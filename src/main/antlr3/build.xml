@@ -1,0 +1,16 @@
+<project default="generate" basedir=".">
+	<target name="generate" description="Generates ANTLR-based tools">
+		<echo message="Compiling XQuery.g"/>
+		<java classname="org.antlr.Tool" classpath="antlr-3.2.jar">
+			<arg line="-o ../java org/brackit/xquery/compiler/parser/XQuery.g"/>
+		</java>
+		<echo message="Compiling XMLexer.g"/>
+		<java classname="org.antlr.Tool" classpath="antlr-3.2.jar">
+			<arg line="-o ../java org/brackit/xquery/compiler/parser/XMLexer.g"/>
+		</java>
+		<echo message="Compiling Path.g"/>
+		<java classname="org.antlr.Tool" classpath="antlr-3.2.jar">
+			<arg line="-o ../java org/brackit/xquery/util/path/Path.g"/>
+		</java>
+	</target>
+</project>
