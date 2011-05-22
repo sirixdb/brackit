@@ -92,6 +92,7 @@ import org.brackit.xquery.operator.Operator;
 import org.brackit.xquery.operator.OrderBy;
 import org.brackit.xquery.operator.Select;
 import org.brackit.xquery.operator.Start;
+import org.brackit.xquery.operator.OrderBy.OrderModifier;
 import org.brackit.xquery.sequence.type.AnyItemType;
 import org.brackit.xquery.sequence.type.AnyKindType;
 import org.brackit.xquery.sequence.type.AtomicType;
@@ -875,7 +876,7 @@ public class Compiler {
 				type = sequenceType(child.getChild(1));
 			}
 			Expr sourceExpr = expr(node.getChild(pos++), true);
-			ForBind forBind = new ForBind(in, sourceExpr);
+			ForBind forBind = new ForBind(in, sourceExpr, null, false);
 
 			Binding runVarBinding = table.bind(runVarName, type);
 			Expr returnExpr = quantifiedBindings(forBind, node, pos);
@@ -1562,7 +1563,7 @@ public class Compiler {
 			posVarType = sequenceType(countVarDecl.getChild(1));
 		}
 		final Binding binding = table.bind(posVarName, posVarType);
-		final Count count = new Count(in.operator);
+		final Count count = new Count(in.operator, null);
 
 		return new ClauseBinding(in, count, binding) {
 			@Override
@@ -1578,21 +1579,40 @@ public class Compiler {
 			throws QueryException {
 		int orderBySpecCount = node.getChildCount();
 		Expr[] orderByExprs = new Expr[orderBySpecCount];
-		int[] orderBySpec = new int[orderBySpecCount];
-		int bindCount = table.bound().length;
+		OrderModifier[] orderBySpec = new OrderModifier[orderBySpecCount];
 		for (int i = 0; i < orderBySpecCount; i++) {
 			AST orderBy = node.getChild(i);
 			orderByExprs[i] = expr(orderBy.getChild(0), true);
-			orderBySpec[i] = bindCount + i;
+			orderBySpec[i] = orderModifier(orderBy);
 		}
-		OrderBy orderBy = new OrderBy(in.operator, orderByExprs, orderBySpec);
+		OrderBy orderBy = new OrderBy(in.operator, orderByExprs, orderBySpec,
+				null, null);
 		return new ClauseBinding(in, orderBy);
+	}
+
+	protected OrderModifier orderModifier(AST orderBy) {
+		boolean asc = true;
+		boolean emptyLeast = true;
+		String collation = null;
+		for (int i = 1; i < orderBy.getChildCount(); i++) {
+			AST modifier = orderBy.getChild(i);
+			if (modifier.getType() == XQueryParser.OrderByKind) {
+				AST direction = modifier.getChild(0);
+				asc = (direction.getType() == XQueryParser.ASCENDING);
+			} else if (modifier.getType() == XQueryParser.OrderByEmptyMode) {
+				AST empty = modifier.getChild(0);
+				emptyLeast = (empty.getType() == XQueryParser.LEAST);
+			} else if (modifier.getType() == XQueryParser.Collation) {
+				collation = modifier.getChild(0).getValue();
+			}
+		}
+		return new OrderModifier(asc, emptyLeast, collation);
 	}
 
 	protected ClauseBinding whereClause(AST node, ClauseBinding in)
 			throws QueryException {
 		Expr expr = anyExpr(node.getChild(0));
-		Select select = new Select(in.operator, expr);
+		Select select = new Select(in.operator, expr, null, null);
 		return new ClauseBinding(in, select);
 	}
 
@@ -1609,7 +1629,7 @@ public class Compiler {
 		}
 		Expr sourceExpr = expr(letClause.getChild(letClausePos++), true);
 		final Binding binding = table.bind(letVarName, letVarType);
-		final LetBind letBind = new LetBind(in.operator, sourceExpr);
+		final LetBind letBind = new LetBind(in.operator, sourceExpr, null);
 
 		return new ClauseBinding(in, letBind, binding) {
 			@Override
@@ -1645,7 +1665,8 @@ public class Compiler {
 		final Binding runVarBinding = table.bind(runVarName, runVarType);
 		final Binding posBinding = (posVarName != null) ? table.bind(
 				posVarName, SequenceType.INTEGER) : null;
-		final ForBind forBind = new ForBind(in.operator, sourceExpr);
+		final ForBind forBind = new ForBind(in.operator, sourceExpr, null,
+				false);
 
 		return new ClauseBinding(in, forBind, runVarBinding, posBinding) {
 			@Override

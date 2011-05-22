@@ -45,6 +45,8 @@ public class LetBindLift extends Walker {
 	private int artificialRunVarCount;
 	private int artificialEnumerateVarCount;
 
+	private boolean first = true;
+
 	@Override
 	protected AST visit(AST node) {
 		if (node.getType() != XQueryParser.LetBind) {
@@ -56,6 +58,10 @@ public class LetBindLift extends Walker {
 		if (opEx.getType() != XQueryParser.ReturnExpr) {
 			return node;
 		}
+
+		if (!first)
+			return node;
+		first = false;
 
 		// AST join = opEx.getChild(0);
 		//		
@@ -86,50 +92,53 @@ public class LetBindLift extends Walker {
 	}
 
 	/*
-	 * Find/introduce a run variable in the copy of the current left input for
+	 * Find/introduce a variable in the copy of the current left input for
 	 * grouping
 	 */
-	private String checkRunVar(AST in) {
-		String runVarName;
+	private String checkGroupingVar(AST in) {
+		String grpVarName;
 		while (true) {
 			if (in.getType() == XQueryParser.LetBind) {
 				// skip let binds in left input branch
 				in = in.getChild(0);
 			} else if (in.getType() == XQueryParser.ForBind) {
-				// use/introduce pos var of for bind for grouping after left
-				// join
+				// use/introduce pos var of for bind for grouping
 				if (in.getChildCount() == 3) {
-					runVarName = createRunVarName(refNumber(in.getChild(1)
+					grpVarName = createRunVarName(refNumber(in.getChild(1)
 							.getChild(0)));
 					AST runVarBinding = new AST(
 							XQueryParser.TypedVariableBinding,
 							"TypedVariableBinding");
 					runVarBinding.addChild(new AST(XQueryParser.Variable,
-							runVarName));
+							grpVarName));
 					in.insertChild(2, runVarBinding); // stopIndex < startIndex
 					// means insert at
 					// startIndex!
 				} else {
-					runVarName = in.getChild(2).getChild(0).getValue();
+					grpVarName = in.getChild(2).getChild(0).getValue();
 				}
 				break;
 			} else {
-				// We are at a non-flowr node in the left input branch, e.g.
-				// Start, Join, LeftJoin
+				// We are at a non-binding node in the left input branch, e.g.
+				// Select, Start, Join, LeftJoin
 				// and introduce an artificial enumeration node for the grouping
-				AST enumerator = new AST(XQueryParser.Count, "Count");
-				runVarName = createEnumerateVarName();
-				in.getParent().replaceChild(0, enumerator);
+				AST count = new AST(XQueryParser.Count, "Count");
+				grpVarName = createEnumerateVarName();
+				in.getParent().replaceChild(0, count);
 				AST runVarBinding = new AST(XQueryParser.TypedVariableBinding,
 						"TypedVariableBinding");
 				runVarBinding.addChild(new AST(XQueryParser.Variable,
-						runVarName));
-				enumerator.addChild(in);
-				enumerator.addChild(runVarBinding);
+						grpVarName));
+				count.addChild(in);
+				count.addChild(runVarBinding);
+				String check = in.getProperty("check");
+				if (check != null) {
+					count.setProperty("check", check);
+				}
 				break;
 			}
 		}
-		return runVarName;
+		return grpVarName;
 	}
 
 	/*
@@ -139,7 +148,6 @@ public class LetBindLift extends Walker {
 	private AST liftInput(AST node) {
 		AST opEx = node.getChild(2);
 		String leftJoinVarName = null;
-		boolean convertedTopJoinToLeftJoin = false;
 		AST leftInput = null;
 		AST left = null;
 		AST tmp = opEx.getChild(0);
@@ -151,23 +159,12 @@ public class LetBindLift extends Walker {
 			}
 
 			if (tmp.getType() == XQueryParser.Join) {
-				// if (convertedTopJoinToLeftJoin)
-				// {
-				// throw new IllegalStateException("Can this happen???"); //
-				// FIXME
-				// }
-				// top join in cascade must be converted to left join
+				// lifted join in cascade must be converted to left join
 				toAdd.setProperty("leftJoin", "true");
-				convertedTopJoinToLeftJoin = true;
-
-				// get left join variable name from right branch
-				AST r = toAdd.getChild(1); // left input branch is still missing
-				// -> right branch is 2nd child
-				while (r.getType() != XQueryParser.Start) {
-					r = r.getChild(0);
-				}
-				leftJoinVarName = r.getParent().getChild(1).getChild(0)
-						.getValue();
+			}
+			if (tmp.getType() == XQueryParser.ForBind) {
+				// lifted for bind must preserve input
+				toAdd.setProperty("preserve", "true");
 			}
 
 			if (leftInput == null) {
@@ -180,22 +177,51 @@ public class LetBindLift extends Walker {
 		}
 
 		AST initialLeftInput = node.getChild(0).copyTree();
-
 		if (leftInput == null) {
 			leftInput = initialLeftInput;
 		} else {
 			left.insertChild(0, initialLeftInput);
 		}
+		String grpVarName = checkGroupingVar(initialLeftInput);
 
-		AST sequencer = new AST(XQueryParser.GroupBy, "GroupBy");
-		sequencer.addChild(leftInput);
-		sequencer.addChild(node.getChild(1).copyTree());
-		String runVarName = checkRunVar(initialLeftInput);
-		sequencer.addChild(new AST(XQueryParser.VariableRef, runVarName));
-		sequencer.addChild(createBindExpression(leftJoinVarName, opEx
-				.getChild(1)));
+		// walk up and add condition to operators
+		String forBindVarName = null;
+		AST tmp3 = initialLeftInput;
+		while (tmp3 != null) {
+			if (tmp3.getType() == XQueryParser.ForBind) {
+				if (Boolean.parseBoolean(tmp3.getProperty("preserve"))) {
+					forBindVarName = tmp3.getChild(1).getChild(0).getValue();
+				}
+				break;
+			}
+			tmp3 = tmp3.getChild(0);
+		}
+		AST tmp2 = left;
+		while (tmp2 != null) {
+			if (forBindVarName != null) {
+				tmp2.setProperty("check", forBindVarName);
+			}
+			if (tmp2.getType() == XQueryParser.ForBind) {
+				forBindVarName = tmp2.getChild(1).getChild(0).getValue();
+			}
+			if ((tmp2.getType() == XQueryParser.OrderBy)
+					|| (tmp2.getType() == XQueryParser.Selection)) {
+				tmp2.setProperty("group", grpVarName);
+			}
+			tmp2 = tmp2.getParent();
+		}
 
-		return sequencer;
+		AST groupBy = new AST(XQueryParser.GroupBy, "GroupBy");
+		groupBy.addChild(leftInput);
+		groupBy.addChild(node.getChild(1).copyTree());
+		groupBy.addChild(new AST(XQueryParser.VariableRef, grpVarName));
+		groupBy
+				.addChild(createBindExpression(leftJoinVarName, opEx
+						.getChild(1)));
+		if (forBindVarName != null) {
+			groupBy.setProperty("check", forBindVarName);
+		}
+		return groupBy;
 	}
 
 	private int refNumber(AST node) {

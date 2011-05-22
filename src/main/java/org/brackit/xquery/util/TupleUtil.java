@@ -44,6 +44,21 @@ import org.brackit.xquery.xdm.Sequence;
  * 
  */
 public final class TupleUtil {
+
+	public static final int compareAtomics(QueryContext ctx, Tuple left,
+			Tuple right, int lPos, int rPos) throws QueryException {
+		Atomic lAtomic = (Atomic) left.get(lPos);
+		Atomic rAtomic = (Atomic) right.get(rPos);
+		
+		if (lAtomic == null) {
+			return (rAtomic == null) ? 0 : -1;
+		} else if (rAtomic == null) {
+			return 1;
+		}
+
+		return lAtomic.cmp(rAtomic);
+	}
+
 	public static final int compareItems(QueryContext ctx, Tuple left,
 			Tuple right, int lPos, int rPos) throws QueryException {
 		Sequence rightSequence = (rPos == -1) ? right.get(0) : right.get(rPos);

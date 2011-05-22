@@ -32,6 +32,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
@@ -40,14 +41,18 @@ import org.brackit.xquery.xdm.Sequence;
  * 
  */
 public class Count implements Operator {
+	private final Expr check;
+
 	private boolean bind = true;
 
 	private static class EnumeratorCursor implements Cursor {
 		private final Cursor c;
+		private final Expr check;
 		private IntegerNumeric pos;
 
-		public EnumeratorCursor(Cursor c) {
+		public EnumeratorCursor(Cursor c, Expr check) {
 			this.c = c;
+			this.check = check;
 		}
 
 		@Override
@@ -62,28 +67,31 @@ public class Count implements Operator {
 			if (t == null) {
 				return null;
 			}
+			if ((check != null) && (check.evaluate(ctx, t) == null)) {
+				pos = Int32.ZERO; // reset current numbering for pass through
+				return new TupleImpl(t, (Sequence) null);
+			}
 
-			Tuple t2 = new TupleImpl(t, (Sequence) pos);
-			pos = pos.inc();
-			return t2;
+			return new TupleImpl(t, (Sequence) (pos = pos.inc()));
 		}
 
 		@Override
 		public void open(QueryContext ctx) throws QueryException {
 			c.open(ctx);
-			pos = Int32.ONE;
+			pos = Int32.ZERO;
 		}
 	}
 
 	private final Operator in;
 
-	public Count(Operator in) {
+	public Count(Operator in, Expr check) {
 		this.in = in;
+		this.check = check;
 	}
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return (bind) ? new EnumeratorCursor(in.create(ctx, tuple)) : in
+		return (bind) ? new EnumeratorCursor(in.create(ctx, tuple), check) : in
 				.create(ctx, tuple);
 	}
 

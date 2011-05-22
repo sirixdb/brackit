@@ -30,6 +30,7 @@ package org.brackit.xquery.operator;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.xdm.Expr;
 
 /**
@@ -42,21 +43,26 @@ public class Select implements Operator {
 
 	private final Expr predicate;
 
+	private final Expr groupVar;
+	
+	private final Expr check;
+
 	public static class SelectCursor implements Cursor {
 		private final Cursor in;
 
 		private final Expr predicate;
+		
+		private final Expr groupVar;
 
-		private final int[] projections;
+		private final Expr check;
 
-		public SelectCursor(Cursor in, Expr predicate) {
-			this(in, predicate, null);
-		}
+		private Tuple next;
 
-		public SelectCursor(Cursor in, Expr predicate, int... projections) {
+		public SelectCursor(Cursor in, Expr predicate, Expr groupVar, Expr check) {
 			this.in = in;
 			this.predicate = predicate;
-			this.projections = projections;
+			this.groupVar = groupVar;
+			this.check = check;
 		}
 
 		@Override
@@ -64,14 +70,31 @@ public class Select implements Operator {
 			in.close(ctx);
 		}
 
-		@Override
 		public Tuple next(QueryContext ctx) throws QueryException {
-			Tuple a;
-			while (((a = in.next(ctx)) != null)
-					&& (!predicate.evaluate(ctx, a).booleanValue(ctx)))
-				;
-			return (a != null) ? (projections != null) ? a.choose(projections)
-					: a : null;
+			Tuple t;
+			while (((t = next) != null) || (t = in.next(ctx)) != null) {
+				next = null;
+				if ((check != null) && (check.evaluate(ctx, t) == null)) {
+					break;
+				}
+				if (predicate.evaluate(ctx, t).booleanValue(ctx)) {
+					break;
+				}
+				if (groupVar == null) {
+					continue;
+				}
+				Tuple n = in.next(ctx);
+				if (n == null) {
+					break;
+				}
+				Atomic gk1 = (Atomic) groupVar.evaluate(ctx, t);
+				Atomic gk2 = (Atomic) groupVar.evaluate(ctx, n);
+				if (gk1.cmp(gk2) != 0) {
+					next = n;
+					break;
+				}
+			}
+			return t;
 		}
 
 		@Override
@@ -80,13 +103,15 @@ public class Select implements Operator {
 		}
 	}
 
-	public Select(Operator in, Expr predicate) {
+	public Select(Operator in, Expr predicate, Expr groupVar, Expr check) {
 		this.in = in;
 		this.predicate = predicate;
+		this.groupVar = groupVar;
+		this.check = check;
 	}
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return new SelectCursor(in.create(ctx, tuple), predicate);
+		return new SelectCursor(in.create(ctx, tuple), predicate, groupVar, check);
 	}
 }

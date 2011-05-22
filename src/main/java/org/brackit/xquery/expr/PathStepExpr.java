@@ -163,6 +163,10 @@ public class PathStepExpr implements Expr {
 					tuple, (Node<?>) n) : new PathStepSequenceIter(ctx, tuple,
 					s, n.iterate());
 		}
+		
+		public String toString() {
+			return step + "/" + nextStep;
+		}
 	}
 
 	private class SinglePathStepSequenceIter implements Iter {

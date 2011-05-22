@@ -45,13 +45,16 @@ import org.brackit.xquery.xdm.Sequence;
  */
 public class GroupBy implements Operator {
 	final Operator in;
-	final Expr[] groupVarExprs;
+	final Expr[] groupVars;
 	final Expr[] groupExprs;
+	final Expr check;
 
-	public GroupBy(Operator in, Expr[] groupVarExprs, Expr[] groupExprs) {
+	public GroupBy(Operator in, Expr[] groupVars, Expr[] groupExprs,
+			Expr check) {
 		this.in = in;
-		this.groupVarExprs = groupVarExprs;
+		this.groupVars = groupVars;
 		this.groupExprs = groupExprs;
+		this.check = check;
 	}
 
 	private class GroupByCursor implements Cursor {
@@ -79,6 +82,10 @@ public class GroupBy implements Operator {
 			if (groupingKeys == null) // first iteration
 			{
 				t = c.next(ctx);
+				if ((t != null) && (check != null)
+						&& (check.evaluate(ctx, t) == null)) {
+					return new TupleImpl(t, new Sequence[groupExprs.length]);
+				}
 				groupingKeys = (t != null) ? extractGroupingKeys(ctx, t) : null;
 			}
 
@@ -90,11 +97,15 @@ public class GroupBy implements Operator {
 			Tuple n = t;
 
 			do {
+				if ((check != null) && (check.evaluate(ctx, t) == null)) {
+					return new TupleImpl(t, new Sequence[groupExprs.length]);
+				}
 				Atomic[] gk = extractGroupingKeys(ctx, t);
 				if (!cmp(groupingKeys, gk)) {
 					groupingKeys = gk;
 					break;
 				}
+				
 				for (int i = 0; i < groupExprs.length; i++) {
 					Expr groupExpr = groupExprs[i];
 					Sequence s = groupExpr.evaluate(ctx, t);
@@ -138,7 +149,7 @@ public class GroupBy implements Operator {
 		}
 
 		private boolean cmp(Atomic[] gk1, Atomic[] gk2) {
-			for (int i = 0; i < groupVarExprs.length; i++) {
+			for (int i = 0; i < groupVars.length; i++) {
 				if (gk1[i] == null) {
 					if (gk2[i] != null) {
 						return false;
@@ -152,9 +163,9 @@ public class GroupBy implements Operator {
 
 		private Atomic[] extractGroupingKeys(QueryContext ctx, Tuple t)
 				throws QueryException {
-			Atomic[] gk = new Atomic[groupVarExprs.length];
-			for (int i = 0; i < groupVarExprs.length; i++) {
-				Item item = groupVarExprs[i].evaluateToItem(ctx, t);
+			Atomic[] gk = new Atomic[groupVars.length];
+			for (int i = 0; i < groupVars.length; i++) {
+				Item item = groupVars[i].evaluateToItem(ctx, t);
 				gk[i] = (item != null) ? item.atomize() : null;
 			}
 			return gk;

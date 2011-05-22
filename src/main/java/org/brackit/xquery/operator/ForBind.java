@@ -48,6 +48,10 @@ public class ForBind implements Operator {
 
 	private final Expr source;
 
+	private final Expr check;
+
+	private final boolean preserve;
+
 	private boolean bindVar = true;
 
 	private boolean bindPos = false;
@@ -56,6 +60,10 @@ public class ForBind implements Operator {
 		private final Cursor in;
 
 		private final Expr expr;
+
+		private final Expr check;
+
+		private final boolean preserve;
 
 		private final boolean bindVar;
 
@@ -69,10 +77,12 @@ public class ForBind implements Operator {
 
 		private Iter it;
 
-		public ForBindCursor(Cursor cursor, Expr expr, boolean bindVar,
-				boolean bindPos) {
+		public ForBindCursor(Cursor cursor, Expr expr, Expr check,
+				boolean preserve, boolean bindVar, boolean bindPos) {
 			this.in = cursor;
 			this.expr = expr;
+			this.check = check;
+			this.preserve = preserve;
 			this.bindVar = bindVar;
 			this.bindPos = bindPos;
 		}
@@ -95,51 +105,93 @@ public class ForBind implements Operator {
 					if (current == null) {
 						return null;
 					}
+					if ((check != null)
+							&& (check.evaluate(ctx, current) == null)) {
+						Tuple t = current;
+						current = null;
+						return passthrough(t);
+					}
 				}
+				Tuple t = current;
 				if (sequence == null) {
 					sequence = expr.evaluate(ctx, current);
 					pos = Int32.ZERO;
+
+					if (sequence == null) {
+						current = null;
+						if (!preserve) {
+							return null;
+						} else {
+							return passthrough(t);
+						}
+					}
 				}
 				if (sequence instanceof Item) {
-					Tuple t = current;
-					if (bindVar) {
-						if (bindPos) {
-							t = new TupleImpl((Tuple) current, sequence,
-									(pos = pos.inc()), null);
-						} else {
-							t = new TupleImpl((Tuple) current, sequence);
-						}
-					} else if (bindPos) {
-						t = new TupleImpl((Tuple) current,
-								(Sequence) (pos = pos.inc()));
-					}
-					sequence = null;
-					current = null;
-					return t;
+					return emit(t, (Item) sequence);
+//					if (bindVar) {
+//						if (bindPos) {
+//							t = new TupleImpl(t, sequence, (pos = pos.inc()),
+//									null);
+//						} else {
+//							t = new TupleImpl(t, sequence);
+//						}
+//					} else if (bindPos) {
+//						t = new TupleImpl(t, (Sequence) (pos = pos.inc()));
+//					}
+//					sequence = null;
+//					current = null;
+//					return t;
 				}
 				if (it == null) {
 					it = sequence.iterate();
 				}
 				Item i = it.next();
 				if (i != null) {
-					Tuple t = current;
-					if (bindVar) {
-						if (bindPos) {
-							t = new TupleImpl((Tuple) current, (Sequence) i,
-									(pos = pos.inc()), null);
-						} else {
-							t = new TupleImpl((Tuple) current, (Sequence) i);
-						}
-					} else if (bindPos) {
-						t = new TupleImpl((Tuple) current,
-								(Sequence) (pos = pos.inc()));
-					}
-					return t;
+					return emit(t, i);
+//					if (bindVar) {
+//						if (bindPos) {
+//							t = new TupleImpl(t, (Sequence) i,
+//									(pos = pos.inc()), null);
+//						} else {
+//							t = new TupleImpl(t, (Sequence) i);
+//						}
+//					} else if (bindPos) {
+//						t = new TupleImpl(t, (Sequence) (pos = pos.inc()));
+//					}
+//					return t;
 				}
 				it.close();
 				it = null;
 				sequence = null;
 				current = null;
+			}
+		}
+		
+		private Tuple emit(Tuple t, Item item) throws QueryException {
+			if (bindVar) {
+				if (bindPos) {
+					return new TupleImpl(t, new Sequence[]{ item, (pos = pos.inc())});
+				} else {
+					return new TupleImpl(t, (Sequence) item);
+				}
+			} else if (bindPos) {
+				return new TupleImpl(t, (Sequence) (pos = pos.inc()));
+			} else {
+				return t;
+			}
+		}
+
+		private Tuple passthrough(Tuple t) throws QueryException {
+			if (bindVar) {
+				if (bindPos) {
+					return new TupleImpl(t, new Sequence[]{ null, null});
+				} else {
+					return new TupleImpl(t, (Sequence) null);
+				}
+			} else if (bindPos) {
+				return new TupleImpl(t, (Sequence) null);
+			} else {
+				return t;
 			}
 		}
 
@@ -154,15 +206,17 @@ public class ForBind implements Operator {
 		}
 	}
 
-	public ForBind(Operator in, Expr source) {
+	public ForBind(Operator in, Expr source, Expr check, boolean preserve) {
 		this.in = in;
 		this.source = source;
+		this.check = check;
+		this.preserve = preserve;
 	}
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return new ForBindCursor(in.create(ctx, tuple), source, bindVar,
-				bindPos);
+		return new ForBindCursor(in.create(ctx, tuple), source, check,
+				preserve, bindVar, bindPos);
 	}
 
 	public void bindVariable(boolean bindVariable) {

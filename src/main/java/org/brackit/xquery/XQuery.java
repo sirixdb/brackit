@@ -147,7 +147,7 @@ public class XQuery {
 			DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR, "unnestrewrite");
 		}
 
-		new JoinRewriter2().walk(ast);
+		//new JoinRewriter2().walk(ast);
 
 		if (DEBUG) {
 			DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR, "joinrewrite");

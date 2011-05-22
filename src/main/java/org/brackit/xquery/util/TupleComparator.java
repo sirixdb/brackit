@@ -36,30 +36,48 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.operator.OrderBy.OrderModifier;
 
+/**
+ * 
+ * @author Sebastian Baechle
+ * 
+ */
 public class TupleComparator implements Comparator<Tuple> {
 	private final QueryContext ctx;
 
-	private final int[] orderBySpec;
+	private final int offset;
 
-	public TupleComparator(QueryContext ctx, int[] orderBySpec) {
+	private final OrderModifier[] orderBySpec;
+
+	public TupleComparator(QueryContext ctx, int offset, OrderModifier[] orderBySpec) {
 		this.ctx = ctx;
+		this.offset = offset;
 		this.orderBySpec = orderBySpec;
 	}
 
 	@Override
 	public int compare(Tuple o1, Tuple o2) {
 		try {
-			for (int orderPos : orderBySpec) {
-				// remember we must not care about pos 0 because this is the
-				// runVar item itself
-				int position = (orderPos > 0) ? orderPos : -orderPos;
-				int res = TupleUtil.compare(ctx, o1, o2, position, position);
+			for (int i = 0; i < orderBySpec.length; i++) {
+				int pos = offset + i;				
+				Atomic lAtomic = (Atomic) o1.get(pos);
+				Atomic rAtomic = (Atomic) o2.get(pos);
+				
+				if (lAtomic == null) {
+					if (rAtomic != null) {
+						return (orderBySpec[i].EMPTY_LEAST) ? -1 : 1;
+					}
+				} else if (rAtomic == null) {
+					return (orderBySpec[i].EMPTY_LEAST) ? 1 : -1;
+				}
 
-				if (res != 0)
-					return (orderPos > 0) ? res : -1;
+				int res = lAtomic.cmp(rAtomic);
+				if (res != 0) {
+					return (orderBySpec[i].ASC) ? res : -res;
+				}
 			}
-
 			return 0;
 		} catch (QueryException e) {
 			if (e.getCode() == ErrorCode.BIT_DYN_RT_ILLEGAL_COMPARISON_ERROR) {

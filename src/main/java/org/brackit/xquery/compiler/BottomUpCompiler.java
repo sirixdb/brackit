@@ -47,6 +47,7 @@ import org.brackit.xquery.operator.Print;
 import org.brackit.xquery.operator.Select;
 import org.brackit.xquery.operator.Start;
 import org.brackit.xquery.operator.TableJoin;
+import org.brackit.xquery.operator.OrderBy.OrderModifier;
 import org.brackit.xquery.sequence.type.SequenceType;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Expr;
@@ -134,8 +135,12 @@ public class BottomUpCompiler extends Compiler {
 		Expr posExpr = anyExpr(node.getChild(2));
 		Expr itemExpr = anyExpr(node.getChild(3));
 		Binding binding = table.bind(letVarName, letVarType);
+		String prop = node.getProperty("check");
+		Expr check = (prop == null) ? null : table.resolve(module
+				.getNamespaces().qname(prop));
 
-		return new GroupBy(in, new Expr[] { posExpr }, new Expr[] { itemExpr });
+		return wrapDebugOutput(new GroupBy(in, new Expr[] { posExpr }, new Expr[] { itemExpr },
+				check));
 	}
 
 	private Operator join(AST node) throws QueryException {
@@ -233,7 +238,6 @@ public class BottomUpCompiler extends Compiler {
 
 	protected Operator forBind(AST node) throws QueryException {
 		QNm posVarName = null;
-		Expr sourceExpr = null;
 		Operator in = anyOp(node.getChild(0));
 
 		int forClausePos = 1; // child zero is the input
@@ -252,7 +256,7 @@ public class BottomUpCompiler extends Compiler {
 					posBindingOrSourceExpr.getChild(0).getValue());
 			posBindingOrSourceExpr = forClause.getChild(forClausePos);
 		}
-		sourceExpr = expr(posBindingOrSourceExpr, true);
+		Expr sourceExpr = expr(posBindingOrSourceExpr, true);
 
 		Binding posBinding = null;
 		Binding runVarBinding = table.bind(runVarName, runVarType);
@@ -266,8 +270,12 @@ public class BottomUpCompiler extends Compiler {
 			table.resolve(posVarName);
 			// TODO Optimize and do not bind variable if not necessary
 		}
+		String prop = node.getProperty("check");
+		Expr check = (prop == null) ? null : table.resolve(module
+				.getNamespaces().qname(prop));
+		boolean preserve = Boolean.parseBoolean(node.getProperty("preserve"));
 
-		ForBind forBind = new ForBind(in, sourceExpr);
+		ForBind forBind = new ForBind(in, sourceExpr, check, preserve);
 		if (posBinding != null) {
 			forBind.bindPosition(posBinding.isReferenced());
 		}
@@ -292,7 +300,10 @@ public class BottomUpCompiler extends Compiler {
 		// Fake binding of let variable because set-oriented processing requires
 		// the variable anyway
 		table.resolve(letVarName);
-		LetBind letBind = new LetBind(in, sourceExpr);
+		String prop = node.getProperty("check");
+		Expr check = (prop == null) ? null : table.resolve(module
+				.getNamespaces().qname(prop));
+		LetBind letBind = new LetBind(in, sourceExpr, check);
 		return letBind;
 	}
 
@@ -310,14 +321,23 @@ public class BottomUpCompiler extends Compiler {
 		// Fake binding of let variable because set-oriented processing requires
 		// the variable anyway
 		table.resolve(posVarName);
-		Count count = new Count(in);
+		String prop = node.getProperty("check");
+		Expr check = (prop == null) ? null : table.resolve(module
+				.getNamespaces().qname(prop));
+		Count count = new Count(in, check);
 		return count;
 	}
 
 	protected Operator select(AST node) throws QueryException {
 		Operator in = anyOp(node.getChild(0));
 		Expr expr = anyExpr(node.getChild(1));
-		Select select = new Select(in, expr);
+		String prop = node.getProperty("check");
+		Expr check = (prop == null) ? null : table.resolve(module
+				.getNamespaces().qname(prop));
+		prop = node.getProperty("group");
+		Expr group = (prop == null) ? null : table.resolve(module
+				.getNamespaces().qname(prop));
+		Select select = new Select(in, expr, group, check);
 		return select;
 	}
 
@@ -326,16 +346,20 @@ public class BottomUpCompiler extends Compiler {
 
 		int orderBySpecCount = node.getChildCount() - 1;
 		Expr[] orderByExprs = new Expr[orderBySpecCount];
-		int[] orderBySpec = new int[orderBySpecCount];
-		int bindCount = table.bound().length;
-
+		OrderModifier[] orderBySpec = new OrderModifier[orderBySpecCount];
 		for (int i = 0; i < orderBySpecCount; i++) {
 			AST orderBy = node.getChild(i + 1);
 			orderByExprs[i] = expr(orderBy.getChild(0), true);
-			orderBySpec[i] = bindCount + i;
+			orderBySpec[i] = orderModifier(orderBy);
 		}
+		String prop = node.getProperty("check");
+		Expr check = (prop == null) ? null : table.resolve(module
+				.getNamespaces().qname(prop));
+		prop = node.getProperty("group");
+		Expr group = (prop == null) ? null : table.resolve(module
+				.getNamespaces().qname(prop));
 
-		return new OrderBy(in, orderByExprs, orderBySpec);
+		return new OrderBy(in, orderByExprs, orderBySpec, group, check);
 	}
 
 	protected Operator wrapDebugOutput(Operator root) {

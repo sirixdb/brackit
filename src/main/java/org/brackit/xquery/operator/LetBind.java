@@ -41,18 +41,23 @@ import org.brackit.xquery.xdm.Sequence;
 public class LetBind implements Operator {
 	private final Operator in;
 
-	private final Expr[] source;
+	private final Expr source;
+
+	private final Expr check;
 
 	private boolean bind = true;
 
 	static class LetBindCursor implements Cursor {
 		private final Cursor in;
 
-		private final Expr[] expr;
+		private final Expr expr;
 
-		public LetBindCursor(Cursor cursor, Expr... expr) {
+		private final Expr check;
+
+		public LetBindCursor(Cursor cursor, Expr expr, Expr check) {
 			this.in = cursor;
 			this.expr = expr;
+			this.check = check;
 		}
 
 		@Override
@@ -62,17 +67,17 @@ public class LetBind implements Operator {
 
 		@Override
 		public Tuple next(QueryContext ctx) throws QueryException {
-			Tuple current = in.next(ctx);
+			Tuple t = in.next(ctx);
 
-			if (current == null) {
+			if (t == null) {
 				return null;
 			}
-
-			for (int i = 0; i < expr.length; i++) {
-				Sequence sequence = expr[i].evaluate(ctx, current);
-				current = new TupleImpl((Tuple) current, sequence);
+			if ((check != null) && (check.evaluate(ctx, t) == null)) {
+				return new TupleImpl(t, (Sequence) null);
 			}
-			return current;
+
+			Sequence sequence = expr.evaluate(ctx, t);
+			return new TupleImpl(t, sequence);
 		}
 
 		@Override
@@ -81,9 +86,10 @@ public class LetBind implements Operator {
 		}
 	}
 
-	public LetBind(Operator in, Expr... source) {
+	public LetBind(Operator in, Expr source, Expr check) {
 		this.in = in;
 		this.source = source;
+		this.check = check;
 	}
 
 	public void bind(boolean bind) {
@@ -92,7 +98,7 @@ public class LetBind implements Operator {
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return (bind) ? new LetBindCursor(in.create(ctx, tuple), source) : in
-				.create(ctx, tuple);
+		return (bind) ? new LetBindCursor(in.create(ctx, tuple), source, check)
+				: in.create(ctx, tuple);
 	}
 }
