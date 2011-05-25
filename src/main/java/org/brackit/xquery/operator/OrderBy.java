@@ -33,6 +33,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.compiler.Reference;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.util.TupleComparator;
 import org.brackit.xquery.util.TupleSort;
@@ -61,35 +62,21 @@ public class OrderBy implements Operator {
 		public final String collation;
 	}
 
-	private static class OrderByCursor implements Cursor {
+	private final Operator in;
+	final Expr[] orderByExprs;
+	final OrderModifier[] orderBySpec;
+	int groupVar = -1;
+	int check = -1;
+
+	private class OrderByCursor implements Cursor {
 		private final Cursor c;
-
-		private final Expr[] orderByExprs;
-
-		private final OrderModifier[] orderBySpec;
-
-		private final Expr groupVar;
-
-		private final Expr check;
-
 		private TupleSort sort;
-
 		private int tupleSize = -1;
-
 		private Stream<? extends Tuple> sorted;
-
 		private Tuple next;
 
-		private Atomic gk1;
-
-		public OrderByCursor(QueryContext ctx, Cursor c, Expr[] orderByExprs,
-				OrderModifier[] orderBySpec, Expr groupVar, Expr check) {
+		public OrderByCursor(Cursor c) {
 			this.c = c;
-			this.orderByExprs = orderByExprs;
-			this.orderBySpec = orderBySpec;
-			this.groupVar = groupVar;
-			this.check = check;
-
 		}
 
 		@Override
@@ -101,74 +88,48 @@ public class OrderBy implements Operator {
 			c.close(ctx);
 		}
 
-		@Override
 		public Tuple next(QueryContext ctx) throws QueryException {
 			Tuple t;
 			if (sorted != null) {
-				// consume remaining tuples last sort
 				t = sorted.next();
 				if (t != null) {
-//					System.out.println("Emit "
-//							+ new TupleImpl(Arrays.copyOfRange(t.array(), 0,
-//									tupleSize)));
 					return new TupleImpl(Arrays.copyOfRange(t.array(), 0,
 							tupleSize));
 				}
 				sorted.close();
 				sort.clear();
 			}
-			if (next != null) {
-				// continue with last tuple read from input
-				t = next;
-				next = null;
-			} else {
-				// read (first) tuple from input
-				t = c.next(ctx);
-				if (t == null) {
-					return null;
-				}
-				// determine input tuple size and start group key
-				tupleSize = t.getSize();
+			if (((t = next) == null) && ((t = c.next(ctx)) == null)) {
+				return null;
 			}
+			next = null;
+			tupleSize = t.getSize();
 
 			// pass through
-			if ((check != null) && (check.evaluate(ctx, t) == null)) {
+			if ((check >= 0) && (t.get(check) == null)) {
 				return t;
 			}
 
 			// sort current tuple and all following in same group
+			Atomic gk = (groupVar >= 0) ? (Atomic) t.get(groupVar) : null;
 			sort = new TupleSort(new TupleComparator(ctx, tupleSize,
 					orderBySpec), -1);
-			System.out.println("Adding " + t);
 			sort.add(addSortFields(ctx, t));
 			while ((next = c.next(ctx)) != null) {
-				if ((check != null) && (check.evaluate(ctx, next) == null)) {
-					gk1 = null; // reset current grouping for pass through
+				if ((check >= 0) && (t.get(check) == null)) {
 					break;
 				}
-				if (groupVar != null) {
-					Atomic gk2 = groupVar.evaluateToItem(ctx, next)
-							.atomize();
-					if (gk1 == null) {
-						gk1 = gk2;
-					} else if (gk1.atomicCmp(gk2) != 0) {
-
-						gk1 = gk2;
+				if (groupVar >= 0) {
+					Atomic ngk = (Atomic) next.get(groupVar);
+					if (gk.atomicCmp(ngk) != 0) {
 						break;
 					}
-					System.out.print("Group " + gk2 + " ");
 				}
-//				System.out.println("Adding " + next);
 				sort.add(addSortFields(ctx, next));
 			}
-			;
 			sort.sort();
 			sorted = sort.stream();
 			t = sorted.next();
-//			System.out
-//					.println("Emit "
-//							+ new TupleImpl(Arrays.copyOfRange(t.array(), 0,
-//									tupleSize)));
 			return new TupleImpl(Arrays.copyOfRange(t.array(), 0, tupleSize));
 		}
 
@@ -193,28 +154,30 @@ public class OrderBy implements Operator {
 		}
 	}
 
-	private final Operator in;
-
-	private final Expr[] orderByExprs;
-
-	private final OrderModifier[] orderBySpec;
-
-	private final Expr groupVar;
-
-	private final Expr check;
-
-	public OrderBy(Operator in, Expr[] orderByExprs,
-			OrderModifier[] orderBySpec, Expr groupVar, Expr check) {
+	public OrderBy(Operator in, Expr[] orderByExprs, OrderModifier[] orderBySpec) {
 		this.in = in;
 		this.orderByExprs = orderByExprs;
 		this.orderBySpec = orderBySpec;
-		this.groupVar = groupVar;
-		this.check = check;
 	}
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return new OrderByCursor(ctx, in.create(ctx, tuple), orderByExprs,
-				orderBySpec, groupVar, check);
+		return new OrderByCursor(in.create(ctx, tuple));
+	}
+
+	public Reference check() {
+		return new Reference() {
+			public void setPos(int pos) {
+				check = pos;
+			}
+		};
+	}
+
+	public Reference group() {
+		return new Reference() {
+			public void setPos(int pos) {
+				groupVar = pos;
+			}
+		};
 	}
 }

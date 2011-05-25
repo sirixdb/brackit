@@ -27,11 +27,15 @@
  */
 package org.brackit.xquery.operator;
 
+import java.util.Arrays;
+
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.compiler.Reference;
 import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.xdm.Sequence;
 
 /**
  * 
@@ -40,29 +44,17 @@ import org.brackit.xquery.xdm.Expr;
  */
 public class Select implements Operator {
 	private final Operator in;
+	final Expr predicate;
+	int groupVar = -1;
+	int check = -1;
 
-	private final Expr predicate;
-
-	private final Expr groupVar;
-	
-	private final Expr check;
-
-	public static class SelectCursor implements Cursor {
+	public class SelectCursor implements Cursor {
 		private final Cursor in;
-
-		private final Expr predicate;
-		
-		private final Expr groupVar;
-
-		private final Expr check;
-
+		private Tuple prev;
 		private Tuple next;
 
-		public SelectCursor(Cursor in, Expr predicate, Expr groupVar, Expr check) {
+		public SelectCursor(Cursor in) {
 			this.in = in;
-			this.predicate = predicate;
-			this.groupVar = groupVar;
-			this.check = check;
 		}
 
 		@Override
@@ -74,26 +66,38 @@ public class Select implements Operator {
 			Tuple t;
 			while (((t = next) != null) || (t = in.next(ctx)) != null) {
 				next = null;
-				if ((check != null) && (check.evaluate(ctx, t) == null)) {
+				if ((check >= 0) && (t.get(check) == null)) {
 					break;
 				}
 				if (predicate.evaluate(ctx, t).booleanValue(ctx)) {
 					break;
 				}
-				if (groupVar == null) {
+				if (groupVar < 0) {
 					continue;
 				}
-				Tuple n = in.next(ctx);
-				if (n == null) {
-					break;
+				// predicate is not fulfilled but we must keep
+				// lifted iteration group alive for "left-join" semantics.
+				Atomic gk = (Atomic) t.get(groupVar);
+				// skip if previously returned tuple was in same iteration group
+				if ((prev != null)
+						&& (gk.cmp((Atomic) prev.get(groupVar)) == 0)) {
+					continue;
 				}
-				Atomic gk1 = (Atomic) groupVar.evaluate(ctx, t);
-				Atomic gk2 = (Atomic) groupVar.evaluate(ctx, n);
-				if (gk1.cmp(gk2) != 0) {
-					next = n;
-					break;
+				next = in.next(ctx);
+				// skip if next tuple is in same iteration group
+				if ((next != null)
+						&& (gk.cmp((Atomic) next.get(groupVar)) == 0)) {
+					continue;
 				}
+				// emit "dead" tuple where "check" field is switched-off
+				// for pass-through in upstream operators
+				Sequence[] tmp = t.array();
+				tmp = Arrays.copyOf(tmp, tmp.length);
+				tmp[check] = null; // switch-off check var
+				t = new TupleImpl(tmp);
+				break;
 			}
+			prev = t;
 			return t;
 		}
 
@@ -103,15 +107,29 @@ public class Select implements Operator {
 		}
 	}
 
-	public Select(Operator in, Expr predicate, Expr groupVar, Expr check) {
+	public Select(Operator in, Expr predicate) {
 		this.in = in;
 		this.predicate = predicate;
-		this.groupVar = groupVar;
-		this.check = check;
 	}
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return new SelectCursor(in.create(ctx, tuple), predicate, groupVar, check);
+		return new SelectCursor(in.create(ctx, tuple));
+	}
+
+	public Reference check() {
+		return new Reference() {
+			public void setPos(int pos) {
+				check = pos;
+			}
+		};
+	}
+
+	public Reference group() {
+		return new Reference() {
+			public void setPos(int pos) {
+				groupVar = pos;
+			}
+		};
 	}
 }

@@ -25,79 +25,17 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.operator;
-
-import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.Tuple;
-import org.brackit.xquery.compiler.Reference;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Sequence;
+package org.brackit.xquery.compiler;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
+ *
  */
-public class LetBind implements Operator {
-	private final Operator in;
-	final Expr source;
-	int check = -1;
-	private boolean bind = true;
-
-	private class LetBindCursor implements Cursor {
-		private final Cursor in;
-
-		public LetBindCursor(Cursor cursor) {
-			this.in = cursor;
-		}
-
-		@Override
-		public void close(QueryContext ctx) {
-			in.close(ctx);
-		}
-
-		@Override
-		public Tuple next(QueryContext ctx) throws QueryException {
-			Tuple t = in.next(ctx);
-
-			if (t == null) {
-				return null;
-			}
-			if ((check >= 0) && (t.get(check) == null)) {
-				return new TupleImpl(t, (Sequence) null);
-			}
-
-			Sequence sequence = source.evaluate(ctx, t);
-			return new TupleImpl(t, sequence);
-		}
-
-		@Override
-		public void open(QueryContext ctx) throws QueryException {
-			in.open(ctx);
-		}
-	}
-
-	public LetBind(Operator in, Expr source) {
-		this.in = in;
-		this.source = source;
-	}
-
-	public void bind(boolean bind) {
-		this.bind = bind;
-	}
-
-	@Override
-	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return (bind) ? new LetBindCursor(in.create(ctx, tuple)) : in.create(
-				ctx, tuple);
-	}
-
-	public Reference check() {
-		return new Reference() {
-			public void setPos(int pos) {
-				check = pos;
-			}
-		};
-	}
+public interface Reference {
+	/**
+	 * Initialize the reference to the variable's 
+	 * position in a tuple.
+	 * @param pos
+	 */
+	public void setPos(int pos);
 }

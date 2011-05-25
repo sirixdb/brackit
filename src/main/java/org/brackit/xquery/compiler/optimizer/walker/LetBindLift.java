@@ -45,8 +45,6 @@ public class LetBindLift extends Walker {
 	private int artificialRunVarCount;
 	private int artificialEnumerateVarCount;
 
-	private boolean first = true;
-
 	@Override
 	protected AST visit(AST node) {
 		if (node.getType() != XQueryParser.LetBind) {
@@ -58,17 +56,6 @@ public class LetBindLift extends Walker {
 		if (opEx.getType() != XQueryParser.ReturnExpr) {
 			return node;
 		}
-
-		if (!first)
-			return node;
-		first = false;
-
-		// AST join = opEx.getChild(0);
-		//		
-		// if (join.getType() != XQueryParser.Join)
-		// {
-		// return node;
-		// }
 
 		AST liftet = liftInput(node);
 		node.getParent().replaceChild(node.getChildIndex(), liftet);

@@ -67,6 +67,35 @@ public class VariableTable {
 		dVariables = new Variable[1];
 	}
 
+	/**
+	 * Resolve bound variable and connect it to provided
+	 * reference
+	 * @param name
+	 * @param ref
+	 * @throws QueryException
+	 */
+	void resolve(QNm name, Reference ref) throws QueryException {
+		if (log.isTraceEnabled()) {
+			log.trace(String.format("Resolving %s", name));
+		}
+
+		for (int i = bLength - 1; i > -1; i--) {
+			if (bTable[bTableCounts][i].name.equals(name)) {
+				bTable[bTableCounts][i].connect(ref);
+				return;
+			}
+		}
+		log.error(dumpTable());
+		throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+				"Cannot resolve var %s", name);
+	}
+	
+	/**
+	 * Resolve variable and create variable access expression
+	 * @param name
+	 * @return
+	 * @throws QueryException
+	 */
 	Variable resolve(QNm name) throws QueryException {
 		if (log.isTraceEnabled()) {
 			log.trace(String.format("Resolving %s", name));

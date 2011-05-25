@@ -135,12 +135,13 @@ public class BottomUpCompiler extends Compiler {
 		Expr posExpr = anyExpr(node.getChild(2));
 		Expr itemExpr = anyExpr(node.getChild(3));
 		Binding binding = table.bind(letVarName, letVarType);
+		GroupBy groupBy = new GroupBy(in, new Expr[] { posExpr },
+				new Expr[] { itemExpr });
 		String prop = node.getProperty("check");
-		Expr check = (prop == null) ? null : table.resolve(module
-				.getNamespaces().qname(prop));
-
-		return wrapDebugOutput(new GroupBy(in, new Expr[] { posExpr }, new Expr[] { itemExpr },
-				check));
+		if (prop != null) {
+			table.resolve(module.getNamespaces().qname(prop), groupBy.check());
+		}
+		return groupBy;
 	}
 
 	private Operator join(AST node) throws QueryException {
@@ -270,16 +271,15 @@ public class BottomUpCompiler extends Compiler {
 			table.resolve(posVarName);
 			// TODO Optimize and do not bind variable if not necessary
 		}
-		String prop = node.getProperty("check");
-		Expr check = (prop == null) ? null : table.resolve(module
-				.getNamespaces().qname(prop));
 		boolean preserve = Boolean.parseBoolean(node.getProperty("preserve"));
-
-		ForBind forBind = new ForBind(in, sourceExpr, check, preserve);
+		ForBind forBind = new ForBind(in, sourceExpr, preserve);
 		if (posBinding != null) {
 			forBind.bindPosition(posBinding.isReferenced());
 		}
-
+		String prop = node.getProperty("check");
+		if (prop != null) {
+			table.resolve(module.getNamespaces().qname(prop), forBind.check());
+		}
 		return forBind;
 	}
 
@@ -300,10 +300,11 @@ public class BottomUpCompiler extends Compiler {
 		// Fake binding of let variable because set-oriented processing requires
 		// the variable anyway
 		table.resolve(letVarName);
+		LetBind letBind = new LetBind(in, sourceExpr);
 		String prop = node.getProperty("check");
-		Expr check = (prop == null) ? null : table.resolve(module
-				.getNamespaces().qname(prop));
-		LetBind letBind = new LetBind(in, sourceExpr, check);
+		if (prop != null) {
+			table.resolve(module.getNamespaces().qname(prop), letBind.check());
+		}
 		return letBind;
 	}
 
@@ -321,23 +322,26 @@ public class BottomUpCompiler extends Compiler {
 		// Fake binding of let variable because set-oriented processing requires
 		// the variable anyway
 		table.resolve(posVarName);
+		Count count = new Count(in);
 		String prop = node.getProperty("check");
-		Expr check = (prop == null) ? null : table.resolve(module
-				.getNamespaces().qname(prop));
-		Count count = new Count(in, check);
+		if (prop != null) {
+			table.resolve(module.getNamespaces().qname(prop), count.check());
+		}
 		return count;
 	}
 
 	protected Operator select(AST node) throws QueryException {
 		Operator in = anyOp(node.getChild(0));
 		Expr expr = anyExpr(node.getChild(1));
+		Select select = new Select(in, expr);
 		String prop = node.getProperty("check");
-		Expr check = (prop == null) ? null : table.resolve(module
-				.getNamespaces().qname(prop));
+		if (prop != null) {
+			table.resolve(module.getNamespaces().qname(prop), select.check());
+		}
 		prop = node.getProperty("group");
-		Expr group = (prop == null) ? null : table.resolve(module
-				.getNamespaces().qname(prop));
-		Select select = new Select(in, expr, group, check);
+		if (prop != null) {
+			table.resolve(module.getNamespaces().qname(prop), select.group());
+		}
 		return select;
 	}
 
@@ -352,14 +356,16 @@ public class BottomUpCompiler extends Compiler {
 			orderByExprs[i] = expr(orderBy.getChild(0), true);
 			orderBySpec[i] = orderModifier(orderBy);
 		}
+		OrderBy orderBy = new OrderBy(in, orderByExprs, orderBySpec);
 		String prop = node.getProperty("check");
-		Expr check = (prop == null) ? null : table.resolve(module
-				.getNamespaces().qname(prop));
+		if (prop != null) {
+			table.resolve(module.getNamespaces().qname(prop), orderBy.check());
+		}
 		prop = node.getProperty("group");
-		Expr group = (prop == null) ? null : table.resolve(module
-				.getNamespaces().qname(prop));
-
-		return new OrderBy(in, orderByExprs, orderBySpec, group, check);
+		if (prop != null) {
+			table.resolve(module.getNamespaces().qname(prop), orderBy.group());
+		}
+		return orderBy;
 	}
 
 	protected Operator wrapDebugOutput(Operator root) {

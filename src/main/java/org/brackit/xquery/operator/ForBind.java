@@ -33,6 +33,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.compiler.Reference;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -45,46 +46,20 @@ import org.brackit.xquery.xdm.Sequence;
  */
 public class ForBind implements Operator {
 	private final Operator in;
+	final Expr source;
+	final boolean preserve;
+	boolean bindVar = true;
+	boolean bindPos = false;
+	int check = -1;
 
-	private final Expr source;
-
-	private final Expr check;
-
-	private final boolean preserve;
-
-	private boolean bindVar = true;
-
-	private boolean bindPos = false;
-
-	static class ForBindCursor implements Cursor {
+	private class ForBindCursor implements Cursor {
 		private final Cursor in;
-
-		private final Expr expr;
-
-		private final Expr check;
-
-		private final boolean preserve;
-
-		private final boolean bindVar;
-
-		private final boolean bindPos;
-
 		private IntegerNumeric pos;
-
-		private Sequence sequence;
-
-		private Tuple current;
-
+		private Tuple t;
 		private Iter it;
 
-		public ForBindCursor(Cursor cursor, Expr expr, Expr check,
-				boolean preserve, boolean bindVar, boolean bindPos) {
+		public ForBindCursor(Cursor cursor) {
 			this.in = cursor;
-			this.expr = expr;
-			this.check = check;
-			this.preserve = preserve;
-			this.bindVar = bindVar;
-			this.bindPos = bindPos;
 		}
 
 		@Override
@@ -99,80 +74,44 @@ public class ForBind implements Operator {
 		@Override
 		public Tuple next(QueryContext ctx) throws QueryException {
 			while (true) {
-				if (current == null) {
-					current = in.next(ctx);
-
-					if (current == null) {
-						return null;
+				if (it != null) {
+					Item i = it.next();
+					if (i != null) {
+						return emit(t, i);
 					}
-					if ((check != null)
-							&& (check.evaluate(ctx, current) == null)) {
-						Tuple t = current;
-						current = null;
-						return passthrough(t);
-					}
+					it.close();
+					it = null;
 				}
-				Tuple t = current;
-				if (sequence == null) {
-					sequence = expr.evaluate(ctx, current);
-					pos = Int32.ZERO;
-
-					if (sequence == null) {
-						current = null;
-						if (!preserve) {
-							return null;
-						} else {
-							return passthrough(t);
-						}
-					}
+				if ((t = in.next(ctx)) == null) {
+					return null;
 				}
-				if (sequence instanceof Item) {
-					return emit(t, (Item) sequence);
-//					if (bindVar) {
-//						if (bindPos) {
-//							t = new TupleImpl(t, sequence, (pos = pos.inc()),
-//									null);
-//						} else {
-//							t = new TupleImpl(t, sequence);
-//						}
-//					} else if (bindPos) {
-//						t = new TupleImpl(t, (Sequence) (pos = pos.inc()));
-//					}
-//					sequence = null;
-//					current = null;
-//					return t;
+				if ((check >= 0) && (t.get(check) == null)) {
+					Tuple tmp = passthrough(t);
+					t = null;
+					return tmp;
 				}
-				if (it == null) {
-					it = sequence.iterate();
+				Sequence s = source.evaluate(ctx, t);
+				pos = Int32.ZERO;
+				if (s == null) {
+					Tuple tmp = (preserve) ? passthrough(t) : null;
+					t = null;
+					return tmp;
 				}
-				Item i = it.next();
-				if (i != null) {
-					return emit(t, i);
-//					if (bindVar) {
-//						if (bindPos) {
-//							t = new TupleImpl(t, (Sequence) i,
-//									(pos = pos.inc()), null);
-//						} else {
-//							t = new TupleImpl(t, (Sequence) i);
-//						}
-//					} else if (bindPos) {
-//						t = new TupleImpl(t, (Sequence) (pos = pos.inc()));
-//					}
-//					return t;
+				if (s instanceof Item) {
+					return emit(t, s);
+				} else {
+					it = s.iterate();
 				}
-				it.close();
-				it = null;
-				sequence = null;
-				current = null;
 			}
 		}
-		
-		private Tuple emit(Tuple t, Item item) throws QueryException {
+
+		private Tuple emit(Tuple t, Sequence item) throws QueryException {
 			if (bindVar) {
 				if (bindPos) {
-					return new TupleImpl(t, new Sequence[]{ item, (pos = pos.inc())});
+					return new TupleImpl(t, new Sequence[] { item,
+							(pos = pos.inc()) });
 				} else {
-					return new TupleImpl(t, (Sequence) item);
+					return new TupleImpl(t, item);
 				}
 			} else if (bindPos) {
 				return new TupleImpl(t, (Sequence) (pos = pos.inc()));
@@ -184,7 +123,7 @@ public class ForBind implements Operator {
 		private Tuple passthrough(Tuple t) throws QueryException {
 			if (bindVar) {
 				if (bindPos) {
-					return new TupleImpl(t, new Sequence[]{ null, null});
+					return new TupleImpl(t, new Sequence[] { null, null });
 				} else {
 					return new TupleImpl(t, (Sequence) null);
 				}
@@ -200,23 +139,21 @@ public class ForBind implements Operator {
 			if (it != null) {
 				throw new QueryException(
 						ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-						"ForBind %s already opened", sequence);
+						"ForBind already opened");
 			}
 			in.open(ctx);
 		}
 	}
 
-	public ForBind(Operator in, Expr source, Expr check, boolean preserve) {
+	public ForBind(Operator in, Expr source, boolean preserve) {
 		this.in = in;
 		this.source = source;
-		this.check = check;
 		this.preserve = preserve;
 	}
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return new ForBindCursor(in.create(ctx, tuple), source, check,
-				preserve, bindVar, bindPos);
+		return new ForBindCursor(in.create(ctx, tuple));
 	}
 
 	public void bindVariable(boolean bindVariable) {
@@ -225,5 +162,13 @@ public class ForBind implements Operator {
 
 	public void bindPosition(boolean bindPos) {
 		this.bindPos = bindPos;
+	}
+
+	public Reference check() {
+		return new Reference() {
+			public void setPos(int pos) {
+				check = pos;
+			}
+		};
 	}
 }

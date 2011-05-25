@@ -32,7 +32,6 @@ import java.util.Arrays;
 
 import org.apache.log4j.Logger;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.expr.BoundVariable;
 import org.brackit.xquery.sequence.type.SequenceType;
 
 /**
@@ -47,7 +46,7 @@ public class Binding {
 	final SequenceType type;
 	final Binding prev;
 	Binding[] next;
-	BoundVariable[] variables;
+	Reference[] refs;
 	int refCount;
 	int nextCount;
 
@@ -82,15 +81,15 @@ public class Binding {
 		next[nextCount++] = binding;
 	}
 
-	void connect(BoundVariable variable) {
-		if (variables == null) {
-			variables = new BoundVariable[2];
+	void connect(Reference variable) {
+		if (refs == null) {
+			refs = new Reference[2];
 		}
-		if (refCount == variables.length) {
-			variables = Arrays.copyOf(variables,
-					((variables.length * 3) / 2 + 1));
+		if (refCount == refs.length) {
+			refs = Arrays.copyOf(refs,
+					((refs.length * 3) / 2 + 1));
 		}
-		variables[refCount++] = variable;
+		refs[refCount++] = variable;
 	}
 
 	boolean isReferenced() {
@@ -107,7 +106,7 @@ public class Binding {
 			}
 
 			for (int i = 0; i < refCount; i++) {
-				variables[i].setPos(currentPos);
+				refs[i].setPos(currentPos);
 			}
 		}
 		for (int i = 0; i < nextCount; i++) {

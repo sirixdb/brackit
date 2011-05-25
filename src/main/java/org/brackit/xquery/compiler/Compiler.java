@@ -876,7 +876,7 @@ public class Compiler {
 				type = sequenceType(child.getChild(1));
 			}
 			Expr sourceExpr = expr(node.getChild(pos++), true);
-			ForBind forBind = new ForBind(in, sourceExpr, null, false);
+			ForBind forBind = new ForBind(in, sourceExpr, false);
 
 			Binding runVarBinding = table.bind(runVarName, type);
 			Expr returnExpr = quantifiedBindings(forBind, node, pos);
@@ -1563,7 +1563,7 @@ public class Compiler {
 			posVarType = sequenceType(countVarDecl.getChild(1));
 		}
 		final Binding binding = table.bind(posVarName, posVarType);
-		final Count count = new Count(in.operator, null);
+		final Count count = new Count(in.operator);
 
 		return new ClauseBinding(in, count, binding) {
 			@Override
@@ -1585,8 +1585,7 @@ public class Compiler {
 			orderByExprs[i] = expr(orderBy.getChild(0), true);
 			orderBySpec[i] = orderModifier(orderBy);
 		}
-		OrderBy orderBy = new OrderBy(in.operator, orderByExprs, orderBySpec,
-				null, null);
+		OrderBy orderBy = new OrderBy(in.operator, orderByExprs, orderBySpec);
 		return new ClauseBinding(in, orderBy);
 	}
 
@@ -1612,7 +1611,7 @@ public class Compiler {
 	protected ClauseBinding whereClause(AST node, ClauseBinding in)
 			throws QueryException {
 		Expr expr = anyExpr(node.getChild(0));
-		Select select = new Select(in.operator, expr, null, null);
+		Select select = new Select(in.operator, expr);
 		return new ClauseBinding(in, select);
 	}
 
@@ -1629,7 +1628,7 @@ public class Compiler {
 		}
 		Expr sourceExpr = expr(letClause.getChild(letClausePos++), true);
 		final Binding binding = table.bind(letVarName, letVarType);
-		final LetBind letBind = new LetBind(in.operator, sourceExpr, null);
+		final LetBind letBind = new LetBind(in.operator, sourceExpr);
 
 		return new ClauseBinding(in, letBind, binding) {
 			@Override
@@ -1665,8 +1664,7 @@ public class Compiler {
 		final Binding runVarBinding = table.bind(runVarName, runVarType);
 		final Binding posBinding = (posVarName != null) ? table.bind(
 				posVarName, SequenceType.INTEGER) : null;
-		final ForBind forBind = new ForBind(in.operator, sourceExpr, null,
-				false);
+		final ForBind forBind = new ForBind(in.operator, sourceExpr, false);
 
 		return new ClauseBinding(in, forBind, runVarBinding, posBinding) {
 			@Override

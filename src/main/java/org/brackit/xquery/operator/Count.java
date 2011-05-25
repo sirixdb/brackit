@@ -32,7 +32,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntegerNumeric;
-import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.compiler.Reference;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
@@ -41,18 +41,16 @@ import org.brackit.xquery.xdm.Sequence;
  * 
  */
 public class Count implements Operator {
-	private final Expr check;
-
+	private final Operator in;
 	private boolean bind = true;
+	int check = -1;
 
-	private static class EnumeratorCursor implements Cursor {
+	private class CountCursor implements Cursor {
 		private final Cursor c;
-		private final Expr check;
 		private IntegerNumeric pos;
 
-		public EnumeratorCursor(Cursor c, Expr check) {
+		public CountCursor(Cursor c) {
 			this.c = c;
-			this.check = check;
 		}
 
 		@Override
@@ -67,9 +65,9 @@ public class Count implements Operator {
 			if (t == null) {
 				return null;
 			}
-			if ((check != null) && (check.evaluate(ctx, t) == null)) {
-				pos = Int32.ZERO; // reset current numbering for pass through
-				return new TupleImpl(t, (Sequence) null);
+			if ((check >= 0) && (t.get(check) == null)) {
+				// reset numbering for pass through
+				return new TupleImpl(t, (Sequence) (pos = Int32.ZERO));
 			}
 
 			return new TupleImpl(t, (Sequence) (pos = pos.inc()));
@@ -82,20 +80,25 @@ public class Count implements Operator {
 		}
 	}
 
-	private final Operator in;
-
-	public Count(Operator in, Expr check) {
+	public Count(Operator in) {
 		this.in = in;
-		this.check = check;
 	}
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return (bind) ? new EnumeratorCursor(in.create(ctx, tuple), check) : in
-				.create(ctx, tuple);
+		return (bind) ? new CountCursor(in.create(ctx, tuple)) : in.create(ctx,
+				tuple);
 	}
 
 	public void bind(boolean bind) {
 		this.bind = bind;
+	}
+
+	public Reference check() {
+		return new Reference() {
+			public void setPos(int pos) {
+				check = pos;
+			}
+		};
 	}
 }

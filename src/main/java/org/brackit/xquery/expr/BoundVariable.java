@@ -31,6 +31,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.Reference;
 import org.brackit.xquery.sequence.type.SequenceType;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Item;
@@ -43,7 +44,7 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  * 
  */
-public class BoundVariable extends Variable {
+public class BoundVariable extends Variable implements Reference {
 	private int pos = -1;
 
 	public BoundVariable(QNm name, SequenceType type) {
@@ -55,6 +56,7 @@ public class BoundVariable extends Variable {
 		this.pos = pos;
 	}
 
+	@Override
 	public void setPos(int pos) {
 		this.pos = pos;
 	}
