@@ -27,16 +27,16 @@
  */
 package org.brackit.xquery.operator;
 
-import java.util.Arrays;
+import java.util.Comparator;
 
+import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.compiler.Reference;
 import org.brackit.xquery.expr.Cast;
-import org.brackit.xquery.util.TupleComparator;
-import org.brackit.xquery.util.TupleSort;
+import org.brackit.xquery.util.sort.TupleSort;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
@@ -62,9 +62,51 @@ public class OrderBy implements Operator {
 		public final String collation;
 	}
 
+	private static class OrderBySpec implements Comparator<Tuple> {
+		private final int offset;
+		private final OrderModifier[] modifier;
+
+		public OrderBySpec(int offset, OrderModifier[] modifier) {
+			this.offset = offset;
+			this.modifier = modifier;
+		}
+
+		@Override
+		public int compare(Tuple o1, Tuple o2) {
+			try {
+				for (int i = 0; i < modifier.length; i++) {
+					int pos = offset + i;
+					Atomic lAtomic = (Atomic) o1.get(pos);
+					Atomic rAtomic = (Atomic) o2.get(pos);
+
+					if (lAtomic == null) {
+						if (rAtomic != null) {
+							return (modifier[i].EMPTY_LEAST) ? -1 : 1;
+						}
+					} else if (rAtomic == null) {
+						return (modifier[i].EMPTY_LEAST) ? 1 : -1;
+					}
+
+					int res = lAtomic.cmp(rAtomic);
+					if (res != 0) {
+						return (modifier[i].ASC) ? res : -res;
+					}
+				}
+				return 0;
+			} catch (QueryException e) {
+				if (e.getCode() == ErrorCode.BIT_DYN_RT_ILLEGAL_COMPARISON_ERROR) {
+					throw new ClassCastException(e.getMessage());
+				} else {
+					e.printStackTrace();
+					throw new RuntimeException(e.getMessage());
+				}
+			}
+		}
+	}
+
 	private final Operator in;
 	final Expr[] orderByExprs;
-	final OrderModifier[] orderBySpec;
+	final OrderModifier[] modifier;
 	int groupVar = -1;
 	int check = -1;
 
@@ -93,8 +135,7 @@ public class OrderBy implements Operator {
 			if (sorted != null) {
 				t = sorted.next();
 				if (t != null) {
-					return new TupleImpl(Arrays.copyOfRange(t.array(), 0,
-							tupleSize));
+					return t.project(0, tupleSize);
 				}
 				sorted.close();
 				sort.clear();
@@ -112,8 +153,7 @@ public class OrderBy implements Operator {
 
 			// sort current tuple and all following in same group
 			Atomic gk = (groupVar >= 0) ? (Atomic) t.get(groupVar) : null;
-			sort = new TupleSort(new TupleComparator(ctx, tupleSize,
-					orderBySpec), -1);
+			sort = new TupleSort(new OrderBySpec(tupleSize, modifier), -1);
 			sort.add(addSortFields(ctx, t));
 			while ((next = c.next(ctx)) != null) {
 				if ((check >= 0) && (t.get(check) == null)) {
@@ -130,7 +170,7 @@ public class OrderBy implements Operator {
 			sort.sort();
 			sorted = sort.stream();
 			t = sorted.next();
-			return new TupleImpl(Arrays.copyOfRange(t.array(), 0, tupleSize));
+			return t.project(0, tupleSize);
 		}
 
 		private Tuple addSortFields(QueryContext ctx, Tuple t)
@@ -144,7 +184,7 @@ public class OrderBy implements Operator {
 				}
 				concat[i] = atomic;
 			}
-			Tuple toSort = new TupleImpl(t, concat);
+			Tuple toSort = t.concat(concat);
 			return toSort;
 		}
 
@@ -157,7 +197,7 @@ public class OrderBy implements Operator {
 	public OrderBy(Operator in, Expr[] orderByExprs, OrderModifier[] orderBySpec) {
 		this.in = in;
 		this.orderByExprs = orderByExprs;
-		this.orderBySpec = orderBySpec;
+		this.modifier = orderBySpec;
 	}
 
 	@Override

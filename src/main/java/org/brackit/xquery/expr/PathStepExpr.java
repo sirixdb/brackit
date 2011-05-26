@@ -36,9 +36,8 @@ import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntegerNumeric;
-import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.sequence.LazySequence;
-import org.brackit.xquery.util.TupleSort;
+import org.brackit.xquery.util.sort.TupleSort;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -186,9 +185,18 @@ public class PathStepExpr implements Expr {
 			if (nextS == null) {
 				Tuple current = tuple;
 				if (bindCount > 0) {
-					current = new TupleImpl(current, bindItem ? currentNode
-							: null, bindPos ? Int32.ONE : null,
-							bindSize ? Int32.ONE : null);
+					Sequence[] tmp = new Sequence[bindCount];
+					int p = 0;
+					if (bindItem) {
+						tmp[p++] = currentNode;
+					}
+					if (bindPos) {
+						tmp[p++] = Int32.ONE;
+					}
+					if (bindSize) {
+						tmp[p++] = Int32.ONE;
+					}
+					current = current.concat(tmp);
 				}
 
 				Sequence sequence = nextStep.evaluate(ctx, current);
@@ -253,9 +261,18 @@ public class PathStepExpr implements Expr {
 				currentNode = (Node<?>) runVar;
 
 				if (bindCount > 0) {
-					current = new TupleImpl(current, bindItem ? runVar : null,
-							bindPos ? (pos = pos.inc()) : null,
-							bindSize ? inSeqSize : null);
+					Sequence[] tmp = new Sequence[bindCount];
+					int p = 0;
+					if (bindItem) {
+						tmp[p++] = runVar;
+					}
+					if (bindPos) {
+						tmp[p++] = (pos = pos.inc());
+					}
+					if (bindSize) {
+						tmp[p++] = inSeqSize;
+					}
+					current = current.concat(tmp);
 				}
 
 				// System.out.println("Performing nextStep " + nextStep +

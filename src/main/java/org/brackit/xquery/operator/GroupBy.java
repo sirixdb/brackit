@@ -84,7 +84,7 @@ public class GroupBy implements Operator {
 			next = null;
 
 			if ((check >= 0) && (t.get(check) == null)) {
-				return new TupleImpl(t, new Sequence[groupExprs.length]);
+				return t.concat(new Sequence[groupExprs.length]);
 			}
 
 			Atomic[] gks = extractGroupingKeys(ctx, t);
@@ -110,7 +110,7 @@ public class GroupBy implements Operator {
 					groupings[i] = new ItemSequence(tmp);
 				}
 			}
-			return new TupleImpl(t, groupings);
+			return t.concat(groupings);
 		}
 
 		private void addGroupFields(QueryContext ctx, Tuple t, int[] size)
@@ -174,7 +174,7 @@ public class GroupBy implements Operator {
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
 		return new GroupByCursor(in.create(ctx, tuple));
 	}
-	
+
 	public Reference check() {
 		return new Reference() {
 			public void setPos(int pos) {

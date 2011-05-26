@@ -31,7 +31,6 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Node;
@@ -79,8 +78,7 @@ public class DocumentExpr extends ConstructedNodeBuilder implements Expr {
 			}
 		};
 
-		final Tuple t = (contentExpr.length > 0) ? new TupleImpl(tuple,
-				(Sequence) document) : tuple;
+		Tuple t = (contentExpr.length > 0) ? tuple.concat(document) : tuple;
 
 		for (int i = 0; i < contentExpr.length; i++) {
 			Sequence content = contentExpr[i].evaluate(ctx, t);

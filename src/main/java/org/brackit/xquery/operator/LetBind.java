@@ -65,11 +65,11 @@ public class LetBind implements Operator {
 				return null;
 			}
 			if ((check >= 0) && (t.get(check) == null)) {
-				return new TupleImpl(t, (Sequence) null);
+				return t.concat((Sequence) null);
 			}
 
 			Sequence sequence = source.evaluate(ctx, t);
-			return new TupleImpl(t, sequence);
+			return t.concat(sequence);
 		}
 
 		@Override

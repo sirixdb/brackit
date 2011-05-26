@@ -27,13 +27,11 @@
  */
 package org.brackit.xquery.atomic;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.operator.TupleImpl;
+import org.brackit.xquery.xdm.AbstractItem;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
@@ -42,7 +40,7 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  * 
  */
-public abstract class AbstractAtomic implements Atomic {
+public abstract class AbstractAtomic extends AbstractItem implements Atomic {
 	@Override
 	public final Sequence evaluate(QueryContext ctx, Tuple context)
 			throws QueryException {
@@ -67,55 +65,6 @@ public abstract class AbstractAtomic implements Atomic {
 	@Override
 	public final Atomic atomize() throws QueryException {
 		return this;
-	}
-
-	@Override
-	public final Sequence get(int position) throws QueryException {
-		if (position != 0) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
-					Integer.toString(position));
-		}
-
-		return this;
-	}
-
-	@Override
-	public final Tuple choose(int... positions) throws QueryException {
-		Sequence[] projected = new Sequence[positions.length];
-		int targetPos = 0;
-		for (int pos : positions) {
-			projected[targetPos++] = get(pos);
-		}
-		return new TupleImpl(projected);
-	}
-
-	@Override
-	public final Sequence[] array() throws QueryException {
-		return new Sequence[] { this };
-	}
-
-	@Override
-	public final int getSize() {
-		return 1;
-	}
-
-	@Override
-	public final Iter iterate() {
-		final Atomic atomic = this;
-		return new Iter() {
-			boolean first = true;
-
-			public final Item next() throws QueryException {
-				if (!first)
-					return null;
-
-				first = false;
-				return atomic;
-			}
-
-			public final void close() {
-			}
-		};
 	}
 
 	public abstract int hashCode();
@@ -144,11 +93,6 @@ public abstract class AbstractAtomic implements Atomic {
 	@Override
 	public final boolean equals(Object obj) {
 		return ((obj == this) || ((obj instanceof Atomic) && (atomicCmp((Atomic) obj) == 0)));
-	}
-
-	@Override
-	public final IntegerNumeric size(QueryContext ctx) throws QueryException {
-		return Int32.ONE;
 	}
 
 	@Override

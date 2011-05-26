@@ -25,35 +25,63 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.operator;
-
-import java.util.Arrays;
+package org.brackit.xquery.xdm;
 
 import org.brackit.xquery.ErrorCode;
+import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.atomic.Int32;
+import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.operator.TupleImpl;
 
 /**
+ * Base class 
  * 
  * @author Sebastian Baechle
  * 
  */
-public class TupleImpl implements Tuple {
-	public static final Tuple EMPTY_TUPLE = new TupleImpl();
+public abstract class AbstractItem implements Item {
 
-	private final Sequence[] sequences;
+	public AbstractItem() {
+	}
+	
+	@Override
+	public final IntegerNumeric size(QueryContext ctx) throws QueryException {
+		return Int32.ONE;
+	}
+	
+	@Override
+	public final Iter iterate() {
+		final Item item = this;
+		return new Iter() {
+			boolean first = true;
 
-	public TupleImpl() {
-		sequences = new Sequence[0];
+			public final Item next() throws QueryException {
+				if (!first)
+					return null;
+
+				first = false;
+				return item;
+			}
+
+			public final void close() {
+			}
+		};
 	}
 
-	public TupleImpl(Sequence t) {
-		sequences = new Sequence[] { t };
+	@Override
+	public Sequence[] array() throws QueryException {
+		return new Sequence[] { this };
 	}
 
-	public TupleImpl(Sequence[] t) {
-		sequences = Arrays.copyOf(t, t.length);
+	@Override
+	public Sequence get(int position) throws QueryException {
+		if (position != 0) {
+			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
+					position);
+		}
+		return this;
 	}
 
 	@Override
@@ -68,72 +96,41 @@ public class TupleImpl implements Tuple {
 
 	@Override
 	public Tuple project(int start, int end) throws QueryException {
-		if ((start < 0) || (start >= sequences.length)) {
+		if (start != 0) {
 			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
 					start);
 		}
-		if ((end < start) || (end >= sequences.length)) {
+		if (end != 0) {
 			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
 					end);
 		}
-		return new TupleImpl(Arrays.copyOfRange(sequences, start, end));
+		return this;
 	}
 
 	@Override
 	public Tuple replace(int position, Sequence s) throws QueryException {
-		if ((position < 0) || (position >= sequences.length)) {
+		if (position != 0) {
 			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
 					position);
 		}
-		Sequence[] tmp = Arrays.copyOf(sequences, sequences.length);
-		tmp[position] = s;
-		return new TupleImpl(tmp);
+		return new TupleImpl(s);
 	}
 
 	@Override
 	public Tuple concat(Sequence s) throws QueryException {
-		Sequence[] tmp = Arrays.copyOf(sequences, sequences.length + 1);
-		tmp[sequences.length] = s;
-		return new TupleImpl(tmp);
+		return new TupleImpl(new Sequence[] { this, s });
 	}
 
 	@Override
 	public Tuple concat(Sequence[] s) throws QueryException {
-		Sequence[] tmp = Arrays.copyOf(sequences, sequences.length + s.length);
-		System.arraycopy(s, 0, tmp, sequences.length, s.length);
+		Sequence[] tmp = new Sequence[s.length + 1];
+		tmp[0] = this;
+		System.arraycopy(s, 0, tmp, 1, s.length);
 		return new TupleImpl(tmp);
 	}
 
 	@Override
-	public Sequence[] array() {
-		return sequences;
-	}
-
-	@Override
-	public Sequence get(int position) throws QueryException {
-		if ((position < 0) || (position >= sequences.length)) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
-					position);
-		}
-
-		return sequences[position];
-	}
-
-	@Override
 	public int getSize() {
-		return sequences.length;
-	}
-
-	public String toString() {
-		StringBuilder out = new StringBuilder();
-		out.append("[");
-		for (int i = 0; i < sequences.length; i++) {
-			if (i > 0)
-				out.append(", ");
-
-			out.append(sequences[i]);
-		}
-		out.append("]");
-		return out.toString();
+		return 1;
 	}
 }

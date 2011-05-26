@@ -108,13 +108,12 @@ public class ForBind implements Operator {
 		private Tuple emit(Tuple t, Sequence item) throws QueryException {
 			if (bindVar) {
 				if (bindPos) {
-					return new TupleImpl(t, new Sequence[] { item,
-							(pos = pos.inc()) });
+					return t.concat(new Sequence[] { item, (pos = pos.inc()) });
 				} else {
-					return new TupleImpl(t, item);
+					return t.concat(item);
 				}
 			} else if (bindPos) {
-				return new TupleImpl(t, (Sequence) (pos = pos.inc()));
+				return t.concat(pos = pos.inc());
 			} else {
 				return t;
 			}
@@ -123,12 +122,12 @@ public class ForBind implements Operator {
 		private Tuple passthrough(Tuple t) throws QueryException {
 			if (bindVar) {
 				if (bindPos) {
-					return new TupleImpl(t, new Sequence[] { null, null });
+					return t.concat(new Sequence[] { null, null });
 				} else {
-					return new TupleImpl(t, (Sequence) null);
+					return t.concat((Sequence) null);
 				}
 			} else if (bindPos) {
-				return new TupleImpl(t, (Sequence) null);
+				return t.concat((Sequence) null);
 			} else {
 				return t;
 			}

@@ -67,10 +67,10 @@ public class Count implements Operator {
 			}
 			if ((check >= 0) && (t.get(check) == null)) {
 				// reset numbering for pass through
-				return new TupleImpl(t, (Sequence) (pos = Int32.ZERO));
+				return t.concat(pos = Int32.ZERO);
 			}
 
-			return new TupleImpl(t, (Sequence) (pos = pos.inc()));
+			return t.concat(pos = pos.inc());
 		}
 
 		@Override

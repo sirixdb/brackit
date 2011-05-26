@@ -74,7 +74,7 @@ public class TableJoin implements Operator {
 		@Override
 		public Tuple next(QueryContext ctx) throws QueryException {
 			if ((it != null) && (itPos < itSize)) {
-				TupleImpl result = new TupleImpl(tuple, it.get(itPos++));
+				Tuple result = tuple.concat(it.get(itPos++));
 				return result;
 			}
 
@@ -95,11 +95,10 @@ public class TableJoin implements Operator {
 					itSize = matches.getSize();
 
 					if (itPos < itSize) {
-						TupleImpl result = new TupleImpl(tuple, matches
-								.get(itPos++));
+						Tuple result = tuple.concat(matches.get(itPos++));
 						return result;
 					} else if (leftJoin) {
-						TupleImpl result = new TupleImpl(tuple, leftJoinPadding);
+						Tuple result = tuple.concat(leftJoinPadding);
 						return result;
 					}
 				} else {
@@ -110,7 +109,7 @@ public class TableJoin implements Operator {
 					}
 					Sequence[] padded = new Sequence[leftJoinPadding.length + 1];
 					padded[leftJoinPadding.length] = new ItemSequence(items);
-					TupleImpl result = new TupleImpl(tuple, padded);
+					Tuple result = tuple.concat(padded);
 					return result;
 				}
 			}

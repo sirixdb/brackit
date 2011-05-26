@@ -27,23 +27,16 @@
  */
 package org.brackit.xquery.node;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
 import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.node.stream.filter.Filter;
 import org.brackit.xquery.node.stream.filter.FilteredStream;
-import org.brackit.xquery.operator.TupleImpl;
+import org.brackit.xquery.xdm.AbstractItem;
 import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.Type;
 
@@ -52,7 +45,7 @@ import org.brackit.xquery.xdm.Type;
  * @author Sebastian Baechle
  * 
  */
-public abstract class AbstractNode<E extends Node<E>> implements Node<E> {
+public abstract class AbstractNode<E extends Node<E>> extends AbstractItem implements Node<E> {
 	protected static final Kind[] mapping = new Kind[] { Kind.ELEMENT,
 			Kind.ATTRIBUTE, Kind.TEXT, Kind.DOCUMENT, Kind.COMMENT,
 			Kind.PROCESSING_INSTRUCTION };
@@ -114,41 +107,6 @@ public abstract class AbstractNode<E extends Node<E>> implements Node<E> {
 	}
 
 	@Override
-	public IntegerNumeric size(QueryContext ctx) throws QueryException {
-		return Int32.ONE;
-	}
-
-	@Override
-	public Sequence[] array() throws QueryException {
-		return new Sequence[] { this };
-	}
-
-	@Override
-	public Sequence get(int position) throws QueryException {
-		if (position != 0) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
-					position);
-		}
-
-		return this;
-	}
-
-	@Override
-	public Tuple choose(int... positions) throws QueryException {
-		Sequence[] projected = new Sequence[positions.length];
-		int targetPos = 0;
-		for (int pos : positions) {
-			projected[targetPos++] = get(pos);
-		}
-		return new TupleImpl(projected);
-	}
-
-	@Override
-	public int getSize() {
-		return 1;
-	}
-
-	@Override
 	public Type type() {
 		return Type.UNA;
 	}
@@ -156,25 +114,6 @@ public abstract class AbstractNode<E extends Node<E>> implements Node<E> {
 	@Override
 	public Atomic atomize() throws QueryException {
 		return new Una(getValue());
-	}
-
-	@Override
-	public Iter iterate() {
-		final Node<E> node = this;
-		return new Iter() {
-			boolean first = true;
-
-			public Item next() throws QueryException {
-				if (!first)
-					return null;
-
-				first = false;
-				return node;
-			}
-
-			public void close() {
-			}
-		};
 	}
 
 	@Override

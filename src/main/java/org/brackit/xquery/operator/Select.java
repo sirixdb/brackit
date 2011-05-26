@@ -91,10 +91,7 @@ public class Select implements Operator {
 				}
 				// emit "dead" tuple where "check" field is switched-off
 				// for pass-through in upstream operators
-				Sequence[] tmp = t.array();
-				tmp = Arrays.copyOf(tmp, tmp.length);
-				tmp[check] = null; // switch-off check var
-				t = new TupleImpl(tmp);
+				t = t.replace(check, null); // switch-off check var
 				break;
 			}
 			prev = t;

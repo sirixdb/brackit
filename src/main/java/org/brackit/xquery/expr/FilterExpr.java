@@ -33,7 +33,6 @@ import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntegerNumeric;
 import org.brackit.xquery.atomic.Numeric;
-import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
@@ -128,9 +127,18 @@ public class FilterExpr implements Expr {
 						Tuple current = tuple;
 
 						if (bindCount > 0) {
-							current = new TupleImpl(current, bindItem ? item
-									: null, bindPos ? pos : null,
-									bindSize ? inSeqSize : null);
+							Sequence[] tmp = new Sequence[bindCount];
+							int p = 0;
+							if (bindItem) {
+								tmp[p++] = item;
+							}
+							if (bindPos) {
+								tmp[p++] = pos;
+							}
+							if (bindSize) {
+								tmp[p++] = inSeqSize;
+							}
+							current = current.concat(tmp);
 						}
 
 						for (Expr f : filter) {
@@ -188,8 +196,18 @@ public class FilterExpr implements Expr {
 			Tuple current = tuple;
 
 			if (bindCount > 0) {
-				current = new TupleImpl(current, bindItem ? res : null,
-						bindPos ? Int32.ONE : null, bindSize ? Int32.ONE : null);
+				Sequence[] tmp = new Sequence[bindCount];
+				int p = 0;
+				if (bindItem) {
+					tmp[p++] = res;
+				}
+				if (bindPos) {
+					tmp[p++] = Int32.ONE;
+				}
+				if (bindSize) {
+					tmp[p++] = Int32.ONE;
+				}
+				current = current.concat(tmp);
 			}
 
 			for (Expr f : filter) {
