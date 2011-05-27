@@ -116,21 +116,62 @@ public class JoinRewriter2 extends Walker {
 			}
 		}
 
+		// divide pipeline in left and right input
+		AST right = node.getChild(0).copyTree();
+		AST tmp = right;
+		while (!isDeclarationOf(tmp, minRightVarRefNumber)) {
+			tmp = tmp.getChild(0);
+		}				
+		AST left = tmp.getChild(0);
+		AST start = new AST(XQueryParser.Start, "Start");
+		tmp.replaceChild(0, start);
+		
+		// adjust right pipeline
+		String checkInJoin = null;
+		AST tmp2 = start.getParent();
+		while (tmp2 != null) {
+			// check property has to be propagated
+			// to the join
+			if (checkInJoin == null) {
+				checkInJoin = tmp2.getProperty("check");
+				tmp2.setProperty("check", null);
+			}			
+			if (tmp2.getType() == XQueryParser.ForBind) {
+				if (Boolean.parseBoolean(tmp2.getProperty("preserve"))) {
+					tmp2.setProperty("preserve", null);
+					
+					// remove all upstream checks for this for binding
+					tmp2 = tmp2.getParent();
+					while ((tmp2 != null) && (tmp2.getType() != XQueryParser.ForBind)) {
+						tmp2.setProperty("check", null);
+					}
+				}
+				break;
+			}
+		}
+
+		// build join
 		AST join = new AST(XQueryParser.Join, "Join");
-		AST path = node.getChild(0).copyTree();
 		AST condition = new AST(XQueryParser.ComparisonExpr, "ComparisonExpr");
 		condition.addChild(comparison.copy());
 		condition.addChild(leftChild.copyTree());
 		condition.addChild(rightChild.copyTree());
-
-		AST child = path;
-		while (!isDeclarationOf(child, minRightVarRefNumber)) {
-			child = child.getChild(0);
-		}
-		join.addChild(child.getChild(0));
+		join.addChild(left);
 		join.addChild(condition);
-		join.addChild(path);
-		child.replaceChild(0, new AST(XQueryParser.Start, "Start"));
+		join.addChild(right);
+		
+		// perform a left join if the select was lifted
+		if (node.getProperty("check") != null) {
+			join.setProperty("leftJoin", "true");
+		}
+		// joins have to be performed within the same iteration group
+		if (node.getProperty("group") != null) {
+			join.setProperty("group", node.getProperty("group"));
+		}
+		if (checkInJoin != null) {
+			join.setProperty("check", checkInJoin);
+		}
+
 		node.getParent().replaceChild(node.getChildIndex(), join);
 		return node.getParent();
 	}

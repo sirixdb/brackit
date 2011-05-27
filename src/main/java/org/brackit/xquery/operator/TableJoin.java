@@ -32,6 +32,8 @@ import java.util.Arrays;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.compiler.Reference;
 import org.brackit.xquery.expr.VCmpExpr.Cmp;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.util.join.FastList;
@@ -49,6 +51,7 @@ public class TableJoin implements Operator {
 	private class TableJoinCursor implements Cursor {
 		final Cursor lc;
 		MultiTypeJoinTable table;
+		Atomic tgk; // grouping key of current table
 		Tuple tuple;
 		FastList<Sequence[]> it;
 		int itPos = 0;
@@ -79,8 +82,15 @@ public class TableJoin implements Operator {
 			}
 
 			while ((tuple = lc.next(ctx)) != null) {
-				if (tuple == null) {
-					return null;
+				// pass through -> padding?
+				// if ((check >= 0) && (t.get(check) == null)) {
+				// return t;
+				// }
+				if (groupVar >= 0) {
+					Atomic gk = (Atomic) tuple.get(groupVar);
+					if ((tgk != null) && (tgk.atomicCmp(gk) != 0)) {
+						table = null;
+					}
 				}
 				if (table == null) {
 					buildTable(ctx, tuple);
@@ -121,17 +131,20 @@ public class TableJoin implements Operator {
 				throws QueryException {
 			int inputSize = tuple.getSize();
 			table = new MultiTypeJoinTable(ctx, cmp, isGCmp, skipSort);
+			if (groupVar >= 0) {
+				tgk = (Atomic) tuple.get(groupVar);
+			}
 			int pos = 1;
 			Tuple t;
 			Cursor rc = r.create(ctx, tuple);
 			try {
 				rc.open(ctx);
 				while ((t = rc.next(ctx)) != null) {
-					final Sequence keys = (isGCmp) ? rExpr.evaluate(ctx, t)
-							: rExpr.evaluateToItem(ctx, t);
-					final Sequence[] tmp = t.array();
-					final Sequence[] bindings = Arrays.copyOfRange(tmp,
-							inputSize, tmp.length);
+					Sequence keys = (isGCmp) ? rExpr.evaluate(ctx, t) : rExpr
+							.evaluateToItem(ctx, t);
+					Sequence[] tmp = t.array();
+					Sequence[] bindings = Arrays.copyOfRange(tmp, inputSize,
+							tmp.length);
 					table.add(keys, bindings, pos++);
 
 					if ((leftJoin) && (leftJoinPadding == null)) {
@@ -153,6 +166,7 @@ public class TableJoin implements Operator {
 	final boolean isGCmp;
 	final boolean skipSort;
 	final boolean emitGroup;
+	int groupVar = -1;
 
 	public TableJoin(Cmp cmp, boolean isGCmsp, boolean leftJoin,
 			boolean skipSort, boolean emitGroup, Operator l, Expr lExpr,
@@ -171,5 +185,13 @@ public class TableJoin implements Operator {
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
 		return new TableJoinCursor(l.create(ctx, tuple));
+	}
+
+	public Reference group() {
+		return new Reference() {
+			public void setPos(int pos) {
+				groupVar = pos;
+			}
+		};
 	}
 }

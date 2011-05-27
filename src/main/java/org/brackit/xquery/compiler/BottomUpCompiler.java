@@ -200,8 +200,15 @@ public class BottomUpCompiler extends Compiler {
 			table.resolve(groupingVarName);
 		}
 
-		return new TableJoin(cmp, isGcmp, leftJoin, skipSort, emitGroup,
-				leftIn, leftExpr, rightIn, rightExpr);
+		TableJoin join = new TableJoin(cmp, isGcmp, leftJoin, skipSort,
+				emitGroup, leftIn, leftExpr, rightIn, rightExpr);
+
+		String prop = node.getProperty("group");
+		if (prop != null) {
+			table.resolve(module.getNamespaces().qname(prop), join.group());
+		}
+
+		return join;
 	}
 
 	private Cmp cmp(AST cmpNode) throws QueryException {

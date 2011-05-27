@@ -71,17 +71,17 @@ public class XQuery {
 
 	public static final String DEBUG_DIR_CFG = "org.brackit.xquery.debugDir";
 
-	public static final boolean DEBUG = Cfg.asBool(DEBUG_CFG, false);
+	public static boolean DEBUG = Cfg.asBool(DEBUG_CFG, false);
 
-	public static final boolean UNNEST = Cfg.asBool(UNNEST_CFG, false);
+	public static boolean UNNEST = Cfg.asBool(UNNEST_CFG, false);
 
-	public static final boolean VARIABLE_PULLUP = Cfg.asBool(
-			VARIABLE_PULLUP_CFG, false);
-
-	public static final boolean JOIN_DETECTION = Cfg.asBool(JOIN_DETECTION_CFG,
+	public static boolean VARIABLE_PULLUP = Cfg.asBool(VARIABLE_PULLUP_CFG,
 			false);
 
-	public static final String DEBUG_DIR = Cfg.asString(DEBUG_DIR_CFG, "debug");
+	public static boolean JOIN_DETECTION = Cfg
+			.asBool(JOIN_DETECTION_CFG, false);
+
+	public static String DEBUG_DIR = Cfg.asString(DEBUG_DIR_CFG, "debug");
 
 	private final String query;
 
@@ -147,39 +147,34 @@ public class XQuery {
 			DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR, "unnestrewrite");
 		}
 
-		//new JoinRewriter2().walk(ast);
-
-		if (DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR, "joinrewrite");
-		}
 
 		new LetBindLift().walk(ast);
 
 		if (DEBUG) {
 			DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR, "letbindliftrewrite");
 		}
+		
+		if (JOIN_DETECTION) {
+			new JoinRewriter2().walk(ast);
 
-		new JoinSortElimination().walk(ast);
-
-		if (DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR,
-					"joinsorteliminationrewrite");
+			if (DEBUG) {
+				DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR, "joinrewrite");
+			}
+			
+//			new JoinSortElimination().walk(ast);
+//
+//			if (DEBUG) {
+//				DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR,
+//						"joinsorteliminationrewrite");
+//			}
+//			
+//			new LeftJoinGroupEmission().walk(ast);
+//
+//			if (DEBUG) {
+//				DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR,
+//						"joingroupemissionrewrite");
+//			}
 		}
-
-		new LeftJoinGroupEmission().walk(ast);
-
-		if (DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR,
-					"joingroupemissionrewrite");
-		}
-
-		// new ReturnExprDecouple().walk(ast);
-		//		
-		// if (DEBUG)
-		// {
-		// DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR,
-		// "ReturnExprDecoubleRewrite");
-		// }
 
 		return ast;
 	}
