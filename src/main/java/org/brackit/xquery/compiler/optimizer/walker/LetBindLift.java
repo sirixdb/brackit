@@ -85,10 +85,7 @@ public class LetBindLift extends Walker {
 	private String checkGroupingVar(AST in) {
 		String grpVarName;
 		while (true) {
-			if (in.getType() == XQueryParser.LetBind) {
-				// skip let binds in left input branch
-				in = in.getChild(0);
-			} else if (in.getType() == XQueryParser.ForBind) {
+			if (in.getType() == XQueryParser.ForBind) {
 				// use/introduce pos var of for bind for grouping
 				if (in.getChildCount() == 3) {
 					grpVarName = createRunVarName(refNumber(in.getChild(1)
@@ -105,10 +102,12 @@ public class LetBindLift extends Walker {
 					grpVarName = in.getChild(2).getChild(0).getValue();
 				}
 				break;
+			} else if (in.getChildCount() > 0) {
+				in = in.getChild(0);
+				continue;			
 			} else {
-				// We are at a non-binding node in the left input branch, e.g.
-				// Select, Start, Join, LeftJoin
-				// and introduce an artificial enumeration node for the grouping
+				// We are at the Start op in the left input branch:
+				// introduce an artificial enumeration node for the grouping
 				AST count = new AST(XQueryParser.Count, "Count");
 				grpVarName = createEnumerateVarName();
 				in.getParent().replaceChild(0, count);
@@ -118,10 +117,6 @@ public class LetBindLift extends Walker {
 						grpVarName));
 				count.addChild(in);
 				count.addChild(runVarBinding);
-				String check = in.getProperty("check");
-				if (check != null) {
-					count.setProperty("check", check);
-				}
 				break;
 			}
 		}
@@ -129,7 +124,7 @@ public class LetBindLift extends Walker {
 	}
 
 	/*
-	 * Create the liftet input pipeline from the input branch of the operator
+	 * Create the lifted input pipeline from the input branch of the operator
 	 * expression
 	 */
 	private AST liftInput(AST node) {
@@ -145,10 +140,6 @@ public class LetBindLift extends Walker {
 				toAdd.addChild(tmp.getChild(i).copyTree());
 			}
 
-			if (tmp.getType() == XQueryParser.Join) {
-				// lifted join in cascade must be converted to left join
-				toAdd.setProperty("leftJoin", "true");
-			}
 			if (tmp.getType() == XQueryParser.ForBind) {
 				// lifted for bind must preserve input
 				toAdd.setProperty("preserve", "true");
