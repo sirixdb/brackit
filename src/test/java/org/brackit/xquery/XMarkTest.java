@@ -49,7 +49,7 @@ import org.junit.Test;
  * @author Sebastian Baechle
  * 
  */
-public class XMarkTest extends XQueryBaseTest {
+public abstract class XMarkTest extends XQueryBaseTest {
 	private static final String QUERY_DIR = "/xmark/queries/orig/";
 
 	private static final String RESULT_DIR = "/xmark/results/";
