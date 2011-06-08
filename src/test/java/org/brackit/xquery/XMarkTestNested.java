@@ -29,6 +29,7 @@ package org.brackit.xquery;
 
 import java.io.FileNotFoundException;
 
+import org.brackit.xquery.compiler.optimizer.DefaultOptimizer;
 import org.brackit.xquery.util.Cfg;
 
 /**
@@ -43,9 +44,9 @@ public class XMarkTestNested extends XMarkTest {
 		XQuery.DEBUG = true;
 		XQuery.DEBUG_DIR = "/media/ramdisk/";
 		
-		Cfg.set(XQuery.UNNEST_CFG, false);
-		XQuery.UNNEST = false;		
-		Cfg.set(XQuery.JOIN_DETECTION_CFG, false);
-		XQuery.JOIN_DETECTION = false;		
+		Cfg.set(DefaultOptimizer.UNNEST_CFG, false);
+		DefaultOptimizer.UNNEST = false;		
+		Cfg.set(DefaultOptimizer.JOIN_DETECTION_CFG, false);
+		DefaultOptimizer.JOIN_DETECTION = false;		
 	}
 }

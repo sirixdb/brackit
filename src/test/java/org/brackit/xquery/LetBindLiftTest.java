@@ -34,6 +34,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.compiler.optimizer.DefaultOptimizer;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.util.Cfg;
 import org.brackit.xquery.xdm.DocumentException;
@@ -55,7 +56,7 @@ public class LetBindLiftTest extends XQueryBaseTest {
 	public void forLetWhereConditional() throws Exception {
 		Cfg.set(XQuery.DEBUG_CFG, true);
 		Cfg.set(XQuery.DEBUG_DIR_CFG, "/media/ramdisk/");
-		Cfg.set(XQuery.UNNEST_CFG, true);
+		Cfg.set(DefaultOptimizer.UNNEST_CFG, true);
 		Sequence res = new XQuery(
 				"for $a in (1,2,3) " +
 				"let $b := 5" +
@@ -76,7 +77,7 @@ public class LetBindLiftTest extends XQueryBaseTest {
 	public void orderByBatched() throws Exception {
 		Cfg.set(XQuery.DEBUG_CFG, true);
 		Cfg.set(XQuery.DEBUG_DIR_CFG, "/media/ramdisk/");
-		Cfg.set(XQuery.UNNEST_CFG, false);
+		Cfg.set(DefaultOptimizer.UNNEST_CFG, false);
 		Sequence res = new XQuery(
 				"for $a in (1,2,3) " +
 				"let $c := " +
@@ -95,11 +96,11 @@ public class LetBindLiftTest extends XQueryBaseTest {
 	@Test
 	public void orderBy2() throws Exception {
 		XQuery.DEBUG = true;
-		XQuery.JOIN_DETECTION = false;
-		XQuery.UNNEST = true;
+		DefaultOptimizer.JOIN_DETECTION = false;
+		DefaultOptimizer.UNNEST = true;
 		XQuery.DEBUG_DIR = "/media/ramdisk/";
-		Cfg.set(XQuery.UNNEST_CFG, true);
-		Cfg.set(XQuery.JOIN_DETECTION_CFG, false);
+		Cfg.set(DefaultOptimizer.UNNEST_CFG, true);
+		Cfg.set(DefaultOptimizer.JOIN_DETECTION_CFG, false);
 		new XQuery(
 				"	for $d in (3,2,1) " +
 				"	for $e in (4,5,6) " +
@@ -111,9 +112,9 @@ public class LetBindLiftTest extends XQueryBaseTest {
 	public void simpleLeftJoin() throws Exception {
 		Cfg.set(XQuery.DEBUG_CFG, true);
 		Cfg.set(XQuery.DEBUG_DIR_CFG, "/media/ramdisk/");
-		Cfg.set(XQuery.UNNEST_CFG, true);
-		Cfg.set(XQuery.JOIN_DETECTION_CFG, true);
-		XQuery.JOIN_DETECTION = true;
+		Cfg.set(DefaultOptimizer.UNNEST_CFG, true);
+		Cfg.set(DefaultOptimizer.JOIN_DETECTION_CFG, true);
+		DefaultOptimizer.JOIN_DETECTION = true;
 		Sequence res = new XQuery(
 				"for $a in (1 to 5) " +
 				"let $b := " +
@@ -129,9 +130,9 @@ public class LetBindLiftTest extends XQueryBaseTest {
 	public void nestedLeftJoin() throws Exception {
 		Cfg.set(XQuery.DEBUG_CFG, true);
 		Cfg.set(XQuery.DEBUG_DIR_CFG, "/media/ramdisk/");
-		Cfg.set(XQuery.UNNEST_CFG, true);
-		Cfg.set(XQuery.JOIN_DETECTION_CFG, true);
-		XQuery.JOIN_DETECTION = true;
+		Cfg.set(DefaultOptimizer.UNNEST_CFG, true);
+		Cfg.set(DefaultOptimizer.JOIN_DETECTION_CFG, true);
+		DefaultOptimizer.JOIN_DETECTION = true;
 		Sequence res = new XQuery(
 				"for $a in (1 to 5) " +
 				"let $b := " +
@@ -151,9 +152,9 @@ public class LetBindLiftTest extends XQueryBaseTest {
 	public void paper() throws Exception {
 		Cfg.set(XQuery.DEBUG_CFG, true);
 		Cfg.set(XQuery.DEBUG_DIR_CFG, "/media/ramdisk/");
-		Cfg.set(XQuery.UNNEST_CFG, true);
-		Cfg.set(XQuery.JOIN_DETECTION_CFG, true);
-		XQuery.JOIN_DETECTION = true;
+		Cfg.set(DefaultOptimizer.UNNEST_CFG, true);
+		Cfg.set(DefaultOptimizer.JOIN_DETECTION_CFG, true);
+		DefaultOptimizer.JOIN_DETECTION = true;
 		Sequence res = new XQuery(
 				"for $a in (1,2,3) " +
 				"let $c:= " +
@@ -169,9 +170,9 @@ public class LetBindLiftTest extends XQueryBaseTest {
 	public void simple() throws Exception {
 		Cfg.set(XQuery.DEBUG_CFG, true);
 		Cfg.set(XQuery.DEBUG_DIR_CFG, "/media/ramdisk/");
-		Cfg.set(XQuery.UNNEST_CFG, true);
-		Cfg.set(XQuery.JOIN_DETECTION_CFG, true);
-		XQuery.JOIN_DETECTION = true;
+		Cfg.set(DefaultOptimizer.UNNEST_CFG, true);
+		Cfg.set(DefaultOptimizer.JOIN_DETECTION_CFG, true);
+		DefaultOptimizer.JOIN_DETECTION = true;
 		Sequence res = new XQuery(
 				"for $a in (1,2,3) " +
 				"let $b:= 2 " +
@@ -185,9 +186,9 @@ public class LetBindLiftTest extends XQueryBaseTest {
 	public void nestedLeftJoin2() throws Exception {
 		Cfg.set(XQuery.DEBUG_CFG, true);
 		Cfg.set(XQuery.DEBUG_DIR_CFG, "/media/ramdisk/");
-		Cfg.set(XQuery.UNNEST_CFG, true);
-		Cfg.set(XQuery.JOIN_DETECTION_CFG, true);
-		XQuery.JOIN_DETECTION = true;
+		Cfg.set(DefaultOptimizer.UNNEST_CFG, true);
+		Cfg.set(DefaultOptimizer.JOIN_DETECTION_CFG, true);
+		DefaultOptimizer.JOIN_DETECTION = true;
 		Sequence res = new XQuery(
 				"for $z in 1 " +
 				"let $x := " +
@@ -284,7 +285,7 @@ public class LetBindLiftTest extends XQueryBaseTest {
 	public void orderBy() throws Exception {
 		Cfg.set(XQuery.DEBUG_CFG, true);
 		Cfg.set(XQuery.DEBUG_DIR_CFG, "/media/ramdisk/");
-		Cfg.set(XQuery.UNNEST_CFG, true);
+		Cfg.set(DefaultOptimizer.UNNEST_CFG, true);
 		new XQuery(
 				"for $a in ('A','B','C') " +
 				"let $c := " +

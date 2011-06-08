@@ -55,12 +55,12 @@ public class DefaultOptimizer implements Optimizer {
 
 	public static final String UNNEST_CFG = "org.brackit.xquery.unnest";
 
-	public static final boolean UNNEST = Cfg.asBool(UNNEST_CFG, false);
+	public static boolean UNNEST = Cfg.asBool(UNNEST_CFG, false);
 
-	public static final boolean VARIABLE_PULLUP = Cfg.asBool(
+	public static boolean VARIABLE_PULLUP = Cfg.asBool(
 			VARIABLE_PULLUP_CFG, false);
 
-	public static final boolean JOIN_DETECTION = Cfg.asBool(JOIN_DETECTION_CFG,
+	public static boolean JOIN_DETECTION = Cfg.asBool(JOIN_DETECTION_CFG,
 			false);
 
 	private List<Stage> stages = new ArrayList<Stage>();
@@ -135,19 +135,19 @@ public class DefaultOptimizer implements Optimizer {
 						"joinrewrite");
 			}
 
-			new JoinSortElimination().walk(ast);
-
-			if (XQuery.DEBUG) {
-				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
-						"joinsorteliminationrewrite");
-			}
-
-			new LeftJoinGroupEmission().walk(ast);
-
-			if (XQuery.DEBUG) {
-				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
-						"joingroupemissionrewrite");
-			}
+//			new JoinSortElimination().walk(ast);
+//
+//			if (XQuery.DEBUG) {
+//				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
+//						"joinsorteliminationrewrite");
+//			}
+//
+//			new LeftJoinGroupEmission().walk(ast);
+//
+//			if (XQuery.DEBUG) {
+//				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
+//						"joingroupemissionrewrite");
+//			}
 
 			return ast;
 		}

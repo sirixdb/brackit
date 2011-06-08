@@ -57,8 +57,8 @@ import org.brackit.xquery.xdm.Sequence;
 public class XQuery {
 	public static final String DEBUG_CFG = "org.brackit.xquery.debug";
 	public static final String DEBUG_DIR_CFG = "org.brackit.xquery.debugDir";
-	public static final boolean DEBUG = Cfg.asBool(DEBUG_CFG, false);
-	public static final String DEBUG_DIR = Cfg.asString(DEBUG_DIR_CFG, "debug");
+	public static boolean DEBUG = Cfg.asBool(DEBUG_CFG, false);
+	public static String DEBUG_DIR = Cfg.asString(DEBUG_DIR_CFG, "debug");
 
 	protected final String query;
 	protected final Parser parser;
