@@ -172,7 +172,7 @@ public class XQTSCase extends XQueryBaseTest
 		private int pass = 0;
 		private int fail = 0;
 		
-		private static final String FILENAME = Cfg.asString("org.brackit.xquery.debugDir") + System.getProperty("file.separator") + "xqts.log";
+		private static final String FILENAME = Cfg.asString("org.brackit.xquery.debugDir", ".") + System.getProperty("file.separator") + "xqts.log";
 
 		public void start(int total)
 		{

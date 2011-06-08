@@ -25,17 +25,19 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler;
+package org.brackit.xquery.compiler.optimizer;
+
+import java.util.List;
+
+import org.brackit.xquery.QueryException;
+import org.brackit.xquery.compiler.AST;
 
 /**
  * @author Sebastian Baechle
  *
  */
-public interface Reference {
-	/**
-	 * Initialize the reference to the variable's 
-	 * position in a tuple.
-	 * @param pos
-	 */
-	public void setPos(int pos);
+public interface Optimizer {
+	public AST optimize(AST ast) throws QueryException;
+	
+	public List<Stage> getStages();
 }

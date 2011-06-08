@@ -32,16 +32,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.function.ConstructorFunction;
 import org.brackit.xquery.function.Function;
 import org.brackit.xquery.function.Signature;
-import org.brackit.xquery.function.bit.Every;
-import org.brackit.xquery.function.bit.Put;
-import org.brackit.xquery.function.bit.Some;
 import org.brackit.xquery.function.fn.Abs;
 import org.brackit.xquery.function.fn.AdjustToTimezone;
 import org.brackit.xquery.function.fn.BaseURI;
@@ -97,8 +92,6 @@ import org.brackit.xquery.function.fn.SubstringRelative;
 import org.brackit.xquery.function.fn.SumAvg;
 import org.brackit.xquery.function.fn.Trace;
 import org.brackit.xquery.function.fn.Unordered;
-import org.brackit.xquery.function.io.Readline;
-import org.brackit.xquery.function.io.Writeline;
 import org.brackit.xquery.sequence.type.AnyItemType;
 import org.brackit.xquery.sequence.type.AnyKindType;
 import org.brackit.xquery.sequence.type.AtomicType;
@@ -106,7 +99,6 @@ import org.brackit.xquery.sequence.type.Cardinality;
 import org.brackit.xquery.sequence.type.DocumentType;
 import org.brackit.xquery.sequence.type.NumericType;
 import org.brackit.xquery.sequence.type.SequenceType;
-import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Type;
 
 /**
@@ -116,16 +108,6 @@ import org.brackit.xquery.xdm.Type;
  */
 public class Functions {
 	private static final Map<QNm, Function[]> predefined = new HashMap<QNm, Function[]>();
-
-	public static final Every BIT_EVERY_FUNC = new Every(new QNm(
-			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "every"),
-			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
-					new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)));
-
-	public static final Some BIT_SOME_FUNC = new Some(new QNm(
-			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "some"),
-			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
-					new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)));
 
 	public static final QNm FN_POSITION = new QNm(Namespaces.FN_NSURI,
 			Namespaces.FS_PREFIX, "position");
@@ -146,20 +128,6 @@ public class Functions {
 			Namespaces.FS_PREFIX, "static-base-uri");
 
 	protected final Map<QNm, Function[]> functions = new HashMap<QNm, Function[]>();
-
-	private static class DummyFunc extends AbstractFunction {
-		public DummyFunc(QNm name, Signature signature) {
-			super(name, signature, true);
-		}
-
-		@Override
-		public Sequence execute(QueryContext ctx, Sequence[] args)
-				throws QueryException {
-			throw new QueryException(
-					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-					"Oops. Function '%s' not implemented yet.", this);
-		}
-	}
 
 	static {
 		// See XQuery Functions and Operators 2 Accessors
@@ -924,18 +892,6 @@ public class Functions {
 				Namespaces.FN_PREFIX, "default-collation"), new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.One))));
 
-		predefine(BIT_SOME_FUNC);
-		predefine(BIT_EVERY_FUNC);
-		predefine(new Put(Put.PUT, new Signature(new SequenceType(
-				AtomicType.STR, Cardinality.One), new SequenceType(
-				AtomicType.STR, Cardinality.One))));
-		predefine(new Put(Put.PUT, new Signature(new SequenceType(
-				AtomicType.STR, Cardinality.One), new SequenceType(
-				AtomicType.STR, Cardinality.One), new SequenceType(
-				AtomicType.STR, Cardinality.ZeroOrOne))));
-		predefine(new Readline());
-		predefine(new Writeline());
-
 		for (Type type : Type.builtInTypes) {
 			if ((type != Type.ANA) && (type != Type.NOT)) {
 				predefine(new ConstructorFunction(type.getName(),
@@ -1008,7 +964,7 @@ public class Functions {
 		functions.put(function.getName(), funs);
 	}
 
-	private static void predefine(Function function) {
+	public static void predefine(Function function) {
 		Function[] funs = predefined.get(function.getName());
 
 		if (funs == null) {

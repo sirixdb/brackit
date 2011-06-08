@@ -25,80 +25,16 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.operator;
+package org.brackit.xquery.compiler.translator;
 
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
-import org.brackit.xquery.compiler.translator.Reference;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.module.Module;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
+ *
  */
-public class Count implements Operator {
-	private final Operator in;
-	private boolean bind = true;
-	int check = -1;
-
-	private class CountCursor implements Cursor {
-		private final Cursor c;
-		private IntegerNumeric pos;
-
-		public CountCursor(Cursor c) {
-			this.c = c;
-		}
-
-		@Override
-		public void close(QueryContext ctx) {
-			c.close(ctx);
-		}
-
-		@Override
-		public Tuple next(QueryContext ctx) throws QueryException {
-			Tuple t = c.next(ctx);
-
-			if (t == null) {
-				return null;
-			}
-			if ((check >= 0) && (t.get(check) == null)) {
-				// reset numbering for pass through
-				return t.concat(pos = Int32.ZERO);
-			}
-
-			return t.concat(pos = pos.inc());
-		}
-
-		@Override
-		public void open(QueryContext ctx) throws QueryException {
-			c.open(ctx);
-			pos = Int32.ZERO;
-		}
-	}
-
-	public Count(Operator in) {
-		this.in = in;
-	}
-
-	@Override
-	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return (bind) ? new CountCursor(in.create(ctx, tuple)) : in.create(ctx,
-				tuple);
-	}
-
-	public void bind(boolean bind) {
-		this.bind = bind;
-	}
-
-	public Reference check() {
-		return new Reference() {
-			public void setPos(int pos) {
-				check = pos;
-			}
-		};
-	}
+public interface Translator {
+	public Module translate(AST ast) throws QueryException;
 }

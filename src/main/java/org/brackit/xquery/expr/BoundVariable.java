@@ -31,7 +31,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.compiler.Reference;
+import org.brackit.xquery.compiler.translator.Reference;
 import org.brackit.xquery.sequence.type.SequenceType;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Item;

@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler;
+package org.brackit.xquery.compiler.translator;
 
 import java.util.Arrays;
 
@@ -33,10 +33,10 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.parser.XQueryParser;
 import org.brackit.xquery.expr.ReturnExpr;
 import org.brackit.xquery.expr.VCmpExpr.Cmp;
-import org.brackit.xquery.module.Module;
 import org.brackit.xquery.operator.Count;
 import org.brackit.xquery.operator.ForBind;
 import org.brackit.xquery.operator.GroupBy;
@@ -62,12 +62,7 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  * 
  */
-public class BottomUpCompiler extends Compiler {
-	@Override
-	public Module xquery(AST ast) throws QueryException {
-		// new LetVariableRefPullup().walk(ast);
-		return super.xquery(ast);
-	}
+public class PipelineCompiler extends Compiler {
 
 	@Override
 	protected Expr anyExpr(AST node) throws QueryException {

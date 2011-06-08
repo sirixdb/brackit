@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler;
+package org.brackit.xquery.compiler.translator;
 
 import java.util.Arrays;
 
@@ -40,6 +40,7 @@ import org.brackit.xquery.atomic.Dec;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.parser.XQueryLexer;
 import org.brackit.xquery.compiler.parser.XQueryParser;
 import org.brackit.xquery.expr.AndExpr;
@@ -80,6 +81,11 @@ import org.brackit.xquery.function.Function;
 import org.brackit.xquery.function.FunctionExpr;
 import org.brackit.xquery.function.Signature;
 import org.brackit.xquery.function.UDF;
+import org.brackit.xquery.function.bit.Every;
+import org.brackit.xquery.function.bit.Put;
+import org.brackit.xquery.function.bit.Some;
+import org.brackit.xquery.function.io.Readline;
+import org.brackit.xquery.function.io.Writeline;
 import org.brackit.xquery.module.Functions;
 import org.brackit.xquery.module.LibraryModule;
 import org.brackit.xquery.module.MainModule;
@@ -123,10 +129,34 @@ import org.brackit.xquery.xdm.Type;
  * @author Sebastian Baechle
  * 
  */
-public class Compiler {
+public class Compiler implements Translator {
 	protected static final Logger log = Logger.getLogger(Compiler.class);
 
+	private static final Every BIT_EVERY_FUNC = new Every(new QNm(
+			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "every"),
+			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
+					new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)));
+
+	private static final Some BIT_SOME_FUNC = new Some(new QNm(
+			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "some"),
+			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
+					new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)));
+
 	protected final VariableTable table = new VariableTable();
+
+	static {
+		Functions.predefine(BIT_SOME_FUNC);
+		Functions.predefine(BIT_EVERY_FUNC);
+		Functions.predefine(new Put(Put.PUT, new Signature(new SequenceType(
+				AtomicType.STR, Cardinality.One), new SequenceType(
+				AtomicType.STR, Cardinality.One))));
+		Functions.predefine(new Put(Put.PUT, new Signature(new SequenceType(
+				AtomicType.STR, Cardinality.One), new SequenceType(
+				AtomicType.STR, Cardinality.One), new SequenceType(
+				AtomicType.STR, Cardinality.ZeroOrOne))));
+		Functions.predefine(new Readline());
+		Functions.predefine(new Writeline());
+	}
 
 	protected Module module;
 
@@ -149,7 +179,7 @@ public class Compiler {
 		}
 	}
 
-	public Module xquery(AST ast) throws QueryException {
+	public Module translate(AST ast) throws QueryException {
 		int childCount = ast.getChildCount();
 		for (int i = 0; i < childCount; i++) {
 			AST child = ast.getChild(i);
@@ -855,9 +885,9 @@ public class Compiler {
 		Function function;
 
 		if (someQuantified) {
-			function = Functions.BIT_SOME_FUNC;
+			function = BIT_SOME_FUNC;
 		} else {
-			function = Functions.BIT_EVERY_FUNC;
+			function = BIT_EVERY_FUNC;
 		}
 
 		return new IfExpr(new FunctionExpr(function, bindingSequenceExpr),
