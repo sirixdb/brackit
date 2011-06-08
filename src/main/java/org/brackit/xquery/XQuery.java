@@ -30,18 +30,14 @@ package org.brackit.xquery;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 
-import org.apache.log4j.Logger;
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.BottomUpCompiler;
-import org.brackit.xquery.compiler.optimizer.walker.DoSNStepMerger;
-import org.brackit.xquery.compiler.optimizer.walker.JoinRewriter2;
-import org.brackit.xquery.compiler.optimizer.walker.JoinSortElimination;
-import org.brackit.xquery.compiler.optimizer.walker.LeftJoinGroupEmission;
-import org.brackit.xquery.compiler.optimizer.walker.LetBindLift;
-import org.brackit.xquery.compiler.optimizer.walker.LetVariableRefPullup;
-import org.brackit.xquery.compiler.optimizer.walker.UnnestRewriter;
+import org.brackit.xquery.compiler.optimizer.DefaultOptimizer;
+import org.brackit.xquery.compiler.optimizer.Optimizer;
 import org.brackit.xquery.compiler.parser.ANTLRParser;
 import org.brackit.xquery.compiler.parser.DotUtil;
+import org.brackit.xquery.compiler.parser.Parser;
+import org.brackit.xquery.compiler.translator.PipelineCompiler;
+import org.brackit.xquery.compiler.translator.Translator;
 import org.brackit.xquery.module.MainModule;
 import org.brackit.xquery.node.SubtreePrinter;
 import org.brackit.xquery.operator.TupleImpl;
@@ -59,65 +55,54 @@ import org.brackit.xquery.xdm.Sequence;
  * 
  */
 public class XQuery {
-	private static final Logger log = Logger.getLogger(XQuery.class);
-
-	public static final String VARIABLE_PULLUP_CFG = "org.brackit.xquery.variablePullup";
-
-	public static final String JOIN_DETECTION_CFG = "org.brackit.xquery.joinDetection";
-
-	public static final String UNNEST_CFG = "org.brackit.xquery.unnest";
-
 	public static final String DEBUG_CFG = "org.brackit.xquery.debug";
-
 	public static final String DEBUG_DIR_CFG = "org.brackit.xquery.debugDir";
-
 	public static final boolean DEBUG = Cfg.asBool(DEBUG_CFG, false);
-
-	public static final boolean UNNEST = Cfg.asBool(UNNEST_CFG, false);
-
-	public static final boolean VARIABLE_PULLUP = Cfg.asBool(
-			VARIABLE_PULLUP_CFG, false);
-
-	public static final boolean JOIN_DETECTION = Cfg.asBool(JOIN_DETECTION_CFG,
-			false);
-
 	public static final String DEBUG_DIR = Cfg.asString(DEBUG_DIR_CFG, "debug");
 
-	private final String query;
+	protected final String query;
+	protected final Parser parser;
+	protected final Optimizer optimizer;
+	protected final Translator translator;
 
 	private MainModule module;
-
-	private long parsingTime;
-
-	private long normalizeTiming;
-
-	private long compileTiming;
-
 	private boolean prettyPrint;
 
 	public XQuery(MainModule module) {
-		this.query = null;
 		this.module = module;
+		this.query = null;
+		this.parser = null;
+		this.optimizer = null;
+		this.translator = null;
 	}
 
 	public XQuery(String query) throws QueryException {
 		this.query = query;
-		compile(UNNEST);
+		this.parser = new ANTLRParser();
+		this.optimizer = new DefaultOptimizer();
+		this.translator = new PipelineCompiler();
+		compile();
+	}
+
+	public XQuery(String query, Parser parser, Optimizer optimizer,
+			Translator translator) {
+		this.query = query;
+		this.parser = parser;
+		this.optimizer = optimizer;
+		this.translator = translator;
 	}
 
 	public MainModule getMainModule() {
 		return module;
 	}
 
-	private XQuery compile(boolean unnest) throws QueryException {
+	private XQuery compile() throws QueryException {
 		if (DEBUG) {
 			System.out.println(String.format("Compiling query:\n%s", query));
 		}
 
-		AST ast = new ANTLRParser().parse(query);
-		ast = standardRewrite(ast);
-		ast = (unnest) ? unnestRewrite(ast) : ast;
-
+		AST ast = parser.parse(query);
+		ast = optimizer.optimize(ast);
 		module = translate(ast);
 
 		if (DEBUG) {
@@ -126,70 +111,8 @@ public class XQuery {
 		return this;
 	}
 
-	private AST standardRewrite(AST ast) {
-		new DoSNStepMerger().walk(ast);
-
-		if (VARIABLE_PULLUP) {
-			new LetVariableRefPullup().walk(ast);
-		}
-
-		if (DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR, "standardrewrite");
-		}
-
-		return ast;
-	}
-
-	private AST unnestRewrite(AST ast) throws QueryException {
-		new UnnestRewriter().walk(ast);
-
-		if (DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR, "unnestrewrite");
-		}
-
-		new JoinRewriter2().walk(ast);
-
-		if (DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR, "joinrewrite");
-		}
-
-		new LetBindLift().walk(ast);
-
-		if (DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR, "letbindliftrewrite");
-		}
-
-		new JoinSortElimination().walk(ast);
-
-		if (DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR,
-					"joinsorteliminationrewrite");
-		}
-
-		new LeftJoinGroupEmission().walk(ast);
-
-		if (DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR,
-					"joingroupemissionrewrite");
-		}
-
-		// new ReturnExprDecouple().walk(ast);
-		//		
-		// if (DEBUG)
-		// {
-		// DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR,
-		// "ReturnExprDecoubleRewrite");
-		// }
-
-		return ast;
-	}
-
 	private MainModule translate(AST ast) throws QueryException {
-		long start = System.currentTimeMillis();
-		org.brackit.xquery.compiler.Compiler compiler = new BottomUpCompiler();
-		MainModule module = (MainModule) compiler.xquery(ast);
-		long end = System.currentTimeMillis();
-		compileTiming = end - start;
+		MainModule module = (MainModule) translator.translate(ast);
 		return module;
 	}
 
@@ -274,11 +197,5 @@ public class XQuery {
 
 	public void setPrettyPrint(boolean prettyPrint) {
 		this.prettyPrint = prettyPrint;
-	}
-
-	public void printTimings() {
-		System.out.println("Parse:\t" + parsingTime);
-		System.out.println("Normalize:\t" + normalizeTiming);
-		System.out.println("Compile:\t" + compileTiming);
 	}
 }
