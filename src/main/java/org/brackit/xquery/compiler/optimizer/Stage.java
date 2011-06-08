@@ -27,8 +27,6 @@
  */
 package org.brackit.xquery.compiler.optimizer;
 
-import java.util.List;
-
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.compiler.AST;
 
@@ -36,8 +34,6 @@ import org.brackit.xquery.compiler.AST;
  * @author Sebastian Baechle
  *
  */
-public interface Optimizer {
-	public AST optimize(AST ast) throws QueryException;
-	
-	public List<Stage> getStages();
+public interface Stage {
+	public AST rewrite(AST ast) throws QueryException;
 }

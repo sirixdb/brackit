@@ -27,6 +27,9 @@
  */
 package org.brackit.xquery.compiler.optimizer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.compiler.AST;
@@ -42,7 +45,7 @@ import org.brackit.xquery.util.Cfg;
 
 /**
  * @author Sebastian Baechle
- *
+ * 
  */
 public class DefaultOptimizer implements Optimizer {
 
@@ -60,70 +63,93 @@ public class DefaultOptimizer implements Optimizer {
 	public static final boolean JOIN_DETECTION = Cfg.asBool(JOIN_DETECTION_CFG,
 			false);
 
+	private List<Stage> stages = new ArrayList<Stage>();
+
+	public DefaultOptimizer() {
+		stages.add(new Simplification());
+		if (UNNEST) {
+			stages.add(new Pipelining());
+		}
+		if (JOIN_DETECTION) {
+			stages.add(new JoinRecognition());
+		}
+	}
+
+	@Override
+	public List<Stage> getStages() {
+		return stages;
+	}
+
 	@Override
 	public AST optimize(AST ast) throws QueryException {
-		ast = standardRewrite(ast);
-		if (UNNEST) {
-			ast = unnestRewrite(ast);
+		for (Stage stage : stages) {
+			ast = stage.rewrite(ast);
 		}
 		return ast;
 	}
 
-	private AST standardRewrite(AST ast) {
-		new DoSNStepMerger().walk(ast);
+	private static class Simplification implements Stage {
+		public AST rewrite(AST ast) {
+			new DoSNStepMerger().walk(ast);
 
-		if (VARIABLE_PULLUP) {
-			new LetVariableRefPullup().walk(ast);
+			if (VARIABLE_PULLUP) {
+				new LetVariableRefPullup().walk(ast);
+			}
+
+			if (XQuery.DEBUG) {
+				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
+						"standardrewrite");
+			}
+
+			return ast;
 		}
-
-		if (XQuery.DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR, "standardrewrite");
-		}
-
-		return ast;
 	}
 
-	private AST unnestRewrite(AST ast) throws QueryException {
-		new UnnestRewriter().walk(ast);
+	private static class Pipelining implements Stage {
+		public AST rewrite(AST ast) throws QueryException {
+			new UnnestRewriter().walk(ast);
 
-		if (XQuery.DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR, "unnestrewrite");
+			if (XQuery.DEBUG) {
+				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
+						"unnestrewrite");
+			}
+
+			new LetBindLift().walk(ast);
+
+			if (XQuery.DEBUG) {
+				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
+						"letbindliftrewrite");
+			}
+			
+			return ast;
 		}
+	}
 
-		new JoinRewriter2().walk(ast);
+	private static class JoinRecognition implements Stage {
+		public AST rewrite(AST ast) throws QueryException {
 
-		if (XQuery.DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR, "joinrewrite");
+			new JoinRewriter2().walk(ast);
+
+			if (XQuery.DEBUG) {
+				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
+						"joinrewrite");
+			}
+
+			new JoinSortElimination().walk(ast);
+
+			if (XQuery.DEBUG) {
+				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
+						"joinsorteliminationrewrite");
+			}
+
+			new LeftJoinGroupEmission().walk(ast);
+
+			if (XQuery.DEBUG) {
+				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
+						"joingroupemissionrewrite");
+			}
+
+			return ast;
 		}
-
-		new LetBindLift().walk(ast);
-
-		if (XQuery.DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR, "letbindliftrewrite");
-		}
-
-		new JoinSortElimination().walk(ast);
-
-		if (XQuery.DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
-					"joinsorteliminationrewrite");
-		}
-
-		new LeftJoinGroupEmission().walk(ast);
-
-		if (XQuery.DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
-					"joingroupemissionrewrite");
-		}
-
-		// new ReturnExprDecouple().walk(ast);
-		//		
-		// if (XQuery.DEBUG)
-		// {
-		// DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
-		// "ReturnExprDecoubleRewrite");
-		// }
-
-		return ast;
 	}
 }
