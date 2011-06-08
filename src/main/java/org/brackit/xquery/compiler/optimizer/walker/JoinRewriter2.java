@@ -142,7 +142,9 @@ public class JoinRewriter2 extends Walker {
 			// to the join
 			if (check == null) {
 				check = tmp2.getProperty("check");
-				tmp2.setProperty("check", null);
+				if (check != null) {
+					tmp2.setProperty("check", null);
+				}
 			}
 			if (tmp2.getType() == XQueryParser.ForBind) {
 				// preserve is not necessary anymore because
@@ -161,6 +163,7 @@ public class JoinRewriter2 extends Walker {
 				}
 				break;
 			}
+			tmp2 = tmp2.getParent();
 		}
 
 		// build join

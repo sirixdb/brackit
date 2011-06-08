@@ -68,8 +68,9 @@ public class Select implements Operator {
 				next = null;
 				if ((check >= 0) && (t.get(check) == null)) {
 					break;
-				}
-				if (predicate.evaluate(ctx, t).booleanValue(ctx)) {
+				}				
+				Sequence p = predicate.evaluate(ctx, t);
+				if ((p != null) && (p.booleanValue(ctx))) {
 					break;
 				}
 				if (groupVar < 0) {

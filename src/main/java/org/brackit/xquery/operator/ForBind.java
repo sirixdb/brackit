@@ -46,7 +46,7 @@ import org.brackit.xquery.xdm.Sequence;
  */
 public class ForBind implements Operator {
 	private final Operator in;
-	final Expr source;
+	final Expr bind;
 	final boolean preserve;
 	boolean bindVar = true;
 	boolean bindPos = false;
@@ -90,17 +90,25 @@ public class ForBind implements Operator {
 					t = null;
 					return tmp;
 				}
-				Sequence s = source.evaluate(ctx, t);
+				Sequence s = bind.evaluate(ctx, t);
 				pos = Int32.ZERO;
 				if (s == null) {
 					Tuple tmp = (preserve) ? passthrough(t) : null;
 					t = null;
 					return tmp;
-				}
-				if (s instanceof Item) {
+				} else if (s instanceof Item) {
 					return emit(t, s);
 				} else {
 					it = s.iterate();
+					Item i = it.next();
+					if (i != null) {
+						return emit(t, i);
+					}
+					it.close();
+					it = null;
+					Tuple tmp = (preserve) ? passthrough(t) : null;
+					t = null;
+					return tmp;
 				}
 			}
 		}
@@ -122,7 +130,7 @@ public class ForBind implements Operator {
 		private Tuple passthrough(Tuple t) throws QueryException {
 			if (bindVar) {
 				if (bindPos) {
-					return t.concat(new Sequence[] { null, null });
+					return t.concat(new Sequence[2]);
 				} else {
 					return t.concat((Sequence) null);
 				}
@@ -144,9 +152,9 @@ public class ForBind implements Operator {
 		}
 	}
 
-	public ForBind(Operator in, Expr source, boolean preserve) {
+	public ForBind(Operator in, Expr bind, boolean preserve) {
 		this.in = in;
-		this.source = source;
+		this.bind = bind;
 		this.preserve = preserve;
 	}
 
