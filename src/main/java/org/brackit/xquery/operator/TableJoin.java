@@ -115,7 +115,7 @@ public class TableJoin implements Operator {
 					Item[] items = new Item[matches.getSize()];
 					for (int i = 0; i < matches.getSize(); i++) {
 						Sequence[] match = matches.get(i);
-						items[i++] = (Item) match[0];
+						items[i] = (Item) match[0];
 					}
 					Sequence[] padded = new Sequence[leftJoinPadding.length + 1];
 					padded[leftJoinPadding.length] = new ItemSequence(items);

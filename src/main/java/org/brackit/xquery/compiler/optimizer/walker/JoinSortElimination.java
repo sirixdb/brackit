@@ -116,7 +116,7 @@ public class JoinSortElimination extends Walker {
 					|| ((!fn.equals("count()")) && (!fn.equals("fn:count()"))
 							&& (!fn.equals("distinct()")) && (!fn
 							.equals("fn:distinct()")))) {
-				return false;
+				return true;
 			}
 		}
 		for (int i = 0; i < node.getChildCount(); i++) {
