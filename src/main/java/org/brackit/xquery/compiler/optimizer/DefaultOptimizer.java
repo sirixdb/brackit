@@ -39,6 +39,7 @@ import org.brackit.xquery.compiler.optimizer.walker.JoinSortElimination;
 import org.brackit.xquery.compiler.optimizer.walker.LeftJoinGroupEmission;
 import org.brackit.xquery.compiler.optimizer.walker.LetBindLift;
 import org.brackit.xquery.compiler.optimizer.walker.LetVariableRefPullup;
+import org.brackit.xquery.compiler.optimizer.walker.OrderForGroupBy;
 import org.brackit.xquery.compiler.optimizer.walker.UnnestRewriter;
 import org.brackit.xquery.compiler.parser.DotUtil;
 import org.brackit.xquery.util.Cfg;
@@ -91,6 +92,7 @@ public class DefaultOptimizer implements Optimizer {
 	private static class Simplification implements Stage {
 		public AST rewrite(AST ast) {
 			new DoSNStepMerger().walk(ast);
+			new OrderForGroupBy().walk(ast);
 
 			if (VARIABLE_PULLUP) {
 				new LetVariableRefPullup().walk(ast);

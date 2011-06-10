@@ -27,8 +27,6 @@
  */
 package org.brackit.xquery.operator;
 
-import java.util.Arrays;
-
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
@@ -49,22 +47,22 @@ public class Select implements Operator {
 	int check = -1;
 
 	public class SelectCursor implements Cursor {
-		private final Cursor in;
+		private final Cursor c;
 		private Tuple prev;
 		private Tuple next;
 
-		public SelectCursor(Cursor in) {
-			this.in = in;
+		public SelectCursor(Cursor c) {
+			this.c = c;
 		}
 
 		@Override
 		public void close(QueryContext ctx) {
-			in.close(ctx);
+			c.close(ctx);
 		}
 
 		public Tuple next(QueryContext ctx) throws QueryException {
 			Tuple t;
-			while (((t = next) != null) || (t = in.next(ctx)) != null) {
+			while (((t = next) != null) || (t = c.next(ctx)) != null) {
 				next = null;
 				if ((check >= 0) && (t.get(check) == null)) {
 					break;
@@ -84,7 +82,7 @@ public class Select implements Operator {
 						&& (gk.cmp((Atomic) prev.get(groupVar)) == 0)) {
 					continue;
 				}
-				next = in.next(ctx);
+				next = c.next(ctx);
 				// skip if next tuple is in same iteration group
 				if ((next != null)
 						&& (gk.cmp((Atomic) next.get(groupVar)) == 0)) {
@@ -101,7 +99,7 @@ public class Select implements Operator {
 
 		@Override
 		public void open(QueryContext ctx) throws QueryException {
-			in.open(ctx);
+			c.open(ctx);
 		}
 	}
 
@@ -113,6 +111,11 @@ public class Select implements Operator {
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
 		return new SelectCursor(in.create(ctx, tuple));
+	}
+
+	@Override
+	public int tupleWidth(int initSize) {
+		return in.tupleWidth(initSize);
 	}
 
 	public Reference check() {

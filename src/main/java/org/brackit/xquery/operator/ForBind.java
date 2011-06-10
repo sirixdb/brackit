@@ -53,13 +53,13 @@ public class ForBind implements Operator {
 	int check = -1;
 
 	private class ForBindCursor implements Cursor {
-		private final Cursor in;
+		private final Cursor c;
 		private IntegerNumeric pos;
 		private Tuple t;
 		private Iter it;
 
-		public ForBindCursor(Cursor cursor) {
-			this.in = cursor;
+		public ForBindCursor(Cursor c) {
+			this.c = c;
 		}
 
 		@Override
@@ -68,7 +68,7 @@ public class ForBind implements Operator {
 				it.close();
 			}
 			it = null;
-			in.close(ctx);
+			c.close(ctx);
 		}
 
 		@Override
@@ -82,7 +82,7 @@ public class ForBind implements Operator {
 					it.close();
 					it = null;
 				}
-				if ((t = in.next(ctx)) == null) {
+				if ((t = c.next(ctx)) == null) {
 					return null;
 				}
 				if ((check >= 0) && (t.get(check) == null)) {
@@ -148,7 +148,7 @@ public class ForBind implements Operator {
 						ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
 						"ForBind already opened");
 			}
-			in.open(ctx);
+			c.open(ctx);
 		}
 	}
 
@@ -161,6 +161,11 @@ public class ForBind implements Operator {
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
 		return new ForBindCursor(in.create(ctx, tuple));
+	}
+	
+	@Override
+	public int tupleWidth(int initSize) {
+		return in.tupleWidth(initSize) + (bindVar ? 1 : 0) + (bindPos ? 1 : 0);
 	}
 
 	public void bindVariable(boolean bindVariable) {

@@ -46,20 +46,20 @@ public class LetBind implements Operator {
 	private boolean bind = true;
 
 	private class LetBindCursor implements Cursor {
-		private final Cursor in;
+		private final Cursor c;
 
-		public LetBindCursor(Cursor cursor) {
-			this.in = cursor;
+		public LetBindCursor(Cursor c) {
+			this.c = c;
 		}
 
 		@Override
 		public void close(QueryContext ctx) {
-			in.close(ctx);
+			c.close(ctx);
 		}
 
 		@Override
 		public Tuple next(QueryContext ctx) throws QueryException {
-			Tuple t = in.next(ctx);
+			Tuple t = c.next(ctx);
 
 			if (t == null) {
 				return null;
@@ -74,7 +74,7 @@ public class LetBind implements Operator {
 
 		@Override
 		public void open(QueryContext ctx) throws QueryException {
-			in.open(ctx);
+			c.open(ctx);
 		}
 	}
 
@@ -92,7 +92,12 @@ public class LetBind implements Operator {
 		return (bind) ? new LetBindCursor(in.create(ctx, tuple)) : in.create(
 				ctx, tuple);
 	}
-
+	
+	@Override
+	public int tupleWidth(int initSize) {
+		return in.tupleWidth(initSize) + (bind ? 1 : 0);
+	}
+	
 	public Reference check() {
 		return new Reference() {
 			public void setPos(int pos) {

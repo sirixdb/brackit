@@ -31,62 +31,54 @@ import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.parser.XQueryParser;
 
 /**
- * Inspects for the (common?) pattern of a left join, where the "run variable"
- * from the right branch, i.e., the inner loop, is grouped immediately after the
- * join. In this case, the join may emit the match group directly as a sequence
- * and bind the grouped variable directly.
- * 
- * Note: Further optimization is possible here when we remove the artificial
- * counter variable which introduced in the left input branch to compute the
- * grouping.
+ * Insert an orderBy clause in front of a groupBy clause that
+ * orders the tuple stream in according to the grouping specification.
  * 
  * @author Sebastian Baechle
  * 
  */
-public class LeftJoinGroupEmission extends Walker {
+public class OrderForGroupBy extends Walker {
+
 	@Override
 	protected AST visit(AST node) {
-		if (node.getType() != XQueryParser.Join) {
-			return node;
-		}
-
-		if (!Boolean.parseBoolean(node.getProperty("leftJoin"))) {
+		if (node.getType() != XQueryParser.GroupByClause) {
 			return node;
 		}
 		
-		AST letBind = node.getParent();
-		if ((letBind.getType() != XQueryParser.LetBind)) {
-			return node;
+		// check if prev sibling is already the needed group by
+		AST prev = node.getParent().getChild(node.getChildIndex() - 1);
+		if (prev.getType() == XQueryParser.OrderByClause) {
+			if (checkOrderBy(node, prev)) {
+				return node;
+			}
 		}
-		AST groupBy = letBind.getParent();
-		if ((groupBy.getType() != XQueryParser.GroupBy) 
-			|| (!Boolean.parseBoolean(groupBy.getProperty("groupOnlyLast")))) {
-			return node;
-		} 
-
-		AST groupinJoin = node.copyTree();
-		groupinJoin.setProperty("emitGroup", "true");
-		groupinJoin.insertChild(1, groupBy.getChild(1).copyTree());
-		AST parent = groupBy.getParent();
-		parent.replaceChild(groupBy.getChildIndex(), groupinJoin);
-
-		// TODO remove the introduced run variable if possible
-
-		return parent;
+		
+		// introduce order by
+		AST orderBy = new AST(XQueryParser.OrderByClause, "OrderByClause");
+		for (int i = 0; i < node.getChildCount(); i++) {
+			AST groupBySpec = node.getChild(i);
+			AST orderBySpec = new AST(XQueryParser.OrderBySpec, "OrderBySpec");			
+			for (int j = 0; j < groupBySpec.getChildCount(); j++) {
+				orderBySpec.addChild(groupBySpec.getChild(0).copyTree());
+			}
+			orderBy.addChild(orderBySpec);	
+		}
+		
+		node.getParent().insertChild(node.getChildIndex(), orderBy);
+		return orderBy;
 	}
 
-	private String innerLoopVarName(AST node) {
-		AST rightIn = node.getChild(node.getChildCount() - 1);
-		while (rightIn.getChild(0).getType() != XQueryParser.Start) {
-			rightIn = rightIn.getChild(0);
+	private boolean checkOrderBy(AST groupBy, AST orderBy) {
+		if (groupBy.getChildCount() != orderBy.getChildCount()) {
+			return false;
 		}
-
-		if (rightIn.getType() == XQueryParser.LetBind) {
-			// a let bind may currently cause errors in grouping. check it
-			throw new RuntimeException("CHECK ME");
+		for (int i = 0; i < groupBy.getChildCount(); i++) {
+			String groupByVar = groupBy.getChild(i).getChild(0).getValue();
+			String orderByVar = orderBy.getChild(i).getChild(0).getValue();
+			if (!groupByVar.equals(orderByVar)) {
+				return false;
+			}
 		}
-
-		// right in is now let-bind or for-bind
-		return rightIn.getChild(1).getChild(0).getValue();
+		return true;
 	}
 }

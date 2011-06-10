@@ -205,6 +205,11 @@ public class OrderBy implements Operator {
 		return new OrderByCursor(in.create(ctx, tuple));
 	}
 
+	@Override
+	public int tupleWidth(int initSize) {
+		return in.tupleWidth(initSize);
+	}
+	
 	public Reference check() {
 		return new Reference() {
 			public void setPos(int pos) {

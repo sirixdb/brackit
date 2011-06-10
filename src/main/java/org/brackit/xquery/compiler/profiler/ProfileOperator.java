@@ -101,6 +101,11 @@ public class ProfileOperator extends ProfilingNode implements Operator {
 		return new StatOpCursor(op.create(ctx, tuple));
 	}
 
+	@Override
+	public int tupleWidth(int initSize) {
+		return op.tupleWidth(initSize);
+	}
+
 	public String toString() {
 		return op.getClass().getSimpleName();
 	}

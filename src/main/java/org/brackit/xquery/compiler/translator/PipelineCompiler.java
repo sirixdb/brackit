@@ -118,20 +118,14 @@ public class PipelineCompiler extends Compiler {
 	}
 
 	private Operator groupBy(AST node) throws QueryException {
-		Operator in = anyOp(node.getChild(0));
-		AST letVarDecl = node.getChild(1);
-		QNm letVarName = module.getNamespaces().qname(
-				letVarDecl.getChild(0).getValue());
-		SequenceType letVarType = SequenceType.ITEM_SEQUENCE;
-		if (letVarDecl.getChildCount() == 2) {
-			letVarType = sequenceType(letVarDecl.getChild(1));
+		Operator in = anyOp(node.getChild(0));		
+		int groupSpecCount = node.getChildCount() - 1;
+		boolean groupOnlyLast = Boolean.parseBoolean(node.getProperty("groupOnlyLast"));
+		GroupBy groupBy = new GroupBy(in, groupSpecCount, groupOnlyLast);
+		for (int i = 0; i < groupSpecCount; i++) {
+			String grpVarName = node.getChild(1 + i).getChild(0).getValue();
+			table.resolve(module.getNamespaces().qname(grpVarName), groupBy.group(i));
 		}
-		// compile expressions before binding
-		Expr posExpr = anyExpr(node.getChild(2));
-		Expr itemExpr = anyExpr(node.getChild(3));
-		Binding binding = table.bind(letVarName, letVarType);
-		GroupBy groupBy = new GroupBy(in, new Expr[] { posExpr },
-				new Expr[] { itemExpr });
 		String prop = node.getProperty("check");
 		if (prop != null) {
 			table.resolve(module.getNamespaces().qname(prop), groupBy.check());

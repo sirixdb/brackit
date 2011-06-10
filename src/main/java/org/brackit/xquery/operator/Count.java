@@ -89,6 +89,11 @@ public class Count implements Operator {
 		return (bind) ? new CountCursor(in.create(ctx, tuple)) : in.create(ctx,
 				tuple);
 	}
+	
+	@Override
+	public int tupleWidth(int initSize) {
+		return in.tupleWidth(initSize) + 1;
+	}
 
 	public void bind(boolean bind) {
 		this.bind = bind;

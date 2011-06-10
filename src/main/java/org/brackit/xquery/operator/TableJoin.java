@@ -186,6 +186,11 @@ public class TableJoin implements Operator {
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
 		return new TableJoinCursor(l.create(ctx, tuple));
 	}
+	
+	@Override
+	public int tupleWidth(int initSize) {
+		return l.tupleWidth(initSize) + r.tupleWidth(initSize);
+	}
 
 	public Reference group() {
 		return new Reference() {

@@ -197,5 +197,10 @@ public class Parallelizer implements Operator {
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
 		return new ParallelizerCursor(in.create(ctx, tuple), ctx);
+	}	
+
+	@Override
+	public int tupleWidth(int initSize) {
+		return in.tupleWidth(initSize);
 	}
 }

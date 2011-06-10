@@ -129,7 +129,6 @@ public class LetBindLift extends Walker {
 	 */
 	private AST liftInput(AST node) {
 		AST opEx = node.getChild(2);
-		String leftJoinVarName = null;
 		AST leftInput = null;
 		AST left = null;
 		AST tmp = opEx.getChild(0);
@@ -188,17 +187,23 @@ public class LetBindLift extends Walker {
 			}
 			tmp2 = tmp2.getParent();
 		}
+		
+		// let bind the return expression
+		AST letBind = new AST(XQueryParser.LetBind, "LetBind");
+		letBind.addChild(leftInput);
+		letBind.addChild(node.getChild(1).copyTree());
+		letBind.addChild(opEx.getChild(1).copyTree());
 
+		// group the let bind
 		AST groupBy = new AST(XQueryParser.GroupBy, "GroupBy");
-		groupBy.addChild(leftInput);
-		groupBy.addChild(node.getChild(1).copyTree());
-		groupBy.addChild(new AST(XQueryParser.VariableRef, grpVarName));
-		groupBy
-				.addChild(createBindExpression(leftJoinVarName, opEx
-						.getChild(1)));
+		groupBy.addChild(letBind);
+		AST groupBySpec = new AST(XQueryParser.GroupBySpec, "GroupBySpec");
+		groupBySpec.addChild(new AST(XQueryParser.VariableRef, grpVarName));
+		groupBy.addChild(groupBySpec);
 		if (forBindVarName != null) {
 			groupBy.setProperty("check", forBindVarName);
 		}
+		groupBy.setProperty("groupOnlyLast", "true");
 		return groupBy;
 	}
 
