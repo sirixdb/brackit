@@ -27,8 +27,6 @@
  */
 package org.brackit.xquery.compiler.translator;
 
-import java.util.Arrays;
-
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -118,13 +116,14 @@ public class PipelineCompiler extends Compiler {
 	}
 
 	private Operator groupBy(AST node) throws QueryException {
-		Operator in = anyOp(node.getChild(0));		
+		Operator in = anyOp(node.getChild(0));
 		int groupSpecCount = node.getChildCount() - 1;
-		boolean groupOnlyLast = Boolean.parseBoolean(node.getProperty("groupOnlyLast"));
-		GroupBy groupBy = new GroupBy(in, groupSpecCount, groupOnlyLast);
+		boolean onlyLast = Boolean.parseBoolean(node.getProperty("onlyLast"));
+		GroupBy groupBy = new GroupBy(in, groupSpecCount, onlyLast);
 		for (int i = 0; i < groupSpecCount; i++) {
 			String grpVarName = node.getChild(1 + i).getChild(0).getValue();
-			table.resolve(module.getNamespaces().qname(grpVarName), groupBy.group(i));
+			table.resolve(module.getNamespaces().qname(grpVarName), groupBy
+					.group(i));
 		}
 		String prop = node.getProperty("check");
 		if (prop != null) {
@@ -134,33 +133,15 @@ public class PipelineCompiler extends Compiler {
 	}
 
 	private Operator join(AST node) throws QueryException {
-		boolean leftJoin = Boolean.parseBoolean(node.getProperty("leftJoin"));
-		boolean skipSort = Boolean.parseBoolean(node.getProperty("skipSort"));
-		boolean emitGroup = Boolean.parseBoolean(node.getProperty("emitGroup"));
-		QNm groupingVarName = null;
-		SequenceType groupingVarType = null;
-		int initialBindSize = table.bound().length;
-		int pos = 0;
-
 		// compile left (outer) join branch
+		int pos = 0;
 		Operator leftIn = anyOp(node.getChild(pos++));
-
-		if (emitGroup) {
-			AST groupingVarDecl = node.getChild(pos++);
-			groupingVarName = module.getNamespaces().qname(
-					groupingVarDecl.getChild(0).getValue());
-			groupingVarType = SequenceType.ITEM_SEQUENCE;
-			if (groupingVarDecl.getChildCount() == 2) {
-				groupingVarType = sequenceType(groupingVarDecl.getChild(1));
-			}
-		}
 
 		// get join type
 		AST comparison = node.getChild(pos++);
 		Cmp cmp = cmp(comparison.getChild(0));
 
 		boolean isGcmp = false;
-
 		switch (comparison.getChild(0).getType()) {
 		case XQueryParser.GeneralCompEQ:
 		case XQueryParser.GeneralCompGE:
@@ -172,29 +153,23 @@ public class PipelineCompiler extends Compiler {
 		}
 
 		Expr leftExpr = anyExpr(comparison.getChild(1));
-		Binding[] leftBindings = Arrays.copyOfRange(table.bound(),
-				initialBindSize, table.bound().length);
 
 		// compile right (inner) join branch
 		Operator rightIn = anyOp(node.getChild(pos++));
 		Expr rightExpr = anyExpr(comparison.getChild(2));
-		Binding[] rightBindings = Arrays.copyOfRange(table.bound(),
-				initialBindSize, table.bound().length);
 
-		if (emitGroup) {
-			Binding runVarBinding = table
-					.bind(groupingVarName, groupingVarType);
-			// Fake binding of run variable because set-oriented processing
-			// requires the variable anyway
-			table.resolve(groupingVarName);
-		}
-
-		TableJoin join = new TableJoin(cmp, isGcmp, leftJoin, skipSort,
-				emitGroup, leftIn, leftExpr, rightIn, rightExpr);
+		boolean leftJoin = Boolean.parseBoolean(node.getProperty("leftJoin"));
+		boolean skipSort = Boolean.parseBoolean(node.getProperty("skipSort"));
+		TableJoin join = new TableJoin(cmp, isGcmp, leftJoin, skipSort, leftIn,
+				leftExpr, rightIn, rightExpr);
 
 		String prop = node.getProperty("group");
 		if (prop != null) {
 			table.resolve(module.getNamespaces().qname(prop), join.group());
+		}
+		prop = node.getProperty("check");
+		if (prop != null) {
+			table.resolve(module.getNamespaces().qname(prop), join.check());
 		}
 
 		return join;

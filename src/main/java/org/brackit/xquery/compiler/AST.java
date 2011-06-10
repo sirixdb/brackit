@@ -90,6 +90,12 @@ public class AST {
 	public String getProperty(String name) {
 		return (properties != null) ? properties.get(name) : null;
 	}
+	
+	public void delProperty(String name) {
+		if (properties != null) {
+			properties.remove(name);
+		}		
+	}
 
 	public AST getParent() {
 		return parent;

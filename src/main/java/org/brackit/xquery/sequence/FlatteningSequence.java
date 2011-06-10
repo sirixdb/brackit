@@ -31,57 +31,55 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntegerNumeric;
-import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
+ *
  */
-public class ItemSequence implements Sequence {
-	protected final Item[] items;
+public class FlatteningSequence implements Sequence {
 
-	public ItemSequence(Item... items) {
-		this.items = items;
+	protected final Sequence[] seqs;
+
+	public FlatteningSequence(Sequence... seqs) {
+		this.seqs = seqs;
 	}
 
 	@Override
 	public boolean booleanValue(QueryContext ctx) throws QueryException {
-		return (items.length > 0) ? (items[0] instanceof Node<?>) ? true
-				: items[0].booleanValue(ctx) : false;
+		return (seqs.length > 0) ? (seqs[0] instanceof Node<?>) ? true
+				: seqs[0].booleanValue(ctx) : false;
 	}
 
 	@Override
 	public IntegerNumeric size(QueryContext ctx) throws QueryException {
-		return new Int32(items.length);
+		IntegerNumeric size = Int32.ZERO;
+		for (Sequence s : seqs) {
+			size = (IntegerNumeric) size.add(s.size(ctx));
+		}
+		return size;
 	}
 
 	@Override
 	public Iter iterate() {
-		return new Iter() {
+		return new FlatteningIter() {
 			int pos = 0;
-
 			@Override
-			public Item next() {
-				return (pos < items.length) ? items[pos++] : null;
-			}
-
-			@Override
-			public void close() {
+			protected Sequence nextSequence() throws QueryException {
+				return (pos < seqs.length) ? seqs[pos++] : null;
 			}
 		};
 	}
 	
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		if (items.length > 0) {
-			sb.append(items[0]);
-			for (int i = 1; i < items.length; i++) {
+		if (seqs.length > 0) {
+			sb.append(seqs[0]);
+			for (int i = 1; i < seqs.length; i++) {
 				sb.append(",");
-				sb.append(items[i]);
+				sb.append(seqs[i]);
 			}
 		}
 		return sb.toString();

@@ -31,14 +31,11 @@ import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.parser.XQueryParser;
 
 /**
- * Inspects for the (common?) pattern of a left join, where the "run variable"
- * from the right branch, i.e., the inner loop, is grouped immediately after the
- * join. In this case, the join may emit the match group directly as a sequence
- * and bind the grouped variable directly.
- * 
- * Note: Further optimization is possible here when we remove the artificial
- * counter variable which introduced in the left input branch to compute the
- * grouping.
+ * Inspects for the (common?) pattern of a left join
+ * that is input of a let bind -> group by combination
+ * that was introduced to lift a let bind pipeline.
+ * In this case, the join may emit the match group directly as a sequence
+ * and bind the grouped let bind variable directly.
  * 
  * @author Sebastian Baechle
  * 
@@ -60,33 +57,27 @@ public class LeftJoinGroupEmission extends Walker {
 		}
 		AST groupBy = letBind.getParent();
 		if ((groupBy.getType() != XQueryParser.GroupBy) 
-			|| (!Boolean.parseBoolean(groupBy.getProperty("groupOnlyLast")))) {
+			|| (!Boolean.parseBoolean(groupBy.getProperty("onlyLast")))) {
 			return node;
-		} 
-
+		}
+		
+		// join and bind/group combo must not be
+		// part of the same check level, i.e., be 
+		// part of different liftings
+		String joinCheck = node.getProperty("check");
+		String letCheck = letBind.getProperty("check");
+		if ((joinCheck != null) && (joinCheck.equals(letCheck))) {
+			return node;
+		}
+		
 		AST groupinJoin = node.copyTree();
-		groupinJoin.setProperty("emitGroup", "true");
-		groupinJoin.insertChild(1, groupBy.getChild(1).copyTree());
+		AST letCopy = letBind.copy();
+		letCopy.addChild(new AST(XQueryParser.Start, "Start"));
+		letCopy.addChild(letBind.getChild(1));
+		letCopy.addChild(letBind.getChild(2));
+		groupinJoin.addChild(letCopy);
 		AST parent = groupBy.getParent();
 		parent.replaceChild(groupBy.getChildIndex(), groupinJoin);
-
-		// TODO remove the introduced run variable if possible
-
 		return parent;
-	}
-
-	private String innerLoopVarName(AST node) {
-		AST rightIn = node.getChild(node.getChildCount() - 1);
-		while (rightIn.getChild(0).getType() != XQueryParser.Start) {
-			rightIn = rightIn.getChild(0);
-		}
-
-		if (rightIn.getType() == XQueryParser.LetBind) {
-			// a let bind may currently cause errors in grouping. check it
-			throw new RuntimeException("CHECK ME");
-		}
-
-		// right in is now let-bind or for-bind
-		return rightIn.getChild(1).getChild(0).getValue();
 	}
 }

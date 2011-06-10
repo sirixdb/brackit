@@ -193,6 +193,9 @@ public class LetBindLift extends Walker {
 		letBind.addChild(leftInput);
 		letBind.addChild(node.getChild(1).copyTree());
 		letBind.addChild(opEx.getChild(1).copyTree());
+		if (forBindVarName != null) {
+			letBind.setProperty("check", forBindVarName);
+		}
 
 		// group the let bind
 		AST groupBy = new AST(XQueryParser.GroupBy, "GroupBy");
@@ -203,7 +206,7 @@ public class LetBindLift extends Walker {
 		if (forBindVarName != null) {
 			groupBy.setProperty("check", forBindVarName);
 		}
-		groupBy.setProperty("groupOnlyLast", "true");
+		groupBy.setProperty("onlyLast", "true");
 		return groupBy;
 	}
 

@@ -34,10 +34,9 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.compiler.translator.Reference;
-import org.brackit.xquery.sequence.ItemSequence;
+import org.brackit.xquery.sequence.FlatteningSequence;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
@@ -47,29 +46,29 @@ import org.brackit.xquery.xdm.Sequence;
 public class GroupBy implements Operator {
 	final Operator in;
 	final int[] groupSpecs; // positions of grouping variables
-	final boolean groupOnlyLast;
+	final boolean onlyLast;
 	int check = -1;
 
-	public GroupBy(Operator in, int groupSpecCount, boolean groupOnlyLast) {
+	public GroupBy(Operator in, int groupSpecCount, boolean onlyLast) {
 		this.in = in;
 		this.groupSpecs = new int[groupSpecCount];
-		this.groupOnlyLast = groupOnlyLast;
+		this.onlyLast = onlyLast;
 	}
 
 	private class GroupByCursor implements Cursor {
 		final Cursor c;
 		Tuple next;
-		Item[][] buffer;
+		Sequence[][] buffer;
 		boolean[] skipgroup;
 
 		public GroupByCursor(Cursor c, int tupleSize) {
 			this.c = c;
-			this.buffer = new Item[tupleSize][10];
+			this.buffer = new Sequence[tupleSize][10];
 			this.skipgroup = new boolean[tupleSize];
 			for (int pos : groupSpecs) {
 				skipgroup[pos] = true;
 			}
-			if (groupOnlyLast) {
+			if (onlyLast) {
 				for (int pos = 0; pos < tupleSize - 1; pos++) {
 					skipgroup[pos] = true;
 				}
@@ -117,8 +116,8 @@ public class GroupBy implements Operator {
 				if (size[i] == 1) {
 					groupings[i] = buffer[i][0];
 				} else if (size[i] > 1) {
-					Item[] tmp = Arrays.copyOfRange(buffer[i], 0, size[i]);
-					groupings[i] = new ItemSequence(tmp);
+					Sequence[] tmp = Arrays.copyOfRange(buffer[i], 0, size[i]);
+					groupings[i] = new FlatteningSequence(tmp);
 				}
 			}
 			return new TupleImpl(groupings);
@@ -134,27 +133,11 @@ public class GroupBy implements Operator {
 				if (s == null) {
 					continue;
 				}
-				if (s instanceof Item) {
-					if (size[i] == buffer[i].length) {
-						buffer[i] = Arrays.copyOf(buffer[i],
-								(buffer[i].length * 3) / 2 + 1);
-					}
-					buffer[i][size[i]++] = (Item) s;
-				} else {
-					Iter it = s.iterate();
-					try {
-						for (Item item = it.next(); item != null; item = it
-								.next()) {
-							if (size[i] == buffer[i].length) {
-								buffer[i] = Arrays.copyOf(buffer[i],
-										(buffer[i].length * 3) / 2 + 1);
-							}
-							buffer[i][size[i]++] = item;
-						}
-					} finally {
-						it.close();
-					}
+				if (size[i] == buffer[i].length) {
+					buffer[i] = Arrays.copyOf(buffer[i],
+							(buffer[i].length * 3) / 2 + 1);
 				}
+				buffer[i][size[i]++] = s;
 			}
 		}
 

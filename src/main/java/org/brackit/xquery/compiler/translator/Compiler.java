@@ -93,6 +93,7 @@ import org.brackit.xquery.module.Module;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.operator.Count;
 import org.brackit.xquery.operator.ForBind;
+import org.brackit.xquery.operator.GroupBy;
 import org.brackit.xquery.operator.LetBind;
 import org.brackit.xquery.operator.Operator;
 import org.brackit.xquery.operator.OrderBy;
@@ -1573,6 +1574,9 @@ public class Compiler implements Translator {
 			case XQueryParser.CountClause:
 				cb = countClause(clause, cb);
 				break;
+			case XQueryParser.GroupByClause:
+				cb = groupByClause(clause, cb);
+				break;
 			default:
 				throw new QueryException(
 						ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
@@ -1636,6 +1640,18 @@ public class Compiler implements Translator {
 			}
 		}
 		return new OrderModifier(asc, emptyLeast, collation);
+	}
+
+	protected ClauseBinding groupByClause(AST node, ClauseBinding in)
+			throws QueryException {
+		int groupSpecCount = node.getChildCount();
+		GroupBy groupBy = new GroupBy(in.operator, groupSpecCount, false);
+		for (int i = 0; i < groupSpecCount; i++) {
+			String grpVarName = node.getChild(i).getChild(0).getValue();
+			table.resolve(module.getNamespaces().qname(grpVarName), groupBy
+					.group(i));
+		}
+		return new ClauseBinding(in, groupBy);
 	}
 
 	protected ClauseBinding whereClause(AST node, ClauseBinding in)

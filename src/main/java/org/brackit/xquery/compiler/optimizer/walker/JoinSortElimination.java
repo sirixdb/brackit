@@ -54,44 +54,26 @@ public class JoinSortElimination extends Walker {
 		if (!Boolean.parseBoolean(node.getProperty("leftJoin"))) {
 			return node;
 		}
-
-		// find name of unrolled for-loop variable in right branch
-		String innerLoopVarName = innerLoopVarName(node);
-
-		// check if unrolled variable is grouped in a sequence downstream
-		String groupingSequenceVarName = null;
-		AST parent = node.getParent();
-		while (parent != null) {
-			if (parent.getType() == XQueryParser.GroupBy) {
-				// variables to be grouped are at positions 3, 5, 7, etc.
-				for (int i = 3; i < parent.getChildCount(); i += 2) {
-					if (parent.getChild(i).getValue().equals(innerLoopVarName)) {
-						groupingSequenceVarName = parent.getChild(i - 2)
-								.getChild(0).getValue();
-						break;
-					}
-				}
-			}
-			if (groupingSequenceVarName != null) {
-				break;
-			}
-
-			parent = parent.getParent();
+		
+		AST letBind = node.getParent();
+		if ((letBind.getType() != XQueryParser.LetBind)) {
+			return node;
 		}
-
-		if ((groupingSequenceVarName == null) || (parent == null)) {
-			// variable is never grouped -> no need to sort
-			node.setProperty("skipSort", "true");
+		AST groupBy = letBind.getParent();
+		if ((groupBy.getType() != XQueryParser.GroupBy) 
+			|| (!Boolean.parseBoolean(groupBy.getProperty("onlyLast")))) {
 			return node;
 		}
 
-		// check if grouped variable is only used in uncritical
+		// check if grouped let bind variable is only used in uncritical
 		// aggregation functions (e.g., count):
 		// collect all references to grouped variable and check them
+		String grpVarName = letBind.getChild(1).getChild(0).getValue();
+		AST parent = groupBy;
 		while ((parent = parent.getParent()) != null) {
 			for (int i = 1; i < parent.getChildCount(); i++) {
 				if (checkForCriticalReference(parent.getChild(i),
-						groupingSequenceVarName)) {
+						grpVarName)) {
 					return node;
 				}
 			}

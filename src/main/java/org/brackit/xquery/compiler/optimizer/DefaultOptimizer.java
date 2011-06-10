@@ -144,12 +144,12 @@ public class DefaultOptimizer implements Optimizer {
 						"joinsorteliminationrewrite");
 			}
 
-			new LeftJoinGroupEmission().walk(ast);
-
-			if (XQuery.DEBUG) {
-				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
-						"joingroupemissionrewrite");
-			}
+//			new LeftJoinGroupEmission().walk(ast);
+//
+//			if (XQuery.DEBUG) {
+//				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
+//						"joingroupemissionrewrite");
+//			}
 
 			return ast;
 		}

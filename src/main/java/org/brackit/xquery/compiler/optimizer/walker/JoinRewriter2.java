@@ -249,7 +249,11 @@ public class JoinRewriter2 extends Walker {
 				}
 			}
 		}
-		join.setProperty("group", groupName);
+		if (groupName != null) {
+			join.setProperty("group", groupName);
+		} else {
+			join.delProperty("group");
+		}
 	}
 
 	private String checkGroupVar(AST forBind) {
