@@ -85,11 +85,12 @@ public class XQuery {
 	}
 
 	public XQuery(String query, Parser parser, Optimizer optimizer,
-			Translator translator) {
+			Translator translator) throws QueryException {
 		this.query = query;
 		this.parser = parser;
 		this.optimizer = optimizer;
 		this.translator = translator;
+		compile();
 	}
 
 	public MainModule getMainModule() {
