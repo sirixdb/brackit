@@ -107,7 +107,6 @@ public class OrderBy implements Operator {
 	private final Operator in;
 	final Expr[] orderByExprs;
 	final OrderModifier[] modifier;
-	int groupVar = -1;
 	int check = -1;
 
 	private class OrderByCursor implements Cursor {
@@ -152,15 +151,15 @@ public class OrderBy implements Operator {
 			}
 
 			// sort current tuple and all following in same group
-			Atomic gk = (groupVar >= 0) ? (Atomic) t.get(groupVar) : null;
+			Atomic gk = (check >= 0) ? (Atomic) t.get(check) : null;
 			sort = new TupleSort(new OrderBySpec(tupleSize, modifier), -1);
 			sort.add(addSortFields(ctx, t));
 			while ((next = c.next(ctx)) != null) {
 				if ((check >= 0) && (t.get(check) == null)) {
 					break;
 				}
-				if (groupVar >= 0) {
-					Atomic ngk = (Atomic) next.get(groupVar);
+				if (check >= 0) {
+					Atomic ngk = (Atomic) next.get(check);
 					if (gk.atomicCmp(ngk) != 0) {
 						break;
 					}
@@ -214,14 +213,6 @@ public class OrderBy implements Operator {
 		return new Reference() {
 			public void setPos(int pos) {
 				check = pos;
-			}
-		};
-	}
-
-	public Reference group() {
-		return new Reference() {
-			public void setPos(int pos) {
-				groupVar = pos;
 			}
 		};
 	}

@@ -37,10 +37,6 @@ import org.brackit.xquery.compiler.parser.XQueryParser;
  * 
  */
 public class UnnestRewriter extends Walker {
-	private static final Logger log = Logger.getLogger(UnnestRewriter.class);
-
-	private static final boolean liftSubFlowr = false;
-
 	@Override
 	protected AST visit(AST node) {
 		if (node.getType() != XQueryParser.FlowrExpr) {

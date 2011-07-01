@@ -67,7 +67,8 @@ public class Count implements Operator {
 			}
 			if ((check >= 0) && (t.get(check) == null)) {
 				// reset numbering for pass through
-				return t.concat(pos = Int32.ZERO);
+				pos = Int32.ZERO;
+				return t.concat((Sequence) null);
 			}
 
 			return t.concat(pos = pos.inc());

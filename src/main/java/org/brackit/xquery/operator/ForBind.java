@@ -47,7 +47,7 @@ import org.brackit.xquery.xdm.Sequence;
 public class ForBind implements Operator {
 	private final Operator in;
 	final Expr bind;
-	final boolean preserve;
+	final boolean allowingEmpty;
 	boolean bindVar = true;
 	boolean bindPos = false;
 	int check = -1;
@@ -93,7 +93,8 @@ public class ForBind implements Operator {
 				Sequence s = bind.evaluate(ctx, t);
 				pos = Int32.ZERO;
 				if (s == null) {
-					Tuple tmp = (preserve) ? passthrough(t) : null;
+					Tuple tmp = (allowingEmpty) ? emit(t, null)
+							: (check >= 0) ? passthrough(t).replace(check, null) : null;
 					t = null;
 					return tmp;
 				} else if (s instanceof Item) {
@@ -106,7 +107,8 @@ public class ForBind implements Operator {
 					}
 					it.close();
 					it = null;
-					Tuple tmp = (preserve) ? passthrough(t) : null;
+					Tuple tmp = (allowingEmpty) ? emit(t, null)
+							: (check >= 0) ? passthrough(t).replace(check, null) : null;
 					t = null;
 					return tmp;
 				}
@@ -116,12 +118,13 @@ public class ForBind implements Operator {
 		private Tuple emit(Tuple t, Sequence item) throws QueryException {
 			if (bindVar) {
 				if (bindPos) {
-					return t.concat(new Sequence[] { item, (pos = pos.inc()) });
+					return t.concat(new Sequence[] { item,
+							(item != null) ? (pos = pos.inc()) : pos });
 				} else {
 					return t.concat(item);
 				}
 			} else if (bindPos) {
-				return t.concat(pos = pos.inc());
+				return t.concat((item != null) ? (pos = pos.inc()) : pos);
 			} else {
 				return t;
 			}
@@ -152,17 +155,17 @@ public class ForBind implements Operator {
 		}
 	}
 
-	public ForBind(Operator in, Expr bind, boolean preserve) {
+	public ForBind(Operator in, Expr bind, boolean allowingEmpty) {
 		this.in = in;
 		this.bind = bind;
-		this.preserve = preserve;
+		this.allowingEmpty = allowingEmpty;
 	}
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
 		return new ForBindCursor(in.create(ctx, tuple));
 	}
-	
+
 	@Override
 	public int tupleWidth(int initSize) {
 		return in.tupleWidth(initSize) + (bindVar ? 1 : 0) + (bindPos ? 1 : 0);

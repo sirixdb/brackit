@@ -242,8 +242,7 @@ public class PipelineCompiler extends Compiler {
 			table.resolve(posVarName);
 			// TODO Optimize and do not bind variable if not necessary
 		}
-		boolean preserve = Boolean.parseBoolean(node.getProperty("preserve"));
-		ForBind forBind = new ForBind(in, sourceExpr, preserve);
+		ForBind forBind = new ForBind(in, sourceExpr, false);
 		if (posBinding != null) {
 			forBind.bindPosition(posBinding.isReferenced());
 		}
@@ -309,10 +308,6 @@ public class PipelineCompiler extends Compiler {
 		if (prop != null) {
 			table.resolve(module.getNamespaces().qname(prop), select.check());
 		}
-		prop = node.getProperty("group");
-		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), select.group());
-		}
 		return select;
 	}
 
@@ -331,10 +326,6 @@ public class PipelineCompiler extends Compiler {
 		String prop = node.getProperty("check");
 		if (prop != null) {
 			table.resolve(module.getNamespaces().qname(prop), orderBy.check());
-		}
-		prop = node.getProperty("group");
-		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), orderBy.group());
 		}
 		return orderBy;
 	}

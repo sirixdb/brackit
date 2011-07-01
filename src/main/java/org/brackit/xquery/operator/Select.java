@@ -43,7 +43,6 @@ import org.brackit.xquery.xdm.Sequence;
 public class Select implements Operator {
 	private final Operator in;
 	final Expr predicate;
-	int groupVar = -1;
 	int check = -1;
 
 	public class SelectCursor implements Cursor {
@@ -66,26 +65,26 @@ public class Select implements Operator {
 				next = null;
 				if ((check >= 0) && (t.get(check) == null)) {
 					break;
-				}				
+				}
 				Sequence p = predicate.evaluate(ctx, t);
 				if ((p != null) && (p.booleanValue(ctx))) {
 					break;
 				}
-				if (groupVar < 0) {
+				if (check < 0) {
 					continue;
 				}
 				// predicate is not fulfilled but we must keep
 				// lifted iteration group alive for "left-join" semantics.
-				Atomic gk = (Atomic) t.get(groupVar);
+				Atomic gk = (Atomic) t.get(check);
 				// skip if previously returned tuple was in same iteration group
-				if ((prev != null)
-						&& (gk.cmp((Atomic) prev.get(groupVar)) == 0)) {
+				Atomic pgk = (prev != null) ? (Atomic) prev.get(check) : null;
+				if ((pgk != null) && (gk.cmp(pgk) == 0)) {
 					continue;
 				}
 				next = c.next(ctx);
 				// skip if next tuple is in same iteration group
-				if ((next != null)
-						&& (gk.cmp((Atomic) next.get(groupVar)) == 0)) {
+				Atomic ngk = (next != null) ? (Atomic) next.get(check) : null;
+				if ((ngk != null) && (gk.cmp(ngk) == 0)) {
 					continue;
 				}
 				// emit "dead" tuple where "check" field is switched-off
@@ -122,14 +121,6 @@ public class Select implements Operator {
 		return new Reference() {
 			public void setPos(int pos) {
 				check = pos;
-			}
-		};
-	}
-
-	public Reference group() {
-		return new Reference() {
-			public void setPos(int pos) {
-				groupVar = pos;
 			}
 		};
 	}

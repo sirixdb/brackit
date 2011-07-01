@@ -108,6 +108,9 @@ public class TableJoin implements Operator {
 					return result;
 				} else if (leftJoin) {
 					Tuple result = tuple.concat(padding);
+					if (check >= 0) {
+						result = result.replace(check, null);
+					}
 					return result;
 				}
 			}

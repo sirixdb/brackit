@@ -27,33 +27,39 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
+import static org.brackit.xquery.compiler.parser.XQueryParser.Count;
+import static org.brackit.xquery.compiler.parser.XQueryParser.GroupBy;
+import static org.brackit.xquery.compiler.parser.XQueryParser.GroupBySpec;
+import static org.brackit.xquery.compiler.parser.XQueryParser.LetBind;
+import static org.brackit.xquery.compiler.parser.XQueryParser.ReturnExpr;
+import static org.brackit.xquery.compiler.parser.XQueryParser.Start;
+import static org.brackit.xquery.compiler.parser.XQueryParser.TypedVariableBinding;
+import static org.brackit.xquery.compiler.parser.XQueryParser.Variable;
+import static org.brackit.xquery.compiler.parser.XQueryParser.VariableRef;
+
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.parser.XQueryParser;
 
 /**
  * Lift a nested operator pipline, i.e., a ReturnExpr child of a LetBind. The
- * lifted pipeline is embraced by an optional count operator at the bottom and
+ * lifted pipeline is embraced by a count operator at the bottom and
  * an group by at the top to preserve the semantics of binding a whole sequence
  * to the let-bound variable instead instead of single items.
- * 
- * Note that the lifting converts lifted joins the left joins.
  * 
  * @author Sebastian Baechle
  * 
  */
 public class LetBindLift extends Walker {
-	private int artificialRunVarCount;
 	private int artificialEnumerateVarCount;
 
 	@Override
 	protected AST visit(AST node) {
-		if (node.getType() != XQueryParser.LetBind) {
+		if (node.getType() != LetBind) {
 			return node;
 		}
 
 		AST opEx = node.getChild(2);
 
-		if (opEx.getType() != XQueryParser.ReturnExpr) {
+		if (opEx.getType() != ReturnExpr) {
 			return node;
 		}
 
@@ -63,163 +69,68 @@ public class LetBindLift extends Walker {
 		return node.getParent();
 	}
 
-	private AST createBindExpression(String leftJoinVarName, AST expression) {
-		if ((leftJoinVarName == null)
-				|| (expression.getType() == XQueryParser.VariableRef)) {
-			return expression.copyTree();
-		} else {
-			AST ifThenElse = new AST(XQueryParser.IfExpr, "IfExpr");
-			ifThenElse.addChild(new AST(XQueryParser.VariableRef,
-					leftJoinVarName));
-			ifThenElse.addChild(expression.copyTree());
-			ifThenElse.addChild(new AST(XQueryParser.EmptySequence,
-					"EmptySequence"));
-			return ifThenElse;
-		}
-	}
-
-	/*
-	 * Find/introduce a variable in the copy of the current left input for
-	 * grouping
-	 */
-	private String checkGroupingVar(AST in) {
-		String grpVarName;
-		while (true) {
-			if (in.getType() == XQueryParser.ForBind) {
-				// use/introduce pos var of for bind for grouping
-				if (in.getChildCount() == 3) {
-					grpVarName = createRunVarName(refNumber(in.getChild(1)
-							.getChild(0)));
-					AST runVarBinding = new AST(
-							XQueryParser.TypedVariableBinding,
-							"TypedVariableBinding");
-					runVarBinding.addChild(new AST(XQueryParser.Variable,
-							grpVarName));
-					in.insertChild(2, runVarBinding); // stopIndex < startIndex
-					// means insert at
-					// startIndex!
-				} else {
-					grpVarName = in.getChild(2).getChild(0).getValue();
-				}
-				break;
-			} else if (in.getChildCount() > 0) {
-				in = in.getChild(0);
-				continue;			
-			} else {
-				// We are at the Start op in the left input branch:
-				// introduce an artificial enumeration node for the grouping
-				AST count = new AST(XQueryParser.Count, "Count");
-				grpVarName = createEnumerateVarName();
-				in.getParent().replaceChild(0, count);
-				AST runVarBinding = new AST(XQueryParser.TypedVariableBinding,
-						"TypedVariableBinding");
-				runVarBinding.addChild(new AST(XQueryParser.Variable,
-						grpVarName));
-				count.addChild(in);
-				count.addChild(runVarBinding);
-				break;
-			}
-		}
-		return grpVarName;
-	}
-
 	/*
 	 * Create the lifted input pipeline from the input branch of the operator
 	 * expression
 	 */
 	private AST liftInput(AST node) {
 		AST opEx = node.getChild(2);
-		AST leftInput = null;
-		AST left = null;
-		AST tmp = opEx.getChild(0);
+		AST in = null;
+		AST lifted = null;
 
-		while (tmp.getType() != XQueryParser.Start) {
+		// create variable name for new group
+		String grpVarName = createEnumerateVarName();
+		
+		// create lifted copy
+		AST nested = opEx.getChild(0);
+		for (AST tmp = nested; tmp.getType() != Start; tmp = tmp.getChild(0)) {
 			AST toAdd = tmp.copy();
 			for (int i = 1; i < tmp.getChildCount(); i++) {
 				toAdd.addChild(tmp.getChild(i).copyTree());
 			}
-
-			if (tmp.getType() == XQueryParser.ForBind) {
-				// lifted for bind must preserve input
-				toAdd.setProperty("preserve", "true");
-			}
-
-			if (leftInput == null) {
-				leftInput = toAdd;
+			toAdd.setProperty("check", grpVarName);
+			if (in == null) {
+				in = toAdd;
 			} else {
-				left.insertChild(0, toAdd);
+				lifted.insertChild(0, toAdd);
 			}
-			left = toAdd;
-			tmp = tmp.getChild(0);
+			lifted = toAdd;
 		}
 
-		AST initialLeftInput = node.getChild(0).copyTree();
-		if (leftInput == null) {
-			leftInput = initialLeftInput;
-		} else {
-			left.insertChild(0, initialLeftInput);
-		}
-		String grpVarName = checkGroupingVar(initialLeftInput);
-
-		// walk up and add condition to operators
-		String forBindVarName = null;
-		AST tmp3 = initialLeftInput;
-		while (tmp3 != null) {
-			if (tmp3.getType() == XQueryParser.ForBind) {
-				if (Boolean.parseBoolean(tmp3.getProperty("preserve"))) {
-					forBindVarName = tmp3.getChild(1).getChild(0).getValue();
-				}
-				break;
-			}
-			tmp3 = tmp3.getChild(0);
-		}
-		AST tmp2 = left;
-		while (tmp2 != null) {
-			if (forBindVarName != null) {
-				tmp2.setProperty("check", forBindVarName);
-			}
-			if (tmp2.getType() == XQueryParser.ForBind) {
-				forBindVarName = tmp2.getChild(1).getChild(0).getValue();
-			}
-			if ((tmp2.getType() == XQueryParser.OrderBy)
-					|| (tmp2.getType() == XQueryParser.Selection)) {
-				tmp2.setProperty("group", grpVarName);
-			}
-			tmp2 = tmp2.getParent();
+		// copy old input and add count operator for the grouping
+		AST oldIn = node.getChild(0).copyTree();
+		AST count = new AST(Count, "Count");		
+		AST runVarBinding = new AST(TypedVariableBinding,
+				"TypedVariableBinding");
+		runVarBinding.addChild(new AST(Variable, grpVarName));		
+		count.addChild(oldIn);
+		count.addChild(runVarBinding);
+		if (oldIn.getProperty("check") != null) {
+			count.setProperty("check", oldIn.getProperty("check"));
 		}
 		
+		// lifted part consumes old input
+		lifted.insertChild(0, count);
+
 		// let bind the return expression
-		AST letBind = new AST(XQueryParser.LetBind, "LetBind");
-		letBind.addChild(leftInput);
+		AST letBind = new AST(LetBind, "LetBind");
+		letBind.addChild(in);
 		letBind.addChild(node.getChild(1).copyTree());
 		letBind.addChild(opEx.getChild(1).copyTree());
-		if (forBindVarName != null) {
-			letBind.setProperty("check", forBindVarName);
-		}
+		letBind.setProperty("check", grpVarName);
 
 		// group the let bind
-		AST groupBy = new AST(XQueryParser.GroupBy, "GroupBy");
+		AST groupBy = new AST(GroupBy, "GroupBy");
 		groupBy.addChild(letBind);
-		AST groupBySpec = new AST(XQueryParser.GroupBySpec, "GroupBySpec");
-		groupBySpec.addChild(new AST(XQueryParser.VariableRef, grpVarName));
+		AST groupBySpec = new AST(GroupBySpec, "GroupBySpec");
+		groupBySpec.addChild(new AST(VariableRef, grpVarName));
 		groupBy.addChild(groupBySpec);
-		if (forBindVarName != null) {
-			groupBy.setProperty("check", forBindVarName);
-		}
+		groupBy.setProperty("check", grpVarName);
 		groupBy.setProperty("onlyLast", "true");
 		return groupBy;
 	}
 
-	private int refNumber(AST node) {
-		return Integer.parseInt(node.getValue().substring(
-				node.getValue().lastIndexOf(";") + 1));
-	}
-
 	private String createEnumerateVarName() {
-		return "_enum;" + (artificialEnumerateVarCount++);
-	}
-
-	private String createRunVarName(int number) {
-		return "_pos;" + (artificialRunVarCount++) + ";" + number;
+		return "_check;" + (artificialEnumerateVarCount++);
 	}
 }
