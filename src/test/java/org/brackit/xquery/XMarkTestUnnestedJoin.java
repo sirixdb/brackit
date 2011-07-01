@@ -41,9 +41,6 @@ public class XMarkTestUnnestedJoin extends XMarkTest {
 	@Override
 	public void setUp() throws Exception, FileNotFoundException {
 		super.setUp();
-//		XQuery.DEBUG = true;
-//		XQuery.DEBUG_DIR = "/media/ramdisk/";
-
 		Cfg.set(DefaultOptimizer.UNNEST_CFG, true);
 		DefaultOptimizer.UNNEST = true;
 		Cfg.set(DefaultOptimizer.JOIN_DETECTION_CFG, true);

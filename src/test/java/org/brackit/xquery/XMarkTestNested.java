@@ -41,9 +41,6 @@ public class XMarkTestNested extends XMarkTest {
 	@Override
 	public void setUp() throws Exception, FileNotFoundException {
 		super.setUp();
-		XQuery.DEBUG = true;
-		XQuery.DEBUG_DIR = "/media/ramdisk/";
-		
 		Cfg.set(DefaultOptimizer.UNNEST_CFG, false);
 		DefaultOptimizer.UNNEST = false;		
 		Cfg.set(DefaultOptimizer.JOIN_DETECTION_CFG, false);
