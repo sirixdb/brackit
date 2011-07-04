@@ -175,7 +175,7 @@ public class TableJoin implements Operator {
 
 	@Override
 	public int tupleWidth(int initSize) {
-		return l.tupleWidth(initSize) + r.tupleWidth(initSize);
+		return l.tupleWidth(initSize) + r.tupleWidth(initSize) - initSize;
 	}
 
 	public Reference check() {
