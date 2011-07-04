@@ -537,7 +537,7 @@ public final class Type {
 		this.parent = parent;
 		this.builtIn = builtIn;
 		this.castPrimitive = castPrimitive;
-		this.atomic = (atomicCode < 0);
+		this.atomic = (atomicCode >= 0);
 		this.numeric = numeric;
 		this.duration = duration;
 		this.timeInstance = timeInstant;
