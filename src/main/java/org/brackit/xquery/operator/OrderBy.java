@@ -83,7 +83,8 @@ public class OrderBy implements Operator {
 						if (rAtomic != null) {
 							return (modifier[i].EMPTY_LEAST) ? -1 : 1;
 						}
-					} else if (rAtomic == null) {
+					}
+					if (rAtomic == null) {
 						return (modifier[i].EMPTY_LEAST) ? 1 : -1;
 					}
 
