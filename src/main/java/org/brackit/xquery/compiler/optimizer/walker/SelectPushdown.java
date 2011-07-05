@@ -27,73 +27,62 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
-import org.brackit.xquery.XQuery;
+import static org.brackit.xquery.compiler.parser.XQueryParser.Count;
+import static org.brackit.xquery.compiler.parser.XQueryParser.GroupBy;
+import static org.brackit.xquery.compiler.parser.XQueryParser.Selection;
+import static org.brackit.xquery.compiler.parser.XQueryParser.Start;
+
+import java.util.HashSet;
+
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.parser.DotUtil;
 
 /**
+ * Push variable bindings downstream in a pipeline to reduce
+ * number of tuples in a pipeline.
  * 
  * @author Sebastian Baechle
- *
+ * 
  */
-public class Walker {
+public class SelectPushdown extends PipelineVarTracker {
 
-	private AST root;	
-	private int snapshot;
-	private boolean restart;
+	private HashSet<AST> pushed = new HashSet<AST>();
 
-	public final void walk(AST node) {
-		snapshot = 0;
-		root = node;
-		root = prepare(root);
-		root = walkInternal(root);
-		root = finish(root);
-	}
-
-	private AST walkInternal(AST node) {
-		AST replacement = visit(node);
-		if (replacement != node) {
-			restart = true;
-			return replacement;
-		}
-
-		for (int i = 0; i < node.getChildCount(); i++) {
-			AST child = node.getChild(i);
-			AST subtree = walkInternal(child);
-
-			if (subtree != child) {
-				return subtree;
-			} else if (restart) {
-				i--;
-				restart = false;
-				snapshot();
-			}
-		}
-		return node;
-	}
-	
+	@Override
 	protected AST prepare(AST root) {
-		return root;
-	}
-	
-	protected AST finish(AST root) {
+		collectVars(root);
 		return root;
 	}
 
-	/**
-	 * Visit a node to perform restructuring if desired. This method must return
-	 * an ancestor of the given node where the walk should restart
-	 */
+	@Override
 	protected AST visit(AST node) {
-		System.out.println("Visiting Node " + node.getValue());
-		return node;
-	}
-
-	protected void snapshot() {
-		if (XQuery.DEBUG) {
-			DotUtil.drawDotToFile(root.dot(), XQuery.DEBUG_DIR, getClass()
-					.getSimpleName()
-					+ "_" + (snapshot++));
+		if (node.getType() != Selection) {
+			return node;
 		}
+		if (pushed.contains(node)) {
+			return node;
+		}
+		VarRef refs = varRefs(node.getChild(1), null);
+		final AST parent = node.getParent();
+		final AST in = node.getChild(0);
+		AST tmp = in;
+		while (tmp.getType() != Start) {
+			if (tmp.getType() == GroupBy) {
+				// TODO Pushdown is OK if bindings are grouping keys
+				break;
+			} else if (tmp.getType() == Count) {
+				break;
+			} else if ((refs != null) && declares(tmp, refs.first())) {
+				break;
+			}
+			tmp = tmp.getChild(0);
+		}
+		if (tmp == in) {
+			return node;
+		}
+		tmp.getParent().replaceChild(0, node);
+		node.replaceChild(0, tmp);
+		parent.replaceChild(0, in);
+		pushed.add(node);
+		return parent;
 	}
 }
