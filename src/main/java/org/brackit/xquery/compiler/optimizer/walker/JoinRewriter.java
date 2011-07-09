@@ -183,14 +183,27 @@ public class JoinRewriter extends PipelineVarTracker {
 		}
 
 		// divide pipeline in left and right input
-		final AST rightIn = select.getChild(0).copyTree();
+		AST rightIn = select.getChild(0).copyTree();
 		AST tmp = rightIn;
 		for (int i = 0; i < s2len - 1; i++) {
 			tmp = tmp.getChild(0);
 		}
-		final AST leftIn = tmp.getChild(0);
+		AST leftIn = tmp.getChild(0);
 		// cut off left part from right
 		tmp.replaceChild(0, new AST(Start, "Start"));
+		
+		// upstream selects which access S2 but not S1
+		// can be included in the right input
+		AST parent = select.getParent();
+		AST child = select;
+		while ((parent.getType() == Selection) && (filtersS2(parent, s2, s1))) {
+			AST include = parent.copy();
+			include.addChild(rightIn);
+			include.addChild(parent.getChild(1).copyTree());
+			rightIn = include;
+			child = parent;
+			parent = parent.getParent();
+		}
 
 		// build join
 		AST join = new AST(Join, "Join");
@@ -201,21 +214,37 @@ public class JoinRewriter extends PipelineVarTracker {
 		join.addChild(leftIn);
 		join.addChild(condition);
 		join.addChild(rightIn);
-		
-		// Convert to left join 
+
+		// convert to left join 
 		// when we are in a lifted part
 		if (select.getProperty("check") != null) {
 			join.setProperty("check", select.getProperty("check"));
 			join.setProperty("leftJoin", "true");
 		}
-
-		select.getParent().replaceChild(select.getChildIndex(), join);
-
+		
+		// check grouping condition i.e. binding
+		// of max max in S0
 		if (s0 != null) {
 			determineGroup(join, s0);
 		}
 
-		return select.getParent();
+		parent.replaceChild(child.getChildIndex(), join);
+
+		return parent;
+	}
+
+	private boolean filtersS2(AST select, VarRef s2, VarRef s1) {
+		boolean accessVarInS2 = false;
+		boolean accessVarInS1 = false;
+		VarRef refs = varRefs(select.getChild(1), null);
+		for (VarRef ref = refs; ref != null; ref = ref.next) {
+			if (ref.var.bndNo >= s2.var.bndNo) {
+				accessVarInS2 = true;
+			} else if (ref.var.bndNo >= s1.var.bndNo) {
+				accessVarInS1 = true;
+			}
+		}
+		return accessVarInS2 && !accessVarInS1;
 	}
 
 	private AST swapCmp(AST comparison) {
