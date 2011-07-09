@@ -36,6 +36,7 @@ import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.optimizer.walker.BindingPushup;
 import org.brackit.xquery.compiler.optimizer.walker.ConjunctionSplitting;
 import org.brackit.xquery.compiler.optimizer.walker.DoSNStepMerger;
+import org.brackit.xquery.compiler.optimizer.walker.ExtractFLWOR;
 import org.brackit.xquery.compiler.optimizer.walker.JoinRewriter;
 import org.brackit.xquery.compiler.optimizer.walker.JoinSortElimination;
 import org.brackit.xquery.compiler.optimizer.walker.LetBindLift;
@@ -71,9 +72,9 @@ public class DefaultOptimizer implements Optimizer {
 	public DefaultOptimizer() {
 		stages.add(new Simplification());
 		stages.add(new Pipelining());
+		stages.add(new Reordering());
 		if (UNNEST) {
 			stages.add(new Unnest());
-			stages.add(new Reordering());
 		}
 		if (JOIN_DETECTION) {
 			stages.add(new JoinRecognition());
@@ -97,16 +98,10 @@ public class DefaultOptimizer implements Optimizer {
 		public AST rewrite(AST ast) {
 			new DoSNStepMerger().walk(ast);
 			new OrderForGroupBy().walk(ast);
-
 			if (VARIABLE_PULLUP) {
 				new LetVariableRefPullup().walk(ast);
 			}
-
-			if (XQuery.DEBUG) {
-				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
-						"standardrewrite");
-			}
-
+			new ExtractFLWOR().walk(ast);
 			return ast;
 		}
 	}
@@ -114,12 +109,6 @@ public class DefaultOptimizer implements Optimizer {
 	private static class Pipelining implements Stage {
 		public AST rewrite(AST ast) throws QueryException {
 			new UnnestRewriter().walk(ast);
-
-			if (XQuery.DEBUG) {
-				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
-						"unnestrewrite");
-			}
-			
 			return ast;
 		}
 	}
@@ -127,48 +116,17 @@ public class DefaultOptimizer implements Optimizer {
 	private static class Reordering implements Stage {
 		public AST rewrite(AST ast) throws QueryException {
 			new ConjunctionSplitting().walk(ast);
-			if (XQuery.DEBUG) {
-				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
-						"conjunctionsplitting");
-			}
 			new SelectPushdown().walk(ast);
-			if (XQuery.DEBUG) {
-				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
-						"selectpushdown");
-			}
 			new BindingPushup().walk(ast);
-			if (XQuery.DEBUG) {
-				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
-						"bindingpushup");
-			}
 			return ast;
 		}
 	}
 
 	private static class JoinRecognition implements Stage {
 		public AST rewrite(AST ast) throws QueryException {
-
 			new JoinRewriter().walk(ast);
-
-			if (XQuery.DEBUG) {
-				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
-						"joinrewrite");
-			}
-
 			new JoinSortElimination().walk(ast);
-
-			if (XQuery.DEBUG) {
-				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
-						"joinsorteliminationrewrite");
-			}
-
 //			new LeftJoinGroupEmission().walk(ast);
-//
-//			if (XQuery.DEBUG) {
-//				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
-//						"joingroupemissionrewrite");
-//			}
-
 			return ast;
 		}
 	}
@@ -176,12 +134,6 @@ public class DefaultOptimizer implements Optimizer {
 	private static class Unnest implements Stage {
 		public AST rewrite(AST ast) throws QueryException {
 			new LetBindLift().walk(ast);
-
-			if (XQuery.DEBUG) {
-				DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR,
-						"letbindliftrewrite");
-			}
-
 			return ast;
 		}
 	}
