@@ -72,6 +72,10 @@ public class MinMax extends AbstractFunction {
 		Item item;
 		Atomic minmax = null;
 		Type minmaxType = null;
+		
+		if (seq == null) {
+			return null;
+		}
 
 		Iter in = seq.iterate();
 		try {
