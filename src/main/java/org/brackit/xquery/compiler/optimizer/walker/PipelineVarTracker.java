@@ -211,6 +211,16 @@ public abstract class PipelineVarTracker extends Walker {
 		vars.add(var);
 	}
 	
+	protected int bindingNo(AST node) {
+		// TODO window clause
+		if ((node.getType() != ForBind) 
+				&& (node.getType() != LetBind)
+				&& (node.getType() != Count)) {
+			throw new RuntimeException();
+		}
+		return findVar(node.getChild(1).getChild(0).getValue()).bndNo;
+	}
+	
 	protected Var findVar(String name) {
 		return byName.get(name);
 	}

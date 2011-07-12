@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.XQuery;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.optimizer.walker.BindingPushup;
 import org.brackit.xquery.compiler.optimizer.walker.ConjunctionSplitting;
@@ -39,12 +38,13 @@ import org.brackit.xquery.compiler.optimizer.walker.DoSNStepMerger;
 import org.brackit.xquery.compiler.optimizer.walker.ExtractFLWOR;
 import org.brackit.xquery.compiler.optimizer.walker.JoinRewriter;
 import org.brackit.xquery.compiler.optimizer.walker.JoinSortElimination;
+import org.brackit.xquery.compiler.optimizer.walker.JoinTree;
 import org.brackit.xquery.compiler.optimizer.walker.LetBindLift;
 import org.brackit.xquery.compiler.optimizer.walker.LetVariableRefPullup;
 import org.brackit.xquery.compiler.optimizer.walker.OrderForGroupBy;
+import org.brackit.xquery.compiler.optimizer.walker.PredicateConjunction;
 import org.brackit.xquery.compiler.optimizer.walker.SelectPushdown;
 import org.brackit.xquery.compiler.optimizer.walker.UnnestRewriter;
-import org.brackit.xquery.compiler.parser.DotUtil;
 import org.brackit.xquery.util.Cfg;
 
 /**
@@ -79,6 +79,7 @@ public class DefaultOptimizer implements Optimizer {
 		if (JOIN_DETECTION) {
 			stages.add(new JoinRecognition());
 		}
+		stages.add(new Finalize());
 	}
 
 	@Override
@@ -125,6 +126,8 @@ public class DefaultOptimizer implements Optimizer {
 	private static class JoinRecognition implements Stage {
 		public AST rewrite(AST ast) throws QueryException {
 			new JoinRewriter().walk(ast);
+//			new JoinTree().walk(ast);
+//			new JoinTree().walk(ast);
 			new JoinSortElimination().walk(ast);
 //			new LeftJoinGroupEmission().walk(ast);
 			return ast;
@@ -134,6 +137,13 @@ public class DefaultOptimizer implements Optimizer {
 	private static class Unnest implements Stage {
 		public AST rewrite(AST ast) throws QueryException {
 			new LetBindLift().walk(ast);
+			return ast;
+		}
+	}
+	
+	private static class Finalize implements Stage {
+		public AST rewrite(AST ast) throws QueryException {
+			new PredicateConjunction().walk(ast);
 			return ast;
 		}
 	}
