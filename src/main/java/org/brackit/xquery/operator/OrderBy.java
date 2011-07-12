@@ -179,7 +179,7 @@ public class OrderBy implements Operator {
 			for (int i = 0; i < orderByExprs.length; i++) {
 				Item item = orderByExprs[i].evaluateToItem(ctx, t);
 				Atomic atomic = (item != null) ? item.atomize() : null;
-				if ((atomic != null) && (item.type().instanceOf(Type.UNA))) {
+				if ((atomic != null) && (atomic.type().instanceOf(Type.UNA))) {
 					atomic = Cast.cast(atomic, Type.STR);
 				}
 				concat[i] = atomic;
