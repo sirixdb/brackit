@@ -114,7 +114,7 @@ public class TableJoin implements Operator {
 					return result;
 				}
 			}
-
+			table = null;
 			return null;
 		}
 
