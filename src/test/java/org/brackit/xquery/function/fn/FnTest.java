@@ -1581,8 +1581,18 @@ public class FnTest extends XQueryBaseTest {
 					.getCode());
 		}
 	}
-
-	// Ad hoc test cases
+	
+	@Test
+	public void fnMinDouble() throws Exception {
+		Sequence result = new XQuery("fn:min((198.95E0,282.69E0,188.72E0 ,268.38E0))").execute(ctx);
+		ResultChecker.check(ctx, new Dbl(188.72), result);
+	}
+	
+	@Test
+	public void fnMaxDouble() throws Exception {
+		Sequence result = new XQuery("fn:max((198.95E0,282.69E0,188.72E0 ,268.38E0))").execute(ctx);
+		ResultChecker.check(ctx, new Dbl(282.69), result);
+	}
 
 	@Test
 	public void test123() {
