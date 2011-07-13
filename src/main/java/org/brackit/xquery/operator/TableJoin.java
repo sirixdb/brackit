@@ -50,6 +50,8 @@ public class TableJoin implements Operator {
 		final Cursor lc;
 		final Sequence[] padding;
 		final int lSize;
+		private Tuple prev;
+		private Tuple next;
 		MultiTypeJoinTable table;
 		Atomic tgk; // grouping key of current table
 		Tuple tuple;
@@ -78,11 +80,11 @@ public class TableJoin implements Operator {
 		@Override
 		public Tuple next(QueryContext ctx) throws QueryException {
 			if ((it != null) && (itPos < itSize)) {
-				Tuple result = tuple.concat(it.get(itPos++));
-				return result;
+				return tuple.concat(it.get(itPos++));
 			}
 
-			while ((tuple = lc.next(ctx)) != null) {
+			while (((tuple = next) != null) || ((tuple = lc.next(ctx)) != null)) {
+				next = null;
 				if ((check >= 0) && (tuple.get(check) == null)) {
 					return tuple.concat(padding);
 				}
@@ -104,14 +106,30 @@ public class TableJoin implements Operator {
 				itSize = matches.getSize();
 
 				if (itPos < itSize) {
-					Tuple result = tuple.concat(matches.get(itPos++));
-					return result;
+					prev = tuple.concat(matches.get(itPos++));
+					return prev;
 				} else if (leftJoin) {
-					Tuple result = tuple.concat(padding);
+					prev = tuple.concat(padding);
 					if (check >= 0) {
-						result = result.replace(check, null);
+						// predicate is not fulfilled but we must keep
+						// lifted iteration group alive for "left-join" semantics.
+						Atomic gk = (Atomic) tuple.get(check);
+						// skip if previously returned tuple was in same iteration group
+						Atomic pgk = (prev != null) ? (Atomic) prev.get(check) : null;
+						if ((pgk != null) && (gk.cmp(pgk) == 0)) {
+							continue;
+						}
+						next = lc.next(ctx);
+						// skip if next tuple is in same iteration group
+						Atomic ngk = (next != null) ? (Atomic) next.get(check) : null;
+						if ((ngk != null) && (gk.cmp(ngk) == 0)) {
+							continue;
+						}
+						// emit "dead" tuple where "check" field is switched-off
+						// for pass-through in upstream operators
+						prev = prev.replace(check, null);
 					}
-					return result;
+					return prev;
 				}
 			}
 			table = null;
