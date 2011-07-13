@@ -215,11 +215,19 @@ public class JoinRewriter extends PipelineVarTracker {
 		join.addChild(condition);
 		join.addChild(rightIn);
 
-		// convert to left join 
-		// when we are in a lifted part
-		if (select.getProperty("check") != null) {
-			join.setProperty("check", select.getProperty("check"));
+		String check = select.getProperty("check");
+		if (check != null) {
+			// convert to left join 
+			// when we are in a lifted part
+			join.setProperty("check", check);
 			join.setProperty("leftJoin", "true");
+			// remove checks in right branch
+			for (AST tmp2 = rightIn; tmp2.getType() != Start; tmp2 = tmp2.getChild(0)) {
+				String check2 = tmp2.getProperty("check");
+				if (check.equals(check2)) {
+					op.delProperty("check");
+				}
+			}
 		}
 		
 		// check grouping condition i.e. binding
