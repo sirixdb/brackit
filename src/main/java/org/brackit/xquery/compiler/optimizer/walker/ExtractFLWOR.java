@@ -28,11 +28,9 @@
 package org.brackit.xquery.compiler.optimizer.walker;
 
 import static org.brackit.xquery.compiler.parser.XQueryParser.FlowrExpr;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ForClause;
 import static org.brackit.xquery.compiler.parser.XQueryParser.LetClause;
 import static org.brackit.xquery.compiler.parser.XQueryParser.TypedVariableBinding;
 import static org.brackit.xquery.compiler.parser.XQueryParser.VariableRef;
-import static org.brackit.xquery.compiler.parser.XQueryParser.WhereClause;
 
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.parser.XQueryParser;
@@ -53,7 +51,7 @@ public class ExtractFLWOR extends Walker {
 		}
 
 		final AST parent = node.getParent();
-		if (parent.getType() == LetClause) {
+		if (isFLWORClause(parent)) {
 			return node;
 		} 
 		AST anc = parent;
@@ -82,10 +80,8 @@ public class ExtractFLWOR extends Walker {
 	}
 
 	private boolean isFLWORClause(AST anc) {
-		// TODO window clause
-		return ((anc.getType() == WhereClause)
-			|| (anc.getType() == LetClause)
-			|| (anc.getType() == ForClause));		
+		AST grandAnc = anc.getParent();
+		return (grandAnc != null) && (grandAnc.getType() == FlowrExpr);
 	}
 
 	private String createVarName() {
