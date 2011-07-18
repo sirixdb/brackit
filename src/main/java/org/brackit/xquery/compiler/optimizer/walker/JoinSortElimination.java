@@ -95,9 +95,9 @@ public class JoinSortElimination extends Walker {
 			// TODO resolve function properly
 			String fn = parentExpr.getValue();
 			if ((parentExpr.getType() != XQueryParser.FunctionCall)
-					|| ((!fn.equals("count()")) && (!fn.equals("fn:count()"))
-							&& (!fn.equals("distinct()")) && (!fn
-							.equals("fn:distinct()")))) {
+					|| ((!fn.equals("count")) && (!fn.equals("fn:count"))
+							&& (!fn.equals("distinct")) && (!fn
+							.equals("fn:distinct")))) {
 				return true;
 			}
 		}
