@@ -40,6 +40,7 @@ import org.brackit.xquery.node.d2linked.D2Node;
 import org.brackit.xquery.node.d2linked.D2NodeBuilder;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.xdm.Collection;
+import org.brackit.xquery.xdm.DocumentException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -239,12 +240,16 @@ public abstract class XMarkTest extends XQueryBaseTest {
 	@Before
 	public void setUp() throws Exception, FileNotFoundException {
 		super.setUp();
-		D2NodeBuilder builder = new D2NodeBuilder();
 		URL url = getClass().getResource("/xmark/auction.xml");
 		DocumentParser parser = new DocumentParser(new File(url.getFile()));
 		parser.setRetainWhitespace(true);
+		coll = createDoc(parser);
+	}
+
+	protected Collection<?> createDoc(DocumentParser parser) throws DocumentException {
+		D2NodeBuilder builder = new D2NodeBuilder();
 		parser.parse(builder);
 		D2Node subtreeRoot = builder.root();
-		coll = subtreeRoot.getCollection();
+		return subtreeRoot.getCollection();
 	}
 }
