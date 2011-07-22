@@ -167,6 +167,7 @@ public abstract class PipelineVarTracker extends Walker {
 		for (int i = 0; i < node.getChildCount(); i++) {
 			refs = varRefs(node.getChild(i), refs);
 		}
+		// TODO include "check" and "group" properties?
 		return refs;
 	}
 
@@ -225,20 +226,20 @@ public abstract class PipelineVarTracker extends Walker {
 		return byName.get(name);
 	}
 
-	protected boolean declares(AST node, VarRef chain) {
+	protected boolean declares(AST operator, VarRef refs) {
 		// TODO window clause
-		if ((node.getType() != ForBind) 
-				&& (node.getType() != LetBind)
-				&& (node.getType() != Count)) {
+		if ((operator.getType() != ForBind) 
+				&& (operator.getType() != LetBind)
+				&& (operator.getType() != Count)) {
 			return false;
 		}
 
-		List<Var> vars = byNode.get(node);
+		List<Var> vars = byNode.get(operator);
 		if (vars == null) {
 			return false;
 		}
 		for (Var var : vars) {
-			for (VarRef ref = chain; ref != null; ref = ref.next()) {
+			for (VarRef ref = refs; ref != null; ref = ref.next()) {
 				if (var.name.equals(ref.var.name)) {
 					return true;
 				}
@@ -247,4 +248,11 @@ public abstract class PipelineVarTracker extends Walker {
 		return false;
 	}
 
+	protected boolean dependsOn(AST operator, AST binding) {
+		VarRef varRefs = null;
+		for (int i = 1; i < operator.getChildCount(); i++) {
+			varRefs = varRefs(operator.getChild(i), varRefs);
+		}
+		return ((varRefs != null) && (declares(binding, varRefs)));
+	}
 }

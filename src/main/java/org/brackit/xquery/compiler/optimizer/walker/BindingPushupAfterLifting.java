@@ -27,71 +27,66 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
-import static org.brackit.xquery.compiler.parser.XQueryParser.Count;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ForBind;
 import static org.brackit.xquery.compiler.parser.XQueryParser.GroupBy;
 import static org.brackit.xquery.compiler.parser.XQueryParser.LetBind;
 import static org.brackit.xquery.compiler.parser.XQueryParser.ReturnExpr;
 
-import java.util.HashSet;
-
 import org.brackit.xquery.compiler.AST;
 
 /**
- * Push variable bindings upstream in a pipeline to reduce
- * size (tuple width) and number of tuples in a pipeline.
+ * Extended variant of binding pushup with support for lifted sections.
+ * 
+ * This additional round of binding pushup is especially useful for
+ * join detection.
+ * 
+ * Pushing bindings _in_ a lifted section has to take care of the 
+ * the grouping semantics into account, i.e., we have to check if 
+ * we do not push a variable binding out-of-scope. 
  * 
  * @author Sebastian Baechle
  * 
  */
-public class BindingPushup extends PipelineVarTracker {
+public class BindingPushupAfterLifting extends BindingPushup {
 
-	private HashSet<AST> pushed = new HashSet<AST>();
-	
 	@Override
-	protected AST prepare(AST root) {
-		collectVars(root);
-		return root;
-	}
-	
-	@Override
-	protected AST visit(AST node) {
-		// TODO window clause
-		if ((node.getType() != ForBind) && (node.getType() != LetBind)) {
-			return node;
+	protected boolean pushableAfterCount(AST binding, AST count) {
+		// A pushup is OK when binding is let and
+		// a) the count is not used for lifting checks, or		
+		// b) the let-bound variable is not used outside the lifted part
+		if (binding.getType() != LetBind) {
+			return false;
 		}
-		if (pushed.contains(node)) {
-			return node;
+		//check case a)
+		AST parent = count.getParent();
+		if (parent.getProperty("check") == null) {
+			return true;
 		}
-		final AST parent = node.getParent();
-		final AST in = parent;
-		AST tmp = in;
-		while (tmp.getType() != ReturnExpr) {
-			if (tmp.getType() == GroupBy) {
-				break;
-			} else if ((tmp.getType() == Count) && (!pushableAfterCount(node, tmp))) {
-				break;
-			} else if (dependsOn(tmp, node)){
+		// check case b)
+		// check if the let-bound variable is used after grouping
+		// with count variable
+		String countVar = count.getChild(1).getChild(0).getValue();
+		while (true) {
+			while ((parent = parent.getParent()).getType() != GroupBy);
+			if ((Boolean.parseBoolean(parent.getProperty("onlyLast")))
+				&& (parent.getProperty("check").equals(countVar))) {
 				break;
 			}
-			tmp = tmp.getParent();
 		}
-		if (tmp == in) {
-			return node;
-		}
-		push(node, tmp);
-		return parent;
+		while ((parent = parent.getParent()).getType() != ReturnExpr) {
+			if (dependsOn(parent, binding)) {
+				return false;
+			}
+		}		
+		return true;
 	}
 
+	@Override
 	protected void push(AST node, AST newParent) {
-		AST parent = node.getParent();
-		parent.replaceChild(0, node.getChild(0));
-		node.replaceChild(0, newParent.getChild(0));
-		newParent.replaceChild(0, node);
-		pushed.add(node);
-	}
-
-	protected boolean pushableAfterCount(AST binding, AST count) {
-		return (binding.getType() == LetBind);
-	}
+		super.push(node, newParent);
+		String check = node.getProperty("check");
+		String pCheck = newParent.getProperty("check");
+		if ((check == null) && (pCheck != null)) {
+			node.setProperty("check", pCheck);
+		}
+	}	
 }

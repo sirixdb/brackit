@@ -33,6 +33,7 @@ import java.util.List;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.optimizer.walker.BindingPushup;
+import org.brackit.xquery.compiler.optimizer.walker.BindingPushupAfterLifting;
 import org.brackit.xquery.compiler.optimizer.walker.ConjunctionSplitting;
 import org.brackit.xquery.compiler.optimizer.walker.DoSNStepMerger;
 import org.brackit.xquery.compiler.optimizer.walker.ExtractFLWOR;
@@ -137,6 +138,7 @@ public class DefaultOptimizer implements Optimizer {
 	private static class Unnest implements Stage {
 		public AST rewrite(AST ast) throws QueryException {
 			new LetBindLift().walk(ast);
+			new BindingPushupAfterLifting().walk(ast); // 2nd chance for pushing
 			return ast;
 		}
 	}
