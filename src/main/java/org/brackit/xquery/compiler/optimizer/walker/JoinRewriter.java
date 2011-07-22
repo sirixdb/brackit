@@ -288,14 +288,19 @@ public class JoinRewriter extends PipelineVarTracker {
 	private void determineGroup(AST join, VarRef s0) {
 		// find iteration group of max free ref
 		AST tmp = join;
-		while (tmp.getChildCount() > 0) {
+		while (tmp.getType() != Start) {
 			tmp = tmp.getChild(0);
 			// TODO window clause
 			if ((tmp.getType() == ForBind) || (tmp.getType() == LetBind)) {
 				int bindingNo = bindNo(tmp.getChild(1).getChild(0)
 						.getValue());
 				if (bindingNo <= s0.var.bndNo) {
-					join.setProperty("group", introduceCount(tmp));
+					while (tmp.getType() == LetBind) {
+						tmp = tmp.getChild(0);
+					}
+					if (tmp.getType() != Start) {
+						join.setProperty("group", introduceCount(tmp));
+					}
 					return;
 				}
 			}
