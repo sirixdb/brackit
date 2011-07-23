@@ -60,13 +60,13 @@ public class DefaultOptimizer implements Optimizer {
 
 	public static final String UNNEST_CFG = "org.brackit.xquery.unnest";
 
-	public static boolean UNNEST = Cfg.asBool(UNNEST_CFG, false);
+	public static boolean UNNEST = Cfg.asBool(UNNEST_CFG, true);
 
 	public static boolean VARIABLE_PULLUP = Cfg.asBool(
 			VARIABLE_PULLUP_CFG, false);
 
 	public static boolean JOIN_DETECTION = Cfg.asBool(JOIN_DETECTION_CFG,
-			false);
+			true);
 
 	private List<Stage> stages = new ArrayList<Stage>();
 
