@@ -92,11 +92,11 @@ public class Binding {
 		refs[refCount++] = variable;
 	}
 
-	boolean isReferenced() {
+	public boolean isReferenced() {
 		return refCount > 0;
 	}
 
-	public void resolvePositions(int currentPos) {
+	void resolvePositions(int currentPos) {
 		if (isReferenced()) {
 			currentPos++;
 

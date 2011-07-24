@@ -74,7 +74,7 @@ public class VariableTable {
 	 * @param ref
 	 * @throws QueryException
 	 */
-	void resolve(QNm name, Reference ref) throws QueryException {
+	public void resolve(QNm name, Reference ref) throws QueryException {
 		if (log.isTraceEnabled()) {
 			log.trace(String.format("Resolving %s", name));
 		}
@@ -96,7 +96,7 @@ public class VariableTable {
 	 * @return
 	 * @throws QueryException
 	 */
-	Variable resolve(QNm name) throws QueryException {
+	public Variable resolve(QNm name) throws QueryException {
 		if (log.isTraceEnabled()) {
 			log.trace(String.format("Resolving %s", name));
 		}
@@ -131,7 +131,7 @@ public class VariableTable {
 				"Cannot resolve var %s", name);
 	}
 
-	Binding bind(QNm name, SequenceType type) {
+	public Binding bind(QNm name, SequenceType type) {
 		if (log.isTraceEnabled()) {
 			log.trace(String.format("Binding %s", name));
 		}
@@ -175,7 +175,7 @@ public class VariableTable {
 		}
 	}
 
-	void unbind() {
+	public void unbind() {
 		if (log.isTraceEnabled()) {
 			log.trace(String.format("Unbinding %s",
 					bTable[bTableCounts][bLength - 1].name));
