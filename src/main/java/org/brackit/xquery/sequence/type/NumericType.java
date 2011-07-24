@@ -27,7 +27,6 @@
  */
 package org.brackit.xquery.sequence.type;
 
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.xdm.Item;
@@ -60,7 +59,7 @@ public class NumericType implements ItemType {
 	}
 
 	@Override
-	public boolean matches(QueryContext ctx, Item item) throws QueryException {
+	public boolean matches(Item item) throws QueryException {
 		if (!(item instanceof Atomic)) {
 			return false;
 		}

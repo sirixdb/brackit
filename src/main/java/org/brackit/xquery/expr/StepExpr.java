@@ -138,28 +138,24 @@ public class StepExpr implements Expr {
 		@Override
 		public Item next() throws QueryException {
 			if (nextS == null) {
-				nextS = axis.performStep(currentNode);
+				nextS = axis.performStep(currentNode, test);
 				pos = Int32.ZERO;
 				inSeqSize = Int32.ZERO;
 
 				if (bindSize) {
 					try {
-						Node<?> res;
-						while ((res = nextS.next()) != null) {
-							if (test.matches(ctx, res)) {
-								inSeqSize = inSeqSize.inc();
-							}
+						while (nextS.next() != null) {
+							inSeqSize = inSeqSize.inc();
 						}
 					} finally {
 						nextS.close();
 					}
-					nextS = axis.performStep(currentNode);
+					nextS = axis.performStep(currentNode, test);
 				}
 			}
 			Node<?> res;
 			while ((res = nextS.next()) != null) {
-				if ((test.matches(ctx, res))
-						&& ((predicates.length == 0) || (predicate(res)))) {
+				if ((predicates.length == 0) || (predicate(res))) {
 					return res;
 				}
 			}

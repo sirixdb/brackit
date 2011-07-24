@@ -89,7 +89,7 @@ public class TypeswitchExpr implements Expr {
 				} else {
 					continue;
 				}
-			} else if (card == Cardinality.Zero || !itemType.matches(ctx, item)) {
+			} else if (card == Cardinality.Zero || !itemType.matches(item)) {
 				continue;
 			}
 
@@ -98,7 +98,7 @@ public class TypeswitchExpr implements Expr {
 			if (item != null
 					&& (card == Cardinality.One
 							|| card == Cardinality.ZeroOrOne || !itemType
-							.matches(ctx, item))) {
+							.matches(item))) {
 				continue;
 			}
 
@@ -106,7 +106,7 @@ public class TypeswitchExpr implements Expr {
 				// Test following items
 				boolean match = true;
 				while ((item = it.next()) != null) {
-					if (!itemType.matches(ctx, item)) {
+					if (!itemType.matches(item)) {
 						match = false;
 						break;
 					}

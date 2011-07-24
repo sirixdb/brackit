@@ -27,7 +27,6 @@
  */
 package org.brackit.xquery.sequence.type;
 
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Node;
@@ -44,13 +43,13 @@ public class AnyKindType extends KindTest {
 	}
 
 	@Override
-	public boolean matches(QueryContext ctx, Node<?> node)
+	public boolean matches(Node<?> node)
 			throws QueryException {
 		return true;
 	}
 
 	@Override
-	public boolean matches(QueryContext ctx, Item item) throws QueryException {
+	public boolean matches(Item item) throws QueryException {
 		return (item instanceof Node<?>);
 	}
 

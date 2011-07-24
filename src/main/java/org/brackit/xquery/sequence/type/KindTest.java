@@ -27,7 +27,6 @@
  */
 package org.brackit.xquery.sequence.type;
 
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.Kind;
@@ -54,7 +53,7 @@ public abstract class KindTest implements ItemType {
 		return true;
 	}
 
-	public abstract boolean matches(QueryContext ctx, Node<?> node)
+	public abstract boolean matches(Node<?> node)
 			throws QueryException;
 
 	public Kind getNodeKind() {

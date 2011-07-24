@@ -28,7 +28,6 @@
 package org.brackit.xquery.sequence.type;
 
 import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Kind;
@@ -56,7 +55,7 @@ public class PIType extends KindTest {
 	}
 
 	@Override
-	public boolean matches(QueryContext ctx, Node<?> node)
+	public boolean matches(Node<?> node)
 			throws QueryException {
 		if (piTarget != null) {
 			throw new QueryException(
@@ -67,7 +66,7 @@ public class PIType extends KindTest {
 	}
 
 	@Override
-	public boolean matches(QueryContext ctx, Item item) throws QueryException {
+	public boolean matches(Item item) throws QueryException {
 		if (piTarget != null) {
 			throw new QueryException(
 					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
