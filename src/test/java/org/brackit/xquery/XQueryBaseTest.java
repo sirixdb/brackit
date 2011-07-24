@@ -121,6 +121,10 @@ public class XQueryBaseTest {
 		}
 	}
 
+	protected XQuery xquery(String query) throws QueryException {
+		return new XQuery(query);
+	}
+
 	protected PrintStream createBuffer() {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		return new PrintStream(out) {
