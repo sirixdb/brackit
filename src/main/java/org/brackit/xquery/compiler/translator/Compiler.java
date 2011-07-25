@@ -83,6 +83,7 @@ import org.brackit.xquery.function.Signature;
 import org.brackit.xquery.function.UDF;
 import org.brackit.xquery.function.bit.Every;
 import org.brackit.xquery.function.bit.Put;
+import org.brackit.xquery.function.bit.Silent;
 import org.brackit.xquery.function.bit.Some;
 import org.brackit.xquery.function.io.Readline;
 import org.brackit.xquery.function.io.Writeline;
@@ -157,6 +158,7 @@ public class Compiler implements Translator {
 				AtomicType.STR, Cardinality.ZeroOrOne))));
 		Functions.predefine(new Readline());
 		Functions.predefine(new Writeline());
+		Functions.predefine(new Silent());
 	}
 
 	protected Module module;
