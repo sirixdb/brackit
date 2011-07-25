@@ -125,7 +125,7 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 			// overflow escalate to long
 			return new Int64((long) a + (long) b);
 		}
-		return new Int32(r);
+		return ((0 <= r) && (r <= 20)) ? Int32.ZERO_TWO_TWENTY[r] : new Int32(r);
 	}
 
 	protected final Numeric addLong(long a, long b) {
