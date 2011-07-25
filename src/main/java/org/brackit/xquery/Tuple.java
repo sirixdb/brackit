@@ -79,4 +79,16 @@ public interface Tuple {
 	 * Append the given sequences to a copy.
 	 */
 	public Tuple concat(Sequence[] s) throws QueryException;
+	
+	/**
+	 * Append the given sequence to a copy and update the
+	 * specified position with the given sequence.
+	 */
+	public Tuple conreplace(Sequence con, int position, Sequence s) throws QueryException;
+	
+	/**
+	 * Append the given sequences to a copy and update the
+	 * specified position with the given sequence.
+	 */
+	public Tuple conreplace(Sequence[] con, int position, Sequence s) throws QueryException;
 }

@@ -128,6 +128,33 @@ public abstract class AbstractItem implements Item {
 		System.arraycopy(s, 0, tmp, 1, s.length);
 		return new TupleImpl(tmp);
 	}
+	
+	@Override
+	public Tuple conreplace(Sequence con, int position, Sequence s)
+			throws QueryException {
+		if ((position < 0) || (position >= 2)) {
+			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
+					position);
+		}
+		Sequence[] tmp = new Sequence[] { this, con };
+		tmp[position] = s;
+		return new TupleImpl(tmp);
+	}
+	
+	@Override
+	public Tuple conreplace(Sequence[] con, int position, Sequence s)
+			throws QueryException {
+		int nLen = con.length + 1;
+		if ((position < 0) || (position >= nLen)) {
+			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
+					position);
+		}
+		Sequence[] tmp = new Sequence[nLen];
+		tmp[0] = this;		
+		System.arraycopy(con, 0, tmp, 1, con.length);
+		tmp[position] = s;
+		return new TupleImpl(tmp);
+	}
 
 	@Override
 	public int getSize() {

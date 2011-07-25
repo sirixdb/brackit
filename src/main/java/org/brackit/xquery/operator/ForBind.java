@@ -94,7 +94,7 @@ public class ForBind implements Operator {
 				pos = Int32.ZERO;
 				if (s == null) {
 					Tuple tmp = (allowingEmpty) ? emit(t, null)
-							: (check >= 0) ? passthrough(t).replace(check, null) : null;
+							: (check >= 0) ? passthroughUncheck(t, check) : null;
 					t = null;
 					return tmp;
 				} else if (s instanceof Item) {
@@ -108,7 +108,7 @@ public class ForBind implements Operator {
 					it.close();
 					it = null;
 					Tuple tmp = (allowingEmpty) ? emit(t, null)
-							: (check >= 0) ? passthrough(t).replace(check, null) : null;
+							: (check >= 0) ? passthroughUncheck(t, check) : null;
 					t = null;
 					return tmp;
 				}
@@ -139,6 +139,20 @@ public class ForBind implements Operator {
 				}
 			} else if (bindPos) {
 				return t.concat((Sequence) null);
+			} else {
+				return t;
+			}
+		}
+		
+		private Tuple passthroughUncheck(Tuple t, int check) throws QueryException {
+			if (bindVar) {
+				if (bindPos) {
+					return t.conreplace(new Sequence[2], check, null);
+				} else {
+					return t.conreplace((Sequence) null, check, null);
+				}
+			} else if (bindPos) {
+				return t.conreplace((Sequence) null, check, null);
 			} else {
 				return t;
 			}

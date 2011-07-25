@@ -103,6 +103,34 @@ public class TupleImpl implements Tuple {
 		System.arraycopy(s, 0, tmp, sequences.length, s.length);
 		return new TupleImpl(tmp);
 	}
+	
+	@Override
+	public Tuple conreplace(Sequence con, int position, Sequence s)
+			throws QueryException {
+		int nLen = sequences.length + 1;
+		if ((position < 0) || (position >= nLen)) {
+			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
+					position);
+		}
+		Sequence[] tmp = Arrays.copyOf(sequences, nLen);
+		tmp[sequences.length] = s;
+		tmp[position] = s;
+		return new TupleImpl(tmp);
+	}
+
+	@Override
+	public Tuple conreplace(Sequence[] con, int position, Sequence s)
+			throws QueryException {
+		int nLen = sequences.length + con.length;
+		if ((position < 0) || (position >= nLen)) {
+			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
+					position);
+		}
+		Sequence[] tmp = Arrays.copyOf(sequences, nLen);
+		System.arraycopy(con, 0, tmp, sequences.length, con.length);
+		tmp[position] = s;
+		return new TupleImpl(tmp);
+	}
 
 	@Override
 	public Sequence[] array() {

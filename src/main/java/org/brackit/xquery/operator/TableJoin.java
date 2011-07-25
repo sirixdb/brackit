@@ -109,7 +109,6 @@ public class TableJoin implements Operator {
 					prev = tuple.concat(matches.get(itPos++));
 					return prev;
 				} else if (leftJoin) {
-					Tuple res = tuple.concat(padding);
 					if (check >= 0) {
 						// predicate is not fulfilled but we must keep
 						// lifted iteration group alive for "left-join" semantics.
@@ -127,9 +126,10 @@ public class TableJoin implements Operator {
 						}
 						// emit "dead" tuple where "check" field is switched-off
 						// for pass-through in upstream operators
-						res = res.replace(check, null);
+						prev = tuple.conreplace(padding, check, null);
+					} else {
+						prev = tuple.concat(padding);
 					}
-					prev = res;
 					return prev;
 				}
 			}
