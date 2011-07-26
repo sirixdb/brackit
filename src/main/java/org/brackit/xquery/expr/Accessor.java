@@ -51,11 +51,6 @@ import org.brackit.xquery.xdm.Stream;
 public abstract class Accessor {
 	public static final Accessor PARENT = new Accessor(Axis.PARENT) {
 		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isParentOf(other);
-		}
-
-		@Override
 		public Stream<Node<?>> performStep(Node<?> node) throws QueryException {
 			Node<?> parent = node.getParent();
 			return (parent != null) ? new AtomStream<Node<?>>(parent)
@@ -64,22 +59,12 @@ public abstract class Accessor {
 	};
 	public static final Accessor CHILD = new Accessor(Axis.CHILD) {
 		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isChildOf(other);
-		}
-
-		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
 			return node.getChildren();
 		}
 	};
 	public static final Accessor ANCESTOR = new Accessor(Axis.ANCESTOR) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isAncestorOf(other);
-		}
-
 		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
@@ -89,11 +74,6 @@ public abstract class Accessor {
 		}
 	};
 	public static final Accessor DESCENDANT = new Accessor(Axis.DESCENDANT) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isDescendantOf(other);
-		}
-
 		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
@@ -106,11 +86,6 @@ public abstract class Accessor {
 	public static final Accessor ANCESTOR_OR_SELF = new Accessor(
 			Axis.ANCESTOR_OR_SELF) {
 		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isAncestorOrSelfOf(other);
-		}
-
-		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
 			Stream<? extends Node<?>> subtree = node.getPath();
@@ -120,11 +95,6 @@ public abstract class Accessor {
 	public static final Accessor DESCENDANT_OR_SELF = new Accessor(
 			Axis.DESCENDANT_OR_SELF) {
 		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isDescendantOrSelfOf(other);
-		}
-
-		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
 			final Stream<? extends Node<?>> subtree = node
@@ -133,11 +103,6 @@ public abstract class Accessor {
 		}
 	};
 	public static final Accessor ATTRIBUTE = new Accessor(Axis.ATTRIBUTE) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isAttributeOf(other);
-		}
-
 		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
@@ -159,22 +124,12 @@ public abstract class Accessor {
 	};
 	public static final Accessor SELF = new Accessor(Axis.SELF) {
 		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isSelfOf(other);
-		}
-
-		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
 			return new AtomStream<Node<?>>(node);
 		}
 	};
 	public static final Accessor FOLLOWING = new Accessor(Axis.FOLLOWING) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isFollowingOf(other);
-		}
-
 		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
@@ -226,11 +181,6 @@ public abstract class Accessor {
 	public static final Accessor FOLLOWING_SIBLING = new Accessor(
 			Axis.FOLLOWING_SIBLING) {
 		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isFollowingSiblingOf(other);
-		}
-
-		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
 			final Node<?> nextSibling = node.getNextSibling();
@@ -256,11 +206,6 @@ public abstract class Accessor {
 		}
 	};
 	public static final Accessor PRECEDING = new Accessor(Axis.PRECEDING) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isPrecedingOf(other);
-		}
-
 		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
@@ -314,11 +259,6 @@ public abstract class Accessor {
 	};
 	public static final Accessor PRECEDING_SIBLING = new Accessor(
 			Axis.PRECEDING_SIBLING) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isPrecedingSiblingOf(other);
-		}
-
 		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
@@ -392,9 +332,6 @@ public abstract class Accessor {
 	public Axis getAxis() {
 		return axis;
 	}
-
-	public abstract boolean check(Node<?> node, Node<?> other)
-			throws QueryException;
 
 	public abstract Stream<? extends Node<?>> performStep(Node<?> node)
 			throws QueryException;
