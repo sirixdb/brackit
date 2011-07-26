@@ -31,13 +31,14 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.node.stream.AtomStream;
 import org.brackit.xquery.node.stream.EmptyStream;
 import org.brackit.xquery.sequence.type.KindTest;
+import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Stream;
 
 /**
- * Covers the document axes as defined in XQuery 1.0: 3.2.1.1 Axes
+ * Standard accessors for all document axes as defined in XQuery 1.0: 3.2.1.1
  * 
  * <p>
  * Note that we sometimes have to check a node's kind because attributes are
@@ -47,8 +48,8 @@ import org.brackit.xquery.xdm.Stream;
  * @author Sebastian Baechle
  * 
  */
-public abstract class Axis {
-	public static final Axis PARENT = new Axis() {
+public abstract class Accessor {
+	public static final Accessor PARENT = new Accessor(Axis.PARENT) {
 		@Override
 		public boolean check(Node<?> node, Node<?> other) throws QueryException {
 			return node.isParentOf(other);
@@ -61,7 +62,7 @@ public abstract class Axis {
 					: new EmptyStream<Node<?>>();
 		}
 	};
-	public static final Axis CHILD = new Axis() {
+	public static final Accessor CHILD = new Accessor(Axis.CHILD) {
 		@Override
 		public boolean check(Node<?> node, Node<?> other) throws QueryException {
 			return node.isChildOf(other);
@@ -73,7 +74,7 @@ public abstract class Axis {
 			return node.getChildren();
 		}
 	};
-	public static final Axis ANCESTOR = new Axis() {
+	public static final Accessor ANCESTOR = new Accessor(Axis.ANCESTOR) {
 		@Override
 		public boolean check(Node<?> node, Node<?> other) throws QueryException {
 			return node.isAncestorOf(other);
@@ -87,7 +88,7 @@ public abstract class Axis {
 					: new EmptyStream<Node<?>>();
 		}
 	};
-	public static final Axis DESCENDANT = new Axis() {
+	public static final Accessor DESCENDANT = new Accessor(Axis.DESCENDANT) {
 		@Override
 		public boolean check(Node<?> node, Node<?> other) throws QueryException {
 			return node.isDescendantOf(other);
@@ -102,7 +103,8 @@ public abstract class Axis {
 			return subtree;
 		}
 	};
-	public static final Axis ANCESTOR_OR_SELF = new Axis() {
+	public static final Accessor ANCESTOR_OR_SELF = new Accessor(
+			Axis.ANCESTOR_OR_SELF) {
 		@Override
 		public boolean check(Node<?> node, Node<?> other) throws QueryException {
 			return node.isAncestorOrSelfOf(other);
@@ -115,7 +117,8 @@ public abstract class Axis {
 			return subtree;
 		}
 	};
-	public static final Axis DESCENDANT_OR_SELF = new Axis() {
+	public static final Accessor DESCENDANT_OR_SELF = new Accessor(
+			Axis.DESCENDANT_OR_SELF) {
 		@Override
 		public boolean check(Node<?> node, Node<?> other) throws QueryException {
 			return node.isDescendantOrSelfOf(other);
@@ -129,7 +132,7 @@ public abstract class Axis {
 			return subtree;
 		}
 	};
-	public static final Axis ATTRIBUTE = new Axis() {
+	public static final Accessor ATTRIBUTE = new Accessor(Axis.ATTRIBUTE) {
 		@Override
 		public boolean check(Node<?> node, Node<?> other) throws QueryException {
 			return node.isAttributeOf(other);
@@ -154,7 +157,7 @@ public abstract class Axis {
 			return super.performStep(node, test);
 		}
 	};
-	public static final Axis SELF = new Axis() {
+	public static final Accessor SELF = new Accessor(Axis.SELF) {
 		@Override
 		public boolean check(Node<?> node, Node<?> other) throws QueryException {
 			return node.isSelfOf(other);
@@ -166,7 +169,7 @@ public abstract class Axis {
 			return new AtomStream<Node<?>>(node);
 		}
 	};
-	public static final Axis FOLLOWING = new Axis() {
+	public static final Accessor FOLLOWING = new Accessor(Axis.FOLLOWING) {
 		@Override
 		public boolean check(Node<?> node, Node<?> other) throws QueryException {
 			return node.isFollowingOf(other);
@@ -220,7 +223,8 @@ public abstract class Axis {
 			};
 		}
 	};
-	public static final Axis FOLLOWING_SIBLING = new Axis() {
+	public static final Accessor FOLLOWING_SIBLING = new Accessor(
+			Axis.FOLLOWING_SIBLING) {
 		@Override
 		public boolean check(Node<?> node, Node<?> other) throws QueryException {
 			return node.isFollowingSiblingOf(other);
@@ -251,7 +255,7 @@ public abstract class Axis {
 			};
 		}
 	};
-	public static final Axis PRECEDING = new Axis() {
+	public static final Accessor PRECEDING = new Accessor(Axis.PRECEDING) {
 		@Override
 		public boolean check(Node<?> node, Node<?> other) throws QueryException {
 			return node.isPrecedingOf(other);
@@ -308,7 +312,8 @@ public abstract class Axis {
 			};
 		}
 	};
-	public static final Axis PRECEDING_SIBLING = new Axis() {
+	public static final Accessor PRECEDING_SIBLING = new Accessor(
+			Axis.PRECEDING_SIBLING) {
 		@Override
 		public boolean check(Node<?> node, Node<?> other) throws QueryException {
 			return node.isPrecedingSiblingOf(other);
@@ -347,21 +352,23 @@ public abstract class Axis {
 			};
 		}
 	};
-	
+
 	protected static class KindFilter implements Stream<Node<?>> {
 		private final KindTest test;
 		private final Stream<? extends Node<?>> stream;
-		
+
 		public KindFilter(KindTest test, Stream<? extends Node<?>> stream) {
 			this.test = test;
 			this.stream = stream;
 		}
 
 		@Override
-		public Node<?> next() throws DocumentException {			
+		public Node<?> next() throws DocumentException {
 			try {
 				Node<?> next;
-				while (((next = stream.next()) != null) && (!test.matches(next)));
+				while (((next = stream.next()) != null)
+						&& (!test.matches(next)))
+					;
 				return next;
 			} catch (DocumentException e) {
 				throw e;
@@ -373,7 +380,17 @@ public abstract class Axis {
 		@Override
 		public void close() {
 			stream.close();
-		}	
+		}
+	}
+
+	private final Axis axis;
+
+	public Accessor(Axis axis) {
+		this.axis = axis;
+	}
+
+	public Axis getAxis() {
+		return axis;
 	}
 
 	public abstract boolean check(Node<?> node, Node<?> other)
@@ -381,8 +398,9 @@ public abstract class Axis {
 
 	public abstract Stream<? extends Node<?>> performStep(Node<?> node)
 			throws QueryException;
-	
-	public Stream<? extends Node<?>> performStep(Node<?> node, KindTest test) throws QueryException {
+
+	public Stream<? extends Node<?>> performStep(Node<?> node, KindTest test)
+			throws QueryException {
 		return new KindFilter(test, performStep(node));
 	}
 }

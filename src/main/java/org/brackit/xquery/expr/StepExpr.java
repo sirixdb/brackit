@@ -50,7 +50,7 @@ import org.brackit.xquery.xdm.Stream;
  * 
  */
 public class StepExpr implements Expr {
-	final Axis axis;
+	final Accessor axis;
 
 	final Expr input;
 
@@ -66,7 +66,7 @@ public class StepExpr implements Expr {
 
 	final int bindCount;
 
-	public StepExpr(Axis axis, KindTest test, Expr input, Expr[] predicates,
+	public StepExpr(Accessor axis, KindTest test, Expr input, Expr[] predicates,
 			boolean bindItem, boolean bindPos, boolean bindSize) {
 		this.axis = axis;
 		this.test = test;

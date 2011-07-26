@@ -43,10 +43,10 @@ import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.parser.XQueryLexer;
 import org.brackit.xquery.compiler.parser.XQueryParser;
+import org.brackit.xquery.expr.Accessor;
 import org.brackit.xquery.expr.AndExpr;
 import org.brackit.xquery.expr.ArithmeticExpr;
 import org.brackit.xquery.expr.AttributeExpr;
-import org.brackit.xquery.expr.Axis;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.expr.Castable;
 import org.brackit.xquery.expr.CommentExpr;
@@ -123,6 +123,7 @@ import org.brackit.xquery.update.ReplaceNode;
 import org.brackit.xquery.update.ReplaceValue;
 import org.brackit.xquery.update.Insert.InsertType;
 import org.brackit.xquery.util.Whitespace;
+import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Type;
 
@@ -1310,26 +1311,26 @@ public class Compiler implements Translator {
 			return true;
 		}
 
-		Axis axis = axis(child.getChild(0).getChild(0));
+		Axis axis = axis(child.getChild(0).getChild(0)).getAxis();
 		return ((axis != Axis.CHILD) && (axis != Axis.ATTRIBUTE) && (axis != Axis.SELF));
 	}
 
 	protected Expr stepExpr(AST node) throws QueryException {
 		AST child = node.getChild(0);
-		Axis axis;
+		Accessor axis;
 
 		if (child.getType() == XQueryParser.AxisSpec) {
 			axis = axis(child.getChild(0));
 			child = node.getChild(1);
 		} else {
-			axis = Axis.CHILD;
+			axis = Accessor.CHILD;
 		}
 
 		Expr in = table.resolve(Namespaces.FS_DOT);
 
 		int noOfPredicates = Math.max(node.getChildCount() - 2, 0);
 		Expr[] predicates = new Expr[noOfPredicates];
-		KindTest test = itemTest(child, axis);
+		KindTest test = itemTest(child, axis.getAxis());
 		Binding itemBinding = table.bind(Namespaces.FS_DOT, SequenceType.NODE);
 		Binding posBinding = table.bind(Namespaces.FS_POSITION,
 				SequenceType.INTEGER);
@@ -1349,32 +1350,32 @@ public class Compiler implements Translator {
 				.isReferenced());
 	}
 
-	protected Axis axis(AST node) throws QueryException {
+	protected Accessor axis(AST node) throws QueryException {
 		switch (node.getType()) {
 		case XQueryParser.CHILD:
-			return Axis.CHILD;
+			return Accessor.CHILD;
 		case XQueryParser.DESCENDANT:
-			return Axis.DESCENDANT;
+			return Accessor.DESCENDANT;
 		case XQueryParser.DESCENDANT_OR_SELF:
-			return Axis.DESCENDANT_OR_SELF;
+			return Accessor.DESCENDANT_OR_SELF;
 		case XQueryParser.ATTRIBUTE:
-			return Axis.ATTRIBUTE;
+			return Accessor.ATTRIBUTE;
 		case XQueryParser.PARENT:
-			return Axis.PARENT;
+			return Accessor.PARENT;
 		case XQueryParser.ANCESTOR:
-			return Axis.ANCESTOR;
+			return Accessor.ANCESTOR;
 		case XQueryParser.ANCESTOR_OR_SELF:
-			return Axis.ANCESTOR_OR_SELF;
+			return Accessor.ANCESTOR_OR_SELF;
 		case XQueryParser.FOLLOWING_SIBLING:
-			return Axis.FOLLOWING_SIBLING;
+			return Accessor.FOLLOWING_SIBLING;
 		case XQueryParser.FOLLOWING:
-			return Axis.FOLLOWING;
+			return Accessor.FOLLOWING;
 		case XQueryParser.PRECEDING:
-			return Axis.PRECEDING;
+			return Accessor.PRECEDING;
 		case XQueryParser.PRECEDING_SIBLING:
-			return Axis.PRECEDING_SIBLING;
+			return Accessor.PRECEDING_SIBLING;
 		case XQueryParser.SELF:
-			return Axis.SELF;
+			return Accessor.SELF;
 		default:
 			throw new QueryException(
 					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
