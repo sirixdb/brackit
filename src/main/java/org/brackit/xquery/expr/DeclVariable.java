@@ -55,20 +55,28 @@ public class DeclVariable extends Variable {
 	@Override
 	public Sequence evaluate(QueryContext ctx, Tuple tuple)
 			throws QueryException {
+		if (ctx.isBound(name)) {
+			return ctx.resolve(name);
+		}		
 		Sequence res = expr.evaluate(ctx, TupleImpl.EMPTY_TUPLE);
 		if (type != null) {
 			res = TypedSequence.toTypedSequence(ctx, type, res);
 		}
+		ctx.bind(name, res);
 		return res;
 	}
 
 	@Override
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
+		if (ctx.isBound(name)) {
+			return (Item) ctx.resolve(name);
+		}
 		Item res = expr.evaluateToItem(ctx, TupleImpl.EMPTY_TUPLE);
 		if (type != null) {
 			res = TypedSequence.toTypedItem(ctx, type, res);
 		}
+		ctx.bind(name, res);
 		return res;
 	}
 
