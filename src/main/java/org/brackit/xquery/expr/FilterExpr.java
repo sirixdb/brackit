@@ -46,17 +46,17 @@ import org.brackit.xquery.xdm.Sequence;
  * 
  */
 public class FilterExpr implements Expr {
-	private final Expr[] filter;
+	final Expr[] filter;
 
-	private final Expr expr;
+	final Expr expr;
 
-	private final boolean bindItem;
+	final boolean bindItem;
 
-	private final boolean bindPos;
+	final boolean bindPos;
 
-	private final boolean bindSize;
+	final boolean bindSize;
 
-	private final int bindCount;
+	final int bindCount;
 
 	public FilterExpr(Expr expr, Expr filter, boolean bindItem,
 			boolean bindPos, boolean bindSize) {
