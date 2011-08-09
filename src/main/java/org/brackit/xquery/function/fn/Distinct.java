@@ -28,24 +28,23 @@
 package org.brackit.xquery.function.fn;
 
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.function.Signature;
 import org.brackit.xquery.sequence.LazySequence;
-import org.brackit.xquery.util.sort.TupleSort;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Stream;
 
 /**
  * 
@@ -86,52 +85,38 @@ public class Distinct extends AbstractFunction {
 
 		return new LazySequence() {
 			final Sequence inSeq = s;
-			TupleSort sort;
+			HashSet<Atomic> set;
 
 			@Override
 			public Iter iterate() {
 				return new Iter() {
-					Stream<? extends Tuple> sorted;
-					IntegerNumeric pos = Int32.ZERO;
-					Atomic prev = null;
+					Iterator<Atomic> it;
 
 					@Override
 					public Item next() throws QueryException {
-						if (sort == null) {
-							sort = new TupleSort(comparator, -1); // TODO -1
-							// means no
-							// external
-							// sort
+						if (set == null) {
+							set = new LinkedHashSet<Atomic>();
 
 							Iter it = inSeq.iterate();
 							try {
 								Item runVar;
 								while ((runVar = it.next()) != null) {
-									sort.add(runVar);
+									set.add((Atomic) runVar);
 								}
-								sort.sort();
 							} finally {
 								it.close();
 							}
 						}
-						if (sorted == null) {
-							sorted = sort.stream();
+						if (it == null) {
+							it = set.iterator();
 						}
-						Atomic next;
-						while ((next = (Atomic) sorted.next()) != null) {
-							if ((prev == null) || (prev.atomicCmp(next) != 0)) {
-								prev = next;
-								return next;
-							}
-						}
-						return null;
+
+						return (it.hasNext()) ? it.next() : null;
 					}
 
 					@Override
 					public void close() {
-						if (sorted != null) {
-							sorted.close();
-						}
+						it = null;
 					}
 				};
 			}
