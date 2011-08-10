@@ -31,7 +31,7 @@ import java.io.File;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.BottomUpCompiler;
+import org.brackit.xquery.compiler.translator.PipelineCompiler;
 import org.brackit.xquery.module.MainModule;
 import org.brackit.xquery.operator.Operator;
 import org.brackit.xquery.xdm.Expr;
@@ -41,7 +41,7 @@ import org.brackit.xquery.xdm.Expr;
  * @author Sebastian Baechle
  * 
  */
-public class ProfilingCompiler extends BottomUpCompiler {
+public class ProfilingCompiler extends PipelineCompiler {
 	private ProfilingNode parent; // used to chain expressions
 
 	private ProfilingNode child; // used to chain operators

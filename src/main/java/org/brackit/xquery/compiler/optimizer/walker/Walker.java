@@ -31,17 +31,23 @@ import org.brackit.xquery.XQuery;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.parser.DotUtil;
 
+/**
+ * 
+ * @author Sebastian Baechle
+ *
+ */
 public class Walker {
-	private AST root;
 
+	private AST root;	
 	private int snapshot;
-
 	private boolean restart;
 
 	public final void walk(AST node) {
 		snapshot = 0;
 		root = node;
-		walkInternal(node);
+		root = prepare(root);
+		root = walkInternal(root);
+		root = finish(root);
 	}
 
 	private AST walkInternal(AST node) {
@@ -64,6 +70,14 @@ public class Walker {
 			}
 		}
 		return node;
+	}
+	
+	protected AST prepare(AST root) {
+		return root;
+	}
+	
+	protected AST finish(AST root) {
+		return root;
 	}
 
 	/**

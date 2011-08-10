@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.util;
+package org.brackit.xquery.util.sort;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -42,6 +42,7 @@ import org.apache.log4j.Logger;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.util.Cfg;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Stream;
 

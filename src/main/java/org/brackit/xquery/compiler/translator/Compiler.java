@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler;
+package org.brackit.xquery.compiler.translator;
 
 import java.util.Arrays;
 
@@ -40,12 +40,13 @@ import org.brackit.xquery.atomic.Dec;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.parser.XQueryLexer;
 import org.brackit.xquery.compiler.parser.XQueryParser;
+import org.brackit.xquery.expr.Accessor;
 import org.brackit.xquery.expr.AndExpr;
 import org.brackit.xquery.expr.ArithmeticExpr;
 import org.brackit.xquery.expr.AttributeExpr;
-import org.brackit.xquery.expr.Axis;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.expr.Castable;
 import org.brackit.xquery.expr.CommentExpr;
@@ -80,6 +81,12 @@ import org.brackit.xquery.function.Function;
 import org.brackit.xquery.function.FunctionExpr;
 import org.brackit.xquery.function.Signature;
 import org.brackit.xquery.function.UDF;
+import org.brackit.xquery.function.bit.Every;
+import org.brackit.xquery.function.bit.Put;
+import org.brackit.xquery.function.bit.Silent;
+import org.brackit.xquery.function.bit.Some;
+import org.brackit.xquery.function.io.Readline;
+import org.brackit.xquery.function.io.Writeline;
 import org.brackit.xquery.module.Functions;
 import org.brackit.xquery.module.LibraryModule;
 import org.brackit.xquery.module.MainModule;
@@ -87,11 +94,13 @@ import org.brackit.xquery.module.Module;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.operator.Count;
 import org.brackit.xquery.operator.ForBind;
+import org.brackit.xquery.operator.GroupBy;
 import org.brackit.xquery.operator.LetBind;
 import org.brackit.xquery.operator.Operator;
 import org.brackit.xquery.operator.OrderBy;
 import org.brackit.xquery.operator.Select;
 import org.brackit.xquery.operator.Start;
+import org.brackit.xquery.operator.OrderBy.OrderModifier;
 import org.brackit.xquery.sequence.type.AnyItemType;
 import org.brackit.xquery.sequence.type.AnyKindType;
 import org.brackit.xquery.sequence.type.AtomicType;
@@ -114,6 +123,7 @@ import org.brackit.xquery.update.ReplaceNode;
 import org.brackit.xquery.update.ReplaceValue;
 import org.brackit.xquery.update.Insert.InsertType;
 import org.brackit.xquery.util.Whitespace;
+import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Type;
 
@@ -122,10 +132,35 @@ import org.brackit.xquery.xdm.Type;
  * @author Sebastian Baechle
  * 
  */
-public class Compiler {
+public class Compiler implements Translator {
 	protected static final Logger log = Logger.getLogger(Compiler.class);
 
+	private static final Every BIT_EVERY_FUNC = new Every(new QNm(
+			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "every"),
+			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
+					new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)));
+
+	private static final Some BIT_SOME_FUNC = new Some(new QNm(
+			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "some"),
+			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
+					new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)));
+
 	protected final VariableTable table = new VariableTable();
+
+	static {
+		Functions.predefine(BIT_SOME_FUNC);
+		Functions.predefine(BIT_EVERY_FUNC);
+		Functions.predefine(new Put(Put.PUT, new Signature(new SequenceType(
+				AtomicType.STR, Cardinality.One), new SequenceType(
+				AtomicType.STR, Cardinality.One))));
+		Functions.predefine(new Put(Put.PUT, new Signature(new SequenceType(
+				AtomicType.STR, Cardinality.One), new SequenceType(
+				AtomicType.STR, Cardinality.One), new SequenceType(
+				AtomicType.STR, Cardinality.ZeroOrOne))));
+		Functions.predefine(new Readline());
+		Functions.predefine(new Writeline());
+		Functions.predefine(new Silent());
+	}
 
 	protected Module module;
 
@@ -148,7 +183,7 @@ public class Compiler {
 		}
 	}
 
-	public Module xquery(AST ast) throws QueryException {
+	public Module translate(AST ast) throws QueryException {
 		int childCount = ast.getChildCount();
 		for (int i = 0; i < childCount; i++) {
 			AST child = ast.getChild(i);
@@ -854,9 +889,9 @@ public class Compiler {
 		Function function;
 
 		if (someQuantified) {
-			function = Functions.BIT_SOME_FUNC;
+			function = BIT_SOME_FUNC;
 		} else {
-			function = Functions.BIT_EVERY_FUNC;
+			function = BIT_EVERY_FUNC;
 		}
 
 		return new IfExpr(new FunctionExpr(function, bindingSequenceExpr),
@@ -875,7 +910,7 @@ public class Compiler {
 				type = sequenceType(child.getChild(1));
 			}
 			Expr sourceExpr = expr(node.getChild(pos++), true);
-			ForBind forBind = new ForBind(in, sourceExpr);
+			ForBind forBind = new ForBind(in, sourceExpr, false);
 
 			Binding runVarBinding = table.bind(runVarName, type);
 			Expr returnExpr = quantifiedBindings(forBind, node, pos);
@@ -1276,26 +1311,26 @@ public class Compiler {
 			return true;
 		}
 
-		Axis axis = axis(child.getChild(0).getChild(0));
+		Axis axis = axis(child.getChild(0).getChild(0)).getAxis();
 		return ((axis != Axis.CHILD) && (axis != Axis.ATTRIBUTE) && (axis != Axis.SELF));
 	}
 
 	protected Expr stepExpr(AST node) throws QueryException {
 		AST child = node.getChild(0);
-		Axis axis;
+		Accessor axis;
 
 		if (child.getType() == XQueryParser.AxisSpec) {
 			axis = axis(child.getChild(0));
 			child = node.getChild(1);
 		} else {
-			axis = Axis.CHILD;
+			axis = Accessor.CHILD;
 		}
 
 		Expr in = table.resolve(Namespaces.FS_DOT);
 
 		int noOfPredicates = Math.max(node.getChildCount() - 2, 0);
 		Expr[] predicates = new Expr[noOfPredicates];
-		KindTest test = itemTest(child, axis);
+		KindTest test = itemTest(child, axis.getAxis());
 		Binding itemBinding = table.bind(Namespaces.FS_DOT, SequenceType.NODE);
 		Binding posBinding = table.bind(Namespaces.FS_POSITION,
 				SequenceType.INTEGER);
@@ -1315,32 +1350,32 @@ public class Compiler {
 				.isReferenced());
 	}
 
-	protected Axis axis(AST node) throws QueryException {
+	protected Accessor axis(AST node) throws QueryException {
 		switch (node.getType()) {
 		case XQueryParser.CHILD:
-			return Axis.CHILD;
+			return Accessor.CHILD;
 		case XQueryParser.DESCENDANT:
-			return Axis.DESCENDANT;
+			return Accessor.DESCENDANT;
 		case XQueryParser.DESCENDANT_OR_SELF:
-			return Axis.DESCENDANT_OR_SELF;
+			return Accessor.DESCENDANT_OR_SELF;
 		case XQueryParser.ATTRIBUTE:
-			return Axis.ATTRIBUTE;
+			return Accessor.ATTRIBUTE;
 		case XQueryParser.PARENT:
-			return Axis.PARENT;
+			return Accessor.PARENT;
 		case XQueryParser.ANCESTOR:
-			return Axis.ANCESTOR;
+			return Accessor.ANCESTOR;
 		case XQueryParser.ANCESTOR_OR_SELF:
-			return Axis.ANCESTOR_OR_SELF;
+			return Accessor.ANCESTOR_OR_SELF;
 		case XQueryParser.FOLLOWING_SIBLING:
-			return Axis.FOLLOWING_SIBLING;
+			return Accessor.FOLLOWING_SIBLING;
 		case XQueryParser.FOLLOWING:
-			return Axis.FOLLOWING;
+			return Accessor.FOLLOWING;
 		case XQueryParser.PRECEDING:
-			return Axis.PRECEDING;
+			return Accessor.PRECEDING;
 		case XQueryParser.PRECEDING_SIBLING:
-			return Axis.PRECEDING_SIBLING;
+			return Accessor.PRECEDING_SIBLING;
 		case XQueryParser.SELF:
-			return Axis.SELF;
+			return Accessor.SELF;
 		default:
 			throw new QueryException(
 					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
@@ -1542,6 +1577,9 @@ public class Compiler {
 			case XQueryParser.CountClause:
 				cb = countClause(clause, cb);
 				break;
+			case XQueryParser.GroupByClause:
+				cb = groupByClause(clause, cb);
+				break;
 			default:
 				throw new QueryException(
 						ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
@@ -1578,15 +1616,45 @@ public class Compiler {
 			throws QueryException {
 		int orderBySpecCount = node.getChildCount();
 		Expr[] orderByExprs = new Expr[orderBySpecCount];
-		int[] orderBySpec = new int[orderBySpecCount];
-		int bindCount = table.bound().length;
+		OrderModifier[] orderBySpec = new OrderModifier[orderBySpecCount];
 		for (int i = 0; i < orderBySpecCount; i++) {
 			AST orderBy = node.getChild(i);
 			orderByExprs[i] = expr(orderBy.getChild(0), true);
-			orderBySpec[i] = bindCount + i;
+			orderBySpec[i] = orderModifier(orderBy);
 		}
 		OrderBy orderBy = new OrderBy(in.operator, orderByExprs, orderBySpec);
 		return new ClauseBinding(in, orderBy);
+	}
+
+	protected OrderModifier orderModifier(AST orderBy) {
+		boolean asc = true;
+		boolean emptyLeast = true;
+		String collation = null;
+		for (int i = 1; i < orderBy.getChildCount(); i++) {
+			AST modifier = orderBy.getChild(i);
+			if (modifier.getType() == XQueryParser.OrderByKind) {
+				AST direction = modifier.getChild(0);
+				asc = (direction.getType() == XQueryParser.ASCENDING);
+			} else if (modifier.getType() == XQueryParser.OrderByEmptyMode) {
+				AST empty = modifier.getChild(0);
+				emptyLeast = (empty.getType() == XQueryParser.LEAST);
+			} else if (modifier.getType() == XQueryParser.Collation) {
+				collation = modifier.getChild(0).getValue();
+			}
+		}
+		return new OrderModifier(asc, emptyLeast, collation);
+	}
+
+	protected ClauseBinding groupByClause(AST node, ClauseBinding in)
+			throws QueryException {
+		int groupSpecCount = node.getChildCount();
+		GroupBy groupBy = new GroupBy(in.operator, groupSpecCount, false);
+		for (int i = 0; i < groupSpecCount; i++) {
+			String grpVarName = node.getChild(i).getChild(0).getValue();
+			table.resolve(module.getNamespaces().qname(grpVarName), groupBy
+					.group(i));
+		}
+		return new ClauseBinding(in, groupBy);
 	}
 
 	protected ClauseBinding whereClause(AST node, ClauseBinding in)
@@ -1645,7 +1713,7 @@ public class Compiler {
 		final Binding runVarBinding = table.bind(runVarName, runVarType);
 		final Binding posBinding = (posVarName != null) ? table.bind(
 				posVarName, SequenceType.INTEGER) : null;
-		final ForBind forBind = new ForBind(in.operator, sourceExpr);
+		final ForBind forBind = new ForBind(in.operator, sourceExpr, false);
 
 		return new ClauseBinding(in, forBind, runVarBinding, posBinding) {
 			@Override

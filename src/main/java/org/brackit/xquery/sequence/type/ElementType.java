@@ -28,7 +28,6 @@
 package org.brackit.xquery.sequence.type;
 
 import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.Item;
@@ -84,7 +83,7 @@ public class ElementType extends KindTest {
 	}
 
 	@Override
-	public boolean matches(QueryContext ctx, Node<?> node)
+	public boolean matches(Node<?> node)
 			throws QueryException {
 		if (type != null) {
 			throw new QueryException(
@@ -97,8 +96,8 @@ public class ElementType extends KindTest {
 	}
 
 	@Override
-	public boolean matches(QueryContext ctx, Item item) throws QueryException {
-		return ((item instanceof Node<?>) && (matches(ctx, (Node<?>) item)));
+	public boolean matches(Item item) throws QueryException {
+		return ((item instanceof Node<?>) && (matches((Node<?>) item)));
 	}
 
 	public String toString() {

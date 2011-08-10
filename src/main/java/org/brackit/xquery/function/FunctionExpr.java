@@ -125,7 +125,7 @@ public class FunctionExpr implements Expr {
 					} else {
 						atomic = Cast.cast(ctx, atomic, expected, false);
 					}
-				} else if (!itemType.matches(ctx, atomic)) {
+				} else if (!itemType.matches(atomic)) {
 					if ((expected.isNumeric()) && (type.isNumeric())) {
 						atomic = Cast.cast(ctx, atomic, expected, false);
 					} else if ((expected.instanceOf(Type.STR))
@@ -140,7 +140,7 @@ public class FunctionExpr implements Expr {
 				}
 
 				return atomic;
-			} else if (!itemType.matches(ctx, (Item) s)) {
+			} else if (!itemType.matches((Item) s)) {
 				throw new QueryException(
 						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 						"Item of invalid type in typed sequence (expected %s): %s",

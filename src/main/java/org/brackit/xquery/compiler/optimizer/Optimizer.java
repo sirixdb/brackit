@@ -25,37 +25,19 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.optimizer.walker;
+package org.brackit.xquery.compiler.optimizer;
 
+import java.util.List;
+
+import org.brackit.xquery.QueryException;
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.parser.XQueryParser;
 
-public class ReturnExprDecouple extends Walker {
-	private int artificialLetBindCount;
-
-	@Override
-	protected AST visit(AST node) {
-		if (node.getType() != XQueryParser.ReturnExpr) {
-			return node;
-		}
-
-		AST letBind = new AST(XQueryParser.LetBind, "LetBind");
-		letBind.addChild(node.getChild(0).copyTree());
-		String letVarName = createLetVarName();
-		AST binding = new AST(XQueryParser.TypedVariableBinding,
-				"TypedVariableBinding");
-		binding.addChild(new AST(XQueryParser.Variable, letVarName));
-		letBind.addChild(binding);
-		letBind.addChild(node.getChild(1).copyTree());
-
-		AST returnExpr = new AST(XQueryParser.ReturnExpr, "ReturnExpr");
-		node.replaceChild(0, letBind);
-		node.replaceChild(1, new AST(XQueryParser.VariableRef, letVarName));
-
-		return node;
-	}
-
-	private String createLetVarName() {
-		return "_return;" + (artificialLetBindCount++);
-	}
+/**
+ * @author Sebastian Baechle
+ *
+ */
+public interface Optimizer {
+	public AST optimize(AST ast) throws QueryException;
+	
+	public List<Stage> getStages();
 }

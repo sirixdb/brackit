@@ -30,7 +30,10 @@ package org.brackit.xquery.operator;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.compiler.translator.Reference;
 import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.xdm.Sequence;
 
 /**
  * 
@@ -39,44 +42,63 @@ import org.brackit.xquery.xdm.Expr;
  */
 public class Select implements Operator {
 	private final Operator in;
+	final Expr predicate;
+	int check = -1;
 
-	private final Expr predicate;
+	public class SelectCursor implements Cursor {
+		private final Cursor c;
+		private Tuple prev;
+		private Tuple next;
 
-	public static class SelectCursor implements Cursor {
-		private final Cursor in;
-
-		private final Expr predicate;
-
-		private final int[] projections;
-
-		public SelectCursor(Cursor in, Expr predicate) {
-			this(in, predicate, null);
-		}
-
-		public SelectCursor(Cursor in, Expr predicate, int... projections) {
-			this.in = in;
-			this.predicate = predicate;
-			this.projections = projections;
+		public SelectCursor(Cursor c) {
+			this.c = c;
 		}
 
 		@Override
 		public void close(QueryContext ctx) {
-			in.close(ctx);
+			c.close(ctx);
 		}
 
-		@Override
 		public Tuple next(QueryContext ctx) throws QueryException {
-			Tuple a;
-			while (((a = in.next(ctx)) != null)
-					&& (!predicate.evaluate(ctx, a).booleanValue(ctx)))
-				;
-			return (a != null) ? (projections != null) ? a.choose(projections)
-					: a : null;
+			Tuple t;
+			while (((t = next) != null) || (t = c.next(ctx)) != null) {
+				next = null;
+				if ((check >= 0) && (t.get(check) == null)) {
+					break;
+				}
+				Sequence p = predicate.evaluate(ctx, t);
+				if ((p != null) && (p.booleanValue(ctx))) {
+					break;
+				}
+				if (check < 0) {
+					continue;
+				}
+				// predicate is not fulfilled but we must keep
+				// lifted iteration group alive for "left-join" semantics.
+				Atomic gk = (Atomic) t.get(check);
+				// skip if previously returned tuple was in same iteration group
+				Atomic pgk = (prev != null) ? (Atomic) prev.get(check) : null;
+				if ((pgk != null) && (gk.cmp(pgk) == 0)) {
+					continue;
+				}
+				next = c.next(ctx);
+				// skip if next tuple is in same iteration group
+				Atomic ngk = (next != null) ? (Atomic) next.get(check) : null;
+				if ((ngk != null) && (gk.cmp(ngk) == 0)) {
+					continue;
+				}
+				// emit "dead" tuple where "check" field is switched-off
+				// for pass-through in upstream operators
+				t = t.replace(check, null); // switch-off check var
+				break;
+			}
+			prev = t;
+			return t;
 		}
 
 		@Override
 		public void open(QueryContext ctx) throws QueryException {
-			in.open(ctx);
+			c.open(ctx);
 		}
 	}
 
@@ -87,6 +109,19 @@ public class Select implements Operator {
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return new SelectCursor(in.create(ctx, tuple), predicate);
+		return new SelectCursor(in.create(ctx, tuple));
+	}
+
+	@Override
+	public int tupleWidth(int initSize) {
+		return in.tupleWidth(initSize);
+	}
+
+	public Reference check() {
+		return new Reference() {
+			public void setPos(int pos) {
+				check = pos;
+			}
+		};
 	}
 }

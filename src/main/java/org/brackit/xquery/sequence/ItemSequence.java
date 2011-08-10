@@ -74,4 +74,16 @@ public class ItemSequence implements Sequence {
 			}
 		};
 	}
+	
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		if (items.length > 0) {
+			sb.append(items[0]);
+			for (int i = 1; i < items.length; i++) {
+				sb.append(",");
+				sb.append(items[i]);
+			}
+		}
+		return sb.toString();
+	}
 }

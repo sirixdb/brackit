@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler;
+package org.brackit.xquery.compiler.translator;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -67,7 +67,36 @@ public class VariableTable {
 		dVariables = new Variable[1];
 	}
 
-	Variable resolve(QNm name) throws QueryException {
+	/**
+	 * Resolve bound variable and connect it to provided
+	 * reference
+	 * @param name
+	 * @param ref
+	 * @throws QueryException
+	 */
+	public void resolve(QNm name, Reference ref) throws QueryException {
+		if (log.isTraceEnabled()) {
+			log.trace(String.format("Resolving %s", name));
+		}
+
+		for (int i = bLength - 1; i > -1; i--) {
+			if (bTable[bTableCounts][i].name.equals(name)) {
+				bTable[bTableCounts][i].connect(ref);
+				return;
+			}
+		}
+		log.error(dumpTable());
+		throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+				"Cannot resolve var %s", name);
+	}
+	
+	/**
+	 * Resolve variable and create variable access expression
+	 * @param name
+	 * @return
+	 * @throws QueryException
+	 */
+	public Variable resolve(QNm name) throws QueryException {
 		if (log.isTraceEnabled()) {
 			log.trace(String.format("Resolving %s", name));
 		}
@@ -102,7 +131,7 @@ public class VariableTable {
 				"Cannot resolve var %s", name);
 	}
 
-	Binding bind(QNm name, SequenceType type) {
+	public Binding bind(QNm name, SequenceType type) {
 		if (log.isTraceEnabled()) {
 			log.trace(String.format("Binding %s", name));
 		}
@@ -146,7 +175,7 @@ public class VariableTable {
 		}
 	}
 
-	void unbind() {
+	public void unbind() {
 		if (log.isTraceEnabled()) {
 			log.trace(String.format("Unbinding %s",
 					bTable[bTableCounts][bLength - 1].name));

@@ -25,49 +25,25 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package org.brackit.xquery;
+
+import java.io.FileNotFoundException;
+
+import org.brackit.xquery.compiler.optimizer.DefaultOptimizer;
+import org.brackit.xquery.util.Cfg;
+
 /**
+ * @author Sebastian Baechle
  * 
  */
-package org.brackit.xquery.util;
-
-import java.util.Comparator;
-
-import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.Tuple;
-
-public class TupleComparator implements Comparator<Tuple> {
-	private final QueryContext ctx;
-
-	private final int[] orderBySpec;
-
-	public TupleComparator(QueryContext ctx, int[] orderBySpec) {
-		this.ctx = ctx;
-		this.orderBySpec = orderBySpec;
-	}
+public class XMarkTestUnnestedJoin extends XMarkTest {
 
 	@Override
-	public int compare(Tuple o1, Tuple o2) {
-		try {
-			for (int orderPos : orderBySpec) {
-				// remember we must not care about pos 0 because this is the
-				// runVar item itself
-				int position = (orderPos > 0) ? orderPos : -orderPos;
-				int res = TupleUtil.compare(ctx, o1, o2, position, position);
-
-				if (res != 0)
-					return (orderPos > 0) ? res : -1;
-			}
-
-			return 0;
-		} catch (QueryException e) {
-			if (e.getCode() == ErrorCode.BIT_DYN_RT_ILLEGAL_COMPARISON_ERROR) {
-				throw new ClassCastException(e.getMessage());
-			} else {
-				e.printStackTrace();
-				throw new RuntimeException(e.getMessage());
-			}
-		}
+	public void setUp() throws Exception, FileNotFoundException {
+		super.setUp();
+		Cfg.set(DefaultOptimizer.UNNEST_CFG, true);
+		DefaultOptimizer.UNNEST = true;
+		Cfg.set(DefaultOptimizer.JOIN_DETECTION_CFG, true);
+		DefaultOptimizer.JOIN_DETECTION = true;
 	}
 }

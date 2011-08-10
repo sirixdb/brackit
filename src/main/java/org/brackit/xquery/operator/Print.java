@@ -50,7 +50,7 @@ public class Print implements Operator {
 	}
 
 	protected class PrintCursor implements Cursor {
-		private final Cursor in;
+		private final Cursor c;
 
 		private final PrintStream out;
 
@@ -58,14 +58,14 @@ public class Print implements Operator {
 
 		private int count;
 
-		public PrintCursor(Cursor in, PrintStream out) {
-			this.in = in;
+		public PrintCursor(Cursor c, PrintStream out) {
+			this.c = c;
 			this.out = out;
 		}
 
 		@Override
 		public void close(QueryContext ctx) {
-			in.close(ctx);
+			c.close(ctx);
 			out.println("---");
 			out.print(count);
 			out.println(" results");
@@ -74,7 +74,7 @@ public class Print implements Operator {
 
 		@Override
 		public Tuple next(QueryContext ctx) throws QueryException {
-			Tuple next = in.next(ctx);
+			Tuple next = c.next(ctx);
 			if (next != null) {
 				count++;
 				int size = next.getSize();
@@ -120,7 +120,7 @@ public class Print implements Operator {
 
 		@Override
 		public void open(QueryContext ctx) throws QueryException {
-			in.open(ctx);
+			c.open(ctx);
 			count = 0;
 		}
 	}
@@ -128,6 +128,11 @@ public class Print implements Operator {
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
 		return new PrintCursor(in.create(ctx, tuple), out);
+	}	
+	
+	@Override
+	public int tupleWidth(int initSize) {
+		return in.tupleWidth(initSize);
 	}
 
 	public String asString(QueryContext ctx, Sequence sequence)

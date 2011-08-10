@@ -301,9 +301,12 @@ abstract class ParentD2Node extends D2Node {
 		if (firstChild == null) {
 			return (firstChild = buildChild(null, null, kind, value));
 		} else if (!after) {
-			D2Node previous = firstChild;
-			while ((previous.sibling != null) && (previous.sibling != sibling))
-				previous = previous.sibling;
+			D2Node previous = null;			
+			if (firstChild != sibling) {
+				previous = firstChild;
+				while ((previous.sibling != null) && (previous.sibling != sibling))
+					previous = previous.sibling;
+			}
 
 			if (kind == Kind.TEXT) {
 				if ((previous != null) && (previous.getKind() == Kind.TEXT)) {

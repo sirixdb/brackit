@@ -90,15 +90,15 @@ public class SortedJoinTable extends JoinTable {
 		while (lower < upper) {
 			int mid = lower + (upper - lower) / 2;
 			int p = entries[mid].key.compareTo(tKey);
-			if (((cmp == Cmp.gt) && (p <= 0)) || (p < 0)) {
+			if (((cmp == Cmp.le) && (p >= 0)) || (p > 0)) {
 				upper = mid;
 			} else {
 				lower = mid + 1;
 			}
 		}
 
-		matches.ensureAdditional(lower + 1);
-		for (int i = 0; i < lower + 1; i++) {
+		matches.ensureAdditional(size - lower);
+		for (int i = lower; i < size; i++) {
 			matches.addUnchecked(entries[i].value);
 		}
 	}
@@ -110,7 +110,7 @@ public class SortedJoinTable extends JoinTable {
 		while (lower < upper) {
 			int mid = lower + (upper - lower + 1) / 2;
 			int p = entries[mid].key.compareTo(tKey);
-			if (((cmp == Cmp.lt) && (p >= 0)) || (p > 0)) {
+			if (((cmp == Cmp.gt) && (p >= 0)) || (p > 0)) {
 				upper = mid - 1;
 			} else {
 				lower = mid;

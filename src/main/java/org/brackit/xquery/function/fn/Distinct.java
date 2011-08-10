@@ -41,7 +41,7 @@ import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.function.Signature;
 import org.brackit.xquery.sequence.LazySequence;
-import org.brackit.xquery.util.TupleSort;
+import org.brackit.xquery.util.sort.TupleSort;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;

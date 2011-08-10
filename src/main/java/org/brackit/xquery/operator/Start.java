@@ -80,5 +80,10 @@ public class Start implements Operator {
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
 		return new StartCursor(tuple);
+	}	
+
+	@Override
+	public int tupleWidth(int initSize) {
+		return initSize;
 	}
 }

@@ -186,15 +186,4 @@ public class LetVariableRefPullup extends Walker {
 
 		return true;
 	}
-
-	private int findMaxRefNumber(AST node) {
-		int max = (node.getType() == XQueryParser.VariableRef) ? refNumber(node)
-				: Integer.MIN_VALUE;
-
-		for (int i = 0; i < node.getChildCount(); i++) {
-			max = Math.max(max, findMaxRefNumber(node.getChild(0)));
-		}
-
-		return max;
-	}
 }

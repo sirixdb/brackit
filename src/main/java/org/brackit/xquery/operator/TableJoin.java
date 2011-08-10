@@ -32,12 +32,12 @@ import java.util.Arrays;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.compiler.translator.Reference;
 import org.brackit.xquery.expr.VCmpExpr.Cmp;
-import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.util.join.FastList;
 import org.brackit.xquery.util.join.MultiTypeJoinTable;
 import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
@@ -48,15 +48,21 @@ import org.brackit.xquery.xdm.Sequence;
 public class TableJoin implements Operator {
 	private class TableJoinCursor implements Cursor {
 		final Cursor lc;
+		final Sequence[] padding;
+		final int lSize;
+		private Tuple prev;
+		private Tuple next;
 		MultiTypeJoinTable table;
+		Atomic tgk; // grouping key of current table
 		Tuple tuple;
 		FastList<Sequence[]> it;
 		int itPos = 0;
 		int itSize = 0;
-		Sequence[] leftJoinPadding;
 
-		public TableJoinCursor(Cursor lc) {
+		public TableJoinCursor(Cursor lc, int lSize, int pad) {
 			this.lc = lc;
+			this.lSize = lSize;
+			this.padding = new Sequence[pad];
 		}
 
 		@Override
@@ -74,13 +80,19 @@ public class TableJoin implements Operator {
 		@Override
 		public Tuple next(QueryContext ctx) throws QueryException {
 			if ((it != null) && (itPos < itSize)) {
-				TupleImpl result = new TupleImpl(tuple, it.get(itPos++));
-				return result;
+				return tuple.concat(it.get(itPos++));
 			}
 
-			while ((tuple = lc.next(ctx)) != null) {
-				if (tuple == null) {
-					return null;
+			while (((tuple = next) != null) || ((tuple = lc.next(ctx)) != null)) {
+				next = null;
+				if ((check >= 0) && (tuple.get(check) == null)) {
+					return tuple.concat(padding);
+				}
+				if (groupVar >= 0) {
+					Atomic gk = (Atomic) tuple.get(groupVar);
+					if ((tgk != null) && (tgk.atomicCmp(gk) != 0)) {
+						table = null;
+					}
 				}
 				if (table == null) {
 					buildTable(ctx, tuple);
@@ -89,55 +101,60 @@ public class TableJoin implements Operator {
 						: lExpr.evaluateToItem(ctx, tuple);
 				final FastList<Sequence[]> matches = table.probe(keys);
 
-				if (!emitGroup) {
-					it = matches;
-					itPos = 0;
-					itSize = matches.getSize();
+				it = matches;
+				itPos = 0;
+				itSize = matches.getSize();
 
-					if (itPos < itSize) {
-						TupleImpl result = new TupleImpl(tuple, matches
-								.get(itPos++));
-						return result;
-					} else if (leftJoin) {
-						TupleImpl result = new TupleImpl(tuple, leftJoinPadding);
-						return result;
+				if (itPos < itSize) {
+					prev = tuple.concat(matches.get(itPos++));
+					return prev;
+				} else if (leftJoin) {
+					if (check >= 0) {
+						// predicate is not fulfilled but we must keep
+						// lifted iteration group alive for "left-join" semantics.
+						Atomic gk = (Atomic) tuple.get(check);
+						// skip if previously returned tuple was in same iteration group
+						Atomic pgk = (prev != null) ? (Atomic) prev.get(check) : null;
+						if ((pgk != null) && (gk.cmp(pgk) == 0)) {
+							continue;
+						}
+						next = lc.next(ctx);
+						// skip if next tuple is in same iteration group
+						Atomic ngk = (next != null) ? (Atomic) next.get(check) : null;
+						if ((ngk != null) && (gk.cmp(ngk) == 0)) {
+							continue;
+						}
+						// emit "dead" tuple where "check" field is switched-off
+						// for pass-through in upstream operators
+						prev = tuple.conreplace(padding, check, null);
+					} else {
+						prev = tuple.concat(padding);
 					}
-				} else {
-					Item[] items = new Item[matches.getSize()];
-					for (int i = 0; i < matches.getSize(); i++) {
-						Sequence[] match = matches.get(i);
-						items[i++] = (Item) match[0];
-					}
-					Sequence[] padded = new Sequence[leftJoinPadding.length + 1];
-					padded[leftJoinPadding.length] = new ItemSequence(items);
-					TupleImpl result = new TupleImpl(tuple, padded);
-					return result;
+					return prev;
 				}
 			}
-
+			table = null;
 			return null;
 		}
 
 		protected void buildTable(QueryContext ctx, Tuple tuple)
 				throws QueryException {
-			int inputSize = tuple.getSize();
 			table = new MultiTypeJoinTable(ctx, cmp, isGCmp, skipSort);
+			if (groupVar >= 0) {
+				tgk = (Atomic) tuple.get(groupVar);
+			}
 			int pos = 1;
 			Tuple t;
 			Cursor rc = r.create(ctx, tuple);
 			try {
 				rc.open(ctx);
 				while ((t = rc.next(ctx)) != null) {
-					final Sequence keys = (isGCmp) ? rExpr.evaluate(ctx, t)
-							: rExpr.evaluateToItem(ctx, t);
-					final Sequence[] tmp = t.array();
-					final Sequence[] bindings = Arrays.copyOfRange(tmp,
-							inputSize, tmp.length);
+					Sequence keys = (isGCmp) ? rExpr.evaluate(ctx, t) : rExpr
+							.evaluateToItem(ctx, t);
+					Sequence[] tmp = t.array();
+					Sequence[] bindings = Arrays.copyOfRange(tmp, lSize,
+							tmp.length);
 					table.add(keys, bindings, pos++);
-
-					if ((leftJoin) && (leftJoinPadding == null)) {
-						leftJoinPadding = new Sequence[bindings.length];
-					}
 				}
 			} finally {
 				rc.close(ctx);
@@ -147,22 +164,21 @@ public class TableJoin implements Operator {
 
 	final Operator l;
 	final Operator r;
-	final Expr rExpr; // should be variable access only
-	final Expr lExpr; // should be variable access only
+	final Expr rExpr;
+	final Expr lExpr;
 	final boolean leftJoin;
 	final Cmp cmp;
 	final boolean isGCmp;
 	final boolean skipSort;
-	final boolean emitGroup;
+	int check = -1;
+	int groupVar = -1;
 
 	public TableJoin(Cmp cmp, boolean isGCmsp, boolean leftJoin,
-			boolean skipSort, boolean emitGroup, Operator l, Expr lExpr,
-			Operator r, Expr rExpr) {
+			boolean skipSort, Operator l, Expr lExpr, Operator r, Expr rExpr) {
 		this.cmp = cmp;
 		this.isGCmp = isGCmsp;
 		this.leftJoin = leftJoin;
 		this.skipSort = skipSort;
-		this.emitGroup = emitGroup;
 		this.l = l;
 		this.r = r;
 		this.rExpr = rExpr;
@@ -171,6 +187,29 @@ public class TableJoin implements Operator {
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return new TableJoinCursor(l.create(ctx, tuple));
+		int lSize = l.tupleWidth(tuple.getSize());
+		int pad = r.tupleWidth(tuple.getSize()) - tuple.getSize();
+		return new TableJoinCursor(l.create(ctx, tuple), lSize, pad);
+	}
+
+	@Override
+	public int tupleWidth(int initSize) {
+		return l.tupleWidth(initSize) + r.tupleWidth(initSize) - initSize;
+	}
+
+	public Reference check() {
+		return new Reference() {
+			public void setPos(int pos) {
+				check = pos;
+			}
+		};
+	}
+
+	public Reference group() {
+		return new Reference() {
+			public void setPos(int pos) {
+				groupVar = pos;
+			}
+		};
 	}
 }

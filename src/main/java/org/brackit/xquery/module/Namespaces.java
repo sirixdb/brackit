@@ -96,14 +96,18 @@ public class Namespaces {
 	protected String defaultElementNamespace;
 
 	static {
-		predefined.put(XML_PREFIX, XML_NSURI);
-		predefined.put(XS_PREFIX, XS_NSURI);
-		predefined.put(XSI_PREFIX, XSI_NSURI);
-		predefined.put(FN_PREFIX, FN_NSURI);
-		predefined.put(LOCAL_PREFIX, LOCAL_NSURI);
-		predefined.put(ERR_PREFIX, ERR_NSURI);
-		predefined.put(BIT_PREFIX, BIT_NSURI);
-		predefined.put(IO_PREFIX, IO_NSURI);
+		predefine(XML_PREFIX, XML_NSURI);
+		predefine(XS_PREFIX, XS_NSURI);
+		predefine(XSI_PREFIX, XSI_NSURI);
+		predefine(FN_PREFIX, FN_NSURI);
+		predefine(LOCAL_PREFIX, LOCAL_NSURI);
+		predefine(ERR_PREFIX, ERR_NSURI);
+		predefine(BIT_PREFIX, BIT_NSURI);
+		predefine(IO_PREFIX, IO_NSURI);
+	}
+
+	public static void predefine(String prefix, String nsUri) {
+		predefined.put(prefix, nsUri);
 	}
 
 	public String getDefaultFunctionNamespace() {

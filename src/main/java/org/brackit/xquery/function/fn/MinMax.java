@@ -72,6 +72,10 @@ public class MinMax extends AbstractFunction {
 		Item item;
 		Atomic minmax = null;
 		Type minmaxType = null;
+		
+		if (seq == null) {
+			return null;
+		}
 
 		Iter in = seq.iterate();
 		try {
@@ -127,7 +131,7 @@ public class MinMax extends AbstractFunction {
 
 			int res = minmax.cmp(s);
 
-			if (((min) && (res > 0)) || (res < 0)) {
+			if ((min) ? (res > 0) : (res < 0)) {
 				minmax = s;
 			}
 		}
@@ -155,7 +159,7 @@ public class MinMax extends AbstractFunction {
 
 			int res = minmax.cmp(s);
 
-			if (((min) && (res > 0)) || (res < 0)) {
+			if ((min) ? (res > 0) : (res < 0)) {
 				minmax = s;
 			}
 		}
@@ -185,7 +189,7 @@ public class MinMax extends AbstractFunction {
 
 			int res = minmax.cmp(s);
 
-			if (((min) && (res > 0)) || (res < 0)) {
+			if ((min) ? (res > 0) : (res < 0)) {
 				minmax = s;
 			}
 		}

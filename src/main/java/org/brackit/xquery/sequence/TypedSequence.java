@@ -151,7 +151,7 @@ public class TypedSequence implements Sequence {
 								atomic = Cast.cast(ctx, atomic,
 										expectedAtomicType, false);
 							}
-						} else if (!itemType.matches(ctx, atomic)) {
+						} else if (!itemType.matches(atomic)) {
 							if ((applyFunctionConversion)
 									&& (expectedAtomicType.isNumeric())
 									&& (type.isNumeric())) {
@@ -171,7 +171,7 @@ public class TypedSequence implements Sequence {
 						}
 
 						return atomic;
-					} else if (!itemType.matches(ctx, next)) {
+					} else if (!itemType.matches(next)) {
 						throw new QueryException(
 								ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 								"Item of invalid type in typed sequence (expected %s): %s",
@@ -229,7 +229,7 @@ public class TypedSequence implements Sequence {
 			// short-circuit wrapping of single item parameter
 			ItemType itemType = sequenceType.getItemType();
 
-			if (!itemType.matches(ctx, (Item) s)) {
+			if (!itemType.matches((Item) s)) {
 				throw new QueryException(
 						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 						"Item of invalid type in typed sequence (expected %s): %s",
@@ -254,7 +254,7 @@ public class TypedSequence implements Sequence {
 			// short-circuit wrapping of single item parameter
 			ItemType itemType = sequenceType.getItemType();
 
-			if (!itemType.matches(ctx, item)) {
+			if (!itemType.matches(item)) {
 				throw new QueryException(
 						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 						"Item of invalid type in typed sequence (expected %s): %s",
@@ -278,7 +278,7 @@ public class TypedSequence implements Sequence {
 			ItemType itemType = sequenceType.getItemType();
 			Item item = (Item) sequence;
 
-			if (!itemType.matches(ctx, item)) {
+			if (!itemType.matches(item)) {
 				throw new QueryException(
 						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 						"Item of invalid type in typed sequence (expected %s): %s",

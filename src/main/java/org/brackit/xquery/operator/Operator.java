@@ -38,4 +38,6 @@ import org.brackit.xquery.Tuple;
  */
 public interface Operator {
 	Cursor create(QueryContext ctx, Tuple tuple) throws QueryException;
+	
+	int tupleWidth(int initSize);
 }

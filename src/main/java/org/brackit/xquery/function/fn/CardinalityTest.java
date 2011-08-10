@@ -106,13 +106,13 @@ public class CardinalityTest extends AbstractFunction {
 		Sequence s = args[0];
 		if (s == null) {
 			throw new QueryException(ErrorCode.ERR_EXACTLY_ONCE_FAILED,
-					"fn:zero-or-one called with a sequence containing more than one item");
+					"fn:exactly-one called with a sequence containing no items");
 		} else if (!(s instanceof Item)) {
 			Iter it = s.iterate();
 			try {
 				if (((s = it.next()) == null) || (it.next() != null)) {
 					throw new QueryException(ErrorCode.ERR_EXACTLY_ONCE_FAILED,
-							"fn:zero-or-one called with a sequence containing more than one item");
+							"fn:exactly-one called with a sequence containing more than one item");
 				}
 			} finally {
 				it.close();

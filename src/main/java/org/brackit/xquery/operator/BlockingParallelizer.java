@@ -219,5 +219,10 @@ public class BlockingParallelizer implements Operator {
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
 		return new BlockingParallelizerCursor(in.create(ctx, tuple), ctx);
+	}	
+	
+	@Override
+	public int tupleWidth(int initSize) {
+		return in.tupleWidth(initSize);
 	}
 }

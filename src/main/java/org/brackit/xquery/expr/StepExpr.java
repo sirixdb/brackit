@@ -35,7 +35,6 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntegerNumeric;
 import org.brackit.xquery.atomic.Numeric;
-import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.sequence.type.KindTest;
 import org.brackit.xquery.xdm.Expr;
@@ -51,7 +50,7 @@ import org.brackit.xquery.xdm.Stream;
  * 
  */
 public class StepExpr implements Expr {
-	final Axis axis;
+	final Accessor axis;
 
 	final Expr input;
 
@@ -67,7 +66,7 @@ public class StepExpr implements Expr {
 
 	final int bindCount;
 
-	public StepExpr(Axis axis, KindTest test, Expr input, Expr[] predicates,
+	public StepExpr(Accessor axis, KindTest test, Expr input, Expr[] predicates,
 			boolean bindItem, boolean bindPos, boolean bindSize) {
 		this.axis = axis;
 		this.test = test;
@@ -139,28 +138,24 @@ public class StepExpr implements Expr {
 		@Override
 		public Item next() throws QueryException {
 			if (nextS == null) {
-				nextS = axis.performStep(currentNode);
+				nextS = axis.performStep(currentNode, test);
 				pos = Int32.ZERO;
 				inSeqSize = Int32.ZERO;
 
 				if (bindSize) {
 					try {
-						Node<?> res;
-						while ((res = nextS.next()) != null) {
-							if (test.matches(ctx, res)) {
-								inSeqSize = inSeqSize.inc();
-							}
+						while (nextS.next() != null) {
+							inSeqSize = inSeqSize.inc();
 						}
 					} finally {
 						nextS.close();
 					}
-					nextS = axis.performStep(currentNode);
+					nextS = axis.performStep(currentNode, test);
 				}
 			}
 			Node<?> res;
 			while ((res = nextS.next()) != null) {
-				if ((test.matches(ctx, res))
-						&& ((predicates.length == 0) || (predicate(res)))) {
+				if ((predicates.length == 0) || (predicate(res))) {
 					return res;
 				}
 			}
@@ -171,9 +166,18 @@ public class StepExpr implements Expr {
 			Tuple current = tuple;
 
 			if (bindCount > 0) {
-				current = new TupleImpl(current, bindItem ? item : null,
-						bindPos ? (pos = pos.inc()) : null,
-						bindSize ? inSeqSize : null);
+				Sequence[] tmp = new Sequence[bindCount];
+				int p = 0;
+				if (bindItem) {
+					tmp[p++] = item;
+				}
+				if (bindPos) {
+					tmp[p++] = (pos = pos.inc());
+				}
+				if (bindSize) {
+					tmp[p++] = inSeqSize;
+				}
+				current = current.concat(tmp);
 			}
 
 			for (int i = 0; i < predicates.length; i++) {

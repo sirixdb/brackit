@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.brackit</groupId>
   <artifactId>brackit</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.2</version>
   <name>Brackit Engine</name>
   <url>http://brackit.org</url>
   <properties>
@@ -15,20 +15,6 @@
   	<url>http://brackit.org</url>
   </organization>
   <build>
-  	<pluginManagement>
-  		<plugins>
-  			<plugin>
-  				<groupId>org.apache.maven.plugins</groupId>
-  				<artifactId>maven-assembly-plugin</artifactId>
-  				<version>2.2.1</version>
-  				<configuration>
-  					<descriptors>
-  						<descriptor>src/assemble/dist.xml</descriptor>
-  					</descriptors>
-  				</configuration>
-  			</plugin>
-  		</plugins>
-  	</pluginManagement>
   	<plugins>
   		<plugin>
   			<groupId>org.apache.maven.plugins</groupId>
@@ -56,12 +42,19 @@
   			<configuration>
 				<archive>
 					<manifest>
-						<mainClass>org.brackitxq.Query</mainClass>
+						<mainClass>org.brackit.xquery.Main</mainClass>
 						<addClasspath>true</addClasspath>
 						<classpathPrefix>lib</classpathPrefix>
 					</manifest>
 				</archive>
   			</configuration>
+  			<executions>
+				<execution>
+					<goals>
+						<goal>test-jar</goal>
+					</goals>
+				</execution>
+       		</executions>  			
   		</plugin> 
         <plugin> 
             <groupId>org.apache.maven.plugins</groupId> 

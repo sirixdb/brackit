@@ -42,137 +42,22 @@ import org.brackit.xquery.xdm.Sequence;
 public class TupleImpl implements Tuple {
 	public static final Tuple EMPTY_TUPLE = new TupleImpl();
 
-	public static int creations;
-
-	private final Sequence[] tuples;
+	private final Sequence[] sequences;
 
 	public TupleImpl() {
-		tuples = new Sequence[0];
-		creations++;
+		sequences = new Sequence[0];
 	}
 
 	public TupleImpl(Sequence t) {
-		tuples = new Sequence[] { t };
-		creations++;
+		sequences = new Sequence[] { t };
 	}
 
 	public TupleImpl(Sequence[] t) {
-		tuples = Arrays.copyOf(t, t.length);
-		creations++;
-	}
-
-	public TupleImpl(Tuple leftTuple, Sequence item, Sequence pos, Sequence size)
-			throws QueryException {
-		Sequence[] left = leftTuple.array();
-		int length = left.length;
-		tuples = new Sequence[length + ((item != null) ? 1 : 0)
-				+ ((pos != null) ? 1 : 0) + ((size != null) ? 1 : 0)];
-		if (length > 0) {
-			System.arraycopy(left, 0, tuples, 0, length);
-		}
-		if (item != null) {
-			tuples[length++] = item;
-		}
-		if (pos != null) {
-			tuples[length++] = pos;
-		}
-		if (size != null) {
-			tuples[length++] = size;
-		}
-		creations++;
-	}
-
-	public TupleImpl(Tuple leftTuple, Sequence[] right) throws QueryException {
-		Sequence[] left = leftTuple.array();
-		tuples = new Sequence[left.length + right.length];
-
-		if (left.length > 0) {
-			System.arraycopy(left, 0, tuples, 0, left.length);
-		}
-
-		if (right.length > 0) {
-			System.arraycopy(right, 0, tuples, left.length, right.length);
-		}
-		creations++;
-	}
-
-	public TupleImpl(Sequence[] s0, Sequence[] s1, Sequence[] s2)
-			throws QueryException {
-		tuples = new Sequence[s0.length + s1.length + s2.length];
-
-		if (s0.length > 0) {
-			System.arraycopy(s0, 0, tuples, 0, s0.length);
-		}
-
-		if (s1.length > 0) {
-			System.arraycopy(s1, 0, tuples, s0.length, s1.length);
-		}
-
-		if (s2.length > 0) {
-			System.arraycopy(s2, 0, tuples, s0.length + s1.length, s2.length);
-		}
-		creations++;
-	}
-
-	public TupleImpl(Sequence left, Sequence right) {
-		tuples = new Sequence[] { left, right };
-		creations++;
-	}
-
-	public TupleImpl(Tuple left, Sequence right) throws QueryException {
-		int leftSize = (left != null) ? left.getSize() : 0;
-		tuples = new Sequence[leftSize + 1];
-
-		if (leftSize > 0) {
-			System.arraycopy(left.array(), 0, tuples, 0, leftSize);
-		}
-		tuples[leftSize] = right;
-		creations++;
-	}
-
-	public TupleImpl(Tuple left, Tuple right) throws QueryException {
-		int leftSize = (left != null) ? left.getSize() : 0;
-		int rightSize = (right != null) ? right.getSize() : 0;
-		tuples = new Sequence[leftSize + rightSize];
-
-		if (leftSize > 0) {
-			System.arraycopy(left.array(), 0, tuples, 0, leftSize);
-		}
-
-		if (rightSize > 0) {
-			System.arraycopy(right.array(), 0, tuples, leftSize, rightSize);
-		}
-		creations++;
-	}
-
-	public TupleImpl(Tuple left, Tuple right, int[] positions)
-			throws QueryException {
-		tuples = new Sequence[positions.length];
-		int leftSize = left.getSize();
-
-		for (int i = 0; i < tuples.length; i++) {
-			int position = positions[i];
-			tuples[i] = (position < leftSize) ? left.get(position) : right
-					.get(position - leftSize);
-		}
-	}
-
-	public TupleImpl(Tuple left, Tuple right, int[] leftPositions,
-			int[] rightPositions) throws QueryException {
-		tuples = new Sequence[leftPositions.length + rightPositions.length];
-
-		for (int i = 0; i < leftPositions.length; i++) {
-			tuples[i] = left.get(i);
-		}
-
-		for (int i = 0; i < rightPositions.length; i++) {
-			tuples[leftPositions.length + i] = right.get(i);
-		}
-		creations++;
+		sequences = Arrays.copyOf(t, t.length);
 	}
 
 	@Override
-	public Tuple choose(int... positions) throws QueryException {
+	public Tuple project(int... positions) throws QueryException {
 		Sequence[] projected = new Sequence[positions.length];
 		int targetPos = 0;
 		for (int pos : positions) {
@@ -182,33 +67,99 @@ public class TupleImpl implements Tuple {
 	}
 
 	@Override
+	public Tuple project(int start, int end) throws QueryException {
+		if ((start < 0) || (start >= sequences.length)) {
+			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
+					start);
+		}
+		if ((end < start) || (end >= sequences.length)) {
+			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
+					end);
+		}
+		return new TupleImpl(Arrays.copyOfRange(sequences, start, end));
+	}
+
+	@Override
+	public Tuple replace(int position, Sequence s) throws QueryException {
+		if ((position < 0) || (position >= sequences.length)) {
+			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
+					position);
+		}
+		Sequence[] tmp = Arrays.copyOf(sequences, sequences.length);
+		tmp[position] = s;
+		return new TupleImpl(tmp);
+	}
+
+	@Override
+	public Tuple concat(Sequence s) throws QueryException {
+		Sequence[] tmp = Arrays.copyOf(sequences, sequences.length + 1);
+		tmp[sequences.length] = s;
+		return new TupleImpl(tmp);
+	}
+
+	@Override
+	public Tuple concat(Sequence[] s) throws QueryException {
+		Sequence[] tmp = Arrays.copyOf(sequences, sequences.length + s.length);
+		System.arraycopy(s, 0, tmp, sequences.length, s.length);
+		return new TupleImpl(tmp);
+	}
+	
+	@Override
+	public Tuple conreplace(Sequence con, int position, Sequence s)
+			throws QueryException {
+		int nLen = sequences.length + 1;
+		if ((position < 0) || (position >= nLen)) {
+			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
+					position);
+		}
+		Sequence[] tmp = Arrays.copyOf(sequences, nLen);
+		tmp[sequences.length] = s;
+		tmp[position] = s;
+		return new TupleImpl(tmp);
+	}
+
+	@Override
+	public Tuple conreplace(Sequence[] con, int position, Sequence s)
+			throws QueryException {
+		int nLen = sequences.length + con.length;
+		if ((position < 0) || (position >= nLen)) {
+			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
+					position);
+		}
+		Sequence[] tmp = Arrays.copyOf(sequences, nLen);
+		System.arraycopy(con, 0, tmp, sequences.length, con.length);
+		tmp[position] = s;
+		return new TupleImpl(tmp);
+	}
+
+	@Override
 	public Sequence[] array() {
-		return tuples;
+		return sequences;
 	}
 
 	@Override
 	public Sequence get(int position) throws QueryException {
-		if ((position < 0) || (position >= tuples.length)) {
+		if ((position < 0) || (position >= sequences.length)) {
 			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
 					position);
 		}
 
-		return tuples[position];
+		return sequences[position];
 	}
 
 	@Override
 	public int getSize() {
-		return tuples.length;
+		return sequences.length;
 	}
 
 	public String toString() {
 		StringBuilder out = new StringBuilder();
 		out.append("[");
-		for (int i = 0; i < tuples.length; i++) {
+		for (int i = 0; i < sequences.length; i++) {
 			if (i > 0)
 				out.append(", ");
 
-			out.append(tuples[i]);
+			out.append(sequences[i]);
 		}
 		out.append("]");
 		return out.toString();

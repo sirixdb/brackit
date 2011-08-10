@@ -32,7 +32,7 @@ import java.util.Comparator;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.util.TupleSort;
+import org.brackit.xquery.util.sort.TupleSort;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Node;

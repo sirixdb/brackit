@@ -303,9 +303,12 @@ abstract class ParentLNode extends LNode {
 		if (firstChild == null) {
 			firstChild = child;
 		} else if (before) {
-			LNode previous = firstChild;
-			while ((previous.sibling != null) && (previous.sibling != sibling))
-				previous = previous.sibling;
+			LNode previous = null;			
+			if (firstChild != sibling) {
+				previous = firstChild;
+				while ((previous.sibling != null) && (previous.sibling != sibling))
+					previous = previous.sibling;
+			};
 
 			if (kind == Kind.TEXT) {
 				if ((previous != null) && (previous.getKind() == Kind.TEXT)) {

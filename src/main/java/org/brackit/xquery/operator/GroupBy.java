@@ -33,10 +33,10 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.sequence.ItemSequence;
-import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.compiler.translator.Reference;
+import org.brackit.xquery.sequence.FlatteningSequence;
+import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
@@ -45,23 +45,34 @@ import org.brackit.xquery.xdm.Sequence;
  */
 public class GroupBy implements Operator {
 	final Operator in;
-	final Expr[] groupVarExprs;
-	final Expr[] groupExprs;
+	final int[] groupSpecs; // positions of grouping variables
+	final boolean onlyLast;
+	int check = -1;
 
-	public GroupBy(Operator in, Expr[] groupVarExprs, Expr[] groupExprs) {
+	public GroupBy(Operator in, int groupSpecCount, boolean onlyLast) {
 		this.in = in;
-		this.groupVarExprs = groupVarExprs;
-		this.groupExprs = groupExprs;
+		this.groupSpecs = new int[groupSpecCount];
+		this.onlyLast = onlyLast;
 	}
 
 	private class GroupByCursor implements Cursor {
 		final Cursor c;
-		Atomic[] groupingKeys;
-		Tuple t;
-		Item[][] buffer = new Item[groupExprs.length][10];
+		Tuple next;
+		Sequence[][] buffer;
+		boolean[] skipgroup;
 
-		public GroupByCursor(Cursor c) {
+		public GroupByCursor(Cursor c, int tupleSize) {
 			this.c = c;
+			this.buffer = new Sequence[tupleSize][10];
+			this.skipgroup = new boolean[tupleSize];
+			for (int pos : groupSpecs) {
+				skipgroup[pos] = true;
+			}
+			if (onlyLast) {
+				for (int pos = 0; pos < tupleSize - 1; pos++) {
+					skipgroup[pos] = true;
+				}
+			}
 		}
 
 		@Override
@@ -76,69 +87,62 @@ public class GroupBy implements Operator {
 
 		@Override
 		public Tuple next(QueryContext ctx) throws QueryException {
-			if (groupingKeys == null) // first iteration
-			{
-				t = c.next(ctx);
-				groupingKeys = (t != null) ? extractGroupingKeys(ctx, t) : null;
-			}
-
-			if (t == null) {
+			Tuple t;
+			if (((t = next) == null) && ((t = c.next(ctx)) == null)) {
 				return null;
 			}
+			next = null;
 
-			int[] size = new int[groupExprs.length];
-			Tuple n = t;
-
-			do {
-				Atomic[] gk = extractGroupingKeys(ctx, t);
-				if (!cmp(groupingKeys, gk)) {
-					groupingKeys = gk;
-					break;
-				}
-				for (int i = 0; i < groupExprs.length; i++) {
-					Expr groupExpr = groupExprs[i];
-					Sequence s = groupExpr.evaluate(ctx, t);
-
-					if (s != null) {
-						if (s instanceof Item) {
-							if (size[i] == buffer[i].length) {
-								buffer[i] = Arrays.copyOf(buffer[i],
-										(buffer[i].length * 3) / 2 + 1);
-							}
-							buffer[i][size[i]++] = (Item) s;
-						} else {
-							Iter it = s.iterate();
-							try {
-								for (Item item = it.next(); item != null; item = it
-										.next()) {
-									if (size[i] == buffer[i].length) {
-										buffer[i] = Arrays.copyOf(buffer[i],
-												(buffer[i].length * 3) / 2 + 1);
-									}
-									buffer[i][size[i]++] = item;
-								}
-							} finally {
-								it.close();
-							}
-						}
-					}
-				}
-			} while ((t = c.next(ctx)) != null);
-
-			Sequence[] groupedSequences = new Sequence[groupExprs.length];
-			for (int i = 0; i < groupExprs.length; i++) {
-				if (size[i] != 0) {
-					groupedSequences[i] = (size[i] == 1) ? buffer[i][0]
-							: new ItemSequence(Arrays.copyOfRange(buffer[i], 0,
-									size[i]));
-				}
+			if ((check >= 0) && (t.get(check) == null)) {
+				return t;
 			}
 
-			return new TupleImpl(n, groupedSequences);
+			Atomic[] gks = extractGroupingKeys(ctx, t);
+			int[] size = new int[buffer.length];
+			addGroupFields(ctx, t, size, true);
+			while ((next = c.next(ctx)) != null) {
+				if ((check >= 0) && (t.get(check) == null)) {
+					break;
+				}
+				Atomic[] ngks = extractGroupingKeys(ctx, next);
+				if (!cmp(gks, ngks)) {
+					break;
+				}
+				addGroupFields(ctx, next, size, false);
+			}
+
+			Sequence[] groupings = new Sequence[buffer.length];
+			for (int i = 0; i < buffer.length; i++) {
+				if (size[i] == 1) {
+					groupings[i] = buffer[i][0];
+				} else if (size[i] > 1) {
+					Sequence[] tmp = Arrays.copyOfRange(buffer[i], 0, size[i]);
+					groupings[i] = new FlatteningSequence(tmp);
+				}
+			}
+			return new TupleImpl(groupings);
+		}
+
+		private void addGroupFields(QueryContext ctx, Tuple t, int[] size,
+				boolean includeSkipGroup) throws QueryException {
+			for (int i = 0; i < buffer.length; i++) {
+				if ((skipgroup[i]) && (!includeSkipGroup)) {
+					continue;
+				}
+				Sequence s = t.get(i);
+				if (s == null) {
+					continue;
+				}
+				if (size[i] == buffer[i].length) {
+					buffer[i] = Arrays.copyOf(buffer[i],
+							(buffer[i].length * 3) / 2 + 1);
+				}
+				buffer[i][size[i]++] = s;
+			}
 		}
 
 		private boolean cmp(Atomic[] gk1, Atomic[] gk2) {
-			for (int i = 0; i < groupVarExprs.length; i++) {
+			for (int i = 0; i < groupSpecs.length; i++) {
 				if (gk1[i] == null) {
 					if (gk2[i] != null) {
 						return false;
@@ -152,10 +156,13 @@ public class GroupBy implements Operator {
 
 		private Atomic[] extractGroupingKeys(QueryContext ctx, Tuple t)
 				throws QueryException {
-			Atomic[] gk = new Atomic[groupVarExprs.length];
-			for (int i = 0; i < groupVarExprs.length; i++) {
-				Item item = groupVarExprs[i].evaluateToItem(ctx, t);
-				gk[i] = (item != null) ? item.atomize() : null;
+			Atomic[] gk = new Atomic[groupSpecs.length];
+			for (int i = 0; i < groupSpecs.length; i++) {
+				Sequence seq = t.get(groupSpecs[i]);
+				if (seq != null) {
+					Item item = ExprUtil.asItem(seq);
+					gk[i] = (item).atomize();
+				}
 			}
 			return gk;
 		}
@@ -163,6 +170,28 @@ public class GroupBy implements Operator {
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return new GroupByCursor(in.create(ctx, tuple));
+		return new GroupByCursor(in.create(ctx, tuple), in.tupleWidth(tuple
+				.getSize()));
+	}
+
+	@Override
+	public int tupleWidth(int initSize) {
+		return in.tupleWidth(initSize);
+	}
+
+	public Reference check() {
+		return new Reference() {
+			public void setPos(int pos) {
+				check = pos;
+			}
+		};
+	}
+
+	public Reference group(final int groupSpecNo) {
+		return new Reference() {
+			public void setPos(int pos) {
+				groupSpecs[groupSpecNo] = pos;
+			}
+		};
 	}
 }

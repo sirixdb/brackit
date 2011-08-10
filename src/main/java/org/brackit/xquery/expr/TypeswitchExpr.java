@@ -30,7 +30,6 @@ package org.brackit.xquery.expr;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.sequence.type.AnyItemType;
 import org.brackit.xquery.sequence.type.Cardinality;
 import org.brackit.xquery.sequence.type.ItemType;
@@ -82,17 +81,15 @@ public class TypeswitchExpr implements Expr {
 				if (card != Cardinality.One && card != Cardinality.OneOrMany) {
 					if (toItem) {
 						return caseExprs[i].evaluateToItem(ctx,
-								(varRefs[i] ? new TupleImpl(tuple, operand)
-										: tuple));
+								(varRefs[i] ? tuple.concat(operand) : tuple));
 					} else {
-						return caseExprs[i].evaluate(ctx,
-								(varRefs[i] ? new TupleImpl(tuple, operand)
-										: tuple));
+						return caseExprs[i].evaluate(ctx, (varRefs[i] ? tuple
+								.concat(operand) : tuple));
 					}
 				} else {
 					continue;
 				}
-			} else if (card == Cardinality.Zero || !itemType.matches(ctx, item)) {
+			} else if (card == Cardinality.Zero || !itemType.matches(item)) {
 				continue;
 			}
 
@@ -101,7 +98,7 @@ public class TypeswitchExpr implements Expr {
 			if (item != null
 					&& (card == Cardinality.One
 							|| card == Cardinality.ZeroOrOne || !itemType
-							.matches(ctx, item))) {
+							.matches(item))) {
 				continue;
 			}
 
@@ -109,7 +106,7 @@ public class TypeswitchExpr implements Expr {
 				// Test following items
 				boolean match = true;
 				while ((item = it.next()) != null) {
-					if (!itemType.matches(ctx, item)) {
+					if (!itemType.matches(item)) {
 						match = false;
 						break;
 					}
@@ -121,24 +118,22 @@ public class TypeswitchExpr implements Expr {
 			}
 
 			if (toItem) {
-				return caseExprs[i].evaluateToItem(ctx,
-						(varRefs[i] ? new TupleImpl(tuple, operand) : tuple));
+				return caseExprs[i].evaluateToItem(ctx, (varRefs[i] ? tuple
+						.concat(operand) : tuple));
 			} else {
-				return caseExprs[i].evaluate(ctx, (varRefs[i] ? new TupleImpl(
-						tuple, operand) : tuple));
+				return caseExprs[i].evaluate(ctx, (varRefs[i] ? tuple
+						.concat(operand) : tuple));
 			}
 		}
 
 		if (toItem) {
-			return defaultExpr
-					.evaluateToItem(ctx,
-							(varRefs[varRefs.length - 1] ? new TupleImpl(tuple,
-									operand) : tuple));
+			return defaultExpr.evaluateToItem(ctx,
+					(varRefs[varRefs.length - 1] ? tuple.concat(operand)
+							: tuple));
 		} else {
-			return defaultExpr
-					.evaluate(ctx,
-							(varRefs[varRefs.length - 1] ? new TupleImpl(tuple,
-									operand) : tuple));
+			return defaultExpr.evaluate(ctx,
+					(varRefs[varRefs.length - 1] ? tuple.concat(operand)
+							: tuple));
 		}
 	}
 

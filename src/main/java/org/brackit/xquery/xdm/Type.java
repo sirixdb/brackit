@@ -63,47 +63,47 @@ public final class Type {
 			+ NAME_START_CHAR_WITHOUT_COLON_PATTERN + "|"
 			+ NAME_CHAR_OTHER_PATTERN + ")+";
 
-	public final static int DATI_CODE = 0;
+	public final static int DATI_CODE = 1;
 
-	public final static int DATE_CODE = 1;
+	public final static int DATE_CODE = 2;
 
-	public final static int TIME_CODE = 2;
+	public final static int TIME_CODE = 3;
 
-	public final static int DUR_CODE = 3;
+	public final static int DUR_CODE = 4;
 
-	public final static int YMD_CODE = 4;
+	public final static int YMD_CODE = 5;
 
-	public final static int DTD_CODE = 5;
+	public final static int DTD_CODE = 6;
 
 	/**
 	 * includes xs:float, xs:double, xs:decimal and xs:integer
 	 */
-	public final static int NUMERIC_CODE = 6;
+	public final static int NUMERIC_CODE = 7;
 
-	public final static int GYM_CODE = 7;
+	public final static int GYM_CODE = 8;
 
-	public final static int GYE_CODE = 8;
+	public final static int GYE_CODE = 9;
 
-	public final static int GMD_CODE = 9;
+	public final static int GMD_CODE = 10;
 
-	public final static int GDAY_CODE = 10;
+	public final static int GDAY_CODE = 11;
 
-	public final static int GMON_CODE = 11;
+	public final static int GMON_CODE = 12;
 
-	public final static int BOOL_CODE = 12;
+	public final static int BOOL_CODE = 13;
 
-	public final static int B64_CODE = 13;
+	public final static int B64_CODE = 14;
 
-	public final static int HEX_CODE = 14;
+	public final static int HEX_CODE = 15;
 
 	/**
 	 * includes xs:string, xs:anyURI and xs:untypedAtomic
 	 */
-	public final static int STRING_CODE = 15;
+	public final static int STRING_CODE = 16;
 
-	public final static int QNM_CODE = 16;
+	public final static int QNM_CODE = 17;
 
-	public final static int NOT_CODE = 17;
+	public final static int NOT_CODE = 18;
 
 	/**
 	 * xs:anyType
@@ -147,7 +147,7 @@ public final class Type {
 	/**
 	 * xs:anyAtomicType
 	 */
-	public static final Type ANA = new Type("anyAtomicType", ANS, true, -1,
+	public static final Type ANA = new Type("anyAtomicType", ANS, true, 0,
 			false, false, false, false);
 
 	/**
@@ -537,7 +537,7 @@ public final class Type {
 		this.parent = parent;
 		this.builtIn = builtIn;
 		this.castPrimitive = castPrimitive;
-		this.atomic = (atomicCode != -1);
+		this.atomic = (atomicCode >= 0);
 		this.numeric = numeric;
 		this.duration = duration;
 		this.timeInstance = timeInstant;

@@ -25,20 +25,46 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.operator;
+package org.brackit.xquery.compiler.optimizer;
 
-import org.brackit.xquery.QueryContext;
+import java.io.FileNotFoundException;
+
 import org.brackit.xquery.ResultChecker;
+import org.brackit.xquery.XQuery;
+import org.brackit.xquery.XQueryBaseTest;
 import org.brackit.xquery.atomic.Int32;
+import org.brackit.xquery.sequence.ItemSequence;
+import org.brackit.xquery.xdm.Sequence;
+import org.junit.Before;
 import org.junit.Test;
 
-public class SortTest {
+/**
+ * @author Sebastian Baechle
+ *
+ */
+public class ExtractFLWORTest extends XQueryBaseTest {
+	
 	@Test
-	public void singleInts() throws Exception {
-		Cursor sort = new Sort(new IntegerSource(0, 8, 6, 4, 2, 9, 7, 5, 3, 1));
-		QueryContext ctx = new QueryContext(null);
-		ResultChecker.dCheckT(ctx, sort, new Int32(0), new Int32(1), new Int32(
-				2), new Int32(3), new Int32(4), new Int32(5), new Int32(6),
-				new Int32(7), new Int32(8), new Int32(9));
+	public void nestedInWhere() throws Exception {
+		Sequence res = new XQuery(
+				"for $a in (1,2,3) " +
+				"where $a > (for $b in (2,3,4) " +
+				"			return $b) " +
+				"return $a").execute(ctx);
+		ResultChecker.dCheck(ctx, new Int32(3), res);
+	}
+	
+	private Sequence intSequence(int... v) {
+		Int32[] s = new Int32[v.length];
+		for (int i = 0; i < v.length; i++) {
+			s[i] = new Int32(v[i]);
+		}
+		return new ItemSequence(s);
+	}
+
+	@Before
+	public void setUp() throws Exception, FileNotFoundException {
+		super.setUp();
+		DefaultOptimizer.UNNEST = true;
 	}
 }

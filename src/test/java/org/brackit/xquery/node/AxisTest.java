@@ -40,10 +40,11 @@ import org.apache.log4j.Logger;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQueryBaseTest;
-import org.brackit.xquery.expr.Axis;
+import org.brackit.xquery.expr.Accessor;
 import org.brackit.xquery.node.stream.StreamUtil;
 import org.brackit.xquery.node.stream.filter.Filter;
 import org.brackit.xquery.node.stream.filter.FilteredStream;
+import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Node;
@@ -134,7 +135,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 		Node<?> node = collection.getDocument().getFirstChild();
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(), new AxisFilter(ctx, node, Axis.CHILD));
-		checkOutput(Axis.CHILD.performStep(node), expected);
+		checkOutput(Accessor.CHILD.performStep(node), expected);
 	}
 
 	@Test
@@ -142,7 +143,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 		Node<?> node = collection.getDocument().getFirstChild().getFirstChild();
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(), new AxisFilter(ctx, node, Axis.CHILD));
-		checkOutput(Axis.CHILD.performStep(node), expected);
+		checkOutput(Accessor.CHILD.performStep(node), expected);
 	}
 
 	@Test
@@ -150,7 +151,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 		Node<?> node = collection.getDocument().getFirstChild();
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(), new AxisFilter(ctx, node, Axis.FOLLOWING));
-		checkOutput(Axis.FOLLOWING.performStep(node), expected);
+		checkOutput(Accessor.FOLLOWING.performStep(node), expected);
 	}
 
 	@Test
@@ -159,7 +160,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 				.getFirstChild().getNextSibling();
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(), new AxisFilter(ctx, node, Axis.FOLLOWING));
-		checkOutput(Axis.FOLLOWING.performStep(node), expected);
+		checkOutput(Accessor.FOLLOWING.performStep(node), expected);
 	}
 
 	@Test
@@ -167,7 +168,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 		Node<?> node = collection.getDocument().getFirstChild();
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(), new AxisFilter(ctx, node, Axis.PRECEDING));
-		checkOutput(Axis.PRECEDING.performStep(node), expected);
+		checkOutput(Accessor.PRECEDING.performStep(node), expected);
 	}
 
 	@Test
@@ -177,7 +178,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 				.getFirstChild().getNextSibling();
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(), new AxisFilter(ctx, node, Axis.PRECEDING));
-		checkOutput(Axis.PRECEDING.performStep(node), expected);
+		checkOutput(Accessor.PRECEDING.performStep(node), expected);
 	}
 
 	@Test
@@ -186,7 +187,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(),
 				new AxisFilter(ctx, node, Axis.PRECEDING_SIBLING));
-		checkOutput(Axis.PRECEDING_SIBLING.performStep(node), expected);
+		checkOutput(Accessor.PRECEDING_SIBLING.performStep(node), expected);
 	}
 
 	@Test
@@ -198,7 +199,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 				.getSubtree(),
 				new AxisFilter(ctx, node, Axis.PRECEDING_SIBLING));
 		System.out.println("---------------");
-		checkOutput(Axis.PRECEDING_SIBLING.performStep(node), expected);
+		checkOutput(Accessor.PRECEDING_SIBLING.performStep(node), expected);
 	}
 
 	@Test
@@ -207,7 +208,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(),
 				new AxisFilter(ctx, node, Axis.FOLLOWING_SIBLING));
-		checkOutput(Axis.FOLLOWING_SIBLING.performStep(node), expected);
+		checkOutput(Accessor.FOLLOWING_SIBLING.performStep(node), expected);
 	}
 
 	@Test
@@ -217,7 +218,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(),
 				new AxisFilter(ctx, node, Axis.FOLLOWING_SIBLING));
-		checkOutput(Axis.FOLLOWING_SIBLING.performStep(node), expected);
+		checkOutput(Accessor.FOLLOWING_SIBLING.performStep(node), expected);
 	}
 
 	protected Set<Node<?>> buildExpectedSet(

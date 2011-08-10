@@ -57,5 +57,38 @@ public interface Tuple {
 	/**
 	 * Projects the given positions into a new tuple.
 	 */
-	public Tuple choose(int... positions) throws QueryException;
+	public Tuple project(int... positions) throws QueryException;
+
+	/**
+	 * Projects the given range into a new tuple.
+	 */
+	public Tuple project(int start, int end) throws QueryException;
+
+	/**
+	 * Create a copy where the specified position is updated with the given
+	 * sequence.
+	 */
+	public Tuple replace(int position, Sequence s) throws QueryException;
+
+	/**
+	 * Append the given sequence to a copy.
+	 */
+	public Tuple concat(Sequence s) throws QueryException;
+
+	/**
+	 * Append the given sequences to a copy.
+	 */
+	public Tuple concat(Sequence[] s) throws QueryException;
+	
+	/**
+	 * Append the given sequence to a copy and update the
+	 * specified position with the given sequence.
+	 */
+	public Tuple conreplace(Sequence con, int position, Sequence s) throws QueryException;
+	
+	/**
+	 * Append the given sequences to a copy and update the
+	 * specified position with the given sequence.
+	 */
+	public Tuple conreplace(Sequence[] con, int position, Sequence s) throws QueryException;
 }

@@ -34,7 +34,6 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.update.op.UpdateOp;
 import org.brackit.xquery.xdm.Expr;
@@ -113,7 +112,7 @@ public class TransformExpr extends ConstructedNodeBuilder implements Expr {
 					}
 				};
 
-				tuple = new TupleImpl(tuple, seq);
+				tuple = tuple.concat(seq);
 			}
 		}
 

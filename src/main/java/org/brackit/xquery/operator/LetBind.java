@@ -30,6 +30,7 @@ package org.brackit.xquery.operator;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.compiler.translator.Reference;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Sequence;
 
@@ -40,48 +41,44 @@ import org.brackit.xquery.xdm.Sequence;
  */
 public class LetBind implements Operator {
 	private final Operator in;
-
-	private final Expr[] source;
-
+	final Expr source;
+	int check = -1;
 	private boolean bind = true;
 
-	static class LetBindCursor implements Cursor {
-		private final Cursor in;
+	private class LetBindCursor implements Cursor {
+		private final Cursor c;
 
-		private final Expr[] expr;
-
-		public LetBindCursor(Cursor cursor, Expr... expr) {
-			this.in = cursor;
-			this.expr = expr;
+		public LetBindCursor(Cursor c) {
+			this.c = c;
 		}
 
 		@Override
 		public void close(QueryContext ctx) {
-			in.close(ctx);
+			c.close(ctx);
 		}
 
 		@Override
 		public Tuple next(QueryContext ctx) throws QueryException {
-			Tuple current = in.next(ctx);
+			Tuple t = c.next(ctx);
 
-			if (current == null) {
+			if (t == null) {
 				return null;
 			}
-
-			for (int i = 0; i < expr.length; i++) {
-				Sequence sequence = expr[i].evaluate(ctx, current);
-				current = new TupleImpl((Tuple) current, sequence);
+			if ((check >= 0) && (t.get(check) == null)) {
+				return t.concat((Sequence) null);
 			}
-			return current;
+
+			Sequence sequence = source.evaluate(ctx, t);
+			return t.concat(sequence);
 		}
 
 		@Override
 		public void open(QueryContext ctx) throws QueryException {
-			in.open(ctx);
+			c.open(ctx);
 		}
 	}
 
-	public LetBind(Operator in, Expr... source) {
+	public LetBind(Operator in, Expr source) {
 		this.in = in;
 		this.source = source;
 	}
@@ -92,7 +89,20 @@ public class LetBind implements Operator {
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return (bind) ? new LetBindCursor(in.create(ctx, tuple), source) : in
-				.create(ctx, tuple);
+		return (bind) ? new LetBindCursor(in.create(ctx, tuple)) : in.create(
+				ctx, tuple);
+	}
+	
+	@Override
+	public int tupleWidth(int initSize) {
+		return in.tupleWidth(initSize) + (bind ? 1 : 0);
+	}
+	
+	public Reference check() {
+		return new Reference() {
+			public void setPos(int pos) {
+				check = pos;
+			}
+		};
 	}
 }

@@ -27,42 +27,41 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
+import static org.brackit.xquery.compiler.parser.XQueryParser.Count;
+import static org.brackit.xquery.compiler.parser.XQueryParser.GroupBy;
+import static org.brackit.xquery.compiler.parser.XQueryParser.GroupBySpec;
+import static org.brackit.xquery.compiler.parser.XQueryParser.LetBind;
+import static org.brackit.xquery.compiler.parser.XQueryParser.ReturnExpr;
+import static org.brackit.xquery.compiler.parser.XQueryParser.Start;
+import static org.brackit.xquery.compiler.parser.XQueryParser.TypedVariableBinding;
+import static org.brackit.xquery.compiler.parser.XQueryParser.Variable;
+import static org.brackit.xquery.compiler.parser.XQueryParser.VariableRef;
+
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.parser.XQueryParser;
 
 /**
  * Lift a nested operator pipline, i.e., a ReturnExpr child of a LetBind. The
- * lifted pipeline is embraced by an optional count operator at the bottom and
+ * lifted pipeline is embraced by a count operator at the bottom and
  * an group by at the top to preserve the semantics of binding a whole sequence
  * to the let-bound variable instead instead of single items.
- * 
- * Note that the lifting converts lifted joins the left joins.
  * 
  * @author Sebastian Baechle
  * 
  */
 public class LetBindLift extends Walker {
-	private int artificialRunVarCount;
 	private int artificialEnumerateVarCount;
 
 	@Override
 	protected AST visit(AST node) {
-		if (node.getType() != XQueryParser.LetBind) {
+		if (node.getType() != LetBind) {
 			return node;
 		}
 
 		AST opEx = node.getChild(2);
 
-		if (opEx.getType() != XQueryParser.ReturnExpr) {
+		if (opEx.getType() != ReturnExpr) {
 			return node;
 		}
-
-		// AST join = opEx.getChild(0);
-		//		
-		// if (join.getType() != XQueryParser.Join)
-		// {
-		// return node;
-		// }
 
 		AST liftet = liftInput(node);
 		node.getParent().replaceChild(node.getChildIndex(), liftet);
@@ -70,144 +69,68 @@ public class LetBindLift extends Walker {
 		return node.getParent();
 	}
 
-	private AST createBindExpression(String leftJoinVarName, AST expression) {
-		if ((leftJoinVarName == null)
-				|| (expression.getType() == XQueryParser.VariableRef)) {
-			return expression.copyTree();
-		} else {
-			AST ifThenElse = new AST(XQueryParser.IfExpr, "IfExpr");
-			ifThenElse.addChild(new AST(XQueryParser.VariableRef,
-					leftJoinVarName));
-			ifThenElse.addChild(expression.copyTree());
-			ifThenElse.addChild(new AST(XQueryParser.EmptySequence,
-					"EmptySequence"));
-			return ifThenElse;
-		}
-	}
-
 	/*
-	 * Find/introduce a run variable in the copy of the current left input for
-	 * grouping
-	 */
-	private String checkRunVar(AST in) {
-		String runVarName;
-		while (true) {
-			if (in.getType() == XQueryParser.LetBind) {
-				// skip let binds in left input branch
-				in = in.getChild(0);
-			} else if (in.getType() == XQueryParser.ForBind) {
-				// use/introduce pos var of for bind for grouping after left
-				// join
-				if (in.getChildCount() == 3) {
-					runVarName = createRunVarName(refNumber(in.getChild(1)
-							.getChild(0)));
-					AST runVarBinding = new AST(
-							XQueryParser.TypedVariableBinding,
-							"TypedVariableBinding");
-					runVarBinding.addChild(new AST(XQueryParser.Variable,
-							runVarName));
-					in.insertChild(2, runVarBinding); // stopIndex < startIndex
-					// means insert at
-					// startIndex!
-				} else {
-					runVarName = in.getChild(2).getChild(0).getValue();
-				}
-				break;
-			} else {
-				// We are at a non-flowr node in the left input branch, e.g.
-				// Start, Join, LeftJoin
-				// and introduce an artificial enumeration node for the grouping
-				AST enumerator = new AST(XQueryParser.Count, "Count");
-				runVarName = createEnumerateVarName();
-				in.getParent().replaceChild(0, enumerator);
-				AST runVarBinding = new AST(XQueryParser.TypedVariableBinding,
-						"TypedVariableBinding");
-				runVarBinding.addChild(new AST(XQueryParser.Variable,
-						runVarName));
-				enumerator.addChild(in);
-				enumerator.addChild(runVarBinding);
-				break;
-			}
-		}
-		return runVarName;
-	}
-
-	/*
-	 * Create the liftet input pipeline from the input branch of the operator
+	 * Create the lifted input pipeline from the input branch of the operator
 	 * expression
 	 */
 	private AST liftInput(AST node) {
 		AST opEx = node.getChild(2);
-		String leftJoinVarName = null;
-		boolean convertedTopJoinToLeftJoin = false;
-		AST leftInput = null;
-		AST left = null;
-		AST tmp = opEx.getChild(0);
+		AST in = null;
+		AST lifted = null;
 
-		while (tmp.getType() != XQueryParser.Start) {
+		// create variable name for new group
+		String grpVarName = createEnumerateVarName();
+		
+		// create lifted copy
+		AST nested = opEx.getChild(0);
+		for (AST tmp = nested; tmp.getType() != Start; tmp = tmp.getChild(0)) {
 			AST toAdd = tmp.copy();
 			for (int i = 1; i < tmp.getChildCount(); i++) {
 				toAdd.addChild(tmp.getChild(i).copyTree());
 			}
-
-			if (tmp.getType() == XQueryParser.Join) {
-				// if (convertedTopJoinToLeftJoin)
-				// {
-				// throw new IllegalStateException("Can this happen???"); //
-				// FIXME
-				// }
-				// top join in cascade must be converted to left join
-				toAdd.setProperty("leftJoin", "true");
-				convertedTopJoinToLeftJoin = true;
-
-				// get left join variable name from right branch
-				AST r = toAdd.getChild(1); // left input branch is still missing
-				// -> right branch is 2nd child
-				while (r.getType() != XQueryParser.Start) {
-					r = r.getChild(0);
-				}
-				leftJoinVarName = r.getParent().getChild(1).getChild(0)
-						.getValue();
-			}
-
-			if (leftInput == null) {
-				leftInput = toAdd;
+			toAdd.setProperty("check", grpVarName);
+			if (in == null) {
+				in = toAdd;
 			} else {
-				left.insertChild(0, toAdd);
+				lifted.insertChild(0, toAdd);
 			}
-			left = toAdd;
-			tmp = tmp.getChild(0);
+			lifted = toAdd;
 		}
 
-		AST initialLeftInput = node.getChild(0).copyTree();
-
-		if (leftInput == null) {
-			leftInput = initialLeftInput;
-		} else {
-			left.insertChild(0, initialLeftInput);
+		// copy old input and add count operator for the grouping
+		AST oldIn = node.getChild(0).copyTree();
+		AST count = new AST(Count, "Count");		
+		AST runVarBinding = new AST(TypedVariableBinding,
+				"TypedVariableBinding");
+		runVarBinding.addChild(new AST(Variable, grpVarName));		
+		count.addChild(oldIn);
+		count.addChild(runVarBinding);
+		if (oldIn.getProperty("check") != null) {
+			count.setProperty("check", oldIn.getProperty("check"));
 		}
+		
+		// lifted part consumes old input
+		lifted.insertChild(0, count);
 
-		AST sequencer = new AST(XQueryParser.GroupBy, "GroupBy");
-		sequencer.addChild(leftInput);
-		sequencer.addChild(node.getChild(1).copyTree());
-		String runVarName = checkRunVar(initialLeftInput);
-		sequencer.addChild(new AST(XQueryParser.VariableRef, runVarName));
-		sequencer.addChild(createBindExpression(leftJoinVarName, opEx
-				.getChild(1)));
+		// let bind the return expression
+		AST letBind = new AST(LetBind, "LetBind");
+		letBind.addChild(in);
+		letBind.addChild(node.getChild(1).copyTree());
+		letBind.addChild(opEx.getChild(1).copyTree());
+		letBind.setProperty("check", grpVarName);
 
-		return sequencer;
-	}
-
-	private int refNumber(AST node) {
-		return Integer.parseInt(node.getValue().substring(
-				node.getValue().lastIndexOf(";") + 1));
+		// group the let bind
+		AST groupBy = new AST(GroupBy, "GroupBy");
+		groupBy.addChild(letBind);
+		AST groupBySpec = new AST(GroupBySpec, "GroupBySpec");
+		groupBySpec.addChild(new AST(VariableRef, grpVarName));
+		groupBy.addChild(groupBySpec);
+		groupBy.setProperty("check", grpVarName);
+		groupBy.setProperty("onlyLast", "true");
+		return groupBy;
 	}
 
 	private String createEnumerateVarName() {
-		return "_enum;" + (artificialEnumerateVarCount++);
-	}
-
-	private String createRunVarName(int number) {
-		return "_pos;" + (artificialRunVarCount++) + ";" + number;
+		return "_check;" + (artificialEnumerateVarCount++);
 	}
 }
