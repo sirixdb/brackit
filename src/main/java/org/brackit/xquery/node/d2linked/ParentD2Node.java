@@ -301,10 +301,11 @@ abstract class ParentD2Node extends D2Node {
 		if (firstChild == null) {
 			return (firstChild = buildChild(null, null, kind, value));
 		} else if (!after) {
-			D2Node previous = null;			
+			D2Node previous = null;
 			if (firstChild != sibling) {
 				previous = firstChild;
-				while ((previous.sibling != null) && (previous.sibling != sibling))
+				while ((previous.sibling != null)
+						&& (previous.sibling != sibling))
 					previous = previous.sibling;
 			}
 
@@ -320,9 +321,15 @@ abstract class ParentD2Node extends D2Node {
 					return sibling;
 				}
 			}
-			child = buildChild(previous.division, sibling.division, kind, value);
+			if (previous != null) {
+				child = buildChild(previous.division, sibling.division, kind,
+						value);
+				previous.sibling = child;
+			} else {
+				child = buildChild(null, sibling.division, kind, value);
+			}
 			child.sibling = sibling;
-			previous.sibling = child;
+
 		} else {
 			if (kind == Kind.TEXT) {
 				if ((sibling != null) && (sibling.getKind() == Kind.TEXT)) {

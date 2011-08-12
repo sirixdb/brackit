@@ -323,7 +323,9 @@ abstract class ParentLNode extends LNode {
 				}
 			}
 			child.sibling = sibling;
-			previous.sibling = child;
+			if (previous != null) {
+				previous.sibling = child;
+			}
 		} else {
 			if (kind == Kind.TEXT) {
 				if ((sibling != null) && (sibling.getKind() == Kind.TEXT)) {
