@@ -42,7 +42,6 @@ import org.brackit.xquery.xdm.Stream;
  */
 public class CollectionSequence extends LazySequence {
 	final QueryContext ctx;
-
 	final Collection<?> collection;
 
 	public CollectionSequence(QueryContext ctx, Collection<?> collection) {
@@ -52,7 +51,7 @@ public class CollectionSequence extends LazySequence {
 
 	@Override
 	public Iter iterate() {
-		return new Iter() {
+		return new BaseIter() {
 			Stream<? extends Node<?>> docs;
 
 			@Override

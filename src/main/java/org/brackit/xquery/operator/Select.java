@@ -67,7 +67,7 @@ public class Select implements Operator {
 					break;
 				}
 				Sequence p = predicate.evaluate(ctx, t);
-				if ((p != null) && (p.booleanValue(ctx))) {
+				if ((p != null) && (p.booleanValue())) {
 					break;
 				}
 				if (check < 0) {

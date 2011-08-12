@@ -98,13 +98,13 @@ public class ArithmeticExpr implements Expr {
 
 		Type leftType = left.type();
 		if (leftType.instanceOf(Type.UNA)) {
-			left = Cast.cast(ctx, left, Type.DBL, false);
+			left = Cast.cast(left, Type.DBL, false);
 			leftType = Type.DBL;
 		}
 
 		Type rightType = right.type();
 		if (rightType.instanceOf(Type.UNA)) {
-			right = Cast.cast(ctx, right, Type.DBL, false);
+			right = Cast.cast(right, Type.DBL, false);
 			rightType = Type.DBL;
 		}
 		// End evaluate operands
@@ -137,7 +137,7 @@ public class ArithmeticExpr implements Expr {
 					return ((DTD) left).divide((DTD) right);
 				}
 			} else if (rightType.isNumeric()) {
-				right = Cast.cast(ctx, right, Type.DBL, false);
+				right = Cast.cast(right, Type.DBL, false);
 
 				switch (op) {
 				case MULT:
@@ -157,7 +157,7 @@ public class ArithmeticExpr implements Expr {
 					return ((YMD) left).divide((YMD) right);
 				}
 			} else if (rightType.isNumeric()) {
-				right = Cast.cast(ctx, right, Type.DBL, false);
+				right = Cast.cast(right, Type.DBL, false);
 
 				switch (op) {
 				case MULT:

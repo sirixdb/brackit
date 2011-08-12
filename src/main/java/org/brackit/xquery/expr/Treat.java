@@ -31,7 +31,8 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.TypedSequence;
 import org.brackit.xquery.sequence.type.SequenceType;
 import org.brackit.xquery.xdm.Expr;
@@ -65,10 +66,9 @@ public class Treat implements Expr {
 				final Sequence s = typedSequence;
 
 				@Override
-				public IntegerNumeric size(QueryContext ctx)
-						throws QueryException {
+				public IntNumeric size() throws QueryException {
 					try {
-						return s.size(ctx);
+						return s.size();
 					} catch (QueryException e) {
 						if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
 							throw new QueryException(
@@ -81,7 +81,7 @@ public class Treat implements Expr {
 
 				@Override
 				public Iter iterate() {
-					return new Iter() {
+					return new BaseIter() {
 						Iter it = s.iterate();
 
 						@Override
@@ -106,10 +106,23 @@ public class Treat implements Expr {
 				}
 
 				@Override
-				public boolean booleanValue(QueryContext ctx)
-						throws QueryException {
+				public boolean booleanValue() throws QueryException {
 					try {
-						return s.booleanValue(ctx);
+						return s.booleanValue();
+					} catch (QueryException e) {
+						if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
+							throw new QueryException(
+									e,
+									ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE);
+						}
+						throw e;
+					}
+				}
+
+				@Override
+				public Item get(IntNumeric pos) throws QueryException {
+					try {
+						return s.get(pos);
 					} catch (QueryException e) {
 						if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
 							throw new QueryException(

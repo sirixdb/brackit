@@ -51,6 +51,6 @@ public class ConstructorFunction extends AbstractFunction {
 	@Override
 	public Sequence execute(QueryContext ctx, Sequence[] args)
 			throws QueryException {
-		return Cast.cast(ctx, (Item) args[0], type, true);
+		return Cast.cast((Item) args[0], type, true);
 	}
 }

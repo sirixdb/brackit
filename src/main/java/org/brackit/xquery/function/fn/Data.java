@@ -32,6 +32,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -60,11 +61,9 @@ public class Data extends AbstractFunction {
 		}
 
 		return new LazySequence() {
-			final Sequence inSeq = s;
-
 			@Override
 			public Iter iterate() {
-				return new Iter() {
+				return new BaseIter() {
 					Iter it;
 
 					@Override

@@ -139,7 +139,7 @@ public class TableJoin implements Operator {
 
 		protected void buildTable(QueryContext ctx, Tuple tuple)
 				throws QueryException {
-			table = new MultiTypeJoinTable(ctx, cmp, isGCmp, skipSort);
+			table = new MultiTypeJoinTable(cmp, isGCmp, skipSort);
 			if (groupVar >= 0) {
 				tgk = (Atomic) tuple.get(groupVar);
 			}

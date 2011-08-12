@@ -31,7 +31,8 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -58,17 +59,23 @@ public class ProfileExpr extends ProfilingNode implements Expr {
 	private long seqIterTotal;
 
 	private int seqDeliverCnt;
+	
+	private int seqSkipCnt;
+	
+	private long seqSkipTotal;
 
 	private int evalBooleanValue;
 
 	private int evalSize;
+	
+	private int evalGet;
 
 	private class StatIter implements Iter {
 		final Iter it;
-
 		int delivered;
-
+		int skipCnt;
 		long time;
+		long skipTime;
 
 		StatIter(Iter it) {
 			this.it = it;
@@ -85,10 +92,21 @@ public class ProfileExpr extends ProfilingNode implements Expr {
 			return item;
 		}
 
+		@Override
+		public void skip(IntNumeric i) throws QueryException {
+			long start = System.nanoTime();
+			it.skip(i);
+			long end = System.nanoTime();
+			skipTime += (end - start);
+			skipCnt++;
+		}
+
 		public void close() {
 			it.close();
 			seqIterTotal += time;
 			seqDeliverCnt += delivered;
+			seqSkipCnt += skipCnt;
+			seqSkipTotal += skipTime;
 		}
 	}
 
@@ -100,16 +118,16 @@ public class ProfileExpr extends ProfilingNode implements Expr {
 		}
 
 		@Override
-		public boolean booleanValue(QueryContext ctx) throws QueryException {
+		public boolean booleanValue() throws QueryException {
 			evalBooleanValue++;
-			return (s != null) ? s.booleanValue(ctx) : false;
+			return (s != null) ? s.booleanValue() : false;
 		}
 
 		@Override
 		public Iter iterate() {
 			seqIterCnt++;
 			return (s != null) ? new StatIter(s.iterate()) : new StatIter(
-					new Iter() {
+					new BaseIter() {
 						@Override
 						public void close() {
 						}
@@ -122,9 +140,15 @@ public class ProfileExpr extends ProfilingNode implements Expr {
 		}
 
 		@Override
-		public IntegerNumeric size(QueryContext ctx) throws QueryException {
+		public IntNumeric size() throws QueryException {
 			evalSize++;
-			return (s != null) ? s.size(ctx) : Int32.ZERO;
+			return (s != null) ? s.size() : Int32.ZERO;
+		}
+
+		@Override
+		public Item get(IntNumeric pos) throws QueryException {
+			evalGet++;
+			return (s != null) ? s.get(pos) : null;
 		}
 
 	}
@@ -151,12 +175,15 @@ public class ProfileExpr extends ProfilingNode implements Expr {
 						: -1);
 		node.addRow("eval bool  (seq)", evalBooleanValue);
 		node.addRow("eval size (seq)", evalSize);
+		node.addRow("eval get (seq)", evalGet);
 		node.addRow("iter (seq)", seqIterCnt);
+		node.addRow("skip (seq)", seqSkipCnt);
 		node.addRow("delivered by iter (seq)", seqDeliverCnt);
 		node.addRow("total time iter (seq) [ms]", seqIterTotal / 1000000);
 		node.addRow("avg. time iter (seq) [ms]",
 				(seqIterCnt > 0) ? (double) seqIterTotal
 						/ ((double) 1000000 * seqIterCnt) : -1);
+		node.addRow("total time skip (seq) [ms]", seqSkipTotal / 1000000);
 	}
 
 	@Override

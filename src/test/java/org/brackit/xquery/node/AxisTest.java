@@ -58,8 +58,6 @@ import org.junit.Test;
  * 
  */
 public abstract class AxisTest extends XQueryBaseTest {
-	private static final Logger log = Logger
-			.getLogger(AxisTest.class.getName());
 
 	private static final Comparator<Node<?>> COMPARATOR = new Comparator<Node<?>>() {
 		@Override
@@ -72,14 +70,10 @@ public abstract class AxisTest extends XQueryBaseTest {
 	private Collection<?> collection;
 
 	private class AxisFilter implements Filter<Node<?>> {
-		private final QueryContext ctx;
-
 		private final Node<?> node;
-
 		private final Axis axis;
 
-		public AxisFilter(QueryContext ctx, Node<?> node, Axis axis) {
-			this.ctx = ctx;
+		public AxisFilter(Node<?> node, Axis axis) {
 			this.node = node;
 			this.axis = axis;
 		}
@@ -134,7 +128,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 	public void testRootElementChildren() throws Exception {
 		Node<?> node = collection.getDocument().getFirstChild();
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(), new AxisFilter(ctx, node, Axis.CHILD));
+				.getSubtree(), new AxisFilter(node, Axis.CHILD));
 		checkOutput(Accessor.CHILD.performStep(node), expected);
 	}
 
@@ -142,7 +136,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 	public void testNonRootElementChildren() throws Exception {
 		Node<?> node = collection.getDocument().getFirstChild().getFirstChild();
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(), new AxisFilter(ctx, node, Axis.CHILD));
+				.getSubtree(), new AxisFilter(node, Axis.CHILD));
 		checkOutput(Accessor.CHILD.performStep(node), expected);
 	}
 
@@ -150,7 +144,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 	public void testRootFollowing() throws Exception {
 		Node<?> node = collection.getDocument().getFirstChild();
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(), new AxisFilter(ctx, node, Axis.FOLLOWING));
+				.getSubtree(), new AxisFilter(node, Axis.FOLLOWING));
 		checkOutput(Accessor.FOLLOWING.performStep(node), expected);
 	}
 
@@ -159,7 +153,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 		Node<?> node = collection.getDocument().getFirstChild().getFirstChild()
 				.getFirstChild().getNextSibling();
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(), new AxisFilter(ctx, node, Axis.FOLLOWING));
+				.getSubtree(), new AxisFilter(node, Axis.FOLLOWING));
 		checkOutput(Accessor.FOLLOWING.performStep(node), expected);
 	}
 
@@ -167,7 +161,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 	public void testRootPreceding() throws Exception {
 		Node<?> node = collection.getDocument().getFirstChild();
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(), new AxisFilter(ctx, node, Axis.PRECEDING));
+				.getSubtree(), new AxisFilter(node, Axis.PRECEDING));
 		checkOutput(Accessor.PRECEDING.performStep(node), expected);
 	}
 
@@ -177,7 +171,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 		Node<?> node = collection.getDocument().getFirstChild().getFirstChild()
 				.getFirstChild().getNextSibling();
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(), new AxisFilter(ctx, node, Axis.PRECEDING));
+				.getSubtree(), new AxisFilter(node, Axis.PRECEDING));
 		checkOutput(Accessor.PRECEDING.performStep(node), expected);
 	}
 
@@ -185,8 +179,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 	public void testRootPrecedingSibling() throws Exception {
 		Node<?> node = collection.getDocument().getFirstChild();
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(),
-				new AxisFilter(ctx, node, Axis.PRECEDING_SIBLING));
+				.getSubtree(), new AxisFilter(node, Axis.PRECEDING_SIBLING));
 		checkOutput(Accessor.PRECEDING_SIBLING.performStep(node), expected);
 	}
 
@@ -196,8 +189,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 				.getFirstChild().getNextSibling();
 		System.out.println(node);
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(),
-				new AxisFilter(ctx, node, Axis.PRECEDING_SIBLING));
+				.getSubtree(), new AxisFilter(node, Axis.PRECEDING_SIBLING));
 		System.out.println("---------------");
 		checkOutput(Accessor.PRECEDING_SIBLING.performStep(node), expected);
 	}
@@ -206,8 +198,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 	public void testRootFollowingSibling() throws Exception {
 		Node<?> node = collection.getDocument().getFirstChild();
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(),
-				new AxisFilter(ctx, node, Axis.FOLLOWING_SIBLING));
+				.getSubtree(), new AxisFilter(node, Axis.FOLLOWING_SIBLING));
 		checkOutput(Accessor.FOLLOWING_SIBLING.performStep(node), expected);
 	}
 
@@ -216,8 +207,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 		Node<?> node = collection.getDocument().getFirstChild().getFirstChild()
 				.getFirstChild().getNextSibling();
 		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(),
-				new AxisFilter(ctx, node, Axis.FOLLOWING_SIBLING));
+				.getSubtree(), new AxisFilter(node, Axis.FOLLOWING_SIBLING));
 		checkOutput(Accessor.FOLLOWING_SIBLING.performStep(node), expected);
 	}
 

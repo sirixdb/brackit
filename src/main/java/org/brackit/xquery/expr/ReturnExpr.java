@@ -32,6 +32,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.operator.Cursor;
 import org.brackit.xquery.operator.Operator;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
@@ -70,7 +71,7 @@ public class ReturnExpr implements Expr {
 
 		@Override
 		public Iter iterate() {
-			return new Iter() {
+			return new BaseIter() {
 				Cursor cursor;
 				Iter it;
 

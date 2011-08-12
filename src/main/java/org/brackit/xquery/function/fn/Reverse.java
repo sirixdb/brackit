@@ -58,7 +58,7 @@ public class Reverse extends AbstractFunction {
 			return null;
 		}
 
-		Item[] items = new Item[s.size(ctx).intValue()];
+		Item[] items = new Item[s.size().intValue()];
 		Item item = null;
 		Iter iter = s.iterate();
 

@@ -25,59 +25,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.expr;
-
-import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.Bool;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Sequence;
+package org.brackit.xquery.atomic;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public class AndExpr implements Expr {
-	private final Expr firstExpr;
+public interface DecNumeric extends Numeric {
 
-	private final Expr secondExpr;
-
-	public AndExpr(Expr firstExpr, Expr secondExpr) {
-		this.firstExpr = firstExpr;
-		this.secondExpr = secondExpr;
-	}
-
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return evaluateToItem(ctx, tuple);
-	}
-
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		Sequence firstResult = firstExpr.evaluate(ctx, tuple);
-
-		if ((firstResult == null) || (!firstResult.booleanValue())) {
-			return Bool.FALSE;
-		}
-
-		Sequence secondResult = secondExpr.evaluate(ctx, tuple);
-
-		return ((secondResult != null) && (secondResult.booleanValue())) ? Bool.TRUE
-				: Bool.FALSE;
-	}
-
-	@Override
-	public boolean isUpdating() {
-		return ((firstExpr.isUpdating()) || (secondExpr.isUpdating()));
-	}
-
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
 }

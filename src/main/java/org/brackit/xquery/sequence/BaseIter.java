@@ -25,13 +25,23 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.atomic;
+package org.brackit.xquery.sequence;
+
+import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.Counter;
+import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.xdm.Iter;
 
 /**
- * 
  * @author Sebastian Baechle
  * 
  */
-public interface IntegerNumeric extends DecimalNumeric {
-	public IntegerNumeric inc();
+public abstract class BaseIter implements Iter {
+
+	@Override
+	public void skip(IntNumeric i) throws QueryException {
+		Counter skipped = new Counter();
+		while ((next() != null) && (skipped.inc().cmp(i) < 0))
+			;
+	}
 }

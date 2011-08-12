@@ -27,10 +27,11 @@
  */
 package org.brackit.xquery.sequence;
 
-import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.Counter;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Node;
@@ -42,48 +43,81 @@ import org.brackit.xquery.xdm.Sequence;
  * 
  */
 public abstract class LazySequence implements Sequence {
-	IntegerNumeric size;
-	Boolean booleanValue;
+	// use volatile fields because
+	// they are computed on demand
+	private volatile IntNumeric size;
+	private volatile Boolean bool;
 
 	@Override
-	public final boolean booleanValue(QueryContext ctx) throws QueryException {
-		// Remember if expression is checked several times
-		if (booleanValue != null) {
-			return booleanValue;
+	public final boolean booleanValue() throws QueryException {
+		Boolean b = bool; // volatile read
+		if (b != null) {
+			return b;
 		}
-
-		booleanValue = false;
 		Iter s = iterate();
 		try {
-			Item n;
-			booleanValue = ((n = s.next()) != null) ? (n instanceof Node<?>) ? true
-					: n.booleanValue(ctx)
-					: false;
+			Item n = s.next();
+			if (n == null) {
+				return (bool = false);
+			}
+			if (n instanceof Node<?>) {
+				return (bool = true);
+			}
+			if (s.next() != null) {
+				throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+						"Effective boolean value is undefined "
+								+ "for sequences with two or more items "
+								+ "not starting with a node");
+			}
+			return (bool = n.booleanValue());
+
 		} finally {
 			s.close();
 		}
-
-		return booleanValue;
 	}
 
 	@Override
-	public final IntegerNumeric size(QueryContext ctx) throws QueryException {
-		// Remember if expression is checked several times
-		if (size != null) {
-			return size;
+	public final IntNumeric size() throws QueryException {
+		IntNumeric si = size; // volatile read
+		if (si != null) {
+			return si;
 		}
-
-		IntegerNumeric count = Int32.ZERO;
+		final Counter count = new Counter();
 		Iter s = iterate();
 		try {
 			while (s.next() != null) {
-				count = count.inc();
+				count.inc();
 			}
 		} finally {
 			s.close();
 		}
+		return (size = count.asIntNumeric());
+	}
 
-		size = count;
-		return size;
+	@Override
+	public Item get(IntNumeric pos) throws QueryException {
+		IntNumeric si = size; // volatile read
+		if ((si != null) && (si.cmp(pos) < 0)) {
+			return null;
+		}
+		if (Int32.ZERO.cmp(pos) >= 0) {
+			return null;
+		}
+		final Counter count = new Counter();
+		Iter it = iterate();
+		Item item;
+		try {
+			while ((item = it.next()) != null) {
+				if (count.inc().cmp(pos) == 0) {
+					return item;
+				}
+			}
+		} finally {
+			it.close();
+		}
+		if (si == null) {
+			size = count.asIntNumeric(); // remember size
+		}
+		return null;
 	}
 }

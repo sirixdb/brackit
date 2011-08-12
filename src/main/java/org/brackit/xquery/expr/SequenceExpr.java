@@ -31,14 +31,48 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.sequence.FlatteningIter;
-import org.brackit.xquery.sequence.LazySequence;
+import org.brackit.xquery.sequence.FlatteningSequence;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 
+/**
+ * 
+ * @author Sebastian Baechle
+ *
+ */
 public class SequenceExpr implements Expr {
+
+	private final class EvalSequence extends FlatteningSequence {
+		final Tuple tuple;
+		final QueryContext ctx;
+		final Sequence[] seqs;
+		int eval;
+
+		private EvalSequence(Tuple tuple, QueryContext ctx) {
+			this.tuple = tuple;
+			this.ctx = ctx;
+			this.seqs = new Sequence[expr.length];
+		}
+		
+		@Override
+		protected Sequence sequence(int pos) throws QueryException {
+			if (pos >= expr.length) {
+				return null;
+			}
+			Sequence s = seqs[pos];
+			if (s != null) {
+				return s;
+			}
+			synchronized (seqs) {
+				while ((s == null) && (eval < expr.length)) {
+					s = seqs[pos] = expr[eval++].evaluate(ctx, tuple);	
+				}				
+			}
+			return s;
+		}
+	}
+
 	final Expr[] expr;
 
 	public SequenceExpr(Expr... expr) {
@@ -48,25 +82,8 @@ public class SequenceExpr implements Expr {
 	@Override
 	public Sequence evaluate(final QueryContext ctx, final Tuple tuple)
 			throws QueryException {
-		// return an anonymous sequence flattening the result
-		// of each expression for the current tuple
-		return new LazySequence() {
-			@Override
-			public Iter iterate() {
-				return new FlatteningIter() {
-					int pos = 0;
 
-					@Override
-					protected Sequence nextSequence() throws QueryException {
-						Sequence s = null;
-						while ((pos < expr.length) && (s == null)) {
-							s = expr[pos++].evaluate(ctx, tuple);
-						}
-						return s;
-					}
-				};
-			}
-		};
+		return new EvalSequence(tuple, ctx);
 	}
 
 	@Override

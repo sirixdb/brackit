@@ -25,57 +25,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence;
-
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
+package org.brackit.xquery.atomic;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public abstract class FlatteningIter implements Iter {
-	private Iter nextS;
-
-	/**
-	 * Get next sequence to flatten out. If <code>null</code> is returned, the
-	 * flattening stops.
-	 */
-	protected abstract Sequence nextSequence() throws QueryException;
-
-	@Override
-	public Item next() throws QueryException {
-		while (true) {
-			if (nextS != null) {
-				Item res = nextS.next();
-				if (res != null) {
-					return res;
-				}
-				nextS.close();
-				nextS = null;
-			}
-
-			Sequence s = nextSequence();
-
-			if (s == null) {
-				return null;
-			}
-			if (s instanceof Item) {
-				// include single item in result
-				return (Item) s;
-			}
-			// flatten out result
-			nextS = s.iterate();
-		}
-	}
-
-	@Override
-	public void close() {
-		if (nextS != null) {
-			nextS.close();
-		}
-	}
+public interface FltNumeric extends Numeric {
 }

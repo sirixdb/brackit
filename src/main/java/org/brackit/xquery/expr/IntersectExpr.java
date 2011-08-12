@@ -32,6 +32,7 @@ import java.util.Comparator;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.sequence.SortedNodeSequence;
 import org.brackit.xquery.util.ExprUtil;
@@ -81,7 +82,7 @@ public class IntersectExpr implements Expr {
 		return new LazySequence() {
 			@Override
 			public Iter iterate() {
-				return new Iter() {
+				return new BaseIter() {
 					Iter aIt;
 					Iter bIt;
 

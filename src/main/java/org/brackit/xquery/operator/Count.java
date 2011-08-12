@@ -31,7 +31,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.compiler.translator.Reference;
 import org.brackit.xquery.xdm.Sequence;
 
@@ -47,7 +47,7 @@ public class Count implements Operator {
 
 	private class CountCursor implements Cursor {
 		private final Cursor c;
-		private IntegerNumeric pos;
+		private IntNumeric pos;
 
 		public CountCursor(Cursor c) {
 			this.c = c;

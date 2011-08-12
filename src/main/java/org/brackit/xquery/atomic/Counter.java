@@ -25,84 +25,46 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence;
+package org.brackit.xquery.atomic;
 
-import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntNumeric;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.Sequence;
+import java.math.BigDecimal;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public class ItemSequence implements Sequence {
-	protected final Item[] items;
+public class Counter {
 
-	public ItemSequence(Item... items) {
-		this.items = items;
+	private long lv;
+	private BigDecimal bdv;
+
+	public IntNumeric asIntNumeric() {
+		return (bdv == null) ? new Int64(lv) : new Int(bdv);
 	}
 
-	@Override
-	public boolean booleanValue() throws QueryException {
-		if (items.length == 0) {
-			return false;
-		}
-		if (items[0] instanceof Node<?>) {
-			return true;
-		}
-		if (items.length > 1) {
-			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-					"Effective boolean value is undefined "
-							+ "for sequences with two or more items "
-							+ "not starting with a node");
-		}
-		return items[0].booleanValue();
-	}
-
-	@Override
-	public IntNumeric size() throws QueryException {
-		return new Int32(items.length);
-	}
-
-	@Override
-	public Item get(IntNumeric pos) throws QueryException {
-		if ((Int32.ZERO.cmp(pos) >= 0) || (size().cmp(pos) < 0)) {
-			return null;
-		}
-		return items[pos.intValue()];
-	}
-
-	@Override
-	public Iter iterate() {
-		return new BaseIter() {
-			int pos = 0;
-
-			@Override
-			public Item next() {
-				return (pos < items.length) ? items[pos++] : null;
+	public Counter inc() {
+		if (bdv == null) {
+			if (lv < Long.MAX_VALUE) {
+				lv++;
+				return this;
 			}
-
-			@Override
-			public void close() {
-			}
-		};
+			bdv = new BigDecimal(lv);
+			lv = -1;			
+		}
+		
+		bdv = bdv.add(BigDecimal.ONE);
+		return this;
 	}
 
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		if (items.length > 0) {
-			sb.append(items[0]);
-			for (int i = 1; i < items.length; i++) {
-				sb.append(",");
-				sb.append(items[i]);
+	public int cmp(IntNumeric i) {
+		if (bdv == null) {
+			if (i instanceof LonNumeric) {
+				long ov = ((LonNumeric) i).longValue();
+				return (lv < ov) ? -1 : (lv == ov) ? 0 : 1;
 			}
+			return new BigDecimal(lv).compareTo(i.integerValue());
 		}
-		return sb.toString();
+		return bdv.compareTo(i.integerValue());
 	}
 }

@@ -54,13 +54,13 @@ public class Some extends AbstractFunction {
 		if (sequence == null) {
 			return Bool.FALSE;
 		} else if (sequence instanceof Item) {
-			return sequence.booleanValue(ctx) ? Bool.TRUE : Bool.FALSE;
+			return sequence.booleanValue() ? Bool.TRUE : Bool.FALSE;
 		} else {
 			Item item;
 			Iter it = sequence.iterate();
 			try {
 				while ((item = it.next()) != null) {
-					if (item.booleanValue(ctx)) {
+					if (item.booleanValue()) {
 						return Bool.TRUE;
 					}
 				}

@@ -27,7 +27,6 @@
  */
 package org.brackit.xquery.node;
 
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Una;
@@ -102,7 +101,7 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem imple
 	}
 
 	@Override
-	public boolean booleanValue(QueryContext ctx) throws QueryException {
+	public boolean booleanValue() throws QueryException {
 		return true;
 	}
 

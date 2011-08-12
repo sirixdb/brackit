@@ -30,7 +30,6 @@ package org.brackit.xquery.atomic;
 import java.math.BigDecimal;
 
 import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Type;
@@ -40,7 +39,7 @@ import org.brackit.xquery.xdm.Type;
  * @author Sebastian Baechle
  * 
  */
-public class Int32 extends AbstractNumeric implements LongNumeric {
+public class Int32 extends AbstractNumeric implements LonNumeric {
 	public static final Int32 MIN_VALUE = new Int32(Integer.MIN_VALUE);
 
 	public static final Int32 MAX_VALUE = new Int32(Integer.MAX_VALUE);
@@ -96,7 +95,7 @@ public class Int32 extends AbstractNumeric implements LongNumeric {
 		this.v = v;
 	}
 
-	public static IntegerNumeric parse(String str) throws QueryException {
+	public static IntNumeric parse(String str) throws QueryException {
 		str = Whitespace.collapseTrimOnly(str);
 		int length = str.length();
 
@@ -129,6 +128,11 @@ public class Int32 extends AbstractNumeric implements LongNumeric {
 	public Type type() {
 		return Type.INR;
 	}
+	
+	@Override
+	public IntNumeric asIntNumeric() {
+		return this;
+	}
 
 	@Override
 	public Atomic asType(Type type) throws QueryException {
@@ -136,14 +140,14 @@ public class Int32 extends AbstractNumeric implements LongNumeric {
 	}
 
 	@Override
-	public IntegerNumeric inc() {
+	public IntNumeric inc() {
 		return ((v < 20) && (v > 0)) ? ZERO_TWO_TWENTY[v + 1]
 				: (v != Integer.MAX_VALUE) ? new Int32(v + 1) : new Int64(
 						((long) v) + 1);
 	}
 
 	@Override
-	public boolean booleanValue(QueryContext ctx) throws QueryException {
+	public boolean booleanValue() throws QueryException {
 		return ((v != 0) && (v != Integer.MAX_VALUE) && (v != Integer.MIN_VALUE));
 	}
 
@@ -206,15 +210,15 @@ public class Int32 extends AbstractNumeric implements LongNumeric {
 
 	@Override
 	public Numeric add(Numeric other) throws QueryException {
-		if (other instanceof IntegerNumeric) {
-			if (other instanceof LongNumeric) {
+		if (other instanceof IntNumeric) {
+			if (other instanceof LonNumeric) {
 				if (other instanceof Int32) {
 					return addInt(v, other.intValue());
 				}
 				return addLong(v, other.longValue());
 			}
 			return other.add(this);
-		} else if (other instanceof DecimalNumeric) {
+		} else if (other instanceof DecNumeric) {
 			return addBigDecimal(new BigDecimal(v), other.decimalValue(), false);
 		} else if (other instanceof Dbl) {
 			return addDouble(v, other.doubleValue());
@@ -225,15 +229,15 @@ public class Int32 extends AbstractNumeric implements LongNumeric {
 
 	@Override
 	public Numeric subtract(Numeric other) throws QueryException {
-		if (other instanceof IntegerNumeric) {
-			if (other instanceof LongNumeric) {
+		if (other instanceof IntNumeric) {
+			if (other instanceof LonNumeric) {
 				if (other instanceof Int32) {
 					return subtractInt(v, other.intValue());
 				}
 				return subtractLong(v, other.longValue());
 			}
 			return other.add(this);
-		} else if (other instanceof DecimalNumeric) {
+		} else if (other instanceof DecNumeric) {
 			return subtractBigDecimal(new BigDecimal(v), other.decimalValue(),
 					false);
 		} else if (other instanceof Dbl) {
@@ -245,15 +249,15 @@ public class Int32 extends AbstractNumeric implements LongNumeric {
 
 	@Override
 	public Numeric multiply(Numeric other) throws QueryException {
-		if (other instanceof IntegerNumeric) {
-			if (other instanceof LongNumeric) {
+		if (other instanceof IntNumeric) {
+			if (other instanceof LonNumeric) {
 				if (other instanceof Int32) {
 					return multiplyInt(v, other.intValue());
 				}
 				return multiplyLong(v, other.longValue());
 			}
 			return other.multiply(this);
-		} else if (other instanceof DecimalNumeric) {
+		} else if (other instanceof DecNumeric) {
 			return multiplyBigDecimal(new BigDecimal(v), other.decimalValue(),
 					true);
 		} else if (other instanceof Dbl) {
@@ -265,15 +269,15 @@ public class Int32 extends AbstractNumeric implements LongNumeric {
 
 	@Override
 	public Numeric div(Numeric other) throws QueryException {
-		if (other instanceof IntegerNumeric) {
-			if (other instanceof LongNumeric) {
+		if (other instanceof IntNumeric) {
+			if (other instanceof LonNumeric) {
 				if (other instanceof Int32) {
 					return divideInt(v, other.intValue());
 				}
 				return divideLong(v, other.longValue());
 			}
 			return other.add(this);
-		} else if (other instanceof DecimalNumeric) {
+		} else if (other instanceof DecNumeric) {
 			return divideBigDecimal(new BigDecimal(v), other.decimalValue(),
 					false);
 		} else if (other instanceof Dbl) {
@@ -285,15 +289,15 @@ public class Int32 extends AbstractNumeric implements LongNumeric {
 
 	@Override
 	public Numeric idiv(Numeric other) throws QueryException {
-		if (other instanceof IntegerNumeric) {
-			if (other instanceof LongNumeric) {
+		if (other instanceof IntNumeric) {
+			if (other instanceof LonNumeric) {
 				if (other instanceof Int32) {
 					return idivideInt(v, other.intValue());
 				}
 				return idivideLong(v, other.longValue());
 			}
 			return other.add(this);
-		} else if (other instanceof DecimalNumeric) {
+		} else if (other instanceof DecNumeric) {
 			return idivideBigDecimal(new BigDecimal(v), other.decimalValue(),
 					false);
 		} else if (other instanceof Dbl) {
@@ -305,15 +309,15 @@ public class Int32 extends AbstractNumeric implements LongNumeric {
 
 	@Override
 	public Numeric mod(Numeric other) throws QueryException {
-		if (other instanceof IntegerNumeric) {
-			if (other instanceof LongNumeric) {
+		if (other instanceof IntNumeric) {
+			if (other instanceof LonNumeric) {
 				if (other instanceof Int32) {
 					return modInt(v, other.intValue());
 				}
 				return modLong(v, other.longValue());
 			}
 			return other.add(this);
-		} else if (other instanceof DecimalNumeric) {
+		} else if (other instanceof DecNumeric) {
 			return modBigDecimal(new BigDecimal(v), other.decimalValue(), false);
 		} else if (other instanceof Dbl) {
 			return modDouble(v, other.doubleValue());

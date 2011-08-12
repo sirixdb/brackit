@@ -81,7 +81,7 @@ public class PIExpr extends ConstructedNodeBuilder implements Expr {
 		if (type != Type.NCN) {
 			if ((type == Type.STR) || (type == Type.UNA)) {
 				try {
-					atomic = Cast.cast(ctx, atomic, Type.NCN, false);
+					atomic = Cast.cast(atomic, Type.NCN, false);
 				} catch (Exception e) {
 					throw new QueryException(e,
 							ErrorCode.ERR_PI_TARGET_CAST_TO_NCNAME,
@@ -110,7 +110,7 @@ public class PIExpr extends ConstructedNodeBuilder implements Expr {
 				atomic = ((Item) sequence).atomize();
 
 				if (!atomic.type().instanceOf(Type.STR)) {
-					atomic = Cast.cast(ctx, atomic, Type.STR, true);
+					atomic = Cast.cast(atomic, Type.STR, true);
 				}
 
 				buf.append(atomic.stringValue());
@@ -122,7 +122,7 @@ public class PIExpr extends ConstructedNodeBuilder implements Expr {
 						atomic = item.atomize();
 
 						if (!atomic.type().instanceOf(Type.STR)) {
-							atomic = Cast.cast(ctx, atomic, Type.STR, true);
+							atomic = Cast.cast(atomic, Type.STR, true);
 						}
 
 						String s = atomic.stringValue();

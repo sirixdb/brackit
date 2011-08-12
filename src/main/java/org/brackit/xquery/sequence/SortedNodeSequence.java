@@ -45,26 +45,21 @@ import org.brackit.xquery.xdm.Stream;
  * 
  */
 public class SortedNodeSequence extends LazySequence {
-	private final Comparator<Tuple> comparator;
+	private final Comparator<Tuple> cmp;
+	private final Sequence in;	
+	private final boolean dedup;
 
-	private final Sequence in;
-
-	private final boolean eliminateDuplicates;
-
-	public SortedNodeSequence(Comparator<Tuple> comparator, Sequence in,
-			boolean eliminateDuplicates) {
-		this.comparator = comparator;
+	public SortedNodeSequence(Comparator<Tuple> cmp, Sequence in, boolean dedup) {
+		this.cmp = cmp;
 		this.in = in;
-		this.eliminateDuplicates = eliminateDuplicates;
+		this.dedup = dedup;
 	}
 
 	@Override
 	public Iter iterate() {
-		return new Iter() {
-			final TupleSort sort = new TupleSort(comparator, -1); // TODO -1
-			// means no
-			// external
-			// sort
+		return new BaseIter() {
+			// TODO -1 means no external sort
+			final TupleSort sort = new TupleSort(cmp, -1);
 			final Sequence source = in;
 
 			Stream<? extends Tuple> sorted;
@@ -80,7 +75,7 @@ public class SortedNodeSequence extends LazySequence {
 				}
 
 				while (n != null) {
-					if ((eliminateDuplicates) && (p != null) && (p.cmp(n) == 0)) {
+					if ((dedup) && (p != null) && (p.cmp(n) == 0)) {
 						n = (Node<?>) sorted.next();
 					}
 					Node<?> deliver = n;

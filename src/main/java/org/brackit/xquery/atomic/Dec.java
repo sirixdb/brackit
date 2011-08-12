@@ -31,12 +31,16 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Type;
 
-public class Dec extends AbstractNumeric implements DecimalNumeric {
+/**
+ * 
+ * @author Sebastian Baechle
+ *
+ */
+public class Dec extends AbstractNumeric implements DecNumeric {
 	private final BigDecimal v;
 
 	private class DDec extends Dec {
@@ -76,23 +80,33 @@ public class Dec extends AbstractNumeric implements DecimalNumeric {
 	}
 
 	@Override
+	public IntNumeric asIntNumeric() {
+		try {
+			v.toBigIntegerExact();
+			return new Int(v);
+		} catch (ArithmeticException e) {
+			return null;
+		}
+	}
+
+	@Override
 	public Atomic asType(Type type) throws QueryException {
 		return new DDec(v, type);
 	}
 
 	@Override
-	public boolean booleanValue(QueryContext ctx) throws QueryException {
+	public boolean booleanValue() throws QueryException {
 		return (v.intValue() != 0);
 	}
 
 	@Override
 	public int cmp(Atomic other) throws QueryException {
-		if (other instanceof DecimalNumeric) {
+		if (other instanceof DecNumeric) {
 			return v.compareTo(((Numeric) other).decimalValue());
-		} else if (other instanceof DoubleNumeric) {
+		} else if (other instanceof DblNumeric) {
 			return Double.compare(v.doubleValue(), ((Numeric) other)
 					.doubleValue());
-		} else if (other instanceof FloatNumeric) {
+		} else if (other instanceof FltNumeric) {
 			return Float
 					.compare(v.floatValue(), ((Numeric) other).floatValue());
 		}
@@ -102,9 +116,9 @@ public class Dec extends AbstractNumeric implements DecimalNumeric {
 
 	@Override
 	protected int atomicCmpInternal(Atomic other) {
-		if (other instanceof DecimalNumeric) {
+		if (other instanceof DecNumeric) {
 			return v.compareTo(((Numeric) other).decimalValue());
-		} else if (other instanceof DoubleNumeric) {
+		} else if (other instanceof DblNumeric) {
 			return Double.compare(v.doubleValue(), ((Numeric) other)
 					.doubleValue());
 		} else {
@@ -149,9 +163,9 @@ public class Dec extends AbstractNumeric implements DecimalNumeric {
 
 	@Override
 	public Numeric add(Numeric other) throws QueryException {
-		if (other instanceof DecimalNumeric) {
+		if (other instanceof DecNumeric) {
 			return addBigDecimal(v, other.decimalValue(), true);
-		} else if (other instanceof DoubleNumeric) {
+		} else if (other instanceof DblNumeric) {
 			return addDouble(v.doubleValue(), other.doubleValue());
 		} else {
 			return addFloat(v.floatValue(), other.floatValue());
@@ -160,9 +174,9 @@ public class Dec extends AbstractNumeric implements DecimalNumeric {
 
 	@Override
 	public Numeric subtract(Numeric other) throws QueryException {
-		if (other instanceof DecimalNumeric) {
+		if (other instanceof DecNumeric) {
 			return subtractBigDecimal(v, other.decimalValue(), true);
-		} else if (other instanceof DoubleNumeric) {
+		} else if (other instanceof DblNumeric) {
 			return subtractDouble(v.doubleValue(), other.doubleValue());
 		} else {
 			return subtractFloat(v.floatValue(), other.floatValue());
@@ -171,9 +185,9 @@ public class Dec extends AbstractNumeric implements DecimalNumeric {
 
 	@Override
 	public Numeric multiply(Numeric other) throws QueryException {
-		if (other instanceof DecimalNumeric) {
+		if (other instanceof DecNumeric) {
 			return multiplyBigDecimal(v, other.decimalValue(), true);
-		} else if (other instanceof DoubleNumeric) {
+		} else if (other instanceof DblNumeric) {
 			return multiplyDouble(v.doubleValue(), other.doubleValue());
 		} else {
 			return multiplyFloat(v.floatValue(), other.floatValue());
@@ -182,9 +196,9 @@ public class Dec extends AbstractNumeric implements DecimalNumeric {
 
 	@Override
 	public Numeric div(Numeric other) throws QueryException {
-		if (other instanceof DecimalNumeric) {
+		if (other instanceof DecNumeric) {
 			return divideBigDecimal(v, other.decimalValue(), true);
-		} else if (other instanceof DoubleNumeric) {
+		} else if (other instanceof DblNumeric) {
 			return divideDouble(v.doubleValue(), other.doubleValue());
 		} else {
 			return divideFloat(v.floatValue(), other.floatValue());
@@ -193,9 +207,9 @@ public class Dec extends AbstractNumeric implements DecimalNumeric {
 
 	@Override
 	public Numeric idiv(Numeric other) throws QueryException {
-		if (other instanceof DecimalNumeric) {
+		if (other instanceof DecNumeric) {
 			return idivideBigDecimal(v, other.decimalValue(), true);
-		} else if (other instanceof DoubleNumeric) {
+		} else if (other instanceof DblNumeric) {
 			return idivideDouble(v.doubleValue(), other.doubleValue());
 		} else {
 			return idivideFloat(v.floatValue(), other.floatValue());
@@ -204,9 +218,9 @@ public class Dec extends AbstractNumeric implements DecimalNumeric {
 
 	@Override
 	public Numeric mod(Numeric other) throws QueryException {
-		if (other instanceof DecimalNumeric) {
+		if (other instanceof DecNumeric) {
 			return modBigDecimal(v, other.decimalValue(), true);
-		} else if (other instanceof DoubleNumeric) {
+		} else if (other instanceof DblNumeric) {
 			return modDouble(v.doubleValue(), other.doubleValue());
 		} else {
 			return modFloat(v.floatValue(), other.floatValue());

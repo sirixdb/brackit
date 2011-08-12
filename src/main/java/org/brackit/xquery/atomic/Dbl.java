@@ -30,12 +30,16 @@ package org.brackit.xquery.atomic;
 import java.math.BigDecimal;
 
 import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Type;
 
-public class Dbl extends AbstractNumeric implements DoubleNumeric {
+/**
+ * 
+ * @author Sebastian Baechle
+ *
+ */
+public class Dbl extends AbstractNumeric implements DblNumeric {
 	public static final Dbl NaN = new Dbl(Double.NaN);
 
 	public static final Dbl NINF = new Dbl(Double.NEGATIVE_INFINITY);
@@ -114,14 +118,24 @@ public class Dbl extends AbstractNumeric implements DoubleNumeric {
 	public Type type() {
 		return Type.DBL;
 	}
-
+	
+	@Override
+	public IntNumeric asIntNumeric() {
+		if (Double.isNaN(v) || Double.isInfinite(v)) {
+			return null;
+		}
+		long i = (long) v;
+		double f = v - i;
+		return (f == 0.0) ? new Int64(i) : null;
+	}
+	
 	@Override
 	public Atomic asType(Type type) throws QueryException {
 		return validate(Type.DBL, new DDbl(v, type));
 	}
 
 	@Override
-	public boolean booleanValue(QueryContext ctx) throws QueryException {
+	public boolean booleanValue() throws QueryException {
 		return ((v != 0) && (v != Double.NaN) && (v != Double.MAX_VALUE) && (v != Double.MIN_VALUE));
 	}
 

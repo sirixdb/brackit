@@ -27,6 +27,11 @@
  */
 package org.brackit.xquery.atomic;
 
-public interface FloatNumeric extends Numeric {
+/**
+ * 
+ * @author Sebastian Baechle
+ *
+ */
+public interface DblNumeric extends Numeric {
 
 }

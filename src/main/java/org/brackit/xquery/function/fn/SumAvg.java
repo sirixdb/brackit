@@ -32,7 +32,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.Numeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.expr.Cast;
@@ -71,7 +71,7 @@ public class SumAvg extends AbstractFunction {
 				aggType = agg.type();
 
 				if (aggType == Type.UNA) {
-					agg = Cast.cast(ctx, agg, Type.DBL, false);
+					agg = Cast.cast(agg, Type.DBL, false);
 					aggType = Type.DBL;
 				}
 
@@ -104,14 +104,14 @@ public class SumAvg extends AbstractFunction {
 	private Atomic numericAggregate(QueryContext ctx, Iter in, Numeric agg)
 			throws QueryException {
 		Item item;
-		IntegerNumeric count = Int32.ONE;
+		IntNumeric count = Int32.ONE;
 
 		while ((item = in.next()) != null) {
 			Atomic s = item.atomize();
 			Type type = s.type();
 
 			if (type == Type.UNA) {
-				s = Cast.cast(ctx, s, Type.DBL, false);
+				s = Cast.cast(s, Type.DBL, false);
 				type = Type.DBL;
 			} else if (!(s instanceof Numeric)) {
 				throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,

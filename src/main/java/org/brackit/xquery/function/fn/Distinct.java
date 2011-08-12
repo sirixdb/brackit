@@ -27,20 +27,19 @@
  */
 package org.brackit.xquery.function.fn;
 
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.Set;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -75,40 +74,35 @@ public class Distinct extends AbstractFunction {
 			return s;
 		}
 
-		final Comparator<Tuple> comparator = new Comparator<Tuple>() {
-			@Override
-			public int compare(Tuple o1, Tuple o2) {
-				int res = ((Atomic) o1).atomicCmp((Atomic) o2);
-				return res;
-			}
-		};
-
 		return new LazySequence() {
 			final Sequence inSeq = s;
-			HashSet<Atomic> set;
+			// volatile because it is computed
+			// on demand
+			volatile Set<Atomic> set;
 
 			@Override
 			public Iter iterate() {
-				return new Iter() {
+				return new BaseIter() {
 					Iterator<Atomic> it;
 
 					@Override
 					public Item next() throws QueryException {
-						if (set == null) {
-							set = new LinkedHashSet<Atomic>();
-
+						Set<Atomic> distinct = set; // volatile read
+						if (distinct == null) {
+							distinct = new LinkedHashSet<Atomic>();
 							Iter it = inSeq.iterate();
 							try {
 								Item runVar;
 								while ((runVar = it.next()) != null) {
-									set.add((Atomic) runVar);
+									distinct.add((Atomic) runVar);
 								}
 							} finally {
 								it.close();
 							}
+							set = distinct;
 						}
 						if (it == null) {
-							it = set.iterator();
+							it = distinct.iterator();
 						}
 
 						return (it.hasNext()) ? it.next() : null;

@@ -35,7 +35,8 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.util.sort.TupleSort;
 import org.brackit.xquery.xdm.Expr;
@@ -97,7 +98,7 @@ public class PathStepExpr implements Expr {
 		}
 
 		Sequence result = new PathStepSequence(ctx, tuple, nodes,
-				(bindSize) ? nodes.size(ctx) : null);
+				(bindSize) ? nodes.size() : null);
 
 		// if (log.isTraceEnabled())
 		// {
@@ -146,10 +147,10 @@ public class PathStepExpr implements Expr {
 		final QueryContext ctx;
 		final Sequence n; // result of unfiltered step expression
 		final Tuple tuple;
-		final IntegerNumeric s;
+		final IntNumeric s;
 
 		PathStepSequence(QueryContext ctx, Tuple tuple, Sequence nodes,
-				IntegerNumeric s) {
+				IntNumeric s) {
 			this.ctx = ctx;
 			this.tuple = tuple;
 			this.n = nodes;
@@ -162,13 +163,13 @@ public class PathStepExpr implements Expr {
 					tuple, (Node<?>) n) : new PathStepSequenceIter(ctx, tuple,
 					s, n.iterate());
 		}
-		
+
 		public String toString() {
 			return step + "/" + nextStep;
 		}
 	}
 
-	private class SinglePathStepSequenceIter implements Iter {
+	private class SinglePathStepSequenceIter extends BaseIter {
 		final QueryContext ctx;
 		final Tuple tuple;
 		Node<?> currentNode;
@@ -214,18 +215,18 @@ public class PathStepExpr implements Expr {
 		}
 	}
 
-	private class PathStepSequenceIter implements Iter {
+	private class PathStepSequenceIter extends BaseIter {
 		final QueryContext ctx;
 		final Tuple tuple;
-		final IntegerNumeric inSeqSize;
+		final IntNumeric inSeqSize;
 		final Iter in;
 
-		IntegerNumeric pos = Int32.ZERO;
+		IntNumeric pos = Int32.ZERO;
 		Node<?> currentNode;
 		Iter nextS;
 
 		PathStepSequenceIter(QueryContext ctx, Tuple tuple,
-				IntegerNumeric inSeqSize, Iter in) {
+				IntNumeric inSeqSize, Iter in) {
 			this.ctx = ctx;
 			this.tuple = tuple;
 			this.inSeqSize = inSeqSize;
@@ -315,11 +316,7 @@ public class PathStepExpr implements Expr {
 	}
 
 	private static class StepOutSequence extends LazySequence {
-		final Sequence s;
-
-		final boolean lastStep;
-
-		final Comparator<Tuple> nodeComparator = new Comparator<Tuple>() {
+		static final Comparator<Tuple> cmp = new Comparator<Tuple>() {
 			@Override
 			public int compare(Tuple o1, Tuple o2) {
 				int res = ((Node<?>) o1).cmp((Node<?>) o2);
@@ -327,7 +324,12 @@ public class PathStepExpr implements Expr {
 			}
 		};
 
-		TupleSort sort;
+		final Sequence s;
+		final boolean lastStep;
+		// volatile fields because they are
+		// computed on demand
+		volatile TupleSort tupleSort;
+		volatile boolean atomicOnly;
 
 		public StepOutSequence(Sequence s, boolean lastStep) {
 			this.s = s;
@@ -336,20 +338,21 @@ public class PathStepExpr implements Expr {
 
 		@Override
 		public Iter iterate() {
-			return new Iter() {
+			return new BaseIter() {
 				Iter it;
 				Stream<? extends Tuple> sorted;
-				IntegerNumeric pos = Int32.ZERO;
 				Node<?> prev = null;
-				boolean atomicOnly;
 
 				@Override
 				public Item next() throws QueryException {
-					if (atomicOnly) {
+					if (atomicOnly) { // volatile read
+						if (it == null) {
+							it = s.iterate();
+						}
 						Item next = it.next();
 						return next;
 					}
-
+					TupleSort sort = tupleSort; // volatile read
 					if (sort == null) {
 						it = s.iterate();
 						final Item first = it.next();
@@ -375,19 +378,20 @@ public class PathStepExpr implements Expr {
 						}
 
 						try {
-							TupleSort tupleSort = new TupleSort(nodeComparator,
-									-1); // TODO -1 means no external sort
+							// TODO -1 means no external sort
+							sort = new TupleSort(cmp, -1);
 							do {
 								if (!(next instanceof Node<?>)) {
 									throw new QueryException(
 											ErrorCode.ERR_LAST_STEP_RETURNED_MIXED_NODE_AND_ATOMIC,
-											"Last step in path expression returned both nodes and atomic values: %s (first) %s (current)",
+											"Last step in path expression returned both "
+													+ "nodes and atomic values: %s (first) %s (current)",
 											first, next);
 								}
-								tupleSort.add(next);
+								sort.add(next);
 							} while ((next = it.next()) != null);
-							tupleSort.sort();
-							sort = tupleSort;
+							sort.sort();
+							tupleSort = sort;
 						} finally {
 							it.close();
 							it = null;

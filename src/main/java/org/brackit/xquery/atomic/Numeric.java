@@ -52,6 +52,8 @@ public interface Numeric extends Atomic {
 	public long longValue();
 
 	public int intValue();
+	
+	public IntNumeric asIntNumeric();
 
 	public Numeric add(Numeric other) throws QueryException;
 

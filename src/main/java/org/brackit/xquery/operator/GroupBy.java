@@ -34,7 +34,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.compiler.translator.Reference;
-import org.brackit.xquery.sequence.FlatteningSequence;
+import org.brackit.xquery.sequence.NestedSequence;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
@@ -117,7 +117,7 @@ public class GroupBy implements Operator {
 					groupings[i] = buffer[i][0];
 				} else if (size[i] > 1) {
 					Sequence[] tmp = Arrays.copyOfRange(buffer[i], 0, size[i]);
-					groupings[i] = new FlatteningSequence(tmp);
+					groupings[i] = new NestedSequence(tmp);
 				}
 			}
 			return new TupleImpl(groupings);

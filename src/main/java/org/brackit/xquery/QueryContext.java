@@ -37,7 +37,7 @@ import org.brackit.xquery.atomic.DTD;
 import org.brackit.xquery.atomic.Date;
 import org.brackit.xquery.atomic.DateTime;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Time;
 import org.brackit.xquery.node.SimpleStore;
@@ -69,9 +69,9 @@ public class QueryContext {
 
 	private Item defaultItem;
 
-	private IntegerNumeric defaultSize;
+	private IntNumeric defaultSize;
 
-	private IntegerNumeric defaultPos;
+	private IntNumeric defaultPos;
 
 	private Map<QNm, Sequence> externalVars;
 
@@ -129,8 +129,8 @@ public class QueryContext {
 		return ((externalVars != null) && (externalVars.containsKey(name)));
 	}
 
-	public void setDefaultContext(Item item, IntegerNumeric position,
-			IntegerNumeric size) throws QueryException {
+	public void setDefaultContext(Item item, IntNumeric position,
+			IntNumeric size) throws QueryException {
 		if (item == null) {
 			if ((position != null) || (size != null)) {
 				throw new QueryException(
@@ -155,11 +155,11 @@ public class QueryContext {
 		return defaultItem;
 	}
 
-	public IntegerNumeric getPosition() {
+	public IntNumeric getPosition() {
 		return defaultPos;
 	}
 
-	public IntegerNumeric getSize() {
+	public IntNumeric getSize() {
 		return defaultSize;
 	}
 

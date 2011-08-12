@@ -28,12 +28,12 @@
 package org.brackit.xquery.xdm;
 
 import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.operator.TupleImpl;
+import org.brackit.xquery.sequence.BaseIter;
 
 /**
  * Base class 
@@ -47,14 +47,19 @@ public abstract class AbstractItem implements Item {
 	}
 	
 	@Override
-	public final IntegerNumeric size(QueryContext ctx) throws QueryException {
+	public final IntNumeric size() throws QueryException {
 		return Int32.ONE;
 	}
 	
 	@Override
+	public Item get(IntNumeric pos) throws QueryException {
+		return (Int32.ONE.eq(pos)) ? this : null;
+	}
+
+	@Override
 	public final Iter iterate() {
 		final Item item = this;
-		return new Iter() {
+		return new BaseIter() {
 			boolean first = true;
 
 			public final Item next() throws QueryException {

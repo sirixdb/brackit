@@ -31,8 +31,9 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.Numeric;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
@@ -46,26 +47,128 @@ import org.brackit.xquery.xdm.Sequence;
  * 
  */
 public class FilterExpr implements Expr {
-	final Expr[] filter;
 
+	private class DependentFilterSeq extends LazySequence {
+		private final QueryContext ctx;
+		private final Tuple tuple;
+		private final Sequence s;
+		private final IntNumeric inSeqSize;
+
+		public DependentFilterSeq(QueryContext ctx, Tuple tuple, Sequence s)
+				throws QueryException {
+			this.ctx = ctx;
+			this.tuple = tuple;
+			this.s = s;
+			this.inSeqSize = (bindSize ? (s != null) ? s.size() : Int32.ZERO
+					: Int32.ONE);
+		}
+
+		@Override
+		public Iter iterate() {
+			return new BaseIter() {
+				IntNumeric pos;
+				Iter it;
+
+				@Override
+				public Item next() throws QueryException {
+					if (pos == null) {
+						if (s instanceof Item) {
+							pos = Int32.ONE;
+							if (predicate((Item) s)) {
+								// include single item in result
+								return (Item) s;
+							}
+							return null;
+						} else if (s != null) {
+							pos = Int32.ZERO;
+							it = s.iterate();
+						}
+					}
+
+					if (it == null) {
+						return null;
+					}
+
+					Item n;
+					while ((n = it.next()) != null) {
+						pos = pos.inc();
+
+						if (predicate((Item) n)) {
+							// include single item in result
+							return (Item) n;
+						}
+					}
+					it.close();
+					return null;
+				}
+
+				private boolean predicate(Item item) throws QueryException {
+					Tuple current = tuple;
+
+					if (bindCount > 0) {
+						Sequence[] tmp = new Sequence[bindCount];
+						int p = 0;
+						if (bindItem) {
+							tmp[p++] = item;
+						}
+						if (bindPos) {
+							tmp[p++] = pos;
+						}
+						if (bindSize) {
+							tmp[p++] = inSeqSize;
+						}
+						current = current.concat(tmp);
+					}
+
+					Sequence res = filter.evaluate(ctx, current);
+
+					if (res == null) {
+						return false;
+					}
+
+					if (res instanceof Numeric) {
+						if (((Numeric) res).cmp(pos) != 0) {
+							return false;
+						}
+					} else {
+						Iter it = res.iterate();
+						try {
+							Item first = it.next();
+							if ((first != null) && (it.next() == null)
+									&& (first instanceof Numeric)
+									&& (((Numeric) first).cmp(pos) != 0)) {
+								return false;
+							}
+						} finally {
+							it.close();
+						}
+
+						if (!res.booleanValue()) {
+							return false;
+						}
+					}
+					return true;
+				}
+
+				@Override
+				public void close() {
+					if (it != null) {
+						it.close();
+					}
+				}
+			};
+		}
+	}
+
+	final Expr filter;
 	final Expr expr;
-
 	final boolean bindItem;
-
 	final boolean bindPos;
-
 	final boolean bindSize;
-
 	final int bindCount;
 
 	public FilterExpr(Expr expr, Expr filter, boolean bindItem,
 			boolean bindPos, boolean bindSize) {
-		this(expr, new Expr[] { filter }, bindItem, bindPos, bindSize);
-	}
-
-	public FilterExpr(Expr expr, Expr[] filter, boolean bindItem,
-			boolean bindPos, boolean bindSize) {
-		super();
 		this.filter = filter;
 		this.expr = expr;
 		this.bindItem = bindItem;
@@ -77,112 +180,40 @@ public class FilterExpr implements Expr {
 	@Override
 	public Sequence evaluate(final QueryContext ctx, final Tuple tuple)
 			throws QueryException {
-		final Sequence inSeq = expr.evaluate(ctx, tuple);
-		final IntegerNumeric inSeqSize = (bindSize ? (inSeq != null) ? inSeq
-				.size(ctx) : Int32.ZERO : Int32.ONE);
+		Sequence s = expr.evaluate(ctx, tuple);
 
-		// return an anonymous sequence flattening the result
-		// of each expression for the current tuple
-		return new LazySequence() {
-			@Override
-			public Iter iterate() {
-				return new Iter() {
-					IntegerNumeric pos;
-					Iter s;
+		// nothing to filter
+		if (s == null) {
+			return null;
+		}
 
-					@Override
-					public Item next() throws QueryException {
-						if (pos == null) {
-							if (inSeq instanceof Item) {
-								pos = Int32.ONE;
-								if (predicate((Item) inSeq)) {
-									// include single item in result
-									return (Item) inSeq;
-								}
-								return null;
-							} else if (inSeq != null) {
-								pos = Int32.ZERO;
-								s = inSeq.iterate();
-							}
-						}
-
-						if (s == null) {
-							return null;
-						}
-
-						Item n;
-						while ((n = s.next()) != null) {
-							pos = pos.inc();
-
-							if (predicate((Item) n)) {
-								// include single item in result
-								return (Item) n;
-							}
-						}
-						s.close();
-						return null;
+		// check if the filter predicate is independent
+		// of the context item
+		if (bindCount == 0) {
+			Sequence fs = filter.evaluate(ctx, tuple);
+			if (fs == null) {
+				return null;
+			} else if (fs instanceof Numeric) {
+				IntNumeric pos = ((Numeric) fs).asIntNumeric();
+				return (pos != null) ? s.get(pos) : null;
+			} else {
+				Iter it = fs.iterate();
+				try {
+					Item first = it.next();
+					if ((first != null) && (it.next() == null)
+							&& (first instanceof Numeric)) {
+						IntNumeric pos = ((Numeric) fs).asIntNumeric();
+						return (pos != null) ? s.get(pos) : null;
 					}
-
-					private boolean predicate(Item item) throws QueryException {
-						Tuple current = tuple;
-
-						if (bindCount > 0) {
-							Sequence[] tmp = new Sequence[bindCount];
-							int p = 0;
-							if (bindItem) {
-								tmp[p++] = item;
-							}
-							if (bindPos) {
-								tmp[p++] = pos;
-							}
-							if (bindSize) {
-								tmp[p++] = inSeqSize;
-							}
-							current = current.concat(tmp);
-						}
-
-						for (Expr f : filter) {
-							Sequence res = f.evaluate(ctx, current);
-
-							if (res == null) {
-								return false;
-							}
-
-							if (res instanceof Numeric) {
-								if (((Numeric) res).cmp(pos) != 0) {
-									return false;
-								}
-							} else {
-								Iter it = res.iterate();
-								try {
-									Item first = it.next();
-									if ((first != null)
-											&& (it.next() == null)
-											&& (first instanceof Numeric)
-											&& (((Numeric) first).cmp(pos) != 0)) {
-										return false;
-									}
-								} finally {
-									it.close();
-								}
-
-								if (!res.booleanValue(ctx)) {
-									return false;
-								}
-							}
-						}
-						return true;
-					}
-
-					@Override
-					public void close() {
-						if (s != null) {
-							s.close();
-						}
-					}
-				};
+				} finally {
+					it.close();
+				}
+				return fs.booleanValue() ? s : null;
 			}
-		};
+		}
+
+		// the filter predicate is dependent on the context item
+		return new DependentFilterSeq(ctx, tuple, s);
 	}
 
 	@Override
@@ -210,21 +241,18 @@ public class FilterExpr implements Expr {
 				current = current.concat(tmp);
 			}
 
-			for (Expr f : filter) {
-				Sequence fRes = f.evaluate(ctx, current);
+			Sequence fRes = filter.evaluate(ctx, current);
 
-				if (fRes == null) {
-					return null;
-				}
+			if (fRes == null) {
+				return null;
+			}
 
-				if ((fRes instanceof Numeric)
-						&& (((Numeric) fRes).intValue() != 1)) {
-					return null;
-				}
+			if ((fRes instanceof Numeric) && (((Numeric) fRes).intValue() != 1)) {
+				return null;
+			}
 
-				if (!fRes.booleanValue(ctx)) {
-					return null;
-				}
+			if (!fRes.booleanValue()) {
+				return null;
 			}
 
 			return (Item) res;
@@ -238,10 +266,8 @@ public class FilterExpr implements Expr {
 		if (expr.isUpdating()) {
 			return true;
 		}
-		for (Expr f : filter) {
-			if (f.isUpdating()) {
-				return true;
-			}
+		if (filter.isUpdating()) {
+			return true;
 		}
 		return false;
 	}
@@ -253,9 +279,9 @@ public class FilterExpr implements Expr {
 
 	public String toString() {
 		StringBuilder s = new StringBuilder(expr.toString());
-		for (int i = 0; i < filter.length; i++) {
+		if (filter != null) {
 			s.append('[');
-			s.append(filter[i]);
+			s.append(filter);
 			s.append(']');
 		}
 		return s.toString();

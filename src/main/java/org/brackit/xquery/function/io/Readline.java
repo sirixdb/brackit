@@ -47,6 +47,7 @@ import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.function.Signature;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.node.parser.DocumentParser;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.sequence.type.AtomicType;
 import org.brackit.xquery.sequence.type.Cardinality;
@@ -76,7 +77,7 @@ public class Readline extends AbstractFunction {
 		return new LazySequence() {
 			@Override
 			public Iter iterate() {
-				return new Iter() {
+				return new BaseIter() {
 					URLConnection conn;
 					BufferedReader in;
 

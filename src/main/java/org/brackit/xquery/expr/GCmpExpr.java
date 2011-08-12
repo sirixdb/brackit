@@ -58,8 +58,7 @@ public class GCmpExpr extends VCmpExpr {
 		Sequence right = rightExpr.evaluate(ctx, tuple);
 
 		if ((left == null) || (right == null)) {
-			// TODO Standard says here return empty sequence
-			return Bool.FALSE;
+			return null;
 		}
 
 		// assume simple case and perform cheaper direct evaluation
@@ -118,7 +117,7 @@ public class GCmpExpr extends VCmpExpr {
 				 * Cast.cast(ctx, lAtomic, Type.STR, false);
 				 */
 			} else {
-				lAtomic = Cast.cast(ctx, lAtomic, rAtomic.type(), false);
+				lAtomic = Cast.cast(lAtomic, rAtomic.type(), false);
 			}
 		} else if (rType.instanceOf(Type.UNA)) {
 			if (lType.isNumeric()) {
@@ -130,7 +129,7 @@ public class GCmpExpr extends VCmpExpr {
 				 * Cast.cast(ctx, rAtomic, Type.STR, false);
 				 */
 			} else {
-				rAtomic = Cast.cast(ctx, rAtomic, lAtomic.type(), false);
+				rAtomic = Cast.cast(rAtomic, lAtomic.type(), false);
 			}
 		}
 

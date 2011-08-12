@@ -53,10 +53,10 @@ public class BooleanValue extends AbstractFunction {
 			throws QueryException {
 		if (not) {
 			return (args[0] == null) ? Bool.TRUE
-					: args[0].booleanValue(ctx) ? Bool.FALSE : Bool.TRUE;
+					: args[0].booleanValue() ? Bool.FALSE : Bool.TRUE;
 		} else {
 			return (args[0] == null) ? Bool.FALSE
-					: args[0].booleanValue(ctx) ? Bool.TRUE : Bool.FALSE;
+					: args[0].booleanValue() ? Bool.TRUE : Bool.FALSE;
 		}
 	}
 }
