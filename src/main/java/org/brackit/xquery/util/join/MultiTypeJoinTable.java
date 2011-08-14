@@ -247,6 +247,9 @@ public class MultiTypeJoinTable {
 
 	public final void add(Sequence keys, Sequence[] bindings, int pos)
 			throws QueryException {
+		if (keys == null) {
+			return;
+		} 
 		if (keys instanceof Item) {
 			addItem((Item) keys, bindings, pos);
 		} else {

@@ -151,10 +151,12 @@ public class TableJoin implements Operator {
 				while ((t = rc.next(ctx)) != null) {
 					Sequence keys = (isGCmp) ? rExpr.evaluate(ctx, t) : rExpr
 							.evaluateToItem(ctx, t);
-					Sequence[] tmp = t.array();
-					Sequence[] bindings = Arrays.copyOfRange(tmp, lSize,
-							tmp.length);
-					table.add(keys, bindings, pos++);
+					if (keys != null) {
+						Sequence[] tmp = t.array();
+						Sequence[] bindings = Arrays.copyOfRange(tmp, lSize,
+								tmp.length);
+						table.add(keys, bindings, pos++);
+					}
 				}
 			} finally {
 				rc.close(ctx);
