@@ -95,11 +95,15 @@ public abstract class FlatteningSequence implements Sequence {
 			Numeric remaining = i.subtract(skipped.asIntNumeric());
 			while ((s = sequence(pos++)) != null) {
 				IntNumeric size = s.size();
-				if (remaining.cmp(size) < 0) {
+				int cmp = remaining.cmp(size);
+				if (cmp <= 0) {
 					it = s.iterate();
-					it.skip((IntNumeric) remaining);
+					if (cmp != 0) {
+						it.skip((IntNumeric) remaining);
+					}
+					break;
 				}
-				remaining = i.subtract(size);
+				remaining = remaining.subtract(size);
 			}
 		}
 
