@@ -25,73 +25,58 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.module;
-
-import java.util.List;
-import java.util.Map;
+package org.brackit.xquery.compiler;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.AnyURI;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
-import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.XQuery;
+import org.brackit.xquery.compiler.optimizer.DefaultOptimizer;
+import org.brackit.xquery.compiler.optimizer.Optimizer;
+import org.brackit.xquery.compiler.parser.ANTLRParser;
+import org.brackit.xquery.compiler.parser.DotUtil;
+import org.brackit.xquery.compiler.parser.Parser;
+import org.brackit.xquery.compiler.translator.PipelineCompiler;
+import org.brackit.xquery.compiler.translator.Translator;
+import org.brackit.xquery.module.Module;
 
 /**
+ * Compiles an {@link Module XQuery module}.
  * 
  * @author Sebastian Baechle
  * 
  */
-public interface Module {
-
-	public NamespaceDecl getTargetNS();
-
-	public Expr getBody();
-
-	public void importModule(Module module) throws QueryException;
-
-	public List<Module> getImportedModules();
+public class CompileChain {
 	
-	public Variables getVariables();
+	public CompileChain() {
+	}
 
-	public Namespaces getNamespaces();
+	protected Parser getParser() {
+		return new ANTLRParser();
+	}
 
-	public Functions getFunctions();
+	protected Optimizer getOptimizer() {
+		return new DefaultOptimizer();
+	}
 
-	public Types getTypes();
+	protected Translator getTranslator() {
+		return new PipelineCompiler(getModuleResolver());
+	}
 
-	public void addOption(QNm name, Str value);
+	protected ModuleResolver getModuleResolver() {
+		return new BaseResolver();
+	}
 
-	public Map<QNm, Str> getOptions();
+	public Module compile(String query) throws QueryException {
+		if (XQuery.DEBUG) {
+			System.out.println(String.format("Compiling query:\n%s", query));
+		}
 
-	public void setBoundarySpaceStrip(boolean strip);
+		AST ast = getParser().parse(query);
+		ast = getOptimizer().optimize(ast);
+		Module module = getTranslator().translate(ast);
 
-	public boolean isBoundarySpaceStrip();
-
-	public String getDefaultCollation();
-
-	public void setDefaultCollation(String collation);
-
-	public AnyURI getBaseURI();
-
-	public void setBaseURI(AnyURI uri);
-
-	public void setConstructionModeStrip(boolean strip);
-
-	public boolean isConstructionModeStrip();
-
-	public void setOrderingModeOrdered(boolean ordered);
-
-	public boolean isOrderingModeOrdered();
-
-	public void setEmptyOrderGreatest(boolean greatest);
-
-	public boolean isEmptyOrderGreatest();
-
-	public boolean isCopyNSPreserve();
-
-	public void setCopyNSPreserve(boolean copyNSPreserve);
-
-	public boolean isCopyNSInherit();
-
-	public void setCopyNSInherit(boolean copyNSInherit);	
+		if (XQuery.DEBUG) {
+			DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR, "xquery");
+		}
+		return module;
+	}
 }

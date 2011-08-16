@@ -25,73 +25,24 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.module;
+package org.brackit.xquery.compiler;
 
 import java.util.List;
-import java.util.Map;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.AnyURI;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
-import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.module.Module;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public interface Module {
+public interface ModuleResolver {
 
-	public NamespaceDecl getTargetNS();
-
-	public Expr getBody();
-
-	public void importModule(Module module) throws QueryException;
-
-	public List<Module> getImportedModules();
-	
-	public Variables getVariables();
-
-	public Namespaces getNamespaces();
-
-	public Functions getFunctions();
-
-	public Types getTypes();
-
-	public void addOption(QNm name, Str value);
-
-	public Map<QNm, Str> getOptions();
-
-	public void setBoundarySpaceStrip(boolean strip);
-
-	public boolean isBoundarySpaceStrip();
-
-	public String getDefaultCollation();
-
-	public void setDefaultCollation(String collation);
-
-	public AnyURI getBaseURI();
-
-	public void setBaseURI(AnyURI uri);
-
-	public void setConstructionModeStrip(boolean strip);
-
-	public boolean isConstructionModeStrip();
-
-	public void setOrderingModeOrdered(boolean ordered);
-
-	public boolean isOrderingModeOrdered();
-
-	public void setEmptyOrderGreatest(boolean greatest);
-
-	public boolean isEmptyOrderGreatest();
-
-	public boolean isCopyNSPreserve();
-
-	public void setCopyNSPreserve(boolean copyNSPreserve);
-
-	public boolean isCopyNSInherit();
-
-	public void setCopyNSInherit(boolean copyNSInherit);	
+	/**
+	 * Resolve the set of modules identified by the target namespace
+	 * <code>targetNSUri</code>
+	 */
+	public List<Module> resolve(String targetNSUri, String... locationUris)
+			throws QueryException;
 }

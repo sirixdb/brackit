@@ -32,6 +32,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.ModuleResolver;
 import org.brackit.xquery.compiler.parser.XQueryParser;
 import org.brackit.xquery.expr.ReturnExpr;
 import org.brackit.xquery.expr.VCmpExpr.Cmp;
@@ -61,6 +62,10 @@ import org.brackit.xquery.xdm.Sequence;
  * 
  */
 public class PipelineCompiler extends Compiler {
+
+	public PipelineCompiler(ModuleResolver resolver) {
+		super(resolver);
+	}
 
 	@Override
 	protected Expr anyExpr(AST node) throws QueryException {

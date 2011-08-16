@@ -361,7 +361,7 @@ libraryModule
     : moduleDecl prolog -> ^(LibraryModule moduleDecl prolog)
     ;
 moduleDecl
-    : MODULE NAMESPACE name=ncName SymEq uri= ';' -> ^(NamespaceDeclaration ^(Literal $name) ^(Literal $uri))
+    : MODULE NAMESPACE name=ncName SymEq uri=uriLiteral ';' -> ^(NamespaceDeclaration ^(Literal $name) ^(Literal $uri))
     ;
 prolog
     : prologPartOne* 

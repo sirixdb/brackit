@@ -33,22 +33,26 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.brackit.xquery.ErrorCode;
+import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
-import org.brackit.xquery.expr.ExtVariable;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public class AbstractModule implements Module {
+public abstract class AbstractModule implements Module {
+	// use small lists instead of maps because we assume
+	// relatively few module imports, external variables and options
+	// per module and also relatively few lookups
 	protected final List<Module> modules = new ArrayList<Module>();
 
-	protected final List<ExtVariable> variables = new ArrayList<ExtVariable>();
-
 	protected final Map<QNm, Str> options = new HashMap<QNm, Str>();
+
+	protected final Variables variables = new Variables();
 
 	protected final Namespaces namespaces = new Namespaces();
 
@@ -75,13 +79,21 @@ public class AbstractModule implements Module {
 	protected boolean copyNSInherit = true;
 
 	@Override
-	public void addModule(Module module) {
+	public void importModule(Module module) throws QueryException {
+		NamespaceDecl nsDecl = module.getTargetNS();
+		String nsURI = (nsDecl != null) ? nsDecl.getUri() : null;
+		if ((nsURI == null) || (nsURI.isEmpty())) {
+			throw new QueryException(ErrorCode.ERR_TARGET_NS_EMPTY,
+					"The target namespace of a module must not be empty");
+		}
+		String prefix = nsDecl.getPrefix();
+		// import target namespace
+		namespaces.declare(prefix, nsURI);
+		// import all _module-local_ variables and functions
+		variables.importVariables(module.getVariables());
+		functions.importFunctions(module.getFunctions());
+		// import module itself
 		modules.add(module);
-	}
-
-	@Override
-	public void addVariable(ExtVariable variable) {
-		variables.add(variable);
 	}
 
 	@Override
@@ -89,9 +101,8 @@ public class AbstractModule implements Module {
 		return Collections.unmodifiableList(modules);
 	}
 
-	@Override
-	public List<ExtVariable> getVariables() {
-		return Collections.unmodifiableList(variables);
+	public Variables getVariables() {
+		return variables;
 	}
 
 	@Override

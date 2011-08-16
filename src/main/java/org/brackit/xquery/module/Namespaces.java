@@ -49,6 +49,8 @@ public class Namespaces {
 	public static final String XS_NSURI = "http://www.w3.org/2001/XMLSchema";
 
 	public static final String XML_NSURI = "http://www.w3.org/XML/1998/namespace";
+	
+	public static final String XMLNS_NSURI = "http://www.w3.org/2000/xmlns";
 
 	public static final String ERR_NSURI = "http://www.w3.org/2005/xqt-errors";
 
@@ -87,9 +89,9 @@ public class Namespaces {
 
 	public static final QNm FS_PARENT = new QNm(FS_NSURI, FS_PREFIX, "parent");
 
-	protected static final Map<String, String> predefined = new HashMap<String, String>();
+	protected static final Map<String, NamespaceDecl> predefined = new HashMap<String, NamespaceDecl>();
 
-	protected final Map<String, String> namespaces = new HashMap<String, String>();
+	protected final Map<String, NamespaceDecl> namespaces = new HashMap<String, NamespaceDecl>();
 
 	protected String defaultFunctionNamespace = FN_NSURI;
 
@@ -107,7 +109,7 @@ public class Namespaces {
 	}
 
 	public static void predefine(String prefix, String nsUri) {
-		predefined.put(prefix, nsUri);
+		predefined.put(prefix, new NamespaceDecl(prefix, nsUri));
 	}
 
 	public String getDefaultFunctionNamespace() {
@@ -126,46 +128,43 @@ public class Namespaces {
 		this.defaultElementNamespace = defaultElementNamespace;
 	}
 
-	public void declare(String prefix, String namespaceURI)
+	public void declare(String prefix, String nsURI)
 			throws QueryException {
-		if (XML_PREFIX.equals(prefix)) {
-			if (!XML_NSURI.equals(namespaceURI)) {
-				throw new QueryException(
-						ErrorCode.ERR_ILLEGAL_NAMESPACE_URI,
-						"Namespace %s must not be bound to any other namespace than %s",
-						XML_PREFIX, XML_NSURI);
-			}
-		} else if (XMLNS_PREFIX.equals(prefix)) {
-			throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_URI,
-					"Namespace prefix %s must not be redefined", XMLNS_PREFIX);
+		if ((XML_PREFIX.equals(prefix)) || (XMLNS_PREFIX.equals(prefix))) {
+			throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
+					"The prefix '%s' must not be used in a namespace declaration");
+		} else if (nsURI.isEmpty()) {
+				namespaces.remove(prefix);
+		} else if ((XML_NSURI.equals(nsURI)) || (XMLNS_NSURI.equals(nsURI))) {
+			throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
+					"The namespace URI '%s' must not be used in a namespace declaration");
 		} else {
-			String previousNamespaceURI = namespaces.put(prefix, namespaceURI);
-			if ((previousNamespaceURI != null)
-					&& (!namespaceURI.equals(previousNamespaceURI))) {
+			NamespaceDecl pNsDecl = namespaces.put(prefix, new NamespaceDecl(
+					prefix, nsURI));
+			if ((pNsDecl != null) && (!nsURI.equals(pNsDecl.getUri()))) {
 				throw new QueryException(
 						ErrorCode.ERR_MULTIPLE_NS_BINDINGS_FOR_PREFIX,
 						"Namespace prefix '%s' is already bound to '%s",
-						prefix, previousNamespaceURI);
+						prefix, pNsDecl.getUri());
 			}
 		}
 	}
 
 	public String resolveNamespace(String prefix) throws QueryException {
-		String namespaceURI = namespaces.get(prefix);
+		NamespaceDecl nsDecl = namespaces.get(prefix);
 
-		if (namespaceURI != null) {
-			if (namespaceURI.isEmpty()) {
+		if (nsDecl != null) {
+			if (nsDecl.getUri().isEmpty()) {
 				throw new QueryException(
 						ErrorCode.ERR_UNDEFINED_NAMESPACE_PREFIX,
 						"Undefined namespace prefix: '%s'", prefix);
 			}
-			return namespaceURI;
+			return nsDecl.getUri();
 		}
 
-		namespaceURI = predefined.get(prefix);
-
-		if (namespaceURI != null) {
-			return namespaceURI;
+		nsDecl = predefined.get(prefix);
+		if (nsDecl != null) {
+			return nsDecl.getUri();
 		}
 
 		throw new QueryException(ErrorCode.ERR_UNDEFINED_NAMESPACE_PREFIX,
