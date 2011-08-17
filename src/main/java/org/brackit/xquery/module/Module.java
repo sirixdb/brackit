@@ -30,10 +30,11 @@ package org.brackit.xquery.module;
 import java.util.List;
 import java.util.Map;
 
+import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
-import org.brackit.xquery.expr.ExtVariable;
+import org.brackit.xquery.xdm.Expr;
 
 /**
  * 
@@ -41,13 +42,16 @@ import org.brackit.xquery.expr.ExtVariable;
  * 
  */
 public interface Module {
-	public void addVariable(ExtVariable variable);
 
-	public void addModule(Module module);
+	public NamespaceDecl getTargetNS();
 
-	public List<ExtVariable> getVariables();
+	public Expr getBody();
+
+	public void importModule(Module module) throws QueryException;
 
 	public List<Module> getImportedModules();
+	
+	public Variables getVariables();
 
 	public Namespaces getNamespaces();
 
@@ -89,5 +93,5 @@ public interface Module {
 
 	public boolean isCopyNSInherit();
 
-	public void setCopyNSInherit(boolean copyNSInherit);
+	public void setCopyNSInherit(boolean copyNSInherit);	
 }

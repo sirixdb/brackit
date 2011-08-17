@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.parser.XQueryParser;
 
@@ -42,8 +41,6 @@ import org.brackit.xquery.compiler.parser.XQueryParser;
  * 
  */
 public class LetVariableRefPullup extends Walker {
-	private static final Logger log = Logger
-			.getLogger(LetVariableRefPullup.class);
 
 	private final Map<String, Variable> variables = new HashMap<String, Variable>();
 
@@ -68,11 +65,6 @@ public class LetVariableRefPullup extends Walker {
 			AST name = node.getChild(0);
 			variables.put(name.getValue(), new Variable(node.getParent()
 					.getType(), node, refNumber(name)));
-			if (log.isDebugEnabled()) {
-				log.debug(String.format(
-						"Found variable binding %s of binding type %s", name
-								.getValue(), node.getParent().getType()));
-			}
 		} else if (node.getType() == XQueryParser.VariableRef) {
 			Variable var = variables.get(node.getValue());
 

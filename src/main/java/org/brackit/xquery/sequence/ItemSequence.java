@@ -27,10 +27,10 @@
  */
 package org.brackit.xquery.sequence;
 
-import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Node;
@@ -49,19 +49,38 @@ public class ItemSequence implements Sequence {
 	}
 
 	@Override
-	public boolean booleanValue(QueryContext ctx) throws QueryException {
-		return (items.length > 0) ? (items[0] instanceof Node<?>) ? true
-				: items[0].booleanValue(ctx) : false;
+	public boolean booleanValue() throws QueryException {
+		if (items.length == 0) {
+			return false;
+		}
+		if (items[0] instanceof Node<?>) {
+			return true;
+		}
+		if (items.length > 1) {
+			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+					"Effective boolean value is undefined "
+							+ "for sequences with two or more items "
+							+ "not starting with a node");
+		}
+		return items[0].booleanValue();
 	}
 
 	@Override
-	public IntegerNumeric size(QueryContext ctx) throws QueryException {
+	public IntNumeric size() throws QueryException {
 		return new Int32(items.length);
 	}
 
 	@Override
+	public Item get(IntNumeric pos) throws QueryException {
+		if ((Int32.ZERO.cmp(pos) >= 0) || (size().cmp(pos) < 0)) {
+			return null;
+		}
+		return items[pos.intValue()];
+	}
+
+	@Override
 	public Iter iterate() {
-		return new Iter() {
+		return new BaseIter() {
 			int pos = 0;
 
 			@Override
@@ -74,7 +93,7 @@ public class ItemSequence implements Sequence {
 			}
 		};
 	}
-	
+
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		if (items.length > 0) {

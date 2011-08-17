@@ -62,7 +62,7 @@ public class Number extends AbstractFunction {
 		Atomic atomic = ((Item) args[0]).atomize();
 
 		try {
-			return Cast.cast(ctx, atomic, Type.DBL, false);
+			return Cast.cast(atomic, Type.DBL, false);
 		} catch (QueryException e) {
 			return Dbl.NaN;
 		}

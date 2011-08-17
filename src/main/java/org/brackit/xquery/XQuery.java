@@ -30,15 +30,8 @@ package org.brackit.xquery;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 
-import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.optimizer.DefaultOptimizer;
-import org.brackit.xquery.compiler.optimizer.Optimizer;
-import org.brackit.xquery.compiler.parser.ANTLRParser;
-import org.brackit.xquery.compiler.parser.DotUtil;
-import org.brackit.xquery.compiler.parser.Parser;
-import org.brackit.xquery.compiler.translator.PipelineCompiler;
-import org.brackit.xquery.compiler.translator.Translator;
-import org.brackit.xquery.module.MainModule;
+import org.brackit.xquery.compiler.CompileChain;
+import org.brackit.xquery.module.Module;
 import org.brackit.xquery.node.SubtreePrinter;
 import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.util.Cfg;
@@ -60,68 +53,34 @@ public class XQuery {
 	public static boolean DEBUG = Cfg.asBool(DEBUG_CFG, false);
 	public static String DEBUG_DIR = Cfg.asString(DEBUG_DIR_CFG, "debug");
 
-	protected final String query;
-	protected final Parser parser;
-	protected final Optimizer optimizer;
-	protected final Translator translator;
-
-	private MainModule module;
+	private final Module module;
 	private boolean prettyPrint;
-
-	public XQuery(MainModule module) {
+	
+	public XQuery(Module module) {
 		this.module = module;
-		this.query = null;
-		this.parser = null;
-		this.optimizer = null;
-		this.translator = null;
 	}
 
 	public XQuery(String query) throws QueryException {
-		this.query = query;
-		this.parser = new ANTLRParser();
-		this.optimizer = new DefaultOptimizer();
-		this.translator = new PipelineCompiler();
-		compile();
+		this.module = new CompileChain().compile(query);
+	}
+	
+	public XQuery(CompileChain chain, String query) throws QueryException {
+		this.module = chain.compile(query);
 	}
 
-	public XQuery(String query, Parser parser, Optimizer optimizer,
-			Translator translator) throws QueryException {
-		this.query = query;
-		this.parser = parser;
-		this.optimizer = optimizer;
-		this.translator = translator;
-		compile();
-	}
-
-	public MainModule getMainModule() {
-		return module;
-	}
-
-	private XQuery compile() throws QueryException {
-		if (DEBUG) {
-			System.out.println(String.format("Compiling query:\n%s", query));
-		}
-
-		AST ast = parser.parse(query);
-		ast = optimizer.optimize(ast);
-		module = translate(ast);
-
-		if (DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), DEBUG_DIR, "xquery");
-		}
-		return this;
-	}
-
-	private MainModule translate(AST ast) throws QueryException {
-		MainModule module = (MainModule) translator.translate(ast);
+	public Module getModule() {
 		return module;
 	}
 
 	public Sequence execute(QueryContext ctx) throws QueryException {
-		Expr rootExpr = module.getRootExpr();
-		Sequence result = rootExpr.evaluate(ctx, new TupleImpl());
+		Expr body = module.getBody();
+		if (body == null) {
+			throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
+					"Module does not contain a query body.");
+		}
+		Sequence result = body.evaluate(ctx, new TupleImpl());
 
-		if (rootExpr.isUpdating()) {
+		if (body.isUpdating()) {
 			// iterate possibly lazy result sequence to "pull-in" all pending
 			// updates
 			if ((result != null) && (!(result instanceof Item))) {

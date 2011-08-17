@@ -27,7 +27,6 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
-import org.apache.log4j.Logger;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.parser.XQueryParser;
 

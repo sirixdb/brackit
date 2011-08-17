@@ -33,7 +33,8 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -67,12 +68,12 @@ public class RangeExpr implements Expr {
 		Atomic left = lItem.atomize();
 		Atomic right = rItem.atomize();
 
-		if (!(left instanceof IntegerNumeric)) {
-			left = Cast.cast(ctx, left, Type.INT, false);
+		if (!(left instanceof IntNumeric)) {
+			left = Cast.cast(left, Type.INT, false);
 		}
 
-		if (!(right instanceof IntegerNumeric)) {
-			right = Cast.cast(ctx, right, Type.INT, false);
+		if (!(right instanceof IntNumeric)) {
+			right = Cast.cast(right, Type.INT, false);
 		}
 
 		int comparison = left.cmp(right);
@@ -98,12 +99,12 @@ public class RangeExpr implements Expr {
 		Atomic left = lItem.atomize();
 		Atomic right = rItem.atomize();
 
-		if (!(left instanceof IntegerNumeric)) {
-			left = Cast.cast(ctx, left, Type.INT, false);
+		if (!(left instanceof IntNumeric)) {
+			left = Cast.cast(left, Type.INT, false);
 		}
 
-		if (!(right instanceof IntegerNumeric)) {
-			right = Cast.cast(ctx, right, Type.INT, false);
+		if (!(right instanceof IntNumeric)) {
+			right = Cast.cast(right, Type.INT, false);
 		}
 
 		int comparison = left.cmp(right);
@@ -112,29 +113,35 @@ public class RangeExpr implements Expr {
 		} else if (comparison == 0) {
 			return left;
 		} else {
-			final IntegerNumeric s = (IntegerNumeric) left;
-			final IntegerNumeric e = (IntegerNumeric) right;
+			final IntNumeric s = (IntNumeric) left;
+			final IntNumeric e = (IntNumeric) right;
 
 			return new Sequence() {
-				private final IntegerNumeric start = s;
-				private final IntegerNumeric end = e;
+				private final IntNumeric start = s;
+				private final IntNumeric end = e;
 
 				@Override
-				public boolean booleanValue(QueryContext ctx)
+				public boolean booleanValue()
 						throws QueryException {
-					return true;
+					if (!size().eq(Int32.ONE)) {
+						throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+								"Effective boolean value is undefined "
+								+ "for sequences with two or more items "
+								+ "not starting with a node");
+					}
+					return start.booleanValue();
 				}
 
 				@Override
-				public IntegerNumeric size(QueryContext ctx)
+				public IntNumeric size()
 						throws QueryException {
-					return (IntegerNumeric) end.subtract(start).add(Int32.ONE);
+					return (IntNumeric) end.subtract(start).add(Int32.ONE);
 				}
 
 				@Override
 				public Iter iterate() {
-					return new Iter() {
-						IntegerNumeric current = start;
+					return new BaseIter() {
+						IntNumeric current = start;
 
 						@Override
 						public void close() {
@@ -145,11 +152,30 @@ public class RangeExpr implements Expr {
 							if (current.cmp(e) > 0)
 								return null;
 
-							IntegerNumeric res = current;
+							IntNumeric res = current;
 							current = current.inc();
 							return res;
 						}
+
+						@Override
+						public void skip(IntNumeric i) throws QueryException {
+							if (i.cmp(Int32.ZERO) <= 0) {
+								return;
+							}
+							current.add(i);
+						}
 					};
+				}
+
+				@Override
+				public Item get(IntNumeric pos) throws QueryException {
+					if (Int32.ZERO.cmp(pos) >= 0) {
+						return null;
+					}					
+					if (size().cmp(pos) < 0) {
+						return null;
+					}
+					return (IntNumeric) start.add(pos).subtract(Int32.ONE);
 				}
 			};
 		}

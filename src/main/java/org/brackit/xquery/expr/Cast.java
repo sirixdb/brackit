@@ -54,7 +54,7 @@ import org.brackit.xquery.atomic.Hex;
 import org.brackit.xquery.atomic.Int;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.Int64;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.Numeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
@@ -89,7 +89,7 @@ public class Cast implements Expr {
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
 		Item item = expr.evaluateToItem(ctx, tuple);
-		return cast(ctx, item, target, allowEmptySequence);
+		return cast(item, target, allowEmptySequence);
 	}
 
 	@Override
@@ -98,8 +98,7 @@ public class Cast implements Expr {
 		return evaluateToItem(ctx, tuple);
 	}
 
-	public static Atomic cast(QueryContext ctx, Item item, Type target,
-			boolean allowEmptySequence) throws QueryException {
+	public static Atomic cast(Item item, Type target, boolean allowEmptySequence) throws QueryException {
 		// See XQuery 1.0: 3.12.3 Cast
 		if (item == null) {
 			if (allowEmptySequence) {
@@ -602,7 +601,7 @@ public class Cast implements Expr {
 				"Illegal cast from %s to %s", source, target);
 	}
 
-	public static IntegerNumeric asInt(BigDecimal d) {
+	public static IntNumeric asInt(BigDecimal d) {
 		if (d.scale() != 0) {
 			d = d.setScale(0, RoundingMode.DOWN);
 		}
@@ -617,7 +616,7 @@ public class Cast implements Expr {
 		}
 	}
 
-	public static IntegerNumeric asInteger(double d) throws QueryException {
+	public static IntNumeric asInteger(double d) throws QueryException {
 		if ((d == Double.NaN) || (d == Double.POSITIVE_INFINITY)
 				|| (d == Double.NEGATIVE_INFINITY)) {
 			throw new QueryException(ErrorCode.ERR_INVALID_LEXICAL_VALUE);

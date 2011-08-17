@@ -30,17 +30,10 @@ package org.brackit.xquery.compiler.parser;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.tree.Tree;
-import org.apache.log4j.Logger;
 import org.brackit.xquery.XQuery;
-import org.brackit.xquery.compiler.parser.DotUtil;
-import org.brackit.xquery.compiler.parser.XMLexer;
-import org.brackit.xquery.compiler.parser.XQueryLexer;
-import org.brackit.xquery.compiler.parser.XQueryParser;
-import org.brackit.xquery.compiler.parser.XQueryTokenStream;
 import org.junit.Test;
 
 public class XQueryParserTest {
-	private static final Logger log = Logger.getLogger(XQueryParser.class);
 
 	private static final boolean DEBUG = true;
 

@@ -136,8 +136,7 @@ public class AtomicType implements ItemType {
 
 	@Override
 	public boolean matches(Item item) throws QueryException {
-		return ((item instanceof Atomic) && (((Atomic) item).type()
-				.instanceOf(type)));
+		return item.type().instanceOf(type);
 	}
 
 	public boolean instanceOf(AtomicType other) {

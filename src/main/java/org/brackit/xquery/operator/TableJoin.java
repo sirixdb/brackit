@@ -139,7 +139,7 @@ public class TableJoin implements Operator {
 
 		protected void buildTable(QueryContext ctx, Tuple tuple)
 				throws QueryException {
-			table = new MultiTypeJoinTable(ctx, cmp, isGCmp, skipSort);
+			table = new MultiTypeJoinTable(cmp, isGCmp, skipSort);
 			if (groupVar >= 0) {
 				tgk = (Atomic) tuple.get(groupVar);
 			}
@@ -151,10 +151,12 @@ public class TableJoin implements Operator {
 				while ((t = rc.next(ctx)) != null) {
 					Sequence keys = (isGCmp) ? rExpr.evaluate(ctx, t) : rExpr
 							.evaluateToItem(ctx, t);
-					Sequence[] tmp = t.array();
-					Sequence[] bindings = Arrays.copyOfRange(tmp, lSize,
-							tmp.length);
-					table.add(keys, bindings, pos++);
+					if (keys != null) {
+						Sequence[] tmp = t.array();
+						Sequence[] bindings = Arrays.copyOfRange(tmp, lSize,
+								tmp.length);
+						table.add(keys, bindings, pos++);
+					}
 				}
 			} finally {
 				rc.close(ctx);

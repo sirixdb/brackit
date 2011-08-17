@@ -27,6 +27,11 @@
  */
 package org.brackit.xquery.atomic;
 
-public interface LongNumeric extends IntegerNumeric {
-
+/**
+ * 
+ * @author Sebastian Baechle
+ * 
+ */
+public interface IntNumeric extends DecNumeric {
+	public IntNumeric inc();
 }

@@ -25,13 +25,25 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.atomic;
+package org.brackit.xquery.sequence;
+
+import org.brackit.xquery.QueryException;
+import org.brackit.xquery.xdm.Sequence;
 
 /**
- * 
  * @author Sebastian Baechle
  * 
  */
-public interface DecimalNumeric extends Numeric {
+public class NestedSequence extends FlatteningSequence {
 
+	private final Sequence[] seqs;
+
+	public NestedSequence(Sequence... seqs) {
+		this.seqs = seqs;
+	}
+
+	@Override
+	protected Sequence sequence(int pos) throws QueryException {
+		return (pos < seqs.length) ? seqs[pos++] : null;
+	}
 }

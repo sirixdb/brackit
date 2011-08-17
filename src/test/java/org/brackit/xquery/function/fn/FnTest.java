@@ -46,7 +46,9 @@ import org.brackit.xquery.atomic.Dbl;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.atomic.Time;
+import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.sequence.ItemSequence;
+import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.junit.Before;
@@ -141,10 +143,12 @@ public class FnTest extends XQueryBaseTest {
 
 	@Test
 	public void fnRootInPathExpr() throws Exception {
-		Sequence result = new XQuery("(<a><b><c/><d/></b></a>)//d/fn:root()")
-				.execute(ctx);
-		print(result);
-		ResultChecker.dCheck(ctx, null, result);
+		Collection<?> coll = ctx.getStore().create("test.xml",
+				new DocumentParser("<a><b><c/><d/></b></a>"));
+		Node<?> doc = coll.getDocument();
+		ctx.setDefaultContext(doc, Int32.ONE, Int32.ONE);
+		Sequence result = new XQuery(".//d/fn:root()").execute(ctx);
+		ResultChecker.dCheck(ctx, doc, result);
 	}
 
 	@Test
@@ -1581,16 +1585,18 @@ public class FnTest extends XQueryBaseTest {
 					.getCode());
 		}
 	}
-	
+
 	@Test
 	public void fnMinDouble() throws Exception {
-		Sequence result = new XQuery("fn:min((198.95E0,282.69E0,188.72E0 ,268.38E0))").execute(ctx);
+		Sequence result = new XQuery(
+				"fn:min((198.95E0,282.69E0,188.72E0 ,268.38E0))").execute(ctx);
 		ResultChecker.check(ctx, new Dbl(188.72), result);
 	}
-	
+
 	@Test
 	public void fnMaxDouble() throws Exception {
-		Sequence result = new XQuery("fn:max((198.95E0,282.69E0,188.72E0 ,268.38E0))").execute(ctx);
+		Sequence result = new XQuery(
+				"fn:max((198.95E0,282.69E0,188.72E0 ,268.38E0))").execute(ctx);
 		ResultChecker.check(ctx, new Dbl(282.69), result);
 	}
 

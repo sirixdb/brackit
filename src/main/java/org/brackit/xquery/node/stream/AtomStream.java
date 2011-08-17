@@ -35,10 +35,8 @@ import org.brackit.xquery.xdm.Stream;
  * 
  * @author Sebastian Baechle
  * 
- * @param <E>
  */
 public class AtomStream<E> implements Stream<E> {
-	private boolean consumed = false;
 
 	private E atom;
 

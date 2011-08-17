@@ -27,13 +27,13 @@
  */
 package org.brackit.xquery.function.fn;
 
-import org.apache.log4j.Logger;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.util.log.Logger;
 import org.brackit.xquery.xdm.Sequence;
 
 /**

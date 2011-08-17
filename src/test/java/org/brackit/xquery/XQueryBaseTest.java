@@ -140,6 +140,9 @@ public class XQueryBaseTest {
 			throws IOException {
 		StringBuilder query = new StringBuilder();
 		URL url = getClass().getResource(dirname + filename);
+		if (url == null) {
+			throw new RuntimeException("Resource not found: " + dirname + filename);
+		}
 		BufferedReader file = new BufferedReader(new FileReader(url.getFile()));
 		boolean first = true;
 

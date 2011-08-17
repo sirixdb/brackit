@@ -34,6 +34,7 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.update.op.UpdateOp;
 import org.brackit.xquery.xdm.Expr;
@@ -89,7 +90,7 @@ public class TransformExpr extends ConstructedNodeBuilder implements Expr {
 
 					@Override
 					public Iter iterate() {
-						return new Iter() {
+						return new BaseIter() {
 							private boolean returned = false;
 
 							@Override

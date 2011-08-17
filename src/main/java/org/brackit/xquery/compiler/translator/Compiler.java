@@ -28,8 +28,9 @@
 package org.brackit.xquery.compiler.translator;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.AnyURI;
@@ -41,6 +42,7 @@ import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.ModuleResolver;
 import org.brackit.xquery.compiler.parser.XQueryLexer;
 import org.brackit.xquery.compiler.parser.XQueryParser;
 import org.brackit.xquery.expr.Accessor;
@@ -91,6 +93,7 @@ import org.brackit.xquery.module.Functions;
 import org.brackit.xquery.module.LibraryModule;
 import org.brackit.xquery.module.MainModule;
 import org.brackit.xquery.module.Module;
+import org.brackit.xquery.module.NamespaceDecl;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.operator.Count;
 import org.brackit.xquery.operator.ForBind;
@@ -133,36 +136,6 @@ import org.brackit.xquery.xdm.Type;
  * 
  */
 public class Compiler implements Translator {
-	protected static final Logger log = Logger.getLogger(Compiler.class);
-
-	private static final Every BIT_EVERY_FUNC = new Every(new QNm(
-			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "every"),
-			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
-					new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)));
-
-	private static final Some BIT_SOME_FUNC = new Some(new QNm(
-			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "some"),
-			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
-					new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)));
-
-	protected final VariableTable table = new VariableTable();
-
-	static {
-		Functions.predefine(BIT_SOME_FUNC);
-		Functions.predefine(BIT_EVERY_FUNC);
-		Functions.predefine(new Put(Put.PUT, new Signature(new SequenceType(
-				AtomicType.STR, Cardinality.One), new SequenceType(
-				AtomicType.STR, Cardinality.One))));
-		Functions.predefine(new Put(Put.PUT, new Signature(new SequenceType(
-				AtomicType.STR, Cardinality.One), new SequenceType(
-				AtomicType.STR, Cardinality.One), new SequenceType(
-				AtomicType.STR, Cardinality.ZeroOrOne))));
-		Functions.predefine(new Readline());
-		Functions.predefine(new Writeline());
-		Functions.predefine(new Silent());
-	}
-
-	protected Module module;
 
 	protected class ClauseBinding {
 		final ClauseBinding in;
@@ -183,62 +156,119 @@ public class Compiler implements Translator {
 		}
 	}
 
+	private static final Every BIT_EVERY_FUNC = new Every(new QNm(
+			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "every"),
+			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
+					new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)));
+
+	private static final Some BIT_SOME_FUNC = new Some(new QNm(
+			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "some"),
+			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
+					new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)));
+
+	static {
+		Functions.predefine(BIT_SOME_FUNC);
+		Functions.predefine(BIT_EVERY_FUNC);
+		Functions.predefine(new Put(Put.PUT, new Signature(new SequenceType(
+				AtomicType.STR, Cardinality.One), new SequenceType(
+				AtomicType.STR, Cardinality.One))));
+		Functions.predefine(new Put(Put.PUT, new Signature(new SequenceType(
+				AtomicType.STR, Cardinality.One), new SequenceType(
+				AtomicType.STR, Cardinality.One), new SequenceType(
+				AtomicType.STR, Cardinality.ZeroOrOne))));
+		Functions.predefine(new Readline());
+		Functions.predefine(new Writeline());
+		Functions.predefine(new Silent());
+	}
+
+	protected final VariableTable table = new VariableTable();
+
+	protected final ModuleResolver resolver;
+
+	protected Module module;
+
+	public Compiler(ModuleResolver resolver) {
+		this.resolver = resolver;
+	}
+
 	public Module translate(AST ast) throws QueryException {
-		int childCount = ast.getChildCount();
-		for (int i = 0; i < childCount; i++) {
-			AST child = ast.getChild(i);
-			switch (child.getType()) {
-			case XQueryParser.MainModule:
-				return mainmodule(child);
-			case XQueryParser.LibraryModule:
-				return libraryModule(child);
-			default:
-				throw new QueryException(
-						ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-						"Unexpected AST root '%s' of type: %s", ast, ast
-								.getType());
-			}
+		if (ast.getChildCount() == 0) {
+			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+					"No module definition found");
 		}
-		throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-				"No module definition found");
-	}
-
-	protected LibraryModule libraryModule(AST ast) throws QueryException {
-		throw new QueryException(
-				ErrorCode.ERR_MODULE_IMPORT_OR_DECLARATION_FEATURE_NOT_SUPPORTED,
-				"Library module declaration is not supported.");
-	}
-
-	protected MainModule mainmodule(AST ast) throws QueryException {
-		if (ast.getType() != XQueryParser.MainModule) {
+		AST module = ast.getChild(0);
+		switch (module.getType()) {
+		case XQueryParser.MainModule:
+			return mainmodule(module);
+		case XQueryParser.LibraryModule:
+			return libraryModule(module);
+		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
 					"Unexpected AST root '%s' of type: %s", ast, ast.getType());
 		}
+	}
 
-		MainModule module = createMainModule();
+	protected LibraryModule libraryModule(AST ast) throws QueryException {
+		LibraryModule module = createLibraryModule();
+		NamespaceDecl nsDecl = null;
 		this.module = module;
-		Expr root = null;
-		int childCount = ast.getChildCount();
-		for (int i = 0; i < childCount; i++) {
-			AST child = ast.getChild(i);
 
-			switch (child.getType()) {
-			case XQueryParser.QueryBody:
-				root = expr(child.getChild(0), false);
-				break;
-			case XQueryParser.Prolog:
-				prolog(child);
-				break;
-			default:
+		// target namespace declaration
+		AST namespace = ast.getChild(0);
+		String prefix = namespace.getChild(0).getChild(0).getValue();
+		String nsURI = namespace.getChild(1).getChild(0).getValue();
+		if ((nsURI == null) || (nsURI.isEmpty())) {
+			throw new QueryException(ErrorCode.ERR_TARGET_NS_EMPTY,
+					"The target namespace of a module must not be empty");
+		}
+		nsDecl = new NamespaceDecl(prefix, nsURI);
+		module.getNamespaces().declare(prefix, nsURI);
+		module.setTargetNS(nsDecl);
+
+		// target ns is default ns for functions in this module
+		module.getNamespaces().setDefaultFunctionNamespace(nsURI);
+
+		prolog(ast.getChild(1));
+
+		// verify that all declared variables are in the target ns
+		for (ExtVariable var : module.getVariables().getDeclaredVariables()) {
+			if (!nsURI.equals(var.getName().getNamespaceURI())) {
 				throw new QueryException(
-						ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-						"Unexpected AST node '%s' of type: %s", child, child
-								.getType());
+						ErrorCode.ERR_FUN_OR_VAR_NOT_IN_TARGET_NS,
+						"Declared variable '%s' is not in the module's target namespace '%s'",
+						var.getName(), nsURI);
 			}
 		}
+		// verify that all functions are in the target ns
+		for (Function[] funs : module.getFunctions().getDeclaredFunctions()) {
+			Function fun = funs[0];
+			if (!nsURI.equals(fun.getName().getNamespaceURI())) {
+				throw new QueryException(
+						ErrorCode.ERR_FUN_OR_VAR_NOT_IN_TARGET_NS,
+						"Declared function '%s' is not in the module's target namespace '%s'",
+						fun.getName(), nsURI);
+			}
+		}
+		
+		return module;
+	}
 
+	protected MainModule mainmodule(AST ast) throws QueryException {
+		MainModule module = createMainModule();
+		this.module = module;
+		AST child = ast.getChild(0);
+		if (child.getType() == XQueryParser.Prolog) {
+			prolog(child);
+			child = ast.getChild(1);
+		}
+		if (child.getType() != XQueryParser.QueryBody) {
+			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+					"Unexpected AST node '%s' of type: %s", child, child
+							.getType());
+		}
+		Expr root = expr(child.getChild(0), false);
 		table.resolvePositions();
-		module.setRootExpr(root);
+		module.setBody(root);
 		return module;
 	}
 
@@ -246,7 +276,12 @@ public class Compiler implements Translator {
 		return new MainModule();
 	}
 
+	protected LibraryModule createLibraryModule() {
+		return new LibraryModule();
+	}
+
 	protected void prolog(AST node) throws QueryException {
+		HashSet<String> importedModules = new HashSet<String>();
 		boolean defaultElementNSDeclared = false;
 		boolean defaultFunctionNSDeclared = false;
 		boolean boundarySpaceDeclared = false;
@@ -296,9 +331,14 @@ public class Compiler implements Translator {
 						ErrorCode.ERR_SCHEMA_IMPORT_FEATURE_NOT_SUPPORTED,
 						"Schema import is not supported.");
 			case XQueryParser.ModuleImport:
-				throw new QueryException(
-						ErrorCode.ERR_MODULE_IMPORT_OR_DECLARATION_FEATURE_NOT_SUPPORTED,
-						"Module import is not supported.");
+				String nsURI = importModule(child);
+				if (!importedModules.add(nsURI)) {
+					throw new QueryException(
+							ErrorCode.ERR_MULTIPLE_IMPORTS_IN_SAME_NS,
+							"Multiple module imports of the same target namespace: '%s'",
+							nsURI);
+				}
+				break;
 			case XQueryParser.BoundarySpaceDeclaration:
 				if (boundarySpaceDeclared) {
 					throw new QueryException(
@@ -363,6 +403,30 @@ public class Compiler implements Translator {
 								.getType());
 			}
 		}
+	}
+
+	private String importModule(AST ast) throws QueryException {
+		String prefix = null;
+		int pos = 0;
+		AST child = ast.getChild(pos++);
+		if (child.getType() == XQueryParser.Namespace) {
+			prefix = child.getChild(0).getValue();
+			child = ast.getChild(pos++);
+		}
+		String nsURI = child.getValue();
+		int childCount = ast.getChildCount();
+		String locs[] = new String[childCount - pos];
+		int locPos = 0;
+		while (pos < childCount) {
+			locs[locPos++] = child.getChild(0).getValue();
+		}
+		List<Module> modList = resolver.resolve(nsURI, locs);
+
+		for (Module mod : modList) {
+			// import module
+			module.importModule(mod);
+		}
+		return nsURI;
 	}
 
 	protected void declareBoundarySpace(AST node) {
@@ -439,8 +503,8 @@ public class Compiler implements Translator {
 		if (child.getType() == XQueryParser.ExternalVariable) {
 			Expr expr = (child.getChildCount() == 1) ? expr(child.getChild(0),
 					true) : null;
-			module.addVariable((ExtVariable) table.declare(varName, expr, type,
-					true));
+			module.getVariables().declare(
+					(ExtVariable) table.declare(varName, expr, type, true));
 		} else {
 			Expr expr = expr(child, true);
 			table.declare(varName, expr, type, false);

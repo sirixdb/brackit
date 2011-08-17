@@ -31,7 +31,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Type;
@@ -95,7 +94,7 @@ public class AnyURI extends AbstractAtomic {
 	}
 
 	@Override
-	public boolean booleanValue(QueryContext ctx) throws QueryException {
+	public boolean booleanValue() throws QueryException {
 		return (!str.isEmpty());
 	}
 

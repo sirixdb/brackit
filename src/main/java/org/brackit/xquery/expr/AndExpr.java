@@ -61,13 +61,13 @@ public class AndExpr implements Expr {
 			throws QueryException {
 		Sequence firstResult = firstExpr.evaluate(ctx, tuple);
 
-		if ((firstResult == null) || (!firstResult.booleanValue(ctx))) {
+		if ((firstResult == null) || (!firstResult.booleanValue())) {
 			return Bool.FALSE;
 		}
 
 		Sequence secondResult = secondExpr.evaluate(ctx, tuple);
 
-		return ((secondResult != null) && (secondResult.booleanValue(ctx))) ? Bool.TRUE
+		return ((secondResult != null) && (secondResult.booleanValue())) ? Bool.TRUE
 				: Bool.FALSE;
 	}
 

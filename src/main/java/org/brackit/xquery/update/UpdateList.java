@@ -33,12 +33,12 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.update.op.OpType;
 import org.brackit.xquery.update.op.UpdateOp;
+import org.brackit.xquery.util.log.Logger;
 
 /**
  * 

@@ -42,7 +42,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.function.Signature;
@@ -80,7 +80,7 @@ public class Writeline extends AbstractFunction {
 		}
 
 		try {
-			IntegerNumeric count = Int32.ZERO;
+			IntNumeric count = Int32.ZERO;
 			BufferedWriter out = createInput(args);
 			Iter it = args[1].iterate();
 			try {

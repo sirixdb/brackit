@@ -33,7 +33,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Random;
@@ -41,7 +40,6 @@ import java.util.Random;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.apache.log4j.Logger;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.StreamSubtreeProcessor;
@@ -63,8 +61,6 @@ import org.w3c.dom.Text;
 import org.xml.sax.InputSource;
 
 public abstract class NodeTest<E extends Node<E>> {
-	protected static final Logger log = Logger.getLogger(NodeTest.class
-			.getName());
 
 	protected static final String DOCUMENT = "<?xml version = '1.0' encoding = 'UTF-8'?>"
 			+ "<Organization>"

@@ -25,8 +25,28 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.atomic;
+package org.brackit.xquery.module;
 
-public interface DoubleNumeric extends Numeric {
+/**
+ * @author Sebastian Baechle
+ *
+ */
+public class NamespaceDecl {
+	
+	private final String prefix;
+	private final String nsUri;
 
+	public NamespaceDecl(String prefix, String nsUri) {
+		super();
+		this.prefix = prefix;
+		this.nsUri = nsUri;
+	}
+
+	public String getPrefix() {
+		return prefix;
+	}
+
+	public String getUri() {
+		return nsUri;
+	}
 }

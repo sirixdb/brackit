@@ -111,13 +111,13 @@ public class ErrorCode {
 			ERR_PREFIX, "XPST0051");
 
 	/**
-	 * XPST0080
+	 * err:PST0080
 	 */
 	public static final QNm ERR_ILLEGAL_CAST_TARGET_TYPE = new QNm(ERR_NSURI,
 			ERR_PREFIX, "XPST0080");
 
 	/**
-	 * XPST0081
+	 * err:PST0081
 	 */
 	public static final QNm ERR_UNDEFINED_NAMESPACE_PREFIX = new QNm(ERR_NSURI,
 			ERR_PREFIX, "XPST0081");
@@ -141,13 +141,13 @@ public class ErrorCode {
 			ERR_NSURI, ERR_PREFIX, "XQST0016");
 
 	/**
-	 * "err:XQST0032
+	 *  err:XQST0032
 	 */
 	public static final QNm ERR_BASE_URI_ALREADY_DECLARED = new QNm(ERR_NSURI,
 			ERR_PREFIX, "XQST0032");
 
 	/**
-	 * "err:XQST0033
+	 * err:XQST0033
 	 */
 	public static final QNm ERR_MULTIPLE_NS_BINDINGS_FOR_PREFIX = new QNm(
 			ERR_NSURI, ERR_PREFIX, "XQST0033");
@@ -159,22 +159,40 @@ public class ErrorCode {
 			ERR_NSURI, ERR_PREFIX, "XQST0034");
 
 	/**
-	 * "XQST0045
+	 * err:XQST0045
 	 */
 	public static final QNm ERR_FUNCTION_DECL_IN_ILLEGAL_NAMESPACE = new QNm(
 			ERR_NSURI, ERR_PREFIX, "XQST0045");
+	
+	/**
+	 * err:XQST0047
+	 */
+	public static final QNm ERR_MULTIPLE_IMPORTS_IN_SAME_NS = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0047");
 
 	/**
-	 * "XQST0049
+	 * err:XQST0048
+	 */
+	public static final QNm ERR_FUN_OR_VAR_NOT_IN_TARGET_NS = new QNm(ERR_NSURI,
+			ERR_PREFIX, "XQST0048");
+	
+	/**
+	 * err:XQST0049
 	 */
 	public static final QNm ERR_DUPLICATE_VARIABLE_DECL = new QNm(ERR_NSURI,
 			ERR_PREFIX, "XQST0049");
 
 	/**
-	 * "err:XQST0055
+	 *  err:XQST0055
 	 */
 	public static final QNm ERR_COPY_NAMESPACES_ALREADY_DECLARED = new QNm(
 			ERR_NSURI, ERR_PREFIX, "XQST0055");
+
+	/**
+	 * err:XQST0059
+	 */
+	public static final QNm ERR_SCHEMA_OR_MODULE_NOT_FOUND = new QNm(ERR_NSURI,
+			ERR_PREFIX, "XQST0059");
 
 	/**
 	 * err:XQST0060
@@ -215,7 +233,7 @@ public class ErrorCode {
 	/**
 	 * err:XQST0070
 	 */
-	public static final QNm ERR_ILLEGAL_NAMESPACE_URI = new QNm(ERR_NSURI,
+	public static final QNm ERR_ILLEGAL_NAMESPACE_DECL = new QNm(ERR_NSURI,
 			ERR_PREFIX, "XQST0070");
 
 	/**
@@ -223,6 +241,12 @@ public class ErrorCode {
 	 */
 	public static final QNm ERR_SCHEMA_VALIDATION_FEATURE_NOT_SUPPORTED = new QNm(
 			ERR_NSURI, ERR_PREFIX, "XQST0075");
+
+	/**
+	 * err:XQST0088
+	 */
+	public static final QNm ERR_TARGET_NS_EMPTY = new QNm(ERR_NSURI, ERR_PREFIX,
+			"XQST0088");
 
 	/**
 	 * err:XQST0090

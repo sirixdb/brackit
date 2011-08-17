@@ -30,10 +30,11 @@ package org.brackit.xquery.function.fn;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -60,16 +61,16 @@ public class Remove extends AbstractFunction {
 			return null;
 		}
 
-		final IntegerNumeric pos = (IntegerNumeric) args[1];
+		final IntNumeric pos = (IntNumeric) args[1];
 
 		return new LazySequence() {
 			final Sequence seq = s;
-			final IntegerNumeric p = pos;
+			final IntNumeric p = pos;
 
 			@Override
 			public Iter iterate() {
-				return new Iter() {
-					private IntegerNumeric next = Int32.ONE;
+				return new BaseIter() {
+					private IntNumeric next = Int32.ONE;
 					private Iter it;
 
 					@Override

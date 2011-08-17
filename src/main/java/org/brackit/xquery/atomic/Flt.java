@@ -30,12 +30,11 @@ package org.brackit.xquery.atomic;
 import java.math.BigDecimal;
 
 import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Type;
 
-public class Flt extends AbstractNumeric implements FloatNumeric {
+public class Flt extends AbstractNumeric implements FltNumeric {
 	public static final Flt NaN = new Flt(Float.NaN);
 
 	public static final Flt NINF = new Flt(Float.NEGATIVE_INFINITY);
@@ -111,19 +110,29 @@ public class Flt extends AbstractNumeric implements FloatNumeric {
 	}
 
 	@Override
+	public IntNumeric asIntNumeric() {
+		if (Float.isNaN(v) || Float.isInfinite(v)) {
+			return null;
+		}
+		int i = (int) v;
+		double f = v - i;
+		return (f == 0.0) ? new Int32(i) : null;
+	}
+
+	@Override
 	public Atomic asType(Type type) throws QueryException {
 		return validate(Type.FLO, new DFlt(v, type));
 	}
 
 	@Override
-	public boolean booleanValue(QueryContext ctx) throws QueryException {
+	public boolean booleanValue() throws QueryException {
 		return ((v != 0) && (v != Float.NaN) && (v != Float.MAX_VALUE) && (v != Float.MIN_VALUE));
 	}
 
 	@Override
 	public int cmp(Atomic other) throws QueryException {
 		if (other instanceof Numeric) {
-			if (!(other instanceof DoubleNumeric)) {
+			if (!(other instanceof DblNumeric)) {
 				return Float.compare(v, ((Numeric) other).floatValue());
 			}
 			return Double.compare(v, ((Numeric) other).doubleValue());
@@ -134,7 +143,7 @@ public class Flt extends AbstractNumeric implements FloatNumeric {
 
 	@Override
 	protected int atomicCmpInternal(Atomic other) {
-		if (!(other instanceof DoubleNumeric)) {
+		if (!(other instanceof DblNumeric)) {
 			return Float.compare(v, ((Numeric) other).floatValue());
 		}
 		return Double.compare(v, ((Numeric) other).doubleValue());
@@ -185,7 +194,7 @@ public class Flt extends AbstractNumeric implements FloatNumeric {
 
 	@Override
 	public Numeric add(Numeric other) throws QueryException {
-		if (!(other instanceof DoubleNumeric)) {
+		if (!(other instanceof DblNumeric)) {
 			return addFloat(v, other.floatValue());
 		} else {
 			return addDouble(v, other.doubleValue());
@@ -194,7 +203,7 @@ public class Flt extends AbstractNumeric implements FloatNumeric {
 
 	@Override
 	public Numeric subtract(Numeric other) throws QueryException {
-		if (!(other instanceof DoubleNumeric)) {
+		if (!(other instanceof DblNumeric)) {
 			return subtractFloat(v, other.floatValue());
 		} else {
 			return subtractDouble(v, other.doubleValue());
@@ -203,7 +212,7 @@ public class Flt extends AbstractNumeric implements FloatNumeric {
 
 	@Override
 	public Numeric multiply(Numeric other) throws QueryException {
-		if (!(other instanceof DoubleNumeric)) {
+		if (!(other instanceof DblNumeric)) {
 			return multiplyFloat(v, other.floatValue());
 		} else {
 			return multiplyDouble(v, other.doubleValue());
@@ -212,7 +221,7 @@ public class Flt extends AbstractNumeric implements FloatNumeric {
 
 	@Override
 	public Numeric div(Numeric other) throws QueryException {
-		if (!(other instanceof DoubleNumeric)) {
+		if (!(other instanceof DblNumeric)) {
 			return divideFloat(v, other.floatValue());
 		} else {
 			return divideDouble(v, other.doubleValue());
@@ -221,7 +230,7 @@ public class Flt extends AbstractNumeric implements FloatNumeric {
 
 	@Override
 	public Numeric idiv(Numeric other) throws QueryException {
-		if (!(other instanceof DoubleNumeric)) {
+		if (!(other instanceof DblNumeric)) {
 			return idivideFloat(v, other.floatValue());
 		} else {
 			return idivideDouble(v, other.doubleValue());
@@ -230,7 +239,7 @@ public class Flt extends AbstractNumeric implements FloatNumeric {
 
 	@Override
 	public Numeric mod(Numeric other) throws QueryException {
-		if (!(other instanceof DoubleNumeric)) {
+		if (!(other instanceof DblNumeric)) {
 			return modFloat(v, other.floatValue());
 		} else {
 			return modDouble(v, other.doubleValue());

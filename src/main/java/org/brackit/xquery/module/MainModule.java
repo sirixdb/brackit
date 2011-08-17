@@ -35,13 +35,19 @@ import org.brackit.xquery.xdm.Expr;
  * 
  */
 public class MainModule extends AbstractModule {
-	private Expr rootExpr;
+	private Expr body;
 
-	public Expr getRootExpr() {
-		return rootExpr;
+	@Override
+	public Expr getBody() {
+		return body;
 	}
 
-	public void setRootExpr(Expr rootExpr) {
-		this.rootExpr = rootExpr;
+	public void setBody(Expr body) {
+		this.body = body;
+	}
+
+	@Override
+	public NamespaceDecl getTargetNS() {
+		return null;
 	}
 }

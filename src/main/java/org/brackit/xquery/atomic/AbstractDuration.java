@@ -28,7 +28,6 @@
 package org.brackit.xquery.atomic;
 
 import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 
 /**
@@ -136,7 +135,7 @@ public abstract class AbstractDuration extends AbstractAtomic implements
 	}
 
 	@Override
-	public final boolean booleanValue(QueryContext ctx) throws QueryException {
+	public final boolean booleanValue() throws QueryException {
 		throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
 				"Effective boolean value of duration is undefined.");
 	}

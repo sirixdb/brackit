@@ -33,8 +33,9 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.Numeric;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.sequence.type.KindTest;
 import org.brackit.xquery.xdm.Expr;
@@ -119,13 +120,13 @@ public class StepExpr implements Expr {
 		}
 	}
 
-	private class AxisStepSequenceIter implements Iter {
+	private class AxisStepSequenceIter extends BaseIter {
 		final QueryContext ctx;
 		final Tuple tuple;
 		final Node<?> currentNode;
 
-		IntegerNumeric inSeqSize = Int32.ZERO;
-		IntegerNumeric pos = Int32.ZERO;
+		IntNumeric inSeqSize = Int32.ZERO;
+		IntNumeric pos = Int32.ZERO;
 
 		Stream<? extends Node<?>> nextS;
 
@@ -200,7 +201,7 @@ public class StepExpr implements Expr {
 				} finally {
 					it.close();
 				}
-				if (!res.booleanValue(ctx)) {
+				if (!res.booleanValue()) {
 					return false;
 				}
 			}

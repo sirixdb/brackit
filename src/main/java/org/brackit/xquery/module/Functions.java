@@ -27,9 +27,13 @@
  */
 package org.brackit.xquery.module;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
@@ -128,6 +132,8 @@ public class Functions {
 			Namespaces.FS_PREFIX, "static-base-uri");
 
 	protected final Map<QNm, Function[]> functions = new HashMap<QNm, Function[]>();
+
+	protected final List<Functions> imports = new ArrayList<Functions>(0);
 
 	static {
 		// See XQuery Functions and Operators 2 Accessors
@@ -903,65 +909,110 @@ public class Functions {
 	}
 
 	public Function resolve(QNm name, int argCount) throws QueryException {
-		Function[] funs = functions.get(name);
-
-		if (funs == null) {
-			funs = predefined.get(name);
+		// collect all available functions for the given name
+		ArrayList<Function> available = new ArrayList<Function>();
+		Function[] declaredFuns = functions.get(name);
+		if (declaredFuns != null) {
+			for (Function f : declaredFuns) {
+				available.add(f);
+			}
 		}
-
-		if (funs != null) {
-			Function function = null;
-			Signature signature = null;
-			SequenceType[] params = null;
-
-			for (int i = 0; i < funs.length; i++) {
-				if (funs[i] != null) {
-					function = funs[i];
-					signature = function.getSignature();
-					params = signature.getParams();
-					int paramCount = params.length;
-
-					if ((argCount == paramCount)
-							|| (((signature.lastIsVarArg()) && ((argCount == paramCount - 1) || (argCount > paramCount))))) {
-						return function;
-					}
+		Function[] predefFuns = predefined.get(name);
+		if (predefFuns != null) {
+			for (Function f : predefFuns) {
+				available.add(f);
+			}
+		}
+		for (Functions imported : imports) {
+			Function[] importedFuns = imported.functions.get(name);
+			if (importedFuns != null) {
+				for (Function f : importedFuns) {
+					available.add(f);
 				}
 			}
+		}
 
+		if (available.isEmpty()) {
 			throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-					"Illegal number of parameters for function %s : %s'",
-					function, argCount);
+					"Unknown function: '%s'", name);
+		}
+
+		// find function with matching arity
+		for (Function f : available) {
+			Signature sig = f.getSignature();
+			SequenceType[] params = sig.getParams();
+			int parCnt = params.length;
+
+			if ((argCount == parCnt)
+					|| (((sig.lastIsVarArg()) && ((argCount == parCnt - 1) || (argCount > parCnt))))) {
+				return f;
+			}
 		}
 
 		throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-				"Unknown function: '%s'", name);
+				"Illegal number of parameters for function %s : %s'", name,
+				argCount);
 	}
 
 	public void declare(Function function) throws QueryException {
 		Function[] funs = functions.get(function.getName());
 
 		if (funs == null) {
-			funs = new Function[1];
+			funs = new Function[] { function };
 			functions.put(function.getName(), funs);
-		}
-
-		for (int i = 0; i < funs.length; i++) {
-			if (funs[i] != null) {
-				if (funs[i].getSignature().equals(function.getSignature())) {
+		} else {
+			for (int i = 0; i < funs.length; i++) {
+				if (funs[i].getSignature().getParams().length == function
+						.getSignature().getParams().length) {
 					throw new QueryException(
 							ErrorCode.ERR_MULTIPLE_FUNCTION_DECLARATIONS,
 							"Found multiple declarations of function %s",
 							function);
 				}
-			} else {
-				funs[i] = function;
-				return;
+			}
+			funs = Arrays.copyOf(funs, funs.length + 1);
+			funs[funs.length - 1] = function;
+		}
+	}
+
+	public void importFunctions(Functions functions) throws QueryException {
+		for (Entry<QNm, Function[]> extFuncs : functions.functions.entrySet()) {
+			Function[] extFuns = extFuncs.getValue();
+			QNm name = extFuncs.getKey();
+
+			Function[] localFuns = this.functions.get(name);
+			if (localFuns != null) {
+				checkDuplicateDecl(localFuns, extFuns);
+			}
+
+			for (Functions imported : imports) {
+				Function[] importedFuns = imported.functions.get(name);
+				if (importedFuns != null) {
+					checkDuplicateDecl(importedFuns, extFuns);
+				}
 			}
 		}
+		imports.add(functions);
+	}
 
-		funs = Arrays.copyOf(funs, funs.length + 1);
-		funs[funs.length - 1] = function;
-		functions.put(function.getName(), funs);
+	public List<Function[]> getDeclaredFunctions() {
+		return Collections.unmodifiableList(new ArrayList<Function[]>(functions
+				.values()));
+	}
+
+	private void checkDuplicateDecl(Function[] localFuns, Function[] extFuns)
+			throws QueryException {
+		for (int i = 0; i < localFuns.length; i++) {
+			for (int j = 0; j < extFuns.length; j++) {
+				if (localFuns[i].getSignature().getParams().length == extFuns[j]
+						.getSignature().getParams().length) {
+					throw new QueryException(
+							ErrorCode.ERR_MULTIPLE_FUNCTION_DECLARATIONS,
+							"Found multiple declarations of function %s",
+							extFuns[j].getName());
+				}
+			}
+		}
 	}
 
 	public static void predefine(Function function) {

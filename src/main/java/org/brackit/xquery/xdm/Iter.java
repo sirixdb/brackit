@@ -28,14 +28,43 @@
 package org.brackit.xquery.xdm;
 
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.IntNumeric;
 
 /**
+ * <p>
+ * An {@link Iter} iterates over a sequence of {@link Item Items}.
+ * </p>
+ * 
+ * <p>
+ * One must ensure to always close an iterator, e.g., by following
+ * this coding pattern:
+ * </p>
+ * 
+ * <pre>
+ * Iter it = s.iterate();
+ * try {
+ *   ...
+ * } finally {
+ * 	it.close();
+ * } 
+ * </pre>
  * 
  * @author Sebastian Baechle
  * 
  */
 public interface Iter {
+	/**
+	 * Get the next item
+	 */
 	public Item next() throws QueryException;
+	
+	/**
+	 * Skip the next <code>i</code> items
+	 */
+	public void skip(IntNumeric i) throws QueryException;
 
+	/**
+	 * Close the iterator to release all resources. 
+	 */
 	public void close();
 }

@@ -31,11 +31,12 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Dbl;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -63,30 +64,30 @@ public class Subsequence extends AbstractFunction {
 			return null;
 		}
 
-		IntegerNumeric tmp = Cast.asInteger(((Dbl) args[1]).round()
+		IntNumeric tmp = Cast.asInteger(((Dbl) args[1]).round()
 				.doubleValue());
 		if (tmp.cmp(Int32.ZERO) <= 0) {
 			tmp = Int32.ONE;
 		}
-		final IntegerNumeric st = tmp;
+		final IntNumeric st = tmp;
 
 		tmp = null;
 		if (args.length == 3) {
-			IntegerNumeric length = Cast.asInteger(((Dbl) args[2]).round()
+			IntNumeric length = Cast.asInteger(((Dbl) args[2]).round()
 					.doubleValue());
-			tmp = (IntegerNumeric) st.add(length);
+			tmp = (IntNumeric) st.add(length);
 		}
-		final IntegerNumeric e = tmp;
+		final IntNumeric e = tmp;
 
 		return new LazySequence() {
 			final Sequence seq = s;
-			final IntegerNumeric start = st;
-			final IntegerNumeric end = e;
+			final IntNumeric start = st;
+			final IntNumeric end = e;
 
 			@Override
 			public Iter iterate() {
-				return new Iter() {
-					private IntegerNumeric next = start;
+				return new BaseIter() {
+					private IntNumeric next = start;
 					private Iter it;
 
 					@Override
@@ -100,10 +101,7 @@ public class Subsequence extends AbstractFunction {
 
 						if (it == null) {
 							it = seq.iterate();
-							for (IntegerNumeric i = Int32.ONE; i.cmp(start) < 0; i = i
-									.inc()) {
-								it.next();
-							}
+							it.skip(start);
 						}
 
 						return it.next();

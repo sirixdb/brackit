@@ -94,7 +94,7 @@ public class Castable implements Expr {
 		}
 
 		try {
-			Cast.cast(ctx, item, target, allowEmptySequence);
+			Cast.cast(item, target, allowEmptySequence);
 			return Bool.TRUE;
 		} catch (QueryException e) {
 			QNm code = e.getCode();

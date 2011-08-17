@@ -30,10 +30,11 @@ package org.brackit.xquery.function.fn;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -56,13 +57,13 @@ public class InsertBefore extends AbstractFunction {
 	public Sequence execute(QueryContext ctx, Sequence[] args)
 			throws QueryException {
 		final Sequence s = args[0];
-		IntegerNumeric p = (IntegerNumeric) args[1];
+		IntNumeric p = (IntNumeric) args[1];
 		final Sequence i = args[2];
 
 		if (p.cmp(Int32.ONE) < 0) {
 			p = Int32.ONE;
 		}
-		final IntegerNumeric pos = p;
+		final IntNumeric pos = p;
 
 		if (s == null) {
 			return i;
@@ -73,12 +74,12 @@ public class InsertBefore extends AbstractFunction {
 		return new LazySequence() {
 			final Sequence seq = s;
 			final Sequence ins = i;
-			final IntegerNumeric p = pos;
+			final IntNumeric p = pos;
 
 			@Override
 			public Iter iterate() {
-				return new Iter() {
-					private IntegerNumeric next = Int32.ONE;
+				return new BaseIter() {
+					private IntNumeric next = Int32.ONE;
 					private Iter itSeq;
 					private Iter itIns;
 

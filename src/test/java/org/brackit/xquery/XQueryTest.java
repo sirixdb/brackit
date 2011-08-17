@@ -42,14 +42,14 @@ import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.atomic.Una;
-import org.brackit.xquery.module.MainModule;
+import org.brackit.xquery.module.Module;
 import org.brackit.xquery.node.SubtreePrinter;
 import org.brackit.xquery.node.linked.ElementLNode;
 import org.brackit.xquery.operator.IntegerSource;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Collection;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Kind;
+import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Type;
 import org.junit.Before;
@@ -308,8 +308,6 @@ public class XQueryTest extends XQueryBaseTest {
 		ctx.bind(new QNm("x"), Int32.ZERO_TWO_TWENTY[2]);
 		XQuery query = new XQuery(
 				"declare variable $x external := 1; for $a in (1,2,3) return $a + $x");
-		MainModule module = query.getMainModule();
-		System.out.println(module.getVariables());
 		Sequence result = query.execute(ctx);
 		ResultChecker.dCheck(ctx, new ItemSequence(new Int32(3), new Int32(4),
 				new Int32(5)), result);

@@ -27,20 +27,30 @@
  */
 package org.brackit.xquery.xdm;
 
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 
 /**
- * Sequence as defined in {@linkplain http://www.w3.org/TR/xpath-datamodel}.
+ * <p>
+ * A sequence as defined in {@linkplain http://www.w3.org/TR/xpath-datamodel}.
+ * </p>
  * 
- * For performance reasons sequences may only be iterated and do not allow
- * direct access to specific elements.
- * 
+ * <p>
  * The empty sequence is represented either as <code>null</code> when returned
  * as result from an {@link Expr Expression} or as any {@link Sequence} without
  * {@link Item Items} when it is required as input for expressions or as a query
  * result.
+ * </p>
+ * 
+ * <p>
+ * For performance reasons sequences may only be iterated and do not allow
+ * direct access to specific elements.
+ * </p>
+ * 
+ * <p>
+ * Sequences must be <b>logically immutable</b>, i.e., it must be ensured that
+ * concurrent access does not cause race conditions.
+ * </p>
  * 
  * @author Sebastian Baechle
  * 
@@ -56,7 +66,7 @@ public interface Sequence {
 	 * input to determine the actual boolean value.
 	 * </p>
 	 */
-	public boolean booleanValue(QueryContext ctx) throws QueryException;
+	public boolean booleanValue() throws QueryException;
 
 	/**
 	 * Checks the size of this sequence.
@@ -67,7 +77,19 @@ public interface Sequence {
 	 * input to determine the actual size.
 	 * </p>
 	 */
-	public IntegerNumeric size(QueryContext ctx) throws QueryException;
+	public IntNumeric size() throws QueryException;
+
+	/**
+	 * Returns the item at the given position or <code>null</code> iff
+	 * <code>pos</code> is out of range.
+	 * 
+	 * <p>
+	 * <b>Caution:</b><br/>
+	 * Note that this method may require to iterate over a potentially large
+	 * input to determine the actual size.
+	 * </p>
+	 */
+	public Item get(IntNumeric pos) throws QueryException;
 
 	/**
 	 * Create a stream to iterate over all items of this sequence.

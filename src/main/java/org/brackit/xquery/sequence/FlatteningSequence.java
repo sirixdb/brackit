@@ -27,60 +27,222 @@
  */
 package org.brackit.xquery.sequence;
 
-import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.Counter;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.atomic.Numeric;
+import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
  * @author Sebastian Baechle
- *
+ * 
  */
-public class FlatteningSequence implements Sequence {
+public abstract class FlatteningSequence implements Sequence {
 
-	protected final Sequence[] seqs;
+	private class FlatteningIter implements Iter {
+		private Sequence s;
+		private Iter it;
+		private int pos;
 
-	public FlatteningSequence(Sequence... seqs) {
-		this.seqs = seqs;
-	}
+		@Override
+		public Item next() throws QueryException {
+			while (true) {
+				if (it != null) {
+					Item res = it.next();
+					if (res != null) {
+						return res;
+					}
+					it.close();
+					it = null;
+				}
 
-	@Override
-	public boolean booleanValue(QueryContext ctx) throws QueryException {
-		return (seqs.length > 0) ? (seqs[0] instanceof Node<?>) ? true
-				: seqs[0].booleanValue(ctx) : false;
-	}
+				s = sequence(pos++);
 
-	@Override
-	public IntegerNumeric size(QueryContext ctx) throws QueryException {
-		IntegerNumeric size = Int32.ZERO;
-		for (Sequence s : seqs) {
-			size = (IntegerNumeric) size.add(s.size(ctx));
+				if (s == null) {
+					return null;
+				}
+				if (s instanceof Item) {
+					// include single item in result
+					return (Item) s;
+				}
+				// flatten out result
+				it = s.iterate();
+			}
 		}
-		return size;
+
+		@Override
+		public void skip(IntNumeric i) throws QueryException {
+			if (i.cmp(Int32.ZERO) <= 0) {
+				return;
+			}
+			final Counter skipped = new Counter();
+			// iterate current sequence to skip items
+			if (it != null) {
+				while (next() != null) {
+					if (skipped.inc().cmp(i) >= 0) {
+						return;
+					}
+				}
+				it.close();
+				it = null;
+			}
+			// skip over and in following sequences
+			Numeric remaining = i.subtract(skipped.asIntNumeric());
+			while ((s = sequence(pos++)) != null) {
+				IntNumeric size = s.size();
+				int cmp = remaining.cmp(size);
+				if (cmp <= 0) {
+					it = s.iterate();
+					if (cmp != 0) {
+						it.skip((IntNumeric) remaining);
+					}
+					break;
+				}
+				remaining = remaining.subtract(size);
+			}
+		}
+
+		@Override
+		public void close() {
+			if (it != null) {
+				it.close();
+			}
+		}
+	}
+
+	// use volatile fields because
+	// they are computed on demand
+	private volatile IntNumeric size;
+	private volatile Boolean bool;
+
+	/**
+	 * Get next sequence to flatten out. If <code>null</code> is returned, the
+	 * flattening stops.
+	 */
+	protected abstract Sequence sequence(int pos) throws QueryException;
+
+	@Override
+	public boolean booleanValue() throws QueryException {
+		Boolean b = bool; // volatile read
+		if (b != null) {
+			return b;
+		}
+		Sequence s;
+		int i = 0;
+		while ((s = sequence(i++)) != null) {
+			Item first;
+			if (s == null) {
+				continue;
+			}
+			if (s instanceof Item) {
+				if (s instanceof Node<?>) {
+					bool = Boolean.TRUE;
+					return true;
+				} else {
+					first = (Item) s;
+				}
+			} else {
+				Iter it = s.iterate();
+				try {
+					first = it.next();
+					if (first == null) {
+						continue;
+					}
+					if (first instanceof Node<?>) {
+						this.bool = Boolean.TRUE;
+						return true;
+					}
+					// assure that current subsequence
+					// is a singleton
+					if (it.next() != null) {
+						throw new QueryException(
+								ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+								"Effective boolean value is undefined "
+										+ "for sequences with two or more items "
+										+ "not starting with a node");
+					}
+				} finally {
+					it.close();
+				}
+			}
+			// ensure that following sequences are empty
+			while ((s = sequence(i++)) != null) {
+				if ((s != null) && (!s.size().eq(Int32.ZERO))) {
+					throw new QueryException(
+							ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+							"Effective boolean value is undefined "
+									+ "for sequences with two or more items "
+									+ "not starting with a node");
+				}
+			}
+			return (bool = first.booleanValue());
+		}
+		return (bool = Boolean.FALSE);
+	}
+
+	@Override
+	public IntNumeric size() throws QueryException {
+		IntNumeric si = size; // volatile read
+		if (si != null) {
+			return si;
+		}
+		si = Int32.ZERO;
+		Sequence s;
+		int i = 0;
+		while ((s = sequence(i++)) != null) {
+			si = (IntNumeric) si.add(s.size());
+		}
+		return (size = si);
+	}
+
+	@Override
+	public Item get(IntNumeric pos) throws QueryException {
+		IntNumeric si = size; // volatile read
+		if ((si != null) && (si.cmp(pos) < 0)) {
+			return null;
+		}
+		if (Int32.ZERO.cmp(pos) >= 0) {
+			return null;
+		}
+		IntNumeric psi = Int32.ZERO;
+		si = Int32.ZERO;
+		Sequence s;
+		int i = 0;
+		while ((s = sequence(i++)) != null) {
+			psi = si;
+			si = (IntNumeric) si.add(s.size());
+			if (si.cmp(pos) >= 0) {
+				return s.get((IntNumeric) pos.subtract(psi));
+			}
+		}
+		size = si; // remember size
+		return null;
 	}
 
 	@Override
 	public Iter iterate() {
-		return new FlatteningIter() {
-			int pos = 0;
-			@Override
-			protected Sequence nextSequence() throws QueryException {
-				return (pos < seqs.length) ? seqs[pos++] : null;
-			}
-		};
+		return new FlatteningIter();
 	}
-	
+
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		if (seqs.length > 0) {
-			sb.append(seqs[0]);
-			for (int i = 1; i < seqs.length; i++) {
-				sb.append(",");
-				sb.append(seqs[i]);
+		try {
+			Sequence s;
+			int i = 0;
+			if ((s = sequence(i++)) != null) {
+				sb.append(s);
+				while ((s = sequence(i++)) != null) {
+					sb.append(",");
+					sb.append(s);
+				}
 			}
+		} catch (QueryException e) {
+			sb.append("...");
 		}
 		return sb.toString();
 	}

@@ -30,11 +30,15 @@ package org.brackit.xquery.atomic;
 import java.math.BigDecimal;
 
 import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Type;
 
-public class Int64 extends AbstractNumeric implements LongNumeric {
+/**
+ * 
+ * @author Sebastian Baechle
+ *
+ */
+public class Int64 extends AbstractNumeric implements LonNumeric {
 	public static final Int64 MIN_VALUE = new Int64(Long.MIN_VALUE);
 
 	public static final Int64 MAX_VALUE = new Int64(Long.MAX_VALUE);
@@ -75,30 +79,35 @@ public class Int64 extends AbstractNumeric implements LongNumeric {
 	}
 
 	@Override
+	public IntNumeric asIntNumeric() {
+		return this;
+	}
+
+	@Override
 	public Atomic asType(Type type) throws QueryException {
 		return validate(Type.INR, new DInt64(v, type));
 	}
 
 	@Override
-	public IntegerNumeric inc() {
+	public IntNumeric inc() {
 		return (v != Long.MAX_VALUE) ? new Int64(v + 1) : new Int(
 				new BigDecimal(v).add(BigDecimal.ONE));
 	}
 
 	@Override
-	public boolean booleanValue(QueryContext ctx) throws QueryException {
+	public boolean booleanValue() throws QueryException {
 		return (v != 0);
 	}
 
 	@Override
 	public int cmp(Atomic other) throws QueryException {
-		if ((other instanceof IntegerNumeric)) {
-			if (other instanceof LongNumeric) {
-				long v2 = ((LongNumeric) other).longValue();
+		if ((other instanceof IntNumeric)) {
+			if (other instanceof LonNumeric) {
+				long v2 = ((LonNumeric) other).longValue();
 				return (v < v2) ? -1 : (v == v2) ? 0 : 1;
 			}
 			return -other.cmp(this);
-		} else if (other instanceof DecimalNumeric) {
+		} else if (other instanceof DecNumeric) {
 			return new BigDecimal(v)
 					.compareTo(((Numeric) other).decimalValue());
 		} else if (other instanceof Dbl) {
@@ -112,13 +121,13 @@ public class Int64 extends AbstractNumeric implements LongNumeric {
 
 	@Override
 	protected int atomicCmpInternal(Atomic other) {
-		if ((other instanceof IntegerNumeric)) {
-			if (other instanceof LongNumeric) {
-				long v2 = ((LongNumeric) other).longValue();
+		if ((other instanceof IntNumeric)) {
+			if (other instanceof LonNumeric) {
+				long v2 = ((LonNumeric) other).longValue();
 				return (v < v2) ? -1 : (v == v2) ? 0 : 1;
 			}
 			return -((AbstractNumeric) other).atomicCmpInternal(this);
-		} else if (other instanceof DecimalNumeric) {
+		} else if (other instanceof DecNumeric) {
 			return new BigDecimal(v)
 					.compareTo(((Numeric) other).decimalValue());
 		} else if (other instanceof Dbl) {
@@ -165,12 +174,12 @@ public class Int64 extends AbstractNumeric implements LongNumeric {
 
 	@Override
 	public Numeric add(Numeric other) throws QueryException {
-		if (other instanceof IntegerNumeric) {
-			if (other instanceof LongNumeric) {
+		if (other instanceof IntNumeric) {
+			if (other instanceof LonNumeric) {
 				return addLong(v, other.longValue());
 			}
 			return other.add(this);
-		} else if (other instanceof DecimalNumeric) {
+		} else if (other instanceof DecNumeric) {
 			return addBigDecimal(new BigDecimal(v), other.decimalValue(), false);
 		} else if (other instanceof Dbl) {
 			return addDouble(v, other.doubleValue());
@@ -181,12 +190,12 @@ public class Int64 extends AbstractNumeric implements LongNumeric {
 
 	@Override
 	public Numeric subtract(Numeric other) throws QueryException {
-		if (other instanceof IntegerNumeric) {
-			if (other instanceof LongNumeric) {
+		if (other instanceof IntNumeric) {
+			if (other instanceof LonNumeric) {
 				return subtractLong(v, other.longValue());
 			}
 			return other.add(this);
-		} else if (other instanceof DecimalNumeric) {
+		} else if (other instanceof DecNumeric) {
 			return subtractBigDecimal(new BigDecimal(v), other.decimalValue(),
 					false);
 		} else if (other instanceof Dbl) {
@@ -198,12 +207,12 @@ public class Int64 extends AbstractNumeric implements LongNumeric {
 
 	@Override
 	public Numeric multiply(Numeric other) throws QueryException {
-		if (other instanceof IntegerNumeric) {
-			if (other instanceof LongNumeric) {
+		if (other instanceof IntNumeric) {
+			if (other instanceof LonNumeric) {
 				return multiplyLong(v, other.longValue());
 			}
 			return other.multiply(this);
-		} else if (other instanceof DecimalNumeric) {
+		} else if (other instanceof DecNumeric) {
 			return multiplyBigDecimal(new BigDecimal(v), other.decimalValue(),
 					true);
 		} else if (other instanceof Dbl) {
@@ -215,12 +224,12 @@ public class Int64 extends AbstractNumeric implements LongNumeric {
 
 	@Override
 	public Numeric div(Numeric other) throws QueryException {
-		if (other instanceof IntegerNumeric) {
-			if (other instanceof LongNumeric) {
+		if (other instanceof IntNumeric) {
+			if (other instanceof LonNumeric) {
 				return divideLong(v, other.longValue());
 			}
 			return other.add(this);
-		} else if (other instanceof DecimalNumeric) {
+		} else if (other instanceof DecNumeric) {
 			return divideBigDecimal(new BigDecimal(v), other.decimalValue(),
 					false);
 		} else if (other instanceof Dbl) {
@@ -232,12 +241,12 @@ public class Int64 extends AbstractNumeric implements LongNumeric {
 
 	@Override
 	public Numeric idiv(Numeric other) throws QueryException {
-		if (other instanceof IntegerNumeric) {
-			if (other instanceof LongNumeric) {
+		if (other instanceof IntNumeric) {
+			if (other instanceof LonNumeric) {
 				return idivideLong(v, other.longValue());
 			}
 			return other.add(this);
-		} else if (other instanceof DecimalNumeric) {
+		} else if (other instanceof DecNumeric) {
 			return idivideBigDecimal(new BigDecimal(v), other.decimalValue(),
 					false);
 		} else if (other instanceof Dbl) {
@@ -249,12 +258,12 @@ public class Int64 extends AbstractNumeric implements LongNumeric {
 
 	@Override
 	public Numeric mod(Numeric other) throws QueryException {
-		if (other instanceof IntegerNumeric) {
-			if (other instanceof LongNumeric) {
+		if (other instanceof IntNumeric) {
+			if (other instanceof LonNumeric) {
 				return modLong(v, other.longValue());
 			}
 			return other.add(this);
-		} else if (other instanceof DecimalNumeric) {
+		} else if (other instanceof DecNumeric) {
 			return modBigDecimal(new BigDecimal(v), other.decimalValue(), false);
 		} else if (other instanceof Dbl) {
 			return modDouble(v, other.doubleValue());

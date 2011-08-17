@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.module;
 
+import org.brackit.xquery.xdm.Expr;
+
 /**
  * 
  * @author Sebastian Baechle
@@ -34,4 +36,18 @@ package org.brackit.xquery.module;
  */
 public class LibraryModule extends AbstractModule {
 
+	private NamespaceDecl targetNS;
+
+	public NamespaceDecl getTargetNS() {
+		return targetNS;
+	}
+
+	public void setTargetNS(NamespaceDecl nsDecl) {
+		this.targetNS = nsDecl;
+	}
+
+	@Override
+	public Expr getBody() {
+		return null;
+	}
 }

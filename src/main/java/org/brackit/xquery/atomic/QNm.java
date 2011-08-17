@@ -28,7 +28,6 @@
 package org.brackit.xquery.atomic;
 
 import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Type;
 
@@ -111,7 +110,7 @@ public class QNm extends AbstractAtomic {
 	}
 
 	@Override
-	public boolean booleanValue(QueryContext ctx) throws QueryException {
+	public boolean booleanValue() throws QueryException {
 		return (!localName.isEmpty());
 	}
 

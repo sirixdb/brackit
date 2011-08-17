@@ -119,9 +119,9 @@ public class ResultChecker {
 					s.close();
 				}
 				assertFalse("Result has boolean value of empty sequence",
-						result.booleanValue(ctx));
+						result.booleanValue());
 				assertTrue("Result has size of empty sequence", Int32.ZERO
-						.cmp(result.size(ctx)) == 0);
+						.cmp(result.size()) == 0);
 			}
 		} else {
 			assertNotNull("Result sequence is not empty", result);
@@ -177,11 +177,11 @@ public class ResultChecker {
 			}
 
 			try {
-				boolean expectedBooleanValue = expected.booleanValue(ctx);
+				boolean expectedBooleanValue = expected.booleanValue();
 				boolean resultBooleanValue = false;
 
 				try {
-					resultBooleanValue = result.booleanValue(ctx);
+					resultBooleanValue = result.booleanValue();
 				} catch (QueryException e) {
 					fail("Result does not have defined boolean value");
 				}
@@ -193,7 +193,7 @@ public class ResultChecker {
 						ErrorCode.ERR_INVALID_ARGUMENT_TYPE, e.getCode());
 
 				try {
-					result.booleanValue(ctx);
+					result.booleanValue();
 					fail("Result has defined boolean value");
 				} catch (QueryException e1) {
 					assertEquals("Correct error code",

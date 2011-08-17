@@ -1,4 +1,4 @@
-// $ANTLR 3.2 Sep 23, 2009 12:02:23 org/brackit/xquery/compiler/parser/XMLexer.g 2011-05-05 13:18:34
+// $ANTLR 3.2 Sep 23, 2009 12:02:23 org/brackit/xquery/compiler/parser/XMLexer.g 2011-08-15 13:19:22
 
 /*=============================================================================
 

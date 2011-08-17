@@ -27,25 +27,23 @@
  */
 package org.brackit.xquery.function.fn;
 
-import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
-import org.brackit.xquery.util.sort.TupleSort;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Stream;
 
 /**
  * 
@@ -76,62 +74,43 @@ public class Distinct extends AbstractFunction {
 			return s;
 		}
 
-		final Comparator<Tuple> comparator = new Comparator<Tuple>() {
-			@Override
-			public int compare(Tuple o1, Tuple o2) {
-				int res = ((Atomic) o1).atomicCmp((Atomic) o2);
-				return res;
-			}
-		};
-
 		return new LazySequence() {
 			final Sequence inSeq = s;
-			TupleSort sort;
+			// volatile because it is computed
+			// on demand
+			volatile Set<Atomic> set;
 
 			@Override
 			public Iter iterate() {
-				return new Iter() {
-					Stream<? extends Tuple> sorted;
-					IntegerNumeric pos = Int32.ZERO;
-					Atomic prev = null;
+				return new BaseIter() {
+					Iterator<Atomic> it;
 
 					@Override
 					public Item next() throws QueryException {
-						if (sort == null) {
-							sort = new TupleSort(comparator, -1); // TODO -1
-							// means no
-							// external
-							// sort
-
+						Set<Atomic> distinct = set; // volatile read
+						if (distinct == null) {
+							distinct = new LinkedHashSet<Atomic>();
 							Iter it = inSeq.iterate();
 							try {
 								Item runVar;
 								while ((runVar = it.next()) != null) {
-									sort.add(runVar);
+									distinct.add((Atomic) runVar);
 								}
-								sort.sort();
 							} finally {
 								it.close();
 							}
+							set = distinct;
 						}
-						if (sorted == null) {
-							sorted = sort.stream();
+						if (it == null) {
+							it = distinct.iterator();
 						}
-						Atomic next;
-						while ((next = (Atomic) sorted.next()) != null) {
-							if ((prev == null) || (prev.atomicCmp(next) != 0)) {
-								prev = next;
-								return next;
-							}
-						}
-						return null;
+
+						return (it.hasNext()) ? it.next() : null;
 					}
 
 					@Override
 					public void close() {
-						if (sorted != null) {
-							sorted.close();
-						}
+						it = null;
 					}
 				};
 			}

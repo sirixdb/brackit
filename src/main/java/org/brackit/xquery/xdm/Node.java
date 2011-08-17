@@ -55,7 +55,7 @@ import org.brackit.xquery.node.parser.SubtreeParser;
  * Insert operations always insert deep copies of the provided nodes. This is a
  * necessary constraint because the parent relationship of existing nodes must
  * only be set during node creation and can only unset with delete.
- * <li>
+ * </li>
  * <li>
  * Delete operations break up the relationship between a a node and its parent.
  * Logically, this node and all its descendant nodes then become deleted, i.e.,

@@ -99,7 +99,7 @@ public interface Atomic extends Item, Expr {
 	public int atomicCode();
 
 	/**
-	 * Returns the string value of this item as defined in {linkplain
+	 * Returns the string value of this item as defined in {@linkplain
 	 * http://www.w3.org/TR/xquery-operators/#func-string}.
 	 */
 	public abstract String stringValue();

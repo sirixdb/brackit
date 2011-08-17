@@ -31,8 +31,9 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.Counter;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.sequence.type.AtomicType;
 import org.brackit.xquery.sequence.type.Cardinality;
@@ -40,7 +41,6 @@ import org.brackit.xquery.sequence.type.ItemType;
 import org.brackit.xquery.sequence.type.SequenceType;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Type;
 
@@ -49,32 +49,115 @@ import org.brackit.xquery.xdm.Type;
  * @author Sebastian Baechle
  * 
  */
-public class TypedSequence implements Sequence {
-	private final QueryContext ctx;
+public class TypedSequence extends LazySequence {
 
-	private final SequenceType type;
+	private static final Int32 TWO = Int32.ZERO_TWO_TWENTY[2];
+	
+	private final class TypedIter extends BaseIter {
+		Cardinality card = type.getCardinality();
+		ItemType iType = type.getItemType();
+		boolean expectAtomicType = (iType instanceof AtomicType);
+		Type aType = (expectAtomicType) ? ((AtomicType) iType).type : null;
+		Counter pos = new Counter();
+		Iter s;
 
-	private final Sequence arg;
+		@Override
+		public Item next() throws QueryException {
+			if (s == null) {
+				s = arg.iterate();
+			}
 
-	private final boolean applyFunctionConversion;
+			Item item = s.next();
+			if (item == null) {
+				if ((pos.cmp(Int32.ZERO) == 0) && (card.moreThanZero())) {
+					throw new QueryException(
+							ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+							"Invalid empty typed sequence (expected %s)", card);
+				}
+				safe = true; // remember that sequence type is OK
+				return null;
+			}
+			
+			pos.inc();
+			if ((card == Cardinality.Zero)
+					|| ((pos.cmp(TWO) == 0) && (card.atMostOne()))) {
+				throw new QueryException(
+						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+						"Invalid cardinality of typed sequence (expected %s): >= %s",
+						card, pos);
+			}
 
-	private final boolean enforceDouble;
+			// See XQuery 3.1.5 Function Calls
+			if (expectAtomicType) {
+				Atomic atomic = item.atomize();
+				Type type = atomic.type();
 
-	private Boolean booleanValue;
+				if ((type == Type.UNA) && (aType != Type.UNA)
+						&& (applyFunctionConversion)) {
+					if (enforceDouble) {
+						atomic = Cast.cast(atomic, Type.DBL, false);
+					} else {
+						atomic = Cast.cast(atomic, aType, false);
+					}
+				} else if (!iType.matches(atomic)) {
+					if ((applyFunctionConversion) && (aType.isNumeric())
+							&& (type.isNumeric())) {
+						atomic = Cast.cast(atomic, aType, false);
+					} else if ((applyFunctionConversion)
+							&& (aType.instanceOf(Type.STR))
+							&& (type.instanceOf(Type.AURI))) {
+						atomic = Cast.cast(atomic, aType, false);
+					} else {
+						throw new QueryException(
+								ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+								"Item of invalid atomic type in typed sequence (expected %s): %s",
+								iType, atomic);
+					}
+				}
 
-	private IntegerNumeric size;
+				return atomic;
+			} else if (!iType.matches(item)) {
+				throw new QueryException(
+						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+						"Item of invalid type in typed sequence (expected %s): %s",
+						iType, item);
+			}
 
-	public TypedSequence(QueryContext ctx, SequenceType type, Sequence arg) {
-		this.ctx = ctx;
+			return item;
+		}
+
+		@Override
+		public void skip(IntNumeric i) throws QueryException {
+			if (s == null) {
+				s = arg.iterate();
+			}
+			s.skip(i);
+		}
+
+		@Override
+		public void close() {
+			if (s != null) {
+				s.close();
+			}
+		}
+	}
+
+	final SequenceType type;
+	final Sequence arg;
+	final boolean applyFunctionConversion;
+	final boolean enforceDouble;
+	// volatile field because safe is evaluated lazy
+	volatile boolean safe;
+
+	public TypedSequence(SequenceType type, Sequence arg) {
 		this.type = type;
 		this.arg = arg;
 		this.applyFunctionConversion = false;
 		this.enforceDouble = false;
 	}
 
-	public TypedSequence(QueryContext ctx, SequenceType type, Sequence arg,
+	public TypedSequence(SequenceType type, Sequence arg,
 			boolean applyFunctionConversion, boolean enforceDouble) {
-		this.ctx = ctx;
 		this.type = type;
 		this.arg = arg;
 		this.applyFunctionConversion = applyFunctionConversion;
@@ -82,152 +165,59 @@ public class TypedSequence implements Sequence {
 	}
 
 	@Override
-	public boolean booleanValue(QueryContext ctx) throws QueryException {
-		// Remember if expression is checked several times
-		if (booleanValue != null) {
-			return booleanValue;
-		}
-
-		booleanValue = false;
-		Iter s = iterate();
-		try {
-			Item n;
-			booleanValue = ((n = s.next()) != null) ? (n instanceof Node<?>) ? true
-					: n.booleanValue(ctx)
-					: false;
-
-			// TODO: Must typed sequences be checked in full once accessed?
-			while (s.next() != null)
-				;
-		} finally {
-			s.close();
-		}
-
-		return booleanValue;
-	}
-
-	@Override
 	public Iter iterate() {
-		return new Iter() {
-			Cardinality cardinality = type.getCardinality();
-			ItemType itemType = type.getItemType();
-			boolean expectAtomicType = (itemType instanceof AtomicType);
-			Type expectedAtomicType = (expectAtomicType) ? ((AtomicType) itemType).type
-					: null;
-			int pos = 0;
-			Iter s;
-
-			@Override
-			public Item next() throws QueryException {
-				if (s == null) {
-					s = arg.iterate();
-				}
-
-				Item next = s.next();
-
-				if (next != null) {
-					pos++;
-
-					if ((cardinality == Cardinality.Zero)
-							|| ((pos == 2) && (cardinality.atMostOne()))) {
-						throw new QueryException(
-								ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-								"Invalid cardinality of typed sequence (expected %s): >= %s",
-								cardinality, pos);
-					}
-
-					// See XQuery 3.1.5 Function Calls
-					if (expectAtomicType) {
-						Atomic atomic = next.atomize();
-						Type type = atomic.type();
-
-						if ((type == Type.UNA)
-								&& (expectedAtomicType != Type.UNA)
-								&& (applyFunctionConversion)) {
-							if (enforceDouble) {
-								atomic = Cast
-										.cast(ctx, atomic, Type.DBL, false);
-							} else {
-								atomic = Cast.cast(ctx, atomic,
-										expectedAtomicType, false);
-							}
-						} else if (!itemType.matches(atomic)) {
-							if ((applyFunctionConversion)
-									&& (expectedAtomicType.isNumeric())
-									&& (type.isNumeric())) {
-								atomic = Cast.cast(ctx, atomic,
-										expectedAtomicType, false);
-							} else if ((applyFunctionConversion)
-									&& (expectedAtomicType.instanceOf(Type.STR))
-									&& (type.instanceOf(Type.AURI))) {
-								atomic = Cast.cast(ctx, atomic,
-										expectedAtomicType, false);
-							} else {
-								throw new QueryException(
-										ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-										"Item of invalid atomic type in typed sequence (expected %s): %s",
-										itemType, atomic);
-							}
-						}
-
-						return atomic;
-					} else if (!itemType.matches(next)) {
-						throw new QueryException(
-								ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-								"Item of invalid type in typed sequence (expected %s): %s",
-								itemType, next);
-					}
-				} else if ((pos == 0) && (cardinality.moreThanZero())) {
-					throw new QueryException(
-							ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-							"Invalid empty typed sequence (expected %s)",
-							cardinality);
-				}
-
-				return next;
-			}
-
-			@Override
-			public void close() {
-				if (s != null) {
-					s.close();
-				}
-			}
-		};
+		if (safe) {
+			return arg.iterate();
+		}
+		return new TypedIter();
 	}
 
 	@Override
-	public IntegerNumeric size(QueryContext ctx) throws QueryException {
-		// Remember if expression is checked several times
-		if (size != null) {
-			return size;
+	public Item get(IntNumeric pos) throws QueryException {
+		Item item = arg.get(pos);
+		if (safe) { // volatile read
+			return item;
 		}
-
-		IntegerNumeric count = Int32.ZERO;
-		Iter s = iterate();
-		try {
-			while (s.next() != null) {
-				count = count.inc();
+		Cardinality card = type.getCardinality();
+		if (item == null) {
+			if (card.moreThanZero()) {
+				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+						"Invalid empty typed sequence (expected %s)", card);
 			}
-		} finally {
-			s.close();
+		} else {
+			if ((pos.cmp(Int32.ONE) > 0) && (card.atMostOne())) {
+				throw new QueryException(
+						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+						"Invalid cardinality of typed sequence (expected %s): >= %s",
+						card, pos);
+			}
+			if ((pos.cmp(Int32.ZERO) > 0) && (card == Cardinality.Zero)) {
+				throw new QueryException(
+						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+						"Invalid cardinality of typed sequence (expected %s): >= %s",
+						card, pos);
+			}
+			if (!type.getItemType().matches(item)) {
+				throw new QueryException(
+						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+						"Item of invalid type in typed sequence (expected %s): %s",
+						type.getItemType(), item);
+			}
 		}
-
-		size = count;
-		return size;
+		return item;
 	}
 
 	public static Sequence toTypedSequence(QueryContext ctx,
-			SequenceType sequenceType, Sequence s) throws QueryException {
+			SequenceType sType, Sequence s) throws QueryException {
 		if (s == null) {
-			if (sequenceType.getCardinality().moreThanZero()) {
+			if (sType.getCardinality().moreThanZero()) {
 				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 						"Invalid empty-sequence()");
 			}
 			return null;
 		} else if (s instanceof Item) {
 			// short-circuit wrapping of single item parameter
-			ItemType itemType = sequenceType.getItemType();
+			ItemType itemType = sType.getItemType();
 
 			if (!itemType.matches((Item) s)) {
 				throw new QueryException(
@@ -238,21 +228,21 @@ public class TypedSequence implements Sequence {
 
 			return s;
 		} else {
-			return new TypedSequence(ctx, sequenceType, s);
+			return new TypedSequence(sType, s);
 		}
 	}
 
-	public static Item toTypedItem(QueryContext ctx, SequenceType sequenceType,
+	public static Item toTypedItem(QueryContext ctx, SequenceType sType,
 			Item item) throws QueryException {
 		if (item == null) {
-			if (sequenceType.getCardinality().moreThanZero()) {
+			if (sType.getCardinality().moreThanZero()) {
 				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 						"Invalid empty-sequence()");
 			}
 			return null;
 		} else {
 			// short-circuit wrapping of single item parameter
-			ItemType itemType = sequenceType.getItemType();
+			ItemType itemType = sType.getItemType();
 
 			if (!itemType.matches(item)) {
 				throw new QueryException(
@@ -265,18 +255,18 @@ public class TypedSequence implements Sequence {
 		}
 	}
 
-	public static Item toTypedItem(QueryContext ctx, SequenceType sequenceType,
-			Sequence sequence) throws QueryException {
-		if (sequence == null) {
-			if (sequenceType.getCardinality().moreThanZero()) {
+	public static Item toTypedItem(QueryContext ctx, SequenceType sType,
+			Sequence s) throws QueryException {
+		if (s == null) {
+			if (sType.getCardinality().moreThanZero()) {
 				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 						"Invalid empty-sequence()");
 			}
 			return null;
-		} else if (sequence instanceof Item) {
+		} else if (s instanceof Item) {
 			// short-circuit wrapping of single item parameter
-			ItemType itemType = sequenceType.getItemType();
-			Item item = (Item) sequence;
+			ItemType itemType = sType.getItemType();
+			Item item = (Item) s;
 
 			if (!itemType.matches(item)) {
 				throw new QueryException(
@@ -287,16 +277,16 @@ public class TypedSequence implements Sequence {
 
 			return item;
 		} else {
-			Iter it = sequence.iterate();
+			Iter it = s.iterate();
 			try {
 				Item item = it.next();
 				if (it.next() != null) {
 					throw new QueryException(
 							ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 							"Cannot convert %s typed sequence %s to single item",
-							sequenceType, sequence);
+							sType, s);
 				}
-				return toTypedItem(ctx, sequenceType, item);
+				return toTypedItem(ctx, sType, item);
 			} finally {
 				it.close();
 			}

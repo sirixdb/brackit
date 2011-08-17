@@ -30,9 +30,9 @@ package org.brackit.xquery.compiler.translator;
 import java.io.PrintWriter;
 import java.util.Arrays;
 
-import org.apache.log4j.Logger;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.sequence.type.SequenceType;
+import org.brackit.xquery.util.log.Logger;
 
 /**
  * 

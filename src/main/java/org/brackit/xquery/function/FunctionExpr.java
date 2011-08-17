@@ -121,16 +121,16 @@ public class FunctionExpr implements Expr {
 
 				if ((type == Type.UNA) && (expected != Type.UNA)) {
 					if ((function.isBuiltIn()) && (expected.isNumeric())) {
-						atomic = Cast.cast(ctx, atomic, expected, false);
+						atomic = Cast.cast(atomic, expected, false);
 					} else {
-						atomic = Cast.cast(ctx, atomic, expected, false);
+						atomic = Cast.cast(atomic, expected, false);
 					}
 				} else if (!itemType.matches(atomic)) {
 					if ((expected.isNumeric()) && (type.isNumeric())) {
-						atomic = Cast.cast(ctx, atomic, expected, false);
+						atomic = Cast.cast(atomic, expected, false);
 					} else if ((expected.instanceOf(Type.STR))
 							&& (type.instanceOf(Type.AURI))) {
-						atomic = Cast.cast(ctx, atomic, expected, false);
+						atomic = Cast.cast(atomic, expected, false);
 					} else {
 						throw new QueryException(
 								ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
@@ -152,8 +152,8 @@ public class FunctionExpr implements Expr {
 			boolean applyFunctionConversion = ((sequenceType.getItemType() instanceof AtomicType) && (((AtomicType) sequenceType
 					.getItemType()).type.isNumeric()));
 			boolean enforceDouble = function.isBuiltIn();
-			TypedSequence typedSequence = new TypedSequence(ctx, sequenceType,
-					s, applyFunctionConversion, enforceDouble);
+			TypedSequence typedSequence = new TypedSequence(sequenceType, s,
+					applyFunctionConversion, enforceDouble);
 
 			if (sequenceType.getCardinality().atMostOne()) {
 				Iter it = typedSequence.iterate();

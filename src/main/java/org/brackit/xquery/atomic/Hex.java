@@ -30,7 +30,6 @@ package org.brackit.xquery.atomic;
 import java.util.Arrays;
 
 import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Type;
@@ -141,7 +140,7 @@ public class Hex extends AbstractAtomic {
 	}
 
 	@Override
-	public boolean booleanValue(QueryContext ctx) throws QueryException {
+	public boolean booleanValue() throws QueryException {
 		throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
 				"Effective boolean value of '%s' is undefined.", type());
 	}

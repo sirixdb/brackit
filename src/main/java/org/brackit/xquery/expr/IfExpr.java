@@ -56,7 +56,7 @@ public class IfExpr implements Expr {
 	public Sequence evaluate(QueryContext ctx, Tuple tuple)
 			throws QueryException {
 		Sequence cond = condExpr.evaluate(ctx, tuple);
-		return ((cond != null) && (cond.booleanValue(ctx))) ? ifExpr.evaluate(
+		return ((cond != null) && (cond.booleanValue())) ? ifExpr.evaluate(
 				ctx, tuple) : elseExpr.evaluate(ctx, tuple);
 	}
 
@@ -64,7 +64,7 @@ public class IfExpr implements Expr {
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
 		Sequence cond = condExpr.evaluate(ctx, tuple);
-		return ((cond != null) && (cond.booleanValue(ctx))) ? ifExpr
+		return ((cond != null) && (cond.booleanValue())) ? ifExpr
 				.evaluateToItem(ctx, tuple) : elseExpr.evaluateToItem(ctx,
 				tuple);
 	}

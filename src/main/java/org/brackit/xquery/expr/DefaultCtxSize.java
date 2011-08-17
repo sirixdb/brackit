@@ -31,7 +31,7 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
@@ -56,7 +56,7 @@ public class DefaultCtxSize extends Variable {
 	@Override
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		IntegerNumeric item = ctx.getSize();
+		IntNumeric item = ctx.getSize();
 		if (item == null) {
 			throw new QueryException(
 					ErrorCode.ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED,

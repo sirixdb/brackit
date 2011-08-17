@@ -84,7 +84,7 @@ public class MinMax extends AbstractFunction {
 				minmaxType = minmax.type();
 
 				if (minmaxType == Type.UNA) {
-					minmax = Cast.cast(ctx, minmax, Type.DBL, false);
+					minmax = Cast.cast(minmax, Type.DBL, false);
 					minmaxType = Type.DBL;
 				}
 
@@ -149,7 +149,7 @@ public class MinMax extends AbstractFunction {
 			Type type = s.type();
 
 			if (type == Type.AURI) {
-				s = Cast.cast(ctx, s, Type.STR, false);
+				s = Cast.cast(s, Type.STR, false);
 				type = Type.STR;
 			} else if (!type.instanceOf(Type.STR)) {
 				throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
@@ -177,7 +177,7 @@ public class MinMax extends AbstractFunction {
 			Type type = s.type();
 
 			if (type == Type.UNA) {
-				s = Cast.cast(ctx, s, Type.DBL, false);
+				s = Cast.cast(s, Type.DBL, false);
 				type = Type.DBL;
 			}
 

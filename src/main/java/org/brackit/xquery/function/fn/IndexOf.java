@@ -32,11 +32,12 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntegerNumeric;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -82,11 +83,9 @@ public class IndexOf extends AbstractFunction {
 
 			@Override
 			public Iter iterate() {
-				return new Iter() {
+				return new BaseIter() {
 					Iter it;
-					private IntegerNumeric next = Int32.ONE;
-					private Iter itSeq;
-					private Iter itIns;
+					private IntNumeric next = Int32.ONE;
 
 					@Override
 					public Item next() throws QueryException {
@@ -97,7 +96,7 @@ public class IndexOf extends AbstractFunction {
 						Atomic item = null;
 
 						while ((item = (Atomic) it.next()) != null) {
-							IntegerNumeric current = next;
+							IntNumeric current = next;
 							next = next.inc();
 
 							if (item.atomicCmp(atomic) == 0) {

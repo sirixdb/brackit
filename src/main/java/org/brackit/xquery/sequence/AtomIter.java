@@ -27,6 +27,9 @@
  */
 package org.brackit.xquery.sequence;
 
+import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.Int32;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -54,5 +57,12 @@ public class AtomIter implements Iter {
 		Item deliver = atom;
 		atom = null;
 		return deliver;
+	}
+
+	@Override
+	public void skip(IntNumeric i) throws QueryException {
+		if (i.cmp(Int32.ZERO) >= 0) {
+			atom = null;
+		}
 	}
 }

@@ -38,11 +38,11 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import org.apache.log4j.Logger;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.util.Cfg;
+import org.brackit.xquery.util.log.Logger;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Stream;
 
