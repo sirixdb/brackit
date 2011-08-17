@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.expr.Cast;
@@ -243,6 +244,9 @@ public class MultiTypeJoinTable {
 
 	public final void add(Sequence keys, Sequence[] bindings, int pos)
 			throws QueryException {
+		if (keys == null) {
+			return;
+		} 
 		if (keys instanceof Item) {
 			addItem((Item) keys, bindings, pos);
 		} else {
