@@ -31,7 +31,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
+import org.brackit.xquery.util.log.Logger;
 
 /**
  * 
@@ -57,15 +57,14 @@ public class Cfg {
 
 	static {
 		try {
-			defaults.load(new FileInputStream(Cfg.DEFAULTS_FILE));
-		} catch (IOException e) {
-			Logger.getLogger(Cfg.class).warn(e.getMessage());
-		}
-		try {
 			properties.load(new FileInputStream(Cfg.CONFIG_FILE));
 		} catch (IOException e) {
-			Logger.getLogger(Cfg.class).info(e.getMessage());
 		}
+	}
+	
+	public static void main(String[] args) {
+		Cfg.check("foo");
+		Logger.getLogger("bar").info("Hello World");
 	}
 
 	public static void set(String key, String val) {

@@ -35,7 +35,7 @@ import org.antlr.runtime.tree.DOTTreeGenerator;
 import org.antlr.runtime.tree.Tree;
 import org.antlr.runtime.tree.TreeAdaptor;
 import org.antlr.stringtemplate.StringTemplate;
-import org.apache.log4j.Logger;
+import org.brackit.xquery.util.log.Logger;
 
 /**
  * 

@@ -31,7 +31,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
 
-import org.apache.log4j.Logger;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
@@ -45,6 +44,7 @@ import org.brackit.xquery.expr.Variable;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.sequence.type.SequenceType;
+import org.brackit.xquery.util.log.Logger;
 import org.brackit.xquery.xdm.Expr;
 
 /**

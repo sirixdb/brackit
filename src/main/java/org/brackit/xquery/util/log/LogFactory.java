@@ -25,40 +25,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.parser;
+package org.brackit.xquery.util.log;
 
-import org.antlr.runtime.ANTLRStringStream;
-import org.antlr.runtime.RecognitionException;
-import org.antlr.runtime.tree.Tree;
-import org.brackit.xquery.XQuery;
-import org.junit.Test;
-
-public class XQueryParserTest {
-
-	private static final boolean DEBUG = true;
-
-	@Test
-	public void stepBug() throws Exception {
-		parse("empty-sequence(./homepage/text())");
-	}
-
-	@Test
-	public void elementWithEmptyAttribute() throws Exception {
-		parse("<a b=''/>");
-	}
-
-	private void parse(String query) throws RecognitionException {
-		ANTLRStringStream source = new ANTLRStringStream(query);
-		XQueryLexer lexerXQ = new XQueryLexer(source);
-		XMLexer lexerXML = new XMLexer(source);
-		XQueryTokenStream tokenStream = new XQueryTokenStream(lexerXML, lexerXQ);
-
-		XQueryParser parser = new XQueryParser(tokenStream);
-		Tree ast = (Tree) parser.mainModule().getTree();
-
-		if (DEBUG) {
-			DotUtil.drawToDotFile(ast, XQueryParser.tokenNames,
-					XQuery.DEBUG_DIR, "parsed");
-		}
-	}
+/**
+ * 
+ * @author Sebastian Baechle
+ *
+ */
+public interface LogFactory {
+	public Logger getLogger(String name);
 }

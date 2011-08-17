@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.brackit</groupId>
   <artifactId>brackit</artifactId>
-  <version>0.0.4</version>
+  <version>0.0.5</version>
   <name>Brackit Engine</name>
   <url>http://brackit.org</url>
   <properties>
@@ -69,12 +69,6 @@
     </plugins>
   </build>
   <dependencies>
-    <dependency>
-    	<groupId>log4j</groupId>
-    	<artifactId>log4j</artifactId>
-    	<version>1.2.16</version>
-    	<scope>compile</scope>
-    </dependency>
     <dependency>
     	<groupId>junit</groupId>
     	<artifactId>junit</artifactId>
