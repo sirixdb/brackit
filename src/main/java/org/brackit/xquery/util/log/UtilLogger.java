@@ -39,12 +39,11 @@ public class UtilLogger extends Logger {
 
 	private java.util.logging.Level[] map = new java.util.logging.Level[] {
 			java.util.logging.Level.FINER, java.util.logging.Level.FINE,
-			java.util.logging.Level.INFO, java.util.logging.Level.INFO,
-			java.util.logging.Level.WARNING, java.util.logging.Level.SEVERE,
-			java.util.logging.Level.SEVERE };
+			java.util.logging.Level.INFO, java.util.logging.Level.WARNING,
+			java.util.logging.Level.SEVERE, java.util.logging.Level.SEVERE };
 
-	private static class UtilLogRecord extends LogRecord {		
-		
+	private static class UtilLogRecord extends LogRecord {
+
 		public UtilLogRecord(java.util.logging.Level level, String msg) {
 			super(level, msg);
 			inferCaller(UtilLogger.class, this);
@@ -77,14 +76,21 @@ public class UtilLogger extends Logger {
 	}
 
 	@Override
+	public String getName() {
+		return log.getName();
+	}
+
+	@Override
 	public void log(Level level, Object msg) {
-		UtilLogRecord record = new UtilLogRecord(map[level.priority], (msg != null) ? msg.toString() : null);
+		UtilLogRecord record = new UtilLogRecord(map[level.priority],
+				(msg != null) ? msg.toString() : null);
 		log.log(record);
 	}
 
 	@Override
 	public void log(Level level, Object msg, Throwable t) {
-		UtilLogRecord record = new UtilLogRecord(map[level.priority], (msg != null) ? msg.toString() : null);
+		UtilLogRecord record = new UtilLogRecord(map[level.priority],
+				(msg != null) ? msg.toString() : null);
 		record.setThrown(t);
 		log.log(record);
 	}

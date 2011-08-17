@@ -27,14 +27,42 @@
  */
 package org.brackit.xquery.util.log;
 
+import java.io.InputStream;
+import java.util.logging.LogManager;
+
+import org.brackit.xquery.util.Cfg;
+
 /**
  * @author Sebastian Baechle
  * 
  */
 public class UtilLogFactory implements LogFactory {
 
+	static {
+		// try load custom properties if not explicitely specified
+		boolean useConfigFile = (System
+				.getProperty("java.util.logging.config.file") != null);
+		boolean useConfigClass = (System
+				.getProperty("java.util.logging.config.class") != null);
+		if (!useConfigFile && !useConfigClass) {
+			try {
+				InputStream in = Cfg.class
+						.getResourceAsStream("/logging.properties");
+				if (in != null) {
+					LogManager.getLogManager().readConfiguration(in);
+				}
+			} catch (Exception e) {
+			}
+		}
+	}
+
 	@Override
 	public Logger getLogger(String name) {
 		return new UtilLogger(java.util.logging.Logger.getLogger(name));
+	}
+
+	@Override
+	public Logger getRootLogger() {
+		return new UtilLogger(java.util.logging.Logger.getLogger(""));
 	}
 }

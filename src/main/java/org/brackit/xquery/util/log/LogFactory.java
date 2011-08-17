@@ -34,4 +34,6 @@ package org.brackit.xquery.util.log;
  */
 public interface LogFactory {
 	public Logger getLogger(String name);
+
+	public Logger getRootLogger();
 }

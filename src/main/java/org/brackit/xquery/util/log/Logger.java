@@ -58,6 +58,10 @@ public abstract class Logger {
 
 	private static LogFactory factory;
 
+	public static Logger getRootLogger() {
+		return factory.getRootLogger();
+	}
+	
 	public static Logger getLogger(String name) {
 		return factory.getLogger(name);
 	}
@@ -79,6 +83,8 @@ public abstract class Logger {
 	public abstract void log(Level fatal, Object msg, Throwable t);
 
 	public abstract void log(Level fatal, Object msg);
+	
+	public abstract String getName();
 
 	public void trace(Object msg) {
 		log(Level.TRACE, msg);

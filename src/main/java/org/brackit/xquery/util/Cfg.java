@@ -61,11 +61,6 @@ public class Cfg {
 		} catch (IOException e) {
 		}
 	}
-	
-	public static void main(String[] args) {
-		Cfg.check("foo");
-		Logger.getLogger("bar").info("Hello World");
-	}
 
 	public static void set(String key, String val) {
 		System.setProperty(key, val);
