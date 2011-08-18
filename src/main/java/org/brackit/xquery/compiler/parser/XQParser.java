@@ -1827,6 +1827,7 @@ public class XQParser extends Tokenizer {
 		seqType.addChild(new XQAST(XQAST.KindTestDocument));
 		call.addChild(step);
 		treat.addChild(call);
+		treat.addChild(seqType);
 		return treat;
 	}
 
@@ -2324,14 +2325,12 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		XQAST[] args = new XQAST[0];
-		XQAST arg = argument();
-		if (arg != null) {
-			add(args, arg);
-			while (attemptSkipWS(",")) {
-				add(args, argument());
+		while (!attemptSkipWS(")")) {
+			if (args.length > 0) {
+				consumeSkipWS(",");
 			}
-		}
-		consumeSkipWS(")");
+			add(args, argument());
+		}		
 		return args;
 	}
 
@@ -2401,7 +2400,7 @@ public class XQParser extends Tokenizer {
 		if (isReservedFuncName(funcName)) {
 			return null;
 		}
-		if (laSkipWS(la, "(") != null) {
+		if (laSkipWS(la, "(") == null) {
 			return null;
 		}
 		consume(la);
