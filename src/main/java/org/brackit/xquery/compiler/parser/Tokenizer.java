@@ -34,7 +34,7 @@ import org.brackit.xquery.xdm.XMLChar;
 /**
  * 
  * @author Sebastian Baechle
- *
+ * 
  */
 public class Tokenizer {
 
@@ -64,9 +64,13 @@ public class Tokenizer {
 		this.input = s.toCharArray();
 		this.end = input.length;
 	}
-	
+
 	protected Token la(String token) {
 		return la(pos, token);
+	}
+	
+	protected Token la(Token prev, String token) {
+		return la(prev.end, token);
 	}
 
 	protected Token laSkipWS(String token) {
@@ -134,6 +138,14 @@ public class Tokenizer {
 		return true;
 	}
 
+	protected void consumeEOF() throws QueryException {
+		int ws = ws(pos);
+		if (pos + ws != end) {
+			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
+					"Expected end of query", paraphrase());
+		}
+	}
+
 	protected void consumeSkipWS(String token) throws QueryException {
 		Token la = laSkipWS(pos, token);
 		if (la == null) {
@@ -159,23 +171,43 @@ public class Tokenizer {
 	}
 
 	protected String paraphrase() {
-		// TODO Auto-generated method stub
-		return null;
+		int line = 0;
+		int linePos = 0;
+		int p = 0;
+		while (p < pos) {
+			linePos++;
+			if (input[p++] == '\n') {
+				line++;
+				linePos++;
+			}
+		}
+		char[] preBuf = new char[60];
+		int preLen = 60 -1;
+		int start = preLen;
+		p = (pos == end) ? pos - 1 : pos;
+		while ((p >= 0) && (start > 0)) {			
+			if ((!XMLChar.isWS(input[p]))
+					|| ((start < preLen) && (!XMLChar.isWS(preBuf[start + 1])))) {
+				preBuf[start--] = input[p];
+			}
+		}
+		String paraphrase = new String(preBuf, start, preBuf.length);
+		return "[" + line + ":" + linePos + "]" + paraphrase; 
 	}
 
 	protected Token laWS() {
 		int ws = ws(pos);
 		return (ws > 0) ? new Token(pos, ws) : null;
 	}
-	
+
 	protected Token laS(Token token) {
 		return laS(token.end);
 	}
-	
+
 	protected Token laS() {
 		return laS(pos);
 	}
-	
+
 	private Token laS(int pos) {
 		int s = s(pos);
 		return (s > 0) ? new Token(pos, s) : null;
@@ -242,7 +274,7 @@ public class Tokenizer {
 	protected Token laEQName(Token token, boolean cond) throws Exception {
 		return laEQName(token.end, cond);
 	}
-	
+
 	protected Token laEQNameSkipWS(Token token, boolean cond) throws Exception {
 		return laEQName(token.end + ws(token.end), cond);
 	}
@@ -273,7 +305,7 @@ public class Tokenizer {
 	protected Token laQName(boolean cond) throws Exception {
 		return laQName(pos, cond);
 	}
-	
+
 	protected Token laQNameSkipWS(Token token, boolean cond) throws Exception {
 		return laQName(token.end + ws(token.end), cond);
 	}
@@ -615,12 +647,13 @@ public class Tokenizer {
 	}
 
 	private String consumeEscapedAttrValue(char escapeChar) {
+		int s = pos;
 		int e = pos;
 		if (e >= end) {
 			return null;
 		}
 		int len = 0;
-		char c = input[e++];
+		char c;
 		while (e < end) {
 			c = input[e++];
 			if ((c == escapeChar) || (c == '{') || (c == '}') || (c == '<')
@@ -630,13 +663,16 @@ public class Tokenizer {
 				len++;
 			}
 		}
+		if (len == 0) {
+			return null;
+		}
 		pos += len;
-		return new String(input, e, len);
+		return new String(input, s, len);
 	}
 
 	protected String consumeElemContentChar() {
 		int s = pos;
-		int e = s;		
+		int e = s;
 		if (e >= end) {
 			return null;
 		}
@@ -790,56 +826,56 @@ public class Tokenizer {
 		pos += len;
 		return new String(input, e, len);
 	}
-	
-    protected String consumePITarget() throws Exception {
-        int s = pos;
-        int e = s;
-        if (e >= end) {
-                return null;
-        }
-        int len = 0;
-        char c = input[e++];
-        if (!XMLChar.isNameStartChar(c)) {
-                return null;
-        }
-        len++;
-        while (e < end) {
-                c = input[e++];
-                if (!XMLChar.isNameChar(c)) {
-                        break;
-                }
-                len++;
-        }
-        if (len == 0) {
-                return null;
-        }
-        String target = new String(input, s, len);
-        if ((target.length() == 3) && (target.toLowerCase().equals("xml"))) {
-                throw new Exception(String.format("PITarget must not be '%s': %s",
-                                target, paraphrase()));
-        }
-        return target;
-    }
-    
-    protected String comsumePIContents() {
-        int e = pos;
-        if (e >= end) {
-                return null;
-        }
-        int len = 0;
-        char c;
-        while (e < end) {
-                c = input[e++];
-                if ((c == '?') && (e + 1 < end) && (input[e + 1] == '>')) {
-                        break;
-                }
-                if (!XMLChar.isChar(c)) {
-                        break;
-                } else {
-                        len++;
-                }
-        }
-        pos += len;
-        return new String(input, e, len);
-    }   
-}                                                                                                                                                                                                                                                                                                     
+
+	protected String consumePITarget() throws Exception {
+		int s = pos;
+		int e = s;
+		if (e >= end) {
+			return null;
+		}
+		int len = 0;
+		char c = input[e++];
+		if (!XMLChar.isNameStartChar(c)) {
+			return null;
+		}
+		len++;
+		while (e < end) {
+			c = input[e++];
+			if (!XMLChar.isNameChar(c)) {
+				break;
+			}
+			len++;
+		}
+		if (len == 0) {
+			return null;
+		}
+		String target = new String(input, s, len);
+		if ((target.length() == 3) && (target.toLowerCase().equals("xml"))) {
+			throw new Exception(String.format("PITarget must not be '%s': %s",
+					target, paraphrase()));
+		}
+		return target;
+	}
+
+	protected String comsumePIContents() {
+		int e = pos;
+		if (e >= end) {
+			return null;
+		}
+		int len = 0;
+		char c;
+		while (e < end) {
+			c = input[e++];
+			if ((c == '?') && (e + 1 < end) && (input[e + 1] == '>')) {
+				break;
+			}
+			if (!XMLChar.isChar(c)) {
+				break;
+			} else {
+				len++;
+			}
+		}
+		pos += len;
+		return new String(input, e, len);
+	}
+}

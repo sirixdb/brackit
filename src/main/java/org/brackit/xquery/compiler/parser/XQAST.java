@@ -138,7 +138,7 @@ public class XQAST {
 	public static final int WildcardAfterColon = seq++;
 	public static final int EmptySequence = seq++;
 	public static final int ContextItemExpr = seq++;
-	public static final int PlaceHolder = seq++;
+	public static final int ArgumentPlaceHolder = seq++;
 	public static final int OrderedExpr = seq++;
 	public static final int UnorderedExpr = seq++;
 	public static final int Int = seq++;
@@ -179,6 +179,49 @@ public class XQAST {
 	public static final int ContentSequence = seq++;
 	public static final int DirPIConstructor = seq++;
 	public static final int PITarget = seq++;
+	public static final int CompDocumentConstructor = seq++;
+	public static final int CompTextConstructor = seq++;
+	public static final int DefaultElementNamespace = seq++;
+	public static final int DefaultFunctionNamespace = seq++;
+	public static final int SchemaImport = seq++;
+	public static final int ModuleImport = seq++;
+	public static final int Namespace = seq++;
+	public static final int ContextItemDeclaration = seq++;
+	public static final int ExternalVariable = seq++;
+	public static final int AnnotatedDecl = seq++;
+	public static final int ExternalFunction = seq++;
+	public static final int BoundarySpaceDeclaration = seq++;
+	public static final int BoundarySpaceModePreserve = seq++;
+	public static final int BoundarySpaceModeStrip = seq++;
+	public static final int CollationDeclaration = seq++;
+	public static final int BaseURIDeclaration = seq++;
+	public static final int ConstructionDeclaration = seq++;
+	public static final int ConstructionModePreserve = seq++;
+	public static final int ConstructionModeStrip = seq++;
+	public static final int OrderingModeDeclaration = seq++;
+	public static final int OrderingModeOrdered = seq++;
+	public static final int OrderingModeUnordered = seq++;
+	public static final int EmptyOrderDeclaration = seq++;
+	public static final int EmptyOrderModeGreatest = seq++;
+	public static final int EmptyOrderModeLeast = seq++;
+	public static final int CopyNamespacesDeclaration = seq++;
+	public static final int CopyNamespacesPreserveModePreserve = seq++;
+	public static final int CopyNamespacesPreserveModeNoPreserve = seq++;
+	public static final int CopyNamespacesInheritModeInherit = seq++;
+	public static final int CopyNamespacesInheritModeNoInherit = seq++;
+	public static final int DecimalFormatDeclaration = seq++;
+	public static final int DecimalFormatProperty = seq++;
+	public static final int DecimalFormatPropertyDecimalSeparator = seq++;
+	public static final int DecimalFormatPropertyGroupingSeparator = seq++;
+	public static final int DecimalFormatPropertyInfinity = seq++;
+	public static final int DecimalFormatPropertyMinusSign = seq++;
+	public static final int DecimalFormatPropertyNaN = seq++;
+	public static final int DecimalFormatPropertyPercent = seq++;
+	public static final int DecimalFormatPropertyPerMille = seq++;
+	public static final int DecimalFormatPropertyZeroDigit = seq++;
+	public static final int DecimalFormatPropertyDigit = seq++;
+	public static final int DecimalFormatPropertyPatternSeparator = seq++;
+	public static final int OptionDeclaration = seq++;
 
 	public static final String NAMES[] = new String[] { "XQuery",
 			"LibraryModule", "MainModule", "NamespaceDeclaration", "Literal",
@@ -206,19 +249,50 @@ public class XQAST {
 			"KindTestSchemaElement", "KindTestSchemaAttribute", "KindTestPi",
 			"KindTestComment", "KindTestText", "KindTestNamespaceNode",
 			"WildcardBeforeColon", "WildcardAfterColon", "EmptySequence",
-			"ContextItemExpr", "PlaceHolder", "OrderedExpr", "UnorderedExpr",
-			"Int", "Str", "Qname", "Dbl", "Dec", "Annotation", "FunctionTest",
-			"AnyFunctionType", "TypedFunctionType", "SingleType", "Optional",
-			"SomeQuantifier", "EveryQuantifier", "QuantifiedExpr",
-			"SwitchExpr", "SwitchClause", "TypeSwitch", "TypeSwitchCase",
-			"IfExpr", "TryCatchExpr", "CatchClause", "CatchErrorList",
-			"CatchVar", "ExtensionExpr", "Pragma", "PragmaContent",
-			"ValidateExpr", "ValidateLax", "ValidateStrict", "LiteralFuncItem",
-			"InlineFuncItem", "TypedVariableDeclaration",
-			"CompElementConstructor", "CompAttributeConstructor", "CompCommentConstructor",
-			"ContentSequence", "DirPIConstructor", "PITarget"};
-	public static final int CompDocumentConstructor = 0;
-	public static final int CompTextConstructor = 0;
+			"ContextItemExpr", "ArgumentPlaceHolder", "OrderedExpr",
+			"UnorderedExpr", "Int", "Str", "Qname", "Dbl", "Dec", "Annotation",
+			"FunctionTest", "AnyFunctionType", "TypedFunctionType",
+			"SingleType", "Optional", "SomeQuantifier", "EveryQuantifier",
+			"QuantifiedExpr", "SwitchExpr", "SwitchClause", "TypeSwitch",
+			"TypeSwitchCase", "IfExpr", "TryCatchExpr", "CatchClause",
+			"CatchErrorList", "CatchVar", "ExtensionExpr", "Pragma",
+			"PragmaContent", "ValidateExpr", "ValidateLax", "ValidateStrict",
+			"LiteralFuncItem", "InlineFuncItem", "TypedVariableDeclaration",
+			"CompElementConstructor", "CompAttributeConstructor",
+			"CompCommentConstructor", "ContentSequence", "DirPIConstructor",
+			"PITarget", "DefaultElementNamespace", "DefaultFunctionNamespace",
+			"SchemaImport", "ModuleImport", "Namespace",
+			"ContextItemDeclaration", "ExternalVariable", "AnnotatedDecl",
+			"ExternalFunction", "BoundarySpaceDeclaration",
+			"BoundarySpaceModePreserve", "BoundarySpaceModeStrip",
+			"CollationDeclaration", "BaseURIDeclaration",
+			"ConstructionDeclaration", "ConstructionModePreserve",
+			"ConstructionModeStrip", "OrderingModeDeclaration",
+			"OrderingModeOrdered", "OrderingModeUnordered",
+			"EmptyOrderDeclaration", "EmptyOrderModeGreatest",
+			"EmptyOrderModeLeast", "CopyNamespacesDeclaration",
+			"CopyNamespacesPreserveModePreserve",
+			"CopyNamespacesPreserveModeNoPreserve",
+			"CopyNamespacesInheritModeInherit",
+			"CopyNamespacesInheritModeNoInherit", "DecimalFormatDeclaration",
+			"DecimalFormatProperty", "DecimalFormatPropertyDecimalSeparator",
+			"DecimalFormatPropertyGroupingSeparator",
+			"DecimalFormatPropertyInfinity", "DecimalFormatPropertyMinusSign",
+			"DecimalFormatPropertyNaN", "DecimalFormatPropertyPercent",
+			"DecimalFormatPropertyPerMille", "DecimalFormatPropertyZeroDigit",
+			"DecimalFormatPropertyDigit",
+			"DecimalFormatPropertyPatternSeparator", "OptionDeclaration" };
+	public static final int CompNamespaceConstructor = 0;
+	public static final int CompProcessingInstructionConstructor = 0;
+	public static final int Predicate = 0;
+	public static final int FilterExpr = 0;
+	public static final int DynamicFunctionCallExpr = 0;
+	public static final int SlidingWindowClause = 0;
+	public static final int TumblingWindowClause = 0;
+	public static final int WindowStartCondition = 0;
+	public static final int WindowEndCondition = 0;
+	public static final int PreviousItemBinding = 0;
+	public static final int NextItemBinding = 0;
 
 	private XQAST parent;
 
