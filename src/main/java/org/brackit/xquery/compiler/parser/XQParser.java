@@ -65,7 +65,7 @@ public class XQParser extends Tokenizer {
 					"No module found");
 		}
 		consumeEOF();
-		XQAST xquery = new XQAST(XQAST.XQuery);
+		XQAST xquery = new XQAST(XQ.XQuery);
 		xquery.addChild(module);
 		return xquery;
 	}
@@ -132,12 +132,12 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS("=");
 		XQAST uriLiteral = uriLiteral(false, true);
 
-		XQAST module = new XQAST(XQAST.LibraryModule);
-		XQAST nsDecl = new XQAST(XQAST.NamespaceDeclaration);
-		XQAST ncname = new XQAST(XQAST.Literal);
+		XQAST module = new XQAST(XQ.LibraryModule);
+		XQAST nsDecl = new XQAST(XQ.NamespaceDeclaration);
+		XQAST ncname = new XQAST(XQ.Literal);
 		ncname.addChild(ncn);
 		nsDecl.addChild(ncname);
-		XQAST str = new XQAST(XQAST.Literal);
+		XQAST str = new XQAST(XQ.Literal);
 		str.addChild(uriLiteral);
 		nsDecl.addChild(str);
 		XQAST[] prolog = prolog();
@@ -150,7 +150,7 @@ public class XQParser extends Tokenizer {
 	private XQAST mainModule() throws QueryException {
 		XQAST[] prolog = prolog();
 		XQAST body = queryBody();
-		XQAST module = new XQAST(XQAST.MainModule);
+		XQAST module = new XQAST(XQ.MainModule);
 		if (prolog != null) {
 			module.addChildren(prolog);
 		}
@@ -201,14 +201,14 @@ public class XQParser extends Tokenizer {
 		boolean isElemDecl = attemptSkipWS("element");
 		XQAST decl;
 		if (isElemDecl) {
-			decl = new XQAST(XQAST.DefaultElementNamespace);
+			decl = new XQAST(XQ.DefaultElementNamespace);
 		} else {
 			consumeSkipWS("function");
-			decl = new XQAST(XQAST.DefaultFunctionNamespace);
+			decl = new XQAST(XQ.DefaultFunctionNamespace);
 		}
 		consumeSkipWS("namespace");
 		XQAST uri = uriLiteral(false, true);
-		XQAST literal = new XQAST(XQAST.Literal);
+		XQAST literal = new XQAST(XQ.Literal);
 		literal.addChild(uri);
 		decl.addChild(literal);
 		return decl;
@@ -237,12 +237,12 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST decl = new XQAST(XQAST.BoundarySpaceDeclaration);
+		XQAST decl = new XQAST(XQ.BoundarySpaceDeclaration);
 		if (attemptSkipWS("preserve")) {
-			decl.addChild(new XQAST(XQAST.BoundarySpaceModePreserve));
+			decl.addChild(new XQAST(XQ.BoundarySpaceModePreserve));
 		} else {
 			consumeSkipWS("strip");
-			decl.addChild(new XQAST(XQAST.BoundarySpaceModeStrip));
+			decl.addChild(new XQAST(XQ.BoundarySpaceModeStrip));
 		}
 		return decl;
 	}
@@ -263,8 +263,8 @@ public class XQParser extends Tokenizer {
 		consume(la);
 		consume(la2);
 		consume(la3);
-		XQAST decl = new XQAST(XQAST.CollationDeclaration);
-		XQAST coll = new XQAST(XQAST.Literal);
+		XQAST decl = new XQAST(XQ.CollationDeclaration);
+		XQAST coll = new XQAST(XQ.Literal);
 		coll.addChild(uriLiteral(false, true));
 		decl.addChild(coll);
 		return decl;
@@ -281,8 +281,8 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST decl = new XQAST(XQAST.BaseURIDeclaration);
-		XQAST coll = new XQAST(XQAST.Literal);
+		XQAST decl = new XQAST(XQ.BaseURIDeclaration);
+		XQAST coll = new XQAST(XQ.Literal);
 		coll.addChild(uriLiteral(false, true));
 		decl.addChild(coll);
 		return decl;
@@ -299,12 +299,12 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST decl = new XQAST(XQAST.ConstructionDeclaration);
+		XQAST decl = new XQAST(XQ.ConstructionDeclaration);
 		if (attemptSkipWS("preserve")) {
-			decl.addChild(new XQAST(XQAST.ConstructionModePreserve));
+			decl.addChild(new XQAST(XQ.ConstructionModePreserve));
 		} else {
 			consumeSkipWS("strip");
-			decl.addChild(new XQAST(XQAST.ConstructionModeStrip));
+			decl.addChild(new XQAST(XQ.ConstructionModeStrip));
 		}
 		return decl;
 	}
@@ -320,12 +320,12 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST decl = new XQAST(XQAST.OrderingModeDeclaration);
+		XQAST decl = new XQAST(XQ.OrderingModeDeclaration);
 		if (attemptSkipWS("ordered")) {
-			decl.addChild(new XQAST(XQAST.OrderingModeOrdered));
+			decl.addChild(new XQAST(XQ.OrderingModeOrdered));
 		} else {
 			consume("unordered");
-			decl.addChild(new XQAST(XQAST.OrderingModeUnordered));
+			decl.addChild(new XQAST(XQ.OrderingModeUnordered));
 		}
 		return decl;
 	}
@@ -351,12 +351,12 @@ public class XQParser extends Tokenizer {
 		consume(la2);
 		consume(la3);
 		consume(la4);
-		XQAST decl = new XQAST(XQAST.EmptyOrderDeclaration);
+		XQAST decl = new XQAST(XQ.EmptyOrderDeclaration);
 		if (attemptSkipWS("greatest")) {
-			decl.addChild(new XQAST(XQAST.EmptyOrderModeGreatest));
+			decl.addChild(new XQAST(XQ.EmptyOrderModeGreatest));
 		} else {
 			consume("least");
-			decl.addChild(new XQAST(XQAST.EmptyOrderModeLeast));
+			decl.addChild(new XQAST(XQ.EmptyOrderModeLeast));
 		}
 		return decl;
 	}
@@ -372,7 +372,7 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST decl = new XQAST(XQAST.CopyNamespacesDeclaration);
+		XQAST decl = new XQAST(XQ.CopyNamespacesDeclaration);
 		decl.addChild(preserveMode());
 		consumeSkipWS(",");
 		decl.addChild(inheritMode());
@@ -382,19 +382,19 @@ public class XQParser extends Tokenizer {
 
 	private XQAST preserveMode() throws QueryException {
 		if (attemptSkipWS("preserve")) {
-			return new XQAST(XQAST.CopyNamespacesPreserveModePreserve);
+			return new XQAST(XQ.CopyNamespacesPreserveModePreserve);
 		} else {
 			consumeSkipWS("no-preserve");
-			return new XQAST(XQAST.CopyNamespacesPreserveModeNoPreserve);
+			return new XQAST(XQ.CopyNamespacesPreserveModeNoPreserve);
 		}
 	}
 
 	private XQAST inheritMode() throws QueryException {
 		if (attemptSkipWS("inherit")) {
-			return new XQAST(XQAST.CopyNamespacesInheritModeInherit);
+			return new XQAST(XQ.CopyNamespacesInheritModeInherit);
 		} else {
 			consumeSkipWS("no-inherit");
-			return new XQAST(XQAST.CopyNamespacesInheritModeNoInherit);
+			return new XQAST(XQ.CopyNamespacesInheritModeNoInherit);
 		}
 	}
 
@@ -413,15 +413,15 @@ public class XQParser extends Tokenizer {
 			consume(la2);
 		}
 		consume(la3);
-		XQAST decl = new XQAST(XQAST.DecimalFormatDeclaration);
+		XQAST decl = new XQAST(XQ.DecimalFormatDeclaration);
 		;
 		XQAST[] dfProperties = new XQAST[0];
 		XQAST dfPropertyName;
 		while ((dfPropertyName = dfPropertyName()) != null) {
 			consumeSkipWS("=");
-			XQAST value = new XQAST(XQAST.Literal);
+			XQAST value = new XQAST(XQ.Literal);
 			value.addChild(stringLiteral(false, true));
-			XQAST dfp = new XQAST(XQAST.DecimalFormatProperty);
+			XQAST dfp = new XQAST(XQ.DecimalFormatProperty);
 			dfp.addChild(dfPropertyName);
 			dfp.addChild(value);
 			add(dfProperties, dfp);
@@ -432,25 +432,25 @@ public class XQParser extends Tokenizer {
 
 	private XQAST dfPropertyName() {
 		if (attemptSkipWS("decimal-separator")) {
-			return new XQAST(XQAST.DecimalFormatPropertyDecimalSeparator);
+			return new XQAST(XQ.DecimalFormatPropertyDecimalSeparator);
 		} else if (attemptSkipWS("grouping-separator")) {
-			return new XQAST(XQAST.DecimalFormatPropertyGroupingSeparator);
+			return new XQAST(XQ.DecimalFormatPropertyGroupingSeparator);
 		} else if (attemptSkipWS("infinity")) {
-			return new XQAST(XQAST.DecimalFormatPropertyInfinity);
+			return new XQAST(XQ.DecimalFormatPropertyInfinity);
 		} else if (attemptSkipWS("minus-sign")) {
-			return new XQAST(XQAST.DecimalFormatPropertyMinusSign);
+			return new XQAST(XQ.DecimalFormatPropertyMinusSign);
 		} else if (attemptSkipWS("NaN")) {
-			return new XQAST(XQAST.DecimalFormatPropertyNaN);
+			return new XQAST(XQ.DecimalFormatPropertyNaN);
 		} else if (attemptSkipWS("percent")) {
-			return new XQAST(XQAST.DecimalFormatPropertyPercent);
+			return new XQAST(XQ.DecimalFormatPropertyPercent);
 		} else if (attemptSkipWS("per-mille")) {
-			return new XQAST(XQAST.DecimalFormatPropertyPerMille);
+			return new XQAST(XQ.DecimalFormatPropertyPerMille);
 		} else if (attemptSkipWS("zero-digit")) {
-			return new XQAST(XQAST.DecimalFormatPropertyZeroDigit);
+			return new XQAST(XQ.DecimalFormatPropertyZeroDigit);
 		} else if (attemptSkipWS("digit")) {
-			return new XQAST(XQAST.DecimalFormatPropertyDigit);
+			return new XQAST(XQ.DecimalFormatPropertyDigit);
 		} else if (attemptSkipWS("pattern-separator")) {
-			return new XQAST(XQAST.DecimalFormatPropertyPatternSeparator);
+			return new XQAST(XQ.DecimalFormatPropertyPatternSeparator);
 		} else {
 			return null;
 		}
@@ -468,13 +468,13 @@ public class XQParser extends Tokenizer {
 		consume(la);
 		consume(la2);
 		XQAST ncname = ncnameLiteral(false, true);
-		XQAST ncnLiteral = new XQAST(XQAST.Literal);
+		XQAST ncnLiteral = new XQAST(XQ.Literal);
 		ncnLiteral.addChild(ncname);
 		consumeSkipWS("=");
 		XQAST uri = uriLiteral(false, true);
-		XQAST uriLiteral = new XQAST(XQAST.Literal);
+		XQAST uriLiteral = new XQAST(XQ.Literal);
 		uriLiteral.addChild(uri);
-		XQAST decl = new XQAST(XQAST.NamespaceDeclaration);
+		XQAST decl = new XQAST(XQ.NamespaceDeclaration);
 		decl.addChild(ncnLiteral);
 		decl.addChild(uriLiteral);
 		return decl;
@@ -505,7 +505,7 @@ public class XQParser extends Tokenizer {
 				add(locs, locUri);
 			}
 		}
-		XQAST imp = new XQAST(XQAST.SchemaImport);
+		XQAST imp = new XQAST(XQ.SchemaImport);
 		if (prefix != null) {
 			imp.addChild(prefix);
 		}
@@ -520,14 +520,14 @@ public class XQParser extends Tokenizer {
 			consume(la);
 			XQAST ncname = ncnameLiteral(false, true);
 			consumeSkipWS("=");
-			XQAST ns = new XQAST(XQAST.Namespace);
+			XQAST ns = new XQAST(XQ.Namespace);
 			ns.addChild(ncname);
 			return ns;
 		}
 		la = laSkipWS("default");
 		consumeSkipWS("element");
 		consume("namespace");
-		return new XQAST(XQAST.DefaultElementNamespace);
+		return new XQAST(XQ.DefaultElementNamespace);
 	}
 
 	private XQAST moduleImport() throws QueryException {
@@ -547,7 +547,7 @@ public class XQParser extends Tokenizer {
 			consume(la3);
 			XQAST ncname = ncnameLiteral(false, true);
 			consumeSkipWS("=");
-			XQAST ns = new XQAST(XQAST.Namespace);
+			XQAST ns = new XQAST(XQ.Namespace);
 			ns.addChild(ncname);
 			prefix = ns;
 		}
@@ -559,7 +559,7 @@ public class XQParser extends Tokenizer {
 				add(locs, locUri);
 			}
 		}
-		XQAST imp = new XQAST(XQAST.ModuleImport);
+		XQAST imp = new XQAST(XQ.ModuleImport);
 		if (prefix != null) {
 			imp.addChild(prefix);
 		}
@@ -580,7 +580,7 @@ public class XQParser extends Tokenizer {
 		consume(la);
 		consume(la2);
 		consumeSkipWS("item");
-		XQAST ctxItemDecl = new XQAST(XQAST.ContextItemDeclaration);
+		XQAST ctxItemDecl = new XQAST(XQ.ContextItemDeclaration);
 		if (attemptSkipWS("as")) {
 			ctxItemDecl.addChild(itemType());
 		}
@@ -588,7 +588,7 @@ public class XQParser extends Tokenizer {
 			ctxItemDecl.addChild(varValue());
 		} else {
 			consumeSkipWS("external");
-			ctxItemDecl.addChild(new XQAST(XQAST.ExternalVariable));
+			ctxItemDecl.addChild(new XQAST(XQ.ExternalVariable));
 			if (attemptSkipWS(":=")) {
 				ctxItemDecl.addChild(varDefaultValue());
 			}
@@ -621,7 +621,7 @@ public class XQParser extends Tokenizer {
 			add(anns, ann);
 			ann = annotation();
 		}
-		XQAST annDecl = new XQAST(XQAST.AnnotatedDecl);
+		XQAST annDecl = new XQAST(XQ.AnnotatedDecl);
 		annDecl.addChildren(anns);
 		XQAST decl = varDecl();
 		decl = (decl != null) ? decl : functionDecl();
@@ -634,8 +634,8 @@ public class XQParser extends Tokenizer {
 		}
 		consumeSkipWS("$");
 		String varName = declare(eqnameLiteral(false, false).getValue());
-		XQAST varDecl = new XQAST(XQAST.TypedVariableDeclaration);
-		varDecl.addChild(new XQAST(XQAST.Variable, varName));
+		XQAST varDecl = new XQAST(XQ.TypedVariableDeclaration);
+		varDecl.addChild(new XQAST(XQ.Variable, varName));
 		XQAST typeDecl = typeDeclaration();
 		if (typeDecl != null) {
 			varDecl.addChild(typeDecl);
@@ -644,7 +644,7 @@ public class XQParser extends Tokenizer {
 			varDecl.addChild(varValue());
 		} else {
 			consumeSkipWS("external");
-			varDecl.addChild(new XQAST(XQAST.ExternalVariable));
+			varDecl.addChild(new XQAST(XQ.ExternalVariable));
 			if (attemptSkipWS(":=")) {
 				varDecl.addChild(varDefaultValue());
 			}
@@ -657,8 +657,8 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		String varName = declare(eqnameLiteral(false, true).getValue());
-		XQAST funcDecl = new XQAST(XQAST.TypedVariableDeclaration);
-		funcDecl.addChild(new XQAST(XQAST.Qname, varName));
+		XQAST funcDecl = new XQAST(XQ.TypedVariableDeclaration);
+		funcDecl.addChild(new XQAST(XQ.Qname, varName));
 		consume("(");
 		do {
 			XQAST param = param();
@@ -672,7 +672,7 @@ public class XQParser extends Tokenizer {
 			funcDecl.addChild(sequenceType());
 		}
 		if (attemptSkipWS("external")) {
-			funcDecl.addChild(new XQAST(XQAST.ExternalFunction));
+			funcDecl.addChild(new XQAST(XQ.ExternalFunction));
 		} else {
 			funcDecl.addChild(functionBody());
 		}
@@ -694,10 +694,10 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST decl = new XQAST(XQAST.OptionDeclaration);
-		XQAST name = new XQAST(XQAST.Literal);
+		XQAST decl = new XQAST(XQ.OptionDeclaration);
+		XQAST name = new XQAST(XQ.Literal);
 		name.addChild(eqnameLiteral(false, true));
-		XQAST value = new XQAST(XQAST.Literal);
+		XQAST value = new XQAST(XQ.Literal);
 		value.addChild(stringLiteral(false, true));
 		decl.addChild(name);
 		decl.addChild(value);
@@ -706,7 +706,7 @@ public class XQParser extends Tokenizer {
 
 	private XQAST queryBody() throws QueryException {
 		XQAST expr = expr();
-		XQAST body = new XQAST(XQAST.QueryBody);
+		XQAST body = new XQAST(XQ.QueryBody);
 		body.addChild(expr);
 		return body;
 	}
@@ -716,7 +716,7 @@ public class XQParser extends Tokenizer {
 		if (!attemptSkipWS(",")) {
 			return first;
 		}
-		XQAST sequenceExpr = new XQAST(XQAST.SequenceExpr);
+		XQAST sequenceExpr = new XQAST(XQ.SequenceExpr);
 		sequenceExpr.addChild(first);
 		do {
 			sequenceExpr.addChild(exprSingle());
@@ -742,10 +742,10 @@ public class XQParser extends Tokenizer {
 
 	private XQAST flowrExpr() throws QueryException {
 		XQAST[] initialClause = initialClause();
-		if (initialClause == null) {
+		if ((initialClause == null) || (initialClause.length == 0)) {
 			return null;
 		}
-		XQAST flworExpr = new XQAST(XQAST.FlowrExpr);
+		XQAST flworExpr = new XQAST(XQ.FlowrExpr);
 		flworExpr.addChildren(initialClause);
 		XQAST[] intermediateClause;
 		while ((intermediateClause = intermediateClause()) != null) {
@@ -781,11 +781,11 @@ public class XQParser extends Tokenizer {
 	}
 
 	private XQAST forBinding() throws QueryException {
-		XQAST forClause = new XQAST(XQAST.ForClause);
+		XQAST forClause = new XQAST(XQ.ForClause);
 		forClause.addChild(typedVarBinding());
 		if (attemptSkipWS("allowing")) {
 			consumeSkipWS("empty");
-			forClause.addChild(new XQAST(XQAST.AllowingEmpty));
+			forClause.addChild(new XQAST(XQ.AllowingEmpty));
 		}
 		XQAST posVar = positionalVar();
 		if (posVar != null) {
@@ -802,8 +802,8 @@ public class XQParser extends Tokenizer {
 		}
 		XQAST eqname = eqnameLiteral(false, false);
 		String varName = declare(eqname.getValue());
-		XQAST binding = new XQAST(XQAST.TypedVariableBinding);
-		binding.addChild(new XQAST(XQAST.Variable, varName));
+		XQAST binding = new XQAST(XQ.TypedVariableBinding);
+		binding.addChild(new XQAST(XQ.Variable, varName));
 		XQAST typeDecl = typeDeclaration();
 		if (typeDecl != null) {
 			binding.addChild(typeDecl);
@@ -817,15 +817,15 @@ public class XQParser extends Tokenizer {
 		}
 		return sequenceType();
 	}
-	
+
 	private XQAST positionalVar() throws QueryException {
 		if (!attemptSkipWS("at")) {
 			return null;
 		}
 		consumeSkipWS("$");
 		String varName = declare(eqnameLiteral(false, false).getValue());
-		XQAST posVarBinding = new XQAST(XQAST.TypedVariableBinding);
-		posVarBinding.addChild(new XQAST(XQAST.Variable, varName));
+		XQAST posVarBinding = new XQAST(XQ.TypedVariableBinding);
+		posVarBinding.addChild(new XQAST(XQ.Variable, varName));
 		return posVarBinding;
 	}
 
@@ -848,7 +848,7 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		consume(la); // consume 'let'
-		XQAST letClause = new XQAST(XQAST.LetClause);
+		XQAST letClause = new XQAST(XQ.LetClause);
 		letClause.addChild(typedVarBinding());
 		consumeSkipWS(":=");
 		letClause.addChild(exprSingle());
@@ -860,7 +860,7 @@ public class XQParser extends Tokenizer {
 		if (la == null) {
 			return null;
 		}
-		if (laSkipWS(la, "sliding") == null) {
+		if (laSkipWS(la, "sliding") != null) {
 			consume(la);
 			return new XQAST[] { tumblingWindowClause() };
 		}
@@ -882,13 +882,13 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST clause = new XQAST(XQAST.TumblingWindowClause);
-		
+		XQAST clause = new XQAST(XQ.TumblingWindowClause);
+
 		consumeSkipWS("$");
 		XQAST eqname = eqnameLiteral(false, false);
 		String varName = declare(eqname.getValue());
-		XQAST binding = new XQAST(XQAST.TypedVariableBinding);
-		binding.addChild(new XQAST(XQAST.Variable, varName));
+		XQAST binding = new XQAST(XQ.TypedVariableBinding);
+		binding.addChild(new XQAST(XQ.Variable, varName));
 		XQAST typeDecl = typeDeclaration();
 		if (typeDecl != null) {
 			binding.addChild(typeDecl);
@@ -905,17 +905,17 @@ public class XQParser extends Tokenizer {
 
 	private XQAST windowStartCondition() throws QueryException {
 		consumeSkipWS("start");
-		XQAST cond = new XQAST(XQAST.WindowStartCondition);
+		XQAST cond = new XQAST(XQ.WindowStartCondition);
 		cond.addChildren(windowVars());
 		consumeSkipWS("when");
 		cond.addChild(exprSingle());
 		return cond;
 	}
-	
-	private XQAST windowEndCondition() throws QueryException {		
-		boolean only = attemptSkipWS("only");		
+
+	private XQAST windowEndCondition() throws QueryException {
+		boolean only = attemptSkipWS("only");
 		consumeSkipWS("end");
-		XQAST cond = new XQAST(XQAST.WindowEndCondition);
+		XQAST cond = new XQAST(XQ.WindowEndCondition);
 		cond.setProperty("only", Boolean.toString(only));
 		cond.addChildren(windowVars());
 		consumeSkipWS("when");
@@ -928,8 +928,8 @@ public class XQParser extends Tokenizer {
 		if (attemptSkipWS("$")) {
 			XQAST eqname = eqnameLiteral(false, false);
 			String varName = declare(eqname.getValue());
-			XQAST binding = new XQAST(XQAST.TypedVariableBinding);
-			binding.addChild(new XQAST(XQAST.Variable, varName));
+			XQAST binding = new XQAST(XQ.TypedVariableBinding);
+			binding.addChild(new XQAST(XQ.Variable, varName));
 			add(vars, binding);
 		}
 		XQAST posVar = positionalVar();
@@ -940,16 +940,16 @@ public class XQParser extends Tokenizer {
 			consumeSkipWS("$");
 			XQAST eqname = eqnameLiteral(false, false);
 			String varName = declare(eqname.getValue());
-			XQAST binding = new XQAST(XQAST.PreviousItemBinding);
-			binding.addChild(new XQAST(XQAST.Variable, varName));
+			XQAST binding = new XQAST(XQ.PreviousItemBinding);
+			binding.addChild(new XQAST(XQ.Variable, varName));
 			add(vars, binding);
 		}
 		if (attemptSkipWS("next")) {
 			consumeSkipWS("$");
 			XQAST eqname = eqnameLiteral(false, false);
 			String varName = declare(eqname.getValue());
-			XQAST binding = new XQAST(XQAST.NextItemBinding);
-			binding.addChild(new XQAST(XQAST.Variable, varName));
+			XQAST binding = new XQAST(XQ.NextItemBinding);
+			binding.addChild(new XQAST(XQ.Variable, varName));
 			add(vars, binding);
 		}
 		return vars;
@@ -966,13 +966,13 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST clause = new XQAST(XQAST.SlidingWindowClause);
-		
+		XQAST clause = new XQAST(XQ.SlidingWindowClause);
+
 		consumeSkipWS("$");
 		XQAST eqname = eqnameLiteral(false, false);
 		String varName = declare(eqname.getValue());
-		XQAST binding = new XQAST(XQAST.TypedVariableBinding);
-		binding.addChild(new XQAST(XQAST.Variable, varName));
+		XQAST binding = new XQAST(XQ.TypedVariableBinding);
+		binding.addChild(new XQAST(XQ.Variable, varName));
 		XQAST typeDecl = typeDeclaration();
 		if (typeDecl != null) {
 			binding.addChild(typeDecl);
@@ -1001,7 +1001,7 @@ public class XQParser extends Tokenizer {
 		if (!attemptSkipWS("where")) {
 			return null;
 		}
-		XQAST whereClause = new XQAST(XQAST.WhereClause);
+		XQAST whereClause = new XQAST(XQ.WhereClause);
 		whereClause.addChild(exprSingle());
 		return whereClause;
 	}
@@ -1011,15 +1011,15 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		consumeSkipWS("by");
-		XQAST groupByClause = new XQAST(XQAST.GroupByClause);
+		XQAST groupByClause = new XQAST(XQ.GroupByClause);
 		do {
 			consumeSkipWS("$");
-			XQAST gs = new XQAST(XQAST.GroupBySpec);
+			XQAST gs = new XQAST(XQ.GroupBySpec);
 			String varName = resolve(eqnameLiteral(false, false).getValue());
-			gs.addChild(new XQAST(XQAST.VariableRef, varName));
+			gs.addChild(new XQAST(XQ.VariableRef, varName));
 			if (attemptSkipWS("collation")) {
 				XQAST uriLiteral = uriLiteral(false, true);
-				XQAST collation = new XQAST(XQAST.Collation);
+				XQAST collation = new XQAST(XQ.Collation);
 				collation.addChild(uriLiteral);
 				gs.addChild(collation);
 			}
@@ -1034,34 +1034,34 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		consumeSkipWS("by");
-		XQAST orderByClause = new XQAST(XQAST.OrderByClause);
+		XQAST orderByClause = new XQAST(XQ.OrderByClause);
 		do {
 			consumeSkipWS("$");
-			XQAST os = new XQAST(XQAST.OrderBySpec);
+			XQAST os = new XQAST(XQ.OrderBySpec);
 			os.addChild(exprSingle());
 			if (attemptSkipWS("ascending")) {
-				XQAST obk = new XQAST(XQAST.OrderByKind);
-				obk.addChild(new XQAST(XQAST.ASCENDING));
+				XQAST obk = new XQAST(XQ.OrderByKind);
+				obk.addChild(new XQAST(XQ.ASCENDING));
 				os.addChild(obk);
 			} else if (attemptSkipWS("descending")) {
-				XQAST obk = new XQAST(XQAST.OrderByKind);
-				obk.addChild(new XQAST(XQAST.DESCENDING));
+				XQAST obk = new XQAST(XQ.OrderByKind);
+				obk.addChild(new XQAST(XQ.DESCENDING));
 				os.addChild(obk);
 			}
 			if (attemptSkipWS("empty")) {
 				if (attemptSkipWS("greatest")) {
-					XQAST obem = new XQAST(XQAST.OrderByEmptyMode);
-					obem.addChild(new XQAST(XQAST.GREATEST));
+					XQAST obem = new XQAST(XQ.OrderByEmptyMode);
+					obem.addChild(new XQAST(XQ.GREATEST));
 					os.addChild(obem);
 				} else if (attemptSkipWS("least")) {
-					XQAST obem = new XQAST(XQAST.OrderByEmptyMode);
-					obem.addChild(new XQAST(XQAST.LEAST));
+					XQAST obem = new XQAST(XQ.OrderByEmptyMode);
+					obem.addChild(new XQAST(XQ.LEAST));
 					os.addChild(obem);
 				}
 			}
 			if (attemptSkipWS("collation")) {
 				XQAST uriLiteral = uriLiteral(false, true);
-				XQAST collation = new XQAST(XQAST.Collation);
+				XQAST collation = new XQAST(XQ.Collation);
 				collation.addChild(uriLiteral);
 				os.addChild(collation);
 			}
@@ -1081,8 +1081,8 @@ public class XQParser extends Tokenizer {
 		consume(la);
 		consume(la2);
 		String varName = declare(eqnameLiteral(false, false).getValue());
-		XQAST countClause = new XQAST(XQAST.CountClause);
-		countClause.addChild(new XQAST(XQAST.Variable, varName));
+		XQAST countClause = new XQAST(XQ.CountClause);
+		countClause.addChild(new XQAST(XQ.Variable, varName));
 		return countClause;
 	}
 
@@ -1090,7 +1090,7 @@ public class XQParser extends Tokenizer {
 		if (!attemptSkipWS("return")) {
 			return null;
 		}
-		XQAST returnExpr = new XQAST(XQAST.ReturnExpr);
+		XQAST returnExpr = new XQAST(XQ.ReturnExpr);
 		returnExpr.addChild(exprSingle());
 		return returnExpr;
 	}
@@ -1098,9 +1098,9 @@ public class XQParser extends Tokenizer {
 	private XQAST quantifiedExpr() throws QueryException {
 		XQAST quantifier;
 		if (attemptSkipWS("some")) {
-			quantifier = new XQAST(XQAST.SomeQuantifier);
+			quantifier = new XQAST(XQ.SomeQuantifier);
 		} else if (attemptSkipWS("every")) {
-			quantifier = new XQAST(XQAST.EveryQuantifier);
+			quantifier = new XQAST(XQ.EveryQuantifier);
 		} else {
 			return null;
 		}
@@ -1108,7 +1108,7 @@ public class XQParser extends Tokenizer {
 		if (laSkipWS("$") == null) {
 			return null;
 		}
-		XQAST qExpr = new XQAST(XQAST.QuantifiedExpr);
+		XQAST qExpr = new XQAST(XQ.QuantifiedExpr);
 		qExpr.addChild(quantifier);
 		qExpr.addChild(typedVarBinding());
 		consumeSkipWS("in");
@@ -1139,7 +1139,7 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST sExpr = new XQAST(XQAST.SwitchExpr);
+		XQAST sExpr = new XQAST(XQ.SwitchExpr);
 		sExpr.addChild(expr());
 		consumeSkipWS(")");
 		XQAST clause = switchClause();
@@ -1161,7 +1161,7 @@ public class XQParser extends Tokenizer {
 		if (!attemptSkipWS("case")) {
 			return null;
 		}
-		XQAST clause = new XQAST(XQAST.SwitchClause);
+		XQAST clause = new XQAST(XQ.SwitchClause);
 		clause.addChild(exprSingle());
 		consumeSkipWS("return");
 		clause.addChild(exprSingle());
@@ -1179,7 +1179,7 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST tsExpr = new XQAST(XQAST.TypeSwitch);
+		XQAST tsExpr = new XQAST(XQ.TypeSwitch);
 		tsExpr.addChild(expr());
 		consumeSkipWS(")");
 		XQAST clause = caseClause();
@@ -1201,12 +1201,12 @@ public class XQParser extends Tokenizer {
 		if (!attemptSkipWS("case")) {
 			return null;
 		}
-		XQAST clause = new XQAST(XQAST.TypeSwitchCase);
+		XQAST clause = new XQAST(XQ.TypeSwitchCase);
 		clause.addChild(exprSingle());
 		if (attemptSkipWS("$")) {
 			XQAST eqname = eqnameLiteral(false, false);
 			String varName = declare(eqname.getValue());
-			clause.addChild(new XQAST(XQAST.Variable, varName));
+			clause.addChild(new XQAST(XQ.Variable, varName));
 			consumeSkipWS("as");
 		}
 		do {
@@ -1228,7 +1228,7 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST ifExpr = new XQAST(XQAST.IfExpr);
+		XQAST ifExpr = new XQAST(XQ.IfExpr);
 		ifExpr.addChild(exprSingle());
 		consumeSkipWS(")");
 		consumeSkipWS("then");
@@ -1249,7 +1249,7 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST tcExpr = new XQAST(XQAST.TryCatchExpr);
+		XQAST tcExpr = new XQAST(XQ.TryCatchExpr);
 		tcExpr.addChild(expr());
 		consumeSkipWS("}");
 		XQAST clause = tryClause();
@@ -1268,7 +1268,7 @@ public class XQParser extends Tokenizer {
 		if (!attemptSkipWS("catch")) {
 			return null;
 		}
-		XQAST clause = new XQAST(XQAST.CatchClause);
+		XQAST clause = new XQAST(XQ.CatchClause);
 		clause.addChild(catchErrorList());
 		clause.addChild(catchVars());
 		consumeSkipWS("{");
@@ -1278,7 +1278,7 @@ public class XQParser extends Tokenizer {
 	}
 
 	private XQAST catchErrorList() throws QueryException {
-		XQAST list = new XQAST(XQAST.CatchErrorList);
+		XQAST list = new XQAST(XQ.CatchErrorList);
 		do {
 			list.addChild(nameTest());
 		} while (attemptSkipWS("|"));
@@ -1287,7 +1287,7 @@ public class XQParser extends Tokenizer {
 
 	private XQAST catchVars() throws QueryException {
 		consumeSkipWS("(");
-		XQAST vars = new XQAST(XQAST.CatchVar);
+		XQAST vars = new XQAST(XQ.CatchVar);
 		consumeSkipWS("$");
 		vars.addChild(eqnameLiteral(false, false));
 		if (attemptSkipWS(",")) {
@@ -1308,7 +1308,7 @@ public class XQParser extends Tokenizer {
 			return first;
 		}
 		XQAST second = andExpr();
-		XQAST expr = new XQAST(XQAST.OrExpr);
+		XQAST expr = new XQAST(XQ.OrExpr);
 		expr.addChild(first);
 		expr.addChild(second);
 		return expr;
@@ -1320,7 +1320,7 @@ public class XQParser extends Tokenizer {
 			return first;
 		}
 		XQAST second = comparisonExpr();
-		XQAST expr = new XQAST(XQAST.AndExpr);
+		XQAST expr = new XQAST(XQ.AndExpr);
 		expr.addChild(first);
 		expr.addChild(second);
 		return expr;
@@ -1330,40 +1330,40 @@ public class XQParser extends Tokenizer {
 		XQAST first = rangeExpr();
 		XQAST cmp;
 		if (attemptSkipWS("=")) {
-			cmp = new XQAST(XQAST.GeneralCompEQ);
+			cmp = new XQAST(XQ.GeneralCompEQ);
 		} else if (attemptSkipWS("!=")) {
-			cmp = new XQAST(XQAST.GeneralCompNE);
+			cmp = new XQAST(XQ.GeneralCompNE);
 		} else if (attemptSkipWS("<")) {
-			cmp = new XQAST(XQAST.GeneralCompLT);
+			cmp = new XQAST(XQ.GeneralCompLT);
 		} else if (attemptSkipWS("<=")) {
-			cmp = new XQAST(XQAST.GeneralCompLE);
+			cmp = new XQAST(XQ.GeneralCompLE);
 		} else if (attemptSkipWS(">")) {
-			cmp = new XQAST(XQAST.GeneralCompGT);
+			cmp = new XQAST(XQ.GeneralCompGT);
 		} else if (attemptSkipWS(">=")) {
-			cmp = new XQAST(XQAST.GeneralCompGE);
+			cmp = new XQAST(XQ.GeneralCompGE);
 		} else if (attemptSkipWS("eq")) {
-			cmp = new XQAST(XQAST.ValueCompEQ);
+			cmp = new XQAST(XQ.ValueCompEQ);
 		} else if (attemptSkipWS("neq")) {
-			cmp = new XQAST(XQAST.ValueCompNE);
+			cmp = new XQAST(XQ.ValueCompNE);
 		} else if (attemptSkipWS("lt")) {
-			cmp = new XQAST(XQAST.ValueCompLT);
+			cmp = new XQAST(XQ.ValueCompLT);
 		} else if (attemptSkipWS("le")) {
-			cmp = new XQAST(XQAST.ValueCompLE);
+			cmp = new XQAST(XQ.ValueCompLE);
 		} else if (attemptSkipWS("gt")) {
-			cmp = new XQAST(XQAST.ValueCompGT);
+			cmp = new XQAST(XQ.ValueCompGT);
 		} else if (attemptSkipWS("ge")) {
-			cmp = new XQAST(XQAST.ValueCompGE);
+			cmp = new XQAST(XQ.ValueCompGE);
 		} else if (attemptSkipWS("is")) {
-			cmp = new XQAST(XQAST.NodeCompIs);
+			cmp = new XQAST(XQ.NodeCompIs);
 		} else if (attemptSkipWS("<<")) {
-			cmp = new XQAST(XQAST.NodeCompPrecedes);
+			cmp = new XQAST(XQ.NodeCompPrecedes);
 		} else if (attemptSkipWS(">>")) {
-			cmp = new XQAST(XQAST.NodeCompFollows);
+			cmp = new XQAST(XQ.NodeCompFollows);
 		} else {
 			return first;
 		}
 		XQAST second = comparisonExpr();
-		XQAST expr = new XQAST(XQAST.ComparisonExpr);
+		XQAST expr = new XQAST(XQ.ComparisonExpr);
 		expr.addChild(first);
 		expr.addChild(cmp);
 		expr.addChild(second);
@@ -1376,7 +1376,7 @@ public class XQParser extends Tokenizer {
 			return first;
 		}
 		XQAST second = additiveExpr();
-		XQAST expr = new XQAST(XQAST.RangeExpr);
+		XQAST expr = new XQAST(XQ.RangeExpr);
 		expr.addChild(first);
 		expr.addChild(second);
 		return expr;
@@ -1384,42 +1384,46 @@ public class XQParser extends Tokenizer {
 
 	private XQAST additiveExpr() throws QueryException {
 		XQAST first = multiplicativeExpr();
-		XQAST op;
-		if (attemptSkipWS("+")) {
-			op = new XQAST(XQAST.AddOp);
-		} else if (attemptSkipWS("-")) {
-			op = new XQAST(XQAST.SubtractOp);
-		} else {
-			return first;
+		while (true) {
+			XQAST op;
+			if (attemptSkipWS("+")) {
+				op = new XQAST(XQ.AddOp);
+			} else if (attemptSkipWS("-")) {
+				op = new XQAST(XQ.SubtractOp);
+			} else {
+				return first;
+			}
+			XQAST second = multiplicativeExpr();
+			XQAST expr = new XQAST(XQ.ArithmeticExpr);
+			expr.addChild(first);
+			expr.addChild(op);
+			expr.addChild(second);
+			first = expr;
 		}
-		XQAST second = multiplicativeExpr();
-		XQAST expr = new XQAST(XQAST.ArithmeticExpr);
-		expr.addChild(first);
-		expr.addChild(op);
-		expr.addChild(second);
-		return expr;
 	}
 
 	private XQAST multiplicativeExpr() throws QueryException {
 		XQAST first = unionExpr();
-		XQAST op;
-		if (attemptSkipWS("*")) {
-			op = new XQAST(XQAST.MultiplyOp);
-		} else if (attemptSkipWS("/")) {
-			op = new XQAST(XQAST.DivideOp);
-		} else if (attemptSkipWS("idiv")) {
-			op = new XQAST(XQAST.IDivideOp);
-		} else if (attemptSkipWS("mod")) {
-			op = new XQAST(XQAST.DivideOp);
-		} else {
-			return first;
+		while (true) {
+			XQAST op;
+			if (attemptSkipWS("*")) {
+				op = new XQAST(XQ.MultiplyOp);
+			} else if (attemptSkipWS("div")) {
+				op = new XQAST(XQ.DivideOp);
+			} else if (attemptSkipWS("idiv")) {
+				op = new XQAST(XQ.IDivideOp);
+			} else if (attemptSkipWS("mod")) {
+				op = new XQAST(XQ.DivideOp);
+			} else {
+				return first;
+			}
+			XQAST second = unionExpr();
+			XQAST expr = new XQAST(XQ.ArithmeticExpr);
+			expr.addChild(first);
+			expr.addChild(op);
+			expr.addChild(second);
+			first = expr;
 		}
-		XQAST second = unionExpr();
-		XQAST expr = new XQAST(XQAST.ArithmeticExpr);
-		expr.addChild(first);
-		expr.addChild(op);
-		expr.addChild(second);
-		return expr;
 	}
 
 	private XQAST unionExpr() throws QueryException {
@@ -1428,7 +1432,7 @@ public class XQParser extends Tokenizer {
 			return first;
 		}
 		XQAST second = intersectExpr();
-		XQAST expr = new XQAST(XQAST.UnionExpr);
+		XQAST expr = new XQAST(XQ.UnionExpr);
 		expr.addChild(first);
 		expr.addChild(second);
 		return expr;
@@ -1438,9 +1442,9 @@ public class XQParser extends Tokenizer {
 		XQAST first = instanceOfExpr();
 		XQAST expr;
 		if (attemptSkipWS("intersect")) {
-			expr = new XQAST(XQAST.IntersectExpr);
+			expr = new XQAST(XQ.IntersectExpr);
 		} else if (attemptSkipWS("except")) {
-			expr = new XQAST(XQAST.ExceptExpr);
+			expr = new XQAST(XQ.ExceptExpr);
 		} else {
 			return first;
 		}
@@ -1457,7 +1461,7 @@ public class XQParser extends Tokenizer {
 		}
 		consumeSkipWS("of");
 		XQAST type = sequenceType();
-		XQAST expr = new XQAST(XQAST.InstanceofExpr);
+		XQAST expr = new XQAST(XQ.InstanceofExpr);
 		expr.addChild(first);
 		expr.addChild(type);
 		return expr;
@@ -1470,7 +1474,7 @@ public class XQParser extends Tokenizer {
 			type = itemType();
 			occInd = occurrenceIndicator();
 		}
-		XQAST typeDecl = new XQAST(XQAST.SequenceType);
+		XQAST typeDecl = new XQAST(XQ.SequenceType);
 		typeDecl.addChild(type);
 		if (occInd != null) {
 			typeDecl.addChild(occInd);
@@ -1490,7 +1494,7 @@ public class XQParser extends Tokenizer {
 		consume(la);
 		consume(la2);
 		consumeSkipWS(")");
-		return new XQAST(XQAST.EmptySequenceType);
+		return new XQAST(XQ.EmptySequenceType);
 	}
 
 	private XQAST anyKind() throws QueryException {
@@ -1505,18 +1509,18 @@ public class XQParser extends Tokenizer {
 		consume(la);
 		consume(la2);
 		consumeSkipWS(")");
-		return new XQAST(XQAST.ItemType);
+		return new XQAST(XQ.ItemType);
 	}
 
 	private XQAST occurrenceIndicator() {
 		if (attemptSkipWS("?")) {
-			return new XQAST(XQAST.CardinalityZeroOrOne);
+			return new XQAST(XQ.CardinalityZeroOrOne);
 		}
 		if (attemptSkipWS("*")) {
-			return new XQAST(XQAST.CardinalityZeroOrMany);
+			return new XQAST(XQ.CardinalityZeroOrMany);
 		}
 		if (attemptSkipWS("+")) {
-			return new XQAST(XQAST.CardinalityOneOrMany);
+			return new XQAST(XQ.CardinalityOneOrMany);
 		}
 		return null;
 	}
@@ -1535,7 +1539,7 @@ public class XQParser extends Tokenizer {
 		XQAST ann;
 		while ((ann = annotation()) != null) {
 			if (funcTest == null) {
-				funcTest = new XQAST(XQAST.FunctionTest);
+				funcTest = new XQAST(XQ.FunctionTest);
 			}
 			funcTest.addChild(ann);
 		}
@@ -1549,7 +1553,7 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		if (funcTest == null) {
-			funcTest = new XQAST(XQAST.FunctionTest);
+			funcTest = new XQAST(XQ.FunctionTest);
 		}
 		funcTest.addChild(test);
 		return funcTest;
@@ -1560,7 +1564,7 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		XQAST name = eqnameLiteral(false, true);
-		XQAST ann = new XQAST(XQAST.Annotation, name.getValue());
+		XQAST ann = new XQAST(XQ.Annotation, name.getValue());
 		if (attemptSkipWS("(")) {
 			do {
 				ann.addChild(stringLiteral(false, true));
@@ -1587,7 +1591,7 @@ public class XQParser extends Tokenizer {
 		consume(la2);
 		consume(la3);
 		consumeSkipWS(")");
-		return new XQAST(XQAST.AnyFunctionType);
+		return new XQAST(XQ.AnyFunctionType);
 	}
 
 	private XQAST typedFunctionTest() throws QueryException {
@@ -1601,7 +1605,7 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST typedFunc = new XQAST(XQAST.TypedFunctionType);
+		XQAST typedFunc = new XQAST(XQ.TypedFunctionType);
 		if (!attemptSkipWS(")")) {
 			do {
 				typedFunc.addChild(sequenceType());
@@ -1631,10 +1635,10 @@ public class XQParser extends Tokenizer {
 		if (aouType == null) {
 			return null;
 		}
-		XQAST type = new XQAST(XQAST.SingleType);
+		XQAST type = new XQAST(XQ.SingleType);
 		type.addChild(aouType);
 		if (attemptSkipWS("?")) {
-			type.addChild(new XQAST(XQAST.Optional));
+			type.addChild(new XQAST(XQ.Optional));
 		}
 		return type;
 	}
@@ -1646,7 +1650,7 @@ public class XQParser extends Tokenizer {
 		}
 		consumeSkipWS("as");
 		XQAST type = sequenceType();
-		XQAST expr = new XQAST(XQAST.TreatExpr);
+		XQAST expr = new XQAST(XQ.TreatExpr);
 		expr.addChild(first);
 		expr.addChild(type);
 		return expr;
@@ -1659,7 +1663,7 @@ public class XQParser extends Tokenizer {
 		}
 		consumeSkipWS("as");
 		XQAST type = singleType();
-		XQAST expr = new XQAST(XQAST.CastableExpr);
+		XQAST expr = new XQAST(XQ.CastableExpr);
 		expr.addChild(first);
 		expr.addChild(type);
 		return expr;
@@ -1672,7 +1676,7 @@ public class XQParser extends Tokenizer {
 		}
 		consumeSkipWS("as");
 		XQAST type = singleType();
-		XQAST expr = new XQAST(XQAST.CastExpr);
+		XQAST expr = new XQAST(XQ.CastExpr);
 		expr.addChild(first);
 		expr.addChild(type);
 		return expr;
@@ -1694,11 +1698,11 @@ public class XQParser extends Tokenizer {
 			return valueExpr();
 		}
 		XQAST second = valueExpr();
-		XQAST first = new XQAST(XQAST.Literal);
-		first.addChild(new XQAST(XQAST.Int, "-1"));
-		XQAST expr = new XQAST(XQAST.ArithmeticExpr);
+		XQAST first = new XQAST(XQ.Literal);
+		first.addChild(new XQAST(XQ.Int, "-1"));
+		XQAST expr = new XQAST(XQ.ArithmeticExpr);
 		expr.addChild(first);
-		expr.addChild(new XQAST(XQAST.MultiplyOp));
+		expr.addChild(new XQAST(XQ.MultiplyOp));
 		expr.addChild(second);
 		return expr;
 	}
@@ -1715,7 +1719,7 @@ public class XQParser extends Tokenizer {
 		if (pragma == null) {
 			return null;
 		}
-		XQAST eExpr = new XQAST(XQAST.ExtensionExpr);
+		XQAST eExpr = new XQAST(XQ.ExtensionExpr);
 		eExpr.addChild(pragma);
 		while ((pragma = pragma()) != null) {
 			eExpr.addChild(pragma);
@@ -1732,7 +1736,7 @@ public class XQParser extends Tokenizer {
 		if (!attemptSkipWS("(#")) {
 			return null;
 		}
-		XQAST pragma = new XQAST(XQAST.Pragma);
+		XQAST pragma = new XQAST(XQ.Pragma);
 		attemptWS();
 		pragma.addChild(qnameLiteral(false, false));
 		if (!attemptWS()) {
@@ -1801,30 +1805,30 @@ public class XQParser extends Tokenizer {
 		if (path.length == 1) {
 			return path[0];
 		}
-		XQAST pathExpr = new XQAST(XQAST.PathExpr);
+		XQAST pathExpr = new XQAST(XQ.PathExpr);
 		pathExpr.addChildren(path);
 		return pathExpr;
 	}
 
 	private XQAST descendantOrSelfNode() {
-		XQAST dosn = new XQAST(XQAST.StepExpr);
-		XQAST axisSpec = new XQAST(XQAST.AxisSpec);
-		axisSpec.addChild(new XQAST(XQAST.DESCENDANT_OR_SELF));
-		dosn.addChild(new XQAST(XQAST.KindTestAnyKind));
+		XQAST dosn = new XQAST(XQ.StepExpr);
+		XQAST axisSpec = new XQAST(XQ.AxisSpec);
+		axisSpec.addChild(new XQAST(XQ.DESCENDANT_OR_SELF));
+		dosn.addChild(new XQAST(XQ.KindTestAnyKind));
 		dosn.addChild(axisSpec);
 		return dosn;
 	}
 
 	private XQAST fnRootTreatAsDocument() {
-		XQAST treat = new XQAST(XQAST.TreatExpr);
-		XQAST call = new XQAST(XQAST.FunctionCall, "fn:root");
-		XQAST step = new XQAST(XQAST.StepExpr);
-		XQAST axisSpec = new XQAST(XQAST.AxisSpec);
-		axisSpec.addChild(new XQAST(XQAST.SELF));
-		step.addChild(new XQAST(XQAST.KindTestAnyKind));
+		XQAST treat = new XQAST(XQ.TreatExpr);
+		XQAST call = new XQAST(XQ.FunctionCall, "fn:root");
+		XQAST step = new XQAST(XQ.StepExpr);
+		XQAST axisSpec = new XQAST(XQ.AxisSpec);
+		axisSpec.addChild(new XQAST(XQ.SELF));
+		step.addChild(new XQAST(XQ.KindTestAnyKind));
 		step.addChild(axisSpec);
-		XQAST seqType = new XQAST(XQAST.SequenceType);
-		seqType.addChild(new XQAST(XQAST.KindTestDocument));
+		XQAST seqType = new XQAST(XQ.SequenceType);
+		seqType.addChild(new XQAST(XQ.KindTestDocument));
 		call.addChild(step);
 		treat.addChild(call);
 		treat.addChild(seqType);
@@ -1848,7 +1852,7 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		XQAST[] predicateList = predicateList();
-		XQAST stepExpr = new XQAST(XQAST.StepExpr);
+		XQAST stepExpr = new XQAST(XQ.StepExpr);
 		stepExpr.addChildren(step);
 		if (predicateList != null) {
 			stepExpr.addChildren(predicateList);
@@ -1861,7 +1865,7 @@ public class XQParser extends Tokenizer {
 		if (forwardAxis == null) {
 			return abbrevForwardStep();
 		}
-		XQAST axisSpec = new XQAST(XQAST.AxisSpec);
+		XQAST axisSpec = new XQAST(XQ.AxisSpec);
 		axisSpec.addChild(forwardAxis);
 		return new XQAST[] { axisSpec, nodeTest() };
 	}
@@ -1870,19 +1874,19 @@ public class XQParser extends Tokenizer {
 		Token la;
 		XQAST axis;
 		if ((la = laSkipWS("child")) != null) {
-			axis = new XQAST(XQAST.CHILD);
+			axis = new XQAST(XQ.CHILD);
 		} else if ((la = laSkipWS("descendant")) != null) {
-			axis = new XQAST(XQAST.DESCENDANT);
+			axis = new XQAST(XQ.DESCENDANT);
 		} else if ((la = laSkipWS("attribute")) != null) {
-			axis = new XQAST(XQAST.ATTRIBUTE);
+			axis = new XQAST(XQ.ATTRIBUTE);
 		} else if ((la = laSkipWS("self")) != null) {
-			axis = new XQAST(XQAST.SELF);
+			axis = new XQAST(XQ.SELF);
 		} else if ((la = laSkipWS("descendant-or-self")) != null) {
-			axis = new XQAST(XQAST.DESCENDANT_OR_SELF);
+			axis = new XQAST(XQ.DESCENDANT_OR_SELF);
 		} else if ((la = laSkipWS("following-sibling")) != null) {
-			axis = new XQAST(XQAST.FOLLOWING_SIBLING);
+			axis = new XQAST(XQ.FOLLOWING_SIBLING);
 		} else if ((la = laSkipWS("following")) != null) {
-			axis = new XQAST(XQAST.FOLLOWING);
+			axis = new XQAST(XQ.FOLLOWING);
 		} else {
 			return null;
 		}
@@ -1915,12 +1919,12 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		if (attributeAxis) {
-			XQAST axisSpec = new XQAST(XQAST.AxisSpec);
-			axisSpec.addChild(new XQAST(XQAST.ATTRIBUTE));
+			XQAST axisSpec = new XQAST(XQ.AxisSpec);
+			axisSpec.addChild(new XQAST(XQ.ATTRIBUTE));
 			return new XQAST[] { axisSpec, nodeTest };
 		} else {
-			XQAST axisSpec = new XQAST(XQAST.AxisSpec);
-			axisSpec.addChild(new XQAST(XQAST.CHILD));
+			XQAST axisSpec = new XQAST(XQ.AxisSpec);
+			axisSpec.addChild(new XQAST(XQ.CHILD));
 			return new XQAST[] { axisSpec, nodeTest };
 		}
 	}
@@ -1930,7 +1934,7 @@ public class XQParser extends Tokenizer {
 		if (forwardAxis == null) {
 			return abbrevReverseStep();
 		}
-		XQAST axisSpec = new XQAST(XQAST.AxisSpec);
+		XQAST axisSpec = new XQAST(XQ.AxisSpec);
 		axisSpec.addChild(forwardAxis);
 		return new XQAST[] { axisSpec, nodeTest() };
 	}
@@ -1939,15 +1943,15 @@ public class XQParser extends Tokenizer {
 		Token la;
 		XQAST axis;
 		if ((la = laSkipWS("parent")) != null) {
-			axis = new XQAST(XQAST.PARENT);
+			axis = new XQAST(XQ.PARENT);
 		} else if ((la = laSkipWS("ancestor")) != null) {
-			axis = new XQAST(XQAST.ANCESTOR);
+			axis = new XQAST(XQ.ANCESTOR);
 		} else if ((la = laSkipWS("preceding-sibling")) != null) {
-			axis = new XQAST(XQAST.PRECEDING_SIBLING);
+			axis = new XQAST(XQ.PRECEDING_SIBLING);
 		} else if ((la = laSkipWS("preceding")) != null) {
-			axis = new XQAST(XQAST.PRECEDING);
+			axis = new XQAST(XQ.PRECEDING);
 		} else if ((la = laSkipWS("ancestor-or-self")) != null) {
-			axis = new XQAST(XQAST.ANCESTOR_OR_SELF);
+			axis = new XQAST(XQ.ANCESTOR_OR_SELF);
 		} else {
 			return null;
 		}
@@ -1964,10 +1968,10 @@ public class XQParser extends Tokenizer {
 		if (!attemptSkipWS("..")) {
 			return null;
 		}
-		XQAST axisSpec = new XQAST(XQAST.AxisSpec);
-		axisSpec.addChild(new XQAST(XQAST.PARENT));
-		XQAST nameTest = new XQAST(XQAST.NameTest);
-		nameTest.addChild(new XQAST(XQAST.Wildcard));
+		XQAST axisSpec = new XQAST(XQ.AxisSpec);
+		axisSpec.addChild(new XQAST(XQ.PARENT));
+		XQAST nameTest = new XQAST(XQ.NameTest);
+		nameTest.addChild(new XQAST(XQ.Wildcard));
 		return new XQAST[] { axisSpec, nameTest };
 	}
 
@@ -2005,7 +2009,7 @@ public class XQParser extends Tokenizer {
 		XQAST elTest = elementTest();
 		XQAST schemaElTest = (elTest != null) ? elTest : schemaElementTest();
 		consumeSkipWS(")");
-		XQAST docTest = new XQAST(XQAST.KindTestDocument);
+		XQAST docTest = new XQAST(XQ.KindTestDocument);
 		if (elTest != null) {
 			docTest.addChild(elTest);
 		}
@@ -2032,11 +2036,11 @@ public class XQParser extends Tokenizer {
 		if ((enow != null) && (attemptSkipWS(","))) {
 			tn = eqnameLiteral(true, true);
 			if (attemptSkipWS("?")) {
-				nilled = new XQAST(XQAST.Nilled);
+				nilled = new XQAST(XQ.Nilled);
 			}
 		}
 		consumeSkipWS(")");
-		XQAST elTest = new XQAST(XQAST.KindTestElement);
+		XQAST elTest = new XQAST(XQ.KindTestElement);
 		if (enow != null) {
 			elTest.addChild(enow);
 		}
@@ -2066,11 +2070,11 @@ public class XQParser extends Tokenizer {
 		if ((anow != null) && (attemptSkipWS(","))) {
 			tn = eqnameLiteral(true, true);
 			if (attemptSkipWS("?")) {
-				nilled = new XQAST(XQAST.Nilled);
+				nilled = new XQAST(XQ.Nilled);
 			}
 		}
 		consumeSkipWS(")");
-		XQAST attTest = new XQAST(XQAST.KindTestAttribute);
+		XQAST attTest = new XQAST(XQ.KindTestAttribute);
 		if (anow != null) {
 			attTest.addChild(anow);
 		}
@@ -2096,7 +2100,7 @@ public class XQParser extends Tokenizer {
 		consume(la2);
 		XQAST name = eqnameLiteral(false, true);
 		consumeSkipWS(")");
-		XQAST test = new XQAST(XQAST.KindTestSchemaElement);
+		XQAST test = new XQAST(XQ.KindTestSchemaElement);
 		test.addChild(name);
 		return test;
 	}
@@ -2114,7 +2118,7 @@ public class XQParser extends Tokenizer {
 		consume(la2);
 		XQAST name = eqnameLiteral(false, true);
 		consumeSkipWS(")");
-		XQAST test = new XQAST(XQAST.KindTestSchemaAttribute);
+		XQAST test = new XQAST(XQ.KindTestSchemaAttribute);
 		test.addChild(name);
 		return test;
 	}
@@ -2133,7 +2137,7 @@ public class XQParser extends Tokenizer {
 		XQAST name = ncnameLiteral(true, true);
 		name = (name != null) ? name : stringLiteral(false, true);
 		consumeSkipWS(")");
-		XQAST test = new XQAST(XQAST.KindTestPi);
+		XQAST test = new XQAST(XQ.KindTestPi);
 		test.addChild(name);
 		return test;
 	}
@@ -2150,7 +2154,7 @@ public class XQParser extends Tokenizer {
 		consume(la);
 		consume(la2);
 		consumeSkipWS(")");
-		return new XQAST(XQAST.KindTestComment);
+		return new XQAST(XQ.KindTestComment);
 	}
 
 	private XQAST textTest() throws QueryException {
@@ -2165,7 +2169,7 @@ public class XQParser extends Tokenizer {
 		consume(la);
 		consume(la2);
 		consumeSkipWS(")");
-		return new XQAST(XQAST.KindTestText);
+		return new XQAST(XQ.KindTestText);
 	}
 
 	private XQAST namespaceNodeTest() throws QueryException {
@@ -2180,7 +2184,7 @@ public class XQParser extends Tokenizer {
 		consume(la);
 		consume(la2);
 		consumeSkipWS(")");
-		return new XQAST(XQAST.KindTestNamespaceNode);
+		return new XQAST(XQ.KindTestNamespaceNode);
 	}
 
 	private XQAST anyKindTest() throws QueryException {
@@ -2195,7 +2199,7 @@ public class XQParser extends Tokenizer {
 		consume(la);
 		consume(la2);
 		consumeSkipWS(")");
-		return new XQAST(XQAST.KindTestAnyKind);
+		return new XQAST(XQ.KindTestAnyKind);
 	}
 
 	private XQAST elementNameOrWildcard() throws QueryException {
@@ -2204,7 +2208,7 @@ public class XQParser extends Tokenizer {
 			return enow;
 		}
 		if (attemptSkipWS("*")) {
-			return new XQAST(XQAST.Wildcard);
+			return new XQAST(XQ.Wildcard);
 		}
 		return null;
 	}
@@ -2215,7 +2219,7 @@ public class XQParser extends Tokenizer {
 			return anow;
 		}
 		if (attemptSkipWS("*")) {
-			return new XQAST(XQAST.Wildcard);
+			return new XQAST(XQ.Wildcard);
 		}
 		return null;
 	}
@@ -2226,7 +2230,7 @@ public class XQParser extends Tokenizer {
 		if (test == null) {
 			return null;
 		}
-		XQAST nameTest = new XQAST(XQAST.NameTest);
+		XQAST nameTest = new XQAST(XQ.NameTest);
 		nameTest.addChild(test);
 		return nameTest;
 	}
@@ -2237,11 +2241,11 @@ public class XQParser extends Tokenizer {
 			if (ncname == null) {
 				return null;
 			}
-			XQAST wbc = new XQAST(XQAST.WildcardBeforeColon);
+			XQAST wbc = new XQAST(XQ.WildcardBeforeColon);
 			wbc.addChild(ncname);
 			return wbc;
 		} else if (attemptSkipWS("*")) {
-			return new XQAST(XQAST.Wildcard);
+			return new XQAST(XQ.Wildcard);
 		} else {
 			XQAST ncname = ncnameLiteral(true, true);
 			if (ncname == null) {
@@ -2250,7 +2254,7 @@ public class XQParser extends Tokenizer {
 			if (!attempt(":*")) {
 				return null;
 			}
-			XQAST wba = new XQAST(XQAST.WildcardAfterColon);
+			XQAST wba = new XQAST(XQ.WildcardAfterColon);
 			wba.addChild(ncname);
 			return wba;
 		}
@@ -2269,7 +2273,7 @@ public class XQParser extends Tokenizer {
 		if (!attemptSkipWS("[")) {
 			return null;
 		}
-		XQAST pred = new XQAST(XQAST.Predicate);
+		XQAST pred = new XQAST(XQ.Predicate);
 		pred.addChild(expr());
 		consume("]");
 		return pred;
@@ -2280,11 +2284,11 @@ public class XQParser extends Tokenizer {
 		if (!attemptSkipWS("validate")) {
 			return null;
 		}
-		XQAST vExpr = new XQAST(XQAST.ValidateExpr);
+		XQAST vExpr = new XQAST(XQ.ValidateExpr);
 		if (attemptSkipWS("lax")) {
-			vExpr.addChild(new XQAST(XQAST.ValidateLax));
+			vExpr.addChild(new XQAST(XQ.ValidateLax));
 		} else if (attemptSkipWS("strict")) {
-			vExpr.addChild(new XQAST(XQAST.ValidateStrict));
+			vExpr.addChild(new XQAST(XQ.ValidateStrict));
 		} else if (attemptSkipWS("type")) {
 			vExpr.addChild(eqnameLiteral(false, true));
 		} else {
@@ -2301,7 +2305,7 @@ public class XQParser extends Tokenizer {
 		while (true) {
 			XQAST predicate = predicate();
 			if (predicate != null) {
-				XQAST filterExpr = new XQAST(XQAST.FilterExpr);
+				XQAST filterExpr = new XQAST(XQ.FilterExpr);
 				filterExpr.addChild(expr);
 				filterExpr.addChild(predicate);
 				expr = filterExpr;
@@ -2309,7 +2313,7 @@ public class XQParser extends Tokenizer {
 			}
 			XQAST[] argumentList = argumentList();
 			if ((argumentList != null) && (argumentList.length > 0)) {
-				XQAST dynFuncCallExpr = new XQAST(XQAST.DynamicFunctionCallExpr);
+				XQAST dynFuncCallExpr = new XQAST(XQ.DynamicFunctionCallExpr);
 				dynFuncCallExpr.addChild(expr);
 				dynFuncCallExpr.addChildren(argumentList);
 				expr = dynFuncCallExpr;
@@ -2330,7 +2334,7 @@ public class XQParser extends Tokenizer {
 				consumeSkipWS(",");
 			}
 			add(args, argument());
-		}		
+		}
 		return args;
 	}
 
@@ -2353,7 +2357,7 @@ public class XQParser extends Tokenizer {
 		if (lit == null) {
 			return null;
 		}
-		XQAST literal = new XQAST(XQAST.Literal);
+		XQAST literal = new XQAST(XQ.Literal);
 		literal.addChild(lit);
 		return lit;
 	}
@@ -2362,7 +2366,7 @@ public class XQParser extends Tokenizer {
 		if (!attemptSkipWS("$")) {
 			return null;
 		}
-		return new XQAST(XQAST.VariableRef, resolve(eqnameLiteral(false, false)
+		return new XQAST(XQ.VariableRef, resolve(eqnameLiteral(false, false)
 				.getValue()));
 	}
 
@@ -2371,7 +2375,7 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		if (attemptSkipWS(")")) {
-			return new XQAST(XQAST.EmptySequence);
+			return new XQAST(XQ.EmptySequence);
 		}
 		XQAST expr = expr();
 		consumeSkipWS(")");
@@ -2382,7 +2386,7 @@ public class XQParser extends Tokenizer {
 		if (!attemptSkipWS(".")) {
 			return null;
 		}
-		return new XQAST(XQAST.ContextItemExpr);
+		return new XQAST(XQ.ContextItemExpr);
 	}
 
 	private XQAST functionCall() throws QueryException {
@@ -2404,7 +2408,7 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		consume(la);
-		XQAST call = new XQAST(XQAST.FunctionCall, funcName);
+		XQAST call = new XQAST(XQ.FunctionCall, funcName);
 		call.addChildren(argumentList());
 		return call;
 	}
@@ -2412,7 +2416,7 @@ public class XQParser extends Tokenizer {
 	private XQAST argument() throws QueryException {
 		// changed order to match '?' greedy
 		if (attempt("?")) {
-			return new XQAST(XQAST.ArgumentPlaceHolder);
+			return new XQAST(XQ.ArgumentPlaceHolder);
 		}
 		return exprSingle();
 	}
@@ -2439,7 +2443,7 @@ public class XQParser extends Tokenizer {
 		consume(la2);
 		XQAST expr = expr();
 		consumeSkipWS("}");
-		XQAST orderedExpr = new XQAST(XQAST.OrderedExpr);
+		XQAST orderedExpr = new XQAST(XQ.OrderedExpr);
 		orderedExpr.addChild(expr);
 		return orderedExpr;
 	}
@@ -2457,7 +2461,7 @@ public class XQParser extends Tokenizer {
 		consume(la2);
 		XQAST expr = expr();
 		consumeSkipWS("}");
-		XQAST unorderedExpr = new XQAST(XQAST.UnorderedExpr);
+		XQAST unorderedExpr = new XQAST(XQ.UnorderedExpr);
 		unorderedExpr.addChild(expr);
 		return unorderedExpr;
 	}
@@ -2476,17 +2480,16 @@ public class XQParser extends Tokenizer {
 	}
 
 	private XQAST dirElemConstructor() throws QueryException {
-		if ((la("</") != null) || (la("<?") != null)
-				|| (!attempt("<"))) {
+		if ((laSkipWS("</") != null) || (laSkipWS("<?") != null) || (!attemptSkipWS("<"))) {
 			return null;
 		}
-		skipS();
-		XQAST stag = qnameLiteral(false, false);
-		XQAST elem = new XQAST(XQAST.CompElementConstructor);
-		XQAST lit = new XQAST(XQAST.Literal);
+//		skipS();
+		XQAST stag = qnameLiteral(false, true);
+		XQAST elem = new XQAST(XQ.CompElementConstructor);
+		XQAST lit = new XQAST(XQ.Literal);
 		lit.addChild(stag);
 		elem.addChild(lit);
-		XQAST cseq = new XQAST(XQAST.ContentSequence);
+		XQAST cseq = new XQAST(XQ.ContentSequence);
 		elem.addChild(cseq);
 		XQAST att;
 		while ((att = dirAttribute()) != null) {
@@ -2502,10 +2505,10 @@ public class XQParser extends Tokenizer {
 			cseq.addChild(content);
 		}
 		consume("</");
-		XQAST etag = qnameLiteral(false, false);
+		XQAST etag = qnameLiteral(false, true);
 		pop(etag.getValue());
-		skipS();
-		consume(">");
+//		skipS();
+		consumeSkipWS(">");
 		return elem;
 	}
 
@@ -2518,11 +2521,11 @@ public class XQParser extends Tokenizer {
 		skipS();
 		consume("=");
 		skipS();
-		XQAST att = new XQAST(XQAST.CompAttributeConstructor);
-		XQAST lit = new XQAST(XQAST.Literal);
+		XQAST att = new XQAST(XQ.CompAttributeConstructor);
+		XQAST lit = new XQAST(XQ.Literal);
 		lit.addChild(qname);
 		att.addChild(lit);
-		XQAST cseq = new XQAST(XQAST.ContentSequence);
+		XQAST cseq = new XQAST(XQ.ContentSequence);
 		att.addChild(cseq);
 		XQAST val;
 		if (attempt("\"")) {
@@ -2545,8 +2548,8 @@ public class XQParser extends Tokenizer {
 		if (la != null) {
 			if (la(la, "\"") != null) {
 				consume("\"\"");
-				XQAST lit = new XQAST(XQAST.Literal);
-				lit.addChild(new XQAST(XQAST.Str, "\""));
+				XQAST lit = new XQAST(XQ.Literal);
+				lit.addChild(new XQAST(XQ.Str, "\""));
 				return lit;
 			}
 			return null;
@@ -2555,10 +2558,11 @@ public class XQParser extends Tokenizer {
 	}
 
 	private XQAST quotAttrValueContent() throws QueryException {
-		String content = consumeQuotAttrContent();
+		Token content = laQuotAttrContentChar();
 		if (content != null) {
-			XQAST lit = new XQAST(XQAST.Literal);
-			lit.addChild(new XQAST(XQAST.Str, content));
+			consume(content);
+			XQAST lit = new XQAST(XQ.Literal);
+			lit.addChild(new XQAST(XQ.Str, content.string()));
 			return lit;
 		}
 		return commonContent();
@@ -2569,8 +2573,8 @@ public class XQParser extends Tokenizer {
 		if (la != null) {
 			if (la(la, "'") != null) {
 				consume("''");
-				XQAST lit = new XQAST(XQAST.Literal);
-				lit.addChild(new XQAST(XQAST.Str, "'"));
+				XQAST lit = new XQAST(XQ.Literal);
+				lit.addChild(new XQAST(XQ.Str, "'"));
 				return lit;
 			}
 			return null;
@@ -2579,67 +2583,33 @@ public class XQParser extends Tokenizer {
 	}
 
 	private XQAST aposAttrValueContent() throws QueryException {
-		String content = consumeAposAttrContent();
+		Token content = laAposAttrContentChar();
 		if (content != null) {
-			XQAST lit = new XQAST(XQAST.Literal);
-			lit.addChild(new XQAST(XQAST.Str, content));
+			consume(content);
+			XQAST lit = new XQAST(XQ.Literal);
+			lit.addChild(new XQAST(XQ.Str, content.string()));
 			return lit;
 		}
 		return commonContent();
 	}
 
 	private XQAST commonContent() throws QueryException {
-		XQAST c = predefEntityRef();
-		c = (c != null) ? c : charRef();
-		c = (c != null) ? c : escapeCurly();
-		c = (c != null) ? c : enclosedExpr();
-		return c;
-	}
-
-	private XQAST predefEntityRef() throws QueryException {
-		String ref;
+		Token c;
 		try {
-			ref = consumePredefEntityRef();
+			c = laPredefEntityRef(false);
+			c = (c != null) ? c : laCharRef(false);
+			c = (c != null) ? c : laEscapeCurly();
 		} catch (Exception e) {
 			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
 					.getMessage());
 		}
-		if (ref == null) {
-			return null;
+		if (c != null) {
+			consume(c);
+			XQAST lit = new XQAST(XQ.Literal);
+			lit.addChild(new XQAST(XQ.Str, c.string()));
+			return lit;
 		}
-		XQAST lit = new XQAST(XQAST.Literal);
-		lit.addChild(new XQAST(XQAST.Str, ref));
-		return lit;
-	}
-
-	private XQAST charRef() throws QueryException {
-		String ref;
-		try {
-			ref = consumeCharRef();
-		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
-		if (ref == null) {
-			return null;
-		}
-		XQAST lit = new XQAST(XQAST.Literal);
-		lit.addChild(new XQAST(XQAST.Str, ref));
-		return lit;
-	}
-
-	private XQAST escapeCurly() {
-		String curly;
-		if (attempt("{{")) {
-			curly = "{";
-		} else if (attempt("}}")) {
-			curly = "}";
-		} else {
-			return null;
-		}
-		XQAST lit = new XQAST(XQAST.Literal);
-		lit.addChild(new XQAST(XQAST.Str, curly));
-		return lit;
+		return enclosedExpr();
 	}
 
 	private XQAST dirElemContent() throws QueryException {
@@ -2654,20 +2624,22 @@ public class XQParser extends Tokenizer {
 		if (!attempt("<![CDATA[")) {
 			return null;
 		}
-		String content = attemptCDataSectionContents();
+		Token content = laCDataSectionContents();
+		consume(content);
 		consume("]]>");
-		XQAST lit = new XQAST(XQAST.Literal);
-		lit.addChild(new XQAST(XQAST.Str, content));
+		XQAST lit = new XQAST(XQ.Literal);
+		lit.addChild(new XQAST(XQ.Str, content.string()));
 		return lit;
 	}
 
 	private XQAST elementContentChar() {
-		String content = consumeElemContentChar();
+		Token content = laElemContentChar();
 		if (content == null) {
 			return null;
 		}
-		XQAST lit = new XQAST(XQAST.Literal);
-		lit.addChild(new XQAST(XQAST.Str, content));
+		consume(content);
+		XQAST lit = new XQAST(XQ.Literal);
+		lit.addChild(new XQAST(XQ.Str, content.string()));
 		return lit;
 	}
 
@@ -2675,17 +2647,18 @@ public class XQParser extends Tokenizer {
 		if (!attempt("<!--")) {
 			return null;
 		}
-		String content;
+		Token content;
 		try {
-			content = consumeCommentContents();
+			content = laCommentContents(false);
 		} catch (Exception e) {
 			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
 					.getMessage());
 		}
+		consume(content);
 		consume("-->");
-		XQAST comment = new XQAST(XQAST.CompCommentConstructor);
-		XQAST lit = new XQAST(XQAST.Literal);
-		lit.addChild(new XQAST(XQAST.Str, content));
+		XQAST comment = new XQAST(XQ.CompCommentConstructor);
+		XQAST lit = new XQAST(XQ.Literal);
+		lit.addChild(new XQAST(XQ.Str, content.string()));
 		comment.addChild(lit);
 		return comment;
 	}
@@ -2695,19 +2668,27 @@ public class XQParser extends Tokenizer {
 		if (!attempt("<?")) {
 			return null;
 		}
-		String target;
+		Token target;
 		try {
-			target = consumePITarget();
+			target = laPITarget(false);
 		} catch (Exception e) {
 			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
 					.getMessage());
 		}
-		XQAST piCon = new XQAST(XQAST.DirPIConstructor);
-		piCon.addChild(new XQAST(XQAST.PITarget, target));
+		consume(target);
+		XQAST piCon = new XQAST(XQ.DirPIConstructor);
+		piCon.addChild(new XQAST(XQ.PITarget, target.string()));
 		if (skipS()) {
-			String content = comsumePIContents();
-			XQAST lit = new XQAST(XQAST.Literal);
-			lit.addChild(new XQAST(XQAST.Str, content));
+			Token content;
+			try {
+				content = laPIContents();
+			} catch (RuntimeException e) {
+				throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
+						.getMessage());
+			}
+			consume(content);
+			XQAST lit = new XQAST(XQ.Literal);
+			lit.addChild(new XQAST(XQ.Str, content.string()));
 			piCon.addChild(lit);
 		}
 		consume("?>");
@@ -2736,7 +2717,7 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST doc = new XQAST(XQAST.CompDocumentConstructor);
+		XQAST doc = new XQAST(XQ.CompDocumentConstructor);
 		doc.addChild(expr());
 		consume("}");
 		return doc;
@@ -2758,9 +2739,9 @@ public class XQParser extends Tokenizer {
 		if (la2 != null) {
 			consume(la);
 			consume(la2);
-			elem = new XQAST(XQAST.CompElementConstructor);
-			XQAST lit = new XQAST(XQAST.Literal);
-			lit.addChild(new XQAST(XQAST.Qname, la2.string()));
+			elem = new XQAST(XQ.CompElementConstructor);
+			XQAST lit = new XQAST(XQ.Literal);
+			lit.addChild(new XQAST(XQ.Qname, la2.string()));
 			elem.addChild(lit);
 		} else {
 			la2 = laSkipWS("{");
@@ -2769,12 +2750,12 @@ public class XQParser extends Tokenizer {
 			}
 			consume(la);
 			consume(la2);
-			elem = new XQAST(XQAST.CompElementConstructor);
+			elem = new XQAST(XQ.CompElementConstructor);
 			elem.addChild(expr());
 			consumeSkipWS("}");
 		}
 		consumeSkipWS("{");
-		XQAST conSeq = new XQAST(XQAST.ContentSequence);
+		XQAST conSeq = new XQAST(XQ.ContentSequence);
 		elem.addChild(conSeq);
 		XQAST expr = expr();
 		if (expr != null) {
@@ -2800,9 +2781,9 @@ public class XQParser extends Tokenizer {
 		if (la2 != null) {
 			consume(la);
 			consume(la2);
-			attr = new XQAST(XQAST.CompAttributeConstructor);
-			XQAST lit = new XQAST(XQAST.Literal);
-			lit.addChild(new XQAST(XQAST.Qname, la2.string()));
+			attr = new XQAST(XQ.CompAttributeConstructor);
+			XQAST lit = new XQAST(XQ.Literal);
+			lit.addChild(new XQAST(XQ.Qname, la2.string()));
 			attr.addChild(lit);
 		} else {
 			la2 = laSkipWS("{");
@@ -2811,12 +2792,12 @@ public class XQParser extends Tokenizer {
 			}
 			consume(la);
 			consume(la2);
-			attr = new XQAST(XQAST.CompAttributeConstructor);
+			attr = new XQAST(XQ.CompAttributeConstructor);
 			attr.addChild(expr());
 			consumeSkipWS("}");
 		}
 		consumeSkipWS("{");
-		XQAST conSeq = new XQAST(XQAST.ContentSequence);
+		XQAST conSeq = new XQAST(XQ.ContentSequence);
 		attr.addChild(conSeq);
 		XQAST expr = expr();
 		if (expr != null) {
@@ -2833,8 +2814,8 @@ public class XQParser extends Tokenizer {
 		}
 		Token la2;
 		try {
-			la2 = laNCName(la, true);
-		} catch (Exception e) {
+			la2 = laNCName(la);
+		} catch (RuntimeException e) {
 			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
 					.getMessage());
 		}
@@ -2842,9 +2823,9 @@ public class XQParser extends Tokenizer {
 		if (la2 != null) {
 			consume(la);
 			consume(la2);
-			ns = new XQAST(XQAST.CompNamespaceConstructor);
-			XQAST lit = new XQAST(XQAST.Literal);
-			lit.addChild(new XQAST(XQAST.Str, la2.string()));
+			ns = new XQAST(XQ.CompNamespaceConstructor);
+			XQAST lit = new XQAST(XQ.Literal);
+			lit.addChild(new XQAST(XQ.Str, la2.string()));
 			ns.addChild(lit);
 		} else {
 			la2 = laSkipWS("{");
@@ -2853,12 +2834,12 @@ public class XQParser extends Tokenizer {
 			}
 			consume(la);
 			consume(la2);
-			ns = new XQAST(XQAST.CompNamespaceConstructor);
+			ns = new XQAST(XQ.CompNamespaceConstructor);
 			ns.addChild(expr());
 			consumeSkipWS("}");
 		}
 		consumeSkipWS("{");
-		XQAST conSeq = new XQAST(XQAST.ContentSequence);
+		XQAST conSeq = new XQAST(XQ.ContentSequence);
 		ns.addChild(conSeq);
 		XQAST expr = expr();
 		if (expr != null) {
@@ -2879,7 +2860,7 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST doc = new XQAST(XQAST.CompTextConstructor);
+		XQAST doc = new XQAST(XQ.CompTextConstructor);
 		doc.addChild(expr());
 		consume("}");
 		return doc;
@@ -2896,7 +2877,7 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST doc = new XQAST(XQAST.CompCommentConstructor);
+		XQAST doc = new XQAST(XQ.CompCommentConstructor);
 		doc.addChild(expr());
 		consume("}");
 		return doc;
@@ -2909,8 +2890,8 @@ public class XQParser extends Tokenizer {
 		}
 		Token la2;
 		try {
-			la2 = laNCName(la, true);
-		} catch (Exception e) {
+			la2 = laNCName(la);
+		} catch (RuntimeException e) {
 			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
 					.getMessage());
 		}
@@ -2918,9 +2899,9 @@ public class XQParser extends Tokenizer {
 		if (la2 != null) {
 			consume(la);
 			consume(la2);
-			pi = new XQAST(XQAST.CompProcessingInstructionConstructor);
-			XQAST lit = new XQAST(XQAST.Literal);
-			lit.addChild(new XQAST(XQAST.Str, la2.string()));
+			pi = new XQAST(XQ.CompProcessingInstructionConstructor);
+			XQAST lit = new XQAST(XQ.Literal);
+			lit.addChild(new XQAST(XQ.Str, la2.string()));
 			pi.addChild(lit);
 		} else {
 			la2 = laSkipWS("{");
@@ -2929,12 +2910,12 @@ public class XQParser extends Tokenizer {
 			}
 			consume(la);
 			consume(la2);
-			pi = new XQAST(XQAST.CompProcessingInstructionConstructor);
+			pi = new XQAST(XQ.CompProcessingInstructionConstructor);
 			pi.addChild(expr());
 			consumeSkipWS("}");
 		}
 		consumeSkipWS("{");
-		XQAST conSeq = new XQAST(XQAST.ContentSequence);
+		XQAST conSeq = new XQAST(XQ.ContentSequence);
 		pi.addChild(conSeq);
 		XQAST expr = expr();
 		if (expr != null) {
@@ -2955,7 +2936,8 @@ public class XQParser extends Tokenizer {
 		try {
 			la = laEQNameSkipWS(true);
 		} catch (Exception e) {
-			return null;
+			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
+					.getMessage());
 		}
 		if (la == null) {
 			return null;
@@ -2964,11 +2946,11 @@ public class XQParser extends Tokenizer {
 		if (la2 == null) {
 			return null;
 		}
-		XQAST eqname = new XQAST(XQAST.Qname, la.string());
+		XQAST eqname = new XQAST(XQ.Qname, la.string());
 		consume(la);
 		consume(la2);
 		XQAST no = integerLiteral(false, true);
-		XQAST litFunc = new XQAST(XQAST.LiteralFuncItem);
+		XQAST litFunc = new XQAST(XQ.LiteralFuncItem);
 		litFunc.addChild(eqname);
 		litFunc.addChild(no);
 		return litFunc;
@@ -2985,7 +2967,7 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		XQAST inlineFunc = new XQAST(XQAST.InlineFuncItem);
+		XQAST inlineFunc = new XQAST(XQ.InlineFuncItem);
 		do {
 			XQAST param = param();
 			if (param == null) {
@@ -3016,8 +2998,8 @@ public class XQParser extends Tokenizer {
 		}
 		XQAST eqname = eqnameLiteral(false, false);
 		String varName = declare(eqname.getValue());
-		XQAST decl = new XQAST(XQAST.TypedVariableDeclaration);
-		decl.addChild(new XQAST(XQAST.Variable, varName));
+		XQAST decl = new XQAST(XQ.TypedVariableDeclaration);
+		decl.addChild(new XQAST(XQ.Variable, varName));
 		XQAST typeDecl = typeDeclaration();
 		if (typeDecl != null) {
 			decl.addChild(typeDecl);
@@ -3025,24 +3007,24 @@ public class XQParser extends Tokenizer {
 		return decl;
 	}
 
-	private XQAST stringLiteral(boolean conditional, boolean skipWS)
+	private XQAST stringLiteral(boolean cond, boolean skipWS)
 			throws QueryException {
 		Token la;
 		try {
-			la = (skipWS) ? laStringSkipWS(conditional) : laString(conditional);
+			la = (skipWS) ? laStringSkipWS(cond) : laString(cond);
 		} catch (Exception e) {
 			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
 					.getMessage());
 		}
 		if (la == null) {
-			if (conditional) {
+			if (cond) {
 				return null;
 			}
 			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
 					"Expected string literal: '%s'", paraphrase());
 		}
 		consume(la);
-		return new XQAST(XQAST.Str, la.string());
+		return new XQAST(XQ.Str, la.string());
 	}
 
 	private XQAST uriLiteral(boolean conditional, boolean skipWS)
@@ -3062,8 +3044,8 @@ public class XQParser extends Tokenizer {
 			throws QueryException {
 		Token la;
 		try {
-			la = (skipWS) ? laNCNameSkipWS(cond) : laNCName(cond);
-		} catch (Exception e) {
+			la = (skipWS) ? laNCNameSkipWS() : laNCName();
+		} catch (RuntimeException e) {
 			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
 					.getMessage());
 		}
@@ -3075,14 +3057,14 @@ public class XQParser extends Tokenizer {
 					"Expected NCName: '%s'", paraphrase());
 		}
 		consume(la);
-		return new XQAST(XQAST.Qname, la.string());
+		return new XQAST(XQ.Qname, la.string());
 	}
 
 	private XQAST eqnameLiteral(boolean cond, boolean skipWS)
 			throws QueryException {
 		Token la;
 		try {
-			la = (skipWS) ? laQNameSkipWS(cond) : laQName(cond);
+			la = (skipWS) ? laEQNameSkipWS(cond) : laEQName(cond);
 		} catch (Exception e) {
 			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
 					.getMessage());
@@ -3095,14 +3077,14 @@ public class XQParser extends Tokenizer {
 					"Expected QName: '%s'", paraphrase());
 		}
 		consume(la);
-		return new XQAST(XQAST.Qname, la.string());
+		return new XQAST(XQ.Qname, la.string());
 	}
 
 	private XQAST qnameLiteral(boolean cond, boolean skipWS)
 			throws QueryException {
 		Token la;
 		try {
-			la = (skipWS) ? laQNameSkipWS(cond) : laQName(cond);
+			la = (skipWS) ? laQNameSkipWS() : laQName();
 		} catch (Exception e) {
 			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
 					.getMessage());
@@ -3115,7 +3097,7 @@ public class XQParser extends Tokenizer {
 					"Expected QName: '%s'", paraphrase());
 		}
 		consume(la);
-		return new XQAST(XQAST.Qname, la.string());
+		return new XQAST(XQ.Qname, la.string());
 	}
 
 	private XQAST doubleLiteral(boolean cond, boolean skipWS)
@@ -3135,7 +3117,7 @@ public class XQParser extends Tokenizer {
 					"Expected double value: '%s'", paraphrase());
 		}
 		consume(la);
-		return new XQAST(XQAST.Dbl, la.string());
+		return new XQAST(XQ.Dbl, la.string());
 	}
 
 	private XQAST decimalLiteral(boolean cond, boolean skipWS)
@@ -3155,7 +3137,7 @@ public class XQParser extends Tokenizer {
 					"Expected decimal value: '%s'", paraphrase());
 		}
 		consume(la);
-		return new XQAST(XQAST.Dec, la.string());
+		return new XQAST(XQ.Dec, la.string());
 	}
 
 	private XQAST integerLiteral(boolean cond, boolean skipWS)
@@ -3163,7 +3145,7 @@ public class XQParser extends Tokenizer {
 		Token la;
 		try {
 			la = (skipWS) ? laIntegerSkipWS(cond) : laInteger(cond);
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
 			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
 					.getMessage());
 		}
@@ -3175,7 +3157,7 @@ public class XQParser extends Tokenizer {
 					"Expected integer value: '%s'", paraphrase());
 		}
 		consume(la);
-		return new XQAST(XQAST.Int, la.string());
+		return new XQAST(XQ.Int, la.string());
 	}
 
 	private XQAST pragmaContent() throws QueryException {
@@ -3187,8 +3169,7 @@ public class XQParser extends Tokenizer {
 					.getMessage());
 		}
 		consume(la);
-		return (la == null) ? null
-				: new XQAST(XQAST.PragmaContent, la.string());
+		return (la == null) ? null : new XQAST(XQ.PragmaContent, la.string());
 	}
 
 	private XQAST[] add(XQAST[] asts, XQAST ast) {
