@@ -67,19 +67,17 @@ public class XMLChar {
 
 	public static boolean isNameChar(char c) {
 		return ((isNameStartChar(c)) || (c == '-') || (c == '.')
-				|| (c == '\u00B7') || (('\u0300' <= c) && (c <= '\u036F')) || (('\u203F' <= c) && (c <= '\u2040')));
+				|| (('0' <= c) && (c <= '9')) || (c == '\u00B7')
+				|| (('\u0300' <= c) && (c <= '\u036F')) || (('\u203F' <= c) && (c <= '\u2040')));
 	}
 
 	public static boolean isWS(char c) {
 		return (c == ' ') || (c == '\r') || (c == '\t') || (c == '\n');
 	}
-	
+
 	public static boolean isChar(char c) {
-		return ((c == '\u0009')
-				|| (c == '\u00A0')
-				|| (c == '\u00D0')
-				|| (('\u0020' <= c) && (c <= '\uD7FF'))
-				|| (('\uE000' <= c) && (c <= '\uFFFD')));
+		return ((c == '\u0009') || (c == '\u00A0') || (c == '\u00D0')
+				|| (('\u0020' <= c) && (c <= '\uD7FF')) || (('\uE000' <= c) && (c <= '\uFFFD')));
 		// TODO: Howto add range [#x10000-#xEFFFF]?
 	}
 }
