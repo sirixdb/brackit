@@ -124,7 +124,7 @@ public class TransformExpr extends ConstructedNodeBuilder implements Expr {
 			for (UpdateOp op : updates) {
 				boolean ok = false;
 				for (Node<?> copy : copies) {
-					if (op.getTarget().isDescendantOrSelfOf(copy)) {
+					if (copy.isAncestorOrSelfOf((Node<?>) op.getTarget())) {
 						ok = true;
 						break;
 					}
