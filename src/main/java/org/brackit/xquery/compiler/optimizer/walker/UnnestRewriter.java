@@ -28,7 +28,7 @@
 package org.brackit.xquery.compiler.optimizer.walker;
 
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.parser.XQueryParser;
+import org.brackit.xquery.compiler.XQ;
 
 /**
  * 
@@ -38,13 +38,13 @@ import org.brackit.xquery.compiler.parser.XQueryParser;
 public class UnnestRewriter extends Walker {
 	@Override
 	protected AST visit(AST node) {
-		if (node.getType() != XQueryParser.FlowrExpr) {
+		if (node.getType() != XQ.FlowrExpr) {
 			return node;
 		}
 
-		AST in = new AST(XQueryParser.Start, "Start");
+		AST in = new AST(XQ.Start, "Start");
 		AST[] unnested = unnestFlowr(in, node);
-		AST opExpr = new AST(XQueryParser.ReturnExpr, "ReturnExpr");
+		AST opExpr = new AST(XQ.ReturnExpr, "ReturnExpr");
 		opExpr.addChild(unnested[0]);
 		opExpr.addChild(unnested[1]);
 		node.getParent().replaceChild(node.getChildIndex(), opExpr);
@@ -59,24 +59,24 @@ public class UnnestRewriter extends Walker {
 			AST clause = node.getChild(pos);
 
 			switch (clause.getType()) {
-			case XQueryParser.ForClause:
-				in = unnestClause(in, clause, XQueryParser.ForBind, "ForBind");
+			case XQ.ForClause:
+				in = unnestClause(in, clause, XQ.ForBind, "ForBind");
 				break;
-			case XQueryParser.LetClause:
-				in = unnestClause(in, clause, XQueryParser.LetBind, "LetBind");
+			case XQ.LetClause:
+				in = unnestClause(in, clause, XQ.LetBind, "LetBind");
 				break;
-			case XQueryParser.WhereClause:
-				in = unnestClause(in, clause, XQueryParser.Selection,
+			case XQ.WhereClause:
+				in = unnestClause(in, clause, XQ.Selection,
 						"Selection");
 				break;
-			case XQueryParser.OrderByClause:
-				in = unnestClause(in, clause, XQueryParser.OrderBy, "OrderBy");
+			case XQ.OrderByClause:
+				in = unnestClause(in, clause, XQ.OrderBy, "OrderBy");
 				break;
-			case XQueryParser.CountClause:
-				in = unnestClause(in, clause, XQueryParser.Count, "Count");
+			case XQ.CountClause:
+				in = unnestClause(in, clause, XQ.Count, "Count");
 				break;
-			case XQueryParser.GroupByClause:
-				in = unnestClause(in, clause, XQueryParser.GroupBy, "GroupBy");
+			case XQ.GroupByClause:
+				in = unnestClause(in, clause, XQ.GroupBy, "GroupBy");
 				break;
 			default:
 				throw new IllegalStateException();
@@ -85,7 +85,7 @@ public class UnnestRewriter extends Walker {
 
 		AST returnExpr = node.getChild(childCount - 1).getChild(0);
 
-		if (returnExpr.getType() == XQueryParser.FlowrExpr) {
+		if (returnExpr.getType() == XQ.FlowrExpr) {
 			return unnestFlowr(in, returnExpr);
 		} else {
 			return new AST[] { in, returnExpr.copyTree() };

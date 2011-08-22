@@ -28,7 +28,7 @@
 package org.brackit.xquery.compiler.optimizer.walker;
 
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.parser.XQueryParser;
+import org.brackit.xquery.compiler.XQ;
 
 /**
  * Inspects for the (common?) pattern of a left join
@@ -43,7 +43,7 @@ import org.brackit.xquery.compiler.parser.XQueryParser;
 public class LeftJoinGroupEmission extends Walker {
 	@Override
 	protected AST visit(AST node) {
-		if (node.getType() != XQueryParser.Join) {
+		if (node.getType() != XQ.Join) {
 			return node;
 		}
 
@@ -52,11 +52,11 @@ public class LeftJoinGroupEmission extends Walker {
 		}
 		
 		AST letBind = node.getParent();
-		if ((letBind.getType() != XQueryParser.LetBind)) {
+		if ((letBind.getType() != XQ.LetBind)) {
 			return node;
 		}
 		AST groupBy = letBind.getParent();
-		if ((groupBy.getType() != XQueryParser.GroupBy) 
+		if ((groupBy.getType() != XQ.GroupBy) 
 			|| (!Boolean.parseBoolean(groupBy.getProperty("onlyLast")))) {
 			return node;
 		}
@@ -72,7 +72,7 @@ public class LeftJoinGroupEmission extends Walker {
 		
 		AST groupinJoin = node.copyTree();
 		AST letCopy = letBind.copy();
-		letCopy.addChild(new AST(XQueryParser.Start, "Start"));
+		letCopy.addChild(new AST(XQ.Start, "Start"));
 		letCopy.addChild(letBind.getChild(1));
 		letCopy.addChild(letBind.getChild(2));
 		groupinJoin.addChild(letCopy);

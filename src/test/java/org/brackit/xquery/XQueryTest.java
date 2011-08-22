@@ -42,7 +42,6 @@ import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.atomic.Una;
-import org.brackit.xquery.module.Module;
 import org.brackit.xquery.node.SubtreePrinter;
 import org.brackit.xquery.node.linked.ElementLNode;
 import org.brackit.xquery.operator.IntegerSource;
@@ -874,6 +873,13 @@ public class XQueryTest extends XQueryBaseTest {
 	}
 
 	@Test
+	public void docExp() throws Exception {
+		Sequence result = new XQuery("document {<a/>}").execute(ctx);
+		print(result);
+		ResultChecker.dCheck(ctx, Bool.FALSE, result);
+	}
+
+	@Test
 	public void unionA() throws Exception {
 		Sequence result = new XQuery(
 				"let $at := (document {<a><b>text1<b>text2</b></b><c>text2<b>text3</b></c><b>text4</b></a>})/a "
@@ -1002,7 +1008,7 @@ public class XQueryTest extends XQueryBaseTest {
 		ctx.bind(new QNm("intVar"), new Una("4.0"));
 		new XQuery(
 				"declare variable $intVar external; "
-						+ "replace value of node fn:doc('test4.xml')/doc/a with $intVar;")
+						+ "replace value of node fn:doc('test4.xml')/doc/a with $intVar")
 				.execute(ctx);
 		new XQuery("fn:doc('test4.xml')").serialize(ctx, System.out);
 	}
@@ -1011,7 +1017,7 @@ public class XQueryTest extends XQueryBaseTest {
 	public void nullTest() throws Exception {
 		ctx.bind(new QNm("intVar"), new Una("4.0"));
 		new XQuery(
-				"for $i in 1 to 3 return <res>{ attribute {'att'} {} }</res>;")
+				"for $i in 1 to 3 return <res>{ attribute {'att'} {} }</res>")
 				.serialize(ctx, System.out);
 	}
 

@@ -1,7 +1,7 @@
 package org.brackit.xquery.compiler.optimizer.walker;
 
-import static org.brackit.xquery.compiler.parser.XQueryParser.AndExpr;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Selection;
+import static org.brackit.xquery.compiler.XQ.AndExpr;
+import static org.brackit.xquery.compiler.XQ.Selection;
 
 import org.brackit.xquery.compiler.AST;
 

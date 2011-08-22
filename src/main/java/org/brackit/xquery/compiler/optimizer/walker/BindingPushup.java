@@ -27,11 +27,11 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
-import static org.brackit.xquery.compiler.parser.XQueryParser.Count;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ForBind;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GroupBy;
-import static org.brackit.xquery.compiler.parser.XQueryParser.LetBind;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ReturnExpr;
+import static org.brackit.xquery.compiler.XQ.Count;
+import static org.brackit.xquery.compiler.XQ.ForBind;
+import static org.brackit.xquery.compiler.XQ.GroupBy;
+import static org.brackit.xquery.compiler.XQ.LetBind;
+import static org.brackit.xquery.compiler.XQ.ReturnExpr;
 
 import java.util.HashSet;
 

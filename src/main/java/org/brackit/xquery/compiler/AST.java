@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.brackit.xquery.compiler.parser.XQueryParser;
 import org.brackit.xquery.compiler.profiler.DotContext;
 import org.brackit.xquery.compiler.profiler.DotNode;
 
@@ -52,6 +51,10 @@ public class AST {
 	private Map<String, String> properties;
 
 	private AST[] children;
+
+	public AST(int type) {
+		this(type, XQ.NAMES[type]);
+	}
 
 	public AST(int type, String value, Map<String, String> properties) {
 		this.type = type;
@@ -90,11 +93,11 @@ public class AST {
 	public String getProperty(String name) {
 		return (properties != null) ? properties.get(name) : null;
 	}
-	
+
 	public void delProperty(String name) {
 		if (properties != null) {
 			properties.remove(name);
-		}		
+		}
 	}
 
 	public AST getParent() {
@@ -117,6 +120,12 @@ public class AST {
 			i++;
 		}
 		throw new IllegalStateException();
+	}
+
+	public void addChildren(AST[] children) {
+		for (AST child : children) {
+			addChild(child);
+		}
 	}
 
 	public void addChild(AST child) {
@@ -239,9 +248,8 @@ public class AST {
 
 	private int toDot(int no, DotContext dt) {
 		final int myNo = no++;
-		String label = ((type > 0) && (type < XQueryParser.tokenNames.length)) ? (XQueryParser.tokenNames[type]
-				.equals(value)) ? value : XQueryParser.tokenNames[type] + "["
-				+ value + "]"
+		String label = ((type > 0) && (type < XQ.NAMES.length)) ? (XQ.NAMES[type]
+				.equals(value)) ? value : XQ.NAMES[type] + "[" + value + "]"
 				: value;
 		DotNode node = dt.addNode(String.valueOf(myNo));
 		node.addRow(label, null);
@@ -286,9 +294,10 @@ public class AST {
 	}
 
 	public String toString() {
-		return ((type > 0) && (type < XQueryParser.tokenNames.length)) ? (XQueryParser.tokenNames[type]
-				.equals(value)) ? value : XQueryParser.tokenNames[type] + "["
-				+ value + "]"
+		int type = getType();
+		String value = getValue();
+		return ((type > 0) && (type < XQ.NAMES.length)) ? (XQ.NAMES[type]
+				.equals(value)) ? value : XQ.NAMES[type] + "[" + value + "]"
 				: value;
 	}
 }

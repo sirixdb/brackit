@@ -28,7 +28,7 @@
 package org.brackit.xquery.compiler.optimizer.walker;
 
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.parser.XQueryParser;
+import org.brackit.xquery.compiler.XQ;
 
 /**
  * Eliminates sorting in left joins when re-grouped items of the right branch,
@@ -47,7 +47,7 @@ public class JoinSortElimination extends Walker {
 
 	@Override
 	protected AST visit(AST node) {
-		if (node.getType() != XQueryParser.Join) {
+		if (node.getType() != XQ.Join) {
 			return node;
 		}
 
@@ -56,11 +56,11 @@ public class JoinSortElimination extends Walker {
 		}
 		
 		AST letBind = node.getParent();
-		if ((letBind.getType() != XQueryParser.LetBind)) {
+		if ((letBind.getType() != XQ.LetBind)) {
 			return node;
 		}
 		AST groupBy = letBind.getParent();
-		if ((groupBy.getType() != XQueryParser.GroupBy) 
+		if ((groupBy.getType() != XQ.GroupBy) 
 			|| (!Boolean.parseBoolean(groupBy.getProperty("onlyLast")))) {
 			return node;
 		}
@@ -77,7 +77,7 @@ public class JoinSortElimination extends Walker {
 					return node;
 				}
 			}
-			if (parent.getType() == XQueryParser.ReturnExpr) {
+			if (parent.getType() == XQ.ReturnExpr) {
 				break;
 			}
 		}
@@ -89,12 +89,12 @@ public class JoinSortElimination extends Walker {
 
 	private boolean checkForCriticalReference(AST node,
 			String groupingSequenceVarName) {
-		if ((node.getType() == XQueryParser.VariableRef)
+		if ((node.getType() == XQ.VariableRef)
 				&& (node.getValue().equals(groupingSequenceVarName))) {
 			AST parentExpr = node.getParent();
 			// TODO resolve function properly
 			String fn = parentExpr.getValue();
-			if ((parentExpr.getType() != XQueryParser.FunctionCall)
+			if ((parentExpr.getType() != XQ.FunctionCall)
 					|| ((!fn.equals("count")) && (!fn.equals("fn:count"))
 							&& (!fn.equals("distinct")) && (!fn
 							.equals("fn:distinct")))) {
@@ -112,7 +112,7 @@ public class JoinSortElimination extends Walker {
 
 	private String innerLoopVarName(AST node) {
 		AST rightIn = node.getChild(node.getChildCount() - 1);
-		while (rightIn.getChild(0).getType() != XQueryParser.Start) {
+		while (rightIn.getChild(0).getType() != XQ.Start) {
 			rightIn = rightIn.getChild(0);
 		}
 		// right in is now let-bind or for-bind

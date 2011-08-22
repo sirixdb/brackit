@@ -1,7 +1,7 @@
 package org.brackit.xquery.compiler.optimizer.walker;
 
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.parser.XQueryParser;
+import org.brackit.xquery.compiler.XQ;
 
 /**
  * Breaks conjunctions of where clauses into separate where clauses, in order
@@ -18,7 +18,7 @@ public class ConjunctionSplitting extends Walker {
 	@Override
 	protected AST visit(AST node)
 	{
-		if (node.getType() != XQueryParser.Selection) {
+		if (node.getType() != XQ.Selection) {
 			return node;
 		}
 		
@@ -29,14 +29,14 @@ public class ConjunctionSplitting extends Walker {
 			AST input = currentSelect.getChild(0);
 			AST predicate = currentSelect.getChild(1);
 			
-			if (predicate.getType() != XQueryParser.AndExpr) {
+			if (predicate.getType() != XQ.AndExpr) {
 				break;
 			}
 			
 			AST andLeft = predicate.getChild(0);
 			AST andRight = predicate.getChild(1);
 			
-			AST newSelection = new AST(XQueryParser.Selection, "Selection");
+			AST newSelection = new AST(XQ.Selection, "Selection");
 			newSelection.addChild(input);
 			newSelection.addChild(andLeft);
 			

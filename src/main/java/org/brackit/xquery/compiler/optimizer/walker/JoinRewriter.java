@@ -27,28 +27,28 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
-import static org.brackit.xquery.compiler.parser.XQueryParser.ComparisonExpr;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Count;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ForBind;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GeneralCompGE;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GeneralCompGT;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GeneralCompLE;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GeneralCompLT;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GeneralCompNE;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Join;
-import static org.brackit.xquery.compiler.parser.XQueryParser.LetBind;
-import static org.brackit.xquery.compiler.parser.XQueryParser.NodeCompFollows;
-import static org.brackit.xquery.compiler.parser.XQueryParser.NodeCompIs;
-import static org.brackit.xquery.compiler.parser.XQueryParser.NodeCompPrecedes;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Selection;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Start;
-import static org.brackit.xquery.compiler.parser.XQueryParser.TypedVariableBinding;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ValueCompGE;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ValueCompGT;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ValueCompLE;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ValueCompLT;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ValueCompNE;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Variable;
+import static org.brackit.xquery.compiler.XQ.ComparisonExpr;
+import static org.brackit.xquery.compiler.XQ.Count;
+import static org.brackit.xquery.compiler.XQ.ForBind;
+import static org.brackit.xquery.compiler.XQ.GeneralCompGE;
+import static org.brackit.xquery.compiler.XQ.GeneralCompGT;
+import static org.brackit.xquery.compiler.XQ.GeneralCompLE;
+import static org.brackit.xquery.compiler.XQ.GeneralCompLT;
+import static org.brackit.xquery.compiler.XQ.GeneralCompNE;
+import static org.brackit.xquery.compiler.XQ.Join;
+import static org.brackit.xquery.compiler.XQ.LetBind;
+import static org.brackit.xquery.compiler.XQ.NodeCompFollows;
+import static org.brackit.xquery.compiler.XQ.NodeCompIs;
+import static org.brackit.xquery.compiler.XQ.NodeCompPrecedes;
+import static org.brackit.xquery.compiler.XQ.Selection;
+import static org.brackit.xquery.compiler.XQ.Start;
+import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
+import static org.brackit.xquery.compiler.XQ.ValueCompGE;
+import static org.brackit.xquery.compiler.XQ.ValueCompGT;
+import static org.brackit.xquery.compiler.XQ.ValueCompLE;
+import static org.brackit.xquery.compiler.XQ.ValueCompLT;
+import static org.brackit.xquery.compiler.XQ.ValueCompNE;
+import static org.brackit.xquery.compiler.XQ.Variable;
 
 import org.brackit.xquery.compiler.AST;
 

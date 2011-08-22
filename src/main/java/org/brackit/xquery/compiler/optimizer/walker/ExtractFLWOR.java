@@ -27,13 +27,13 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
-import static org.brackit.xquery.compiler.parser.XQueryParser.FlowrExpr;
-import static org.brackit.xquery.compiler.parser.XQueryParser.LetClause;
-import static org.brackit.xquery.compiler.parser.XQueryParser.TypedVariableBinding;
-import static org.brackit.xquery.compiler.parser.XQueryParser.VariableRef;
+import static org.brackit.xquery.compiler.XQ.FlowrExpr;
+import static org.brackit.xquery.compiler.XQ.LetClause;
+import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
+import static org.brackit.xquery.compiler.XQ.VariableRef;
 
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.parser.XQueryParser;
+import org.brackit.xquery.compiler.XQ;
 
 /**
  * 
@@ -68,7 +68,7 @@ public class ExtractFLWOR extends Walker {
 
 		String varName = createVarName();
 		AST binding = new AST(TypedVariableBinding, "TypedVariableBinding");
-		binding.addChild(new AST(XQueryParser.Variable, varName));
+		binding.addChild(new AST(XQ.Variable, varName));
 		AST letClause = new AST(LetClause, "LetClause");		
 		letClause.addChild(binding);
 		letClause.addChild(node.copyTree());

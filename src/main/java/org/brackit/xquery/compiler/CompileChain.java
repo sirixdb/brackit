@@ -31,9 +31,9 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.compiler.optimizer.DefaultOptimizer;
 import org.brackit.xquery.compiler.optimizer.Optimizer;
-import org.brackit.xquery.compiler.parser.ANTLRParser;
 import org.brackit.xquery.compiler.parser.DotUtil;
 import org.brackit.xquery.compiler.parser.Parser;
+import org.brackit.xquery.compiler.parser.XQParser;
 import org.brackit.xquery.compiler.translator.PipelineCompiler;
 import org.brackit.xquery.compiler.translator.Translator;
 import org.brackit.xquery.module.Module;
@@ -50,7 +50,12 @@ public class CompileChain {
 	}
 
 	protected Parser getParser() {
-		return new ANTLRParser();
+		return new Parser() {
+			@Override
+			public AST parse(String query) throws QueryException {
+				return new XQParser(query).parse();
+			}
+		};
 	}
 
 	protected Optimizer getOptimizer() {
@@ -69,11 +74,12 @@ public class CompileChain {
 		if (XQuery.DEBUG) {
 			System.out.println(String.format("Compiling query:\n%s", query));
 		}
-
 		AST ast = getParser().parse(query);
+		if (XQuery.DEBUG) {
+			DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR, "parsed");
+		}
 		ast = getOptimizer().optimize(ast);
 		Module module = getTranslator().translate(ast);
-
 		if (XQuery.DEBUG) {
 			DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR, "xquery");
 		}

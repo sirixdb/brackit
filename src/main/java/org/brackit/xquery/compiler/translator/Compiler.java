@@ -34,7 +34,6 @@ import java.util.List;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.AnyURI;
-import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.Dbl;
 import org.brackit.xquery.atomic.Dec;
@@ -43,8 +42,7 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.ModuleResolver;
-import org.brackit.xquery.compiler.parser.XQueryLexer;
-import org.brackit.xquery.compiler.parser.XQueryParser;
+import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.expr.Accessor;
 import org.brackit.xquery.expr.AndExpr;
 import org.brackit.xquery.expr.ArithmeticExpr;
@@ -198,9 +196,9 @@ public class Compiler implements Translator {
 		}
 		AST module = ast.getChild(0);
 		switch (module.getType()) {
-		case XQueryParser.MainModule:
+		case XQ.MainModule:
 			return mainmodule(module);
-		case XQueryParser.LibraryModule:
+		case XQ.LibraryModule:
 			return libraryModule(module);
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
@@ -249,7 +247,7 @@ public class Compiler implements Translator {
 						fun.getName(), nsURI);
 			}
 		}
-		
+
 		return module;
 	}
 
@@ -257,11 +255,11 @@ public class Compiler implements Translator {
 		MainModule module = createMainModule();
 		this.module = module;
 		AST child = ast.getChild(0);
-		if (child.getType() == XQueryParser.Prolog) {
+		if (child.getType() == XQ.Prolog) {
 			prolog(child);
 			child = ast.getChild(1);
 		}
-		if (child.getType() != XQueryParser.QueryBody) {
+		if (child.getType() != XQ.QueryBody) {
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
 					"Unexpected AST node '%s' of type: %s", child, child
 							.getType());
@@ -296,19 +294,19 @@ public class Compiler implements Translator {
 			AST child = node.getChild(i);
 
 			switch (child.getType()) {
-			case XQueryParser.TypedVariableDeclaration:
+			case XQ.TypedVariableDeclaration:
 				declareVariable(child);
 				break;
-			case XQueryParser.FunctionDeclaration:
+			case XQ.FunctionDecl:
 				declareFunction(child);
 				break;
-			case XQueryParser.NamespaceDeclaration:
+			case XQ.NamespaceDeclaration:
 				declareNamespace(child);
 				break;
-			case XQueryParser.OptionDeclaration:
+			case XQ.OptionDeclaration:
 				declareOption(child);
 				break;
-			case XQueryParser.DefaultElementNamespace:
+			case XQ.DefaultElementNamespace:
 				if (defaultElementNSDeclared) {
 					throw new QueryException(
 							ErrorCode.ERR_DEFAULT_NS_ALREADY_DECLARED,
@@ -317,7 +315,7 @@ public class Compiler implements Translator {
 				declareDefaultNamespace(child);
 				defaultElementNSDeclared = true;
 				break;
-			case XQueryParser.DefaultFunctionNamespace:
+			case XQ.DefaultFunctionNamespace:
 				if (defaultFunctionNSDeclared) {
 					throw new QueryException(
 							ErrorCode.ERR_DEFAULT_NS_ALREADY_DECLARED,
@@ -326,11 +324,11 @@ public class Compiler implements Translator {
 				declareDefaultFunctionNamespace(child);
 				defaultFunctionNSDeclared = true;
 				break;
-			case XQueryParser.SchemaImport:
+			case XQ.SchemaImport:
 				throw new QueryException(
 						ErrorCode.ERR_SCHEMA_IMPORT_FEATURE_NOT_SUPPORTED,
 						"Schema import is not supported.");
-			case XQueryParser.ModuleImport:
+			case XQ.ModuleImport:
 				String nsURI = importModule(child);
 				if (!importedModules.add(nsURI)) {
 					throw new QueryException(
@@ -339,7 +337,7 @@ public class Compiler implements Translator {
 							nsURI);
 				}
 				break;
-			case XQueryParser.BoundarySpaceDeclaration:
+			case XQ.BoundarySpaceDeclaration:
 				if (boundarySpaceDeclared) {
 					throw new QueryException(
 							ErrorCode.ERR_BOUNDARY_SPACE_ALREADY_DECLARED,
@@ -348,10 +346,10 @@ public class Compiler implements Translator {
 				declareBoundarySpace(child);
 				defaultFunctionNSDeclared = true;
 				break;
-			case XQueryParser.CollationDeclaration:
+			case XQ.CollationDeclaration:
 				declareDefaultCollation(node);
 				break;
-			case XQueryParser.BaseURIDeclaration:
+			case XQ.BaseURIDeclaration:
 				if (baseURIDeclared) {
 					throw new QueryException(
 							ErrorCode.ERR_BASE_URI_ALREADY_DECLARED,
@@ -360,7 +358,7 @@ public class Compiler implements Translator {
 				declareBaseURI(child);
 				baseURIDeclared = true;
 				break;
-			case XQueryParser.ConstructionDeclaration:
+			case XQ.ConstructionDeclaration:
 				if (constructionModeDeclared) {
 					throw new QueryException(
 							ErrorCode.ERR_CONSTRUCTION_ALREADY_DECLARED,
@@ -369,7 +367,7 @@ public class Compiler implements Translator {
 				declareConstructionMode(child);
 				constructionModeDeclared = true;
 				break;
-			case XQueryParser.OrderingModeDeclaration:
+			case XQ.OrderingModeDeclaration:
 				if (orderingModeDeclared) {
 					throw new QueryException(
 							ErrorCode.ERR_ORDERING_MODE_ALREADY_DECLARED,
@@ -378,7 +376,7 @@ public class Compiler implements Translator {
 				declareOrderingMode(child);
 				orderingModeDeclared = true;
 				break;
-			case XQueryParser.EmptyOrderDeclaration:
+			case XQ.EmptyOrderDeclaration:
 				if (emptyOrderDeclared) {
 					throw new QueryException(
 							ErrorCode.ERR_EMPTY_ORDER_ALREADY_DECLARED,
@@ -387,7 +385,7 @@ public class Compiler implements Translator {
 				declareEmptyOrder(child);
 				emptyOrderDeclared = true;
 				break;
-			case XQueryParser.CopyNamespacesDeclaration:
+			case XQ.CopyNamespacesDeclaration:
 				if (copyNamespacesDeclared) {
 					throw new QueryException(
 							ErrorCode.ERR_COPY_NAMESPACES_ALREADY_DECLARED,
@@ -409,7 +407,7 @@ public class Compiler implements Translator {
 		String prefix = null;
 		int pos = 0;
 		AST child = ast.getChild(pos++);
-		if (child.getType() == XQueryParser.Namespace) {
+		if (child.getType() == XQ.Namespace) {
 			prefix = child.getChild(0).getValue();
 			child = ast.getChild(pos++);
 		}
@@ -496,11 +494,11 @@ public class Compiler implements Translator {
 		AST child = node.getChild(pos++);
 		QNm varName = module.getNamespaces().qname(child.getValue());
 		child = node.getChild(pos++);
-		if (child.getType() == XQueryParser.SequenceType) {
+		if (child.getType() == XQ.SequenceType) {
 			type = sequenceType(child);
 			child = node.getChild(pos++);
 		}
-		if (child.getType() == XQueryParser.ExternalVariable) {
+		if (child.getType() == XQ.ExternalVariable) {
 			Expr expr = (child.getChildCount() == 1) ? expr(child.getChild(0),
 					true) : null;
 			module.getVariables().declare(
@@ -540,21 +538,13 @@ public class Compiler implements Translator {
 					name, namespaceURI);
 		}
 
-		if (child.getType() == XQueryParser.SequenceType) {
+		if (child.getType() == XQ.SequenceType) {
 			resultType = sequenceType(child);
 			child = node.getChild(pos++);
 		}
-		if ((child.getType() == XQueryParser.DETERMINISTIC)
-				|| (child.getType() == XQueryParser.NONDETERMINISTIC)) {
-			// This is an optional flag in XQuery 1.1 => Ignore
-			child = node.getChild(pos++);
-		}
-		if (child.getType() == XQueryParser.UPDATING) {
-			updating = false;
-			child = node.getChild(pos++);
-		}
-		if (child.getType() == XQueryParser.SIMPLE) {
-			// This is an optional flag in XQuery scripting => Ignore
+		while (child.getType() == XQ.Annotation) {
+			// TODO
+			// ignore annotation
 			child = node.getChild(pos++);
 		}
 		int noOfParameters = child.getChildCount();
@@ -602,85 +592,99 @@ public class Compiler implements Translator {
 
 	protected Expr anyExpr(AST node) throws QueryException {
 		switch (node.getType()) {
-		case XQueryParser.FlowrExpr:
+		case XQ.FlowrExpr:
 			return flowrExpr(node);
-		case XQueryParser.QuantifiedExpr:
+		case XQ.QuantifiedExpr:
 			return quantifiedExpr(node);
-		case XQueryParser.SequenceExpr:
+		case XQ.SequenceExpr:
 			return sequenceExpr(node);
-		case XQueryParser.Literal:
-			return literal(node);
-		case XQueryParser.VariableRef:
+		case XQ.Int:
+			return Int32.parse(node.getValue());
+		case XQ.Str:
+			return new Str(Whitespace.normalizeXML11(node.getValue()));
+		case XQ.Dbl:
+			return Dbl.parse(node.getValue());
+		case XQ.Dec:
+			return new Dec(node.getValue());
+		case XQ.QNm:
+			if (node.getValue().contains(":")) {
+				throw new QueryException(
+						ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
+						"Namespaces are not supported yet.");
+			}
+			return new QNm(node.getValue());
+		case XQ.VariableRef:
 			return variableRefExpr(node);
-		case XQueryParser.ArithmeticExpr:
+		case XQ.ArithmeticExpr:
 			return arithmeticExpr(node);
-		case XQueryParser.ComparisonExpr:
+		case XQ.ComparisonExpr:
 			return comparisonExpr(node);
-		case XQueryParser.RangeExpr:
+		case XQ.RangeExpr:
 			return rangeExpr(node);
-		case XQueryParser.AndExpr:
+		case XQ.AndExpr:
 			return andExpr(node);
-		case XQueryParser.OrExpr:
+		case XQ.OrExpr:
 			return orExpr(node);
-		case XQueryParser.CastExpr:
+		case XQ.CastExpr:
 			return castExpr(node);
-		case XQueryParser.CastableExpr:
+		case XQ.CastableExpr:
 			return castableExpr(node);
-		case XQueryParser.TreatExpr:
+		case XQ.TreatExpr:
 			return treatExpr(node);
-		case XQueryParser.InstanceofExpr:
+		case XQ.InstanceofExpr:
 			return instanceOfExpr(node);
-		case XQueryParser.TypeSwitch:
+		case XQ.TypeSwitch:
 			return typeswitchExpr(node);
-		case XQueryParser.IfExpr:
+		case XQ.IfExpr:
 			return ifExpr(node);
-		case XQueryParser.FilterExpr:
+		case XQ.FilterExpr:
 			return filterExpr(node);
-		case XQueryParser.CompElementConstructor:
+		case XQ.CompElementConstructor:
 			return elementExpr(node);
-		case XQueryParser.CompAttributeConstructor:
+		case XQ.CompAttributeConstructor:
 			return attributeExpr(node);
-		case XQueryParser.CompCommentConstructor:
+		case XQ.CompCommentConstructor:
 			return commentExpr(node);
-		case XQueryParser.CompTextConstructor:
+		case XQ.CompTextConstructor:
 			return textExpr(node);
-		case XQueryParser.CompDocumentConstructor:
+		case XQ.CompDocumentConstructor:
 			return documentExpr(node);
-		case XQueryParser.CompPIConstructor:
+		case XQ.CompProcessingInstructionConstructor:
 			return piExpr(node);
-		case XQueryParser.FunctionCall:
+		case XQ.FunctionCall:
 			return functionCall(node);
-		case XQueryParser.EmptySequence:
+		case XQ.EmptySequence:
 			return new SequenceExpr();
-		case XQueryLexer.PathExpr:
+		case XQ.PathExpr:
 			return pathExpr(node);
-		case XQueryLexer.StepExpr:
+		case XQ.StepExpr:
 			return stepExpr(node);
-		case XQueryParser.ContextItemExpr:
+		case XQ.ContextItemExpr:
 			return table.resolve(Namespaces.FS_DOT);
-		case XQueryParser.Insert:
+		case XQ.InsertExpr:
 			return insertExpr(node);
-		case XQueryParser.Delete:
+		case XQ.DeleteExpr:
 			return deleteExpr(node);
-		case XQueryParser.Replace:
+		case XQ.ReplaceNodeExpr:
+		case XQ.ReplaceValueExpr:
 			return replaceExpr(node);
-		case XQueryParser.Rename:
+		case XQ.RenameExpr:
 			return renameExpr(node);
-		case XQueryParser.Transform:
+		case XQ.TransformExpr:
 			return transformExpr(node);
-		case XQueryParser.OrderedExpr:
+		case XQ.OrderedExpr:
 			return anyExpr(node.getChild(0));
-		case XQueryParser.UnorderedExpr:
+		case XQ.UnorderedExpr:
 			return anyExpr(node.getChild(0));
-		case XQueryParser.UnionExpr:
+		case XQ.UnionExpr:
 			return unionExpr(node);
-		case XQueryParser.ExceptExpr:
+		case XQ.ExceptExpr:
 			return exceptExpr(node);
-		case XQueryParser.IntersectExpr:
+		case XQ.IntersectExpr:
 			return intersectExpr(node);
-		case XQueryParser.Pragma:
+		case XQ.Pragma:
 			return pragma(node);
-		case XQueryParser.ValidateExpr:
+		case XQ.ValidateExpr:
 			throw new QueryException(
 					ErrorCode.ERR_SCHEMA_VALIDATION_FEATURE_NOT_SUPPORTED,
 					"Schema validation feature is not supported.");
@@ -716,15 +720,21 @@ public class Compiler implements Translator {
 
 	protected Expr castExpr(AST node) throws QueryException {
 		Expr expr = expr(node.getChild(0), true);
-		Type targetType = resolveType(node.getChild(1).getValue());
-		boolean allowEmptySequence = node.getChildCount() == 3;
+		AST type = node.getChild(1);
+		AST aouType = type.getChild(0);
+		Type targetType = resolveType(aouType.getChild(0).getValue());
+		boolean allowEmptySequence = ((type.getChildCount() == 2) && (type
+				.getChild(1).getType() == XQ.CardinalityZeroOrOne));
 		return new Cast(expr, targetType, allowEmptySequence);
 	}
 
 	protected Expr castableExpr(AST node) throws QueryException {
 		Expr expr = expr(node.getChild(0), true);
-		Type targetType = resolveType(node.getChild(1).getValue());
-		boolean allowEmptySequence = node.getChildCount() == 3;
+		AST type = node.getChild(1);
+		AST aouType = type.getChild(0);
+		Type targetType = resolveType(aouType.getChild(0).getValue());
+		boolean allowEmptySequence = ((type.getChildCount() == 2) && (type
+				.getChild(1).getType() == XQ.CardinalityZeroOrOne));
 		return new Castable(expr, targetType, allowEmptySequence);
 	}
 
@@ -762,7 +772,7 @@ public class Compiler implements Translator {
 			QNm varName = null;
 			Binding binding = null;
 
-			if (firstChild.getType() == XQueryParser.Variable) {
+			if (firstChild.getType() == XQ.Variable) {
 				c++;
 				varName = module.getNamespaces().qname(firstChild.getValue());
 			}
@@ -798,7 +808,7 @@ public class Compiler implements Translator {
 		QNm varName = null;
 		Binding binding = null;
 
-		if (firstChild.getType() == XQueryParser.Variable) {
+		if (firstChild.getType() == XQ.Variable) {
 			c++;
 			varName = module.getNamespaces().qname(firstChild.getValue());
 			binding = table.bind(varName, SequenceType.ITEM_SEQUENCE);
@@ -859,19 +869,19 @@ public class Compiler implements Translator {
 
 		AST typeNode = node.getChild(0);
 		switch (typeNode.getType()) {
-		case XQueryParser.InsertInto:
+		case XQ.InsertInto:
 			insertType = InsertType.INTO;
 			break;
-		case XQueryParser.InsertBefore:
+		case XQ.InsertBefore:
 			insertType = InsertType.BEFORE;
 			break;
-		case XQueryParser.InsertAfter:
+		case XQ.InsertAfter:
 			insertType = InsertType.AFTER;
 			break;
-		case XQueryParser.InsertFirst:
+		case XQ.InsertFirst:
 			insertType = InsertType.FIRST;
 			break;
-		case XQueryParser.InsertLast:
+		case XQ.InsertLast:
 			insertType = InsertType.LAST;
 			break;
 		default:
@@ -892,9 +902,9 @@ public class Compiler implements Translator {
 	}
 
 	protected Expr replaceExpr(AST node) throws QueryException {
-		boolean replaceNode = (node.getChild(0).getType() == XQueryParser.ReplaceNode);
-		Expr targetExpr = expr(node.getChild(1), true);
-		Expr sourceExpr = expr(node.getChild(2), true);
+		boolean replaceNode = (node.getType() == XQ.ReplaceNodeExpr);
+		Expr targetExpr = expr(node.getChild(0), true);
+		Expr sourceExpr = expr(node.getChild(1), true);
 		return (replaceNode) ? new ReplaceNode(sourceExpr, targetExpr)
 				: new ReplaceValue(sourceExpr, targetExpr);
 	}
@@ -909,21 +919,20 @@ public class Compiler implements Translator {
 		AST current = null;
 
 		QNm varName;
-		Expr sourceExpr;
 		int childCount = node.getChildCount();
 		Expr[] sourceExprs = new Expr[childCount - 2];
 		Binding[] bindings = new Binding[childCount - 2];
 		boolean[] referenced = new boolean[childCount - 2];
 		int c = 0;
 
-		while ((current = node.getChild(c)).getType() == XQueryParser.CopyBinding) {
+		while ((current = node.getChild(c)).getType() == XQ.CopyVariableBinding) {
 			varName = module.getNamespaces().qname(
 					current.getChild(0).getValue());
 			sourceExprs[c] = expr(current.getChild(1), true);
 			bindings[c++] = table.bind(varName, SequenceType.ITEM);
 		}
 
-		Expr modifyExpr = expr(current.getChild(0), false);
+		Expr modifyExpr = expr(current, false);
 
 		if (!modifyExpr.isUpdating() && !modifyExpr.isVacuous()) {
 			throw (new QueryException(
@@ -931,7 +940,7 @@ public class Compiler implements Translator {
 					"Modify clause must not contain an expression that is non-updating and non-vacuous."));
 		}
 
-		Expr returnExpr = expr(node.getChild(++c).getChild(0), true);
+		Expr returnExpr = expr(node.getChild(++c), true);
 
 		for (int i = 0; i < childCount - 2; i++) {
 			if (bindings[i].isReferenced()) {
@@ -948,7 +957,7 @@ public class Compiler implements Translator {
 		int childCount = node.getChildCount();
 		int pos = 0;
 		AST child = node.getChild(pos++);
-		boolean someQuantified = (child.getType() == XQueryParser.SomeQuantifier);
+		boolean someQuantified = (child.getType() == XQ.SomeQuantifier);
 		Expr bindingSequenceExpr = quantifiedBindings(new Start(), node, pos);
 		Function function;
 
@@ -966,7 +975,7 @@ public class Compiler implements Translator {
 			throws QueryException {
 		AST child = node.getChild(pos++);
 
-		if (child.getType() == XQueryParser.TypedVariableBinding) {
+		if (child.getType() == XQ.TypedVariableBinding) {
 			QNm runVarName = module.getNamespaces().qname(
 					child.getChild(0).getValue());
 			SequenceType type = SequenceType.ITEM_SEQUENCE;
@@ -1104,10 +1113,9 @@ public class Compiler implements Translator {
 		for (int i = 0; i < node.getChildCount(); i++) {
 			AST child = node.getChild(i);
 
-			if ((child.getType() == XQueryParser.Literal)
-					&& (child.getChild(0).getType() == XQueryParser.Str)) {
-				merged = (merged == null) ? child.getChild(0).getValue()
-						: merged + child.getChild(0).getValue();
+			if ((child.getType() == XQ.Str)) {
+				merged = (merged == null) ? child.getValue() : merged
+						+ child.getValue();
 			} else {
 				if (merged != null) {
 					if ((first) && (module.isBoundarySpaceStrip())) {
@@ -1165,12 +1173,12 @@ public class Compiler implements Translator {
 		if (parent == null) {
 			return false;
 		}
-		if (parent.getType() == XQueryParser.ContentSequence) {
+		if (parent.getType() == XQ.ContentSequence) {
 			parent = parent.getParent();
 		}
 
-		boolean parentIsConstructor = (parent.getType() == XQueryParser.CompElementConstructor)
-				|| (parent.getType() == XQueryParser.CompDocumentConstructor);
+		boolean parentIsConstructor = (parent.getType() == XQ.CompElementConstructor)
+				|| (parent.getType() == XQ.CompDocumentConstructor);
 
 		if (parentIsConstructor) {
 			table.resolve(Namespaces.FS_PARENT);
@@ -1228,35 +1236,35 @@ public class Compiler implements Translator {
 		Expr secondArg = expr(node.getChild(2), true);
 		AST cmpNode = node.getChild(0);
 		switch (cmpNode.getType()) {
-		case XQueryParser.ValueCompEQ:
+		case XQ.ValueCompEQ:
 			return new VCmpExpr(Cmp.eq, firstArg, secondArg);
-		case XQueryParser.ValueCompGE:
+		case XQ.ValueCompGE:
 			return new VCmpExpr(Cmp.ge, firstArg, secondArg);
-		case XQueryParser.ValueCompLE:
+		case XQ.ValueCompLE:
 			return new VCmpExpr(Cmp.le, firstArg, secondArg);
-		case XQueryParser.ValueCompLT:
+		case XQ.ValueCompLT:
 			return new VCmpExpr(Cmp.lt, firstArg, secondArg);
-		case XQueryParser.ValueCompGT:
+		case XQ.ValueCompGT:
 			return new VCmpExpr(Cmp.gt, firstArg, secondArg);
-		case XQueryParser.ValueCompNE:
+		case XQ.ValueCompNE:
 			return new VCmpExpr(Cmp.ne, firstArg, secondArg);
-		case XQueryParser.GeneralCompEQ:
+		case XQ.GeneralCompEQ:
 			return new GCmpExpr(Cmp.eq, firstArg, secondArg);
-		case XQueryParser.GeneralCompGE:
+		case XQ.GeneralCompGE:
 			return new GCmpExpr(Cmp.ge, firstArg, secondArg);
-		case XQueryParser.GeneralCompLE:
+		case XQ.GeneralCompLE:
 			return new GCmpExpr(Cmp.le, firstArg, secondArg);
-		case XQueryParser.GeneralCompLT:
+		case XQ.GeneralCompLT:
 			return new GCmpExpr(Cmp.lt, firstArg, secondArg);
-		case XQueryParser.GeneralCompGT:
+		case XQ.GeneralCompGT:
 			return new GCmpExpr(Cmp.gt, firstArg, secondArg);
-		case XQueryParser.GeneralCompNE:
+		case XQ.GeneralCompNE:
 			return new GCmpExpr(Cmp.ne, firstArg, secondArg);
-		case XQueryParser.NodeCompIs:
+		case XQ.NodeCompIs:
 			return new NodeCmpExpr(NodeCmp.is, firstArg, secondArg);
-		case XQueryParser.NodeCompFollows:
+		case XQ.NodeCompFollows:
 			return new NodeCmpExpr(NodeCmp.following, firstArg, secondArg);
-		case XQueryParser.NodeCompPrecedes:
+		case XQ.NodeCompPrecedes:
 			return new NodeCmpExpr(NodeCmp.preceding, firstArg, secondArg);
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
@@ -1268,53 +1276,28 @@ public class Compiler implements Translator {
 	protected Expr arithmeticExpr(AST node) throws QueryException {
 		ArithmeticOp op = null;
 		switch (node.getChild(0).getType()) {
-		case XQueryParser.AddOp:
+		case XQ.AddOp:
 			op = ArithmeticOp.PLUS;
 			break;
-		case XQueryParser.SubtractOp:
+		case XQ.SubtractOp:
 			op = ArithmeticOp.MINUS;
 			break;
-		case XQueryParser.MultiplyOp:
+		case XQ.MultiplyOp:
 			op = ArithmeticOp.MULT;
 			break;
-		case XQueryParser.DivideOp:
+		case XQ.DivideOp:
 			op = ArithmeticOp.DIV;
 			break;
-		case XQueryParser.IDivideOp:
+		case XQ.IDivideOp:
 			op = ArithmeticOp.IDIV;
 			break;
-		case XQueryParser.ModulusOp:
+		case XQ.ModulusOp:
 			op = ArithmeticOp.MOD;
 		}
 
 		Expr firstArg = expr(node.getChild(1), true);
 		Expr secondArg = expr(node.getChild(2), true);
 		return new ArithmeticExpr(op, firstArg, secondArg);
-	}
-
-	protected Atomic literal(AST node) throws QueryException {
-		AST literalNode = node.getChild(0);
-		switch (literalNode.getType()) {
-		case XQueryParser.Int:
-			return Int32.parse(literalNode.getValue());
-		case XQueryParser.Str:
-			return new Str(Whitespace.normalizeXML11(literalNode.getValue()));
-		case XQueryParser.Dbl:
-			return Dbl.parse(literalNode.getValue());
-		case XQueryParser.Dec:
-			return new Dec(literalNode.getValue());
-		case XQueryParser.Qname:
-			if (literalNode.getValue().contains(":")) {
-				throw new QueryException(
-						ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-						"Namespaces are not supported yet.");
-			}
-			return new QNm(literalNode.getValue());
-		default:
-			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-					"Unexpected AST literal node '%s' of type: %s",
-					literalNode, literalNode.getType());
-		}
 	}
 
 	protected Expr pathExpr(AST node) throws QueryException {
@@ -1371,7 +1354,7 @@ public class Compiler implements Translator {
 			throws QueryException {
 		AST child = node.getChild(position);
 
-		if (child.getType() != XQueryParser.StepExpr) {
+		if (child.getType() != XQ.StepExpr) {
 			return true;
 		}
 
@@ -1383,7 +1366,7 @@ public class Compiler implements Translator {
 		AST child = node.getChild(0);
 		Accessor axis;
 
-		if (child.getType() == XQueryParser.AxisSpec) {
+		if (child.getType() == XQ.AxisSpec) {
 			axis = axis(child.getChild(0));
 			child = node.getChild(1);
 		} else {
@@ -1416,29 +1399,29 @@ public class Compiler implements Translator {
 
 	protected Accessor axis(AST node) throws QueryException {
 		switch (node.getType()) {
-		case XQueryParser.CHILD:
+		case XQ.CHILD:
 			return Accessor.CHILD;
-		case XQueryParser.DESCENDANT:
+		case XQ.DESCENDANT:
 			return Accessor.DESCENDANT;
-		case XQueryParser.DESCENDANT_OR_SELF:
+		case XQ.DESCENDANT_OR_SELF:
 			return Accessor.DESCENDANT_OR_SELF;
-		case XQueryParser.ATTRIBUTE:
+		case XQ.ATTRIBUTE:
 			return Accessor.ATTRIBUTE;
-		case XQueryParser.PARENT:
+		case XQ.PARENT:
 			return Accessor.PARENT;
-		case XQueryParser.ANCESTOR:
+		case XQ.ANCESTOR:
 			return Accessor.ANCESTOR;
-		case XQueryParser.ANCESTOR_OR_SELF:
+		case XQ.ANCESTOR_OR_SELF:
 			return Accessor.ANCESTOR_OR_SELF;
-		case XQueryParser.FOLLOWING_SIBLING:
+		case XQ.FOLLOWING_SIBLING:
 			return Accessor.FOLLOWING_SIBLING;
-		case XQueryParser.FOLLOWING:
+		case XQ.FOLLOWING:
 			return Accessor.FOLLOWING;
-		case XQueryParser.PRECEDING:
+		case XQ.PRECEDING:
 			return Accessor.PRECEDING;
-		case XQueryParser.PRECEDING_SIBLING:
+		case XQ.PRECEDING_SIBLING:
 			return Accessor.PRECEDING_SIBLING;
-		case XQueryParser.SELF:
+		case XQ.SELF:
 			return Accessor.SELF;
 		default:
 			throw new QueryException(
@@ -1449,7 +1432,7 @@ public class Compiler implements Translator {
 
 	protected SequenceType sequenceType(AST node) throws QueryException {
 		AST child = node.getChild(0);
-		if (child.getType() == XQueryParser.EmptySequenceType) {
+		if (child.getType() == XQ.EmptySequenceType) {
 			return SequenceType.EMPTY_SEQUENCE;
 		}
 
@@ -1458,13 +1441,13 @@ public class Compiler implements Translator {
 
 		if (node.getChildCount() == 2) {
 			switch (node.getChild(1).getType()) {
-			case XQueryParser.CardinalityOneOrMany:
+			case XQ.CardinalityOneOrMany:
 				cardinality = Cardinality.OneOrMany;
 				break;
-			case XQueryParser.CardinalityZeroOrMany:
+			case XQ.CardinalityZeroOrMany:
 				cardinality = Cardinality.ZeroOrMany;
 				break;
-			case XQueryParser.CardinalityZeroOrOne:
+			case XQ.CardinalityZeroOrOne:
 				cardinality = Cardinality.ZeroOrOne;
 				break;
 			}
@@ -1475,22 +1458,22 @@ public class Compiler implements Translator {
 
 	protected ItemType itemType(AST node) throws QueryException {
 		switch (node.getType()) {
-		case XQueryParser.ItemType:
+		case XQ.ItemType:
 			return AnyItemType.ANY;
-		case XQueryParser.AtomicType:
-			return atomicType(node);
+		case XQ.AtomicOrUnionType:
+			return atomicOrUnionType(node);
 		default:
 			return kindTest(node);
 		}
 	}
 
-	protected ItemType atomicType(AST node) throws QueryException {
+	protected ItemType atomicOrUnionType(AST node) throws QueryException {
 		Type type = resolveType(node.getChild(0).getValue());
 		return new AtomicType(type);
 	}
 
 	protected KindTest itemTest(AST node, Axis axis) throws QueryException {
-		if (node.getType() == XQueryParser.NameTest) {
+		if (node.getType() == XQ.NameTest) {
 			return nameTest(node, axis);
 		} else {
 			return kindTest(node);
@@ -1499,23 +1482,23 @@ public class Compiler implements Translator {
 
 	protected KindTest kindTest(AST node) throws QueryException {
 		switch (node.getType()) {
-		case XQueryParser.KindTestAnyKind:
+		case XQ.KindTestAnyKind:
 			return AnyKindType.ANY_NODE;
-		case XQueryParser.KindTestText:
+		case XQ.KindTestText:
 			return new TextType();
-		case XQueryParser.KindTestElement:
+		case XQ.KindTestElement:
 			return elementTest(node);
-		case XQueryParser.KindTestAttribute:
+		case XQ.KindTestAttribute:
 			return attributeTest(node);
-		case XQueryParser.KindTestComment:
+		case XQ.KindTestComment:
 			return new CommentType();
-		case XQueryParser.KindTestDocument:
+		case XQ.KindTestDocument:
 			return documentTest(node);
-		case XQueryParser.KindTestPi:
+		case XQ.KindTestPi:
 			return new PIType();
-		case XQueryParser.KindTestSchemaElement:
+		case XQ.KindTestSchemaElement:
 			return schemaElementTest(node);
-		case XQueryParser.KindTestSchemaAttribute:
+		case XQ.KindTestSchemaAttribute:
 			return schemaAttributeTest(node);
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
@@ -1536,7 +1519,7 @@ public class Compiler implements Translator {
 	protected DocumentType documentTest(AST child) throws QueryException {
 		if (child.getChildCount() == 0)
 			return new DocumentType();
-		else if (child.getChild(0).getType() == XQueryParser.KindTestElement)
+		else if (child.getChild(0).getType() == XQ.KindTestElement)
 			return new DocumentType(elementTest(child.getChild(0)));
 		else
 			return new DocumentType(schemaElementTest(child.getChild(0)));
@@ -1563,8 +1546,8 @@ public class Compiler implements Translator {
 	}
 
 	protected QNm qNameOrWildcard(AST name) throws QueryException {
-		return (name.getType() == XQueryParser.Wildcard) ? null : module
-				.getNamespaces().qname(name.getValue());
+		return (name.getType() == XQ.Wildcard) ? null : module.getNamespaces()
+				.qname(name.getValue());
 	}
 
 	protected KindTest nameTest(AST child, Axis axis) throws QueryException {
@@ -1626,22 +1609,22 @@ public class Compiler implements Translator {
 		while (pos <= maxPos) {
 			AST clause = node.getChild(pos++);
 			switch (clause.getType()) {
-			case XQueryParser.ForClause:
+			case XQ.ForClause:
 				cb = forClause(clause, cb);
 				break;
-			case XQueryParser.LetClause:
+			case XQ.LetClause:
 				cb = letClause(clause, cb);
 				break;
-			case XQueryParser.WhereClause:
+			case XQ.WhereClause:
 				cb = whereClause(clause, cb);
 				break;
-			case XQueryParser.OrderByClause:
+			case XQ.OrderByClause:
 				cb = orderByClause(clause, cb);
 				break;
-			case XQueryParser.CountClause:
+			case XQ.CountClause:
 				cb = countClause(clause, cb);
 				break;
-			case XQueryParser.GroupByClause:
+			case XQ.GroupByClause:
 				cb = groupByClause(clause, cb);
 				break;
 			default:
@@ -1696,13 +1679,13 @@ public class Compiler implements Translator {
 		String collation = null;
 		for (int i = 1; i < orderBy.getChildCount(); i++) {
 			AST modifier = orderBy.getChild(i);
-			if (modifier.getType() == XQueryParser.OrderByKind) {
+			if (modifier.getType() == XQ.OrderByKind) {
 				AST direction = modifier.getChild(0);
-				asc = (direction.getType() == XQueryParser.ASCENDING);
-			} else if (modifier.getType() == XQueryParser.OrderByEmptyMode) {
+				asc = (direction.getType() == XQ.ASCENDING);
+			} else if (modifier.getType() == XQ.OrderByEmptyMode) {
 				AST empty = modifier.getChild(0);
-				emptyLeast = (empty.getType() == XQueryParser.LEAST);
-			} else if (modifier.getType() == XQueryParser.Collation) {
+				emptyLeast = (empty.getType() == XQ.LEAST);
+			} else if (modifier.getType() == XQ.Collation) {
 				collation = modifier.getChild(0).getValue();
 			}
 		}
@@ -1767,7 +1750,7 @@ public class Compiler implements Translator {
 		}
 		AST posBindingOrSourceExpr = forClause.getChild(forClausePos++);
 
-		if (posBindingOrSourceExpr.getType() == XQueryParser.TypedVariableBinding) {
+		if (posBindingOrSourceExpr.getType() == XQ.TypedVariableBinding) {
 			posVarName = module.getNamespaces().qname(
 					posBindingOrSourceExpr.getChild(0).getValue());
 			posBindingOrSourceExpr = forClause.getChild(forClausePos);

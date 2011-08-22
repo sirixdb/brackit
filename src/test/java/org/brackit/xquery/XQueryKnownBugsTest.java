@@ -260,6 +260,17 @@ public class XQueryKnownBugsTest extends XQueryBaseTest {
 	}
 
 	@Test
+	public void tmp() throws Exception {
+		new XQuery("<e attr=\"x{<e>a</e>, <e>b</e>, <e>c</e>, 1, 2, 3}y\"/>")
+				.serialize(ctx, System.out);
+		// new
+		// XQuery("fn:doc('tpcc.xml')/tpcc/Warehouses/Warehouse/Districts/District/Customers/Customer[@c_w_id = 1 and @c_d_id = 1 and @c_id = 416]/@c_balance/fn:data(.)").serialize(ctx,
+		// System.out);
+	}
+	
+	
+	
+	@Test
 	public void fromFile() throws Exception, IOException {
 		// storeDocument("tpcc.xml", new File("/docs/tpcc.xml"));
 		new XQuery(readQuery("./", "debug.xq")).serialize(ctx, System.out);

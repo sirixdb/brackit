@@ -347,12 +347,9 @@ public class Tokenizer {
 		if (c != ':') {
 			return new QNameToken(la.start, la.end, null, la.string());
 		}
-		e++;
 		Token la2 = laNCName(e);
 		if (la2 == null) {
-			return null;
-			// throw new Exception(String.format("Illegal QName '%s': %s",
-			// new String(input, pos, e - pos), paraphrase()));
+			return new QNameToken(la.start, la.end, null, la.string());
 		}
 		e = la2.end;
 		return new QNameToken(pos, e, la.string(), la2.string());
@@ -551,6 +548,10 @@ public class Tokenizer {
 			c = input[e++];
 			if ((c >= '0') && (c <= '9')) {
 				len++;
+			} else if (c == 'E') {
+				// found exponent
+				// should be parsed as double
+				return null;
 			} else {
 				break;
 			}
@@ -605,6 +606,10 @@ public class Tokenizer {
 			c = input[e++];
 			if ((c >= '0') && (c <= '9')) {
 				len++;
+			} else if (c == '.') {
+				// found decimal point
+				// should be parsed as floating point number
+				return null;
 			} else {
 				break;
 			}

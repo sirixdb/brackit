@@ -33,7 +33,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.ModuleResolver;
-import org.brackit.xquery.compiler.parser.XQueryParser;
+import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.expr.ReturnExpr;
 import org.brackit.xquery.expr.VCmpExpr.Cmp;
 import org.brackit.xquery.operator.Count;
@@ -69,7 +69,7 @@ public class PipelineCompiler extends Compiler {
 
 	@Override
 	protected Expr anyExpr(AST node) throws QueryException {
-		if (node.getType() == XQueryParser.ReturnExpr) {
+		if (node.getType() == XQ.ReturnExpr) {
 			// switch to bottom up compilation
 			return returnExpr(node);
 		}
@@ -97,21 +97,21 @@ public class PipelineCompiler extends Compiler {
 
 	protected Operator _anyOp(AST node) throws QueryException {
 		switch (node.getType()) {
-		case XQueryParser.Start:
+		case XQ.Start:
 			return new Start();
-		case XQueryParser.ForBind:
+		case XQ.ForBind:
 			return forBind(node);
-		case XQueryParser.LetBind:
+		case XQ.LetBind:
 			return letBind(node);
-		case XQueryParser.Selection:
+		case XQ.Selection:
 			return select(node);
-		case XQueryParser.OrderBy:
+		case XQ.OrderBy:
 			return orderBy(node);
-		case XQueryParser.Join:
+		case XQ.Join:
 			return join(node);
-		case XQueryParser.GroupBy:
+		case XQ.GroupBy:
 			return groupBy(node);
-		case XQueryParser.Count:
+		case XQ.Count:
 			return count(node);
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
@@ -148,12 +148,12 @@ public class PipelineCompiler extends Compiler {
 
 		boolean isGcmp = false;
 		switch (comparison.getChild(0).getType()) {
-		case XQueryParser.GeneralCompEQ:
-		case XQueryParser.GeneralCompGE:
-		case XQueryParser.GeneralCompLE:
-		case XQueryParser.GeneralCompLT:
-		case XQueryParser.GeneralCompGT:
-		case XQueryParser.GeneralCompNE:
+		case XQ.GeneralCompEQ:
+		case XQ.GeneralCompGE:
+		case XQ.GeneralCompLE:
+		case XQ.GeneralCompLT:
+		case XQ.GeneralCompGT:
+		case XQ.GeneralCompNE:
 			isGcmp = true;
 		}
 
@@ -182,29 +182,29 @@ public class PipelineCompiler extends Compiler {
 
 	private Cmp cmp(AST cmpNode) throws QueryException {
 		switch (cmpNode.getType()) {
-		case XQueryParser.ValueCompEQ:
+		case XQ.ValueCompEQ:
 			return Cmp.eq;
-		case XQueryParser.ValueCompGE:
+		case XQ.ValueCompGE:
 			return Cmp.ge;
-		case XQueryParser.ValueCompLE:
+		case XQ.ValueCompLE:
 			return Cmp.le;
-		case XQueryParser.ValueCompLT:
+		case XQ.ValueCompLT:
 			return Cmp.lt;
-		case XQueryParser.ValueCompGT:
+		case XQ.ValueCompGT:
 			return Cmp.gt;
-		case XQueryParser.ValueCompNE:
+		case XQ.ValueCompNE:
 			return Cmp.ne;
-		case XQueryParser.GeneralCompEQ:
+		case XQ.GeneralCompEQ:
 			return Cmp.eq;
-		case XQueryParser.GeneralCompGE:
+		case XQ.GeneralCompGE:
 			return Cmp.ge;
-		case XQueryParser.GeneralCompLE:
+		case XQ.GeneralCompLE:
 			return Cmp.le;
-		case XQueryParser.GeneralCompLT:
+		case XQ.GeneralCompLT:
 			return Cmp.lt;
-		case XQueryParser.GeneralCompGT:
+		case XQ.GeneralCompGT:
 			return Cmp.gt;
-		case XQueryParser.GeneralCompNE:
+		case XQ.GeneralCompNE:
 			return Cmp.ne;
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
@@ -228,7 +228,7 @@ public class PipelineCompiler extends Compiler {
 		}
 		AST posBindingOrSourceExpr = forClause.getChild(forClausePos++);
 
-		if (posBindingOrSourceExpr.getType() == XQueryParser.TypedVariableBinding) {
+		if (posBindingOrSourceExpr.getType() == XQ.TypedVariableBinding) {
 			posVarName = module.getNamespaces().qname(
 					posBindingOrSourceExpr.getChild(0).getValue());
 			posBindingOrSourceExpr = forClause.getChild(forClausePos);

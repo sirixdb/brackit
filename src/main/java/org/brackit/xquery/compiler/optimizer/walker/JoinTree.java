@@ -27,8 +27,8 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
-import static org.brackit.xquery.compiler.parser.XQueryParser.Join;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Start;
+import static org.brackit.xquery.compiler.XQ.Join;
+import static org.brackit.xquery.compiler.XQ.Start;
 
 import java.util.HashSet;
 

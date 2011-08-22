@@ -27,15 +27,15 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
-import static org.brackit.xquery.compiler.parser.XQueryParser.Count;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GroupBy;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GroupBySpec;
-import static org.brackit.xquery.compiler.parser.XQueryParser.LetBind;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ReturnExpr;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Start;
-import static org.brackit.xquery.compiler.parser.XQueryParser.TypedVariableBinding;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Variable;
-import static org.brackit.xquery.compiler.parser.XQueryParser.VariableRef;
+import static org.brackit.xquery.compiler.XQ.Count;
+import static org.brackit.xquery.compiler.XQ.GroupBy;
+import static org.brackit.xquery.compiler.XQ.GroupBySpec;
+import static org.brackit.xquery.compiler.XQ.LetBind;
+import static org.brackit.xquery.compiler.XQ.ReturnExpr;
+import static org.brackit.xquery.compiler.XQ.Start;
+import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
+import static org.brackit.xquery.compiler.XQ.Variable;
+import static org.brackit.xquery.compiler.XQ.VariableRef;
 
 import org.brackit.xquery.compiler.AST;
 

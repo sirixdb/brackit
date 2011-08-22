@@ -25,64 +25,71 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.optimizer.walker;
+package org.brackit.xquery.compiler.parser;
 
-import static org.brackit.xquery.compiler.XQ.Count;
-import static org.brackit.xquery.compiler.XQ.GroupBy;
-import static org.brackit.xquery.compiler.XQ.Selection;
-import static org.brackit.xquery.compiler.XQ.Start;
-
-import java.util.HashSet;
-
-import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.XQueryBaseTest;
+import org.junit.Test;
 
 /**
- * Push variable bindings downstream in a pipeline to reduce
- * number of tuples in a pipeline.
- * 
  * @author Sebastian Baechle
- * 
+ *
  */
-public class SelectPushdown extends PipelineVarTracker {
-
-	private HashSet<AST> pushed = new HashSet<AST>();
-
-	@Override
-	protected AST prepare(AST root) {
-		collectVars(root);
-		return root;
+public class XQParserTest extends XQueryBaseTest {
+	
+	@Test
+	public void ncname() throws Exception {
+		new XQParser("declare").parse().display();
 	}
-
-	@Override
-	protected AST visit(AST node) {
-		if (node.getType() != Selection) {
-			return node;
-		}
-		if (pushed.contains(node)) {
-			return node;
-		}
-		VarRef refs = varRefs(node.getChild(1), null);
-		final AST parent = node.getParent();
-		final AST in = node.getChild(0);
-		AST tmp = in;
-		while (tmp.getType() != Start) {
-			if (tmp.getType() == GroupBy) {
-				// TODO Pushdown is OK if bindings are grouping keys
-				break;
-			} else if (tmp.getType() == Count) {
-				break;
-			} else if ((refs != null) && declares(tmp, refs.first())) {
-				break;
-			}
-			tmp = tmp.getChild(0);
-		}
-		if (tmp == in) {
-			return node;
-		}
-		tmp.getParent().replaceChild(0, node);
-		node.replaceChild(0, tmp);
-		parent.replaceChild(0, in);
-		pushed.add(node);
-		return parent;
+	
+	@Test
+	public void qname() throws Exception {
+		new XQParser("declare").parse().display();
+	}
+	
+	@Test
+	public void emptyElement() throws Exception {
+		new XQParser("<a/>").parse().display();
+	}
+	
+	@Test
+	public void emptyElementWithWS() throws Exception {
+		new XQParser(" < a />").parse().display();
+	}
+	
+	@Test
+	public void nestedElements() throws Exception {
+		new XQParser("<a><b></b></a>").parse().display();
+	}
+	
+	@Test
+	public void nestedElementsWithWS() throws Exception {
+		new XQParser(" < a> <  b> </b  \n></ \n\na>").parse().display();
+	}
+	
+	@Test
+	public void emptyElementWithAttribute() throws Exception {
+		new XQParser("<a b='a'/>").parse().display();
+	}
+	
+	@Test
+	public void elementWithAttribute() throws Exception {
+		new XQParser("<a b='a'></a>").parse().display();
+	}
+	
+	
+	@Test
+	public void pathStepWithEQName() throws Exception {
+		new XQParser("//\"http://foo.com/bar\":test").parse().display();
+	}
+	
+	@Test
+	public void weirdPart2() throws Exception {
+		new XQParser("else- +-++-**-* instance  of element(*)* * * **---++div- div -div").parse().display();
+	}
+	
+	
+	@Test
+	public void weird() throws Exception {
+		new XQParser(readQuery("/parser/", "weird.xq")).parse().display();
 	}
 }
