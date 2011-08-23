@@ -162,16 +162,16 @@ public class Tokenizer {
 		}
 		return new Token(s, e);
 	}
-	
-	protected Token laSkipWSWS(String token) {
+
+	protected Token laSymSkipWS(String token) {
 		return laSkipWS(pos, token);
 	}
 
-	protected Token laSkipWSWS(Token prev, String token) {
+	protected Token laSymSkipWS(Token prev, String token) {
 		return laSkipWS(prev.end, token);
 	}
-	
-	private Token laSkipWSWS(int from, String token) {
+
+	private Token laSymSkipWS(int from, String token) {
 		int s = from + ws(from);
 		int e = s;
 		int len = token.length();
@@ -183,7 +183,26 @@ public class Tokenizer {
 				return null;
 			}
 		}
-		return ((e == end) || (XMLChar.isWS(input[e]))) ? new Token(s, e) : null;
+		boolean isSym = (e == end) || (isSymDel(input[e]));
+		return isSym ? new Token(s, e) : null;
+	}
+
+	private boolean isSymDel(char c) {
+		// char is (prefix of) a symbol separator (whitespace or comment)
+		// see A.2.2 Terminal Delimitation for details
+		return ((XMLChar.isWS(c)) || (c == '('));
+	}
+
+	private boolean isDelChar(char c) {
+		// char is (prefix of) delimiting terminal symbol
+		// see A.2.2 Terminal Delimitation for details
+		return ((XMLChar.isWS(c)) || (c == '!') || (c == '\'') || (c == '"')
+				|| (c == '#') || (c == '$') || (c == '%') || (c == '(')
+				|| (c == ')') || (c == '+') || (c == '-') || (c == ',')
+				|| (c == '-') || (c == '.') || (c == '/') || (c == ':')
+				|| (c == ';') || (c == '<') || (c == '=') || (c == '>')
+				|| (c == '?') || (c == '@') || (c == '[') || (c == ']')
+				|| (c == '{') || (c == '|') || (c == '}'));
 	}
 
 	protected Token la(int from, String token) {
@@ -218,9 +237,9 @@ public class Tokenizer {
 		consume(la);
 		return true;
 	}
-		
-	protected boolean attemptSkipWSWS(String token) {
-		Token la = laSkipWSWS(pos, token);
+
+	protected boolean attemptSymSkipWS(String token) {
+		Token la = laSymSkipWS(pos, token);
 		if (la == null) {
 			return false;
 		}
@@ -244,9 +263,9 @@ public class Tokenizer {
 					paraphrase());
 		}
 	}
-	
+
 	protected void consumeSkipWSWS(String token) throws TokenizerException {
-		Token la = laSkipWSWS(pos, token);
+		Token la = laSymSkipWS(pos, token);
 		if (la == null) {
 			throw new TokenizerException("Expected '%s': '%s'", token,
 					paraphrase());
@@ -302,7 +321,8 @@ public class Tokenizer {
 			start--;
 		}
 		String paraphrase = new String(preBuf, start + 1, preLen - start);
-		return String.format("[%s:%s|%s:%s] %s", line, linePos, pos, end, paraphrase);
+		return String.format("[%s:%s|%s:%s] %s", line, linePos, pos, end,
+				paraphrase);
 	}
 
 	protected Token laWS() {
@@ -481,7 +501,7 @@ public class Tokenizer {
 			}
 			len++;
 		}
-		if (len == 0) {
+		if ((len == 0) || ((e != end) && (!isDelChar(input[e - 1])))) {
 			return null;
 		}
 		return new Token(pos, pos + len);
@@ -581,7 +601,10 @@ public class Tokenizer {
 				}
 			}
 		}
-		return (len == 0) ? null : new Token(pos, pos + len);
+		if ((len == 0) || ((e != end) && (!isDelChar(input[e - 1])))) {
+			return null;
+		}
+		return new Token(pos, pos + len);
 	}
 
 	protected Token laDecimal(boolean cond) throws TokenizerException {
@@ -640,7 +663,10 @@ public class Tokenizer {
 				}
 			}
 		}
-		return (len == 0) ? null : new Token(pos, pos + len);
+		if ((len == 0) || ((e != end) && (!isDelChar(input[e - 1])))) {
+			return null;
+		}
+		return new Token(pos, pos + len);
 	}
 
 	protected Token laInteger(boolean cond) {
@@ -674,7 +700,10 @@ public class Tokenizer {
 				break;
 			}
 		}
-		return (len == 0) ? null : new Token(pos, pos + len);
+		if ((len == 0) || ((e != end) && (!isDelChar(input[e - 1])))) {
+			return null;
+		}
+		return new Token(pos, pos + len);
 	}
 
 	protected Token laString(boolean cond) throws TokenizerException {
