@@ -162,6 +162,29 @@ public class Tokenizer {
 		}
 		return new Token(s, e);
 	}
+	
+	protected Token laSkipWSWS(String token) {
+		return laSkipWS(pos, token);
+	}
+
+	protected Token laSkipWSWS(Token prev, String token) {
+		return laSkipWS(prev.end, token);
+	}
+	
+	private Token laSkipWSWS(int from, String token) {
+		int s = from + ws(from);
+		int e = s;
+		int len = token.length();
+		if (end - e < len) {
+			return null;
+		}
+		for (int i = 0; i < len; i++) {
+			if (token.charAt(i) != input[e++]) {
+				return null;
+			}
+		}
+		return ((e == end) || (XMLChar.isWS(input[e]))) ? new Token(s, e) : null;
+	}
 
 	protected Token la(int from, String token) {
 		int s = from;
@@ -195,6 +218,15 @@ public class Tokenizer {
 		consume(la);
 		return true;
 	}
+		
+	protected boolean attemptSkipWSWS(String token) {
+		Token la = laSkipWSWS(pos, token);
+		if (la == null) {
+			return false;
+		}
+		consume(la);
+		return true;
+	}
 
 	protected boolean attempt(String token) {
 		Token la = la(pos, token);
@@ -211,6 +243,15 @@ public class Tokenizer {
 			throw new TokenizerException("Expected end of query: %s",
 					paraphrase());
 		}
+	}
+	
+	protected void consumeSkipWSWS(String token) throws TokenizerException {
+		Token la = laSkipWSWS(pos, token);
+		if (la == null) {
+			throw new TokenizerException("Expected '%s': '%s'", token,
+					paraphrase());
+		}
+		consume(la);
 	}
 
 	protected void consumeSkipWS(String token) throws TokenizerException {

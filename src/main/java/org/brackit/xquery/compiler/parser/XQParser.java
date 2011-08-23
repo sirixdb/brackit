@@ -125,16 +125,16 @@ public class XQParser extends Tokenizer {
 	}
 
 	private boolean versionDecl() throws TokenizerException {
-		if (!attemptSkipWS("xquery")) {
+		if (!attemptSkipWSWS("xquery")) {
 			return false;
 		}
 		boolean vDecl = false;
 		boolean eDecl = false;
-		if (attemptSkipWS("version")) {
+		if (attemptSkipWSWS("version")) {
 			setXQVersion(stringLiteral(false, true).getValue());
 			vDecl = true;
 		}
-		if (attemptSkipWS("encoding")) {
+		if (attemptSkipWSWS("encoding")) {
 			setEncoding(stringLiteral(false, true).getValue());
 			eDecl = true;
 		}
@@ -146,7 +146,7 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST libraryModule() throws TokenizerException {
-		Token la = laSkipWS("module");
+		Token la = laSkipWSWS("module");
 		if (la == null) {
 			return null;
 		}
@@ -211,20 +211,20 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST defaultNamespaceDecl() throws TokenizerException {
-		Token la = laSkipWS("declare");
+		Token la = laSkipWSWS("declare");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "default");
+		Token la2 = laSkipWSWS(la, "default");
 		if (la2 == null) {
 			return null;
 		}
 		consume(la);
 		consume(la2);
 		AST decl;
-		if (attemptSkipWS("element")) {
+		if (attemptSkipWSWS("element")) {
 			decl = new AST(XQ.DefaultElementNamespace);
-		} else if (attemptSkipWS("function")) {
+		} else if (attemptSkipWSWS("function")) {
 			decl = new AST(XQ.DefaultFunctionNamespace);
 		} else {
 			throw new MismatchException("element", "function");
@@ -250,11 +250,11 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST boundarySpaceDecl() throws TokenizerException {
-		Token la = laSkipWS("declare");
+		Token la = laSkipWSWS("declare");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "boundary-space");
+		Token la2 = laSkipWSWS(la, "boundary-space");
 		if (la2 == null) {
 			return null;
 		}
@@ -272,15 +272,15 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST defaultCollationDecl() throws TokenizerException {
-		Token la = laSkipWS("declare");
+		Token la = laSkipWSWS("declare");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "default");
+		Token la2 = laSkipWSWS(la, "default");
 		if (la2 == null) {
 			return null;
 		}
-		Token la3 = laSkipWS(la2, "collation");
+		Token la3 = laSkipWSWS(la2, "collation");
 		if (la3 == null) {
 			return null;
 		}
@@ -293,11 +293,11 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST baseURIDecl() throws TokenizerException {
-		Token la = laSkipWS("declare");
+		Token la = laSkipWSWS("declare");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "base-uri");
+		Token la2 = laSkipWSWS(la, "base-uri");
 		if (la2 == null) {
 			return null;
 		}
@@ -309,11 +309,11 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST constructionDecl() throws TokenizerException {
-		Token la = laSkipWS("declare");
+		Token la = laSkipWSWS("declare");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "construction");
+		Token la2 = laSkipWSWS(la, "construction");
 		if (la2 == null) {
 			return null;
 		}
@@ -331,11 +331,11 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST orderingModeDecl() throws TokenizerException {
-		Token la = laSkipWS("declare");
+		Token la = laSkipWSWS("declare");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "ordering");
+		Token la2 = laSkipWSWS(la, "ordering");
 		if (la2 == null) {
 			return null;
 		}
@@ -353,19 +353,19 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST emptyOrderDecl() throws TokenizerException {
-		Token la = laSkipWS("declare");
+		Token la = laSkipWSWS("declare");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "default");
+		Token la2 = laSkipWSWS(la, "default");
 		if (la2 == null) {
 			return null;
 		}
-		Token la3 = laSkipWS(la2, "order");
+		Token la3 = laSkipWSWS(la2, "order");
 		if (la3 == null) {
 			return null;
 		}
-		Token la4 = laSkipWS(la3, "empty");
+		Token la4 = laSkipWSWS(la3, "empty");
 		if (la4 == null) {
 			return null;
 		}
@@ -386,11 +386,11 @@ public class XQParser extends Tokenizer {
 
 	// Begin XQuery Update Facility 1.0
 	private AST revalidationDecl() throws TokenizerException {
-		Token la = laSkipWS("declare");
+		Token la = laSkipWSWS("declare");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "revalidation");
+		Token la2 = laSkipWSWS(la, "revalidation");
 		if (la2 == null) {
 			return null;
 		}
@@ -412,11 +412,11 @@ public class XQParser extends Tokenizer {
 	// End XQuery Update Facility 1.0
 
 	private AST copyNamespacesDecl() throws TokenizerException {
-		Token la = laSkipWS("declare");
+		Token la = laSkipWSWS("declare");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "copy-namespaces");
+		Token la2 = laSkipWSWS(la, "copy-namespaces");
 		if (la2 == null) {
 			return null;
 		}
@@ -451,12 +451,12 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST decimalFormatDecl() throws TokenizerException {
-		Token la = laSkipWS("declare");
+		Token la = laSkipWSWS("declare");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "default");
-		Token la3 = laSkipWS((la2 != null) ? la2 : la, "decimal-format");
+		Token la2 = laSkipWSWS(la, "default");
+		Token la3 = laSkipWSWS((la2 != null) ? la2 : la, "decimal-format");
 		if (la3 == null) {
 			return null;
 		}
@@ -508,11 +508,11 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST namespaceDecl() throws TokenizerException {
-		Token la = laSkipWS("declare");
+		Token la = laSkipWSWS("declare");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "namespace");
+		Token la2 = laSkipWSWS(la, "namespace");
 		if (la2 == null) {
 			return null;
 		}
@@ -533,11 +533,11 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST schemaImport() throws TokenizerException {
-		Token la = laSkipWS("import");
+		Token la = laSkipWSWS("import");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "schema");
+		Token la2 = laSkipWSWS(la, "schema");
 		if (la2 == null) {
 			return null;
 		}
@@ -546,7 +546,7 @@ public class XQParser extends Tokenizer {
 		AST prefix = schemaPrefix();
 		AST uri = uriLiteral(false, true);
 		AST[] locs = new AST[0];
-		if (attemptSkipWS("at")) {
+		if (attemptSkipWSWS("at")) {
 			AST locUri;
 			while ((locUri = uriLiteral(true, true)) != null) {
 				locs = add(locs, locUri);
@@ -571,18 +571,18 @@ public class XQParser extends Tokenizer {
 			ns.addChild(ncname);
 			return ns;
 		}
-		la = laSkipWS("default");
-		consumeSkipWS("element");
-		consume("namespace");
+		la = laSkipWSWS("default");
+		consumeSkipWSWS("element");
+		consumeSkipWS("namespace");
 		return new AST(XQ.DefaultElementNamespace);
 	}
 
 	private AST moduleImport() throws TokenizerException {
-		Token la = laSkipWS("import");
+		Token la = laSkipWSWS("import");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "module");
+		Token la2 = laSkipWSWS(la, "module");
 		if (la2 == null) {
 			return null;
 		}
@@ -616,25 +616,25 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST contextItemDecl() throws TokenizerException {
-		Token la = laSkipWS("declare");
+		Token la = laSkipWSWS("declare");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "context");
+		Token la2 = laSkipWSWS(la, "context");
 		if (la2 == null) {
 			return null;
 		}
 		consume(la);
 		consume(la2);
-		consumeSkipWS("item");
+		consumeSkipWSWS("item");
 		AST ctxItemDecl = new AST(XQ.ContextItemDeclaration);
-		if (attemptSkipWS("as")) {
+		if (attemptSkipWSWS("as")) {
 			ctxItemDecl.addChild(itemType());
 		}
 		if (attemptSkipWS(":=")) {
 			ctxItemDecl.addChild(varValue());
 		} else {
-			consumeSkipWS("external");
+			consumeSkipWSWS("external");
 			ctxItemDecl.addChild(new AST(XQ.ExternalVariable));
 			if (attemptSkipWS(":=")) {
 				ctxItemDecl.addChild(varDefaultValue());
@@ -652,15 +652,15 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST annotatedDecl() throws TokenizerException {
-		Token la = laSkipWS("declare");
+		Token la = laSkipWSWS("declare");
 		if (la == null) {
 			return null;
 		}
 		// perform look ahead
-		if ((laSkipWS(la, "%") == null) && (laSkipWS(la, "variable") == null)
-				&& (laSkipWS(la, "function") == null)
+		if ((laSkipWS(la, "%") == null) && (laSkipWSWS(la, "variable") == null)
+				&& (laSkipWSWS(la, "function") == null)
 				// Begin XQuery Update Facility 1.0
-				&& (laSkipWS(la, "updating") == null)
+				&& (laSkipWSWS(la, "updating") == null)
 		// End XQuery Update Facility 1.0
 		) {
 			return null;
@@ -680,7 +680,7 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST varDecl() throws TokenizerException {
-		if (!attemptSkipWS("variable")) {
+		if (!attemptSkipWSWS("variable")) {
 			return null;
 		}
 		consumeSkipWS("$");
@@ -704,14 +704,14 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST functionDecl() throws TokenizerException {
-		if (!attemptSkipWS("function")) {
+		if (!attemptSkipWSWS("function")) {
 			return null;
 		}
 		openScope();
 		String varName = declare(eqnameLiteral(false, true).getValue());
 		AST funcDecl = new AST(XQ.FunctionDecl);
 		funcDecl.addChild(new AST(XQ.QNm, varName));
-		consume("(");
+		consumeSkipWS("(");
 		do {
 			AST param = param();
 			if (param == null) {
@@ -721,7 +721,7 @@ public class XQParser extends Tokenizer {
 		} while (attemptSkipWS(","));
 		consume(")");
 		offerScope();
-		if (attemptSkipWS("as")) {
+		if (attemptSkipWSWS("as")) {
 			funcDecl.addChild(sequenceType());
 		}
 		if (attemptSkipWS("external")) {
@@ -738,11 +738,11 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST optionDecl() throws TokenizerException {
-		Token la = laSkipWS("declare");
+		Token la = laSkipWSWS("declare");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "option");
+		Token la2 = laSkipWSWS(la, "option");
 		if (la2 == null) {
 			return null;
 		}
@@ -798,13 +798,13 @@ public class XQParser extends Tokenizer {
 
 	// Begin XQuery Update Facility 1.0
 	private AST insertExpr() throws TokenizerException {
-		Token la = laSkipWS("insert");
+		Token la = laSkipWSWS("insert");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "node");
+		Token la2 = laSkipWSWS(la, "node");
 		if (la2 == null) {
-			la2 = laSkipWS(la, "nodes");
+			la2 = laSkipWSWS(la, "nodes");
 		}
 		if (la2 == null) {
 			return null;
@@ -822,21 +822,21 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST insertExprTargetChoice() throws TokenizerException {
-		if (attemptSkipWS("as")) {
-			if (attemptSkipWS("first")) {
-				consumeSkipWS("into");
+		if (attemptSkipWSWS("as")) {
+			if (attemptSkipWSWS("first")) {
+				consumeSkipWSWS("into");
 				return new AST(XQ.InsertFirst);
-			} else if (attemptSkipWS("last")) {
-				consumeSkipWS("into");
+			} else if (attemptSkipWSWS("last")) {
+				consumeSkipWSWS("into");
 				return new AST(XQ.InsertLast);
 			} else {
 				throw new MismatchException("first", "last");
 			}
-		} else if (attemptSkipWS("into")) {
+		} else if (attemptSkipWSWS("into")) {
 			return new AST(XQ.InsertInto);
-		} else if (attemptSkipWS("after")) {
+		} else if (attemptSkipWSWS("after")) {
 			return new AST(XQ.InsertAfter);
-		} else if (attemptSkipWS("before")) {
+		} else if (attemptSkipWSWS("before")) {
 			return new AST(XQ.InsertBefore);
 		} else {
 			throw new MismatchException("as", "after", "before");
@@ -844,13 +844,13 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST deleteExpr() throws TokenizerException {
-		Token la = laSkipWS("delete");
+		Token la = laSkipWSWS("delete");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "node");
+		Token la2 = laSkipWSWS(la, "node");
 		if (la2 == null) {
-			la2 = laSkipWS(la, "nodes");
+			la2 = laSkipWSWS(la, "nodes");
 		}
 		if (la2 == null) {
 			return null;
@@ -864,18 +864,18 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST renameExpr() throws TokenizerException {
-		Token la = laSkipWS("rename");
+		Token la = laSkipWSWS("rename");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "node");
+		Token la2 = laSkipWSWS(la, "node");
 		if (la2 == null) {
 			return null;
 		}
 		consume(la);
 		consume(la2);
 		AST target = exprSingle();
-		consumeSkipWS("as");
+		consumeSkipWSWS("as");
 		AST newNameExpr = exprSingle();
 		AST expr = new AST(XQ.RenameExpr);
 		expr.addChild(target);
@@ -884,17 +884,17 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST replaceExpr() throws TokenizerException {
-		Token la = laSkipWS("replace");
+		Token la = laSkipWSWS("replace");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "value");
+		Token la2 = laSkipWSWS(la, "value");
 		if (la2 != null) {
-			Token la3 = laSkipWS(la2, "of");
+			Token la3 = laSkipWSWS(la2, "of");
 			if (la3 == null) {
 				return null;
 			}
-			Token la4 = laSkipWS(la3, "node");
+			Token la4 = laSkipWSWS(la3, "node");
 			if (la4 == null) {
 				return null;
 			}
@@ -904,13 +904,13 @@ public class XQParser extends Tokenizer {
 			consume(la4);
 			AST target = exprSingle();
 			AST expr = new AST(XQ.ReplaceValueExpr);
-			consumeSkipWS("with");
+			consumeSkipWSWS("with");
 			AST newExpr = exprSingle();
 			expr.addChild(target);
 			expr.addChild(newExpr);
 			return expr;
 		} else {
-			la2 = laSkipWS(la, "node");
+			la2 = laSkipWSWS(la, "node");
 			if (la2 == null) {
 				return null;
 			}
@@ -918,7 +918,7 @@ public class XQParser extends Tokenizer {
 			consume(la2);
 			AST target = exprSingle();
 			AST expr = new AST(XQ.ReplaceNodeExpr);
-			consumeSkipWS("with");
+			consumeSkipWSWS("with");
 			AST newExpr = exprSingle();
 			expr.addChild(target);
 			expr.addChild(newExpr);
@@ -927,7 +927,7 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST transformExpr() throws TokenizerException {
-		Token la = laSkipWS("copy");
+		Token la = laSkipWSWS("copy");
 		if (la == null) {
 			return null;
 		}
@@ -950,10 +950,10 @@ public class XQParser extends Tokenizer {
 			binding.addChild(exprSingle);
 			expr.addChild(binding);
 		} while (attemptSkipWS(","));
-		consumeSkipWS("modify");
+		consumeSkipWSWS("modify");
 		offerScope();
 		expr.addChild(exprSingle());
-		consumeSkipWS("return");
+		consumeSkipWSWS("return");
 		expr.addChild(exprSingle());
 		closeScope();
 		return expr;
@@ -989,7 +989,7 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST[] forClause() throws TokenizerException {
-		Token la = laSkipWS("for");
+		Token la = laSkipWSWS("for");
 		if (la == null) {
 			return null;
 		}
@@ -1009,15 +1009,15 @@ public class XQParser extends Tokenizer {
 		AST forClause = new AST(XQ.ForClause);
 		openScope();
 		forClause.addChild(typedVarBinding());
-		if (attemptSkipWS("allowing")) {
-			consumeSkipWS("empty");
+		if (attemptSkipWSWS("allowing")) {
+			consumeSkipWSWS("empty");
 			forClause.addChild(new AST(XQ.AllowingEmpty));
 		}
 		AST posVar = positionalVar();
 		if (posVar != null) {
 			forClause.addChild(posVar);
 		}
-		consumeSkipWS("in");		
+		consumeSkipWSWS("in");		
 		forClause.addChild(exprSingle());
 		offerScope();
 		return forClause;
@@ -1039,14 +1039,14 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST typeDeclaration() throws TokenizerException {
-		if (!attemptSkipWS("as")) {
+		if (!attemptSkipWSWS("as")) {
 			return null;
 		}
 		return sequenceType();
 	}
 
 	private AST positionalVar() throws TokenizerException {
-		if (!attemptSkipWS("at")) {
+		if (!attemptSkipWSWS("at")) {
 			return null;
 		}
 		consumeSkipWS("$");
@@ -1057,7 +1057,7 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST[] letClause() throws TokenizerException {
-		Token la = laSkipWS("let");
+		Token la = laSkipWSWS("let");
 		if (la == null) {
 			return null;
 		}
@@ -1075,18 +1075,18 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST[] windowClause() throws TokenizerException {
-		Token la = laSkipWS("for");
+		Token la = laSkipWSWS("for");
 		if (la == null) {
 			return null;
 		}
-		if (laSkipWS(la, "sliding") != null) {
+		if (laSkipWSWS(la, "sliding") != null) {
 			consume(la);
 			openScope();
 			AST clause = tumblingWindowClause();
 			offerScope();
 			return new AST[] { clause };
 		}
-		if (laSkipWS(la, "tumbling") != null) {
+		if (laSkipWSWS(la, "tumbling") != null) {
 			consume(la);
 			openScope();
 			AST clause = slidingWindowClause();
@@ -1097,11 +1097,11 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST tumblingWindowClause() throws TokenizerException {
-		Token la = laSkipWS("sliding");
+		Token la = laSkipWSWS("sliding");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "window");
+		Token la2 = laSkipWSWS(la, "window");
 		if (la2 == null) {
 			return null;
 		}
@@ -1118,31 +1118,31 @@ public class XQParser extends Tokenizer {
 			binding.addChild(typeDecl);
 		}
 		clause.addChild(binding);
-		consumeSkipWS("in");		
+		consumeSkipWSWS("in");		
 		clause.addChild(exprSingle());
 		clause.addChild(windowStartCondition());
-		if ((laSkipWS("only") != null) || (laSkipWS("end") != null)) {
+		if ((laSkipWSWS("only") != null) || (laSkipWSWS("end") != null)) {
 			clause.addChild(windowEndCondition());
 		}
 		return clause;
 	}
 
 	private AST windowStartCondition() throws TokenizerException {
-		consumeSkipWS("start");
+		consumeSkipWSWS("start");
 		AST cond = new AST(XQ.WindowStartCondition);
 		cond.addChildren(windowVars());
-		consumeSkipWS("when");
+		consumeSkipWSWS("when");
 		cond.addChild(exprSingle());
 		return cond;
 	}
 
 	private AST windowEndCondition() throws TokenizerException {
-		boolean only = attemptSkipWS("only");
-		consumeSkipWS("end");
+		boolean only = attemptSkipWSWS("only");
+		consumeSkipWSWS("end");
 		AST cond = new AST(XQ.WindowEndCondition);
 		cond.setProperty("only", Boolean.toString(only));
 		cond.addChildren(windowVars());
-		consumeSkipWS("when");
+		consumeSkipWSWS("when");
 		cond.addChild(exprSingle());
 		return cond;
 	}
@@ -1160,7 +1160,7 @@ public class XQParser extends Tokenizer {
 		if (posVar != null) {
 			vars = add(vars, posVar);
 		}
-		if (attemptSkipWS("previous")) {
+		if (attemptSkipWSWS("previous")) {
 			consumeSkipWS("$");
 			AST eqname = eqnameLiteral(false, false);
 			String varName = declare(eqname.getValue());
@@ -1168,7 +1168,7 @@ public class XQParser extends Tokenizer {
 			binding.addChild(new AST(XQ.Variable, varName));
 			vars = add(vars, binding);
 		}
-		if (attemptSkipWS("next")) {
+		if (attemptSkipWSWS("next")) {
 			consumeSkipWS("$");
 			AST eqname = eqnameLiteral(false, false);
 			String varName = declare(eqname.getValue());
@@ -1180,11 +1180,11 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST slidingWindowClause() throws TokenizerException {
-		Token la = laSkipWS("tumbling");
+		Token la = laSkipWSWS("tumbling");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSkipWS(la, "window");
+		Token la2 = laSkipWSWS(la, "window");
 		if (la2 == null) {
 			return null;
 		}
@@ -1202,7 +1202,7 @@ public class XQParser extends Tokenizer {
 			binding.addChild(typeDecl);
 		}
 		clause.addChild(binding);
-		consumeSkipWS("in");
+		consumeSkipWSWS("in");
 		clause.addChild(exprSingle());
 		clause.addChild(windowStartCondition());
 		clause.addChild(windowEndCondition());
@@ -1222,7 +1222,7 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST whereClause() throws TokenizerException {
-		if (!attemptSkipWS("where")) {
+		if (!attemptSkipWSWS("where")) {
 			return null;
 		}
 		AST whereClause = new AST(XQ.WhereClause);
@@ -1231,17 +1231,17 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST groupByClause() throws TokenizerException {
-		if (!attemptSkipWS("group")) {
+		if (!attemptSkipWSWS("group")) {
 			return null;
 		}
-		consumeSkipWS("by");
+		consumeSkipWSWS("by");
 		AST groupByClause = new AST(XQ.GroupByClause);
 		do {
 			consumeSkipWS("$");
 			AST gs = new AST(XQ.GroupBySpec);
 			String varName = resolve(eqnameLiteral(false, false).getValue());
 			gs.addChild(new AST(XQ.VariableRef, varName));
-			if (attemptSkipWS("collation")) {
+			if (attemptSkipWSWS("collation")) {
 				AST uriLiteral = uriLiteral(false, true);
 				AST collation = new AST(XQ.Collation);
 				collation.addChild(uriLiteral);
@@ -1252,38 +1252,38 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST orderByClause() throws TokenizerException {
-		if (attemptSkipWS("stable")) {
-			consumeSkipWS("order");
-		} else if (!attemptSkipWS("order")) {
+		if (attemptSkipWSWS("stable")) {
+			consumeSkipWSWS("order");
+		} else if (!attemptSkipWSWS("order")) {
 			return null;
 		}
-		consumeSkipWS("by");
+		consumeSkipWSWS("by");
 		AST clause = new AST(XQ.OrderByClause);
 		do {
 			AST os = new AST(XQ.OrderBySpec);
 			clause.addChild(os);
 			os.addChild(exprSingle());
-			if (attemptSkipWS("ascending")) {
+			if (attemptSkipWSWS("ascending")) {
 				AST obk = new AST(XQ.OrderByKind);
 				obk.addChild(new AST(XQ.ASCENDING));
 				os.addChild(obk);
-			} else if (attemptSkipWS("descending")) {
+			} else if (attemptSkipWSWS("descending")) {
 				AST obk = new AST(XQ.OrderByKind);
 				obk.addChild(new AST(XQ.DESCENDING));
 				os.addChild(obk);
 			}
-			if (attemptSkipWS("empty")) {
-				if (attemptSkipWS("greatest")) {
+			if (attemptSkipWSWS("empty")) {
+				if (attemptSkipWSWS("greatest")) {
 					AST obem = new AST(XQ.OrderByEmptyMode);
 					obem.addChild(new AST(XQ.GREATEST));
 					os.addChild(obem);
-				} else if (attemptSkipWS("least")) {
+				} else if (attemptSkipWSWS("least")) {
 					AST obem = new AST(XQ.OrderByEmptyMode);
 					obem.addChild(new AST(XQ.LEAST));
 					os.addChild(obem);
 				}
 			}
-			if (attemptSkipWS("collation")) {
+			if (attemptSkipWSWS("collation")) {
 				AST uriLiteral = uriLiteral(false, true);
 				AST collation = new AST(XQ.Collation);
 				collation.addChild(uriLiteral);
@@ -1294,7 +1294,7 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST countClause() throws TokenizerException {
-		Token la = laSkipWS("count");
+		Token la = laSkipWSWS("count");
 		if (la == null) {
 			return null;
 		}
@@ -1311,7 +1311,7 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST returnClause() throws TokenizerException {
-		consumeSkipWS("return");
+		consumeSkipWSWS("return");
 		AST returnExpr = new AST(XQ.ReturnClause);
 		returnExpr.addChild(exprSingle());
 		return returnExpr;
@@ -1319,9 +1319,9 @@ public class XQParser extends Tokenizer {
 
 	private AST quantifiedExpr() throws TokenizerException {
 		AST quantifier;
-		if (attemptSkipWS("some")) {
+		if (attemptSkipWSWS("some")) {
 			quantifier = new AST(XQ.SomeQuantifier);
-		} else if (attemptSkipWS("every")) {
+		} else if (attemptSkipWSWS("every")) {
 			quantifier = new AST(XQ.EveryQuantifier);
 		} else {
 			return null;
@@ -1333,7 +1333,7 @@ public class XQParser extends Tokenizer {
 		AST qExpr = new AST(XQ.QuantifiedExpr);
 		qExpr.addChild(quantifier);
 		qExpr.addChild(typedVarBinding());
-		consumeSkipWS("in");
+		consumeSkipWSWS("in");
 		qExpr.addChild(exprSingle());
 		while (attemptSkipWS(",")) {
 			AST binding = typedVarBinding();
@@ -1342,16 +1342,16 @@ public class XQParser extends Tokenizer {
 						paraphrase());
 			}
 			qExpr.addChild(binding);
-			consumeSkipWS("in");
+			consumeSkipWSWS("in");
 			qExpr.addChild(exprSingle());
 		}
-		consumeSkipWS("satisfies");
+		consumeSkipWSWS("satisfies");
 		qExpr.addChild(exprSingle());
 		return qExpr;
 	}
 
 	private AST switchExpr() throws TokenizerException {
-		Token la = laSkipWS("switch");
+		Token la = laSkipWSWS("switch");
 		if (la == null) {
 			return null;
 		}
@@ -1366,32 +1366,32 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS(")");
 		AST clause = switchClause();
 		if (clause == null) {
-			throw new TokenizerException("Excpected switch clause: %s",
+			throw new TokenizerException("Expected switch clause: %s",
 					paraphrase());
 		}
 		sExpr.addChild(clause);
 		while ((clause = switchClause()) != null) {
 			sExpr.addChild(clause);
 		}
-		consumeSkipWS("default");
-		consumeSkipWS("return");
+		consumeSkipWSWS("default");
+		consumeSkipWSWS("return");
 		sExpr.addChild(exprSingle());
 		return sExpr;
 	}
 
 	private AST switchClause() throws TokenizerException {
-		if (!attemptSkipWS("case")) {
+		if (!attemptSkipWSWS("case")) {
 			return null;
 		}
 		AST clause = new AST(XQ.SwitchClause);
 		clause.addChild(exprSingle());
-		consumeSkipWS("return");
+		consumeSkipWSWS("return");
 		clause.addChild(exprSingle());
 		return clause;
 	}
 
 	private AST typeswitchExpr() throws TokenizerException {
-		Token la = laSkipWS("typeswitch");
+		Token la = laSkipWSWS("typeswitch");
 		if (la == null) {
 			return null;
 		}
@@ -1406,14 +1406,14 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS(")");
 		AST clause = caseClause();
 		if (clause == null) {
-			throw new TokenizerException("Excpected case clause: %s",
+			throw new TokenizerException("Expected case clause: %s",
 					paraphrase());
 		}
 		tsExpr.addChild(clause);
 		while ((clause = caseClause()) != null) {
 			tsExpr.addChild(clause);
 		}
-		consumeSkipWS("default");
+		consumeSkipWSWS("default");
 		openScope();
 		AST dftClause = new AST(XQ.TypeSwitchCase);
 		if (attemptSkipWS("$")) {
@@ -1421,7 +1421,7 @@ public class XQParser extends Tokenizer {
 			String varName = declare(eqname.getValue());
 			dftClause.addChild(new AST(XQ.Variable, varName));
 		}
-		consumeSkipWS("return");
+		consumeSkipWSWS("return");
 		offerScope();
 		dftClause.addChild(exprSingle());
 		tsExpr.addChild(dftClause);
@@ -1430,7 +1430,7 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST caseClause() throws TokenizerException {
-		if (!attemptSkipWS("case")) {
+		if (!attemptSkipWSWS("case")) {
 			return null;
 		}
 		openScope();
@@ -1439,12 +1439,12 @@ public class XQParser extends Tokenizer {
 			AST eqname = eqnameLiteral(false, false);
 			String varName = declare(eqname.getValue());
 			clause.addChild(new AST(XQ.Variable, varName));
-			consumeSkipWS("as");
+			consumeSkipWSWS("as");
 		}
 		do {
 			clause.addChild(sequenceType());
 		} while (attemptSkipWS("|"));
-		consumeSkipWS("return");
+		consumeSkipWSWS("return");
 		offerScope();
 		clause.addChild(exprSingle());
 		closeScope();
@@ -1452,7 +1452,7 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST ifExpr() throws TokenizerException {
-		Token la = laSkipWS("if");
+		Token la = laSkipWSWS("if");
 		if (la == null) {
 			return null;
 		}
@@ -1465,15 +1465,15 @@ public class XQParser extends Tokenizer {
 		AST ifExpr = new AST(XQ.IfExpr);
 		ifExpr.addChild(exprSingle());
 		consumeSkipWS(")");
-		consumeSkipWS("then");
+		consumeSkipWSWS("then");
 		ifExpr.addChild(exprSingle());
-		consumeSkipWS("else");
+		consumeSkipWSWS("else");
 		ifExpr.addChild(exprSingle());
 		return ifExpr;
 	}
 
 	private AST tryCatchExpr() throws TokenizerException {
-		Token la = laSkipWS("try");
+		Token la = laSkipWSWS("try");
 		if (la == null) {
 			return null;
 		}
@@ -1499,7 +1499,7 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST tryClause() throws TokenizerException {
-		if (!attemptSkipWS("catch")) {
+		if (!attemptSkipWSWS("catch")) {
 			return null;
 		}
 		AST clause = new AST(XQ.CatchClause);
@@ -1538,9 +1538,7 @@ public class XQParser extends Tokenizer {
 
 	private AST orExpr() throws TokenizerException {
 		AST first = andExpr();
-		// additional space used to disambiguate
-		// 'expr() or expr()' and '... expr() order by...'
-		if (!attemptSkipWS("or ")) {
+		if (!attemptSkipWSWS("or")) {
 			return first;
 		}
 		AST second = andExpr();
@@ -1552,7 +1550,7 @@ public class XQParser extends Tokenizer {
 
 	private AST andExpr() throws TokenizerException {
 		AST first = comparisonExpr();
-		if (!attemptSkipWS("and")) {
+		if (!attemptSkipWSWS("and")) {
 			return first;
 		}
 		AST second = comparisonExpr();
@@ -1565,7 +1563,6 @@ public class XQParser extends Tokenizer {
 	private AST comparisonExpr() throws TokenizerException {
 		AST first = rangeExpr();
 		AST cmp;
-		// additional space used for disambiguation
 		if (attemptSkipWS("=")) {
 			cmp = new AST(XQ.GeneralCompEQ);
 		} else if (attemptSkipWS("!=")) {
@@ -1578,21 +1575,19 @@ public class XQParser extends Tokenizer {
 			cmp = new AST(XQ.GeneralCompGT);
 		} else if (attemptSkipWS(">=")) {
 			cmp = new AST(XQ.GeneralCompGE);
-		} else if (attemptSkipWS("eq")) {
+		} else if (attemptSkipWSWS("eq")) {
 			cmp = new AST(XQ.ValueCompEQ);
-		} else if (attemptSkipWS("neq")) {
+		} else if (attemptSkipWSWS("neq")) {
 			cmp = new AST(XQ.ValueCompNE);
-		} else if (attemptSkipWS("lt")) {
+		} else if (attemptSkipWSWS("lt")) {
 			cmp = new AST(XQ.ValueCompLT);
-		} else if (attemptSkipWS("le ")) {
-			// additional space used to disambiguate
-			// 'expr() le expr()' and '... expr() let $...'
+		} else if (attemptSkipWSWS("le")) {
 			cmp = new AST(XQ.ValueCompLE);
-		} else if (attemptSkipWS("gt")) {
+		} else if (attemptSkipWSWS("gt")) {
 			cmp = new AST(XQ.ValueCompGT);
-		} else if (attemptSkipWS("ge")) {
+		} else if (attemptSkipWSWS("ge")) {
 			cmp = new AST(XQ.ValueCompGE);
-		} else if (attemptSkipWS("is")) {
+		} else if (attemptSkipWSWS("is")) {
 			cmp = new AST(XQ.NodeCompIs);
 		} else if (attemptSkipWS("<<")) {
 			cmp = new AST(XQ.NodeCompPrecedes);
@@ -1611,7 +1606,7 @@ public class XQParser extends Tokenizer {
 
 	private AST rangeExpr() throws TokenizerException {
 		AST first = additiveExpr();
-		if (!attemptSkipWS("to")) {
+		if (!attemptSkipWSWS("to")) {
 			return first;
 		}
 		AST second = additiveExpr();
@@ -1647,12 +1642,11 @@ public class XQParser extends Tokenizer {
 			AST op;
 			if (attemptSkipWS("*")) {
 				op = new AST(XQ.MultiplyOp);
-			} else if (attemptSkipWS("div")) {
+			} else if (attemptSkipWSWS("div")) {
 				op = new AST(XQ.DivideOp);
-			} else if (attemptSkipWS("idiv")) {
+			} else if (attemptSkipWSWS("idiv")) {
 				op = new AST(XQ.IDivideOp);
-			} else if (attemptSkipWS("mod ")) {
-				// additional space used to disambiguate
+			} else if (attemptSkipWSWS("mod")) {
 				op = new AST(XQ.ModulusOp);
 			} else {
 				return first;
@@ -1668,7 +1662,7 @@ public class XQParser extends Tokenizer {
 
 	private AST unionExpr() throws TokenizerException {
 		AST first = intersectExpr();
-		if ((!attemptSkipWS("union")) && (!attemptSkipWS("|"))) {
+		if ((!attemptSkipWSWS("union")) && (!attemptSkipWS("|"))) {
 			return first;
 		}
 		AST second = intersectExpr();
@@ -1681,9 +1675,9 @@ public class XQParser extends Tokenizer {
 	private AST intersectExpr() throws TokenizerException {
 		AST first = instanceOfExpr();
 		AST expr;
-		if (attemptSkipWS("intersect")) {
+		if (attemptSkipWSWS("intersect")) {
 			expr = new AST(XQ.IntersectExpr);
-		} else if (attemptSkipWS("except")) {
+		} else if (attemptSkipWSWS("except")) {
 			expr = new AST(XQ.ExceptExpr);
 		} else {
 			return first;
@@ -1696,10 +1690,10 @@ public class XQParser extends Tokenizer {
 
 	private AST instanceOfExpr() throws TokenizerException {
 		AST first = treatExpr();
-		if (!attemptSkipWS("instance")) {
+		if (!attemptSkipWSWS("instance")) {
 			return first;
 		}
-		consumeSkipWS("of");
+		consumeSkipWSWS("of");
 		AST type = sequenceType();
 		AST expr = new AST(XQ.InstanceofExpr);
 		expr.addChild(first);
@@ -1802,7 +1796,7 @@ public class XQParser extends Tokenizer {
 	private AST annotation() throws TokenizerException {
 		// Begin XQuery Update Facility 1.0
 		// treat old-school updating keyword as special "annotation"
-		if (attemptSkipWS("updating")) {
+		if (attemptSkipWSWS("updating")) {
 			return new AST(XQ.Annotation, "updating");
 		}
 		// End XQuery Update Facility 1.0
@@ -1858,7 +1852,7 @@ public class XQParser extends Tokenizer {
 			} while (attemptSkipWS(","));
 			consumeSkipWS(")");
 		}
-		consumeSkipWS("as");
+		consumeSkipWSWS("as");
 		typedFunc.addChild(sequenceType());
 		return typedFunc;
 	}
@@ -1894,10 +1888,10 @@ public class XQParser extends Tokenizer {
 
 	private AST treatExpr() throws TokenizerException {
 		AST first = castableExpr();
-		if (!attemptSkipWS("treat")) {
+		if (!attemptSkipWSWS("treat")) {
 			return first;
 		}
-		consumeSkipWS("as");
+		consumeSkipWSWS("as");
 		AST type = sequenceType();
 		AST expr = new AST(XQ.TreatExpr);
 		expr.addChild(first);
@@ -1907,10 +1901,10 @@ public class XQParser extends Tokenizer {
 
 	private AST castableExpr() throws TokenizerException {
 		AST first = castExpr();
-		if (!attemptSkipWS("castable")) {
+		if (!attemptSkipWSWS("castable")) {
 			return first;
 		}
-		consumeSkipWS("as");
+		consumeSkipWSWS("as");
 		AST type = singleType();
 		AST expr = new AST(XQ.CastableExpr);
 		expr.addChild(first);
@@ -1920,12 +1914,10 @@ public class XQParser extends Tokenizer {
 
 	private AST castExpr() throws TokenizerException {
 		AST first = unaryExpr();
-		// additional space used to disambiguate
-		// 'expr() cast as...' and '... expr() castable ...'
-		if (!attemptSkipWS("cast ")) {
+		if (!attemptSkipWSWS("cast")) {
 			return first;
 		}
-		consumeSkipWS("as");
+		consumeSkipWSWS("as");
 		AST type = singleType();
 		AST expr = new AST(XQ.CastExpr);
 		expr.addChild(first);
@@ -2529,7 +2521,7 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST validateExpr() throws TokenizerException {
-		if (!attemptSkipWS("validate")) {
+		if (!attemptSkipWSWS("validate")) {
 			return null;
 		}
 		AST vExpr = new AST(XQ.ValidateExpr);
@@ -3130,7 +3122,7 @@ public class XQParser extends Tokenizer {
 			inlineFunc.addChild(param);
 		} while (attemptSkipWS(","));
 		consumeSkipWS(")");
-		if (attemptSkipWS("as")) {
+		if (attemptSkipWSWS("as")) {
 			inlineFunc.addChild(sequenceType());
 		}
 		inlineFunc.addChild(enclosedExpr());
