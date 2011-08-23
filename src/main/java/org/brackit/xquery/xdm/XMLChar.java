@@ -27,6 +27,11 @@
  */
 package org.brackit.xquery.xdm;
 
+/**
+ * 
+ * @author Sebastian Baechle
+ *
+ */
 public class XMLChar {
 
 	// TODO: Howto add range [#x10000-#xEFFFF]?
