@@ -27,10 +27,12 @@
  */
 package org.brackit.xquery.compiler.parser;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 
@@ -42,10 +44,16 @@ import org.brackit.xquery.compiler.XQ;
  */
 public class XQParser extends Tokenizer {
 
-	private class MismatchException extends QueryException {
-		private MismatchException(String... expected) {
-			super(ErrorCode.ERR_PARSING_ERROR, "Expected one of %s: '%s'",
-					Arrays.toString(expected), paraphrase());
+	private class XQTokenizerException extends TokenizerException {
+		private final QNm code;
+
+		protected XQTokenizerException(QNm code, String message, Object... args) {
+			super(message, args);
+			this.code = code;
+		}
+
+		QNm getCode() {
+			return code;
 		}
 	}
 
@@ -63,23 +71,34 @@ public class XQParser extends Tokenizer {
 
 	private VarScopes variables;
 
+	private ArrayDeque<String> stack;
+
 	public XQParser(String query) {
 		super(query);
 	}
 
 	public AST parse() throws QueryException {
-		AST module = module();
-		if (module == null) {
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"No module found");
+		try {
+			variables = new VarScopes();
+			stack = new ArrayDeque<String>();
+			AST module = module();
+			if (module == null) {
+				throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
+						"No module found");
+			}
+			consumeEOF();
+			AST xquery = new AST(XQ.XQuery);
+			xquery.addChild(module);
+			return xquery;
+		} catch (XQTokenizerException e) {
+			throw new QueryException(e, e.getCode(), e.getMessage());
+		} catch (Exception e) {
+			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
+					.getMessage());
 		}
-		consumeEOF();
-		AST xquery = new AST(XQ.XQuery);
-		xquery.addChild(module);
-		return xquery;
 	}
 
-	public void setXQVersion(String version) throws QueryException {
+	private void setXQVersion(String version) throws TokenizerException {
 		if ("3.0".equals(version)) {
 			this.version = version;
 		} else if ("1.0".equals(version)) {
@@ -87,8 +106,8 @@ public class XQParser extends Tokenizer {
 		} else if ("1.1".equals(version)) {
 			this.version = version;
 		} else {
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"unsupported version: " + version);
+			throw new TokenizerException("unsupported version '%s': %s",
+					version, paraphrase());
 		}
 	}
 
@@ -96,7 +115,7 @@ public class XQParser extends Tokenizer {
 		System.out.println("set encoding " + encoding);
 	}
 
-	private AST module() throws QueryException {
+	private AST module() throws TokenizerException {
 		versionDecl();
 		AST module = libraryModule();
 		if (module == null) {
@@ -105,7 +124,7 @@ public class XQParser extends Tokenizer {
 		return module;
 	}
 
-	private boolean versionDecl() throws QueryException {
+	private boolean versionDecl() throws TokenizerException {
 		if (!attemptSkipWS("xquery")) {
 			return false;
 		}
@@ -126,7 +145,7 @@ public class XQParser extends Tokenizer {
 		return true;
 	}
 
-	private AST libraryModule() throws QueryException {
+	private AST libraryModule() throws TokenizerException {
 		Token la = laSkipWS("module");
 		if (la == null) {
 			return null;
@@ -152,7 +171,7 @@ public class XQParser extends Tokenizer {
 		return module;
 	}
 
-	private AST mainModule() throws QueryException {
+	private AST mainModule() throws TokenizerException {
 		AST prolog = prolog();
 		AST body = queryBody();
 		AST module = new AST(XQ.MainModule);
@@ -163,7 +182,7 @@ public class XQParser extends Tokenizer {
 		return module;
 	}
 
-	private AST prolog() throws QueryException {
+	private AST prolog() throws TokenizerException {
 		AST prolog = new AST(XQ.Prolog);
 		while (true) {
 			AST def = defaultNamespaceDecl();
@@ -191,7 +210,7 @@ public class XQParser extends Tokenizer {
 		return prolog;
 	}
 
-	private AST defaultNamespaceDecl() throws QueryException {
+	private AST defaultNamespaceDecl() throws TokenizerException {
 		Token la = laSkipWS("declare");
 		if (la == null) {
 			return null;
@@ -215,7 +234,7 @@ public class XQParser extends Tokenizer {
 		return decl;
 	}
 
-	private AST setter() throws QueryException {
+	private AST setter() throws TokenizerException {
 		AST setter = boundarySpaceDecl();
 		setter = (setter != null) ? setter : defaultCollationDecl();
 		setter = (setter != null) ? setter : baseURIDecl();
@@ -230,7 +249,7 @@ public class XQParser extends Tokenizer {
 		return setter;
 	}
 
-	private AST boundarySpaceDecl() throws QueryException {
+	private AST boundarySpaceDecl() throws TokenizerException {
 		Token la = laSkipWS("declare");
 		if (la == null) {
 			return null;
@@ -252,7 +271,7 @@ public class XQParser extends Tokenizer {
 		return decl;
 	}
 
-	private AST defaultCollationDecl() throws QueryException {
+	private AST defaultCollationDecl() throws TokenizerException {
 		Token la = laSkipWS("declare");
 		if (la == null) {
 			return null;
@@ -273,7 +292,7 @@ public class XQParser extends Tokenizer {
 		return decl;
 	}
 
-	private AST baseURIDecl() throws QueryException {
+	private AST baseURIDecl() throws TokenizerException {
 		Token la = laSkipWS("declare");
 		if (la == null) {
 			return null;
@@ -289,7 +308,7 @@ public class XQParser extends Tokenizer {
 		return decl;
 	}
 
-	private AST constructionDecl() throws QueryException {
+	private AST constructionDecl() throws TokenizerException {
 		Token la = laSkipWS("declare");
 		if (la == null) {
 			return null;
@@ -311,7 +330,7 @@ public class XQParser extends Tokenizer {
 		return decl;
 	}
 
-	private AST orderingModeDecl() throws QueryException {
+	private AST orderingModeDecl() throws TokenizerException {
 		Token la = laSkipWS("declare");
 		if (la == null) {
 			return null;
@@ -333,7 +352,7 @@ public class XQParser extends Tokenizer {
 		return decl;
 	}
 
-	private AST emptyOrderDecl() throws QueryException {
+	private AST emptyOrderDecl() throws TokenizerException {
 		Token la = laSkipWS("declare");
 		if (la == null) {
 			return null;
@@ -366,7 +385,7 @@ public class XQParser extends Tokenizer {
 	}
 
 	// Begin XQuery Update Facility 1.0
-	private AST revalidationDecl() throws QueryException {
+	private AST revalidationDecl() throws TokenizerException {
 		Token la = laSkipWS("declare");
 		if (la == null) {
 			return null;
@@ -392,7 +411,7 @@ public class XQParser extends Tokenizer {
 
 	// End XQuery Update Facility 1.0
 
-	private AST copyNamespacesDecl() throws QueryException {
+	private AST copyNamespacesDecl() throws TokenizerException {
 		Token la = laSkipWS("declare");
 		if (la == null) {
 			return null;
@@ -411,7 +430,7 @@ public class XQParser extends Tokenizer {
 		return decl;
 	}
 
-	private AST preserveMode() throws QueryException {
+	private AST preserveMode() throws TokenizerException {
 		if (attemptSkipWS("preserve")) {
 			return new AST(XQ.CopyNamespacesPreserveModePreserve);
 		} else if (attemptSkipWS("no-preserve")) {
@@ -421,7 +440,7 @@ public class XQParser extends Tokenizer {
 		}
 	}
 
-	private AST inheritMode() throws QueryException {
+	private AST inheritMode() throws TokenizerException {
 		if (attemptSkipWS("inherit")) {
 			return new AST(XQ.CopyNamespacesInheritModeInherit);
 		} else if (attemptSkipWS("no-inherit")) {
@@ -431,7 +450,7 @@ public class XQParser extends Tokenizer {
 		}
 	}
 
-	private AST decimalFormatDecl() throws QueryException {
+	private AST decimalFormatDecl() throws TokenizerException {
 		Token la = laSkipWS("declare");
 		if (la == null) {
 			return null;
@@ -488,7 +507,7 @@ public class XQParser extends Tokenizer {
 		}
 	}
 
-	private AST namespaceDecl() throws QueryException {
+	private AST namespaceDecl() throws TokenizerException {
 		Token la = laSkipWS("declare");
 		if (la == null) {
 			return null;
@@ -508,12 +527,12 @@ public class XQParser extends Tokenizer {
 		return decl;
 	}
 
-	private AST importDecl() throws QueryException {
+	private AST importDecl() throws TokenizerException {
 		AST importDecl = schemaImport();
 		return (importDecl != null) ? importDecl : moduleImport();
 	}
 
-	private AST schemaImport() throws QueryException {
+	private AST schemaImport() throws TokenizerException {
 		Token la = laSkipWS("import");
 		if (la == null) {
 			return null;
@@ -542,7 +561,7 @@ public class XQParser extends Tokenizer {
 		return imp;
 	}
 
-	private AST schemaPrefix() throws QueryException {
+	private AST schemaPrefix() throws TokenizerException {
 		Token la = laSkipWS("namespace");
 		if (la != null) {
 			consume(la);
@@ -558,7 +577,7 @@ public class XQParser extends Tokenizer {
 		return new AST(XQ.DefaultElementNamespace);
 	}
 
-	private AST moduleImport() throws QueryException {
+	private AST moduleImport() throws TokenizerException {
 		Token la = laSkipWS("import");
 		if (la == null) {
 			return null;
@@ -596,7 +615,7 @@ public class XQParser extends Tokenizer {
 		return imp;
 	}
 
-	private AST contextItemDecl() throws QueryException {
+	private AST contextItemDecl() throws TokenizerException {
 		Token la = laSkipWS("declare");
 		if (la == null) {
 			return null;
@@ -624,15 +643,15 @@ public class XQParser extends Tokenizer {
 		return ctxItemDecl;
 	}
 
-	private AST varValue() throws QueryException {
+	private AST varValue() throws TokenizerException {
 		return exprSingle();
 	}
 
-	private AST varDefaultValue() throws QueryException {
+	private AST varDefaultValue() throws TokenizerException {
 		return exprSingle();
 	}
 
-	private AST annotatedDecl() throws QueryException {
+	private AST annotatedDecl() throws TokenizerException {
 		Token la = laSkipWS("declare");
 		if (la == null) {
 			return null;
@@ -660,7 +679,7 @@ public class XQParser extends Tokenizer {
 		return decl;
 	}
 
-	private AST varDecl() throws QueryException {
+	private AST varDecl() throws TokenizerException {
 		if (!attemptSkipWS("variable")) {
 			return null;
 		}
@@ -684,10 +703,11 @@ public class XQParser extends Tokenizer {
 		return varDecl;
 	}
 
-	private AST functionDecl() throws QueryException {
+	private AST functionDecl() throws TokenizerException {
 		if (!attemptSkipWS("function")) {
 			return null;
 		}
+		openScope();
 		String varName = declare(eqnameLiteral(false, true).getValue());
 		AST funcDecl = new AST(XQ.FunctionDecl);
 		funcDecl.addChild(new AST(XQ.QNm, varName));
@@ -700,6 +720,7 @@ public class XQParser extends Tokenizer {
 			funcDecl.addChild(param);
 		} while (attemptSkipWS(","));
 		consume(")");
+		offerScope();
 		if (attemptSkipWS("as")) {
 			funcDecl.addChild(sequenceType());
 		}
@@ -708,14 +729,15 @@ public class XQParser extends Tokenizer {
 		} else {
 			funcDecl.addChild(functionBody());
 		}
+		closeScope();
 		return funcDecl;
 	}
 
-	private AST functionBody() throws QueryException {
+	private AST functionBody() throws TokenizerException {
 		return enclosedExpr();
 	}
 
-	private AST optionDecl() throws QueryException {
+	private AST optionDecl() throws TokenizerException {
 		Token la = laSkipWS("declare");
 		if (la == null) {
 			return null;
@@ -732,14 +754,14 @@ public class XQParser extends Tokenizer {
 		return decl;
 	}
 
-	private AST queryBody() throws QueryException {
+	private AST queryBody() throws TokenizerException {
 		AST expr = expr();
 		AST body = new AST(XQ.QueryBody);
 		body.addChild(expr);
 		return body;
 	}
 
-	private AST expr() throws QueryException {
+	private AST expr() throws TokenizerException {
 		AST first = exprSingle();
 		if (!attemptSkipWS(",")) {
 			return first;
@@ -752,7 +774,7 @@ public class XQParser extends Tokenizer {
 		return sequenceExpr;
 	}
 
-	private AST exprSingle() throws QueryException {
+	private AST exprSingle() throws TokenizerException {
 		AST expr = flowrExpr();
 		expr = (expr != null) ? expr : quantifiedExpr();
 		expr = (expr != null) ? expr : switchExpr();
@@ -768,14 +790,14 @@ public class XQParser extends Tokenizer {
 		// End XQuery Update Facility 1.0
 		expr = (expr != null) ? expr : orExpr();
 		if (expr == null) {
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"Non-expression faced: %s", paraphrase());
+			throw new TokenizerException("Non-expression faced: %s",
+					paraphrase());
 		}
 		return expr;
 	}
 
 	// Begin XQuery Update Facility 1.0
-	private AST insertExpr() throws QueryException {
+	private AST insertExpr() throws TokenizerException {
 		Token la = laSkipWS("insert");
 		if (la == null) {
 			return null;
@@ -794,12 +816,12 @@ public class XQParser extends Tokenizer {
 		AST target = exprSingle();
 		AST expr = new AST(XQ.InsertExpr);
 		expr.addChild(targetChoice);
-		expr.addChild(src);		
+		expr.addChild(src);
 		expr.addChild(target);
 		return expr;
 	}
 
-	private AST insertExprTargetChoice() throws QueryException {
+	private AST insertExprTargetChoice() throws TokenizerException {
 		if (attemptSkipWS("as")) {
 			if (attemptSkipWS("first")) {
 				consumeSkipWS("into");
@@ -821,7 +843,7 @@ public class XQParser extends Tokenizer {
 		}
 	}
 
-	private AST deleteExpr() throws QueryException {
+	private AST deleteExpr() throws TokenizerException {
 		Token la = laSkipWS("delete");
 		if (la == null) {
 			return null;
@@ -841,7 +863,7 @@ public class XQParser extends Tokenizer {
 		return expr;
 	}
 
-	private AST renameExpr() throws QueryException {
+	private AST renameExpr() throws TokenizerException {
 		Token la = laSkipWS("rename");
 		if (la == null) {
 			return null;
@@ -861,7 +883,7 @@ public class XQParser extends Tokenizer {
 		return expr;
 	}
 
-	private AST replaceExpr() throws QueryException {
+	private AST replaceExpr() throws TokenizerException {
 		Token la = laSkipWS("replace");
 		if (la == null) {
 			return null;
@@ -904,7 +926,7 @@ public class XQParser extends Tokenizer {
 		}
 	}
 
-	private AST transformExpr() throws QueryException {
+	private AST transformExpr() throws TokenizerException {
 		Token la = laSkipWS("copy");
 		if (la == null) {
 			return null;
@@ -914,6 +936,7 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		consume(la); // consume 'copy'
+		openScope();
 		AST expr = new AST(XQ.TransformExpr);
 		// add all copy variables
 		do {
@@ -928,15 +951,18 @@ public class XQParser extends Tokenizer {
 			expr.addChild(binding);
 		} while (attemptSkipWS(","));
 		consumeSkipWS("modify");
+		offerScope();
 		expr.addChild(exprSingle());
 		consumeSkipWS("return");
 		expr.addChild(exprSingle());
+		closeScope();
 		return expr;
 	}
 
 	// End XQuery Update Facility 1.0
 
-	private AST flowrExpr() throws QueryException {
+	private AST flowrExpr() throws TokenizerException {
+		int scopeCount = scopeCount();
 		AST[] initialClause = initialClause();
 		if ((initialClause == null) || (initialClause.length == 0)) {
 			return null;
@@ -947,19 +973,22 @@ public class XQParser extends Tokenizer {
 		while ((intermediateClause = intermediateClause()) != null) {
 			flworExpr.addChildren(intermediateClause);
 		}
-		AST returnExpr = returnExpr();
+		AST returnExpr = returnClause();
 		flworExpr.addChild(returnExpr);
+		for (int i = scopeCount(); i > scopeCount; i--) {
+			closeScope();
+		}
 		return flworExpr;
 	}
 
-	private AST[] initialClause() throws QueryException {
+	private AST[] initialClause() throws TokenizerException {
 		AST[] clause = forClause();
 		clause = (clause != null) ? clause : letClause();
 		clause = (clause != null) ? clause : windowClause();
 		return clause;
 	}
 
-	private AST[] forClause() throws QueryException {
+	private AST[] forClause() throws TokenizerException {
 		Token la = laSkipWS("for");
 		if (la == null) {
 			return null;
@@ -968,7 +997,7 @@ public class XQParser extends Tokenizer {
 		if (laSkipWS(la, "$") == null) {
 			return null;
 		}
-		consume(la); // consume 'for'
+		consume(la); // consume 'for'		
 		AST[] forClauses = new AST[0];
 		do {
 			forClauses = add(forClauses, forBinding());
@@ -976,8 +1005,9 @@ public class XQParser extends Tokenizer {
 		return forClauses;
 	}
 
-	private AST forBinding() throws QueryException {
+	private AST forBinding() throws TokenizerException {
 		AST forClause = new AST(XQ.ForClause);
+		openScope();
 		forClause.addChild(typedVarBinding());
 		if (attemptSkipWS("allowing")) {
 			consumeSkipWS("empty");
@@ -987,12 +1017,13 @@ public class XQParser extends Tokenizer {
 		if (posVar != null) {
 			forClause.addChild(posVar);
 		}
-		consumeSkipWS("in");
+		consumeSkipWS("in");		
 		forClause.addChild(exprSingle());
+		offerScope();
 		return forClause;
 	}
 
-	private AST typedVarBinding() throws QueryException {
+	private AST typedVarBinding() throws TokenizerException {
 		if (!attemptSkipWS("$")) {
 			return null;
 		}
@@ -1007,14 +1038,14 @@ public class XQParser extends Tokenizer {
 		return binding;
 	}
 
-	private AST typeDeclaration() throws QueryException {
+	private AST typeDeclaration() throws TokenizerException {
 		if (!attemptSkipWS("as")) {
 			return null;
 		}
 		return sequenceType();
 	}
 
-	private AST positionalVar() throws QueryException {
+	private AST positionalVar() throws TokenizerException {
 		if (!attemptSkipWS("at")) {
 			return null;
 		}
@@ -1025,17 +1056,7 @@ public class XQParser extends Tokenizer {
 		return posVarBinding;
 	}
 
-	private String declare(String qname) {
-		System.out.println("Declare " + qname);
-		return qname;
-	}
-
-	private String resolve(String qname) {
-		System.out.println("Resolve " + qname);
-		return qname;
-	}
-
-	private AST[] letClause() throws QueryException {
+	private AST[] letClause() throws TokenizerException {
 		Token la = laSkipWS("let");
 		if (la == null) {
 			return null;
@@ -1044,30 +1065,38 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		consume(la); // consume 'let'
+		openScope();
 		AST letClause = new AST(XQ.LetClause);
 		letClause.addChild(typedVarBinding());
-		consumeSkipWS(":=");
+		consumeSkipWS(":=");	
 		letClause.addChild(exprSingle());
+		offerScope();
 		return new AST[] { letClause };
 	}
 
-	private AST[] windowClause() throws QueryException {
+	private AST[] windowClause() throws TokenizerException {
 		Token la = laSkipWS("for");
 		if (la == null) {
 			return null;
 		}
 		if (laSkipWS(la, "sliding") != null) {
 			consume(la);
-			return new AST[] { tumblingWindowClause() };
+			openScope();
+			AST clause = tumblingWindowClause();
+			offerScope();
+			return new AST[] { clause };
 		}
 		if (laSkipWS(la, "tumbling") != null) {
 			consume(la);
-			return new AST[] { slidingWindowClause() };
+			openScope();
+			AST clause = slidingWindowClause();
+			offerScope();
+			return new AST[] { clause };
 		}
 		return null;
 	}
 
-	private AST tumblingWindowClause() throws QueryException {
+	private AST tumblingWindowClause() throws TokenizerException {
 		Token la = laSkipWS("sliding");
 		if (la == null) {
 			return null;
@@ -1079,7 +1108,6 @@ public class XQParser extends Tokenizer {
 		consume(la);
 		consume(la2);
 		AST clause = new AST(XQ.TumblingWindowClause);
-
 		consumeSkipWS("$");
 		AST eqname = eqnameLiteral(false, false);
 		String varName = declare(eqname.getValue());
@@ -1090,7 +1118,7 @@ public class XQParser extends Tokenizer {
 			binding.addChild(typeDecl);
 		}
 		clause.addChild(binding);
-		consumeSkipWS("in");
+		consumeSkipWS("in");		
 		clause.addChild(exprSingle());
 		clause.addChild(windowStartCondition());
 		if ((laSkipWS("only") != null) || (laSkipWS("end") != null)) {
@@ -1099,7 +1127,7 @@ public class XQParser extends Tokenizer {
 		return clause;
 	}
 
-	private AST windowStartCondition() throws QueryException {
+	private AST windowStartCondition() throws TokenizerException {
 		consumeSkipWS("start");
 		AST cond = new AST(XQ.WindowStartCondition);
 		cond.addChildren(windowVars());
@@ -1108,7 +1136,7 @@ public class XQParser extends Tokenizer {
 		return cond;
 	}
 
-	private AST windowEndCondition() throws QueryException {
+	private AST windowEndCondition() throws TokenizerException {
 		boolean only = attemptSkipWS("only");
 		consumeSkipWS("end");
 		AST cond = new AST(XQ.WindowEndCondition);
@@ -1119,7 +1147,7 @@ public class XQParser extends Tokenizer {
 		return cond;
 	}
 
-	private AST[] windowVars() throws QueryException {
+	private AST[] windowVars() throws TokenizerException {
 		AST[] vars = new AST[0];
 		if (attemptSkipWS("$")) {
 			AST eqname = eqnameLiteral(false, false);
@@ -1151,7 +1179,7 @@ public class XQParser extends Tokenizer {
 		return vars;
 	}
 
-	private AST slidingWindowClause() throws QueryException {
+	private AST slidingWindowClause() throws TokenizerException {
 		Token la = laSkipWS("tumbling");
 		if (la == null) {
 			return null;
@@ -1181,7 +1209,7 @@ public class XQParser extends Tokenizer {
 		return null;
 	}
 
-	private AST[] intermediateClause() throws QueryException {
+	private AST[] intermediateClause() throws TokenizerException {
 		AST[] clauses = initialClause();
 		if (clauses != null) {
 			return clauses;
@@ -1193,7 +1221,7 @@ public class XQParser extends Tokenizer {
 		return (clause != null) ? new AST[] { clause } : null;
 	}
 
-	private AST whereClause() throws QueryException {
+	private AST whereClause() throws TokenizerException {
 		if (!attemptSkipWS("where")) {
 			return null;
 		}
@@ -1202,7 +1230,7 @@ public class XQParser extends Tokenizer {
 		return whereClause;
 	}
 
-	private AST groupByClause() throws QueryException {
+	private AST groupByClause() throws TokenizerException {
 		if (!attemptSkipWS("group")) {
 			return null;
 		}
@@ -1223,7 +1251,7 @@ public class XQParser extends Tokenizer {
 		return groupByClause;
 	}
 
-	private AST orderByClause() throws QueryException {
+	private AST orderByClause() throws TokenizerException {
 		if (attemptSkipWS("stable")) {
 			consumeSkipWS("order");
 		} else if (!attemptSkipWS("order")) {
@@ -1234,7 +1262,7 @@ public class XQParser extends Tokenizer {
 		do {
 			AST os = new AST(XQ.OrderBySpec);
 			clause.addChild(os);
-			os.addChild(exprSingle());			
+			os.addChild(exprSingle());
 			if (attemptSkipWS("ascending")) {
 				AST obk = new AST(XQ.OrderByKind);
 				obk.addChild(new AST(XQ.ASCENDING));
@@ -1260,12 +1288,12 @@ public class XQParser extends Tokenizer {
 				AST collation = new AST(XQ.Collation);
 				collation.addChild(uriLiteral);
 				os.addChild(collation);
-			}			
+			}
 		} while (attemptSkipWS(","));
 		return clause;
 	}
 
-	private AST countClause() throws QueryException {
+	private AST countClause() throws TokenizerException {
 		Token la = laSkipWS("count");
 		if (la == null) {
 			return null;
@@ -1282,16 +1310,14 @@ public class XQParser extends Tokenizer {
 		return countClause;
 	}
 
-	private AST returnExpr() throws QueryException {
-		if (!attemptSkipWS("return")) {
-			return null;
-		}
+	private AST returnClause() throws TokenizerException {
+		consumeSkipWS("return");
 		AST returnExpr = new AST(XQ.ReturnClause);
 		returnExpr.addChild(exprSingle());
 		return returnExpr;
 	}
 
-	private AST quantifiedExpr() throws QueryException {
+	private AST quantifiedExpr() throws TokenizerException {
 		AST quantifier;
 		if (attemptSkipWS("some")) {
 			quantifier = new AST(XQ.SomeQuantifier);
@@ -1312,8 +1338,8 @@ public class XQParser extends Tokenizer {
 		while (attemptSkipWS(",")) {
 			AST binding = typedVarBinding();
 			if (binding == null) {
-				throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-						"Expected variable binding: %s", paraphrase());
+				throw new TokenizerException("Expected variable binding: %s",
+						paraphrase());
 			}
 			qExpr.addChild(binding);
 			consumeSkipWS("in");
@@ -1324,7 +1350,7 @@ public class XQParser extends Tokenizer {
 		return qExpr;
 	}
 
-	private AST switchExpr() throws QueryException {
+	private AST switchExpr() throws TokenizerException {
 		Token la = laSkipWS("switch");
 		if (la == null) {
 			return null;
@@ -1340,8 +1366,8 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS(")");
 		AST clause = switchClause();
 		if (clause == null) {
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"Excpected switch clause: %s", paraphrase());
+			throw new TokenizerException("Excpected switch clause: %s",
+					paraphrase());
 		}
 		sExpr.addChild(clause);
 		while ((clause = switchClause()) != null) {
@@ -1353,7 +1379,7 @@ public class XQParser extends Tokenizer {
 		return sExpr;
 	}
 
-	private AST switchClause() throws QueryException {
+	private AST switchClause() throws TokenizerException {
 		if (!attemptSkipWS("case")) {
 			return null;
 		}
@@ -1364,7 +1390,7 @@ public class XQParser extends Tokenizer {
 		return clause;
 	}
 
-	private AST typeswitchExpr() throws QueryException {
+	private AST typeswitchExpr() throws TokenizerException {
 		Token la = laSkipWS("typeswitch");
 		if (la == null) {
 			return null;
@@ -1380,14 +1406,15 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS(")");
 		AST clause = caseClause();
 		if (clause == null) {
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"Excpected case clause: %s", paraphrase());
+			throw new TokenizerException("Excpected case clause: %s",
+					paraphrase());
 		}
 		tsExpr.addChild(clause);
 		while ((clause = caseClause()) != null) {
 			tsExpr.addChild(clause);
 		}
 		consumeSkipWS("default");
+		openScope();
 		AST dftClause = new AST(XQ.TypeSwitchCase);
 		if (attemptSkipWS("$")) {
 			AST eqname = eqnameLiteral(false, false);
@@ -1395,15 +1422,18 @@ public class XQParser extends Tokenizer {
 			dftClause.addChild(new AST(XQ.Variable, varName));
 		}
 		consumeSkipWS("return");
+		offerScope();
 		dftClause.addChild(exprSingle());
 		tsExpr.addChild(dftClause);
+		closeScope();
 		return tsExpr;
 	}
 
-	private AST caseClause() throws QueryException {
+	private AST caseClause() throws TokenizerException {
 		if (!attemptSkipWS("case")) {
 			return null;
 		}
+		openScope();
 		AST clause = new AST(XQ.TypeSwitchCase);
 		if (attemptSkipWS("$")) {
 			AST eqname = eqnameLiteral(false, false);
@@ -1415,11 +1445,13 @@ public class XQParser extends Tokenizer {
 			clause.addChild(sequenceType());
 		} while (attemptSkipWS("|"));
 		consumeSkipWS("return");
+		offerScope();
 		clause.addChild(exprSingle());
+		closeScope();
 		return clause;
 	}
 
-	private AST ifExpr() throws QueryException {
+	private AST ifExpr() throws TokenizerException {
 		Token la = laSkipWS("if");
 		if (la == null) {
 			return null;
@@ -1440,7 +1472,7 @@ public class XQParser extends Tokenizer {
 		return ifExpr;
 	}
 
-	private AST tryCatchExpr() throws QueryException {
+	private AST tryCatchExpr() throws TokenizerException {
 		Token la = laSkipWS("try");
 		if (la == null) {
 			return null;
@@ -1456,8 +1488,8 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS("}");
 		AST clause = tryClause();
 		if (clause == null) {
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"Excpected try clause: %s", paraphrase());
+			throw new TokenizerException("Excpected try clause: %s",
+					paraphrase());
 		}
 		tcExpr.addChild(clause);
 		while ((clause = tryClause()) != null) {
@@ -1466,7 +1498,7 @@ public class XQParser extends Tokenizer {
 		return tcExpr;
 	}
 
-	private AST tryClause() throws QueryException {
+	private AST tryClause() throws TokenizerException {
 		if (!attemptSkipWS("catch")) {
 			return null;
 		}
@@ -1479,7 +1511,7 @@ public class XQParser extends Tokenizer {
 		return clause;
 	}
 
-	private AST catchErrorList() throws QueryException {
+	private AST catchErrorList() throws TokenizerException {
 		AST list = new AST(XQ.CatchErrorList);
 		do {
 			list.addChild(nameTest());
@@ -1487,7 +1519,7 @@ public class XQParser extends Tokenizer {
 		return list;
 	}
 
-	private AST catchVars() throws QueryException {
+	private AST catchVars() throws TokenizerException {
 		consumeSkipWS("(");
 		AST vars = new AST(XQ.CatchVar);
 		consumeSkipWS("$");
@@ -1504,10 +1536,10 @@ public class XQParser extends Tokenizer {
 		return vars;
 	}
 
-	private AST orExpr() throws QueryException {
+	private AST orExpr() throws TokenizerException {
 		AST first = andExpr();
 		// additional space used to disambiguate
-		// 'expr() or expr()' and '... expr() order by...' 
+		// 'expr() or expr()' and '... expr() order by...'
 		if (!attemptSkipWS("or ")) {
 			return first;
 		}
@@ -1518,7 +1550,7 @@ public class XQParser extends Tokenizer {
 		return expr;
 	}
 
-	private AST andExpr() throws QueryException {
+	private AST andExpr() throws TokenizerException {
 		AST first = comparisonExpr();
 		if (!attemptSkipWS("and")) {
 			return first;
@@ -1530,7 +1562,7 @@ public class XQParser extends Tokenizer {
 		return expr;
 	}
 
-	private AST comparisonExpr() throws QueryException {
+	private AST comparisonExpr() throws TokenizerException {
 		AST first = rangeExpr();
 		AST cmp;
 		// additional space used for disambiguation
@@ -1572,12 +1604,12 @@ public class XQParser extends Tokenizer {
 		AST second = comparisonExpr();
 		AST expr = new AST(XQ.ComparisonExpr);
 		expr.addChild(cmp);
-		expr.addChild(first);		
+		expr.addChild(first);
 		expr.addChild(second);
 		return expr;
 	}
 
-	private AST rangeExpr() throws QueryException {
+	private AST rangeExpr() throws TokenizerException {
 		AST first = additiveExpr();
 		if (!attemptSkipWS("to")) {
 			return first;
@@ -1589,7 +1621,7 @@ public class XQParser extends Tokenizer {
 		return expr;
 	}
 
-	private AST additiveExpr() throws QueryException {
+	private AST additiveExpr() throws TokenizerException {
 		AST first = multiplicativeExpr();
 		while (true) {
 			AST op;
@@ -1609,7 +1641,7 @@ public class XQParser extends Tokenizer {
 		}
 	}
 
-	private AST multiplicativeExpr() throws QueryException {
+	private AST multiplicativeExpr() throws TokenizerException {
 		AST first = unionExpr();
 		while (true) {
 			AST op;
@@ -1634,7 +1666,7 @@ public class XQParser extends Tokenizer {
 		}
 	}
 
-	private AST unionExpr() throws QueryException {
+	private AST unionExpr() throws TokenizerException {
 		AST first = intersectExpr();
 		if ((!attemptSkipWS("union")) && (!attemptSkipWS("|"))) {
 			return first;
@@ -1646,7 +1678,7 @@ public class XQParser extends Tokenizer {
 		return expr;
 	}
 
-	private AST intersectExpr() throws QueryException {
+	private AST intersectExpr() throws TokenizerException {
 		AST first = instanceOfExpr();
 		AST expr;
 		if (attemptSkipWS("intersect")) {
@@ -1662,7 +1694,7 @@ public class XQParser extends Tokenizer {
 		return expr;
 	}
 
-	private AST instanceOfExpr() throws QueryException {
+	private AST instanceOfExpr() throws TokenizerException {
 		AST first = treatExpr();
 		if (!attemptSkipWS("instance")) {
 			return first;
@@ -1675,7 +1707,7 @@ public class XQParser extends Tokenizer {
 		return expr;
 	}
 
-	private AST sequenceType() throws QueryException {
+	private AST sequenceType() throws TokenizerException {
 		AST type = emptySequence();
 		AST occInd = null;
 		if (type == null) {
@@ -1690,7 +1722,7 @@ public class XQParser extends Tokenizer {
 		return typeDecl;
 	}
 
-	private AST emptySequence() throws QueryException {
+	private AST emptySequence() throws TokenizerException {
 		Token la = laSkipWS("empty-sequence");
 		if (la == null) {
 			return null;
@@ -1705,7 +1737,7 @@ public class XQParser extends Tokenizer {
 		return new AST(XQ.EmptySequenceType);
 	}
 
-	private AST anyKind() throws QueryException {
+	private AST anyKind() throws TokenizerException {
 		Token la = laSkipWS("item");
 		if (la == null) {
 			return null;
@@ -1733,7 +1765,7 @@ public class XQParser extends Tokenizer {
 		return null;
 	}
 
-	private AST itemType() throws QueryException {
+	private AST itemType() throws TokenizerException {
 		AST type = kindTest();
 		type = (type != null) ? type : anyKind();
 		type = (type != null) ? type : functionTest();
@@ -1742,7 +1774,7 @@ public class XQParser extends Tokenizer {
 		return type;
 	}
 
-	private AST functionTest() throws QueryException {
+	private AST functionTest() throws TokenizerException {
 		AST funcTest = null;
 		AST ann;
 		while ((ann = annotation()) != null) {
@@ -1755,8 +1787,8 @@ public class XQParser extends Tokenizer {
 		test = (test != null) ? test : typedFunctionTest();
 		if (test == null) {
 			if (funcTest != null) {
-				throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-						"Expected function test: %s", paraphrase());
+				throw new TokenizerException("Expected function test: %s",
+						paraphrase());
 			}
 			return null;
 		}
@@ -1767,7 +1799,7 @@ public class XQParser extends Tokenizer {
 		return funcTest;
 	}
 
-	private AST annotation() throws QueryException {
+	private AST annotation() throws TokenizerException {
 		// Begin XQuery Update Facility 1.0
 		// treat old-school updating keyword as special "annotation"
 		if (attemptSkipWS("updating")) {
@@ -1788,7 +1820,7 @@ public class XQParser extends Tokenizer {
 		return ann;
 	}
 
-	private AST anyFunctionTest() throws QueryException {
+	private AST anyFunctionTest() throws TokenizerException {
 		Token la = laSkipWS("namespace-node");
 		if (la == null) {
 			return null;
@@ -1808,7 +1840,7 @@ public class XQParser extends Tokenizer {
 		return new AST(XQ.AnyFunctionType);
 	}
 
-	private AST typedFunctionTest() throws QueryException {
+	private AST typedFunctionTest() throws TokenizerException {
 		Token la = laSkipWS("namespace-node");
 		if (la == null) {
 			return null;
@@ -1831,14 +1863,14 @@ public class XQParser extends Tokenizer {
 		return typedFunc;
 	}
 
-	private AST atomicOrUnionType() throws QueryException {
+	private AST atomicOrUnionType() throws TokenizerException {
 		AST eqname = eqnameLiteral(true, true);
 		AST aouType = new AST(XQ.AtomicOrUnionType);
 		aouType.addChild(eqname);
 		return aouType;
 	}
 
-	private AST parenthesizedItemType() throws QueryException {
+	private AST parenthesizedItemType() throws TokenizerException {
 		if (!attemptSkipWS("(")) {
 			return null;
 		}
@@ -1847,7 +1879,7 @@ public class XQParser extends Tokenizer {
 		return itemType;
 	}
 
-	private AST singleType() throws QueryException {
+	private AST singleType() throws TokenizerException {
 		AST aouType = atomicOrUnionType();
 		if (aouType == null) {
 			return null;
@@ -1860,7 +1892,7 @@ public class XQParser extends Tokenizer {
 		return type;
 	}
 
-	private AST treatExpr() throws QueryException {
+	private AST treatExpr() throws TokenizerException {
 		AST first = castableExpr();
 		if (!attemptSkipWS("treat")) {
 			return first;
@@ -1873,7 +1905,7 @@ public class XQParser extends Tokenizer {
 		return expr;
 	}
 
-	private AST castableExpr() throws QueryException {
+	private AST castableExpr() throws TokenizerException {
 		AST first = castExpr();
 		if (!attemptSkipWS("castable")) {
 			return first;
@@ -1886,7 +1918,7 @@ public class XQParser extends Tokenizer {
 		return expr;
 	}
 
-	private AST castExpr() throws QueryException {
+	private AST castExpr() throws TokenizerException {
 		AST first = unaryExpr();
 		// additional space used to disambiguate
 		// 'expr() cast as...' and '... expr() castable ...'
@@ -1901,7 +1933,7 @@ public class XQParser extends Tokenizer {
 		return expr;
 	}
 
-	private AST unaryExpr() throws QueryException {
+	private AST unaryExpr() throws TokenizerException {
 		int minusCount = 0;
 		while (true) {
 			if (attemptSkipWS("+")) {
@@ -1923,14 +1955,14 @@ public class XQParser extends Tokenizer {
 		return expr;
 	}
 
-	private AST valueExpr() throws QueryException {
+	private AST valueExpr() throws TokenizerException {
 		AST expr = validateExpr();
 		expr = (expr != null) ? expr : pathExpr();
 		expr = (expr != null) ? expr : extensionExpr();
 		return expr;
 	}
 
-	private AST extensionExpr() throws QueryException {
+	private AST extensionExpr() throws TokenizerException {
 		AST pragma = pragma();
 		if (pragma == null) {
 			return null;
@@ -1948,7 +1980,7 @@ public class XQParser extends Tokenizer {
 		return eExpr;
 	}
 
-	private AST pragma() throws QueryException {
+	private AST pragma() throws TokenizerException {
 		if (!attemptSkipWS("(#")) {
 			return null;
 		}
@@ -1962,20 +1994,20 @@ public class XQParser extends Tokenizer {
 		return pragma;
 	}
 
-	private AST pathExpr() throws QueryException {
+	private AST pathExpr() throws TokenizerException {
 		// treatment of initial '/' and '//' is
 		// delayed to relativePathExpr
 		return relativePathExpr();
 	}
 
-	private AST relativePathExpr() throws QueryException {
+	private AST relativePathExpr() throws TokenizerException {
 		AST[] path = null;
 		AST step;
 		if (attemptSkipWS("//")) {
 			step = stepExpr();
 			if (step == null) {
-				throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-						"Incomplete path step: %s", paraphrase());
+				throw new TokenizerException("Incomplete path step: %s",
+						paraphrase());
 			}
 			// initial '//' is translated to
 			// fn:root(self::node()) treat as
@@ -2013,8 +2045,8 @@ public class XQParser extends Tokenizer {
 			}
 			step = stepExpr();
 			if (step == null) {
-				throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-						"Incomplete path step: %s", paraphrase());
+				throw new TokenizerException("Incomplete path step: %s",
+						paraphrase());
 			}
 			path = add(path, step);
 		}
@@ -2051,7 +2083,7 @@ public class XQParser extends Tokenizer {
 		return treat;
 	}
 
-	private AST stepExpr() throws QueryException {
+	private AST stepExpr() throws TokenizerException {
 		AST expr = postFixExpr();
 		if (expr != null) {
 			return expr;
@@ -2059,7 +2091,7 @@ public class XQParser extends Tokenizer {
 		return axisStep();
 	}
 
-	private AST axisStep() throws QueryException {
+	private AST axisStep() throws TokenizerException {
 		AST[] step = forwardStep();
 		if (step == null) {
 			step = reverseStep();
@@ -2076,7 +2108,7 @@ public class XQParser extends Tokenizer {
 		return stepExpr;
 	}
 
-	private AST[] forwardStep() throws QueryException {
+	private AST[] forwardStep() throws TokenizerException {
 		AST forwardAxis = forwardAxis();
 		if (forwardAxis == null) {
 			return abbrevForwardStep();
@@ -2115,7 +2147,7 @@ public class XQParser extends Tokenizer {
 		return axis;
 	}
 
-	private AST[] abbrevForwardStep() throws QueryException {
+	private AST[] abbrevForwardStep() throws TokenizerException {
 		boolean attributeAxis = false;
 		if (attemptSkipWS("@")) {
 			attributeAxis = true;
@@ -2145,7 +2177,7 @@ public class XQParser extends Tokenizer {
 		}
 	}
 
-	private AST[] reverseStep() throws QueryException {
+	private AST[] reverseStep() throws TokenizerException {
 		AST forwardAxis = reverseAxis();
 		if (forwardAxis == null) {
 			return abbrevReverseStep();
@@ -2191,13 +2223,13 @@ public class XQParser extends Tokenizer {
 		return new AST[] { axisSpec, nameTest };
 	}
 
-	private AST nodeTest() throws QueryException {
+	private AST nodeTest() throws TokenizerException {
 		AST test = kindTest();
 		test = (test != null) ? test : nameTest();
 		return test;
 	}
 
-	private AST kindTest() throws QueryException {
+	private AST kindTest() throws TokenizerException {
 		AST test = documentTest();
 		test = (test != null) ? test : elementTest();
 		test = (test != null) ? test : attributeTest();
@@ -2211,7 +2243,7 @@ public class XQParser extends Tokenizer {
 		return test;
 	}
 
-	private AST documentTest() throws QueryException {
+	private AST documentTest() throws TokenizerException {
 		Token la = laSkipWS("document-node");
 		if (la == null) {
 			return null;
@@ -2235,7 +2267,7 @@ public class XQParser extends Tokenizer {
 		return docTest;
 	}
 
-	private AST elementTest() throws QueryException {
+	private AST elementTest() throws TokenizerException {
 		Token la = laSkipWS("element");
 		if (la == null) {
 			return null;
@@ -2269,7 +2301,7 @@ public class XQParser extends Tokenizer {
 		return elTest;
 	}
 
-	private AST attributeTest() throws QueryException {
+	private AST attributeTest() throws TokenizerException {
 		Token la = laSkipWS("attribute");
 		if (la == null) {
 			return null;
@@ -2303,7 +2335,7 @@ public class XQParser extends Tokenizer {
 		return attTest;
 	}
 
-	private AST schemaElementTest() throws QueryException {
+	private AST schemaElementTest() throws TokenizerException {
 		Token la = laSkipWS("schema-element");
 		if (la == null) {
 			return null;
@@ -2321,7 +2353,7 @@ public class XQParser extends Tokenizer {
 		return test;
 	}
 
-	private AST schemaAttributeTest() throws QueryException {
+	private AST schemaAttributeTest() throws TokenizerException {
 		Token la = laSkipWS("schema-attribute");
 		if (la == null) {
 			return null;
@@ -2339,7 +2371,7 @@ public class XQParser extends Tokenizer {
 		return test;
 	}
 
-	private AST piTest() throws QueryException {
+	private AST piTest() throws TokenizerException {
 		Token la = laSkipWS("processing-instruction");
 		if (la == null) {
 			return null;
@@ -2358,7 +2390,7 @@ public class XQParser extends Tokenizer {
 		return test;
 	}
 
-	private AST commentTest() throws QueryException {
+	private AST commentTest() throws TokenizerException {
 		Token la = laSkipWS("comment");
 		if (la == null) {
 			return null;
@@ -2373,7 +2405,7 @@ public class XQParser extends Tokenizer {
 		return new AST(XQ.KindTestComment);
 	}
 
-	private AST textTest() throws QueryException {
+	private AST textTest() throws TokenizerException {
 		Token la = laSkipWS("text");
 		if (la == null) {
 			return null;
@@ -2388,7 +2420,7 @@ public class XQParser extends Tokenizer {
 		return new AST(XQ.KindTestText);
 	}
 
-	private AST namespaceNodeTest() throws QueryException {
+	private AST namespaceNodeTest() throws TokenizerException {
 		Token la = laSkipWS("namespace-node");
 		if (la == null) {
 			return null;
@@ -2403,7 +2435,7 @@ public class XQParser extends Tokenizer {
 		return new AST(XQ.KindTestNamespaceNode);
 	}
 
-	private AST anyKindTest() throws QueryException {
+	private AST anyKindTest() throws TokenizerException {
 		Token la = laSkipWS("node");
 		if (la == null) {
 			return null;
@@ -2418,7 +2450,7 @@ public class XQParser extends Tokenizer {
 		return new AST(XQ.KindTestAnyKind);
 	}
 
-	private AST elementNameOrWildcard() throws QueryException {
+	private AST elementNameOrWildcard() throws TokenizerException {
 		AST enow = eqnameLiteral(true, true);
 		if (enow != null) {
 			return enow;
@@ -2429,7 +2461,7 @@ public class XQParser extends Tokenizer {
 		return null;
 	}
 
-	private AST attributeNameOrWildcard() throws QueryException {
+	private AST attributeNameOrWildcard() throws TokenizerException {
 		AST anow = eqnameLiteral(true, true);
 		if (anow != null) {
 			return anow;
@@ -2440,7 +2472,7 @@ public class XQParser extends Tokenizer {
 		return null;
 	}
 
-	private AST nameTest() throws QueryException {
+	private AST nameTest() throws TokenizerException {
 		AST test = eqnameLiteral(true, true);
 		test = (test != null) ? test : wildcard();
 		if (test == null) {
@@ -2451,7 +2483,7 @@ public class XQParser extends Tokenizer {
 		return nameTest;
 	}
 
-	private AST wildcard() throws QueryException {
+	private AST wildcard() throws TokenizerException {
 		if (attemptSkipWS("*:")) {
 			AST ncname = ncnameLiteral(true, true);
 			if (ncname == null) {
@@ -2476,7 +2508,7 @@ public class XQParser extends Tokenizer {
 		}
 	}
 
-	private AST[] predicateList() throws QueryException {
+	private AST[] predicateList() throws TokenizerException {
 		AST[] predicates = new AST[0];
 		AST predicate;
 		while ((predicate = predicate()) != null) {
@@ -2485,7 +2517,7 @@ public class XQParser extends Tokenizer {
 		return predicates;
 	}
 
-	private AST predicate() throws QueryException {
+	private AST predicate() throws TokenizerException {
 		if (!attemptSkipWS("[")) {
 			return null;
 		}
@@ -2496,7 +2528,7 @@ public class XQParser extends Tokenizer {
 
 	}
 
-	private AST validateExpr() throws QueryException {
+	private AST validateExpr() throws TokenizerException {
 		if (!attemptSkipWS("validate")) {
 			return null;
 		}
@@ -2516,7 +2548,7 @@ public class XQParser extends Tokenizer {
 		return vExpr;
 	}
 
-	private AST postFixExpr() throws QueryException {
+	private AST postFixExpr() throws TokenizerException {
 		AST expr = primaryExpr();
 		while (true) {
 			AST predicate = predicate();
@@ -2540,7 +2572,7 @@ public class XQParser extends Tokenizer {
 		return expr;
 	}
 
-	private AST[] argumentList() throws QueryException {
+	private AST[] argumentList() throws TokenizerException {
 		if (!attemptSkipWS("(")) {
 			return null;
 		}
@@ -2554,7 +2586,7 @@ public class XQParser extends Tokenizer {
 		return args;
 	}
 
-	private AST primaryExpr() throws QueryException {
+	private AST primaryExpr() throws TokenizerException {
 		AST expr = literal();
 		expr = (expr != null) ? expr : varRef();
 		expr = (expr != null) ? expr : parenthesizedExpr();
@@ -2567,13 +2599,13 @@ public class XQParser extends Tokenizer {
 		return expr;
 	}
 
-	private AST literal() throws QueryException {
+	private AST literal() throws TokenizerException {
 		AST lit = numericLiteral();
 		lit = (lit != null) ? lit : stringLiteral(true, true);
 		return lit;
 	}
 
-	private AST varRef() throws QueryException {
+	private AST varRef() throws TokenizerException {
 		if (!attemptSkipWS("$")) {
 			return null;
 		}
@@ -2581,7 +2613,7 @@ public class XQParser extends Tokenizer {
 				.getValue()));
 	}
 
-	private AST parenthesizedExpr() throws QueryException {
+	private AST parenthesizedExpr() throws TokenizerException {
 		if (!attemptSkipWS("(")) {
 			return null;
 		}
@@ -2600,14 +2632,8 @@ public class XQParser extends Tokenizer {
 		return new AST(XQ.ContextItemExpr);
 	}
 
-	private AST functionCall() throws QueryException {
-		Token la;
-		try {
-			la = laEQNameSkipWS(true);
-		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+	private AST functionCall() throws TokenizerException {
+		Token la = laEQNameSkipWS(true);
 		if (la == null) {
 			return null;
 		}
@@ -2624,7 +2650,7 @@ public class XQParser extends Tokenizer {
 		return call;
 	}
 
-	private AST argument() throws QueryException {
+	private AST argument() throws TokenizerException {
 		// changed order to match '?' greedy
 		if (attempt("?")) {
 			return new AST(XQ.ArgumentPlaceHolder);
@@ -2641,7 +2667,7 @@ public class XQParser extends Tokenizer {
 		return false;
 	}
 
-	private AST orderedExpr() throws QueryException {
+	private AST orderedExpr() throws TokenizerException {
 		Token la = laSkipWS("ordered");
 		if (la == null) {
 			return null;
@@ -2659,7 +2685,7 @@ public class XQParser extends Tokenizer {
 		return orderedExpr;
 	}
 
-	private AST unorderedExpr() throws QueryException {
+	private AST unorderedExpr() throws TokenizerException {
 		Token la = laSkipWS("unordered");
 		if (la == null) {
 			return null;
@@ -2677,20 +2703,20 @@ public class XQParser extends Tokenizer {
 		return unorderedExpr;
 	}
 
-	private AST constructor() throws QueryException {
+	private AST constructor() throws TokenizerException {
 		AST con = directConstructor();
 		con = (con != null) ? con : computedConstructor();
 		return con;
 	}
 
-	private AST directConstructor() throws QueryException {
+	private AST directConstructor() throws TokenizerException {
 		AST con = dirElemConstructor();
 		con = (con != null) ? con : dirCommentConstructor();
 		con = (con != null) ? con : dirPIConstructor();
 		return con;
 	}
 
-	private AST dirElemConstructor() throws QueryException {
+	private AST dirElemConstructor() throws TokenizerException {
 		if ((laSkipWS("</") != null) || (laSkipWS("<?") != null)
 				|| (!attemptSkipWS("<"))) {
 			return null;
@@ -2722,7 +2748,7 @@ public class XQParser extends Tokenizer {
 		return elem;
 	}
 
-	private AST dirAttribute() throws QueryException {
+	private AST dirAttribute() throws TokenizerException {
 		skipS();
 		AST qname = qnameLiteral(true, false);
 		if (qname == null) {
@@ -2751,7 +2777,7 @@ public class XQParser extends Tokenizer {
 		return att;
 	}
 
-	private AST quotAttrValue() throws QueryException {
+	private AST quotAttrValue() throws TokenizerException {
 		Token la = la("\"");
 		if (la != null) {
 			if (la(la, "\"") != null) {
@@ -2763,7 +2789,7 @@ public class XQParser extends Tokenizer {
 		return quotAttrValueContent();
 	}
 
-	private AST quotAttrValueContent() throws QueryException {
+	private AST quotAttrValueContent() throws TokenizerException {
 		Token content = laQuotAttrContentChar();
 		if (content != null) {
 			consume(content);
@@ -2772,7 +2798,7 @@ public class XQParser extends Tokenizer {
 		return commonContent();
 	}
 
-	private AST aposAttrValue() throws QueryException {
+	private AST aposAttrValue() throws TokenizerException {
 		Token la = la("'");
 		if (la != null) {
 			if (la(la, "'") != null) {
@@ -2784,7 +2810,7 @@ public class XQParser extends Tokenizer {
 		return aposAttrValueContent();
 	}
 
-	private AST aposAttrValueContent() throws QueryException {
+	private AST aposAttrValueContent() throws TokenizerException {
 		Token content = laAposAttrContentChar();
 		if (content != null) {
 			consume(content);
@@ -2793,16 +2819,10 @@ public class XQParser extends Tokenizer {
 		return commonContent();
 	}
 
-	private AST commonContent() throws QueryException {
-		Token c;
-		try {
-			c = laPredefEntityRef(false);
-			c = (c != null) ? c : laCharRef(false);
-			c = (c != null) ? c : laEscapeCurly();
-		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+	private AST commonContent() throws TokenizerException {
+		Token c = laPredefEntityRef(false);
+		c = (c != null) ? c : laCharRef(false);
+		c = (c != null) ? c : laEscapeCurly();
 		if (c != null) {
 			consume(c);
 			return new AST(XQ.Str, c.string());
@@ -2810,7 +2830,7 @@ public class XQParser extends Tokenizer {
 		return enclosedExpr();
 	}
 
-	private AST dirElemContent() throws QueryException {
+	private AST dirElemContent() throws TokenizerException {
 		AST c = directConstructor();
 		c = (c != null) ? c : cDataSection();
 		c = (c != null) ? c : commonContent();
@@ -2818,7 +2838,7 @@ public class XQParser extends Tokenizer {
 		return c;
 	}
 
-	private AST cDataSection() throws QueryException {
+	private AST cDataSection() throws TokenizerException {
 		if (!attempt("<![CDATA[")) {
 			return null;
 		}
@@ -2837,17 +2857,11 @@ public class XQParser extends Tokenizer {
 		return new AST(XQ.Str, content.string());
 	}
 
-	private AST dirCommentConstructor() throws QueryException {
+	private AST dirCommentConstructor() throws TokenizerException {
 		if (!attempt("<!--")) {
 			return null;
 		}
-		Token content;
-		try {
-			content = laCommentContents(false);
-		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+		Token content = laCommentContents(false);
 		consume(content);
 		consume("-->");
 		AST comment = new AST(XQ.CompCommentConstructor);
@@ -2855,29 +2869,17 @@ public class XQParser extends Tokenizer {
 		return comment;
 	}
 
-	private AST dirPIConstructor() throws QueryException {
+	private AST dirPIConstructor() throws TokenizerException {
 		// "<?" PITarget (S DirPIContents)? "?>"
 		if (!attempt("<?")) {
 			return null;
 		}
-		Token target;
-		try {
-			target = laPITarget(false);
-		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+		Token target = laPITarget(false);
 		consume(target);
 		AST piCon = new AST(XQ.DirPIConstructor);
 		piCon.addChild(new AST(XQ.PITarget, target.string()));
 		if (skipS()) {
-			Token content;
-			try {
-				content = laPIContents();
-			} catch (RuntimeException e) {
-				throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-						.getMessage());
-			}
+			Token content = laPIContents();
 			consume(content);
 			piCon.addChild(new AST(XQ.Str, content.string()));
 		}
@@ -2885,7 +2887,7 @@ public class XQParser extends Tokenizer {
 		return piCon;
 	}
 
-	private AST computedConstructor() throws QueryException {
+	private AST computedConstructor() throws TokenizerException {
 		AST c = compDocConstructor();
 		c = (c != null) ? c : compElemConstructor();
 		c = (c != null) ? c : compAttrConstructor();
@@ -2896,7 +2898,7 @@ public class XQParser extends Tokenizer {
 		return c;
 	}
 
-	private AST compDocConstructor() throws QueryException {
+	private AST compDocConstructor() throws TokenizerException {
 		Token la = laSkipWS("document");
 		if (la == null) {
 			return null;
@@ -2913,18 +2915,12 @@ public class XQParser extends Tokenizer {
 		return doc;
 	}
 
-	private AST compElemConstructor() throws QueryException {
+	private AST compElemConstructor() throws TokenizerException {
 		Token la = laSkipWS("element");
 		if (la == null) {
 			return null;
 		}
-		Token la2;
-		try {
-			la2 = laEQNameSkipWS(la, true);
-		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+		Token la2 = laEQNameSkipWS(la, true);
 		AST elem;
 		if (la2 != null) {
 			consume(la);
@@ -2953,18 +2949,12 @@ public class XQParser extends Tokenizer {
 		return elem;
 	}
 
-	private AST compAttrConstructor() throws QueryException {
+	private AST compAttrConstructor() throws TokenizerException {
 		Token la = laSkipWS("attribute");
 		if (la == null) {
 			return null;
 		}
-		Token la2;
-		try {
-			la2 = laEQNameSkipWS(la, true);
-		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+		Token la2 = laEQNameSkipWS(la, true);
 		AST attr;
 		if (la2 != null) {
 			consume(la);
@@ -2993,18 +2983,12 @@ public class XQParser extends Tokenizer {
 		return attr;
 	}
 
-	private AST compNamespaceConstructor() throws QueryException {
+	private AST compNamespaceConstructor() throws TokenizerException {
 		Token la = laSkipWS("namespace");
 		if (la == null) {
 			return null;
 		}
-		Token la2;
-		try {
-			la2 = laNCName(la);
-		} catch (RuntimeException e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+		Token la2 = laNCName(la);
 		AST ns;
 		if (la2 != null) {
 			consume(la);
@@ -3033,7 +3017,7 @@ public class XQParser extends Tokenizer {
 		return ns;
 	}
 
-	private AST compTextConstructor() throws QueryException {
+	private AST compTextConstructor() throws TokenizerException {
 		Token la = laSkipWS("text");
 		if (la == null) {
 			return null;
@@ -3050,7 +3034,7 @@ public class XQParser extends Tokenizer {
 		return doc;
 	}
 
-	private AST compCommentConstructor() throws QueryException {
+	private AST compCommentConstructor() throws TokenizerException {
 		Token la = laSkipWS("comment");
 		if (la == null) {
 			return null;
@@ -3067,18 +3051,12 @@ public class XQParser extends Tokenizer {
 		return doc;
 	}
 
-	private AST compPIConstructor() throws QueryException {
+	private AST compPIConstructor() throws TokenizerException {
 		Token la = laSkipWS("processing-instruction");
 		if (la == null) {
 			return null;
 		}
-		Token la2;
-		try {
-			la2 = laNCName(la);
-		} catch (RuntimeException e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+		Token la2 = laNCName(la);
 		AST pi;
 		if (la2 != null) {
 			consume(la);
@@ -3107,20 +3085,14 @@ public class XQParser extends Tokenizer {
 		return pi;
 	}
 
-	private AST functionItemExpr() throws QueryException {
+	private AST functionItemExpr() throws TokenizerException {
 		AST funcItem = literalFunctionItem();
 		funcItem = (funcItem != null) ? funcItem : inlineFunction();
 		return funcItem;
 	}
 
-	private AST literalFunctionItem() throws QueryException {
-		Token la;
-		try {
-			la = laEQNameSkipWS(true);
-		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+	private AST literalFunctionItem() throws TokenizerException {
+		Token la = laEQNameSkipWS(true);
 		if (la == null) {
 			return null;
 		}
@@ -3138,7 +3110,7 @@ public class XQParser extends Tokenizer {
 		return litFunc;
 	}
 
-	private AST inlineFunction() throws QueryException {
+	private AST inlineFunction() throws TokenizerException {
 		Token la = laSkipWS("function");
 		if (la == null) {
 			return null;
@@ -3165,7 +3137,7 @@ public class XQParser extends Tokenizer {
 		return inlineFunc;
 	}
 
-	private AST enclosedExpr() throws QueryException {
+	private AST enclosedExpr() throws TokenizerException {
 		if (!attemptSkipWS("{")) {
 			return null;
 		}
@@ -3174,7 +3146,7 @@ public class XQParser extends Tokenizer {
 		return expr;
 	}
 
-	private AST param() throws QueryException {
+	private AST param() throws TokenizerException {
 		if (!attemptSkipWS("$")) {
 			return null;
 		}
@@ -3190,45 +3162,34 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST stringLiteral(boolean cond, boolean skipWS)
-			throws QueryException {
-		Token la;
-		try {
-			la = (skipWS) ? laStringSkipWS(cond) : laString(cond);
-		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+			throws TokenizerException {
+		Token la = (skipWS) ? laStringSkipWS(cond) : laString(cond);
 		if (la == null) {
 			if (cond) {
 				return null;
 			}
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"Expected string literal: '%s'", paraphrase());
+			throw new TokenizerException("Expected string literal: '%s'",
+					paraphrase());
 		}
 		consume(la);
 		return new AST(XQ.Str, la.string());
 	}
 
-	private AST uriLiteral(boolean cond, boolean skipWS) throws QueryException {
-		Token la;
-		try {
-			la = (skipWS) ? laStringSkipWS(cond) : laString(cond);
-		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+	private AST uriLiteral(boolean cond, boolean skipWS)
+			throws TokenizerException {
+		Token la = (skipWS) ? laStringSkipWS(cond) : laString(cond);
 		if (la == null) {
 			if (cond) {
 				return null;
 			}
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"Expected URI literal: '%s'", paraphrase());
+			throw new TokenizerException("Expected URI literal: '%s'",
+					paraphrase());
 		}
 		consume(la);
 		return new AST(XQ.AnyURI, la.string());
 	}
 
-	private AST numericLiteral() throws QueryException {
+	private AST numericLiteral() throws TokenizerException {
 		AST lit = integerLiteral(true, true);
 		lit = (lit != null) ? lit : decimalLiteral(true, true);
 		lit = (lit != null) ? lit : doubleLiteral(true, true);
@@ -3236,133 +3197,88 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST ncnameLiteral(boolean cond, boolean skipWS)
-			throws QueryException {
-		Token la;
-		try {
-			la = (skipWS) ? laNCNameSkipWS() : laNCName();
-		} catch (RuntimeException e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+			throws TokenizerException {
+		Token la = (skipWS) ? laNCNameSkipWS() : laNCName();
 		if (la == null) {
 			if (cond) {
 				return null;
 			}
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"Expected NCName: '%s'", paraphrase());
+			throw new TokenizerException("Expected NCName: '%s'", paraphrase());
 		}
 		consume(la);
 		return new AST(XQ.Str, la.string());
 	}
 
 	private AST eqnameLiteral(boolean cond, boolean skipWS)
-			throws QueryException {
-		Token la;
-		try {
-			la = (skipWS) ? laEQNameSkipWS(cond) : laEQName(cond);
-		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+			throws TokenizerException {
+		Token la = (skipWS) ? laEQNameSkipWS(cond) : laEQName(cond);
 		if (la == null) {
 			if (cond) {
 				return null;
 			}
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"Expected QName: '%s'", paraphrase());
+			throw new TokenizerException("Expected QName: '%s'", paraphrase());
 		}
 		consume(la);
 		return new AST(XQ.QNm, la.string());
 	}
 
 	private AST qnameLiteral(boolean cond, boolean skipWS)
-			throws QueryException {
-		Token la;
-		try {
-			la = (skipWS) ? laQNameSkipWS() : laQName();
-		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+			throws TokenizerException {
+		Token la = (skipWS) ? laQNameSkipWS() : laQName();
 		if (la == null) {
 			if (cond) {
 				return null;
 			}
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"Expected QName: '%s'", paraphrase());
+			throw new TokenizerException("Expected QName: '%s'", paraphrase());
 		}
 		consume(la);
 		return new AST(XQ.QNm, la.string());
 	}
 
 	private AST doubleLiteral(boolean cond, boolean skipWS)
-			throws QueryException {
-		Token la;
-		try {
-			la = (skipWS) ? laDoubleSkipWS(cond) : laDouble(cond);
-		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+			throws TokenizerException {
+		Token la = (skipWS) ? laDoubleSkipWS(cond) : laDouble(cond);
 		if (la == null) {
 			if (cond) {
 				return null;
 			}
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"Expected double value: '%s'", paraphrase());
+			throw new TokenizerException("Expected double value: '%s'",
+					paraphrase());
 		}
 		consume(la);
 		return new AST(XQ.Dbl, la.string());
 	}
 
 	private AST decimalLiteral(boolean cond, boolean skipWS)
-			throws QueryException {
-		Token la;
-		try {
-			la = (skipWS) ? laDecimalSkipWS(cond) : laDecimal(cond);
-		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+			throws TokenizerException {
+		Token la = (skipWS) ? laDecimalSkipWS(cond) : laDecimal(cond);
 		if (la == null) {
 			if (cond) {
 				return null;
 			}
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"Expected decimal value: '%s'", paraphrase());
+			throw new TokenizerException("Expected decimal value: '%s'",
+					paraphrase());
 		}
 		consume(la);
 		return new AST(XQ.Dec, la.string());
 	}
 
 	private AST integerLiteral(boolean cond, boolean skipWS)
-			throws QueryException {
-		Token la;
-		try {
-			la = (skipWS) ? laIntegerSkipWS(cond) : laInteger(cond);
-		} catch (RuntimeException e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+			throws TokenizerException {
+		Token la = (skipWS) ? laIntegerSkipWS(cond) : laInteger(cond);
 		if (la == null) {
 			if (cond) {
 				return null;
 			}
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"Expected integer value: '%s'", paraphrase());
+			throw new TokenizerException("Expected integer value: '%s'",
+					paraphrase());
 		}
 		consume(la);
 		return new AST(XQ.Int, la.string());
 	}
 
-	private AST pragmaContent() throws QueryException {
-		Token la;
-		try {
-			la = laPragma(false);
-		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		}
+	private AST pragmaContent() throws TokenizerException {
+		Token la = laPragma(false);
 		consume(la);
 		return (la == null) ? null : new AST(XQ.PragmaContent, la.string());
 	}
@@ -3374,11 +3290,56 @@ public class XQParser extends Tokenizer {
 		return asts;
 	}
 
-	private void push(String name) {
-
+	private void push(String name) throws TokenizerException {
+		stack.push(name);
 	}
 
-	private void pop(String name) {
+	private void pop(String name) throws TokenizerException {
+		String top = stack.poll();
+		if ((top == null) || (!top.equals(name))) {
+			throw new TokenizerException("Expected closing tag </%s>: %s", top,
+					paraphrase());
+		}
+	}
 
+	private String declare(String qname) throws TokenizerException {
+		System.out.println("Declare " + qname);
+		try {
+			return variables.declare(qname);
+		} catch (QueryException e) {
+			throw new XQTokenizerException(e.getCode(), e.getMessage());
+		}
+	}
+
+	private String resolve(String qname) throws TokenizerException {
+		System.out.println("Resolve " + qname);
+		try {
+			return variables.resolve(qname);
+		} catch (QueryException e) {
+			throw new XQTokenizerException(e.getCode(), "%s: %s", e.getMessage(), paraphrase());
+		}
+	}
+
+	private void openScope() throws TokenizerException {
+		System.out.println("Open scope");
+		variables.openScope();
+	}
+	
+	private void offerScope() throws TokenizerException {
+		System.out.println("Offer scope");
+		variables.offerScope();
+	}
+
+	private void closeScope() throws TokenizerException {
+		System.out.println("Close scope");
+		try {
+			variables.closeScope();
+		} catch (QueryException e) {
+			throw new XQTokenizerException(e.getCode(), e.getMessage());
+		}
+	}
+
+	private int scopeCount() {
+		return variables.scopeCount();
 	}
 }

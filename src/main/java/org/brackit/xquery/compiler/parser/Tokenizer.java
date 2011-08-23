@@ -27,8 +27,8 @@
  */
 package org.brackit.xquery.compiler.parser;
 
-import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryException;
+import java.util.Arrays;
+
 import org.brackit.xquery.xdm.XMLChar;
 
 /**
@@ -42,6 +42,19 @@ public class Tokenizer {
 	private int lastScanEnd;
 	private final int end;
 	private final char[] input;
+
+	public class TokenizerException extends Exception {
+		public TokenizerException(String message, Object... args) {
+			super(String.format(message, args));
+		}
+	}
+
+	public class MismatchException extends TokenizerException {
+		public MismatchException(String... expected) {
+			super("Expected one of %s: '%s'", Arrays.toString(expected),
+					paraphrase());
+		}
+	}
 
 	protected class Token {
 		final int start;
@@ -192,19 +205,19 @@ public class Tokenizer {
 		return true;
 	}
 
-	protected void consumeEOF() throws QueryException {
+	protected void consumeEOF() throws TokenizerException {
 		int ws = ws(pos);
 		if (pos + ws != end) {
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"Expected end of query: %s", paraphrase());
+			throw new TokenizerException("Expected end of query: %s",
+					paraphrase());
 		}
 	}
 
-	protected void consumeSkipWS(String token) throws QueryException {
+	protected void consumeSkipWS(String token) throws TokenizerException {
 		Token la = laSkipWS(pos, token);
 		if (la == null) {
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"Expected '%s': '%s'", token, paraphrase());
+			throw new TokenizerException("Expected '%s': '%s'", token,
+					paraphrase());
 		}
 		consume(la);
 	}
@@ -215,11 +228,11 @@ public class Tokenizer {
 		pos = token.end;
 	}
 
-	protected void consume(String token) throws QueryException {
+	protected void consume(String token) throws TokenizerException {
 		Token la = la(pos, token);
 		if (la == null) {
-			throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-					"Expected '%s' after: '%s'", token, paraphrase());
+			throw new TokenizerException("Expected '%s' after: '%s'", token,
+					paraphrase());
 		}
 		consumeSkipWS(token);
 	}
@@ -236,7 +249,7 @@ public class Tokenizer {
 			}
 		}
 		char[] preBuf = new char[60];
-		int preLen = 60 - 1;
+		final int preLen = 60 - 1;
 		int start = preLen;
 		p = (pos == end) ? pos - 1 : pos;
 		while ((p >= 0) && (start > 0)) {
@@ -244,10 +257,11 @@ public class Tokenizer {
 					|| ((start < preLen) && (!XMLChar.isWS(preBuf[start + 1])))) {
 				preBuf[start] = input[p];
 			}
+			p--;
 			start--;
 		}
-		String paraphrase = new String(preBuf, start, preBuf.length);
-		return "[" + line + ":" + linePos + "]" + paraphrase;
+		String paraphrase = new String(preBuf, start + 1, preLen - start);
+		return String.format("[%s:%s|%s:%s] %s", line, linePos, pos, end, paraphrase);
 	}
 
 	protected Token laWS() {
@@ -355,24 +369,27 @@ public class Tokenizer {
 		return new QNameToken(pos, e, la.string(), la2.string());
 	}
 
-	protected EQNameToken laEQName(boolean cond) throws Exception {
+	protected EQNameToken laEQName(boolean cond) throws TokenizerException {
 		return laEQName(pos, cond);
 	}
 
 	protected EQNameToken laEQNameSkipWS(Token token, boolean cond)
-			throws Exception {
+			throws TokenizerException {
 		return laEQName(token.end + ws(token.end), cond);
 	}
 
-	protected EQNameToken laEQNameSkipWS(boolean cond) throws Exception {
+	protected EQNameToken laEQNameSkipWS(boolean cond)
+			throws TokenizerException {
 		return laEQName(pos + ws(pos), cond);
 	}
 
-	protected EQNameToken laEQName(Token token, boolean cond) throws Exception {
+	protected EQNameToken laEQName(Token token, boolean cond)
+			throws TokenizerException {
 		return laEQName(token.end, cond);
 	}
 
-	private EQNameToken laEQName(int pos, boolean cond) throws Exception {
+	private EQNameToken laEQName(int pos, boolean cond)
+			throws TokenizerException {
 		QNameToken la = laQName(pos);
 		if (la != null) {
 			return la;
@@ -429,19 +446,20 @@ public class Tokenizer {
 		return new Token(pos, pos + len);
 	}
 
-	protected Token laDouble(boolean cond) throws Exception {
+	protected Token laDouble(boolean cond) throws TokenizerException {
 		return laDouble(pos, cond);
 	}
 
-	protected Token laDoubleSkipWS(boolean cond) throws Exception {
+	protected Token laDoubleSkipWS(boolean cond) throws TokenizerException {
 		return laDouble(pos + ws(pos), cond);
 	}
 
-	protected Token laDouble(Token token, boolean cond) throws Exception {
+	protected Token laDouble(Token token, boolean cond)
+			throws TokenizerException {
 		return laDouble(token.end, cond);
 	}
 
-	private Token laDouble(int pos, boolean cond) throws Exception {
+	private Token laDouble(int pos, boolean cond) throws TokenizerException {
 		int e = pos;
 		int len = 0;
 		char c = 0;
@@ -464,9 +482,9 @@ public class Tokenizer {
 					if (cond) {
 						return null;
 					}
-					throw new Exception(String.format(
+					throw new TokenizerException(
 							"Invalid numerical literal '%s': %s", new String(
-									input, pos, e - pos), paraphrase()));
+									input, pos, e - pos), paraphrase());
 				}
 				len++;
 			}
@@ -486,9 +504,9 @@ public class Tokenizer {
 				if (cond) {
 					return null;
 				}
-				throw new Exception(String.format(
+				throw new TokenizerException(
 						"Invalid numerical literal '%s': %s", new String(input,
-								pos, e - pos), paraphrase()));
+								pos, e - pos), paraphrase());
 			}
 			c = input[e++];
 			if ((c == '-') || (c == '+')) {
@@ -497,9 +515,9 @@ public class Tokenizer {
 					if (cond) {
 						return null;
 					}
-					throw new Exception(String.format(
+					throw new TokenizerException(
 							"Invalid numerical literal '%s': %s", new String(
-									input, pos, e - pos), paraphrase()));
+									input, pos, e - pos), paraphrase());
 				}
 				c = input[e++];
 			}
@@ -507,9 +525,9 @@ public class Tokenizer {
 				if (cond) {
 					return null;
 				}
-				throw new Exception(String.format(
+				throw new TokenizerException(
 						"Invalid numerical literal '%s': %s", new String(input,
-								pos, e - pos), paraphrase()));
+								pos, e - pos), paraphrase());
 			}
 			len++;
 			// remaining digits after are optional
@@ -525,19 +543,20 @@ public class Tokenizer {
 		return (len == 0) ? null : new Token(pos, pos + len);
 	}
 
-	protected Token laDecimal(boolean cond) throws Exception {
+	protected Token laDecimal(boolean cond) throws TokenizerException {
 		return laDecimal(pos, cond);
 	}
 
-	protected Token laDecimalSkipWS(boolean cond) throws Exception {
+	protected Token laDecimalSkipWS(boolean cond) throws TokenizerException {
 		return laDecimal(pos + ws(pos), cond);
 	}
 
-	protected Token laDecimal(Token token, boolean cond) throws Exception {
+	protected Token laDecimal(Token token, boolean cond)
+			throws TokenizerException {
 		return laDecimal(token.end, cond);
 	}
 
-	private Token laDecimal(int pos, boolean cond) throws Exception {
+	private Token laDecimal(int pos, boolean cond) throws TokenizerException {
 		int e = pos;
 		int len = 0;
 		char c = 0;
@@ -564,9 +583,9 @@ public class Tokenizer {
 					if (cond) {
 						return null;
 					}
-					throw new Exception(String.format(
+					throw new TokenizerException(
 							"Invalid numerical literal '%s': %s", new String(
-									input, pos, e - pos), paraphrase()));
+									input, pos, e - pos), paraphrase());
 				}
 				len++;
 			}
@@ -617,19 +636,20 @@ public class Tokenizer {
 		return (len == 0) ? null : new Token(pos, pos + len);
 	}
 
-	protected Token laString(boolean cond) throws Exception {
+	protected Token laString(boolean cond) throws TokenizerException {
 		return laString(pos, cond);
 	}
 
-	protected Token laStringSkipWS(boolean cond) throws Exception {
+	protected Token laStringSkipWS(boolean cond) throws TokenizerException {
 		return laString(pos + ws(pos), cond);
 	}
 
-	protected Token laString(Token token, boolean cond) throws Exception {
+	protected Token laString(Token token, boolean cond)
+			throws TokenizerException {
 		return laString(token.end, cond);
 	}
 
-	private Token laString(int pos, boolean cond) throws Exception {
+	private Token laString(int pos, boolean cond) throws TokenizerException {
 		Token begin = la(pos, "'");
 		if (begin != null) {
 			String s = scanAposStringLiteral(begin.end, cond);
@@ -640,8 +660,8 @@ public class Tokenizer {
 				if (cond) {
 					return null;
 				}
-				throw new Exception(String.format(
-						"Unclosed string literal: %s", paraphrase()));
+				throw new TokenizerException("Unclosed string literal: %s",
+						paraphrase());
 			}
 		} else {
 			begin = la(pos, "\"");
@@ -654,19 +674,19 @@ public class Tokenizer {
 					if (cond) {
 						return null;
 					}
-					throw new Exception(String.format(
-							"Unclosed string literal: %s", paraphrase()));
+					throw new TokenizerException("Unclosed string literal: %s",
+							paraphrase());
 				}
 			}
 		}
 		return null;
 	}
 
-	protected Token laPragma(boolean cond) throws Exception {
+	protected Token laPragma(boolean cond) throws TokenizerException {
 		return laPragma(pos, cond);
 	}
 
-	private Token laPragma(int pos, boolean cond) throws Exception {
+	private Token laPragma(int pos, boolean cond) throws TokenizerException {
 		int e = pos;
 		if (e >= end) {
 			return null;
@@ -682,18 +702,17 @@ public class Tokenizer {
 				if (cond) {
 					return null;
 				}
-				throw new Exception(String.format(
-						"Invalid pragma content '%s': %s", new String(input,
-								pos, e - pos), paraphrase()));
+				throw new TokenizerException("Invalid pragma content '%s': %s",
+						new String(input, pos, e - pos), paraphrase());
 			}
 			len++;
 		}
 		if (cond) {
 			return null;
 		}
-		throw new Exception(String.format(
+		throw new TokenizerException(
 				"Unclosed pragma content at position %s: '%s'", pos,
-				paraphrase()));
+				paraphrase());
 	}
 
 	protected Token laQuotAttrContentChar() {
@@ -714,7 +733,7 @@ public class Tokenizer {
 		return new StringToken(s, lastScanEnd, content);
 	}
 
-	protected Token laPredefEntityRef(boolean cond) throws Exception {
+	protected Token laPredefEntityRef(boolean cond) throws TokenizerException {
 		int s = pos;
 		String content = scanPredefEntityRef(s, cond);
 		if (content == null) {
@@ -723,7 +742,7 @@ public class Tokenizer {
 		return new StringToken(s, lastScanEnd, content);
 	}
 
-	protected Token laCharRef(boolean cond) throws Exception {
+	protected Token laCharRef(boolean cond) throws TokenizerException {
 		int s = pos;
 		String content = scanCharRef(s, cond);
 		if (content == null) {
@@ -762,7 +781,7 @@ public class Tokenizer {
 		return new StringToken(s, lastScanEnd, content);
 	}
 
-	protected Token laCommentContents(boolean cond) throws Exception {
+	protected Token laCommentContents(boolean cond) throws TokenizerException {
 		int s = pos;
 		String content = scanCommentContents(s, cond);
 		if (content == null) {
@@ -771,7 +790,7 @@ public class Tokenizer {
 		return new StringToken(s, lastScanEnd, content);
 	}
 
-	protected Token laPITarget(boolean cond) throws Exception {
+	protected Token laPITarget(boolean cond) throws TokenizerException {
 		int s = pos;
 		String content = scanPITarget(s, cond);
 		if (content == null) {
@@ -879,7 +898,8 @@ public class Tokenizer {
 		return new String(input, s, len);
 	}
 
-	private String scanPredefEntityRef(int pos, boolean cond) throws Exception {
+	private String scanPredefEntityRef(int pos, boolean cond)
+			throws TokenizerException {
 		int e = pos;
 		if ((end - e <= 4) || (input[e++] != '&')) {
 			return null;
@@ -916,12 +936,11 @@ public class Tokenizer {
 		if (cond) {
 			return null;
 		}
-		throw new Exception(String.format(
-				"Illegal PredefinedEntityRef '%s': %s", new String(input, pos,
-						6), paraphrase()));
+		throw new TokenizerException("Illegal PredefinedEntityRef '%s': %s",
+				new String(input, pos, 6), paraphrase());
 	}
 
-	private String scanCharRef(int pos, boolean cond) throws Exception {
+	private String scanCharRef(int pos, boolean cond) throws TokenizerException {
 		int e = pos;
 		if ((end - e <= 4) || (input[e++] != '&') || (input[e++] != '#')) {
 			return null;
@@ -960,15 +979,15 @@ public class Tokenizer {
 			if (cond) {
 				return null;
 			}
-			throw new Exception(String.format(
-					"Illegal Unicode codepoint '%s': %s", tmp, paraphrase()));
+			throw new TokenizerException("Illegal Unicode codepoint '%s': %s",
+					tmp, paraphrase());
 		}
 		if (!XMLChar.isChar(charRef)) {
 			if (cond) {
 				return null;
 			}
-			throw new Exception(String.format(
-					"Illegal Unicode codepoint '%s': %s", tmp, paraphrase()));
+			throw new TokenizerException("Illegal Unicode codepoint '%s': %s",
+					tmp, paraphrase());
 		}
 		lastScanEnd = s + len;
 		return String.valueOf(charRef);
@@ -995,7 +1014,7 @@ public class Tokenizer {
 	}
 
 	private String scanAposStringLiteral(int pos, boolean cond)
-			throws Exception {
+			throws TokenizerException {
 		StringBuilder buf = new StringBuilder();
 		int spos = pos;
 		while (true) {
@@ -1013,7 +1032,8 @@ public class Tokenizer {
 		return buf.toString();
 	}
 
-	protected String scanQuotStringLiteral(int pos, boolean cond) throws Exception {
+	protected String scanQuotStringLiteral(int pos, boolean cond)
+			throws TokenizerException {
 		StringBuilder buf = new StringBuilder();
 		int spos = pos;
 		while (true) {
@@ -1042,7 +1062,8 @@ public class Tokenizer {
 		return escapeString;
 	}
 
-	private String scanCommentContents(int pos, boolean cond) throws Exception {
+	private String scanCommentContents(int pos, boolean cond)
+			throws TokenizerException {
 		int e = pos;
 		if (e >= end) {
 			return null;
@@ -1055,8 +1076,8 @@ public class Tokenizer {
 				if (cond) {
 					return null;
 				}
-				throw new Exception(String.format(
-						"Illegal '--' in XML comment: %s", paraphrase()));
+				throw new TokenizerException("Illegal '--' in XML comment: %s",
+						paraphrase());
 			}
 			if (!XMLChar.isChar(c)) {
 				break;
@@ -1068,7 +1089,8 @@ public class Tokenizer {
 		return new String(input, e, len);
 	}
 
-	private String scanPITarget(int pos, boolean cond) throws Exception {
+	private String scanPITarget(int pos, boolean cond)
+			throws TokenizerException {
 		int s = pos;
 		int e = s;
 		if (e >= end) {
@@ -1095,8 +1117,8 @@ public class Tokenizer {
 			if (cond) {
 				return null;
 			}
-			throw new Exception(String.format("PITarget must not be '%s': %s",
-					target, paraphrase()));
+			throw new TokenizerException("PITarget must not be '%s': %s",
+					target, paraphrase());
 		}
 		lastScanEnd = pos + len;
 		return target;

@@ -30,6 +30,7 @@ package org.brackit.xquery.compiler.parser;
 import java.util.HashMap;
 
 import org.brackit.xquery.ErrorCode;
+import org.brackit.xquery.QueryException;
 
 /**
  * 
@@ -42,6 +43,8 @@ public class VarScopes {
 	private Scope root = new Scope(null);
 
 	private Scope current = root;
+	
+	private Scope resolveIn = root;
 
 	private int level;
 
@@ -70,25 +73,31 @@ public class VarScopes {
 			return name;
 		}
 	}
+	
+	public int scopeCount() {
+		return level;
+	}
 
 	public void openScope() {
 		level++;
 		current = new Scope(current);
 	}
+	
+	public void offerScope() {		
+		resolveIn = current;
+	}
 
-	public void closeScope() throws XQueryRecognitionException {
+	public void closeScope() throws QueryException {
 		if (level == 0) {
-			throw new XQueryRecognitionException(
-					ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR);
+			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR);
 		}
 		level--;
 		current = current.parent;
 	}
 
-	public String declare(String name) throws XQueryRecognitionException {
+	public String declare(String name) throws QueryException {
 		if (current.mapping.containsKey(name)) {
-			throw new XQueryRecognitionException(
-					ErrorCode.ERR_DUPLICATE_VARIABLE_DECL,
+			throw new QueryException(ErrorCode.ERR_DUPLICATE_VARIABLE_DECL,
 					"Variable $%s has already been declared.", name);
 		}
 
@@ -98,8 +107,8 @@ public class VarScopes {
 		return var.name;
 	}
 
-	public String resolve(String name) throws XQueryRecognitionException {
-		Scope scope = current;
+	public String resolve(String name) throws QueryException {
+		Scope scope = resolveIn;
 		Variable var = null;
 
 		while (((var = scope.mapping.get(name)) == null)
@@ -107,8 +116,7 @@ public class VarScopes {
 			;
 
 		if (var == null) {
-			throw new XQueryRecognitionException(
-					ErrorCode.ERR_UNDEFINED_REFERENCE,
+			throw new QueryException(ErrorCode.ERR_UNDEFINED_REFERENCE,
 					"Variable $%s has not been declared.", name);
 		}
 

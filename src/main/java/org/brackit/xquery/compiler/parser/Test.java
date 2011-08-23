@@ -11,7 +11,6 @@ public class Test {
 		//new XQParser("element foo {1 + 1}").parse().display();
 		// new XQParser("<a><b/> 345 <c/><?target hjaea?as>?>{ 1 + 1}</a>").parse().display();
 		//new XQParser("for $a in (/) return foo($a/b/c) + fn:data()").parse().display();
-		new ANTLRParser().parse("foo -foo").display();
 		new XQParser("foo -foo").parse().display();
 	}
 }

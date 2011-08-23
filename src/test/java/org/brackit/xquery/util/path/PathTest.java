@@ -32,10 +32,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import org.antlr.runtime.MismatchedTokenException;
-import org.antlr.runtime.RecognitionException;
-import org.brackit.xquery.util.path.Path;
-import org.brackit.xquery.util.path.PathParser;
 import org.junit.Test;
 
 public class PathTest {
@@ -103,7 +99,7 @@ public class PathTest {
 		try {
 			Path<String> parsed = (new PathParser("/a/..b/c")).parse();
 			fail("Parser accepted invalid input");
-		} catch (RecognitionException e) {
+		} catch (PathException e) {
 			// expected
 		}
 	}

@@ -33,8 +33,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.antlr.runtime.RecognitionException;
-
 /**
  * General purpose representation of a path or a path expression.
  * 
@@ -434,16 +432,7 @@ public class Path<E extends Comparable<E>> {
 	}
 
 	public static Path<String> parse(String path) throws PathException {
-		try {
-			return (new PathParser(path)).parse();
-		} catch (RecognitionException e) {
-			throw new PathException(String.format(
-					"Unexpected token in '%s' at position %s.", path,
-					e.charPositionInLine), e.charPositionInLine);
-		} catch (Exception e) {
-			throw new PathException(String.format("Error parsing path '%s'",
-					path), -1);
-		}
+		return (new PathParser(path)).parse();
 	}
 
 	public static void main(String[] args) {
