@@ -2115,14 +2115,14 @@ public class XQParser extends Tokenizer {
 		AST axis;
 		if ((la = laSkipWS("child")) != null) {
 			axis = new AST(XQ.CHILD);
+		} else if ((la = laSkipWS("descendant-or-self")) != null) {
+			axis = new AST(XQ.DESCENDANT_OR_SELF);
 		} else if ((la = laSkipWS("descendant")) != null) {
 			axis = new AST(XQ.DESCENDANT);
 		} else if ((la = laSkipWS("attribute")) != null) {
 			axis = new AST(XQ.ATTRIBUTE);
 		} else if ((la = laSkipWS("self")) != null) {
 			axis = new AST(XQ.SELF);
-		} else if ((la = laSkipWS("descendant-or-self")) != null) {
-			axis = new AST(XQ.DESCENDANT_OR_SELF);
 		} else if ((la = laSkipWS("following-sibling")) != null) {
 			axis = new AST(XQ.FOLLOWING_SIBLING);
 		} else if ((la = laSkipWS("following")) != null) {
@@ -2618,9 +2618,13 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST contextItemExpr() {
-		if (!attemptSkipWS(".")) {
+		Token la = laSkipWS(".");
+		// avoid to interpret parent axis ('..') as
+		// context item expression
+		if ((la == null) || (la(la, ".") != null)) {
 			return null;
 		}
+		consume(la);
 		return new AST(XQ.ContextItemExpr);
 	}
 
