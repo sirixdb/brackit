@@ -684,7 +684,7 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		consumeSkipWS("$");
-		String varName = declare(eqnameLiteral(false, false).getValue());
+		String varName = declare(eqnameLiteral(false, true).getValue());
 		AST varDecl = new AST(XQ.TypedVariableDeclaration);
 		varDecl.addChild(new AST(XQ.Variable, varName));
 		AST typeDecl = typeDeclaration();
@@ -941,7 +941,7 @@ public class XQParser extends Tokenizer {
 		// add all copy variables
 		do {
 			consumeSkipWS("$");
-			AST qname = qnameLiteral(false, false);
+			AST qname = qnameLiteral(false, true);
 			consumeSkipWS(":=");
 			AST exprSingle = exprSingle();
 			String varName = declare(qname.getValue());
@@ -1027,7 +1027,7 @@ public class XQParser extends Tokenizer {
 		if (!attemptSkipWS("$")) {
 			return null;
 		}
-		AST eqname = eqnameLiteral(false, false);
+		AST eqname = eqnameLiteral(false, true);
 		String varName = declare(eqname.getValue());
 		AST binding = new AST(XQ.TypedVariableBinding);
 		binding.addChild(new AST(XQ.Variable, varName));
@@ -1050,7 +1050,7 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		consumeSkipWS("$");
-		String varName = declare(eqnameLiteral(false, false).getValue());
+		String varName = declare(eqnameLiteral(false, true).getValue());
 		AST posVarBinding = new AST(XQ.TypedVariableBinding);
 		posVarBinding.addChild(new AST(XQ.Variable, varName));
 		return posVarBinding;
@@ -1109,7 +1109,7 @@ public class XQParser extends Tokenizer {
 		consume(la2);
 		AST clause = new AST(XQ.TumblingWindowClause);
 		consumeSkipWS("$");
-		AST eqname = eqnameLiteral(false, false);
+		AST eqname = eqnameLiteral(false, true);
 		String varName = declare(eqname.getValue());
 		AST binding = new AST(XQ.TypedVariableBinding);
 		binding.addChild(new AST(XQ.Variable, varName));
@@ -1150,7 +1150,7 @@ public class XQParser extends Tokenizer {
 	private AST[] windowVars() throws TokenizerException {
 		AST[] vars = new AST[0];
 		if (attemptSkipWS("$")) {
-			AST eqname = eqnameLiteral(false, false);
+			AST eqname = eqnameLiteral(false, true);
 			String varName = declare(eqname.getValue());
 			AST binding = new AST(XQ.TypedVariableBinding);
 			binding.addChild(new AST(XQ.Variable, varName));
@@ -1162,7 +1162,7 @@ public class XQParser extends Tokenizer {
 		}
 		if (attemptSkipWSWS("previous")) {
 			consumeSkipWS("$");
-			AST eqname = eqnameLiteral(false, false);
+			AST eqname = eqnameLiteral(false, true);
 			String varName = declare(eqname.getValue());
 			AST binding = new AST(XQ.PreviousItemBinding);
 			binding.addChild(new AST(XQ.Variable, varName));
@@ -1170,7 +1170,7 @@ public class XQParser extends Tokenizer {
 		}
 		if (attemptSkipWSWS("next")) {
 			consumeSkipWS("$");
-			AST eqname = eqnameLiteral(false, false);
+			AST eqname = eqnameLiteral(false, true);
 			String varName = declare(eqname.getValue());
 			AST binding = new AST(XQ.NextItemBinding);
 			binding.addChild(new AST(XQ.Variable, varName));
@@ -1193,7 +1193,7 @@ public class XQParser extends Tokenizer {
 		AST clause = new AST(XQ.SlidingWindowClause);
 
 		consumeSkipWS("$");
-		AST eqname = eqnameLiteral(false, false);
+		AST eqname = eqnameLiteral(false, true);
 		String varName = declare(eqname.getValue());
 		AST binding = new AST(XQ.TypedVariableBinding);
 		binding.addChild(new AST(XQ.Variable, varName));
@@ -1239,7 +1239,7 @@ public class XQParser extends Tokenizer {
 		do {
 			consumeSkipWS("$");
 			AST gs = new AST(XQ.GroupBySpec);
-			String varName = resolve(eqnameLiteral(false, false).getValue());
+			String varName = resolve(eqnameLiteral(false, true).getValue());
 			gs.addChild(new AST(XQ.VariableRef, varName));
 			if (attemptSkipWSWS("collation")) {
 				AST uriLiteral = uriLiteral(false, true);
@@ -1304,7 +1304,7 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		String varName = declare(eqnameLiteral(false, false).getValue());
+		String varName = declare(eqnameLiteral(false, true).getValue());
 		AST countClause = new AST(XQ.CountClause);
 		countClause.addChild(new AST(XQ.Variable, varName));
 		return countClause;
@@ -1417,7 +1417,7 @@ public class XQParser extends Tokenizer {
 		openScope();
 		AST dftClause = new AST(XQ.TypeSwitchCase);
 		if (attemptSkipWS("$")) {
-			AST eqname = eqnameLiteral(false, false);
+			AST eqname = eqnameLiteral(false, true);
 			String varName = declare(eqname.getValue());
 			dftClause.addChild(new AST(XQ.Variable, varName));
 		}
@@ -1436,7 +1436,7 @@ public class XQParser extends Tokenizer {
 		openScope();
 		AST clause = new AST(XQ.TypeSwitchCase);
 		if (attemptSkipWS("$")) {
-			AST eqname = eqnameLiteral(false, false);
+			AST eqname = eqnameLiteral(false, true);
 			String varName = declare(eqname.getValue());
 			clause.addChild(new AST(XQ.Variable, varName));
 			consumeSkipWSWS("as");
@@ -1523,13 +1523,13 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS("(");
 		AST vars = new AST(XQ.CatchVar);
 		consumeSkipWS("$");
-		vars.addChild(eqnameLiteral(false, false));
+		vars.addChild(eqnameLiteral(false, true));
 		if (attemptSkipWS(",")) {
 			consumeSkipWS("$");
-			vars.addChild(eqnameLiteral(false, false));
+			vars.addChild(eqnameLiteral(false, true));
 			if (attemptSkipWS(",")) {
 				consumeSkipWS("$");
-				vars.addChild(eqnameLiteral(false, false));
+				vars.addChild(eqnameLiteral(false, true));
 			}
 		}
 		consumeSkipWS(")");
@@ -2601,7 +2601,7 @@ public class XQParser extends Tokenizer {
 		if (!attemptSkipWS("$")) {
 			return null;
 		}
-		return new AST(XQ.VariableRef, resolve(eqnameLiteral(false, false)
+		return new AST(XQ.VariableRef, resolve(eqnameLiteral(false, true)
 				.getValue()));
 	}
 
@@ -3142,7 +3142,7 @@ public class XQParser extends Tokenizer {
 		if (!attemptSkipWS("$")) {
 			return null;
 		}
-		AST eqname = eqnameLiteral(false, false);
+		AST eqname = eqnameLiteral(false, true);
 		String varName = declare(eqname.getValue());
 		AST decl = new AST(XQ.TypedVariableDeclaration);
 		decl.addChild(new AST(XQ.Variable, varName));
