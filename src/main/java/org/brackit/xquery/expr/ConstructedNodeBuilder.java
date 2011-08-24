@@ -167,7 +167,7 @@ public abstract class ConstructedNodeBuilder {
 	protected String buildAttributeContent(QueryContext ctx, Sequence content)
 			throws QueryException {
 		if (content == null) {
-			return null;
+			return "";
 		}
 		// optimized value construction for single item case
 		if (content instanceof Item) {
