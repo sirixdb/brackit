@@ -44,13 +44,13 @@ import org.brackit.xquery.xdm.Sequence;
 public class AttributeExpr extends ConstructedNodeBuilder implements Expr {
 	protected final Expr nameExpr;
 
-	protected final Expr valueExpr;
+	protected final Expr[] valueExpr;
 
 	protected final boolean appendOnly;
 
 	protected final QNm name;
 
-	public AttributeExpr(Expr nameExpr, Expr valueExpr, boolean appendOnly) {
+	public AttributeExpr(Expr nameExpr, Expr[] valueExpr, boolean appendOnly) {
 		this.nameExpr = nameExpr;
 		this.valueExpr = valueExpr;
 		this.appendOnly = appendOnly;
@@ -70,8 +70,11 @@ public class AttributeExpr extends ConstructedNodeBuilder implements Expr {
 		QNm name = (this.name != null) ? this.name : buildAttributeName(ctx,
 				nameExpr.evaluateToItem(ctx, tuple));
 
-		Sequence content = valueExpr.evaluate(ctx, tuple);
-		String stringValue = buildAttributeContent(ctx, content);
+		String stringValue = "";
+		for (Expr e : valueExpr) {
+			Sequence content = e.evaluate(ctx, tuple);
+			stringValue += buildAttributeContent(ctx, content);
+		}
 
 		if (appendOnly) {
 			((Node<?>) tuple.get(tuple.getSize() - 1)).setAttribute(name
@@ -86,7 +89,15 @@ public class AttributeExpr extends ConstructedNodeBuilder implements Expr {
 
 	@Override
 	public boolean isUpdating() {
-		return ((nameExpr.isUpdating()) || (valueExpr.isUpdating()));
+		if (nameExpr.isUpdating()) {
+			return isUpdating();
+		}
+		for (Expr e : valueExpr) {
+			if (e.isUpdating()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override

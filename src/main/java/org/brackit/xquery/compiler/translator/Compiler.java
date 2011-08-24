@@ -1069,7 +1069,7 @@ public class Compiler implements Translator {
 		if (node.getChildCount() > 0) {
 			Binding binding = table.bind(Namespaces.FS_PARENT,
 					SequenceType.ITEM);
-			contentExpr = contentSequence(node.getChild(0));
+			contentExpr = contentSequence(node.getChild(0), module.isBoundarySpaceStrip());
 			table.unbind();
 			bind = binding.isReferenced();
 		} else {
@@ -1088,7 +1088,8 @@ public class Compiler implements Translator {
 		if (node.getChildCount() > 0) {
 			Binding binding = table.bind(Namespaces.FS_PARENT,
 					SequenceType.ITEM);
-			contentExpr = contentSequence(node.getChild(1));
+			contentExpr = contentSequence(node.getChild(1), module
+					.isBoundarySpaceStrip());
 			table.unbind();
 			bind = binding.isReferenced();
 		} else {
@@ -1098,7 +1099,8 @@ public class Compiler implements Translator {
 		return new ElementExpr(nameExpr, contentExpr, bind, appendOnly);
 	}
 
-	protected Expr[] contentSequence(AST node) throws QueryException {
+	protected Expr[] contentSequence(AST node, boolean boundarySpaceStrip)
+			throws QueryException {
 		int childCount = node.getChildCount();
 
 		if (childCount == 0) {
@@ -1118,7 +1120,7 @@ public class Compiler implements Translator {
 						+ child.getValue();
 			} else {
 				if (merged != null) {
-					if ((first) && (module.isBoundarySpaceStrip())) {
+					if ((first) && boundarySpaceStrip) {
 						merged = Whitespace.trimBoundaryWS(merged, true, false);
 					}
 					if (!merged.isEmpty()) {
@@ -1132,7 +1134,7 @@ public class Compiler implements Translator {
 		}
 
 		if (merged != null) {
-			if (module.isBoundarySpaceStrip()) {
+			if (boundarySpaceStrip) {
 				merged = Whitespace.trimBoundaryWS(merged, first, true);
 			}
 			if (!merged.isEmpty()) {
@@ -1146,8 +1148,8 @@ public class Compiler implements Translator {
 
 	protected Expr attributeExpr(AST node) throws QueryException {
 		Expr nameExpr = expr(node.getChild(0), true);
-		Expr contentExpr = (node.getChildCount() > 1) ? new SequenceExpr(
-				contentSequence(node.getChild(1))) : new EmptyExpr();
+		Expr[] contentExpr = (node.getChildCount() > 1) ? contentSequence(node
+				.getChild(1), false) : new Expr[0];
 		return new AttributeExpr(nameExpr, contentExpr, appendOnly(node));
 	}
 
