@@ -176,7 +176,7 @@ public abstract class ConstructedNodeBuilder {
 			Item next;
 			Iter s = content.iterate();
 			try {
-				String stringValue = null;
+				String stringValue = "";
 				if ((next = s.next()) != null) {
 					stringValue = next.atomize().stringValue();
 					if ((next = s.next()) != null) {
