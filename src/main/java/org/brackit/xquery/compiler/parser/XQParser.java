@@ -159,11 +159,13 @@ public class XQParser extends Tokenizer {
 		AST ncn = ncnameLiteral(false, true);
 		consumeSkipWS("=");
 		AST uriLiteral = uriLiteral(false, true);
+		consumeSkipWS(";");
 
 		AST module = new AST(XQ.LibraryModule);
 		AST nsDecl = new AST(XQ.NamespaceDeclaration);
 		nsDecl.addChild(ncn);
 		nsDecl.addChild(uriLiteral);
+		module.addChild(nsDecl);
 		AST prolog = prolog();
 		if (prolog != null) {
 			module.addChild(prolog);
@@ -708,7 +710,7 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		openScope();
-		String varName = declare(eqnameLiteral(false, true).getValue());
+		String varName = eqnameLiteral(false, true).getValue();
 		AST funcDecl = new AST(XQ.FunctionDecl);
 		funcDecl.addChild(new AST(XQ.QNm, varName));
 		consumeSkipWS("(");
@@ -723,6 +725,10 @@ public class XQParser extends Tokenizer {
 		offerScope();
 		if (attemptSymSkipWS("as")) {
 			funcDecl.addChild(sequenceType());
+		} else {
+			// add item()* as default result type
+			AST typeDecl = defaultFunctionResultType();
+			funcDecl.addChild(typeDecl);
 		}
 		if (attemptSkipWS("external")) {
 			funcDecl.addChild(new AST(XQ.ExternalFunction));
@@ -731,6 +737,13 @@ public class XQParser extends Tokenizer {
 		}
 		closeScope();
 		return funcDecl;
+	}
+
+	private AST defaultFunctionResultType() {
+		AST typeDecl = new AST(XQ.SequenceType);
+		typeDecl.addChild(new AST(XQ.ItemType));
+		typeDecl.addChild(new AST(XQ.CardinalityOneOrMany));
+		return typeDecl;
 	}
 
 	private AST functionBody() throws TokenizerException {
@@ -3136,6 +3149,10 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS(")");
 		if (attemptSymSkipWS("as")) {
 			inlineFunc.addChild(sequenceType());
+		} else {
+			// add item()* as default result type
+			AST typeDecl = defaultFunctionResultType();
+			inlineFunc.addChild(typeDecl);			
 		}
 		inlineFunc.addChild(enclosedExpr());
 		return inlineFunc;

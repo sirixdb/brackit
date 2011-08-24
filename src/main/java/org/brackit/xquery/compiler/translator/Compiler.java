@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.compiler.translator;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -135,22 +136,55 @@ import org.brackit.xquery.xdm.Type;
  */
 public class Compiler implements Translator {
 
-	protected class ClauseBinding {
+	protected static class ClauseBinding {
 		final ClauseBinding in;
 		final Operator operator;
 		final Binding[] bindings;
 
-		public ClauseBinding(ClauseBinding in, Operator operator,
-				Binding... bindings) {
+		ClauseBinding(ClauseBinding in, Operator operator, Binding... bindings) {
 			this.in = in;
 			this.operator = operator;
 			this.bindings = bindings;
 		}
 
-		public void unbind() {
+		void unbind() {
 			if (in != null) {
 				in.unbind();
 			}
+		}
+	}
+
+	protected class DeferredFuncBody {
+		final UDF udf;
+		final QNm[] names;
+		final SequenceType[] types;
+		final AST ast;
+		final boolean updating;
+
+		DeferredFuncBody(UDF udf, QNm[] names, SequenceType[] types, AST ast,
+				boolean updating) {
+			this.udf = udf;
+			this.names = names;
+			this.types = types;
+			this.ast = ast;
+			this.updating = updating;
+		}
+
+		void compile() throws QueryException {
+			// safe current variable table
+			VariableTable sav = table;
+			table = new VariableTable();
+			for (int i = 0; i < names.length; i++) {
+				table.bind(names[i], types[i]);
+			}
+			Expr expr = expr(ast, !updating);
+			for (int i = 0; i < names.length; i++) {
+				table.unbind();
+			}
+			table.resolvePositions();
+			// restore variable table
+			table = sav;
+			udf.setBody(expr);
 		}
 	}
 
@@ -179,7 +213,7 @@ public class Compiler implements Translator {
 		Functions.predefine(new Silent());
 	}
 
-	protected final VariableTable table = new VariableTable();
+	protected VariableTable table = new VariableTable();
 
 	protected final ModuleResolver resolver;
 
@@ -213,8 +247,8 @@ public class Compiler implements Translator {
 
 		// target namespace declaration
 		AST namespace = ast.getChild(0);
-		String prefix = namespace.getChild(0).getChild(0).getValue();
-		String nsURI = namespace.getChild(1).getChild(0).getValue();
+		String prefix = namespace.getChild(0).getValue();
+		String nsURI = namespace.getChild(1).getValue();
 		if ((nsURI == null) || (nsURI.isEmpty())) {
 			throw new QueryException(ErrorCode.ERR_TARGET_NS_EMPTY,
 					"The target namespace of a module must not be empty");
@@ -279,7 +313,8 @@ public class Compiler implements Translator {
 	}
 
 	protected void prolog(AST node) throws QueryException {
-		HashSet<String> importedModules = new HashSet<String>();
+		HashSet<String> importedModules = new HashSet<String>(0);
+		List<DeferredFuncBody> declaredFuncs = new ArrayList<DeferredFuncBody>(0);
 		boolean defaultElementNSDeclared = false;
 		boolean defaultFunctionNSDeclared = false;
 		boolean boundarySpaceDeclared = false;
@@ -298,7 +333,7 @@ public class Compiler implements Translator {
 				declareVariable(child);
 				break;
 			case XQ.FunctionDecl:
-				declareFunction(child);
+				declaredFuncs.add(declareFunction(child));
 				break;
 			case XQ.NamespaceDeclaration:
 				declareNamespace(child);
@@ -400,6 +435,10 @@ public class Compiler implements Translator {
 						"Unexpected AST node '%s' of type: %s", child, child
 								.getType());
 			}
+		}
+		
+		for (DeferredFuncBody f : declaredFuncs) {
+			f.compile();
 		}
 	}
 
@@ -509,18 +548,26 @@ public class Compiler implements Translator {
 		}
 	}
 
-	protected void declareFunction(AST node) throws QueryException {
-		SequenceType resultType = SequenceType.ITEM_SEQUENCE;
+	protected DeferredFuncBody declareFunction(AST node) throws QueryException {
+		Namespaces namespaces = module.getNamespaces();
 		boolean updating = false;
-
 		int pos = 0;
 		AST child = node.getChild(pos++);
-		QNm name = module.getNamespaces().qname(child.getValue());
+
+		// annotation
+		while (child.getType() == XQ.Annotation) {
+			// TODO
+			// ignore annotation
+			child = node.getChild(pos++);
+		}
+
+		// function name
+		QNm name = namespaces.qname(child.getValue());
 		child = node.getChild(pos++);
 		String namespaceURI = name.getNamespaceURI();
 
 		if (namespaceURI == null) {
-			namespaceURI = module.getNamespaces().getDefaultFunctionNamespace();
+			namespaceURI = namespaces.getDefaultFunctionNamespace();
 
 			if (namespaceURI == null) {
 				throw new QueryException(ErrorCode.ERR_FUNCTION_DECL_NOT_IN_NS,
@@ -538,43 +585,37 @@ public class Compiler implements Translator {
 					name, namespaceURI);
 		}
 
-		if (child.getType() == XQ.SequenceType) {
-			resultType = sequenceType(child);
-			child = node.getChild(pos++);
-		}
-		while (child.getType() == XQ.Annotation) {
-			// TODO
-			// ignore annotation
-			child = node.getChild(pos++);
-		}
-		int noOfParameters = child.getChildCount();
-		SequenceType[] parameterTypes = new SequenceType[noOfParameters];
-		Binding[] bindings = new Binding[noOfParameters];
+		// parameters
+		int noOfParameters = (node.getChildCount() - pos - 1);
+		QNm[] pNames = new QNm[noOfParameters];
+		SequenceType[] pTypes = new SequenceType[noOfParameters];
 		for (int i = 0; i < noOfParameters; i++) {
-			AST decl = child.getChild(i);
-			SequenceType type = SequenceType.ITEM_SEQUENCE;
-			QNm varName = module.getNamespaces().qname(
-					decl.getChild(0).getValue());
-
-			if (decl.getChildCount() == 2) {
-				type = sequenceType(decl.getChild(1));
+			pNames[i] = namespaces.qname(child.getChild(0).getValue());
+			if (child.getChildCount() == 2) {
+				pTypes[i] = sequenceType(child.getChild(1));
+			} else {
+				pTypes[i] = SequenceType.ITEM_SEQUENCE;
 			}
-			bindings[i] = table.bind(varName, type);
-			parameterTypes[i] = type;
+			child = node.getChild(pos++);
 		}
+
+		// result type
+		SequenceType resultType = sequenceType(child);
 		child = node.getChild(pos++);
 
 		// Register function before compiling body to allow recursion
-		Signature signature = new Signature(resultType, parameterTypes);
+		Signature signature = new Signature(resultType, pTypes);
 		UDF udf = new UDF(name, signature, updating);
 		module.getFunctions().declare(udf);
 
-		udf.setBody(expr(child, !updating));
-
-		for (int i = 0; i < noOfParameters; i++) {
-			table.unbind();
+		// function body
+		if (child.getType() == XQ.ExternalFunction) {
+			throw new QueryException(
+					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
+					"External functions not supported yet.");
 		}
-		table.resolvePositions();
+
+		return new DeferredFuncBody(udf, pNames, pTypes, child, updating);
 	}
 
 	protected Expr expr(AST node, boolean disallowUpdatingExpr)
@@ -1069,7 +1110,8 @@ public class Compiler implements Translator {
 		if (node.getChildCount() > 0) {
 			Binding binding = table.bind(Namespaces.FS_PARENT,
 					SequenceType.ITEM);
-			contentExpr = contentSequence(node.getChild(0), module.isBoundarySpaceStrip());
+			contentExpr = contentSequence(node.getChild(0), module
+					.isBoundarySpaceStrip());
 			table.unbind();
 			bind = binding.isReferenced();
 		} else {
