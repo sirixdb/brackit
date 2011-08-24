@@ -2937,11 +2937,13 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS("{");
 		AST conSeq = new AST(XQ.ContentSequence);
 		elem.addChild(conSeq);
-		AST expr = expr();
-		if (expr != null) {
-			conSeq.addChild(expr);
+		if (!attemptSkipWS("}")) {
+			AST expr = expr();
+			if (expr != null) {
+				conSeq.addChild(expr);
+			}
+			consumeSkipWS("}");
 		}
-		consumeSkipWS("}");
 		return elem;
 	}
 
@@ -2971,11 +2973,13 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS("{");
 		AST conSeq = new AST(XQ.ContentSequence);
 		attr.addChild(conSeq);
-		AST expr = expr();
-		if (expr != null) {
-			conSeq.addChild(expr);
+		if (!attemptSkipWS("}")) {
+			AST expr = expr();
+			if (expr != null) {
+				conSeq.addChild(expr);
+			}
+			consumeSkipWS("}");
 		}
-		consumeSkipWS("}");
 		return attr;
 	}
 
@@ -3005,11 +3009,13 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS("{");
 		AST conSeq = new AST(XQ.ContentSequence);
 		ns.addChild(conSeq);
-		AST expr = expr();
-		if (expr != null) {
-			conSeq.addChild(expr);
+		if (!attemptSkipWS("}")) {
+			AST expr = expr();
+			if (expr != null) {
+				conSeq.addChild(expr);
+			}
+			consumeSkipWS("}");
 		}
-		consumeSkipWS("}");
 		return ns;
 	}
 
@@ -3073,11 +3079,13 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS("{");
 		AST conSeq = new AST(XQ.ContentSequence);
 		pi.addChild(conSeq);
-		AST expr = expr();
-		if (expr != null) {
-			conSeq.addChild(expr);
+		if (!attemptSkipWS("}")) {
+			AST expr = expr();
+			if (expr != null) {
+				conSeq.addChild(expr);
+			}
+			consumeSkipWS("}");
 		}
-		consumeSkipWS("}");
 		return pi;
 	}
 
