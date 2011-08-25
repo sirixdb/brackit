@@ -3072,7 +3072,7 @@ public class XQParser extends Tokenizer {
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laNCName(la);
+		Token la2 = laNCNameSkipWS(la);
 		AST pi;
 		if (la2 != null) {
 			consume(la);

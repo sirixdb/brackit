@@ -482,6 +482,10 @@ public class Tokenizer {
 	protected Token laNCName(Token token) {
 		return laNCName(token.end);
 	}
+	
+	protected Token laNCNameSkipWS(Token token) {
+		return laNCName(token.end + ws(token.end));
+	}
 
 	private Token laNCName(int pos) {
 		int e = pos;
