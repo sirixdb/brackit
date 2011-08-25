@@ -983,10 +983,10 @@ public class Tokenizer {
 			return ">";
 		}
 		if (end - e >= 4) {
-			if ((input[e] == 'a') && (input[e + 1] == 'l')
-					&& (input[e + 2] == 't') && (input[e + 3] == ';')) {
+			if ((input[e] == 'a') && (input[e + 1] == 'm')
+					&& (input[e + 2] == 'p') && (input[e + 3] == ';')) {
 				lastScanEnd = pos + 5;
-				return "'";
+				return "&";
 			}
 		}
 		if (end - e >= 5) {
