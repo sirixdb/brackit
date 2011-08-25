@@ -206,7 +206,7 @@ public class Whitespace {
 						|| (c == '\t') || (c == '\n')))
 			start++;
 
-		if (start != end) {
+		if (start == end) {
 			return str;
 		}
 
