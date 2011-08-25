@@ -659,7 +659,8 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		// perform look ahead
-		if ((laSkipWS(la, "%") == null) && (laSymSkipWS(la, "variable") == null)
+		if ((laSkipWS(la, "%") == null)
+				&& (laSymSkipWS(la, "variable") == null)
 				&& (laSymSkipWS(la, "function") == null)
 				// Begin XQuery Update Facility 1.0
 				&& (laSymSkipWS(la, "updating") == null)
@@ -1010,7 +1011,7 @@ public class XQParser extends Tokenizer {
 		if (laSkipWS(la, "$") == null) {
 			return null;
 		}
-		consume(la); // consume 'for'		
+		consume(la); // consume 'for'
 		AST[] forClauses = new AST[0];
 		do {
 			forClauses = add(forClauses, forBinding());
@@ -1030,7 +1031,7 @@ public class XQParser extends Tokenizer {
 		if (posVar != null) {
 			forClause.addChild(posVar);
 		}
-		consumeSkipWSWS("in");		
+		consumeSkipWSWS("in");
 		forClause.addChild(exprSingle());
 		offerScope();
 		return forClause;
@@ -1081,7 +1082,7 @@ public class XQParser extends Tokenizer {
 		openScope();
 		AST letClause = new AST(XQ.LetClause);
 		letClause.addChild(typedVarBinding());
-		consumeSkipWS(":=");	
+		consumeSkipWS(":=");
 		letClause.addChild(exprSingle());
 		offerScope();
 		return new AST[] { letClause };
@@ -1131,7 +1132,7 @@ public class XQParser extends Tokenizer {
 			binding.addChild(typeDecl);
 		}
 		clause.addChild(binding);
-		consumeSkipWSWS("in");		
+		consumeSkipWSWS("in");
 		clause.addChild(exprSingle());
 		clause.addChild(windowStartCondition());
 		if ((laSymSkipWS("only") != null) || (laSymSkipWS("end") != null)) {
@@ -2727,7 +2728,7 @@ public class XQParser extends Tokenizer {
 
 	private AST dirElemConstructor() throws TokenizerException {
 		if ((laSkipWS("</") != null) || (laSkipWS("<?") != null)
-				|| (!attemptSkipWS("<"))) {
+				|| (laSkipWS("<!") != null) || (!attemptSkipWS("<"))) {
 			return null;
 		}
 		// skipS();
@@ -3152,7 +3153,7 @@ public class XQParser extends Tokenizer {
 		} else {
 			// add item()* as default result type
 			AST typeDecl = defaultFunctionResultType();
-			inlineFunc.addChild(typeDecl);			
+			inlineFunc.addChild(typeDecl);
 		}
 		inlineFunc.addChild(enclosedExpr());
 		return inlineFunc;
@@ -3337,7 +3338,8 @@ public class XQParser extends Tokenizer {
 		try {
 			return variables.resolve(qname);
 		} catch (QueryException e) {
-			throw new XQTokenizerException(e.getCode(), "%s: %s", e.getMessage(), paraphrase());
+			throw new XQTokenizerException(e.getCode(), "%s: %s", e
+					.getMessage(), paraphrase());
 		}
 	}
 
@@ -3345,7 +3347,7 @@ public class XQParser extends Tokenizer {
 		System.out.println("Open scope");
 		variables.openScope();
 	}
-	
+
 	private void offerScope() throws TokenizerException {
 		System.out.println("Offer scope");
 		variables.offerScope();

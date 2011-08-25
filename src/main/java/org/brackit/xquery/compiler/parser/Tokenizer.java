@@ -878,7 +878,7 @@ public class Tokenizer {
 		return new StringToken(s, lastScanEnd, content);
 	}
 
-	protected Token laCDataSectionContents() {
+	protected Token laCDataSectionContents() throws TokenizerException {
 		int s = pos;
 		String content = scanCDataSectionContents(s);
 		if (content == null) {
@@ -944,14 +944,14 @@ public class Tokenizer {
 		return new String(input, s, len);
 	}
 
-	private String scanCDataSectionContents(int pos) {
+	private String scanCDataSectionContents(int pos) throws TokenizerException {
 		int s = pos;
 		int e = s;
 		if (e >= end) {
 			return null;
 		}
 		int len = 0;
-		char c = input[e++];
+		char c;
 		while (e < end) {
 			c = input[e++];
 			if ((c == ']')
@@ -959,7 +959,8 @@ public class Tokenizer {
 				break;
 			}
 			if (!XMLChar.isChar(c)) {
-				break;
+				throw new TokenizerException("Illegal character in CDATA section: '%s': %s",
+						c, paraphrase());
 			} else {
 				len++;
 			}
