@@ -190,7 +190,7 @@ public class Tokenizer {
 	private boolean isSymDel(char c) {
 		// char is (prefix of) a symbol separator (whitespace or comment)
 		// see A.2.2 Terminal Delimitation for details
-		return ((XMLChar.isWS(c)) || (c == '('));
+		return ((XMLChar.isWS(c)) || (c == '(') || (isDelChar(c)));
 	}
 
 	private boolean isDelChar(char c) {
