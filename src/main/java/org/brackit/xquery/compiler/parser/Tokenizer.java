@@ -1090,6 +1090,7 @@ public class Tokenizer {
 
 	private String scanAposStringLiteral(int pos, boolean cond)
 			throws TokenizerException {
+		lastScanEnd = pos;
 		StringBuilder buf = new StringBuilder();
 		int spos = pos;
 		while (true) {
@@ -1107,8 +1108,9 @@ public class Tokenizer {
 		return buf.toString();
 	}
 
-	protected String scanQuotStringLiteral(int pos, boolean cond)
+	private String scanQuotStringLiteral(int pos, boolean cond)
 			throws TokenizerException {
+		lastScanEnd = pos;
 		StringBuilder buf = new StringBuilder();
 		int spos = pos;
 		while (true) {

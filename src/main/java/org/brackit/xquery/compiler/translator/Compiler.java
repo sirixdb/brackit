@@ -314,7 +314,8 @@ public class Compiler implements Translator {
 
 	protected void prolog(AST node) throws QueryException {
 		HashSet<String> importedModules = new HashSet<String>(0);
-		List<DeferredFuncBody> declaredFuncs = new ArrayList<DeferredFuncBody>(0);
+		List<DeferredFuncBody> declaredFuncs = new ArrayList<DeferredFuncBody>(
+				0);
 		boolean defaultElementNSDeclared = false;
 		boolean defaultFunctionNSDeclared = false;
 		boolean boundarySpaceDeclared = false;
@@ -347,7 +348,7 @@ public class Compiler implements Translator {
 							ErrorCode.ERR_DEFAULT_NS_ALREADY_DECLARED,
 							"Default element namespace declared more than once");
 				}
-				declareDefaultNamespace(child);
+				declareDefaultElementNamespace(child);
 				defaultElementNSDeclared = true;
 				break;
 			case XQ.DefaultFunctionNamespace:
@@ -436,7 +437,7 @@ public class Compiler implements Translator {
 								.getType());
 			}
 		}
-		
+
 		for (DeferredFuncBody f : declaredFuncs) {
 			f.compile();
 		}
@@ -467,57 +468,63 @@ public class Compiler implements Translator {
 	}
 
 	protected void declareBoundarySpace(AST node) {
-		String poilcy = node.getChild(0).getChild(0).getValue();
-		module.setBoundarySpaceStrip("strip".equals(poilcy));
+		int mode = node.getChild(0).getType();
+		boolean strip = (mode == XQ.BoundarySpaceModeStrip);
+		module.setBoundarySpaceStrip(strip);
 	}
 
 	protected void declareDefaultCollation(AST node) {
-		String collation = node.getChild(0).getChild(0).getValue();
+		String collation = node.getChild(0).getValue();
 		module.setDefaultCollation(collation);
 	}
 
 	protected void declareBaseURI(AST node) throws QueryException {
-		String uri = node.getChild(0).getChild(0).getValue();
+		String uri = node.getChild(0).getValue();
 		module.setBaseURI(new AnyURI(uri));
 	}
 
 	protected void declareConstructionMode(AST node) {
-		String mode = node.getChild(0).getChild(0).getValue();
-		module.setConstructionModeStrip("strip".equals(mode));
+		int mode = node.getChild(0).getType();
+		boolean strip = (mode == XQ.ConstructionModeStrip);
+		module.setConstructionModeStrip(strip);
 	}
 
 	protected void declareOrderingMode(AST node) {
-		String mode = node.getChild(0).getChild(0).getValue();
-		module.setOrderingModeOrdered("ordered".equals(mode));
+		int mode = node.getChild(0).getType();
+		boolean ordered = (mode == XQ.OrderingModeOrdered);
+		module.setOrderingModeOrdered(ordered);
 	}
 
 	protected void declareEmptyOrder(AST node) {
-		String mode = node.getChild(0).getChild(0).getValue();
-		module.setEmptyOrderGreatest("greatest".equals(mode));
+		int mode = node.getChild(0).getType();
+		boolean greatest = (mode == XQ.EmptyOrderModeGreatest);
+		module.setEmptyOrderGreatest(greatest);
 	}
 
 	protected void declareCopyNamespaces(AST node) {
-		String preserve = node.getChild(0).getChild(0).getValue();
-		module.setCopyNSPreserve("preserve".equals(preserve));
-		String inherit = node.getChild(0).getChild(0).getValue();
-		module.setCopyNSInherit("inherit".equals(inherit));
+		int mode = node.getChild(0).getType();
+		boolean preserve = (mode == XQ.CopyNamespacesPreserveModePreserve);
+		module.setCopyNSPreserve(preserve);
+		int mode2 = node.getChild(0).getType();
+		boolean inherit = (mode2 == XQ.CopyNamespacesInheritModeInherit);
+		module.setCopyNSInherit(inherit);
 	}
 
-	protected void declareDefaultNamespace(AST node) {
-		String functionNS = node.getChild(0).getChild(0).getValue();
+	protected void declareDefaultElementNamespace(AST node) {
+		String functionNS = node.getChild(0).getValue();
 		module.getNamespaces().setDefaultElementNamespace(
 				functionNS.isEmpty() ? null : functionNS);
 	}
 
 	protected void declareDefaultFunctionNamespace(AST node) {
-		String functionNS = node.getChild(0).getChild(0).getValue();
+		String functionNS = node.getChild(0).getValue();
 		module.getNamespaces().setDefaultFunctionNamespace(
 				functionNS.isEmpty() ? null : functionNS);
 	}
 
 	protected void declareNamespace(AST node) throws QueryException {
-		String prefix = node.getChild(0).getChild(0).getValue();
-		String uri = node.getChild(1).getChild(0).getValue();
+		String prefix = node.getChild(0).getValue();
+		String uri = node.getChild(1).getValue();
 		module.getNamespaces().declare(prefix, uri);
 	}
 
