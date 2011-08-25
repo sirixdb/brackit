@@ -81,7 +81,7 @@ public class XMLChar {
 	}
 
 	public static boolean isChar(char c) {
-		return ((c == '\u0009') || (c == '\u00A0') || (c == '\u00D0')
+		return ((c == '\t') || (c == '\n') || (c == '\r')
 				|| (('\u0020' <= c) && (c <= '\uD7FF')) || (('\uE000' <= c) && (c <= '\uFFFD')));
 		// TODO: Howto add range [#x10000-#xEFFFF]?
 	}
