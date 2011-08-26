@@ -243,7 +243,7 @@ abstract class ParentD2Node extends D2Node {
 	}
 
 	void deleteChild(D2Node node) {
-		D2Node prev = previousSiblingOf(this);
+		D2Node prev = previousSiblingOf(node);
 		if (prev == null)
 			firstChild = node.sibling;
 		else

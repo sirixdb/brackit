@@ -247,7 +247,7 @@ abstract class ParentLNode extends LNode {
 	}
 
 	void deleteChild(LNode node) {
-		LNode prev = previousSiblingOf(this);
+		LNode prev = previousSiblingOf(node);
 		if (prev == null)
 			firstChild = node.sibling;
 		else
