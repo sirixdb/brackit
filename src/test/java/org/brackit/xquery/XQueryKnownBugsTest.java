@@ -50,7 +50,7 @@ public class XQueryKnownBugsTest extends XQueryBaseTest {
 	public void incompleteElementContentSequence() throws Exception {
 		Sequence res = new XQuery("data((<x>{2, 1+2 , (())}</x>)//text())")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx, new ItemSequence(new Una("2 3")), res);
+		ResultChecker.dCheck(new ItemSequence(new Una("2 3")), res);
 	}
 
 	@Test
@@ -60,30 +60,28 @@ public class XQueryKnownBugsTest extends XQueryBaseTest {
 						+ "declare namespace ns2 = 'http://www.example.org/ns2';"
 						+ "let $element as element(ns1:foo) := <ns1:foo/>"
 						+ "return count($element/self::ns2:*)").execute(ctx);
-		ResultChecker.dCheck(ctx, new ItemSequence(new Una("2 3")), res);
+		ResultChecker.dCheck(new ItemSequence(new Una("2 3")), res);
 	}
 
 	@Test
 	public void unaryFunction() throws Exception {
 		Sequence res = new XQuery("for $ a in (1,2,3) return -$a").execute(ctx);
 		print(res);
-		ResultChecker.dCheck(ctx, new ItemSequence(new Int32(-1),
+		ResultChecker.dCheck(new ItemSequence(new Int32(-1),
 				new Int32(-2), new Int32(-3)), res);
 	}
 
 	@Test
 	public void parseError() throws Exception {
-		Sequence res = new XQuery("<a>1&amp;<b/>12 {'aha'}soso<c/></a>")
-				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, new ItemSequence(new Una("2 3")), res);
+		new XQuery("<a>1&amp;<b/>12 {'aha'}soso<c/></a>")
+				.serialize(ctx, System.out);
 	}
 
 	@Test
 	public void parseError2() throws Exception {
 		Sequence res = new XQuery("for $a in (1,2,3) return text(*)")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx, new ItemSequence(new Una("2 3")), res);
+		ResultChecker.dCheck(new ItemSequence(new Una("2 3")), res);
 	}
 
 	@Test
@@ -97,7 +95,7 @@ public class XQueryKnownBugsTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"string(<elem>{'a'} a {1,2,3} b <![CDATA[ b ]]> c {'a', 'b'}</elem>)")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx, new ItemSequence(new Str(" a  b  c ")), res);
+		ResultChecker.dCheck(new ItemSequence(new Str(" a  b  c ")), res);
 	}
 
 	@Test
@@ -105,8 +103,7 @@ public class XQueryKnownBugsTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"string(<elem a='5' b='{1+1}'> { 'a ' }{' b', 'd' }{' c' } </elem>)")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx, new ItemSequence(new Str(" a   b d  c ")),
-				res);
+		ResultChecker.dCheck(new ItemSequence(new Str(" a   b d  c ")), res);
 	}
 
 	@Test
@@ -114,14 +111,14 @@ public class XQueryKnownBugsTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"declare variable $input-context external;\n\n-.0.1")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx, new ItemSequence(new Una("2 3")), res);
+		ResultChecker.dCheck(new ItemSequence(new Una("2 3")), res);
 	}
 
 	@Test
 	public void parseError13() throws Exception {
 		Sequence res = new XQuery("processing-instruction XmL {'pi'}")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx, new Str("12"), res);
+		ResultChecker.dCheck(new Str("12"), res);
 	}
 
 	@Test
@@ -135,7 +132,7 @@ public class XQueryKnownBugsTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"<part partid='{'a'}{1+1}' name='{'soso' }' > { 1 + 1}</part>")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx, new Str("12"), res);
+		ResultChecker.dCheck(new Str("12"), res);
 	}
 
 	@Test
@@ -143,7 +140,7 @@ public class XQueryKnownBugsTest extends XQueryBaseTest {
 		Sequence res = new XQuery("<elem attr=\"&amp;&lt;&gt;\"   />")
 				.execute(ctx);
 		print(res);
-		ResultChecker.dCheck(ctx, new Str("12"), res);
+		ResultChecker.dCheck(new Str("12"), res);
 	}
 
 	@Test
@@ -152,7 +149,7 @@ public class XQueryKnownBugsTest extends XQueryBaseTest {
 				"for $a in (<b>10</b>, <a>8b</a>, 9E0, 0) order by $a return $a")
 				.execute(ctx);
 		print(res);
-		ResultChecker.dCheck(ctx, new Str("12"), res);
+		ResultChecker.dCheck(new Str("12"), res);
 	}
 
 	@Test
@@ -160,7 +157,7 @@ public class XQueryKnownBugsTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"for $i in (<a><b/></a>, <a><b/></a>, <a><b/></a>, <a><b/></a>) return $i/b[position() < 10]/fn:root()[.]/b/fn:true()")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx, new ItemSequence(Bool.TRUE, Bool.TRUE,
+		ResultChecker.dCheck(new ItemSequence(Bool.TRUE, Bool.TRUE,
 				Bool.TRUE, Bool.TRUE), res);
 	}
 
@@ -169,7 +166,7 @@ public class XQueryKnownBugsTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"for $i in <res att=\"hello\" att2=\"world\"/> return $i/@*/data(.)")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx, new ItemSequence(new Una("hello"), new Una(
+		ResultChecker.dCheck(new ItemSequence(new Una("hello"), new Una(
 				"world")), res);
 	}
 
@@ -178,9 +175,9 @@ public class XQueryKnownBugsTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"(<p><a><b>a1b1</b><b>a1b2</b></a><a><b>a2b1</b><b>a2b2</b></a></p>)//a//b/text()")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx, new ItemSequence(new TextLNode("a1b1"),
+		ResultChecker.dCheck(new ItemSequence(new TextLNode("a1b1"),
 				new TextLNode("a1b2"), new TextLNode("a2b1"), new TextLNode(
-						"a2b2")), res);
+						"a2b2")), res, false);
 	}
 
 	// (<p><a><b>a1b1</b><b>a1b2</b></a><a><b>a2b1</b><b>a2b2</b></a></p>)//a//b/text()
@@ -190,7 +187,7 @@ public class XQueryKnownBugsTest extends XQueryBaseTest {
 
 	@Test
 	public void current() throws Exception {
-		Sequence res = new XQuery("nametest : nametest").execute(ctx);
+		Sequence res = new XQuery("nametest / nametest").execute(ctx);
 		print(res);
 	}
 

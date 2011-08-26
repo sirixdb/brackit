@@ -199,18 +199,7 @@ public class Whitespace {
 		int start = 0;
 		int end = str.length();
 		int trimTo = str.length();
-		char c = 0;
-
-		while ((start < end)
-				&& ((((c = str.charAt(start))) == ' ') || (c == '\r')
-						|| (c == '\t') || (c == '\n')))
-			start++;
-
-		if (start == end) {
-			return str;
-		}
-
-		start = 0;
+		char c;
 		if (fromHead) {
 			while ((start < trimTo)
 					&& (((c = str.charAt(start)) == ' ') || (c == '\n')

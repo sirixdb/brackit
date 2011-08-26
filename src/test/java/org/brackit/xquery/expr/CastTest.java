@@ -31,7 +31,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.ResultChecker;
 import org.brackit.xquery.XQuery;
@@ -46,11 +45,16 @@ import org.brackit.xquery.atomic.YMD;
 import org.brackit.xquery.xdm.Sequence;
 import org.junit.Test;
 
+/**
+ * 
+ * @author Sebastian Baechle
+ *
+ */
 public class CastTest extends XQueryBaseTest {
 	@Test
 	public void durationFromString() throws QueryException {
 		Sequence res = new XQuery("xs:duration('P1Y20MT20S')").execute(ctx);
-		ResultChecker.dCheck(ctx, new Dur(false, (short) 2, (byte) 8,
+		ResultChecker.dCheck(new Dur(false, (short) 2, (byte) 8,
 				(short) 0, (byte) 0, (byte) 0, 20000000), res);
 	}
 
@@ -58,7 +62,7 @@ public class CastTest extends XQueryBaseTest {
 	public void durationFromString2() throws QueryException {
 		Sequence res = new XQuery("xs:duration('P1Y20M16DT23H1502M')")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx, new Dur(false, (short) 2, (byte) 8,
+		ResultChecker.dCheck(new Dur(false, (short) 2, (byte) 8,
 				(short) 18, (byte) 0, (byte) 2, 0), res);
 	}
 
@@ -66,14 +70,14 @@ public class CastTest extends XQueryBaseTest {
 	public void durationFromString3() throws QueryException {
 		Sequence res = new XQuery("xs:duration('PT1M123.123456789S')")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx, new Dur(false, (short) 0, (byte) 0,
+		ResultChecker.dCheck(new Dur(false, (short) 0, (byte) 0,
 				(short) 0, (byte) 0, (byte) 3, 3123456), res);
 	}
 
 	@Test
 	public void durationFromString4() throws QueryException {
 		Sequence res = new XQuery("xs:duration('PT1M123.2S')").execute(ctx);
-		ResultChecker.dCheck(ctx, new Dur(false, (short) 0, (byte) 0,
+		ResultChecker.dCheck(new Dur(false, (short) 0, (byte) 0,
 				(short) 0, (byte) 0, (byte) 3, 3200000), res);
 	}
 
@@ -93,7 +97,7 @@ public class CastTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"xs:duration('P1Y20M16DT23H1502M') cast as xs:yearMonthDuration")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx, new YMD(false, (short) 2, (byte) 8), res);
+		ResultChecker.dCheck(new YMD(false, (short) 2, (byte) 8), res);
 	}
 
 	@Test
@@ -101,7 +105,7 @@ public class CastTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"xs:duration('P6Y9M21DT16H1M3.123456789S') cast as xs:dayTimeDuration")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx, new DTD(false, (short) 21, (byte) 16,
+		ResultChecker.dCheck(new DTD(false, (short) 21, (byte) 16,
 				(byte) 1, 3123456), res);
 	}
 
@@ -109,7 +113,7 @@ public class CastTest extends XQueryBaseTest {
 	public void divideDayTimeDuration() throws QueryException {
 		Sequence res = new XQuery("xs:dayTimeDuration('-P12DT10H') div -0.5")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx, new DTD(false, (short) 24, (byte) 20,
+		ResultChecker.dCheck(new DTD(false, (short) 24, (byte) 20,
 				(byte) 0, 0), res);
 	}
 
@@ -118,8 +122,7 @@ public class CastTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"xs:dateTime('1981-12-31T12:05:35.1234567') + xs:yearMonthDuration('P1Y2M')")
 				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, new DateTime((short) 1983, (byte) 2,
+		ResultChecker.dCheck(new DateTime((short) 1983, (byte) 2,
 				(byte) 28, (byte) 12, (byte) 5, 35123456, null), res);
 	}
 
@@ -128,8 +131,7 @@ public class CastTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"xs:dateTime('1981-12-12T12:05:35.1234567') + xs:yearMonthDuration('-P1Y1M')")
 				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, new DateTime((short) 1980, (byte) 11,
+		ResultChecker.dCheck(new DateTime((short) 1980, (byte) 11,
 				(byte) 12, (byte) 12, (byte) 5, 35123456, null), res);
 	}
 
@@ -138,8 +140,7 @@ public class CastTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"xs:dateTime('1981-12-12T12:05:35.1234567') + xs:dayTimeDuration('P19DT14H40.654321S')")
 				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, new DateTime((short) 1982, (byte) 1,
+		ResultChecker.dCheck(new DateTime((short) 1982, (byte) 1,
 				(byte) 1, (byte) 2, (byte) 6, 15777777, null), res);
 	}
 
@@ -148,8 +149,7 @@ public class CastTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"'1981-11-11T12:05:35.1234567+07:00' cast as xs:dateTime")
 				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, new DateTime((short) 1981, (byte) 11,
+		ResultChecker.dCheck(new DateTime((short) 1981, (byte) 11,
 				(byte) 11, (byte) 12, (byte) 5, 35123456, new DTD(false,
 						(short) 0, (byte) 7, (byte) 0, 0)), res);
 	}
@@ -158,8 +158,7 @@ public class CastTest extends XQueryBaseTest {
 	public void castDateTimeFromString2() throws QueryException {
 		Sequence res = new XQuery("'19811-11-11T12:05:35' cast as xs:dateTime")
 				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, new DateTime((short) 19811, (byte) 11,
+		ResultChecker.dCheck(new DateTime((short) 19811, (byte) 11,
 				(byte) 11, (byte) 12, (byte) 5, 35000000, null), res);
 	}
 
@@ -167,8 +166,7 @@ public class CastTest extends XQueryBaseTest {
 	public void castDateTimeFromString3() throws QueryException {
 		Sequence res = new XQuery("'0333-03-01T09:05:35' cast as xs:dateTime")
 				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, new DateTime((short) 333, (byte) 3, (byte) 1,
+		ResultChecker.dCheck(new DateTime((short) 333, (byte) 3, (byte) 1,
 				(byte) 9, (byte) 5, 35000000, null), res);
 	}
 
@@ -176,10 +174,8 @@ public class CastTest extends XQueryBaseTest {
 	public void castDateTimeFromString4() throws QueryException {
 		Sequence res = new XQuery("'-0005-03-01T09:05:35Z' cast as xs:dateTime")
 				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx,
-				new DateTime((short) -5, (byte) 3, (byte) 1, (byte) 9,
-						(byte) 5, 35000000, AbstractTimeInstant.UTC_TIMEZONE),
+		ResultChecker.dCheck(new DateTime((short) -5, (byte) 3, (byte) 1, (byte) 9,
+				(byte) 5, 35000000, AbstractTimeInstant.UTC_TIMEZONE),
 				res);
 	}
 
@@ -199,8 +195,7 @@ public class CastTest extends XQueryBaseTest {
 	public void castDateTimeFromString6() throws QueryException {
 		Sequence res = new XQuery("'2010-03-01T24:00:00Z' cast as xs:dateTime")
 				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, new DateTime((short) 2010, (byte) 3,
+		ResultChecker.dCheck(new DateTime((short) 2010, (byte) 3,
 				(byte) 2, (byte) 0, (byte) 0, 0,
 				AbstractTimeInstant.UTC_TIMEZONE), res);
 	}
@@ -209,8 +204,7 @@ public class CastTest extends XQueryBaseTest {
 	public void castDateTimeFromString7() throws QueryException {
 		Sequence res = new XQuery("'2000-02-28T24:00:00Z' cast as xs:dateTime")
 				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, new DateTime((short) 2000, (byte) 2,
+		ResultChecker.dCheck(new DateTime((short) 2000, (byte) 2,
 				(byte) 29, (byte) 0, (byte) 0, 0,
 				AbstractTimeInstant.UTC_TIMEZONE), res);
 	}
@@ -219,8 +213,7 @@ public class CastTest extends XQueryBaseTest {
 	public void castDateTimeFromString8() throws QueryException {
 		Sequence res = new XQuery("'2001-02-28T24:00:00Z' cast as xs:dateTime")
 				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, new DateTime((short) 2001, (byte) 3,
+		ResultChecker.dCheck(new DateTime((short) 2001, (byte) 3,
 				(byte) 1, (byte) 0, (byte) 0, 0,
 				AbstractTimeInstant.UTC_TIMEZONE), res);
 	}
@@ -241,8 +234,7 @@ public class CastTest extends XQueryBaseTest {
 	public void castDateTimeFromString10() throws QueryException {
 		Sequence res = new XQuery(
 				"'19811-11-11T12:05:35.1000' cast as xs:dateTime").execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, new DateTime((short) 19811, (byte) 11,
+		ResultChecker.dCheck(new DateTime((short) 19811, (byte) 11,
 				(byte) 11, (byte) 12, (byte) 5, 35100000, null), res);
 	}
 
@@ -250,8 +242,7 @@ public class CastTest extends XQueryBaseTest {
 	public void castDateFromString() throws QueryException {
 		Sequence res = new XQuery("'2002-10-09-11:00' cast as xs:date")
 				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, new Date((short) 2002, (byte) 10, (byte) 9,
+		ResultChecker.dCheck(new Date((short) 2002, (byte) 10, (byte) 9,
 				new DTD(true, (short) 0, (byte) 11, (byte) 0, 0)), res);
 	}
 
@@ -259,8 +250,7 @@ public class CastTest extends XQueryBaseTest {
 	public void castDateFromString2() throws QueryException {
 		Sequence res = new XQuery("'2002-10-10+13:00' cast as xs:date")
 				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, new Date((short) 2002, (byte) 10, (byte) 10,
+		ResultChecker.dCheck(new Date((short) 2002, (byte) 10, (byte) 10,
 				new DTD(false, (short) 0, (byte) 13, (byte) 0, 0)), res);
 	}
 
@@ -269,8 +259,7 @@ public class CastTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"xs:date('2002-10-10+13:00') eq xs:date('2002-10-09-11:00')")
 				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, Bool.TRUE, res);
+		ResultChecker.dCheck(Bool.TRUE, res);
 	}
 
 	@Test
@@ -278,8 +267,7 @@ public class CastTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"xs:date('2002-10-10+14:00') eq xs:date('2002-10-09-11:00')")
 				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, Bool.FALSE, res);
+		ResultChecker.dCheck(Bool.FALSE, res);
 	}
 
 	@Test
@@ -287,8 +275,7 @@ public class CastTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"xs:dateTime(\"2000-10-30T06:12:00\") -  xs:dateTime(\"1999-11-28T09:00:00\")")
 				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, Bool.FALSE, res);
+		ResultChecker.dCheck(Bool.FALSE, res);
 	}
 
 	@Test
@@ -296,7 +283,6 @@ public class CastTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"xs:dateTime(\"2000-10-30T06:12:00\") -  xs:dateTime(\"1999-11-28T09:00:00Z\")")
 				.execute(ctx);
-		print(res);
-		ResultChecker.dCheck(ctx, Bool.FALSE, res);
+		ResultChecker.dCheck(Bool.FALSE, res);
 	}
 }

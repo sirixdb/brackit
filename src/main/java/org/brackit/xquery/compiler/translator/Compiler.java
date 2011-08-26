@@ -70,7 +70,6 @@ import org.brackit.xquery.expr.ReturnExpr;
 import org.brackit.xquery.expr.SequenceExpr;
 import org.brackit.xquery.expr.StepExpr;
 import org.brackit.xquery.expr.TextExpr;
-import org.brackit.xquery.expr.TransformExpr;
 import org.brackit.xquery.expr.Treat;
 import org.brackit.xquery.expr.TypeswitchExpr;
 import org.brackit.xquery.expr.UnionExpr;
@@ -123,6 +122,7 @@ import org.brackit.xquery.update.Insert;
 import org.brackit.xquery.update.Rename;
 import org.brackit.xquery.update.ReplaceNode;
 import org.brackit.xquery.update.ReplaceValue;
+import org.brackit.xquery.update.Transform;
 import org.brackit.xquery.update.Insert.InsertType;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Axis;
@@ -154,20 +154,29 @@ public class Compiler implements Translator {
 		}
 	}
 
-	protected class DeferredFuncBody {
-		final UDF udf;
-		final QNm[] names;
-		final SequenceType[] types;
+	protected abstract class DeferredExpr {
 		final AST ast;
 		final boolean updating;
 
-		DeferredFuncBody(UDF udf, QNm[] names, SequenceType[] types, AST ast,
+		public DeferredExpr(AST ast, boolean updating) {
+			this.ast = ast;
+			this.updating = updating;
+		}
+
+		abstract void compile() throws QueryException;
+	}
+
+	protected class UDFBody extends DeferredExpr {
+		final UDF udf;
+		final QNm[] names;
+		final SequenceType[] types;
+
+		UDFBody(UDF udf, QNm[] names, SequenceType[] types, AST ast,
 				boolean updating) {
+			super(ast, updating);
 			this.udf = udf;
 			this.names = names;
 			this.types = types;
-			this.ast = ast;
-			this.updating = updating;
 		}
 
 		void compile() throws QueryException {
@@ -185,6 +194,23 @@ public class Compiler implements Translator {
 			// restore variable table
 			table = sav;
 			udf.setBody(expr);
+		}
+	}
+
+	protected class CtxItemExpr extends DeferredExpr {
+		private final ItemType type;
+		private final boolean external;
+
+		public CtxItemExpr(ItemType type, boolean external, AST ast,
+				boolean updating) {
+			super(ast, updating);
+			this.type = type;
+			this.external = external;
+		}
+
+		void compile() throws QueryException {
+			Expr expr = (ast != null) ? expr(ast, !updating) : null;
+			table.declareDefaultCtxItem(expr, type, external);
 		}
 	}
 
@@ -314,8 +340,8 @@ public class Compiler implements Translator {
 
 	protected void prolog(AST node) throws QueryException {
 		HashSet<String> importedModules = new HashSet<String>(0);
-		List<DeferredFuncBody> declaredFuncs = new ArrayList<DeferredFuncBody>(
-				0);
+		List<UDFBody> udfs = new ArrayList<UDFBody>(0);
+		CtxItemExpr ctxItemExpr = null;
 		boolean defaultElementNSDeclared = false;
 		boolean defaultFunctionNSDeclared = false;
 		boolean boundarySpaceDeclared = false;
@@ -324,6 +350,7 @@ public class Compiler implements Translator {
 		boolean orderingModeDeclared = false;
 		boolean emptyOrderDeclared = false;
 		boolean copyNamespacesDeclared = false;
+		boolean contextItemDeclared = false;
 
 		int childCount = node.getChildCount();
 		for (int i = 0; i < childCount; i++) {
@@ -334,7 +361,7 @@ public class Compiler implements Translator {
 				declareVariable(child);
 				break;
 			case XQ.FunctionDecl:
-				declaredFuncs.add(declareFunction(child));
+				udfs.add(declareFunction(child));
 				break;
 			case XQ.NamespaceDeclaration:
 				declareNamespace(child);
@@ -430,6 +457,15 @@ public class Compiler implements Translator {
 				declareCopyNamespaces(child);
 				copyNamespacesDeclared = true;
 				break;
+			case XQ.ContextItemDeclaration:
+				if (contextItemDeclared) {
+					throw new QueryException(
+							ErrorCode.ERR_CONTEXT_ITEM_ALREADY_DECLARED,
+							"Context item declared more than once");
+				}
+				ctxItemExpr = declareContextItem(child);
+				contextItemDeclared = true;
+				break;
 			default:
 				throw new QueryException(
 						ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
@@ -438,7 +474,12 @@ public class Compiler implements Translator {
 			}
 		}
 
-		for (DeferredFuncBody f : declaredFuncs) {
+		if (ctxItemExpr != null) {
+			ctxItemExpr.compile();
+		} else {
+			table.declareDefaultCtxItem(null, AnyItemType.ANY, true);
+		}
+		for (UDFBody f : udfs) {
 			f.compile();
 		}
 	}
@@ -530,8 +571,23 @@ public class Compiler implements Translator {
 
 	protected void declareOption(AST node) throws QueryException {
 		QNm name = module.getNamespaces().qname(node.getChild(0).getValue());
-		Str value = new Str(node.getChild(1).getChild(0).getValue());
+		Str value = new Str(node.getChild(1).getValue());
 		module.addOption(name, value);
+	}
+
+	protected CtxItemExpr declareContextItem(AST node) throws QueryException {
+		ItemType type = itemType(node.getChild(0));
+		boolean external = false;
+		AST defaultExpr = null;
+		if (node.getChild(1).getType() == XQ.ExternalVariable) {
+			external = true;
+			if (node.getChildCount() == 3) {
+				defaultExpr = node.getChild(2);
+			}
+		} else {
+			defaultExpr = node.getChild(1);
+		}
+		return new CtxItemExpr(type, external, defaultExpr, false);
 	}
 
 	protected void declareVariable(AST node) throws QueryException {
@@ -555,7 +611,7 @@ public class Compiler implements Translator {
 		}
 	}
 
-	protected DeferredFuncBody declareFunction(AST node) throws QueryException {
+	protected UDFBody declareFunction(AST node) throws QueryException {
 		Namespaces namespaces = module.getNamespaces();
 		boolean updating = false;
 		int pos = 0;
@@ -622,7 +678,7 @@ public class Compiler implements Translator {
 					"External functions not supported yet.");
 		}
 
-		return new DeferredFuncBody(udf, pNames, pTypes, child, updating);
+		return new UDFBody(udf, pNames, pTypes, child, updating);
 	}
 
 	protected Expr expr(AST node, boolean disallowUpdatingExpr)
@@ -997,8 +1053,7 @@ public class Compiler implements Translator {
 			table.unbind();
 		}
 
-		return new TransformExpr(sourceExprs, referenced, modifyExpr,
-				returnExpr);
+		return new Transform(sourceExprs, referenced, modifyExpr, returnExpr);
 	}
 
 	protected Expr quantifiedExpr(AST node) throws QueryException {
@@ -1117,8 +1172,7 @@ public class Compiler implements Translator {
 		if (node.getChildCount() > 0) {
 			Binding binding = table.bind(Namespaces.FS_PARENT,
 					SequenceType.ITEM);
-			contentExpr = contentSequence(node.getChild(0), module
-					.isBoundarySpaceStrip());
+			contentExpr = contentSequence(node.getChild(0));
 			table.unbind();
 			bind = binding.isReferenced();
 		} else {
@@ -1137,8 +1191,8 @@ public class Compiler implements Translator {
 		if (node.getChildCount() > 0) {
 			Binding binding = table.bind(Namespaces.FS_PARENT,
 					SequenceType.ITEM);
-			contentExpr = contentSequence(node.getChild(1), module
-					.isBoundarySpaceStrip());
+			boolean strip = module.isBoundarySpaceStrip();
+			contentExpr = contentSequence(node.getChild(1));
 			table.unbind();
 			bind = binding.isReferenced();
 		} else {
@@ -1148,7 +1202,7 @@ public class Compiler implements Translator {
 		return new ElementExpr(nameExpr, contentExpr, bind, appendOnly);
 	}
 
-	protected Expr[] contentSequence(AST node, boolean boundarySpaceStrip)
+	protected Expr[] contentSequence(AST node)
 			throws QueryException {
 		int childCount = node.getChildCount();
 
@@ -1159,37 +1213,23 @@ public class Compiler implements Translator {
 		int size = 0;
 		Expr[] subExprs = new Expr[childCount];
 		String merged = null;
-		boolean first = true;
 
 		for (int i = 0; i < node.getChildCount(); i++) {
 			AST child = node.getChild(i);
-
 			if ((child.getType() == XQ.Str)) {
 				merged = (merged == null) ? child.getValue() : merged
 						+ child.getValue();
 			} else {
-				if (merged != null) {
-					if ((first) && boundarySpaceStrip) {
-						merged = Whitespace.trimBoundaryWS(merged, true, false);
-					}
-					if (!merged.isEmpty()) {
-						subExprs[size++] = new Str(merged);
-					}
-					merged = null;
-					first = true;
+				if ((merged != null) && (!merged.isEmpty())) {
+					subExprs[size++] = new Str(merged);
 				}
+				merged = null;
 				subExprs[size++] = expr(child, true);
 			}
 		}
 
-		if (merged != null) {
-			if (boundarySpaceStrip) {
-				merged = Whitespace.trimBoundaryWS(merged, first, true);
-			}
-			if (!merged.isEmpty()) {
-				subExprs[size++] = new Str(merged);
-			}
-			merged = null;
+		if ((merged != null) && (!merged.isEmpty())) {
+			subExprs[size++] = new Str(merged);			
 		}
 
 		return Arrays.copyOf(subExprs, size);
@@ -1198,7 +1238,7 @@ public class Compiler implements Translator {
 	protected Expr attributeExpr(AST node) throws QueryException {
 		Expr nameExpr = expr(node.getChild(0), true);
 		Expr[] contentExpr = (node.getChildCount() > 1) ? contentSequence(node
-				.getChild(1), false) : new Expr[0];
+				.getChild(1)) : new Expr[0];
 		return new AttributeExpr(nameExpr, contentExpr, appendOnly(node));
 	}
 

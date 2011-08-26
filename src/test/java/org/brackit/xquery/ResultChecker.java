@@ -96,31 +96,29 @@ public class ResultChecker {
 		for (int i = 0; i < eSize; i++) {
 			Sequence eSequence = expected.get(i);
 			Sequence rSequence = result.get(i);
-			check(ctx, eSequence, rSequence);
+			check(eSequence, rSequence);
 		}
 	}
 
-	public static void dCheck(QueryContext ctx, Sequence expected,
-			Sequence result) throws QueryException {
+	public static void dCheck(Sequence expected, Sequence result) throws QueryException {
 		// double check result to verify that result can be evaluated repeatedly
-		check(ctx, expected, result, true);
-		check(ctx, expected, result, true);
+		check(expected, result, true);
+		check(expected, result, true);
 	}
 
-	public static void dCheck(QueryContext ctx, Sequence expected,
-			Sequence result, boolean nodeIdentity) throws QueryException {
+	public static void dCheck(Sequence expected, Sequence result,
+			boolean nodeIdentity) throws QueryException {
 		// double check result to verify that result can be evaluated repeatedly
-		check(ctx, expected, result, nodeIdentity);
-		check(ctx, expected, result, nodeIdentity);
+		check(expected, result, nodeIdentity);
+		check(expected, result, nodeIdentity);
 	}
 
-	public static void check(QueryContext ctx, Sequence expected,
-			Sequence result) throws QueryException {
+	public static void check(Sequence expected, Sequence result) throws QueryException {
 		compare(expected, result, true);
 	}
 
-	public static void check(QueryContext ctx, Sequence expected,
-			Sequence result, boolean nodeIdentity) throws QueryException {
+	public static void check(Sequence expected, Sequence result,
+			boolean nodeIdentity) throws QueryException {
 		compare(expected, result, nodeIdentity);
 	}
 
@@ -254,7 +252,7 @@ public class ResultChecker {
 			throws DocumentException {
 		Stream<? extends Node<?>> eChildren = eNode.getChildren();
 		try {
-			Stream<? extends Node<?>> rChildren = eNode.getChildren();
+			Stream<? extends Node<?>> rChildren = rNode.getChildren();
 			try {
 				Node<?> eChild;
 				Node<?> rChild;
@@ -276,13 +274,13 @@ public class ResultChecker {
 			throws OperationNotSupportedException, DocumentException {
 		Stream<? extends Node<?>> eAtts = eNode.getAttributes();
 		try {
-			Stream<? extends Node<?>> rAtts = eNode.getAttributes();
+			Stream<? extends Node<?>> rAtts = rNode.getAttributes();
 			try {
 				Node<?> eAtt;
 				Node<?> rAtt;
 				while ((eAtt = eAtts.next()) != null) {
 					assertNotNull("Attribute is in result", rAtt = rAtts.next());
-					assertEquals("Node kind is correct", Kind.ATTRIBUTE, rNode
+					assertEquals("Node kind is correct", Kind.ATTRIBUTE, rAtt
 							.getKind());
 					assertEquals("Node name is correct", eAtt.getName(), rAtt
 							.getName());

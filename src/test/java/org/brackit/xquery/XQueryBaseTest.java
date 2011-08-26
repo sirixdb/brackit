@@ -40,12 +40,9 @@ import java.util.Random;
 
 import org.brackit.xquery.node.SimpleStore;
 import org.brackit.xquery.node.SubtreePrinter;
-import org.brackit.xquery.node.dom.DOMListener;
 import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.node.parser.StreamSubtreeProcessor;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.xdm.Collection;
-import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Kind;
@@ -53,7 +50,6 @@ import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Store;
 import org.junit.Before;
-import org.w3c.dom.Document;
 
 /**
  * 
@@ -67,53 +63,19 @@ public class XQueryBaseTest {
 
 	protected Store store;
 
-	public void demo() throws Exception {
-		XQuery query = new XQuery(
-				"<a>for $a in (1,2,3) return <b><c>Hello World</c></b></a>");
-
-		System.out.println("No pretty print");
-		query.serialize(ctx, System.out);
-		System.out.println("\nPretty print");
-		query.setPrettyPrint(true);
-		query.serialize(ctx, System.out);
-		System.out.println("\nPlain");
-		Sequence result = query.execute(ctx);
-		print(result);
-
-		// create DOM trees (CAVEAT: always rooted with document)
-		Iter it = result.iterate();
-		Item item;
-		try {
-			while ((item = it.next()) != null) {
-				DOMListener listener = new DOMListener();
-				StreamSubtreeProcessor processor = new StreamSubtreeProcessor(
-						((Node<?>) item).getSubtree(), listener);
-				processor.process();
-				Document document = listener.getDocument();
-			}
-		} finally {
-			it.close();
-		}
-	}
-
-	protected void print(Sequence sequence) throws QueryException {
-		if (sequence == null) {
+	protected void print(Sequence s) throws QueryException {
+		if (s == null) {
 			return;
 		}
-		Iter it = sequence.iterate();
+		Iter it = s.iterate();
 		Item item;
 		try {
 			while ((item = it.next()) != null) {
 				System.out.println(item);
 				if ((item instanceof Node<?>)
 						&& (((Node<?>) item).getKind() != Kind.ATTRIBUTE)) {
-					try {
-						new SubtreePrinter(System.out, false, false)
-								.print((Node<?>) item);
-					} catch (DocumentException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+					new SubtreePrinter(System.out, false, false)
+							.print((Node<?>) item);
 				}
 			}
 		} finally {
@@ -141,7 +103,8 @@ public class XQueryBaseTest {
 		StringBuilder query = new StringBuilder();
 		URL url = getClass().getResource(dirname + filename);
 		if (url == null) {
-			throw new RuntimeException("Resource not found: " + dirname + filename);
+			throw new RuntimeException("Resource not found: " + dirname
+					+ filename);
 		}
 		BufferedReader file = new BufferedReader(new FileReader(url.getFile()));
 		boolean first = true;
@@ -154,7 +117,6 @@ public class XQueryBaseTest {
 			first = false;
 		}
 		file.close();
-		System.out.println("Read query:\n" + query);
 		return query.toString();
 	}
 

@@ -29,7 +29,6 @@ package org.brackit.xquery.update.op;
 
 import java.util.Arrays;
 
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Node;
 
@@ -52,9 +51,9 @@ public abstract class AbstractInsertOp implements UpdateOp {
 	}
 
 	@Override
-	public void apply(QueryContext ctx) throws QueryException {
+	public void apply() throws QueryException {
 		for (int i = 0; i < size; i++) {
-			doInsert(ctx, target, content[i]);
+			doInsert(target, content[i]);
 		}
 	}
 
@@ -71,8 +70,7 @@ public abstract class AbstractInsertOp implements UpdateOp {
 		content[size++] = node;
 	}
 
-	protected abstract void doInsert(QueryContext ctx, Node<?> target,
-			Node<?> content) throws QueryException;
+	protected abstract void doInsert(Node<?> target, Node<?> content) throws QueryException;
 
 	public String toString() {
 		StringBuilder out = new StringBuilder();

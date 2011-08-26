@@ -67,6 +67,8 @@ public class XQParser extends Tokenizer {
 
 	private String version = "3.0";
 
+	private boolean stripBoundaryWS = true;
+
 	private boolean update;
 
 	private VarScopes variables;
@@ -265,8 +267,10 @@ public class XQParser extends Tokenizer {
 		AST decl = new AST(XQ.BoundarySpaceDeclaration);
 		if (attemptSkipWS("preserve")) {
 			decl.addChild(new AST(XQ.BoundarySpaceModePreserve));
+			stripBoundaryWS = false; // don't eagerly strip WS during parsing
 		} else if (attemptSkipWS("strip")) {
 			decl.addChild(new AST(XQ.BoundarySpaceModeStrip));
+			stripBoundaryWS = true; // don't eagerly strip WS during parsing
 		} else {
 			throw new MismatchException("preserve", "strip");
 		}
@@ -632,6 +636,9 @@ public class XQParser extends Tokenizer {
 		AST ctxItemDecl = new AST(XQ.ContextItemDeclaration);
 		if (attemptSymSkipWS("as")) {
 			ctxItemDecl.addChild(itemType());
+		} else {
+			// default type is item()
+			ctxItemDecl.addChild(new AST(XQ.ItemType));
 		}
 		if (attemptSkipWS(":=")) {
 			ctxItemDecl.addChild(varValue());
@@ -1581,14 +1588,18 @@ public class XQParser extends Tokenizer {
 			cmp = new AST(XQ.GeneralCompEQ);
 		} else if (attemptSkipWS("!=")) {
 			cmp = new AST(XQ.GeneralCompNE);
-		} else if (attemptSkipWS("<")) {
-			cmp = new AST(XQ.GeneralCompLT);
 		} else if (attemptSkipWS("<=")) {
 			cmp = new AST(XQ.GeneralCompLE);
-		} else if (attemptSkipWS(">")) {
-			cmp = new AST(XQ.GeneralCompGT);
+		} else if (attemptSkipWS("<<")) {
+			cmp = new AST(XQ.NodeCompPrecedes);
+		} else if (attemptSkipWS("<")) {
+			cmp = new AST(XQ.GeneralCompLT);
 		} else if (attemptSkipWS(">=")) {
 			cmp = new AST(XQ.GeneralCompGE);
+		} else if (attemptSkipWS(">>")) {
+			cmp = new AST(XQ.NodeCompFollows);
+		} else if (attemptSkipWS(">")) {
+			cmp = new AST(XQ.GeneralCompGT);
 		} else if (attemptSymSkipWS("eq")) {
 			cmp = new AST(XQ.ValueCompEQ);
 		} else if (attemptSymSkipWS("neq")) {
@@ -1603,10 +1614,6 @@ public class XQParser extends Tokenizer {
 			cmp = new AST(XQ.ValueCompGE);
 		} else if (attemptSymSkipWS("is")) {
 			cmp = new AST(XQ.NodeCompIs);
-		} else if (attemptSkipWS("<<")) {
-			cmp = new AST(XQ.NodeCompPrecedes);
-		} else if (attemptSkipWS(">>")) {
-			cmp = new AST(XQ.NodeCompFollows);
 		} else {
 			return first;
 		}
@@ -1955,8 +1962,8 @@ public class XQParser extends Tokenizer {
 			return valueExpr();
 		}
 		AST expr = new AST(XQ.ArithmeticExpr);
-		expr.addChild(new AST(XQ.Int, "-1"));
 		expr.addChild(new AST(XQ.MultiplyOp));
+		expr.addChild(new AST(XQ.Int, "-1"));
 		expr.addChild(valueExpr());
 		return expr;
 	}
@@ -2714,22 +2721,29 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST constructor() throws TokenizerException {
-		AST con = directConstructor();
+		AST con = directConstructor(false);
 		con = (con != null) ? con : computedConstructor();
 		return con;
 	}
 
-	private AST directConstructor() throws TokenizerException {
-		AST con = dirElemConstructor();
+	private AST directConstructor(boolean nested) throws TokenizerException {
+		AST con = dirElemConstructor(nested);
 		con = (con != null) ? con : dirCommentConstructor();
 		con = (con != null) ? con : dirPIConstructor();
 		return con;
 	}
 
-	private AST dirElemConstructor() throws TokenizerException {
-		if ((laSkipWS("</") != null) || (laSkipWS("<?") != null)
-				|| (laSkipWS("<!") != null) || (!attemptSkipWS("<"))) {
-			return null;
+	private AST dirElemConstructor(boolean nested) throws TokenizerException {
+		if (nested) {
+			if ((la("</") != null) || (la("<?") != null) || (la("<!") != null)
+					|| (!attempt("<"))) {
+				return null;
+			}
+		} else {
+			if ((laSkipWS("</") != null) || (laSkipWS("<?") != null)
+					|| (laSkipWS("<!") != null) || (!attemptSkipWS("<"))) {
+				return null;
+			}
 		}
 		// skipS();
 		AST stag = qnameLiteral(false, true);
@@ -2746,10 +2760,11 @@ public class XQParser extends Tokenizer {
 		}
 		consume(">");
 		push(stag.getValue());
-		AST content;
-		while ((content = dirElemContent()) != null) {
-			cseq.addChild(content);
-		}
+		dirElementContentList(cseq);
+		// AST content;
+		// while ((content = dirElemContent()) != null) {
+		// cseq.addChild(content);
+		// }
 		consume("</");
 		AST etag = qnameLiteral(false, true);
 		pop(etag.getValue());
@@ -2837,15 +2852,47 @@ public class XQParser extends Tokenizer {
 			consume(c);
 			return new AST(XQ.Str, c.string());
 		}
-		return enclosedExpr();
+		// do not use 'normal' enclosed expression
+		// as whitespace in direct constructors matters
+		if (!attempt("{")) {
+			return null;
+		}
+		AST expr = expr();
+		consumeSkipWS("}");
+		return expr;
 	}
 
-	private AST dirElemContent() throws TokenizerException {
-		AST c = directConstructor();
-		c = (c != null) ? c : cDataSection();
-		c = (c != null) ? c : commonContent();
-		c = (c != null) ? c : elementContentChar();
-		return c;
+	private void dirElementContentList(AST cseq) throws TokenizerException {
+		boolean atBoundary = true;
+		AST c;
+		while (true) {
+			boolean checkS = (laSkipS("<") != null)
+					|| (((laSkipS("{") != null) && (laSkipS("{{") == null)));
+			if ((atBoundary) && checkS) {
+				// we are at a boundary and next
+				// content element is an direct element
+				// constructor or an enclosed expression
+				// -> skip boundary ws if required
+				Token boundaryS = laS();
+				if (boundaryS != null) {
+					consume(boundaryS);
+					if (!stripBoundaryWS) {
+						cseq.addChild(new AST(XQ.Str, boundaryS.string()));
+					}
+				}
+			} else {
+				atBoundary = false;
+			}
+			if ((c = directConstructor(true)) != null) {
+				atBoundary = true;
+			} else if ((c = cDataSection()) != null) {
+			} else if ((c = commonContent()) != null) {
+			} else if ((c = elementContentChar()) != null) {
+			} else {
+				break;
+			}
+			cseq.addChild(c);
+		}
 	}
 
 	private AST cDataSection() throws TokenizerException {
@@ -2920,7 +2967,9 @@ public class XQParser extends Tokenizer {
 		consume(la);
 		consume(la2);
 		AST doc = new AST(XQ.CompDocumentConstructor);
-		doc.addChild(expr());
+		AST content = new AST(XQ.ContentSequence);
+		content.addChild(expr());
+		doc.addChild(content);
 		consume("}");
 		return doc;
 	}

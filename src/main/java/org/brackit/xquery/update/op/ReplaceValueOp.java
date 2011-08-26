@@ -27,7 +27,6 @@
  */
 package org.brackit.xquery.update.op;
 
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Node;
 
@@ -47,7 +46,7 @@ public class ReplaceValueOp implements UpdateOp {
 	}
 
 	@Override
-	public void apply(QueryContext ctx) throws QueryException {
+	public void apply() throws QueryException {
 		target.setValue(value);
 	}
 

@@ -51,7 +51,7 @@ public class JoinTest extends XQueryBaseTest {
 				"for $b in (2,3,4) " +
 				"where $a = $b " +
 				"return $a").execute(ctx);
-		ResultChecker.dCheck(ctx, intSequence(2,3), res);
+		ResultChecker.dCheck(intSequence(2,3), res);
 	}
 	
 	@Test
@@ -64,7 +64,7 @@ public class JoinTest extends XQueryBaseTest {
 				"let $z := $a + $x[0] " +
 				"where $a = $b " +
 				"return $a").execute(ctx);
-		ResultChecker.dCheck(ctx, intSequence(2,2,3), res);
+		ResultChecker.dCheck(intSequence(2,2,3), res);
 	}
 	
 	@Test
@@ -77,7 +77,7 @@ public class JoinTest extends XQueryBaseTest {
 				"let $z := $a + $x[0] " + 
 				"where $a = $b " +
 				"return $a").execute(ctx);
-		ResultChecker.dCheck(ctx, intSequence(2,3), res);
+		ResultChecker.dCheck(intSequence(2,3), res);
 	}
 	
 	@Test
@@ -88,7 +88,7 @@ public class JoinTest extends XQueryBaseTest {
 				"          where $a = $b " +
 				"          return $a " +
 				"return $c").execute(ctx);
-		ResultChecker.dCheck(ctx, intSequence(2,3), res);
+		ResultChecker.dCheck(intSequence(2,3), res);
 	}
 	
 	@Test
@@ -103,7 +103,7 @@ public class JoinTest extends XQueryBaseTest {
 				"          where $a = $b " +
 				"          return $a " +
 				"return $c").execute(ctx);
-		ResultChecker.dCheck(ctx, intSequence(2,2,3), res);
+		ResultChecker.dCheck(intSequence(2,2,3), res);
 	}
 	
 	@Test
@@ -115,7 +115,7 @@ public class JoinTest extends XQueryBaseTest {
 				"			where $a = $b " +
 				"			return $c " +
 				"return $x").execute(ctx);
-		ResultChecker.dCheck(ctx, intSequence(1,1), res);
+		ResultChecker.dCheck(intSequence(1,1), res);
 	}
 	
 	private Sequence intSequence(int... v) {

@@ -31,20 +31,24 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- * Reference to the context size of the default context item,
+ * Reference to the context size of the default context item.
  * 
  * @author Sebastian Baechle
  * 
  */
 public class DefaultCtxSize extends Variable {
-	public DefaultCtxSize() {
+	
+	private final DefaultCtxItem expr;
+	
+	public DefaultCtxSize(DefaultCtxItem expr) {
 		super(Namespaces.FS_LAST);
+		this.expr = expr;
 	}
 
 	@Override
@@ -56,12 +60,11 @@ public class DefaultCtxSize extends Variable {
 	@Override
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		IntNumeric item = ctx.getSize();
-		if (item == null) {
+		if (expr.evaluateToItem(ctx, tuple) == null) {
 			throw new QueryException(
 					ErrorCode.ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED,
 					"Dynamic context variable %s is not assigned a value", name);
 		}
-		return item;
+		return Int32.ONE;
 	}
 }

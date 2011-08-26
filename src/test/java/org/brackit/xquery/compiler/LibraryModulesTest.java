@@ -36,11 +36,7 @@ import org.brackit.xquery.ResultChecker;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.XQueryBaseTest;
 import org.brackit.xquery.atomic.Str;
-import org.brackit.xquery.compiler.BaseResolver;
-import org.brackit.xquery.compiler.CompileChain;
-import org.brackit.xquery.compiler.ModuleResolver;
 import org.brackit.xquery.module.LibraryModule;
-import org.brackit.xquery.module.Module;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Sequence;
 import org.junit.Test;
@@ -91,8 +87,7 @@ public class LibraryModulesTest extends XQueryBaseTest {
 		XQuery xq2 = new XQuery(chain, IMPORT_FOO + "foo:echo('y')");
 		QueryContext ctx = createContext();
 		Sequence result = xq2.execute(ctx);
-		ResultChecker.check(ctx, new ItemSequence(new Str("y"), new Str("y")),
-				result);
+		ResultChecker.check(new ItemSequence(new Str("y"), new Str("y")), result);
 	}
 
 	@Test
@@ -116,7 +111,7 @@ public class LibraryModulesTest extends XQueryBaseTest {
 				+ "(foo:echo('y'), foo:echo2('y'))");
 		QueryContext ctx = createContext();
 		Sequence result = xq2.execute(ctx);
-		ResultChecker.check(ctx, new ItemSequence(new Str("y"), new Str("y"),
+		ResultChecker.check(new ItemSequence(new Str("y"), new Str("y"),
 				new Str("y"), new Str("y")), result);
 	}
 
@@ -141,7 +136,7 @@ public class LibraryModulesTest extends XQueryBaseTest {
 				+ "(foo:echo('y'), bar:echo2('y'))");
 		QueryContext ctx = createContext();
 		Sequence result = xq2.execute(ctx);
-		ResultChecker.check(ctx, new ItemSequence(new Str("y"), new Str("y"),
+		ResultChecker.check(new ItemSequence(new Str("y"), new Str("y"),
 				new Str("y"), new Str("y")), result);
 	}
 

@@ -255,6 +255,18 @@ public class ErrorCode {
 			ERR_NSURI, ERR_PREFIX, "XQST0090");
 
 	/**
+	 * err:XQST0099
+	 */
+	public static final QNm ERR_CONTEXT_ITEM_ALREADY_DECLARED = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0099");
+	
+	/**
+	 * err:XQST0107
+	 */
+	public static final QNm ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0107");
+	
+	/**
 	 * err:FOAR0001
 	 */
 	public static final QNm ERR_DIVISION_BY_ZERO = new QNm(ERR_NSURI,

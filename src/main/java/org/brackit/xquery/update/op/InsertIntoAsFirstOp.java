@@ -27,7 +27,6 @@
  */
 package org.brackit.xquery.update.op;
 
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Node;
 
@@ -42,7 +41,7 @@ public class InsertIntoAsFirstOp extends AbstractInsertOp {
 	}
 
 	@Override
-	protected void doInsert(QueryContext ctx, Node<?> target, Node<?> content)
+	protected void doInsert(Node<?> target, Node<?> content)
 			throws QueryException {
 		target.prepend(content);
 	}

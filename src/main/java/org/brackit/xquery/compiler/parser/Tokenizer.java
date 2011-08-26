@@ -139,6 +139,30 @@ public class Tokenizer {
 	protected Token la(Token prev, String token) {
 		return la(prev.end, token);
 	}
+	
+	protected Token laSkipS(String token) {
+		return laSkipS(pos, token);
+	}
+
+	protected Token laSkipS(Token prev, String token) {
+		return laSkipWS(prev.end, token);
+	}
+
+	private Token laSkipS(int from, String token) {
+		int s = from + s(from);
+		int e = s;
+		int len = token.length();
+		if (end - e < len) {
+			return null;
+		}
+		for (int i = 0; i < len; i++) {
+			if (token.charAt(i) != input[e++]) {
+				return null;
+			}
+		}
+		return new Token(s, e);
+	}
+
 
 	protected Token laSkipWS(String token) {
 		return laSkipWS(pos, token);
@@ -327,7 +351,7 @@ public class Tokenizer {
 
 	protected Token laWS() {
 		int ws = ws(pos);
-		return (ws > 0) ? new Token(pos, ws) : null;
+		return (ws > 0) ? new Token(pos, pos + ws) : null;
 	}
 
 	protected Token laS(Token token) {
@@ -340,7 +364,7 @@ public class Tokenizer {
 
 	private Token laS(int pos) {
 		int s = s(pos);
-		return (s > 0) ? new Token(pos, s) : null;
+		return (s > 0) ? new Token(pos, pos + s) : null;
 	}
 
 	protected boolean skipS() {
@@ -381,7 +405,8 @@ public class Tokenizer {
 			}
 			// check for (nested) comment
 			if ((c == '(') && (p < end) && (input[p + 1] == ':')) {
-				p = comment(p);
+				int len = comment(p);
+				p = (len != 0) ? p + len : p++;
 				continue;
 			}
 			break;
@@ -390,7 +415,31 @@ public class Tokenizer {
 	}
 
 	private int comment(int from) {
-		throw new RuntimeException();
+		int e = from;
+		char c = input[e++];
+		if ((c != '(') || (e >= end) || ((c = input[e++]) != ':')) {
+			return 0;
+		}
+		int len = 2; // the starting '(:'
+		int depth = 0;		
+		while (e < end) {
+			char p = c;
+			c = input[e++];
+			len++;
+			if (c == ':') {
+				if (p == '(') {
+					depth++; // open nested comment 
+				}
+			} else if (c == ')') {
+				if (p == ':') {
+					if (depth == 0) {
+						return len;
+					}
+					depth--; // close nested comment					
+				}
+			}
+		}
+		return 0;
 	}
 
 	protected QNameToken laQName() {
@@ -976,7 +1025,7 @@ public class Tokenizer {
 	private String scanPredefEntityRef(int pos, boolean cond)
 			throws TokenizerException {
 		int e = pos;
-		if ((end - e <= 4) || (input[e++] != '&')) {
+		if ((end - e <= 4) || (input[e++] != '&') || (input[e] == '#')) {
 			return null;
 		}
 		if ((input[e] == 'l') && (input[e + 1] == 't') && (input[e + 2] == ';')) {
@@ -1023,7 +1072,10 @@ public class Tokenizer {
 		int len = 0;
 		int s = e;
 		char c;
+		int radix = 10;
 		if (input[e] == 'x') { // hex
+			radix = 16;
+			s++;
 			e++; // consume 'x'
 			while (e < end) {
 				c = input[e++];
@@ -1044,12 +1096,13 @@ public class Tokenizer {
 					}
 					break;
 				}
+				len++;
 			}
 		}
 		String tmp = new String(input, s, len);
-		char charRef;
+		int charRef;
 		try {
-			charRef = (char) Integer.parseInt(tmp);
+			charRef = Integer.parseInt(tmp, radix);
 		} catch (NumberFormatException e1) {
 			if (cond) {
 				return null;
@@ -1064,8 +1117,8 @@ public class Tokenizer {
 			throw new TokenizerException("Illegal Unicode codepoint '%s': %s",
 					tmp, paraphrase());
 		}
-		lastScanEnd = s + len;
-		return String.valueOf(charRef);
+		lastScanEnd = s + len + 1;
+		return Character.toString((char) charRef);
 	}
 
 	private String scanString(int pos, char escapeChar) {

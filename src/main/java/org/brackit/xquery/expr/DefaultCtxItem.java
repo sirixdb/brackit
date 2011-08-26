@@ -32,6 +32,11 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.module.Namespaces;
+import org.brackit.xquery.sequence.TypedSequence;
+import org.brackit.xquery.sequence.type.Cardinality;
+import org.brackit.xquery.sequence.type.ItemType;
+import org.brackit.xquery.sequence.type.SequenceType;
+import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
 
@@ -42,8 +47,17 @@ import org.brackit.xquery.xdm.Sequence;
  * 
  */
 public class DefaultCtxItem extends Variable {
-	public DefaultCtxItem() {
+
+	private final Expr dftExpr;
+	private final ItemType type;
+	private final boolean external;
+	private Item item;
+
+	public DefaultCtxItem(Expr dftExpr, ItemType type, boolean external) {
 		super(Namespaces.FS_DOT);
+		this.dftExpr = dftExpr;
+		this.type = type;
+		this.external = external;
 	}
 
 	@Override
@@ -55,12 +69,23 @@ public class DefaultCtxItem extends Variable {
 	@Override
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		Item item = ctx.getItem();
-		if (item == null) {
+		if (item != null) {
+			return item;
+		}
+		Item i = null;
+		if (external) {
+			i = ctx.getContextItem();
+		}
+		if ((i == null) && (dftExpr != null)) {
+			i = dftExpr.evaluateToItem(ctx, tuple);
+		}
+		if (i == null) {
 			throw new QueryException(
 					ErrorCode.ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED,
 					"Dynamic context variable %s is not assigned a value", name);
 		}
-		return item;
+		item = TypedSequence.toTypedItem(ctx, new SequenceType(type,
+				Cardinality.One), i);
+		return i;
 	}
 }

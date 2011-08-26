@@ -107,7 +107,7 @@ public class Rename extends ConstructedNodeBuilder implements Expr {
 		if (!renameNodeKind.contains(node.getKind())) {
 			throw new QueryException(
 					ErrorCode.ERR_UPDATE_RENAME_TARGET_NOT_A_EAP_NODE,
-					"Target node kind %s is not allowed for rename node: %",
+					"Target node kind is not allowed for rename node: %s",
 					node.getKind());
 		}
 

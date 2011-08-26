@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.expr;
+package org.brackit.xquery.update;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,22 +34,20 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.sequence.BaseIter;
-import org.brackit.xquery.sequence.LazySequence;
+import org.brackit.xquery.expr.ConstructedNodeBuilder;
 import org.brackit.xquery.update.op.UpdateOp;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 
-public class TransformExpr extends ConstructedNodeBuilder implements Expr {
+public class Transform extends ConstructedNodeBuilder implements Expr {
 	private Expr[] copyBindings;
 	private Expr modifyExpr;
 	private Expr returnExpr;
 	private boolean[] referenced;
 
-	public TransformExpr(Expr[] copyBindings, boolean[] referenced,
+	public Transform(Expr[] copyBindings, boolean[] referenced,
 			Expr modifyExpr, Expr returnExpr) {
 		this.copyBindings = copyBindings;
 		this.referenced = referenced;
@@ -71,74 +69,49 @@ public class TransformExpr extends ConstructedNodeBuilder implements Expr {
 
 	private Tuple copyAndModify(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		final List<Node<?>> copies = new ArrayList<Node<?>>();
-		final QueryContext context = ctx;
 
+		// backup current pending update list
+		UpdateList saved = ctx.getUpdateList();
+		UpdateList mods = new UpdateList();
+		ctx.setUpdateList(mods);
+		// create copy bindings
+		List<Node<?>> copies = new ArrayList<Node<?>>(copyBindings.length);
 		for (int i = 0; i < copyBindings.length; i++) {
 			if (referenced[i]) {
-				final Item source = copyBindings[i].evaluateToItem(ctx, tuple);
-
-				if (source == null || !(source instanceof Node<?>)) {
+				Item item = copyBindings[i].evaluateToItem(ctx, tuple);
+				if (item == null || !(item instanceof Node<?>)) {
 					throw (new QueryException(
 							ErrorCode.ERR_TRANSFORM_SOURCE_EXPRESSION_NOT_SINGLE_NODE,
 							"Source expression must evaluate to single node."));
 				}
-
-				Sequence seq = new LazySequence() {
-					private Node<?> orig = (Node<?>) source;
-					private Node<?> copy;
-
-					@Override
-					public Iter iterate() {
-						return new BaseIter() {
-							private boolean returned = false;
-
-							@Override
-							public Item next() throws QueryException {
-								if (!returned) {
-									if (copy == null) {
-										copy = copy(context, orig);
-										copies.add(copy);
-									}
-									returned = true;
-									return copy;
-								}
-								return null;
-							}
-
-							@Override
-							public void close() {
-							}
-						};
-					}
-				};
-
-				tuple = tuple.concat(seq);
+				Node<?> copy = copy(ctx, (Node<?>) item);
+				copies.add(copy);
+				tuple = tuple.concat(copy);
 			}
 		}
-
+		// evaluate transform expression
 		modifyExpr.evaluate(ctx, tuple);
-
-		List<UpdateOp> updates = ctx.getPendingUpdates();
-		if (updates != null) {
-			for (UpdateOp op : updates) {
-				boolean ok = false;
-				for (Node<?> copy : copies) {
-					if (copy.isAncestorOrSelfOf((Node<?>) op.getTarget())) {
-						ok = true;
-						break;
-					}
-				}
-
-				if (!ok) {
-					throw new QueryException(
-							ErrorCode.ERR_TRANSFORM_MODIFIES_EXISTING_NODE,
-							"Modify clause update expressions may not affect existing nodes.");
+		// ensure that only copies are affected by the transformation
+		for (UpdateOp op : mods.list()) {
+			boolean ok = false;
+			for (Node<?> copy : copies) {
+				if (copy.isAncestorOrSelfOf((Node<?>) op.getTarget())) {
+					ok = true;
+					break;
 				}
 			}
-		}
 
+			if (!ok) {
+				throw new QueryException(
+						ErrorCode.ERR_TRANSFORM_MODIFIES_EXISTING_NODE,
+						"Modify clause update expressions may not affect existing nodes.");
+			}
+		}
+		// apply transformation
 		ctx.applyUpdates();
+		// reinstall backup of pending updates
+		ctx.setUpdateList(saved);
+
 		return tuple;
 	}
 

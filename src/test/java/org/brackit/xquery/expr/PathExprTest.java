@@ -31,26 +31,29 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.PrintStream;
 
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.ResultChecker;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.XQueryBaseTest;
-import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.junit.Test;
 
+/**
+ * 
+ * @author Sebastian Baechle
+ *
+ */
 public class PathExprTest extends XQueryBaseTest {
 	@Test
 	public void oneChildStepPathExpr() throws Exception {
 		Collection<?> locator = storeDocument("test.xml", "<a><b/><b/></a>");
 		Node<?> documentNode = locator.getDocument();
 		Node<?> root = documentNode.getFirstChild();
-		ctx.setDefaultContext(root, Int32.ONE, Int32.ONE);
+		ctx.setContextItem(root);
 		Sequence result = new XQuery("b").execute(ctx);
-		ResultChecker.dCheck(ctx, new ItemSequence(root.getFirstChild(), root
+		ResultChecker.dCheck(new ItemSequence(root.getFirstChild(), root
 				.getLastChild()), result);
 	}
 
@@ -59,9 +62,9 @@ public class PathExprTest extends XQueryBaseTest {
 		Collection<?> locator = storeDocument("test.xml", "<a><b/><b/></a>");
 		Node<?> documentNode = locator.getDocument();
 		Node<?> aNode = documentNode.getFirstChild().getFirstChild();
-		ctx.setDefaultContext(aNode, Int32.ONE, Int32.ONE);
+		ctx.setContextItem(aNode);
 		Sequence result = new XQuery("/").execute(ctx);
-		ResultChecker.dCheck(ctx, documentNode, result);
+		ResultChecker.dCheck(documentNode, result);
 	}
 
 	@Test
@@ -117,7 +120,6 @@ public class PathExprTest extends XQueryBaseTest {
 		new XQuery(
 				"let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c))//position()")
 				.serialize(ctx, buf);
-		System.out.println(buf.toString());
 		assertEquals("1 2 3 1 2 3 4 5", buf.toString());
 	}
 
@@ -172,7 +174,6 @@ public class PathExprTest extends XQueryBaseTest {
 		new XQuery(
 				"let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c, $doc/d))/*")
 				.serialize(ctx, buf);
-		System.out.println(buf.toString());
 		assertEquals("<b>b1</b><b>b2</b><b>b3</b>", buf.toString());
 	}
 
@@ -182,7 +183,6 @@ public class PathExprTest extends XQueryBaseTest {
 		new XQuery(
 				"let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c, $doc/d))//position()")
 				.serialize(ctx, buf);
-		System.out.println(buf.toString());
 		assertEquals("1 2 3 1 2 3 4 5 1 2 3", buf.toString());
 	}
 
@@ -192,7 +192,6 @@ public class PathExprTest extends XQueryBaseTest {
 		new XQuery(
 				"let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c, $doc/d))/b/text()")
 				.serialize(ctx, buf);
-		System.out.println(buf.toString());
 		assertEquals("b1b2b3", buf.toString());
 	}
 

@@ -54,7 +54,7 @@ public class XMLChar {
 			+ NAME_START_CHAR_WITHOUT_COLON_PATTERN + "|"
 			+ NAME_CHAR_OTHER_PATTERN + ")+";
 
-	public static boolean isNameStartChar(char c) {
+	public static boolean isNameStartChar(int c) {
 		return ((c == ':') || (('A' <= c) && (c <= 'Z')) || (c == '_')
 				|| (('a' <= c) && (c <= 'z'))
 				|| (('\u00C0' <= c) && (c <= '\u00D6'))
@@ -70,17 +70,17 @@ public class XMLChar {
 		// TODO: Howto add range [#x10000-#xEFFFF]?
 	}
 
-	public static boolean isNameChar(char c) {
+	public static boolean isNameChar(int c) {
 		return ((isNameStartChar(c)) || (c == '-') || (c == '.')
 				|| (('0' <= c) && (c <= '9')) || (c == '\u00B7')
 				|| (('\u0300' <= c) && (c <= '\u036F')) || (('\u203F' <= c) && (c <= '\u2040')));
 	}
 
-	public static boolean isWS(char c) {
+	public static boolean isWS(int c) {
 		return (c == ' ') || (c == '\r') || (c == '\t') || (c == '\n');
 	}
 
-	public static boolean isChar(char c) {
+	public static boolean isChar(int c) {
 		return ((c == '\t') || (c == '\n') || (c == '\r')
 				|| (('\u0020' <= c) && (c <= '\uD7FF')) || (('\uE000' <= c) && (c <= '\uFFFD')));
 		// TODO: Howto add range [#x10000-#xEFFFF]?

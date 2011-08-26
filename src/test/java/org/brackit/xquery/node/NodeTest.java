@@ -41,6 +41,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.XQueryBaseTest;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.StreamSubtreeProcessor;
 import org.brackit.xquery.node.parser.SubtreeListener;
@@ -60,48 +61,18 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 import org.xml.sax.InputSource;
 
-public abstract class NodeTest<E extends Node<E>> {
-
-	protected static final String DOCUMENT = "<?xml version = '1.0' encoding = 'UTF-8'?>"
-			+ "<Organization>"
-			+ "<Department>"
-			+ "<Member key=\"12\" employee=\"true\">"
-			+ "<Firstname>Kurt</Firstname>"
-			+ "<Lastname>Mayer</Lastname>"
-			+ "<DateOfBirth>1.4.1963</DateOfBirth>"
-			+ "<Title>Dr.-Ing.</Title>"
-			+ "</Member>"
-			+ "<Member key=\"40\"  employe=\"false\">"
-			+ "<Firstname>Hans</Firstname>"
-			+ "<Lastname>Mettmann</Lastname>"
-			+ "<DateOfBirth>12.9.1974</DateOfBirth>"
-			+ "<Title>Dipl.-Inf</Title>"
-			+ "</Member>"
-			+ "<Member>"
-			+ "</Member>"
-			+ "<Member>"
-			+ "</Member>"
-			+ "</Department>"
-			+ "<Project id=\"4711\" priority=\"high\">"
-			+ "<Title>XML-DB</Title>"
-			+ "<Budget>10000</Budget>"
-			+ "</Project>"
-			+ "<Project id=\"666\" priority=\"evenhigher\">"
-			+ "<Title>DISS</Title>"
-			+ "<Budget>7000</Budget>"
-			+ "<Abstract>Native<b>XML</b>-Databases</Abstract>"
-			+ "</Project>"
-			+ "</Organization>";
+/**
+ * 
+ * @author Sebastian Baechle
+ * 
+ */
+public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
 	protected static final String ROOT_ONLY_DOCUMENT = "<?xml version = '1.0' encoding = 'UTF-8'?><root/>";
 
-	protected QueryContext ctx;
-
-	protected Random rand;
-
 	@Test
 	public void testStoreDocument() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
+		createDocument(new DocumentParser(readFile("/docs/", "orga.xml")));
 	}
 
 	@Test
@@ -204,12 +175,13 @@ public abstract class NodeTest<E extends Node<E>> {
 
 	@Test
 	public void traverseDocumentInPreorder() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
+		Collection<E> coll = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
 		E root = coll.getDocument().getFirstChild();
 		org.w3c.dom.Node domRoot = null;
 
-		domRoot = createDomTree(ctx,
-				new InputSource(new StringReader(DOCUMENT)));
+		domRoot = createDomTree(ctx, new InputSource(new StringReader(readFile(
+				"/docs/", "orga.xml"))));
 
 		checkSubtreePreOrder(ctx, root, domRoot); // check document index
 	}
@@ -347,7 +319,8 @@ public abstract class NodeTest<E extends Node<E>> {
 
 	@Test
 	public void traverseDocumentInPostorder() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
+		Collection<E> coll = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
 		E root = coll.getDocument().getFirstChild();
 		org.w3c.dom.Node domRoot = null;
 
@@ -356,7 +329,7 @@ public abstract class NodeTest<E extends Node<E>> {
 					.newInstance();
 			DocumentBuilder builder = factory.newDocumentBuilder();
 			Document document = builder.parse(new InputSource(new StringReader(
-					DOCUMENT)));
+					readFile("/docs/", "orga.xml"))));
 			domRoot = document.getDocumentElement();
 		} catch (Exception e) {
 			throw new DocumentException(
@@ -483,7 +456,8 @@ public abstract class NodeTest<E extends Node<E>> {
 
 	@Test
 	public void testScanDocument() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
+		Collection<E> coll = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
 
 		Stream<? extends E> stream = coll.getDocument().getFirstChild()
 				.getSubtree();
@@ -496,7 +470,8 @@ public abstract class NodeTest<E extends Node<E>> {
 
 	@Test
 	public void testProcessSubtree() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
+		Collection<E> coll = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
 
 		System.err.println("-------------------");
 		Stream<? extends E> stream = coll.getDocument().getFirstChild()
@@ -509,7 +484,8 @@ public abstract class NodeTest<E extends Node<E>> {
 
 	@Test
 	public void testInsertSubtree() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
+		Collection<E> coll = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
 
 		E root = coll.getDocument().getFirstChild();
 		E node = root.getFirstChild();
@@ -523,7 +499,8 @@ public abstract class NodeTest<E extends Node<E>> {
 
 	@Test
 	public void testInsertRecord() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
+		Collection<E> coll = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
 
 		E root = coll.getDocument().getFirstChild();
 		E lastChild = root.getLastChild();
@@ -532,7 +509,8 @@ public abstract class NodeTest<E extends Node<E>> {
 
 	@Test
 	public void testSetAttribute() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
+		Collection<E> coll = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
 
 		E root = coll.getDocument().getFirstChild();
 		E node = root.getFirstChild();
@@ -546,7 +524,8 @@ public abstract class NodeTest<E extends Node<E>> {
 
 	@Test
 	public void testGetText() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
+		Collection<E> coll = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
 		E root = coll.getDocument().getFirstChild();
 		System.out.println(root.getValue());
 		E node = root.getFirstChild();

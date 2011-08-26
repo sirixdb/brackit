@@ -50,7 +50,7 @@ public class LetBindLiftTest extends XQueryBaseTest {
 	public void forLetWhereConditional() throws Exception {
 		Sequence res = new XQuery(
 				"for $a in (1,2,3) " +
-				"let $b := 5" +
+				"let $b := 5 " +
 				"let $c := " +
 				"	for $d in (2 to 1)" +
 				"	let $e := " +
@@ -60,7 +60,7 @@ public class LetBindLiftTest extends XQueryBaseTest {
 				"	return $d " +
 				"return 'no'").execute(ctx);
 		Str no = new Str("no");
-		ResultChecker.dCheck(ctx, new ItemSequence(no, no, no), res);
+		ResultChecker.dCheck(new ItemSequence(no, no, no), res);
 	}
 	
 	@Test
@@ -73,7 +73,7 @@ public class LetBindLiftTest extends XQueryBaseTest {
 				"	order by $d ascending, $e descending " +
 				"	return ($d,$e) " +
 				"return ($a, $c)").execute(ctx);
-		ResultChecker.dCheck(ctx, intSequence(1, 4, 9, 4, 8, 4, 7, 5, 9, 5, 8,
+		ResultChecker.dCheck(intSequence(1, 4, 9, 4, 8, 4, 7, 5, 9, 5, 8,
 				5, 7, 6, 9, 6, 8, 6, 7, 2, 4, 9, 4, 8, 4, 7, 5, 9, 5, 8, 5, 7,
 				6, 9, 6, 8, 6, 7, 3, 4, 9, 4, 8, 4, 7, 5, 9, 5, 8, 5, 7, 6, 9,
 				6, 8, 6, 7), res);
@@ -89,7 +89,7 @@ public class LetBindLiftTest extends XQueryBaseTest {
 				"	order by $d ascending, $e descending " +
 				"	return ($d,$e) " +
 				"return ($a, $c)").execute(ctx);
-		ResultChecker.dCheck(ctx, intSequence(7, 1, 6, 1, 5, 1, 4, 2, 6, 2, 5,
+		ResultChecker.dCheck(intSequence(7, 1, 6, 1, 5, 1, 4, 2, 6, 2, 5,
 				2, 4, 3, 6, 3, 5, 3, 4, 8, 1, 6, 1, 5, 1, 4, 2, 6, 2, 5, 2, 4,
 				3, 6, 3, 5, 3, 4, 9, 1, 6, 1, 5, 1, 4, 2, 6, 2, 5, 2, 4, 3, 6,
 				3, 5, 3, 4), res);
@@ -103,7 +103,7 @@ public class LetBindLiftTest extends XQueryBaseTest {
 				"	for $e in (4,5,6) " +
 				"	order by $d ascending, $e descending " +
 				"	return ($d,$e)").execute(ctx);
-		ResultChecker.dCheck(ctx, intSequence(1, 6, 1, 5, 1, 4, 2, 6, 2, 5, 2,
+		ResultChecker.dCheck(intSequence(1, 6, 1, 5, 1, 4, 2, 6, 2, 5, 2,
 				4, 3, 6, 3, 5, 3, 4), res);
 	}
 	
@@ -125,7 +125,7 @@ public class LetBindLiftTest extends XQueryBaseTest {
 				"	return $d " +
 				"return ($a,$b) " +
 				"return $x").execute(ctx);
-		ResultChecker.dCheck(ctx, intSequence(1, 2, 2, 4, 3, 4, 2, 4, 5), res);		
+		ResultChecker.dCheck(intSequence(1, 2, 2, 4, 3, 4, 2, 4, 5), res);		
 	}
 	
 	private Sequence intSequence(int... v) {

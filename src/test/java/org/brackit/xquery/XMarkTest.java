@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URL;
 
-import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.node.d2linked.D2Node;
 import org.brackit.xquery.node.d2linked.D2NodeBuilder;
 import org.brackit.xquery.node.parser.DocumentParser;
@@ -59,7 +58,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark01() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q01.xq"));
 		query.serialize(ctx, buffer);
@@ -68,7 +67,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark02() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q02.xq"));
 		query.serialize(ctx, buffer);
@@ -77,7 +76,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark03() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q03.xq"));
 		query.serialize(ctx, buffer);
@@ -86,7 +85,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark04() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q04.xq"));
 		query.serialize(ctx, buffer);
@@ -95,7 +94,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark05() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q05.xq"));
 		query.serialize(ctx, buffer);
@@ -104,7 +103,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark06() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q06.xq"));
 		query.serialize(ctx, buffer);
@@ -113,7 +112,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark07() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q07.xq"));
 		query.serialize(ctx, buffer);
@@ -122,7 +121,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark08() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q08.xq"));
 		query.serialize(ctx, buffer);
@@ -131,7 +130,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark09() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q09.xq"));
 		query.serialize(ctx, buffer);
@@ -140,7 +139,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark10() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q10.xq"));
 		query.serialize(ctx, buffer);
@@ -149,7 +148,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark11() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q11.xq"));
 		query.serialize(ctx, buffer);
@@ -158,7 +157,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark12() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q12.xq"));
 		query.serialize(ctx, buffer);
@@ -167,7 +166,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark13() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q13.xq"));
 		query.serialize(ctx, buffer);
@@ -176,7 +175,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark14() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q14.xq"));
 		query.serialize(ctx, buffer);
@@ -185,7 +184,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark15() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q15.xq"));
 		query.serialize(ctx, buffer);
@@ -194,7 +193,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark16() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q16.xq"));
 		query.serialize(ctx, buffer);
@@ -203,7 +202,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark17() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q17.xq"));
 		query.serialize(ctx, buffer);
@@ -212,7 +211,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark18() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q18.xq"));
 		query.serialize(ctx, buffer);
@@ -221,7 +220,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark19() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q19.xq"));
 		query.serialize(ctx, buffer);
@@ -230,7 +229,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
 
 	@Test
 	public void xmark20() throws Exception, IOException {
-		ctx.setDefaultContext(coll.getDocument(), Int32.ONE, Int32.ONE);
+		ctx.setContextItem(coll.getDocument());
 		PrintStream buffer = createBuffer();
 		XQuery query = xquery(readQuery(QUERY_DIR, "q20.xq"));
 		query.serialize(ctx, buffer);

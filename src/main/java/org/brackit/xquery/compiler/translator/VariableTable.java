@@ -43,6 +43,7 @@ import org.brackit.xquery.expr.ExtVariable;
 import org.brackit.xquery.expr.Variable;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.module.Namespaces;
+import org.brackit.xquery.sequence.type.ItemType;
 import org.brackit.xquery.sequence.type.SequenceType;
 import org.brackit.xquery.util.log.Logger;
 import org.brackit.xquery.xdm.Expr;
@@ -61,6 +62,7 @@ public class VariableTable {
 	int bLength;
 	int bTableCounts;
 	Module module;
+	DefaultCtxItem defaultItem;
 
 	public VariableTable() {
 		bTable = new Binding[1][3];
@@ -68,8 +70,8 @@ public class VariableTable {
 	}
 
 	/**
-	 * Resolve bound variable and connect it to provided
-	 * reference
+	 * Resolve bound variable and connect it to provided reference
+	 * 
 	 * @param name
 	 * @param ref
 	 * @throws QueryException
@@ -89,9 +91,10 @@ public class VariableTable {
 		throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
 				"Cannot resolve var %s", name);
 	}
-	
+
 	/**
 	 * Resolve variable and create variable access expression
+	 * 
 	 * @param name
 	 * @return
 	 * @throws QueryException
@@ -111,13 +114,28 @@ public class VariableTable {
 		}
 
 		if (Namespaces.FS_DOT.equals(name)) {
-			return new DefaultCtxItem();
+			if (defaultItem == null) {
+				throw new QueryException(
+						ErrorCode.ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER,
+						"Context item initializer depends on context item");
+			}
+			return defaultItem;
 		}
 		if (Namespaces.FS_POSITION.equals(name)) {
-			return new DefaultCtxPos();
+			if (defaultItem == null) {
+				throw new QueryException(
+						ErrorCode.ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER,
+						"Context item initializer depends on context item");
+			}
+			return new DefaultCtxPos(defaultItem);
 		}
 		if (Namespaces.FS_LAST.equals(name)) {
-			return new DefaultCtxSize();
+			if (defaultItem == null) {
+				throw new QueryException(
+						ErrorCode.ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER,
+						"Context item initializer depends on context item");
+			}
+			return new DefaultCtxSize(defaultItem);
 		}
 
 		for (int i = 0; i < dLength; i++) {
@@ -173,6 +191,10 @@ public class VariableTable {
 			dVariables[dLength++] = declVariable;
 			return declVariable;
 		}
+	}
+
+	Variable declareDefaultCtxItem(Expr expr, ItemType type, boolean external) {
+		return (defaultItem = new DefaultCtxItem(expr, type, external));
 	}
 
 	public void unbind() {
