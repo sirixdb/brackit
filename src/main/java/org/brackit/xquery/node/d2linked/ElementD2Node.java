@@ -222,7 +222,7 @@ public final class ElementD2Node extends ParentD2Node {
 					"Cannot replace root node with node of type: %s", kind);
 		}
 
-		if ((kind != Kind.ELEMENT) || (kind != Kind.TEXT)) {
+		if ((kind != Kind.ELEMENT) && (kind != Kind.TEXT)) {
 			throw new DocumentException(
 					"Cannot replace element with node of type: %s.", kind);
 		}
@@ -243,7 +243,7 @@ public final class ElementD2Node extends ParentD2Node {
 					"Cannot replace root node with node of type: %s", kind);
 		}
 
-		if ((kind != Kind.ELEMENT) || (kind != Kind.TEXT)) {
+		if ((kind != Kind.ELEMENT) && (kind != Kind.TEXT)) {
 			throw new DocumentException(
 					"Cannot replace element with node of type: %s.", kind);
 		}
@@ -265,7 +265,7 @@ public final class ElementD2Node extends ParentD2Node {
 					"Cannot replace root node with node of type: %s", kind);
 		}
 
-		if ((kind != Kind.ELEMENT) || (kind != Kind.TEXT)) {
+		if ((kind != Kind.ELEMENT) && (kind != Kind.TEXT)) {
 			throw new DocumentException(
 					"Cannot replace element with node of type: %s.", kind);
 		}
