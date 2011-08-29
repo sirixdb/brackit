@@ -604,7 +604,7 @@ abstract class ParentD2Node extends D2Node {
 
 	D2Node replace(D2Node node, Node<?> child)
 			throws OperationNotSupportedException, DocumentException {
-		return insert(node.getSubtree(), node, true, false);
+		return insert(child.getSubtree(), node, true, false);
 	}
 
 	D2Node replace(D2Node node, SubtreeParser parser)

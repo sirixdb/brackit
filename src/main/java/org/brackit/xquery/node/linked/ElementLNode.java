@@ -272,7 +272,7 @@ public final class ElementLNode extends ParentLNode {
 			throw new DocumentException("Cannot replace node without parent");
 		}
 
-		return parent.replace(this, node);
+		return parent.replaceDirect(this, node);
 	}
 
 	@Override

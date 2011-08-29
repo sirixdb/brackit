@@ -123,7 +123,7 @@ abstract class ParentLNode extends LNode {
 				return next;
 			}
 
-			while (current != root) {
+			while ((current != root) && (current != null)) {
 				if ((next = current.sibling) != null) // try to switch to
 				// sibling of descendant
 				{
@@ -610,6 +610,11 @@ abstract class ParentLNode extends LNode {
 			throws OperationNotSupportedException, DocumentException {
 		LNode newChild = buildChild(child);
 		return replaceChild(node, newChild);
+	}
+	
+	LNode replaceDirect(LNode node, LNode child)
+	throws OperationNotSupportedException, DocumentException {
+		return replaceChild(node, child);
 	}
 
 	LNode replace(LNode node, SubtreeParser parser)
