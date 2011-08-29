@@ -32,9 +32,11 @@ import java.util.Arrays;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.util.log.Logger;
 
 /**
  * Straight-forward, recursive descent parser.
@@ -44,6 +46,8 @@ import org.brackit.xquery.compiler.XQ;
  */
 public class XQParser extends Tokenizer {
 
+	private static final Logger log = Logger.getLogger(XQParser.class);
+	
 	private class XQTokenizerException extends TokenizerException {
 		private final QNm code;
 
@@ -2486,8 +2490,12 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST nameTest() throws TokenizerException {
-		AST test = eqnameLiteral(true, true);
-		test = (test != null) ? test : wildcard();
+		// Switched order of EQName and Wildcard of
+		// the XQuery grammar because the EQName look
+		// ahead could consume the NCName prefix of 
+		// a "NCNname ':' '*'" wildcard
+		AST test = wildcard();
+		test = (test != null) ? test : eqnameLiteral(true, true);
 		if (test == null) {
 			return null;
 		}
@@ -2498,25 +2506,27 @@ public class XQParser extends Tokenizer {
 
 	private AST wildcard() throws TokenizerException {
 		if (attemptSkipWS("*:")) {
-			AST ncname = ncnameLiteral(true, true);
-			if (ncname == null) {
+			Token la = laNCNameSkipWS();
+			if (la == null) {
 				return null;
 			}
-			AST wbc = new AST(XQ.WildcardBeforeColon);
-			wbc.addChild(ncname);
+			consume(la);
+			AST wbc = new AST(XQ.WildcardBeforeColon, la.string());
 			return wbc;
 		} else if (attemptSkipWS("*")) {
 			return new AST(XQ.Wildcard);
 		} else {
-			AST ncname = ncnameLiteral(true, true);
-			if (ncname == null) {
+			Token la = laNCNameSkipWS();
+			if (la == null) {
+				return null;
+			}			
+			Token la2 = la(la, ":*");
+			if (la2 == null) {
 				return null;
 			}
-			if (!attempt(":*")) {
-				return null;
-			}
-			AST wba = new AST(XQ.WildcardAfterColon);
-			wba.addChild(ncname);
+			consume(la);
+			consume(la2);
+			AST wba = new AST(XQ.WildcardAfterColon, la.string());
 			return wba;
 		}
 	}
@@ -3374,7 +3384,9 @@ public class XQParser extends Tokenizer {
 	}
 
 	private String declare(String qname) throws TokenizerException {
-		System.out.println("Declare " + qname);
+		if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
+			log.debug("Declare " + qname);
+		}
 		try {
 			return variables.declare(qname);
 		} catch (QueryException e) {
@@ -3383,7 +3395,9 @@ public class XQParser extends Tokenizer {
 	}
 
 	private String resolve(String qname) throws TokenizerException {
-		System.out.println("Resolve " + qname);
+		if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
+			log.debug("Resolve " + qname);
+		}
 		try {
 			return variables.resolve(qname);
 		} catch (QueryException e) {
@@ -3393,17 +3407,23 @@ public class XQParser extends Tokenizer {
 	}
 
 	private void openScope() throws TokenizerException {
-		System.out.println("Open scope");
+		if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
+			log.debug("Open scope");
+		}
 		variables.openScope();
 	}
 
 	private void offerScope() throws TokenizerException {
-		System.out.println("Offer scope");
+		if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
+			log.debug("Offer scope");
+		}
 		variables.offerScope();
 	}
 
 	private void closeScope() throws TokenizerException {
-		System.out.println("Close scope");
+		if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
+			log.debug("Close scope");
+		}
 		try {
 			variables.closeScope();
 		} catch (QueryException e) {

@@ -29,6 +29,8 @@ package org.brackit.xquery.compiler.parser;
 
 import java.util.Arrays;
 
+import org.brackit.xquery.XQuery;
+import org.brackit.xquery.util.log.Logger;
 import org.brackit.xquery.xdm.XMLChar;
 
 /**
@@ -37,6 +39,8 @@ import org.brackit.xquery.xdm.XMLChar;
  * 
  */
 public class Tokenizer {
+
+	private static final Logger log = Logger.getLogger(Tokenizer.class);
 
 	private int pos;
 	private int lastScanEnd;
@@ -139,7 +143,7 @@ public class Tokenizer {
 	protected Token la(Token prev, String token) {
 		return la(prev.end, token);
 	}
-	
+
 	protected Token laSkipS(String token) {
 		return laSkipS(pos, token);
 	}
@@ -162,7 +166,6 @@ public class Tokenizer {
 		}
 		return new Token(s, e);
 	}
-
 
 	protected Token laSkipWS(String token) {
 		return laSkipWS(pos, token);
@@ -307,8 +310,10 @@ public class Tokenizer {
 	}
 
 	protected void consume(Token token) {
-		System.out.println("Consuming " + token + " (to [" + token.start + ":"
-				+ token.end + "]/" + end + ")");
+		if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
+			log.debug("Consuming " + token + " (to [" + token.start + ":"
+					+ token.end + "]/" + end + ")");
+		}
 		pos = token.end;
 	}
 
@@ -372,8 +377,11 @@ public class Tokenizer {
 		if (s <= 0) {
 			return false;
 		}
-		System.out.println("Skipping whitespace from " + pos + " to "
-				+ (pos + s));
+
+		if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
+			log.debug("Skipping whitespace from " + pos + " to "
+					+ (pos + s));
+		}
 		pos += s;
 		return true;
 	}
@@ -421,21 +429,21 @@ public class Tokenizer {
 			return 0;
 		}
 		int len = 2; // the starting '(:'
-		int depth = 0;		
+		int depth = 0;
 		while (e < end) {
 			char p = c;
 			c = input[e++];
 			len++;
 			if (c == ':') {
 				if (p == '(') {
-					depth++; // open nested comment 
+					depth++; // open nested comment
 				}
 			} else if (c == ')') {
 				if (p == ':') {
 					if (depth == 0) {
 						return len;
 					}
-					depth--; // close nested comment					
+					depth--; // close nested comment
 				}
 			}
 		}
@@ -473,6 +481,7 @@ public class Tokenizer {
 		}
 		Token la2 = laNCName(e);
 		if (la2 == null) {
+			// TODO illegal? throw exception?
 			return new QNameToken(la.start, la.end, null, la.string());
 		}
 		e = la2.end;
@@ -515,7 +524,7 @@ public class Tokenizer {
 		Token ncname = laNCName(colon);
 		if (ncname == null) {
 			// TODO illegal? throw exception?
-			return null;
+			return la;
 		}
 		return new EQNameToken(pos, ncname.end, uri.string(), ncname.string());
 	}
@@ -531,7 +540,7 @@ public class Tokenizer {
 	protected Token laNCName(Token token) {
 		return laNCName(token.end);
 	}
-	
+
 	protected Token laNCNameSkipWS(Token token) {
 		return laNCName(token.end + ws(token.end));
 	}
@@ -1012,8 +1021,9 @@ public class Tokenizer {
 				break;
 			}
 			if (!XMLChar.isChar(c)) {
-				throw new TokenizerException("Illegal character in CDATA section: '%s': %s",
-						c, paraphrase());
+				throw new TokenizerException(
+						"Illegal character in CDATA section: '%s': %s", c,
+						paraphrase());
 			} else {
 				len++;
 			}
