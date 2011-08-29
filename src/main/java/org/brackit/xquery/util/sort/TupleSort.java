@@ -162,13 +162,22 @@ public class TupleSort {
 		}
 	}
 
-	private void sortBuffer() {
+	private void sortBuffer() throws QueryException {
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Start main memory sort of %s items.'",
 					count));
 		}
 
-		Arrays.sort(buffer, 0, count, comparator);
+		try {
+			Arrays.sort(buffer, 0, count, comparator);
+		} catch (ClassCastException e) {
+			// java.util.Comparator#compare() is expected to throw a
+			// a ClassCastException when to items cannot be compared
+			// to each other. This translates to a err:XPTY0004 in XQuery
+			throw new QueryException(e, ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
+		} catch (RuntimeException e) {
+			throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR);
+		}
 
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Finished main memory sort of %s items",

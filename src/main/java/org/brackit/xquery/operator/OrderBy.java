@@ -95,11 +95,10 @@ public class OrderBy implements Operator {
 				}
 				return 0;
 			} catch (QueryException e) {
-				if (e.getCode() == ErrorCode.BIT_DYN_RT_ILLEGAL_COMPARISON_ERROR) {
+				if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
 					throw new ClassCastException(e.getMessage());
 				} else {
-					e.printStackTrace();
-					throw new RuntimeException(e.getMessage());
+					throw new RuntimeException(e);
 				}
 			}
 		}
