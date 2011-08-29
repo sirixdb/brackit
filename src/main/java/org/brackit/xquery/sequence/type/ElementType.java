@@ -61,7 +61,7 @@ public class ElementType extends KindTest {
 
 	public ElementType(QNm name, Type type) {
 		this.name = name;
-		this.localName = name.getLocalName();
+		this.localName = (name != null) ? name.getLocalName() : null;
 		this.type = type;
 	}
 
