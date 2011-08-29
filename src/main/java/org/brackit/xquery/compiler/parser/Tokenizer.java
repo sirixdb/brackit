@@ -414,7 +414,11 @@ public class Tokenizer {
 			// check for (nested) comment
 			if ((c == '(') && (p < end) && (input[p + 1] == ':')) {
 				int len = comment(p);
-				p = (len != 0) ? p + len : p++;
+				if (len == 0) {
+					p++;
+					break;
+				}
+				p = p + len;
 				continue;
 			}
 			break;
