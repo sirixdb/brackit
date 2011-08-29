@@ -37,9 +37,11 @@ import org.brackit.xquery.ResultChecker;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.XQueryBaseTest;
 import org.brackit.xquery.atomic.Dbl;
+import org.brackit.xquery.atomic.Dec;
 import org.brackit.xquery.atomic.Int;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Sequence;
 import org.junit.Test;
@@ -52,23 +54,29 @@ public class PrologDeclarationTest extends XQueryBaseTest {
 
 	@Test
 	public void declareFunction() throws Exception {
-		new XQuery(
+		Sequence res = new XQuery(
 				"declare function local:addOne($a as item()) { $a + 1 }; local:addOne(1)")
-				.serialize(ctx, System.out);
+				.execute(ctx);
+		ResultChecker.check(new Int32(2), res);
 	}
 
 	@Test
 	public void declareRecursiveFunction() throws Exception {
-		new XQuery(
+		Sequence res = new XQuery(
 				"declare function local:countdown($a as xs:integer) { if ($a > 0) then ($a, local:countdown($a - 1)) else $a }; local:countdown(3)")
-				.serialize(ctx, System.out);
+				.execute(ctx);
+		ResultChecker.check(new ItemSequence(new Int32(3), new Int32(2),
+				new Int32(1), new Int32(0)), res);
 	}
 
 	@Test
 	public void declareIndirectRecursiveFunctions() throws Exception {
-		new XQuery(
+		Sequence res = new XQuery(
 				"declare function local:a($a as xs:integer) { if ($a > 0) then ('a', $a, local:b($a - 1)) else ('a', $a) }; declare function local:b($b as xs:integer) { if ($b > 0) then ('b', $b, local:a($b - 1)) else ('b', $b) }; local:a(3)")
-				.serialize(ctx, System.out);
+				.execute(ctx);
+		ResultChecker.check(new ItemSequence(new Str("a"), new Int32(3),
+				new Str("b"), new Int32(2), new Str("a"), new Int32(1),
+				new Str("b"), new Int32(0)), res);
 	}
 
 	@Test
@@ -82,7 +90,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
 							.getCode());
 		}
 	}
-	
+
 	@Test
 	public void variableDeclarationWithAccess() throws Exception {
 		Sequence result = new XQuery(

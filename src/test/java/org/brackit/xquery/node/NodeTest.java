@@ -35,23 +35,19 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Random;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.ResultChecker;
 import org.brackit.xquery.XQueryBaseTest;
 import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.node.parser.StreamSubtreeProcessor;
-import org.brackit.xquery.node.parser.SubtreeListener;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Stream;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -180,14 +176,13 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		E root = coll.getDocument().getFirstChild();
 		org.w3c.dom.Node domRoot = null;
 
-		domRoot = createDomTree(ctx, new InputSource(new StringReader(readFile(
+		domRoot = createDomTree(new InputSource(new StringReader(readFile(
 				"/docs/", "orga.xml"))));
 
-		checkSubtreePreOrder(ctx, root, domRoot); // check document index
+		checkSubtreePreOrder(root, domRoot); // check document index
 	}
 
-	protected org.w3c.dom.Node createDomTree(QueryContext ctx,
-			InputSource source) throws Exception {
+	protected org.w3c.dom.Node createDomTree(InputSource source) throws Exception {
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory
 					.newInstance();
@@ -201,8 +196,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		}
 	}
 
-	protected void checkSubtreePreOrder(QueryContext ctx, final E node,
-			org.w3c.dom.Node domNode) throws Exception {
+	protected void checkSubtreePreOrder(final E node, org.w3c.dom.Node domNode) throws Exception {
 		E child = null;
 
 		if (domNode instanceof Element) {
@@ -216,7 +210,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
 			assertEquals(String.format("Name of node %s", node), element
 					.getNodeName(), node.getName());
-			compareAttributes(ctx, node, element);
+			compareAttributes(node, element);
 
 			NodeList domChildNodes = element.getChildNodes();
 			ArrayList<E> children = new ArrayList<E>();
@@ -298,7 +292,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 				assertNotNull(String
 						.format("child node %s of node %s", i, node), child);
 
-				checkSubtreePreOrder(ctx, child, domChild);
+				checkSubtreePreOrder(child, domChild);
 			}
 
 			assertEquals(String.format("child count of element %s", node),
@@ -337,11 +331,10 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 							.getMessage());
 		}
 
-		checkSubtreePostOrder(ctx, root, domRoot); // check document index
+		checkSubtreePostOrder(root, domRoot); // check document index
 	}
 
-	protected void checkSubtreePostOrder(QueryContext ctx, E node,
-			org.w3c.dom.Node domNode) throws Exception {
+	protected void checkSubtreePostOrder(E node, org.w3c.dom.Node domNode) throws Exception {
 		E child = null;
 
 		if (domNode instanceof Element) {
@@ -354,7 +347,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
 			assertEquals(String.format("Name of node %s", node), element
 					.getNodeName(), node.getName());
-			compareAttributes(ctx, node, element);
+			compareAttributes(node, element);
 
 			NodeList domChildNodes = element.getChildNodes();
 			ArrayList<E> children = new ArrayList<E>();
@@ -387,7 +380,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 				assertNotNull(String
 						.format("child node %s of node %s", i, node), child);
 
-				checkSubtreePostOrder(ctx, child, domChild);
+				checkSubtreePostOrder(child, domChild);
 			}
 
 			assertEquals(String.format("child count of element %s", node),
@@ -405,7 +398,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		}
 	}
 
-	protected void compareAttributes(QueryContext ctx, E node, Element element)
+	protected void compareAttributes(E node, Element element)
 			throws Exception {
 		NamedNodeMap domAttributes = element.getAttributes();
 		Stream<? extends E> attributes = node.getAttributes();
@@ -455,56 +448,43 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 	}
 
 	@Test
-	public void testScanDocument() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(readFile(
+	public void testAppendSubtree() throws Exception {
+		Collection<E> orig = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
+		Collection<E> doc = createDocument(new DocumentParser(readFile(
 				"/docs/", "orga.xml")));
 
-		Stream<? extends E> stream = coll.getDocument().getFirstChild()
-				.getSubtree();
-		E next;
-		while ((next = stream.next()) != null) {
-			System.out.println(next);
-		}
-		stream.close();
-	}
-
-	@Test
-	public void testProcessSubtree() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(readFile(
-				"/docs/", "orga.xml")));
-
-		System.err.println("-------------------");
-		Stream<? extends E> stream = coll.getDocument().getFirstChild()
-				.getSubtree();
-		StreamSubtreeProcessor<? extends E> processor = new StreamSubtreeProcessor(
-				stream, new SubtreeListener[] { new SubtreePrinter(System.out,
-						true) });
-		processor.process();
-	}
-
-	@Test
-	public void testInsertSubtree() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(readFile(
-				"/docs/", "orga.xml")));
-
-		E root = coll.getDocument().getFirstChild();
-		E node = root.getFirstChild();
-		node = node.getFirstChild();
-		node = node.getNextSibling();
-		node = node.getNextSibling();
+		E onode = orig.getDocument().getFirstChild().getLastChild();
+		E test = onode.append(Kind.ELEMENT, "test");
+		test.append(Kind.ELEMENT, "a");
+		test.append(Kind.ELEMENT, "b");
+		
+		E cnode = doc.getDocument().getFirstChild().getLastChild();
 		DocumentParser docParser = new DocumentParser("<test><a/><b/></test>");
 		docParser.setParseAsFragment(true);
-		node.append(docParser);
-	}
+		cnode.append(docParser);		
 
+		ResultChecker.check(orig.getDocument(), doc.getDocument(), false);
+	}
+	
 	@Test
-	public void testInsertRecord() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(readFile(
+	public void testReplaceSubtree() throws Exception {
+		Collection<E> orig = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
+		Collection<E> doc = createDocument(new DocumentParser(readFile(
 				"/docs/", "orga.xml")));
 
-		E root = coll.getDocument().getFirstChild();
-		E lastChild = root.getLastChild();
-		E newLastChild = root.append(Kind.ELEMENT, "Project");
+		E onode = orig.getDocument().getFirstChild().getLastChild();
+		E test = onode.replaceWith(Kind.ELEMENT, "test");
+		test.append(Kind.ELEMENT, "a");
+		test.append(Kind.ELEMENT, "b");
+		
+		E cnode = doc.getDocument().getFirstChild().getLastChild();
+		DocumentParser docParser = new DocumentParser("<test><a/><b/></test>");
+		docParser.setParseAsFragment(true);
+		cnode.replaceWith(docParser);
+
+		ResultChecker.check(orig.getDocument(), doc.getDocument(), false);
 	}
 
 	@Test
@@ -518,31 +498,13 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		node = root.getFirstChild();
 		node = node.getNextSibling();
 		node = node.getNextSibling();
-		node.setAttribute("new", "4711");
-		E attribute = node.getAttribute("new");
+		node.setAttribute("new", "CHECKME");
+		assertEquals("updated attribute value", "CHECKME", node.getAttribute("new").getValue());
 	}
 
-	@Test
-	public void testGetText() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(readFile(
-				"/docs/", "orga.xml")));
-		E root = coll.getDocument().getFirstChild();
-		System.out.println(root.getValue());
-		E node = root.getFirstChild();
-		System.out.println(node.getValue());
-	}
 
 	@After
 	public void tearDown() throws Exception {
-	}
-
-	@Before
-	public void setUp() throws Exception {
-		ctx = new QueryContext(null);
-
-		// use same random source to get reproducible results in case of an
-		// error
-		rand = new Random(12345678);
 	}
 
 	protected abstract Collection<E> createDocument(

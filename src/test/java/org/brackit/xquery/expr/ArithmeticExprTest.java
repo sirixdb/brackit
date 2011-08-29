@@ -25,23 +25,49 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.node.d2linked;
+package org.brackit.xquery.expr;
 
-import org.brackit.xquery.node.NodeTest;
-import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.xdm.Collection;
-import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.ResultChecker;
+import org.brackit.xquery.XQuery;
+import org.brackit.xquery.XQueryBaseTest;
+import org.brackit.xquery.atomic.Int32;
+import org.brackit.xquery.xdm.Sequence;
+import org.junit.Test;
 
 /**
- * 
  * @author Sebastian Baechle
- *
+ * 
  */
-public class D2NodeTest extends NodeTest<D2Node> {
+public class ArithmeticExprTest extends XQueryBaseTest {
 
-	@Override
-	protected Collection<D2Node> createDocument(DocumentParser documentParser)
-			throws DocumentException {
-		return new D2NodeFactory().build(documentParser).getCollection();
+	@Test
+	public void add() throws Exception {
+		Sequence result = new XQuery("1 + 2").execute(ctx);
+		ResultChecker.dCheck(new Int32(3), result);
 	}
+
+	@Test
+	public void mult() throws Exception {
+		Sequence result = new XQuery("1 * 2").execute(ctx);
+		ResultChecker.dCheck(new Int32(2), result);
+	}
+
+	@Test
+	public void multPrecedence1() throws Exception {
+		Sequence result = new XQuery("1 + 2 * 3").execute(ctx);
+		ResultChecker.dCheck(new Int32(7), result);
+	}
+
+	@Test
+	public void multPrecedence2() throws Exception {
+		Sequence result = new XQuery("1 * 2 + 3").execute(ctx);
+		ResultChecker.dCheck(new Int32(5), result);
+	}
+
+	@Test
+	public void parenthesizedPrecedence() throws Exception {
+		Sequence result = new XQuery("(1 + 2) * 3").execute(ctx);
+		ResultChecker.dCheck(new Int32(9), result);
+	}
+
 }

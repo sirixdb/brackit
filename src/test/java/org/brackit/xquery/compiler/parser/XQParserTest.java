@@ -125,11 +125,6 @@ public class XQParserTest extends XQueryBaseTest {
 	}
 
 	@Test
-	public void pathStepWithEQName() throws Exception {
-		new XQParser("//\"http://foo.com/bar\":test").parse();
-	}
-
-	@Test
 	public void weirdPart2() throws Exception {
 		new XQParser(
 				"else- +-++-**-* instance  of element(*)* * * **---++div- div -div")
@@ -147,11 +142,6 @@ public class XQParserTest extends XQueryBaseTest {
 	}
 	
 	@Test
-	public void constructedAttributeWithEmptyName() throws Exception {
-		new XQParser("attribute {} {'foo'}").parse();
-	}
-	
-	@Test
 	public void constructedPI() throws Exception {
 		new XQParser("processing-instruction XmL {'pi'}").parse();
 	}	
@@ -163,7 +153,7 @@ public class XQParserTest extends XQueryBaseTest {
 	
 	@Test
 	public void parentAxis() throws Exception {
-		new XQParser("a/../b").parse().display();
+		new XQParser("a/../b").parse();
 	}
 	
 	@Test

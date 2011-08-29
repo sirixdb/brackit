@@ -34,6 +34,11 @@ import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
+/**
+ * 
+ * @author Sebastian Baechle
+ * 
+ */
 public class PathTest {
 	@Test
 	public void testSimplePath() throws Exception {
@@ -78,20 +83,22 @@ public class PathTest {
 	@Test
 	public void testFilePath() throws Exception {
 		Path<String> parsed = (new PathParser("/test.xml")).parse();
-		System.out.println(parsed);
+		assertEquals("Path parsed correctly", new Path<String>()
+				.child("test.xml"), parsed);
 	}
 
 	@Test
 	public void testFile2Path() throws Exception {
 		Path<String> parsed = (new PathParser("_test.xml")).parse();
-		System.out.println(parsed.trailing());
-		System.out.println(parsed);
+		assertEquals("Path parsed correctly", new Path<String>().self().child(
+				"_test.xml"), parsed);
 	}
 
 	@Test
 	public void testFilePath2() throws Exception {
 		Path<String> parsed = (new PathParser("../conf.d//test.xml")).parse();
-		System.out.println(parsed);
+		assertEquals("Path parsed correctly", new Path<String>().parent()
+				.child("conf.d").descendant("test.xml"), parsed);
 	}
 
 	@Test

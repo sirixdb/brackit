@@ -261,7 +261,7 @@ public class ResultChecker {
 							.next());
 					compareNode(eChild, rChild);
 				}
-				assertNull("Result has no further attributes", rChildren.next());
+				assertNull("Result has no further children", rChildren.next());
 			} finally {
 				rChildren.close();
 			}

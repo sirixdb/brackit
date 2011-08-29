@@ -25,23 +25,54 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.node.d2linked;
+package org.brackit.xquery.expr;
 
-import org.brackit.xquery.node.NodeTest;
-import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.xdm.Collection;
-import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.ResultChecker;
+import org.brackit.xquery.XQuery;
+import org.brackit.xquery.XQueryBaseTest;
+import org.brackit.xquery.atomic.Bool;
+import org.brackit.xquery.xdm.Sequence;
+import org.junit.Test;
 
 /**
- * 
  * @author Sebastian Baechle
- *
+ * 
  */
-public class D2NodeTest extends NodeTest<D2Node> {
+public class CmpExprTest extends XQueryBaseTest {
 
-	@Override
-	protected Collection<D2Node> createDocument(DocumentParser documentParser)
-			throws DocumentException {
-		return new D2NodeFactory().build(documentParser).getCollection();
+	@Test
+	public void generalComparison() throws Exception {
+		Sequence result = new XQuery("1 > 2").execute(ctx);
+		ResultChecker.dCheck(Bool.FALSE, result);
+	}
+
+	@Test
+	public void generalComparisonNodeAndAtomics() throws Exception {
+		// the content must be converted to numeric double
+		Sequence result = new XQuery("(<a>12</a> < 24) and (<b>122</b> > 24)")
+				.execute(ctx);
+		ResultChecker.dCheck(Bool.TRUE, result);
+	}
+
+	@Test
+	public void valueComparison() throws Exception {
+		Sequence result = new XQuery("1 lt 2").execute(ctx);
+		ResultChecker.dCheck(Bool.TRUE, result);
+	}
+
+	@Test
+	public void compareDates() throws Exception {
+		Sequence res = new XQuery(
+				"xs:date('2002-10-10+13:00') eq xs:date('2002-10-09-11:00')")
+				.execute(ctx);
+		ResultChecker.dCheck(Bool.TRUE, res);
+	}
+
+	@Test
+	public void compareDates2() throws Exception {
+		Sequence res = new XQuery(
+				"xs:date('2002-10-10+14:00') eq xs:date('2002-10-09-11:00')")
+				.execute(ctx);
+		ResultChecker.dCheck(Bool.FALSE, res);
 	}
 }
