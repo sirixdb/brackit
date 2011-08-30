@@ -1344,6 +1344,8 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST quantifiedExpr() throws TokenizerException {
+		int scopeCount = scopeCount();
+		openScope();
 		AST quantifier;
 		if (attemptSymSkipWS("some")) {
 			quantifier = new AST(XQ.SomeQuantifier);
@@ -1358,10 +1360,12 @@ public class XQParser extends Tokenizer {
 		}
 		AST qExpr = new AST(XQ.QuantifiedExpr);
 		qExpr.addChild(quantifier);
-		qExpr.addChild(typedVarBinding());
+		qExpr.addChild(typedVarBinding());		
 		consumeSkipWSWS("in");
 		qExpr.addChild(exprSingle());
+		offerScope();
 		while (attemptSkipWS(",")) {
+			openScope();
 			AST binding = typedVarBinding();
 			if (binding == null) {
 				throw new TokenizerException("Expected variable binding: %s",
@@ -1370,9 +1374,13 @@ public class XQParser extends Tokenizer {
 			qExpr.addChild(binding);
 			consumeSkipWSWS("in");
 			qExpr.addChild(exprSingle());
+			offerScope();
 		}
 		consumeSkipWSWS("satisfies");
 		qExpr.addChild(exprSingle());
+		for (int i = scopeCount(); i > scopeCount; i--) {
+			closeScope();
+		}
 		return qExpr;
 	}
 
