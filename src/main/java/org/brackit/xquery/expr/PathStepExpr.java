@@ -200,8 +200,11 @@ public class PathStepExpr implements Expr {
 					current = current.concat(tmp);
 				}
 
-				Sequence sequence = nextStep.evaluate(ctx, current);
-				nextS = (sequence != null) ? sequence.iterate() : null;
+				Sequence s = nextStep.evaluate(ctx, current);
+				if (s == null) {
+					return null;
+				}
+				nextS = s.iterate();
 			}
 
 			return nextS.next();
