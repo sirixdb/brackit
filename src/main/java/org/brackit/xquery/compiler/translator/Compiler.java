@@ -181,8 +181,6 @@ public class Compiler implements Translator {
 
 		void compile() throws QueryException {
 			// safe current variable table
-			VariableTable sav = table;
-			table = new VariableTable();
 			for (int i = 0; i < names.length; i++) {
 				table.bind(names[i], types[i]);
 			}
@@ -191,8 +189,6 @@ public class Compiler implements Translator {
 				table.unbind();
 			}
 			table.resolvePositions();
-			// restore variable table
-			table = sav;
 			udf.setBody(expr);
 		}
 	}
@@ -239,7 +235,7 @@ public class Compiler implements Translator {
 		Functions.predefine(new Silent());
 	}
 
-	protected VariableTable table = new VariableTable();
+	protected final VariableTable table = new VariableTable();
 
 	protected final ModuleResolver resolver;
 
