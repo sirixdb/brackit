@@ -3150,12 +3150,10 @@ public class XQParser extends Tokenizer {
 			consumeSkipWS("}");
 		}
 		consumeSkipWS("{");
-		AST conSeq = new AST(XQ.ContentSequence);
-		pi.addChild(conSeq);
 		if (!attemptSkipWS("}")) {
 			AST expr = expr();
 			if (expr != null) {
-				conSeq.addChild(expr);
+				pi.addChild(expr);
 			}
 			consumeSkipWS("}");
 		}
