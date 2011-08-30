@@ -93,6 +93,7 @@ public class VarScopes {
 		}
 		level--;
 		current = current.parent;
+		resolveIn = current;
 	}
 
 	public String declare(String name) throws QueryException {
