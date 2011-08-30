@@ -47,7 +47,7 @@ import org.brackit.xquery.util.log.Logger;
 public class XQParser extends Tokenizer {
 
 	private static final Logger log = Logger.getLogger(XQParser.class);
-	
+
 	private class XQTokenizerException extends TokenizerException {
 		private final QNm code;
 
@@ -794,7 +794,8 @@ public class XQParser extends Tokenizer {
 		AST sequenceExpr = new AST(XQ.SequenceExpr);
 		sequenceExpr.addChild(first);
 		do {
-			sequenceExpr.addChild(exprSingle());
+			AST e = exprSingle();
+			sequenceExpr.addChild(e);
 		} while (attemptSkipWS(","));
 		return sequenceExpr;
 	}
@@ -2492,7 +2493,7 @@ public class XQParser extends Tokenizer {
 	private AST nameTest() throws TokenizerException {
 		// Switched order of EQName and Wildcard of
 		// the XQuery grammar because the EQName look
-		// ahead could consume the NCName prefix of 
+		// ahead could consume the NCName prefix of
 		// a "NCNname ':' '*'" wildcard
 		AST test = wildcard();
 		test = (test != null) ? test : eqnameLiteral(true, true);
@@ -2519,7 +2520,7 @@ public class XQParser extends Tokenizer {
 			Token la = laNCNameSkipWS();
 			if (la == null) {
 				return null;
-			}			
+			}
 			Token la2 = la(la, ":*");
 			if (la2 == null) {
 				return null;
@@ -2738,8 +2739,8 @@ public class XQParser extends Tokenizer {
 
 	private AST directConstructor(boolean nested) throws TokenizerException {
 		AST con = dirElemConstructor(nested);
-		con = (con != null) ? con : dirCommentConstructor();
-		con = (con != null) ? con : dirPIConstructor();
+		con = (con != null) ? con : dirCommentConstructor(nested);
+		con = (con != null) ? con : dirPIConstructor(nested);
 		return con;
 	}
 
@@ -2924,9 +2925,15 @@ public class XQParser extends Tokenizer {
 		return new AST(XQ.Str, content.string());
 	}
 
-	private AST dirCommentConstructor() throws TokenizerException {
-		if (!attempt("<!--")) {
-			return null;
+	private AST dirCommentConstructor(boolean nested) throws TokenizerException {
+		if (nested) {
+			if (!attempt("<!--")) {
+				return null;
+			}
+		} else {
+			if (!attemptSkipWS("<!--")) {
+				return null;
+			}
 		}
 		Token content = laCommentContents(false);
 		consume(content);
@@ -2936,10 +2943,15 @@ public class XQParser extends Tokenizer {
 		return comment;
 	}
 
-	private AST dirPIConstructor() throws TokenizerException {
-		// "<?" PITarget (S DirPIContents)? "?>"
-		if (!attempt("<?")) {
-			return null;
+	private AST dirPIConstructor(boolean nested) throws TokenizerException {
+		if (nested) {
+			if (!attempt("<?")) {
+				return null;
+			}
+		} else {
+			if (!attemptSkipWS("<?")) {
+				return null;
+			}
 		}
 		Token target = laPITarget(false);
 		consume(target);

@@ -1208,15 +1208,19 @@ public class Tokenizer {
 
 	private String scanCommentContents(int pos, boolean cond)
 			throws TokenizerException {
-		int e = pos;
+		int s = pos;
+		int e = s;
 		if (e >= end) {
 			return null;
 		}
 		int len = 0;
-		char c = input[e++];
+		char c;
 		while (e < end) {
 			c = input[e++];
-			if ((c == '-') && (e + 1 < end) && (input[e + 1] == '-')) {
+			if ((c == '-') && (e < end) && (input[e] == '-')) {
+				if ((e + 1 < end) && (input[e + 1] == '>')) {
+					break;
+				}
 				if (cond) {
 					return null;
 				}
@@ -1230,7 +1234,7 @@ public class Tokenizer {
 			}
 		}
 		lastScanEnd = pos + len;
-		return new String(input, e, len);
+		return new String(input, s, len);
 	}
 
 	private String scanPITarget(int pos, boolean cond)
