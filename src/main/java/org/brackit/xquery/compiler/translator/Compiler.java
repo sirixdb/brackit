@@ -826,7 +826,7 @@ public class Compiler implements Translator {
 		Expr expr = expr(node.getChild(0), true);
 		AST type = node.getChild(1);
 		AST aouType = type.getChild(0);
-		Type targetType = resolveType(aouType.getChild(0).getValue());
+		Type targetType = resolveType(aouType.getChild(0).getValue(), true);
 		boolean allowEmptySequence = ((type.getChildCount() == 2) && (type
 				.getChild(1).getType() == XQ.CardinalityZeroOrOne));
 		return new Cast(expr, targetType, allowEmptySequence);
@@ -836,7 +836,7 @@ public class Compiler implements Translator {
 		Expr expr = expr(node.getChild(0), true);
 		AST type = node.getChild(1);
 		AST aouType = type.getChild(0);
-		Type targetType = resolveType(aouType.getChild(0).getValue());
+		Type targetType = resolveType(aouType.getChild(0).getValue(), true);
 		boolean allowEmptySequence = ((type.getChildCount() == 2) && (type
 				.getChild(1).getType() == XQ.CardinalityZeroOrOne));
 		return new Castable(expr, targetType, allowEmptySequence);
@@ -1202,8 +1202,7 @@ public class Compiler implements Translator {
 		return new ElementExpr(nameExpr, contentExpr, bind, appendOnly);
 	}
 
-	protected Expr[] contentSequence(AST node)
-			throws QueryException {
+	protected Expr[] contentSequence(AST node) throws QueryException {
 		int childCount = node.getChildCount();
 
 		if (childCount == 0) {
@@ -1229,7 +1228,7 @@ public class Compiler implements Translator {
 		}
 
 		if ((merged != null) && (!merged.isEmpty())) {
-			subExprs[size++] = new Str(merged);			
+			subExprs[size++] = new Str(merged);
 		}
 
 		return Arrays.copyOf(subExprs, size);
@@ -1559,7 +1558,7 @@ public class Compiler implements Translator {
 	}
 
 	protected ItemType atomicOrUnionType(AST node) throws QueryException {
-		Type type = resolveType(node.getChild(0).getValue());
+		Type type = resolveType(node.getChild(0).getValue(), false);
 		return new AtomicType(type);
 	}
 
@@ -1599,12 +1598,14 @@ public class Compiler implements Translator {
 
 	protected SchemaAttributeType schemaAttributeTest(AST child)
 			throws QueryException {
-		return new SchemaAttributeType(qNameOrWildcard(child.getChild(0)));
+		QNm qname = module.getNamespaces().qname(child.getChild(0).getValue());
+		return new SchemaAttributeType(module.getTypes().resolveSchemaType(qname));
 	}
 
 	protected SchemaElementType schemaElementTest(AST child)
 			throws QueryException {
-		return new SchemaElementType(qNameOrWildcard(child.getChild(0)));
+		QNm qname = module.getNamespaces().qname(child.getChild(0).getValue());
+		return new SchemaElementType(module.getTypes().resolveSchemaType(qname));
 	}
 
 	protected DocumentType documentTest(AST child) throws QueryException {
@@ -1623,7 +1624,7 @@ public class Compiler implements Translator {
 			return new AttributeType(qNameOrWildcard(child.getChild(0)));
 		else
 			return new AttributeType(qNameOrWildcard(child.getChild(0)),
-					resolveType(child.getChild(1).getValue()));
+					resolveType(child.getChild(1).getValue(), false));
 	}
 
 	protected ElementType elementTest(AST child) throws QueryException {
@@ -1633,7 +1634,7 @@ public class Compiler implements Translator {
 			return new ElementType(qNameOrWildcard(child.getChild(0)));
 		else
 			return new ElementType(qNameOrWildcard(child.getChild(0)),
-					resolveType(child.getChild(1).getValue()));
+					resolveType(child.getChild(1).getValue(), false));
 	}
 
 	protected QNm qNameOrWildcard(AST name) throws QueryException {
@@ -1649,9 +1650,14 @@ public class Compiler implements Translator {
 			return new AttributeType(qNameOrWildcard(name));
 	}
 
-	protected Type resolveType(String text) throws QueryException {
+	protected Type resolveType(String text, boolean atomic)
+			throws QueryException {
 		QNm qname = module.getNamespaces().qname(text);
-		return module.getTypes().resolveType(qname);
+		if (atomic) {
+			return module.getTypes().resolveAtomicType(qname);
+		} else {
+			return module.getTypes().resolveType(qname);
+		}
 	}
 
 	protected Expr sequenceExpr(AST node) throws QueryException {

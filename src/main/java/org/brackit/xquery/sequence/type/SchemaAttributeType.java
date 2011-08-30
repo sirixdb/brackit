@@ -29,10 +29,10 @@ package org.brackit.xquery.sequence.type;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.Type;
 
 /**
  * 
@@ -40,15 +40,10 @@ import org.brackit.xquery.xdm.Node;
  * 
  */
 public class SchemaAttributeType extends KindTest {
-	private final QNm name;
+	private final Type type;
 
-	public SchemaAttributeType(QNm name) {
-		super();
-		this.name = name;
-	}
-
-	public QNm getName() {
-		return name;
+	public SchemaAttributeType(Type type) {
+		this.type = type;
 	}
 
 	@Override
@@ -56,8 +51,9 @@ public class SchemaAttributeType extends KindTest {
 		return Kind.ATTRIBUTE;
 	}
 
-	public QNm getQName() {
-		return name;
+	@Override
+	public Type getType() {
+		return type;
 	}
 
 	@Override
@@ -76,6 +72,6 @@ public class SchemaAttributeType extends KindTest {
 	}
 
 	public String toString() {
-		return String.format("schema-element(\"%s\")", name);
+		return String.format("schema-element(\"%s\")", type);
 	}
 }

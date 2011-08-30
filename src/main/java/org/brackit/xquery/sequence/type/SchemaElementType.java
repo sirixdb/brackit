@@ -33,6 +33,7 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.Type;
 
 /**
  * 
@@ -40,11 +41,10 @@ import org.brackit.xquery.xdm.Node;
  * 
  */
 public class SchemaElementType extends KindTest {
-	private final QNm name;
+	private final Type type;
 
-	public SchemaElementType(QNm qname) {
-		super();
-		this.name = qname;
+	public SchemaElementType(Type type) {
+		this.type = type;
 	}
 
 	@Override
@@ -52,8 +52,9 @@ public class SchemaElementType extends KindTest {
 		return Kind.ELEMENT;
 	}
 
-	public QNm getQName() {
-		return name;
+	@Override
+	public Type getType() {
+		return type;
 	}
 
 	@Override
@@ -72,6 +73,6 @@ public class SchemaElementType extends KindTest {
 	}
 
 	public String toString() {
-		return String.format("schema-attribute(\"%s\")", name);
+		return String.format("schema-attribute(\"%s\")", type);
 	}
 }
