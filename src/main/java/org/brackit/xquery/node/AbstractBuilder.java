@@ -29,6 +29,10 @@ package org.brackit.xquery.node;
 
 import java.util.Arrays;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.node.parser.SubtreeHandler;
 import org.brackit.xquery.node.parser.SubtreeListener;
 import org.brackit.xquery.xdm.DocumentException;
@@ -60,20 +64,19 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 
 	protected abstract E buildDocument() throws DocumentException;
 
-	protected abstract E buildElement(E parent, String name)
+	protected abstract E buildElement(E parent, QNm name)
 			throws DocumentException;
 
-	protected abstract E buildAttribute(E parent, String name, String value)
+	protected abstract E buildAttribute(E parent, QNm name, Atomic value)
 			throws DocumentException;
 
-	protected abstract E buildText(E parent, String text)
-			throws DocumentException;
+	protected abstract E buildText(E parent, Atomic text) throws DocumentException;
 
-	protected abstract E buildComment(E parent, String text)
+	protected abstract E buildComment(E parent, Str text)
 			throws DocumentException;
 
 	// TODO check params for PI's
-	protected abstract E buildProcessingInstruction(E parent, String text)
+	protected abstract E buildProcessingInstruction(E parent, Str text)
 			throws DocumentException;
 
 	private void prepare() throws DocumentException {
@@ -130,7 +133,7 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 	@Override
 	public <T extends E> void startElement(T node) throws DocumentException {
 		prepare();
-		parent = buildElement(parent, node.getValue());
+		parent = buildElement(parent, node.getName());
 		stack[stackSize++] = parent;
 	}
 
@@ -149,54 +152,57 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 	@Override
 	public <T extends E> void text(T node) throws DocumentException {
 		prepare();
-		stack[stackSize] = buildText(parent, node.getValue());
+		stack[stackSize] = buildText(parent, new Una(node.getValue()
+				.stringValue()));
 	}
 
 	@Override
 	public <T extends E> void comment(T node) throws DocumentException {
 		prepare();
-		stack[stackSize] = buildComment(parent, node.getValue());
+		stack[stackSize] = buildComment(parent, new Str(node.getValue()
+				.stringValue()));
 	}
 
 	@Override
 	public <T extends E> void processingInstruction(T node)
 			throws DocumentException {
 		prepare();
-		stack[stackSize] = buildProcessingInstruction(parent, node.getValue());
+		stack[stackSize] = buildProcessingInstruction(parent, new Str(node
+				.getValue().stringValue()));
 	}
 
 	@Override
-	public void startElement(String name) throws DocumentException {
+	public void startElement(QNm name) throws DocumentException {
 		prepare();
 		parent = buildElement(parent, name);
 		stack[stackSize++] = parent;
 	}
 
 	@Override
-	public void endElement(String name) throws DocumentException {
+	public void endElement(QNm name) throws DocumentException {
 		parent = (E) (--stackSize > 0 ? stack[stackSize - 1] : null);
 	}
 
 	@Override
-	public void attribute(String name, String value) throws DocumentException {
+	public void attribute(QNm name, Atomic value) throws DocumentException {
 		prepare();
 		stack[stackSize] = buildAttribute(parent, name, value);
 	}
 
 	@Override
-	public void text(String content) throws DocumentException {
+	public void text(Atomic content) throws DocumentException {
 		prepare();
 		stack[stackSize] = buildText(parent, content);
 	}
 
 	@Override
-	public void comment(String content) throws DocumentException {
+	public void comment(Str content) throws DocumentException {
 		prepare();
 		stack[stackSize] = buildComment(parent, content);
 	}
 
 	@Override
-	public void processingInstruction(String content) throws DocumentException {
+	public void processingInstruction(Str content) throws DocumentException {
 		prepare();
 		stack[stackSize] = buildProcessingInstruction(parent, content);
 	}

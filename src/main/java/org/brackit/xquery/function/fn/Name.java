@@ -34,10 +34,10 @@ import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.Signature;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 
 /**
  * Implementation of predefined functions fn:name(), fn:name($arg1),
@@ -74,7 +74,7 @@ public class Name extends AbstractFunction {
 					"Context item is not a node."));
 		}
 
-		String name;
+		QNm name;
 		try {
 			name = ((Node<?>) args[0]).getName();
 		} catch (DocumentException e) {
@@ -85,7 +85,7 @@ public class Name extends AbstractFunction {
 		if (name == null) {
 			return Str.EMPTY;
 		} else {
-			return new Str(name);
+			return new Str(name.stringValue());
 		}
 	}
 }

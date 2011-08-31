@@ -34,6 +34,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Kind;
@@ -128,12 +129,12 @@ public abstract class ConstructedNodeBuilder {
 			}
 		} else {
 			if ((prevSibling != null) && (prevSibling.getKind() == Kind.TEXT)) {
-				prevSibling.setValue(prevSibling.getValue() + " "
-						+ ((Atomic) item).stringValue());
+				prevSibling.setValue(new Str(prevSibling.getValue().stringValue() + " "
+						+ ((Atomic) item).stringValue()));
 				return prevSibling;
 			} else {
 				Node<?> node = ctx.getNodeFactory().text(
-						((Atomic) item).stringValue());
+						new Str(((Atomic) item).stringValue()));
 				return sink.addNode(ctx, node);
 			}
 		}

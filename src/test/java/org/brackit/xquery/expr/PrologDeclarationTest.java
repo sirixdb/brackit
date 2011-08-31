@@ -37,7 +37,6 @@ import org.brackit.xquery.ResultChecker;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.XQueryBaseTest;
 import org.brackit.xquery.atomic.Dbl;
-import org.brackit.xquery.atomic.Dec;
 import org.brackit.xquery.atomic.Int;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.QNm;
@@ -132,7 +131,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
 		Sequence result = new XQuery(
 				"declare default element namespace \"http://brackit.org/foo\"; <a/>")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx.getNodeFactory().element("a"), result, false);
+		ResultChecker.dCheck(ctx.getNodeFactory().element(new QNm("a")), result, false);
 	}
 
 	@Test

@@ -37,13 +37,13 @@ import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.Numeric;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
-import org.brackit.xquery.sequence.type.KindTest;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.type.NodeType;
 
 /**
  * 
@@ -55,7 +55,7 @@ public class StepExpr implements Expr {
 
 	final Expr input;
 
-	final KindTest test;
+	final NodeType test;
 
 	final Expr[] predicates;
 
@@ -67,7 +67,7 @@ public class StepExpr implements Expr {
 
 	final int bindCount;
 
-	public StepExpr(Accessor axis, KindTest test, Expr input, Expr[] predicates,
+	public StepExpr(Accessor axis, NodeType test, Expr input, Expr[] predicates,
 			boolean bindItem, boolean bindPos, boolean bindSize) {
 		this.axis = axis;
 		this.test = test;

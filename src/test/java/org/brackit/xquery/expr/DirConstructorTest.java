@@ -32,6 +32,8 @@ import java.io.PrintStream;
 import org.brackit.xquery.ResultChecker;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.XQueryBaseTest;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
@@ -47,6 +49,7 @@ public class DirConstructorTest extends XQueryBaseTest {
 	@Test
 	public void dirAttributeContent1() throws Exception {
 		PrintStream buf = createBuffer();
+		Sequence s = new XQuery("<shoe size=\"7\"/>").execute(ctx);
 		new XQuery("<shoe size=\"7\"/>").serialize(ctx, buf);
 		Assert.assertEquals("serialized result differs", "<shoe size=\"7\"/>",
 				buf.toString());
@@ -154,22 +157,22 @@ public class DirConstructorTest extends XQueryBaseTest {
 	@Test
 	public void directElementExpr() throws Exception {
 		Sequence result = new XQuery("<a/>").execute(ctx);
-		ResultChecker.dCheck(ctx.getNodeFactory().element("a"), result, false);
+		ResultChecker.dCheck(ctx.getNodeFactory().element(new QNm("a")), result, false);
 	}
 
 	@Test
 	public void directElementExprWithEmptyAttribute() throws Exception {
 		Sequence result = new XQuery("<a b=''/>").execute(ctx);
-		Node<?> a = ctx.getNodeFactory().element("a");
-		a.setAttribute("b", "");
+		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
+		a.setAttribute(new QNm("b"), new Una(""));
 		ResultChecker.dCheck(a, result, false);
 	}
 
 	@Test
 	public void directElementExprWithAttribute() throws Exception {
 		Sequence result = new XQuery("<a b='c'/>").execute(ctx);
-		Node<?> a = ctx.getNodeFactory().element("a");
-		a.setAttribute("b", "c");
+		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
+		a.setAttribute(new QNm("b"), new Una("c"));
 		ResultChecker.dCheck(a, result, false);
 	}
 
@@ -177,17 +180,17 @@ public class DirConstructorTest extends XQueryBaseTest {
 	public void directElementExprWithAttributeAndComputedValue()
 			throws Exception {
 		Sequence result = new XQuery("<a b=\"{1 + 2}\"/> ").execute(ctx);
-		Node<?> a = ctx.getNodeFactory().element("a");
-		a.setAttribute("b", "3");
+		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
+		a.setAttribute(new QNm("b"), new Una("3"));
 		ResultChecker.dCheck(a, result, false);
 	}
 
 	@Test
 	public void directElementExprWith2Attributes() throws Exception {
 		Sequence result = new XQuery("<a b='c' d='e'/>").execute(ctx);
-		Node<?> a = ctx.getNodeFactory().element("a");
-		a.setAttribute("b", "c");
-		a.setAttribute("d", "e");
+		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
+		a.setAttribute(new QNm("b"), new Una("c"));
+		a.setAttribute(new QNm("d"), new Una("e"));
 		ResultChecker.dCheck(a, result, false);
 	}
 
@@ -196,42 +199,42 @@ public class DirConstructorTest extends XQueryBaseTest {
 			throws Exception {
 		Sequence result = new XQuery("<a b='{1 + 2}'   c='{2 + 2}'/>")
 				.execute(ctx);
-		Node<?> a = ctx.getNodeFactory().element("a");
-		a.setAttribute("b", "3");
-		a.setAttribute("c", "4");
+		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
+		a.setAttribute(new QNm("b"), new Una("3"));
+		a.setAttribute(new QNm("c"), new Una("4"));
 		ResultChecker.dCheck(a, result, false);
 	}
 
 	@Test
 	public void directElementExprWithText() throws Exception {
 		Sequence result = new XQuery("<a>test</a>").execute(ctx);
-		Node<?> a = ctx.getNodeFactory().element("a");
-		a.append(Kind.TEXT, "test");
+		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
+		a.append(Kind.TEXT, new Una("test"));
 		ResultChecker.dCheck(a, result, false);
 	}
 
 	@Test
 	public void directElementExprWithChildren() throws Exception {
 		Sequence result = new XQuery("<a><b/><c/></a>").execute(ctx);
-		Node<?> a = ctx.getNodeFactory().element("a");
-		a.append(Kind.ELEMENT, "b");
-		a.append(Kind.ELEMENT, "c");
+		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
+		a.append(Kind.ELEMENT, new QNm("b"));
+		a.append(Kind.ELEMENT, new QNm("c"));
 		ResultChecker.dCheck(a, result, false);
 	}
 
 	@Test
 	public void directElementExprWithComputedContent() throws Exception {
 		Sequence result = new XQuery("<a>{(1 to 3)}</a>").execute(ctx);
-		Node<?> a = ctx.getNodeFactory().element("a");
-		a.append(Kind.TEXT, "1 2 3");
+		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
+		a.append(Kind.TEXT, new Una("1 2 3"));
 		ResultChecker.dCheck(a, result, false);
 	}
 
 	@Test
 	public void directElementExprWithComputedSequenceContent() throws Exception {
 		Sequence result = new XQuery("<a>{1, 2, 3}</a>").execute(ctx);
-		Node<?> a = ctx.getNodeFactory().element("a");
-		a.append(Kind.TEXT, "1 2 3");
+		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
+		a.append(Kind.TEXT, new Una("1 2 3"));
 		ResultChecker.dCheck(a, result, false);
 	}
 
@@ -239,10 +242,10 @@ public class DirConstructorTest extends XQueryBaseTest {
 	public void nesteddirectElementExprInSequence() throws Exception {
 		Sequence result = new XQuery("<a>{<b>{2 + 4}</b>, 1}</a>")
 				.execute(ctx);
-		Node<?> a = ctx.getNodeFactory().element("a");
-		Node<?> b = a.append(Kind.ELEMENT, "b");
-		b.append(Kind.TEXT, "6");
-		a.append(Kind.TEXT, "1");
+		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
+		Node<?> b = a.append(Kind.ELEMENT, new QNm("b"));
+		b.append(Kind.TEXT, new Una("6"));
+		a.append(Kind.TEXT, new Una("1"));
 		ResultChecker.dCheck(a, result, false);
 	}
 	

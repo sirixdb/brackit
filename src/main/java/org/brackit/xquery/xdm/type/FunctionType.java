@@ -25,53 +25,57 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence.type;
+package org.brackit.xquery.xdm.type;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.xdm.Function;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.xdm.Signature;
 
 /**
- * 
  * @author Sebastian Baechle
  * 
  */
-public class SchemaAttributeType extends KindTest {
-	private final Type type;
+public final class FunctionType implements ItemType {
 
-	public SchemaAttributeType(Type type) {
-		this.type = type;
+	private final Signature signature;
+
+	public FunctionType(Signature signature) {
+		this.signature = signature;
+	}
+
+	public Signature getSignature() {
+		return signature;
 	}
 
 	@Override
-	public Kind getNodeKind() {
-		return Kind.ATTRIBUTE;
+	public boolean isAnyItem() {
+		return false;
 	}
 
 	@Override
-	public Type getType() {
-		return type;
+	public boolean isAtomic() {
+		return false;
 	}
 
 	@Override
-	public boolean matches(Node<?> node)
-			throws QueryException {
-		throw new QueryException(
-				ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-				"Schema attribute test support not implemented yet.");
+	public boolean isNode() {
+		return false;
+	}
+
+	@Override
+	public boolean isFunction() {
+		return true;
 	}
 
 	@Override
 	public boolean matches(Item item) throws QueryException {
-		throw new QueryException(
-				ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-				"Schema attribute test support not implemented yet.");
+		return ((item instanceof Function) && (((Function) item).getSignature()
+				.equals(signature)));
 	}
 
-	public String toString() {
-		return String.format("schema-element(\"%s\")", type);
+	public boolean equals(Object obj) {
+		return ((obj instanceof FunctionType) && (((FunctionType) obj).signature
+				.equals(signature)));
 	}
 }

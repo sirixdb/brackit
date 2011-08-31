@@ -25,43 +25,68 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence.type;
-
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Item;
+package org.brackit.xquery.xdm.type;
 
 /**
+ * Type as defined in {@linkplain http://www.w3.org/TR/xquery/#dt-sequence-type}
  * 
  * @author Sebastian Baechle
  * 
  */
-public class AnyItemType implements ItemType {
-	public static final AnyItemType ANY = new AnyItemType();
+public final class SequenceType {
+	public static SequenceType EMPTY_SEQUENCE = new SequenceType(
+			new AnyItemType(), Cardinality.Zero);
 
-	public AnyItemType() {
+	public static SequenceType ITEM_SEQUENCE = new SequenceType(
+			new AnyItemType(), Cardinality.ZeroOrMany);
+
+	public static SequenceType ITEM = new SequenceType(new AnyItemType(),
+			Cardinality.One);
+
+	public static SequenceType NODE = new SequenceType(AnyItemType.ANY,
+			Cardinality.One);
+
+	public static SequenceType INTEGER = new SequenceType(AtomicType.INR,
+			Cardinality.One);
+
+	private final ItemType itemType;
+
+	private final Cardinality cardinality;
+
+	public SequenceType(ItemType itemType, Cardinality cardinality) {
+		this.itemType = itemType;
+		this.cardinality = cardinality;
 	}
 
-	@Override
-	public boolean isAnyItem() {
-		return true;
+	public ItemType getItemType() {
+		return itemType;
 	}
 
-	@Override
-	public boolean isAtomic() {
-		return true;
+	public Cardinality getCardinality() {
+		return cardinality;
 	}
 
-	@Override
-	public boolean isNode() {
-		return true;
-	}
-
-	@Override
-	public boolean matches(Item item) throws QueryException {
-		return true;
+	private String cardinalityString() {
+		switch (cardinality) {
+		case OneOrMany:
+			return "+";
+		case ZeroOrMany:
+			return "*";
+		case ZeroOrOne:
+			return "?";
+		default:
+			throw new RuntimeException();
+		}
 	}
 
 	public String toString() {
-		return "item()";
+		return (cardinality == Cardinality.Zero) ? "empty-sequence()" : String
+				.format("%s%s", itemType, cardinalityString());
+	}
+
+	public boolean equals(Object obj) {
+		return ((obj == this) || ((obj instanceof SequenceType)
+				&& (((SequenceType) obj).itemType.equals(itemType)) && (((SequenceType) obj).cardinality
+				.equals(cardinality))));
 	}
 }

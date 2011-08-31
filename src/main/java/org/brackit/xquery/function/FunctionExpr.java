@@ -34,14 +34,16 @@ import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.sequence.TypedSequence;
-import org.brackit.xquery.sequence.type.AtomicType;
-import org.brackit.xquery.sequence.type.ItemType;
-import org.brackit.xquery.sequence.type.SequenceType;
 import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.xdm.Function;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.xdm.type.AtomicType;
+import org.brackit.xquery.xdm.type.ItemType;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * 

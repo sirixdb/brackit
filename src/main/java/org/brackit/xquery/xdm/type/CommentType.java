@@ -25,67 +25,42 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.function;
+package org.brackit.xquery.xdm.type;
 
-import org.brackit.xquery.sequence.type.SequenceType;
+import org.brackit.xquery.QueryException;
+import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.Kind;
+import org.brackit.xquery.xdm.Node;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public class Signature {
-	private final SequenceType resultType;
-
-	private final SequenceType[] params;
-
-	private final boolean lastIsVarArg;
-
-	private final boolean defaultsIsContextItem;
-
-	public Signature(SequenceType resultType, SequenceType... params) {
-		this.resultType = resultType;
-		this.params = params;
-		this.lastIsVarArg = false;
-		this.defaultsIsContextItem = false;
+public final class CommentType extends NodeType {
+	public CommentType() {
 	}
 
-	public Signature(SequenceType resultType, boolean lastIsVarArg,
-			boolean defaultIsContextItem, SequenceType... params) {
-		this.resultType = resultType;
-		this.params = params;
-		this.lastIsVarArg = lastIsVarArg;
-		this.defaultsIsContextItem = defaultIsContextItem;
+	@Override
+	public Kind getNodeKind() {
+		return Kind.COMMENT;
 	}
 
-	public SequenceType getResultType() {
-		return resultType;
+	@Override
+	public boolean matches(Node<?> node) throws QueryException {
+		return (node.getKind() == Kind.COMMENT);
 	}
 
-	public SequenceType[] getParams() {
-		return params;
-	}
-
-	public boolean lastIsVarArg() {
-		return lastIsVarArg;
-	}
-
-	public boolean defaultIsContextItem() {
-		return defaultsIsContextItem;
+	@Override
+	public boolean matches(Item item) throws QueryException {
+		return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.COMMENT));
 	}
 
 	public String toString() {
-		StringBuilder st = new StringBuilder();
-		st.append("(");
-		if (params.length > 0) {
-			st.append(params[0]);
-			for (int i = 1; i < params.length; i++) {
-				st.append(", ");
-				st.append(params[i]);
-			}
-		}
-		st.append(") : ");
-		st.append(resultType);
-		return st.toString();
+		return "comment()";
+	}
+
+	public boolean equals(Object obj) {
+		return ((obj == this) || (obj instanceof CommentType));
 	}
 }

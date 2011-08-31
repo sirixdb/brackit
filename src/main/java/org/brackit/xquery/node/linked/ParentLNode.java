@@ -29,6 +29,10 @@ package org.brackit.xquery.node.linked;
 
 import java.util.Arrays;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.node.stream.EmptyStream;
 import org.brackit.xquery.xdm.DocumentException;
@@ -36,6 +40,7 @@ import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
 import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.Type;
 
 /**
  * Abstract base for all constructed nodes that may have children
@@ -215,19 +220,21 @@ abstract class ParentLNode extends LNode {
 	}
 
 	@Override
-	public String getValue() throws DocumentException {
+	public Atomic getValue() throws DocumentException {
 		StringBuffer buffer = new StringBuffer();
 		Stream<LNode> scanner = new DescendantScanner(this);
-
-		LNode descendant;
-		while ((descendant = scanner.next()) != null) {
-			if (descendant.getKind() == Kind.TEXT) {
-				buffer.append(descendant.getValue());
+		try {
+			LNode descendant;
+			while ((descendant = scanner.next()) != null) {
+				if (descendant.getKind() == Kind.TEXT) {
+					buffer.append(descendant.getValue());
+				}
 			}
+		} finally {
+			scanner.close();
 		}
-		scanner.close();
 
-		return buffer.toString();
+		return new Una(buffer.toString());
 	}
 
 	LNode nextSiblingOf(LNode node) {
@@ -273,8 +280,9 @@ abstract class ParentLNode extends LNode {
 
 			if ((kind == Kind.TEXT) && (previous != null)
 					&& (previous.getKind() == Kind.TEXT)) {
-				((TextLNode) previous).value = ((TextLNode) previous).value
-						+ ((TextLNode) child).value;
+				((TextLNode) previous).value = new Una(
+						((TextLNode) previous).value.stringValue()
+								+ ((TextLNode) child).value.stringValue());
 				return previous;
 			}
 			previous.sibling = child;
@@ -282,8 +290,9 @@ abstract class ParentLNode extends LNode {
 			LNode first = firstChild;
 			if ((kind == Kind.TEXT) && (first != null)
 					&& (first.getKind() == Kind.TEXT)) {
-				((TextLNode) first).value = ((TextLNode) child).value
-						+ ((TextLNode) first).value;
+				((TextLNode) first).value = new Una(((TextLNode) child).value
+						.stringValue()
+						+ ((TextLNode) first).value.stringValue());
 				return first;
 			}
 			child.sibling = first;
@@ -303,22 +312,26 @@ abstract class ParentLNode extends LNode {
 		if (firstChild == null) {
 			firstChild = child;
 		} else if (before) {
-			LNode previous = null;			
+			LNode previous = null;
 			if (firstChild != sibling) {
 				previous = firstChild;
-				while ((previous.sibling != null) && (previous.sibling != sibling))
+				while ((previous.sibling != null)
+						&& (previous.sibling != sibling))
 					previous = previous.sibling;
-			};
+			}
+			;
 
 			if (kind == Kind.TEXT) {
 				if ((previous != null) && (previous.getKind() == Kind.TEXT)) {
-					((TextLNode) previous).value = ((TextLNode) previous).value
-							+ ((TextLNode) child).value;
+					((TextLNode) previous).value = new Una(
+							((TextLNode) previous).value.stringValue()
+									+ ((TextLNode) child).value.stringValue());
 					return previous;
 				}
 				if ((sibling != null) && (sibling.getKind() == Kind.TEXT)) {
-					((TextLNode) sibling).value = ((TextLNode) sibling).value
-							+ ((TextLNode) child).value;
+					((TextLNode) sibling).value = new Una(
+							((TextLNode) sibling).value.stringValue()
+									+ ((TextLNode) child).value.stringValue());
 					return sibling;
 				}
 			}
@@ -329,14 +342,16 @@ abstract class ParentLNode extends LNode {
 		} else {
 			if (kind == Kind.TEXT) {
 				if ((sibling != null) && (sibling.getKind() == Kind.TEXT)) {
-					((TextLNode) sibling).value = ((TextLNode) sibling).value
-							+ ((TextLNode) child).value;
+					((TextLNode) sibling).value = new Una(
+							((TextLNode) sibling).value.stringValue()
+									+ ((TextLNode) child).value.stringValue());
 					return sibling;
 				}
 				if ((sibling.sibling != null)
 						&& (sibling.sibling.getKind() == Kind.TEXT)) {
-					((TextLNode) sibling.sibling).value = ((TextLNode) sibling.sibling).value
-							+ ((TextLNode) child).value;
+					((TextLNode) sibling.sibling).value = new Una(
+							((TextLNode) sibling.sibling).value.stringValue()
+									+ ((TextLNode) child).value.stringValue());
 					return sibling.sibling;
 				}
 			}
@@ -366,15 +381,25 @@ abstract class ParentLNode extends LNode {
 		return child;
 	}
 
-	private LNode buildChild(Kind kind, String value) throws DocumentException {
+	private LNode buildChild(Kind kind, Atomic value) throws DocumentException {
 		LNode child;
 
 		if (kind == Kind.ELEMENT) {
-			child = new ElementLNode(this, value);
+			if (!value.type().instanceOf(Type.QNM)) {
+				throw new DocumentException(
+						"Element name is not an xs:QName: %s (%s)", value,
+						value.type());
+			}
+			child = new ElementLNode(this, (QNm) value);
 		} else if (kind == Kind.TEXT) {
 			child = new TextLNode(this, value);
 		} else if (kind == Kind.COMMENT) {
-			child = new CommentLNode(this, value);
+			if (!value.type().instanceOf(Type.STR)) {
+				throw new DocumentException(
+						"Comment value is not an xs:string: %s (%s)", value,
+						value.type());
+			}
+			child = new CommentLNode(this, (Str) value);
 		} else if (kind == Kind.PROCESSING_INSTRUCTION) {
 			throw new DocumentException("Illegal node type: %s", kind);
 		} else {
@@ -393,9 +418,9 @@ abstract class ParentLNode extends LNode {
 		case TEXT:
 			return new TextLNode(this, node.getValue());
 		case COMMENT:
-			return new CommentLNode(this, node.getValue());
+			return new CommentLNode(this, node.getStrValue());
 		case PROCESSING_INSTRUCTION:
-			return new PILNode(this, node.getName(), node.getValue());
+			return new PILNode(this, node.getName(), node.getStrValue());
 		default:
 			throw new DocumentException("Illegal child node type: %s", kind);
 		}
@@ -459,18 +484,18 @@ abstract class ParentLNode extends LNode {
 		case ATTRIBUTE:
 			return parent.setAttribute(node.getName(), node.getValue());
 		case COMMENT:
-			return parent.addChild(new CommentLNode(parent, node.getValue()),
-					true);
+			return parent.addChild(
+					new CommentLNode(parent, node.getStrValue()), true);
 		case PROCESSING_INSTRUCTION:
 			return parent.addChild(new PILNode(parent, node.getName(), node
-					.getValue()), true);
+					.getStrValue()), true);
 		default:
 			throw new DocumentException("Unknown node type: %s", kind);
 		}
 	}
 
 	@Override
-	public LNode append(Kind kind, String value) throws DocumentException {
+	public LNode append(Kind kind, Atomic value) throws DocumentException {
 		LNode child = buildChild(kind, value);
 		return addChild(child, true);
 	}
@@ -541,7 +566,7 @@ abstract class ParentLNode extends LNode {
 	}
 
 	@Override
-	public LNode prepend(Kind kind, String value)
+	public LNode prepend(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		LNode child = buildChild(kind, value);
 		return addChild(child, false);
@@ -562,7 +587,7 @@ abstract class ParentLNode extends LNode {
 		return prepend(child);
 	}
 
-	LNode insertBefore(LNode node, Kind kind, String value)
+	LNode insertBefore(LNode node, Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		LNode child = buildChild(kind, value);
 		return insertChild(node, child, true);
@@ -581,7 +606,7 @@ abstract class ParentLNode extends LNode {
 		return insertBefore(node, child);
 	}
 
-	LNode insertAfter(LNode node, Kind kind, String value)
+	LNode insertAfter(LNode node, Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		LNode child = buildChild(kind, value);
 		return insertAfter(node, child);
@@ -600,7 +625,7 @@ abstract class ParentLNode extends LNode {
 		return insertAfter(node, child);
 	}
 
-	LNode replace(LNode node, Kind kind, String value)
+	LNode replace(LNode node, Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		LNode child = buildChild(kind, value);
 		return replaceChild(node, child);
@@ -611,9 +636,9 @@ abstract class ParentLNode extends LNode {
 		LNode newChild = buildChild(child);
 		return replaceChild(node, newChild);
 	}
-	
+
 	LNode replaceDirect(LNode node, LNode child)
-	throws OperationNotSupportedException, DocumentException {
+			throws OperationNotSupportedException, DocumentException {
 		return replaceChild(node, child);
 	}
 

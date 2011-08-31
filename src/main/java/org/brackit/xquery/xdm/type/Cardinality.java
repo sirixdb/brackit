@@ -25,17 +25,28 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence.type;
+package org.brackit.xquery.xdm.type;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public interface ItemType extends ItemTest {
-	public boolean isAnyItem();
+public enum Cardinality {
+	Zero, // empty-sequence()
+	One, ZeroOrOne, // ?
+	OneOrMany, // +
+	ZeroOrMany; // *
 
-	public boolean isAtomic();
+	public final boolean moreThanZero() {
+		return (this == One) || (this == OneOrMany);
+	}
 
-	public boolean isNode();
+	public final boolean many() {
+		return ((this == OneOrMany) || (this == ZeroOrMany));
+	}
+
+	public final boolean atMostOne() {
+		return ((this == ZeroOrOne) || (this == One));
+	}
 }

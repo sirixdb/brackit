@@ -79,9 +79,9 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
 
 		if (appendOnly) {
 			element = ((Node<?>) tuple.get(tuple.getSize() - 1)).append(
-					Kind.ELEMENT, name.getLocalName());
+					Kind.ELEMENT, name);
 		} else {
-			element = ctx.getNodeFactory().element(name.getLocalName());
+			element = ctx.getNodeFactory().element(name);
 		}
 
 		ContentSink sink = new ContentSink() {

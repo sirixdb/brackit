@@ -29,6 +29,9 @@ package org.brackit.xquery.node.parser;
 
 import java.util.ArrayDeque;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.node.linked.LNodeFactory;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
@@ -54,6 +57,10 @@ public class FragmentHelper {
 	}
 
 	public FragmentHelper openElement(String name) throws DocumentException {
+		return openElement(new QNm(name));
+	}
+
+	public FragmentHelper openElement(QNm name) throws DocumentException {
 		if (!stack.isEmpty()) {
 			stack.push(stack.peek().append(Kind.ELEMENT, name));
 		} else {
@@ -74,12 +81,21 @@ public class FragmentHelper {
 	}
 
 	public FragmentHelper element(String name) throws DocumentException {
+		return element(new QNm(name));
+	}
+
+	public FragmentHelper element(QNm name) throws DocumentException {
 		openElement(name);
 		closeElement();
 		return this;
 	}
 
 	public FragmentHelper attribute(String name, String value)
+			throws DocumentException {
+		return attribute(new QNm(name), new Una(value));
+	}
+
+	public FragmentHelper attribute(QNm name, Atomic value)
 			throws DocumentException {
 		if ((stack.isEmpty()) || (stack.peek().getKind() != Kind.ELEMENT)) {
 			throw new DocumentException("No element on stack.");
@@ -92,6 +108,10 @@ public class FragmentHelper {
 	}
 
 	public FragmentHelper content(String content) throws DocumentException {
+		return content(new Una(content));
+	}
+
+	public FragmentHelper content(Atomic content) throws DocumentException {
 		if ((stack.isEmpty()) || (stack.peek().getKind() != Kind.ELEMENT)) {
 			throw new DocumentException("No element on stack.");
 		}

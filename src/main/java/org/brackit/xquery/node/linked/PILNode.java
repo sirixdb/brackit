@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.node.linked;
 
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
@@ -37,25 +39,25 @@ import org.brackit.xquery.xdm.OperationNotSupportedException;
  * 
  */
 public final class PILNode extends TextLNode {
-	private String target;
+	private QNm target;
 
-	PILNode(ParentLNode parent, String name, String value) {
+	PILNode(ParentLNode parent, QNm target, Str value) {
 		super(parent, value);
-		this.target = name;
+		this.target = target;
 	}
 
-	public PILNode(String name, String value) {
+	public PILNode(QNm target, Str value) {
 		super(value);
-		this.target = name;
+		this.target = target;
 	}
 
 	@Override
-	public String getName() throws DocumentException {
+	public QNm getName() throws DocumentException {
 		return target;
 	}
 
 	@Override
-	public void setName(String name) throws OperationNotSupportedException,
+	public void setName(QNm name) throws OperationNotSupportedException,
 			DocumentException {
 		this.target = name;
 	}

@@ -43,10 +43,10 @@ import org.brackit.xquery.expr.ExtVariable;
 import org.brackit.xquery.expr.Variable;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.module.Namespaces;
-import org.brackit.xquery.sequence.type.ItemType;
-import org.brackit.xquery.sequence.type.SequenceType;
 import org.brackit.xquery.util.log.Logger;
 import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.xdm.type.ItemType;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * 

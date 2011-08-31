@@ -36,10 +36,10 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.Signature;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Type;
 
 /**

@@ -34,6 +34,7 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 
 /**
  * 

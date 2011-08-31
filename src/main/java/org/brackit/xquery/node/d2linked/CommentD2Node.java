@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.node.d2linked;
 
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.xdm.Kind;
 
 /**
@@ -35,11 +36,11 @@ import org.brackit.xquery.xdm.Kind;
  * 
  */
 public final class CommentD2Node extends TextD2Node {
-	public CommentD2Node(String value) {
+	public CommentD2Node(Str value) {
 		super(value);
 	}
 
-	CommentD2Node(ParentD2Node parent, int[] division, String value) {
+	CommentD2Node(ParentD2Node parent, int[] division, Str value) {
 		super(parent, division, value);
 	}
 

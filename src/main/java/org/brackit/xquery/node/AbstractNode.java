@@ -28,8 +28,10 @@
 package org.brackit.xquery.node;
 
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.atomic.Una;
+import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.node.stream.AtomStream;
 import org.brackit.xquery.node.stream.filter.Filter;
 import org.brackit.xquery.node.stream.filter.FilteredStream;
 import org.brackit.xquery.xdm.AbstractItem;
@@ -38,17 +40,21 @@ import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.xdm.type.ElementType;
+import org.brackit.xquery.xdm.type.ItemType;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public abstract class AbstractNode<E extends Node<E>> extends AbstractItem implements Node<E> {
+public abstract class AbstractNode<E extends Node<E>> extends AbstractItem
+		implements Node<E> {
 	protected static final Kind[] mapping = new Kind[] { Kind.ELEMENT,
 			Kind.ATTRIBUTE, Kind.TEXT, Kind.DOCUMENT, Kind.COMMENT,
 			Kind.PROCESSING_INSTRUCTION };
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Stream<? extends E> getPath() throws DocumentException {
 		final Node<? extends E> node = this;
@@ -71,6 +77,7 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem imple
 		};
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public final int cmp(Node<?> other) {
 		if (((Object) other) == this) {
@@ -106,13 +113,65 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem imple
 	}
 
 	@Override
+	public AnyURI getBaseURI() {
+		return null;
+	}
+
+	@Override
+	public Stream<Atomic> getValues() throws DocumentException {
+		return new AtomStream<Atomic>(getValue());
+	}
+
+	@Override
+	public Str getStrValue() throws DocumentException {
+		if ((getKind() == Kind.ELEMENT) || (getKind() == Kind.DOCUMENT)) {
+			StringBuffer buffer = new StringBuffer();
+			Stream<? extends E> scanner = getDescendantOrSelf();
+			try {
+				E descendant;
+				while ((descendant = scanner.next()) != null) {
+					if (descendant.getKind() == Kind.TEXT) {
+						buffer.append(descendant.getValue());
+					}
+				}
+			} finally {
+				scanner.close();
+			}
+			return new Str(buffer.toString());
+		} else {
+			return getValue().asStr();
+		}
+	}
+
+	@Override
 	public Type type() {
-		return Type.UNA;
+		switch (getKind()) {
+		case ELEMENT:
+			return Type.UN;
+		case ATTRIBUTE:
+		case TEXT:
+			return Type.UNA;
+		default:
+			return null;
+		}
+	}
+	
+	@Override
+	public ItemType itemType() throws DocumentException {
+		switch (getKind()) {
+		case ELEMENT:
+			return new ElementType(getName(), Type.UN);
+		case ATTRIBUTE:
+		case TEXT:
+//			return Type.UNA;
+		default:
+			return null;
+		}
 	}
 
 	@Override
 	public Atomic atomize() throws QueryException {
-		return new Una(getValue());
+		return getValue();
 	}
 
 	@Override

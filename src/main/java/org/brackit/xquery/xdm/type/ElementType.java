@@ -25,11 +25,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence.type;
+package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.Kind;
+import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Type;
 
 /**
@@ -37,39 +39,88 @@ import org.brackit.xquery.xdm.Type;
  * @author Sebastian Baechle
  * 
  */
-public class NumericType implements ItemType {
-	public static NumericType INSTANCE = new NumericType();
+public final class ElementType extends NodeType {
+	private final QNm name;
+	private final Type type;
 
-	private NumericType() {
+	public ElementType() {
+		this.name = null;
+		this.type = null;
+	}
+
+	public ElementType(QNm name) {
+		this.name = name;
+		this.type = null;
+	}
+
+	public ElementType(QNm name, Type type) {
+		this.name = name;
+		this.type = type;
 	}
 
 	@Override
-	public boolean isAnyItem() {
-		return false;
+	public QNm getQName() {
+		return name;
+	}
+	
+	@Override
+	public Type getType() {
+		return type;
+	}
+
+	public boolean isWildcard() {
+		return name == null;
 	}
 
 	@Override
-	public boolean isAtomic() {
-		return true;
+	public Kind getNodeKind() {
+		return Kind.ELEMENT;
 	}
 
 	@Override
-	public boolean isNode() {
-		return false;
+	public boolean matches(Node<?> node) throws QueryException {
+		return ((node.getKind() == Kind.ELEMENT)
+				&& ((name == null) || (name.eq(node.getName()))) && ((type == null) || (node
+				.type().instanceOf(type))));
 	}
 
 	@Override
 	public boolean matches(Item item) throws QueryException {
-		if (!(item instanceof Atomic)) {
-			return false;
-		}
-		Type type = ((Atomic) item).type();
-
-		return (type.instanceOf(Type.DBL)) || (type.instanceOf(Type.FLO))
-				|| (type.instanceOf(Type.DEC));
+		return ((item instanceof Node<?>) && (matches((Node<?>) item)));
 	}
 
 	public String toString() {
-		return "numeric";
+		return (name != null) ? (type == null) ? String.format(
+				"element(\"%s\")", name) : String.format(
+				"element(\"%s\", \"%s\")", name, type) : "element()";
+	}
+	
+	public boolean equals(Object obj) {
+		if (obj == this) {
+			return true;
+		}
+		if (!(obj instanceof ElementType)) {
+			return false;
+		}
+		ElementType t = (ElementType) obj;
+		if (name == null) {
+			if (t.name != null) {
+				return false;
+			}
+		} else {
+			if ((t.name == null) || (!name.equals(t.name))) {
+				return false;
+			}
+		}
+		if (type == null) {
+			if (t.type != null) {
+				return false;
+			}
+		} else {
+			if ((t.type == null) || (!type.equals(t.type))) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

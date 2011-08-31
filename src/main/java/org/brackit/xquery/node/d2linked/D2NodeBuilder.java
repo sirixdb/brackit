@@ -28,6 +28,9 @@
 package org.brackit.xquery.node.d2linked;
 
 import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.AbstractBuilder;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
@@ -53,35 +56,35 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
 	}
 
 	@Override
-	protected D2Node buildAttribute(D2Node parent, String name, String value)
+	protected D2Node buildAttribute(D2Node parent, QNm name, Atomic value)
 			throws DocumentException {
 		return (parent != null) ? parent.setAttribute(name, value)
 				: new AttributeD2Node(name, value);
 	}
 
 	@Override
-	protected D2Node buildElement(D2Node parent, String name)
+	protected D2Node buildElement(D2Node parent, QNm name)
 			throws DocumentException {
 		return (parent != null) ? parent.append(Kind.ELEMENT, name)
 				: new ElementD2Node(name);
 	}
 
 	@Override
-	protected D2Node buildText(D2Node parent, String text)
+	protected D2Node buildText(D2Node parent, Atomic text)
 			throws DocumentException {
 		return (parent != null) ? parent.append(Kind.TEXT, text)
 				: new TextD2Node(text);
 	}
 
 	@Override
-	protected D2Node buildComment(D2Node parent, String text)
+	protected D2Node buildComment(D2Node parent, Str text)
 			throws DocumentException {
 		return (parent != null) ? parent.append(Kind.COMMENT, text)
 				: new CommentD2Node(text);
 	}
 
 	@Override
-	protected D2Node buildProcessingInstruction(D2Node parent, String text)
+	protected D2Node buildProcessingInstruction(D2Node parent, Str text)
 			throws DocumentException {
 		return (parent != null) ? parent.append(Kind.PROCESSING_INSTRUCTION,
 				text) : new PID2Node(null, text);

@@ -25,9 +25,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence.type;
+package org.brackit.xquery.xdm.type;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.Item;
@@ -40,35 +39,32 @@ import org.brackit.xquery.xdm.Type;
  * @author Sebastian Baechle
  * 
  */
-public class ElementType extends KindTest {
+public final class AttributeType extends NodeType {
 	private final QNm name;
-
-	private final String localName;
 
 	private final Type type;
 
-	public ElementType() {
+	public AttributeType() {
 		this.name = null;
-		this.localName = null;
 		this.type = null;
 	}
 
-	public ElementType(QNm name) {
+	public AttributeType(QNm name) {
 		this.name = name;
-		this.localName = (name != null) ? name.getLocalName() : null;
 		this.type = null;
 	}
 
-	public ElementType(QNm name, Type type) {
+	public AttributeType(QNm name, Type type) {
 		this.name = name;
-		this.localName = (name != null) ? name.getLocalName() : null;
 		this.type = type;
 	}
 
+	@Override
 	public QNm getQName() {
 		return name;
 	}
 
+	@Override
 	public Type getType() {
 		return type;
 	}
@@ -79,20 +75,14 @@ public class ElementType extends KindTest {
 
 	@Override
 	public Kind getNodeKind() {
-		return Kind.ELEMENT;
+		return Kind.ATTRIBUTE;
 	}
 
 	@Override
-	public boolean matches(Node<?> node)
-			throws QueryException {
-		if (type != null) {
-			throw new QueryException(
-					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-					"Type annotation support not implemented yet");
-		}
-		// TODO get correct QName of the node
-		return (node.getKind() == Kind.ELEMENT)
-				&& ((localName == null) || (localName.equals(node.getName())));
+	public boolean matches(Node<?> node) throws QueryException {
+		return ((node.getKind() == Kind.ATTRIBUTE)
+				&& ((name == null) || (name.eq(node.getName()))) && ((type == null) || (node
+				.type().instanceOf(type))));
 	}
 
 	@Override
@@ -101,8 +91,36 @@ public class ElementType extends KindTest {
 	}
 
 	public String toString() {
-		return (name != null) ? (type == null) ? String.format(
-				"element(\"%s\")", name) : String.format(
-				"element(\"%s\", \"%s\")", name, type) : "element()";
+		return (type == null) ? String.format("attribute(\"%s\")", name)
+				: String.format("attribute(\"%s\", \"%s\")", name, type);
+	}
+
+	public boolean equals(Object obj) {
+		if (obj == this) {
+			return true;
+		}
+		if (!(obj instanceof AttributeType)) {
+			return false;
+		}
+		AttributeType t = (AttributeType) obj;
+		if (name == null) {
+			if (t.name != null) {
+				return false;
+			}
+		} else {
+			if ((t.name == null) || (!name.equals(t.name))) {
+				return false;
+			}
+		}
+		if (type == null) {
+			if (t.type != null) {
+				return false;
+			}
+		} else {
+			if ((t.type == null) || (!type.equals(t.type))) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

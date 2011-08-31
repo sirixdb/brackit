@@ -25,28 +25,52 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence.type;
+package org.brackit.xquery.xdm.type;
+
+import org.brackit.xquery.QueryException;
+import org.brackit.xquery.xdm.Item;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public enum Cardinality {
-	Zero, // empty-sequence()
-	One, ZeroOrOne, // ?
-	OneOrMany, // +
-	ZeroOrMany; // *
+public final class AnyItemType implements ItemType {
+	public static final AnyItemType ANY = new AnyItemType();
 
-	public final boolean moreThanZero() {
-		return (this == One) || (this == OneOrMany);
+	public AnyItemType() {
 	}
 
-	public final boolean many() {
-		return ((this == OneOrMany) || (this == ZeroOrMany));
+	@Override
+	public boolean isAnyItem() {
+		return true;
 	}
 
-	public final boolean atMostOne() {
-		return ((this == ZeroOrOne) || (this == One));
+	@Override
+	public boolean isAtomic() {
+		return true;
+	}
+
+	@Override
+	public boolean isNode() {
+		return true;
+	}
+
+	@Override
+	public boolean isFunction() {
+		return true;
+	}
+
+	@Override
+	public boolean matches(Item item) throws QueryException {
+		return true;
+	}
+
+	public String toString() {
+		return "item()";
+	}
+
+	public boolean equals(Object obj) {
+		return ((obj == this) || (obj instanceof AnyItemType));
 	}
 }

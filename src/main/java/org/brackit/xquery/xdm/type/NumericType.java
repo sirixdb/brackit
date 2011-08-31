@@ -25,39 +25,41 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence.type;
+package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.Type;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public class TextType extends KindTest {
-	public TextType() {
-	}
+public final class NumericType extends AtomicType {
+	public static NumericType INSTANCE = new NumericType();
 
-	@Override
-	public Kind getNodeKind() {
-		return Kind.TEXT;
-	}
-
-	@Override
-	public boolean matches(Node<?> node)
-			throws QueryException {
-		return (node.getKind() == Kind.TEXT);
+	private NumericType() {
+		super(null);
 	}
 
 	@Override
 	public boolean matches(Item item) throws QueryException {
-		return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.TEXT));
+		if (!(item instanceof Atomic)) {
+			return false;
+		}
+		Type type = ((Atomic) item).type();
+
+		return (type.instanceOf(Type.DBL)) || (type.instanceOf(Type.FLO))
+				|| (type.instanceOf(Type.DEC));
 	}
 
 	public String toString() {
-		return "text()";
+		return "numeric";
+	}
+
+	public boolean equals(Object obj) {
+		return ((obj == this) || (obj instanceof NumericType));
 	}
 }

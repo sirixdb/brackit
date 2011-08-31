@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.node.linked;
 
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.xdm.Kind;
 
 /**
@@ -35,11 +36,11 @@ import org.brackit.xquery.xdm.Kind;
  * 
  */
 public final class CommentLNode extends TextLNode {
-	public CommentLNode(String value) {
+	public CommentLNode(Str value) {
 		super(value);
 	}
 
-	CommentLNode(ParentLNode parent, String value) {
+	CommentLNode(ParentLNode parent, Str value) {
 		super(parent, value);
 	}
 

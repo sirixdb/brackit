@@ -30,6 +30,7 @@ package org.brackit.xquery.xdm;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.xdm.type.ItemType;
 
 /**
  * Item as defined in {@linkplain http://www.w3.org/TR/xpath-datamodel}.
@@ -38,15 +39,17 @@ import org.brackit.xquery.atomic.Atomic;
  * 
  */
 public interface Item extends Tuple, Sequence {
+	
 	/**
-	 * Returns the {@link Type] of this item,
+	 * Returns the {@link ItemType] of this item.
 	 */
-	public Type type();
+	public ItemType itemType() throws QueryException;
 
 	/**
-	 * Returns the atomized value of this item as defined in {@linkplain http
-	 * ://www.w3.org/TR/xquery/#dt-atomization} and {@linkplain http
-	 * ://www.w3.org/TR/xquery-operators/#func-data}.
+	 * Returns the atomized value of this item.
+	 * 
+	 * @see http://www.w3.org/TR/xquery/#dt-atomization
+	 * @see http://www.w3.org/TR/xquery-operators/#func-data
 	 */
 	public Atomic atomize() throws QueryException;
 }

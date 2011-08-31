@@ -29,6 +29,8 @@ package org.brackit.xquery.node.linked;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.AbstractNode;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.node.stream.AtomStream;
@@ -171,24 +173,24 @@ public abstract class LNode extends AbstractNode<LNode> {
 	}
 
 	@Override
-	public LNode append(Kind kind, String value)
+	public LNode append(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
 
 	@Override
-	public LNode prepend(Kind kind, String value)
+	public LNode prepend(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
 
 	@Override
-	public LNode getAttribute(String name) throws DocumentException {
+	public LNode getAttribute(QNm name) throws DocumentException {
 		return null;
 	}
 
 	@Override
-	public String getAttributeValue(String name) throws DocumentException {
+	public String getAttributeValue(QNm name) throws DocumentException {
 		return null;
 	}
 
@@ -412,7 +414,7 @@ public abstract class LNode extends AbstractNode<LNode> {
 	}
 
 	@Override
-	public LNode insertAfter(Kind kind, String value)
+	public LNode insertAfter(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
@@ -430,7 +432,7 @@ public abstract class LNode extends AbstractNode<LNode> {
 	}
 
 	@Override
-	public LNode insertBefore(Kind kind, String value)
+	public LNode insertBefore(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
@@ -448,7 +450,7 @@ public abstract class LNode extends AbstractNode<LNode> {
 	}
 
 	@Override
-	public LNode replaceWith(Kind kind, String value)
+	public LNode replaceWith(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
@@ -466,25 +468,25 @@ public abstract class LNode extends AbstractNode<LNode> {
 	}
 
 	@Override
-	public boolean deleteAttribute(String name)
+	public boolean deleteAttribute(QNm name)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
 
 	@Override
-	public LNode setAttribute(String name, String value)
+	public LNode setAttribute(QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
 
 	@Override
-	public void setName(String name) throws OperationNotSupportedException,
+	public void setName(QNm name) throws OperationNotSupportedException,
 			DocumentException {
 		throw new OperationNotSupportedException();
 	}
 
 	@Override
-	public void setValue(String value) throws OperationNotSupportedException,
+	public void setValue(Atomic value) throws OperationNotSupportedException,
 			DocumentException {
 		throw new OperationNotSupportedException();
 	}

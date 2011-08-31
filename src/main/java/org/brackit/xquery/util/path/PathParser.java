@@ -90,9 +90,14 @@ public class PathParser extends Tokenizer {
 
 	private boolean namedStep() throws TokenizerException {
 		String s = null;
-		if (attempt("//")) {
+		Token la = la("//");
+		if (la != null) {
+			if (la(la, "@") != null) {
+				return false;
+			}
+			consume(la);
 			if (!attempt("*")) {
-				Token la = laQName();
+				la = laQName();
 				if (la == null) {
 					throw new MismatchException("Wildcard", "QName");
 				}
@@ -101,9 +106,13 @@ public class PathParser extends Tokenizer {
 			}
 			p.descendant(s);
 			return true;
-		} else if (attempt("/")) {			
+		} else if ((la = la("/")) != null) {
+			if (la(la, "@") != null) {
+				return false;
+			}
+			consume(la);
 			if (!attempt("*")) {
-				Token la = laQName();
+				la = laQName();
 				if (la == null) {
 					throw new MismatchException("Wildcard", "QName");
 				}

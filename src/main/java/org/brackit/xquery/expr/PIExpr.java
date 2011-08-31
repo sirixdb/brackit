@@ -32,6 +32,8 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -151,11 +153,11 @@ public class PIExpr extends ConstructedNodeBuilder implements Expr {
 
 		if (appendOnly) {
 			((Node<?>) tuple.get(tuple.getSize() - 1)).append(
-					Kind.PROCESSING_INSTRUCTION, content);
+					Kind.PROCESSING_INSTRUCTION, new Str(content));
 			return null;
 		}
 
-		Node<?> attribute = ctx.getNodeFactory().pi(target, content);
+		Node<?> attribute = ctx.getNodeFactory().pi(new QNm(target), new Str(content));
 		return attribute;
 	}
 

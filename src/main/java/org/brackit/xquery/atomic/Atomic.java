@@ -40,6 +40,9 @@ import org.brackit.xquery.xdm.Type;
  * 
  */
 public interface Atomic extends Item, Expr {
+		
+	public Type type();
+	
 	/**
 	 * Compares this atomic with the given one. Numeric types are expected to
 	 * perform numeric type promotion as xs:anyURI is expected to be promoted to
@@ -99,10 +102,18 @@ public interface Atomic extends Item, Expr {
 	public int atomicCode();
 
 	/**
-	 * Returns the string value of this item as defined in {@linkplain
-	 * http://www.w3.org/TR/xquery-operators/#func-string}.
+	 * Returns the string value of this item.
+	 * 
+	 * @see http://www.w3.org/TR/xquery-operators/#func-string
 	 */
-	public abstract String stringValue();
+	public String stringValue();
+
+	/**
+	 * Returns the string value of this item.
+	 * 
+	 * @see http://www.w3.org/TR/xquery-operators/#func-string
+	 */
+	public Str asStr();
 
 	/**
 	 * Returns a copy of this value of the given type. The value must be in the

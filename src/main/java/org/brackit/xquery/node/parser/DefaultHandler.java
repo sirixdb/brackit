@@ -27,6 +27,9 @@
  */
 package org.brackit.xquery.node.parser;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.xdm.DocumentException;
 
 /**
@@ -36,7 +39,7 @@ import org.brackit.xquery.xdm.DocumentException;
  */
 public class DefaultHandler implements SubtreeHandler {
 	@Override
-	public void attribute(String name, String value) throws DocumentException {
+	public void attribute(QNm name, Atomic value) throws DocumentException {
 	}
 
 	@Override
@@ -48,7 +51,7 @@ public class DefaultHandler implements SubtreeHandler {
 	}
 
 	@Override
-	public void comment(String content) throws DocumentException {
+	public void comment(Str content) throws DocumentException {
 	}
 
 	@Override
@@ -60,7 +63,7 @@ public class DefaultHandler implements SubtreeHandler {
 	}
 
 	@Override
-	public void endElement(String name) throws DocumentException {
+	public void endElement(QNm name) throws DocumentException {
 	}
 
 	@Override
@@ -72,7 +75,7 @@ public class DefaultHandler implements SubtreeHandler {
 	}
 
 	@Override
-	public void processingInstruction(String content) throws DocumentException {
+	public void processingInstruction(Str content) throws DocumentException {
 	}
 
 	@Override
@@ -80,11 +83,11 @@ public class DefaultHandler implements SubtreeHandler {
 	}
 
 	@Override
-	public void startElement(String name) throws DocumentException {
+	public void startElement(QNm name) throws DocumentException {
 	}
 
 	@Override
-	public void text(String content) throws DocumentException {
+	public void text(Atomic content) throws DocumentException {
 	}
 
 }

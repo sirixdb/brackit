@@ -39,8 +39,6 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.ConstructorFunction;
-import org.brackit.xquery.function.Function;
-import org.brackit.xquery.function.Signature;
 import org.brackit.xquery.function.fn.Abs;
 import org.brackit.xquery.function.fn.AdjustToTimezone;
 import org.brackit.xquery.function.fn.BaseURI;
@@ -96,14 +94,16 @@ import org.brackit.xquery.function.fn.SubstringRelative;
 import org.brackit.xquery.function.fn.SumAvg;
 import org.brackit.xquery.function.fn.Trace;
 import org.brackit.xquery.function.fn.Unordered;
-import org.brackit.xquery.sequence.type.AnyItemType;
-import org.brackit.xquery.sequence.type.AnyKindType;
-import org.brackit.xquery.sequence.type.AtomicType;
-import org.brackit.xquery.sequence.type.Cardinality;
-import org.brackit.xquery.sequence.type.DocumentType;
-import org.brackit.xquery.sequence.type.NumericType;
-import org.brackit.xquery.sequence.type.SequenceType;
+import org.brackit.xquery.xdm.Function;
+import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.xdm.type.AnyItemType;
+import org.brackit.xquery.xdm.type.AnyNodeType;
+import org.brackit.xquery.xdm.type.AtomicType;
+import org.brackit.xquery.xdm.type.Cardinality;
+import org.brackit.xquery.xdm.type.DocumentType;
+import org.brackit.xquery.xdm.type.NumericType;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * 
@@ -140,15 +140,15 @@ public class Functions {
 		predefine(new NodeName(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "node-name"), new Signature(
 				new SequenceType(AtomicType.QNM, Cardinality.ZeroOrOne),
-				new SequenceType(AnyKindType.ANY_NODE, Cardinality.ZeroOrOne))));
+				new SequenceType(AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne))));
 		predefine(new Nilled(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"nilled"), new Signature(new SequenceType(AtomicType.QNM,
-				Cardinality.ZeroOrOne), new SequenceType(AnyKindType.ANY_NODE,
+				Cardinality.ZeroOrOne), new SequenceType(AnyNodeType.ANY_NODE,
 				Cardinality.ZeroOrOne))));
 		predefine(new BaseURI(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "base-uri"), new Signature(
 				new SequenceType(AtomicType.AURI, Cardinality.ZeroOrOne),
-				new SequenceType(AnyKindType.ANY_NODE, Cardinality.ZeroOrOne))));
+				new SequenceType(AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne))));
 		predefine(new BaseURI(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "base-uri"), new Signature(
 				new SequenceType(AtomicType.AURI, Cardinality.ZeroOrOne),
@@ -167,7 +167,7 @@ public class Functions {
 		predefine(new DocumentURI(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "document-uri"), new Signature(
 				new SequenceType(AtomicType.AURI, Cardinality.ZeroOrOne),
-				new SequenceType(AnyKindType.ANY_NODE, Cardinality.ZeroOrOne))));
+				new SequenceType(AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne))));
 
 		// See XQuery Functions and Operators 3 The Error Function
 		predefine(new org.brackit.xquery.function.fn.Error(new QNm(
@@ -674,27 +674,27 @@ public class Functions {
 		predefine(new Name(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"name"), Name.Mode.NAME, new Signature(new SequenceType(
 				AtomicType.STR, Cardinality.One), new SequenceType(
-				AnyKindType.ANY_NODE, Cardinality.ZeroOrOne))));
+				AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne))));
 		predefine(new Name(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"local-name"), Name.Mode.LOCAL_NAME, new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.One), false, true)));
 		predefine(new Name(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"local-name"), Name.Mode.LOCAL_NAME, new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.One),
-				new SequenceType(AnyKindType.ANY_NODE, Cardinality.ZeroOrOne))));
+				new SequenceType(AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne))));
 		predefine(new Number(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"number"), new Signature(new SequenceType(AtomicType.DBL,
 				Cardinality.One), false, true)));
 		predefine(new Number(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"number"), new Signature(new SequenceType(AnyKindType.ANY_NODE,
-				Cardinality.ZeroOrOne), new SequenceType(AnyKindType.ANY_NODE,
+				"number"), new Signature(new SequenceType(AnyNodeType.ANY_NODE,
+				Cardinality.ZeroOrOne), new SequenceType(AnyNodeType.ANY_NODE,
 				Cardinality.ZeroOrOne))));
 		predefine(new Root(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"root"), new Signature(new SequenceType(AnyKindType.ANY_NODE,
+				"root"), new Signature(new SequenceType(AnyNodeType.ANY_NODE,
 				Cardinality.ZeroOrOne), false, true)));
 		predefine(new Root(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"root"), new Signature(new SequenceType(AnyKindType.ANY_NODE,
-				Cardinality.ZeroOrOne), new SequenceType(AnyKindType.ANY_NODE,
+				"root"), new Signature(new SequenceType(AnyNodeType.ANY_NODE,
+				Cardinality.ZeroOrOne), new SequenceType(AnyNodeType.ANY_NODE,
 				Cardinality.ZeroOrOne))));
 
 		// See XQuery Functions and Operators 15.1 General Functions and

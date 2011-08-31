@@ -29,6 +29,7 @@ package org.brackit.xquery.node.d2linked;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.SingleCollection;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
@@ -71,7 +72,7 @@ public class DocumentD2Node extends ParentD2Node {
 	}
 
 	@Override
-	public String getName() throws DocumentException {
+	public QNm getName() throws DocumentException {
 		return null;
 	}
 

@@ -31,6 +31,7 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -101,11 +102,11 @@ public class CommentExpr extends ConstructedNodeBuilder implements Expr {
 
 		if (appendOnly) {
 			((Node<?>) tuple.get(tuple.getSize() - 1)).append(Kind.COMMENT,
-					content);
+					new Str(content));
 			return null;
 		}
 
-		Node<?> node = ctx.getNodeFactory().comment(content);
+		Node<?> node = ctx.getNodeFactory().comment(new Str(content));
 		return node;
 	}
 

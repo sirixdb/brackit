@@ -27,6 +27,9 @@
  */
 package org.brackit.xquery.node.linked;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.AbstractBuilder;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
@@ -51,35 +54,35 @@ public class LNodeBuilder extends AbstractBuilder<LNode> {
 	}
 
 	@Override
-	protected LNode buildAttribute(LNode parent, String name, String value)
+	protected LNode buildAttribute(LNode parent, QNm name, Atomic value)
 			throws DocumentException {
 		return (parent != null) ? parent.setAttribute(name, value)
 				: new AttributeLNode(name, value);
 	}
 
 	@Override
-	protected LNode buildElement(LNode parent, String name)
+	protected LNode buildElement(LNode parent, QNm name)
 			throws DocumentException {
 		return (parent != null) ? parent.append(Kind.ELEMENT, name)
 				: new ElementLNode(name);
 	}
 
 	@Override
-	protected LNode buildText(LNode parent, String text)
+	protected LNode buildText(LNode parent, Atomic text)
 			throws DocumentException {
 		return (parent != null) ? parent.append(Kind.TEXT, text)
 				: new TextLNode(text);
 	}
 
 	@Override
-	protected LNode buildComment(LNode parent, String text)
+	protected LNode buildComment(LNode parent, Str text)
 			throws DocumentException {
 		return (parent != null) ? parent.append(Kind.COMMENT, text)
 				: new CommentLNode(text);
 	}
 
 	@Override
-	protected LNode buildProcessingInstruction(LNode parent, String text)
+	protected LNode buildProcessingInstruction(LNode parent, Str text)
 			throws DocumentException {
 		return (parent != null) ? parent.append(Kind.PROCESSING_INSTRUCTION,
 				text) : new PILNode(null, text);

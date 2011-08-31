@@ -47,13 +47,13 @@ import org.brackit.xquery.operator.Select;
 import org.brackit.xquery.operator.Start;
 import org.brackit.xquery.operator.TableJoin;
 import org.brackit.xquery.operator.OrderBy.OrderModifier;
-import org.brackit.xquery.sequence.type.SequenceType;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * Extended compiler for bottom-up compilation of unnested flwor expressions
@@ -372,7 +372,7 @@ public class PipelineCompiler extends Compiler {
 					case DOCUMENT:
 						return "doc(" + node.getCollection().getName() + ")";
 					default:
-						return node.getValue();
+						return node.getValue().stringValue();
 					}
 				} catch (DocumentException e) {
 					e.printStackTrace();

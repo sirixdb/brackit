@@ -25,10 +25,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence.type;
+package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
 
 /**
@@ -36,24 +37,31 @@ import org.brackit.xquery.xdm.Node;
  * @author Sebastian Baechle
  * 
  */
-public class AnyKindType extends KindTest {
-	public static final AnyKindType ANY_NODE = new AnyKindType();
+public final class TextType extends NodeType {
+	public TextType() {
+	}
 
-	public AnyKindType() {
+	@Override
+	public Kind getNodeKind() {
+		return Kind.TEXT;
 	}
 
 	@Override
 	public boolean matches(Node<?> node)
 			throws QueryException {
-		return true;
+		return (node.getKind() == Kind.TEXT);
 	}
 
 	@Override
 	public boolean matches(Item item) throws QueryException {
-		return (item instanceof Node<?>);
+		return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.TEXT));
 	}
 
 	public String toString() {
-		return "node()";
+		return "text()";
+	}
+	
+	public boolean equals(Object obj) {
+		return ((obj == this) || (obj instanceof CommentType));
 	}
 }

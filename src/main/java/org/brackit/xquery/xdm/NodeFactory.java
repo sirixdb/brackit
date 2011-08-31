@@ -27,6 +27,9 @@
  */
 package org.brackit.xquery.xdm;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.parser.SubtreeParser;
 
 /**
@@ -35,17 +38,17 @@ import org.brackit.xquery.node.parser.SubtreeParser;
  * 
  */
 public interface NodeFactory<E extends Node<E>> {
-	public E element(String name) throws DocumentException;
+	public E element(QNm name) throws DocumentException;
 
-	public E attribute(String name, String value) throws DocumentException;
+	public E attribute(QNm name, Atomic value) throws DocumentException;
 
-	public E text(String value) throws DocumentException;
+	public E text(Atomic value) throws DocumentException;
 
-	public E pi(String target, String value) throws DocumentException;
+	public E pi(QNm target, Str value) throws DocumentException;
 
-	public E comment(String value) throws DocumentException;
+	public E comment(Str value) throws DocumentException;
 
-	public E document(String name) throws DocumentException;
+	public E document(Str name) throws DocumentException;
 
 	public E copy(Node<?> source) throws DocumentException;
 

@@ -25,16 +25,26 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence.type;
+package org.brackit.xquery.xdm;
 
+import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.atomic.QNm;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public interface ItemTest {
-	public boolean matches(Item item) throws QueryException;
+public interface Function extends Item {
+	public QNm getName();
+
+	public Signature getSignature();
+
+	public Sequence execute(QueryContext ctx, Sequence[] args)
+			throws QueryException;
+
+	public boolean isUpdating();
+
+	public boolean isBuiltIn();
 }

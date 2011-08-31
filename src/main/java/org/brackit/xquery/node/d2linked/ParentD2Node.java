@@ -29,6 +29,9 @@ package org.brackit.xquery.node.d2linked;
 
 import java.util.Arrays;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.node.stream.EmptyStream;
 import org.brackit.xquery.xdm.DocumentException;
@@ -36,6 +39,7 @@ import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
 import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.Type;
 
 /**
  * Abstract base for all constructed nodes that may have children
@@ -211,19 +215,21 @@ abstract class ParentD2Node extends D2Node {
 	}
 
 	@Override
-	public String getValue() throws DocumentException {
+	public Atomic getValue() throws DocumentException {
 		StringBuffer buffer = new StringBuffer();
 		Stream<D2Node> scanner = new DescendantScanner(this);
-
-		D2Node descendant;
-		while ((descendant = scanner.next()) != null) {
-			if (descendant.getKind() == Kind.TEXT) {
-				buffer.append(descendant.getValue());
+		try {
+			D2Node descendant;
+			while ((descendant = scanner.next()) != null) {
+				if (descendant.getKind() == Kind.TEXT) {
+					buffer.append(descendant.getValue());
+				}
 			}
+		} finally {
+			scanner.close();
 		}
-		scanner.close();
 
-		return buffer.toString();
+		return new Una(buffer.toString());
 	}
 
 	D2Node nextSiblingOf(D2Node node) {
@@ -250,7 +256,7 @@ abstract class ParentD2Node extends D2Node {
 			prev.sibling = node.sibling;
 	}
 
-	private D2Node addChild(Kind kind, String value, boolean append)
+	private D2Node addChild(Kind kind, Atomic value, boolean append)
 			throws DocumentException {
 		if (((kind == Kind.ATTRIBUTE) || (kind == Kind.DOCUMENT))) {
 			throw new DocumentException("Cannot add children of type '%s'",
@@ -268,8 +274,9 @@ abstract class ParentD2Node extends D2Node {
 
 			if ((kind == Kind.TEXT) && (previous != null)
 					&& (previous.getKind() == Kind.TEXT)) {
-				((TextD2Node) previous).value = ((TextD2Node) previous).value
-						+ value;
+				((TextD2Node) previous).value = new Una(
+						((TextD2Node) previous).value.stringValue()
+								+ value.stringValue());
 				return previous;
 			}
 			child = buildChild(previous.division,
@@ -280,7 +287,8 @@ abstract class ParentD2Node extends D2Node {
 			D2Node first = firstChild;
 			if ((kind == Kind.TEXT) && (first != null)
 					&& (first.getKind() == Kind.TEXT)) {
-				((TextD2Node) first).value = value + ((TextD2Node) first).value;
+				((TextD2Node) first).value = new Una(value.stringValue()
+						+ ((TextD2Node) first).value.stringValue());
 				return first;
 			}
 			child = buildChild(null, first.division, kind, value);
@@ -290,7 +298,7 @@ abstract class ParentD2Node extends D2Node {
 		return child;
 	}
 
-	private D2Node insertChild(D2Node sibling, Kind kind, String value,
+	private D2Node insertChild(D2Node sibling, Kind kind, Atomic value,
 			boolean after) throws DocumentException {
 		if (((kind == Kind.ATTRIBUTE) || (kind == Kind.DOCUMENT))) {
 			throw new DocumentException("Cannot add children of type '%s'",
@@ -311,13 +319,15 @@ abstract class ParentD2Node extends D2Node {
 
 			if (kind == Kind.TEXT) {
 				if ((previous != null) && (previous.getKind() == Kind.TEXT)) {
-					((TextD2Node) previous).value = ((TextD2Node) previous).value
-							+ value;
+					((TextD2Node) previous).value = new Una(
+							((TextD2Node) previous).value.stringValue()
+									+ value.stringValue());
 					return previous;
 				}
 				if ((sibling != null) && (sibling.getKind() == Kind.TEXT)) {
-					((TextD2Node) sibling).value = ((TextD2Node) sibling).value
-							+ value;
+					((TextD2Node) sibling).value = new Una(
+							((TextD2Node) sibling).value.stringValue()
+									+ value.stringValue());
 					return sibling;
 				}
 			}
@@ -333,14 +343,16 @@ abstract class ParentD2Node extends D2Node {
 		} else {
 			if (kind == Kind.TEXT) {
 				if ((sibling != null) && (sibling.getKind() == Kind.TEXT)) {
-					((TextD2Node) sibling).value = ((TextD2Node) sibling).value
-							+ value;
+					((TextD2Node) sibling).value = new Una(
+							((TextD2Node) sibling).value.stringValue()
+									+ value.stringValue());
 					return sibling;
 				}
 				if ((sibling.sibling != null)
 						&& (sibling.sibling.getKind() == Kind.TEXT)) {
-					((TextD2Node) sibling.sibling).value = ((TextD2Node) sibling.sibling).value
-							+ value;
+					((TextD2Node) sibling.sibling).value = new Una(
+							((TextD2Node) sibling.sibling).value.stringValue()
+									+ value.stringValue());
 					return sibling.sibling;
 				}
 			}
@@ -354,7 +366,7 @@ abstract class ParentD2Node extends D2Node {
 		return child;
 	}
 
-	private D2Node replaceChild(D2Node sibling, Kind kind, String value)
+	private D2Node replaceChild(D2Node sibling, Kind kind, Atomic value)
 			throws DocumentException {
 		if (((kind == Kind.ATTRIBUTE) || (kind == Kind.DOCUMENT))) {
 			throw new DocumentException("Cannot add children of type '%s'",
@@ -377,7 +389,7 @@ abstract class ParentD2Node extends D2Node {
 	}
 
 	private D2Node buildChild(int[] prevSibling, int[] nextSibling, Kind kind,
-			String value) throws DocumentException {
+			Atomic value) throws DocumentException {
 		int[] division = (prevSibling != null) ? ((nextSibling != null) ? siblingBetween(
 				prevSibling, nextSibling)
 				: siblingAfter(prevSibling))
@@ -386,15 +398,21 @@ abstract class ParentD2Node extends D2Node {
 		return buildChild(division, kind, value);
 	}
 
-	private D2Node buildChild(int[] division, Kind kind, String value)
+	private D2Node buildChild(int[] division, Kind kind, Atomic value)
 			throws DocumentException {
 		D2Node child;
 		if (kind == Kind.ELEMENT) {
-			child = new ElementD2Node(this, division, value);
+			if (!value.type().instanceOf(Type.QNM)) {
+				throw new DocumentException("Element name is not an xs:QName: %s (%s)", value, value.type());
+			}
+			child = new ElementD2Node(this, division, (QNm) value);
 		} else if (kind == Kind.TEXT) {
 			child = new TextD2Node(this, division, value);
 		} else if (kind == Kind.COMMENT) {
-			child = new CommentD2Node(this, division, value);
+			if (!value.type().instanceOf(Type.STR)) {
+				throw new DocumentException("Comment value is not an xs:string: %s (%s)", value, value.type());
+			}
+			child = new CommentD2Node(this, division, value.asStr());
 		} else if (kind == Kind.PROCESSING_INSTRUCTION) {
 			throw new DocumentException("Illegal node kind: %s", kind);
 		} else {
@@ -416,7 +434,7 @@ abstract class ParentD2Node extends D2Node {
 			while ((next = scanner.next()) != null) {
 				if (currentCopy == null) {
 					Kind kind = next.getKind();
-					String value = (kind == Kind.ELEMENT) ? next.getName()
+					Atomic value = (kind == Kind.ELEMENT) ? next.getName()
 							: next.getValue();
 
 					if (sibling == null) {
@@ -479,7 +497,7 @@ abstract class ParentD2Node extends D2Node {
 	}
 
 	@Override
-	public D2Node append(Kind kind, String value) throws DocumentException {
+	public D2Node append(Kind kind, Atomic value) throws DocumentException {
 		return addChild(kind, value, true);
 	}
 
@@ -547,7 +565,7 @@ abstract class ParentD2Node extends D2Node {
 	}
 
 	@Override
-	public D2Node prepend(Kind kind, String value)
+	public D2Node prepend(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		return addChild(kind, value, false);
 	}
@@ -565,7 +583,7 @@ abstract class ParentD2Node extends D2Node {
 		return prepend(child);
 	}
 
-	D2Node insertBefore(D2Node node, Kind kind, String value)
+	D2Node insertBefore(D2Node node, Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		return insertChild(node, kind, value, true);
 	}
@@ -581,7 +599,7 @@ abstract class ParentD2Node extends D2Node {
 		return insertBefore(child);
 	}
 
-	D2Node insertAfter(D2Node node, Kind kind, String value)
+	D2Node insertAfter(D2Node node, Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		return insertChild(node, kind, value, false);
 	}
@@ -597,7 +615,7 @@ abstract class ParentD2Node extends D2Node {
 		return insertAfter(child);
 	}
 
-	D2Node replace(D2Node node, Kind kind, String value)
+	D2Node replace(D2Node node, Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		return replaceChild(node, kind, value);
 	}

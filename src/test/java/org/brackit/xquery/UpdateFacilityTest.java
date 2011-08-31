@@ -29,6 +29,8 @@ package org.brackit.xquery;
 
 import java.io.FileNotFoundException;
 
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Kind;
@@ -51,8 +53,8 @@ public class UpdateFacilityTest extends XQueryBaseTest {
 	@Test
 	public void insertInto() throws Exception {
 		ctx.setContextItem(doc);
+		orig.getFirstChild().append(Kind.ELEMENT, new QNm("test"));
 		new XQuery("insert node <test/> into ./a").execute(ctx);
-		orig.getFirstChild().append(Kind.ELEMENT, "test");
 		ResultChecker.dCheck(orig, doc, false);
 	}
 
@@ -68,7 +70,8 @@ public class UpdateFacilityTest extends XQueryBaseTest {
 	public void simpleReplaceNode() throws Exception {
 		ctx.setContextItem(doc);
 		new XQuery("replace node ./a/c with <d/>").execute(ctx);
-		orig.getFirstChild().getLastChild().replaceWith(Kind.ELEMENT, "d");
+		orig.getFirstChild().getLastChild().replaceWith(Kind.ELEMENT,
+				new QNm("d"));
 		ResultChecker.dCheck(orig, doc, false);
 	}
 
@@ -76,7 +79,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
 	public void simpleRename() throws Exception {
 		ctx.setContextItem(doc);
 		new XQuery("rename node ./a as 'b'").execute(ctx);
-		orig.getFirstChild().setName("b");
+		orig.getFirstChild().setName(new QNm("b"));
 		ResultChecker.dCheck(orig, doc, false);
 	}
 
@@ -85,8 +88,8 @@ public class UpdateFacilityTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"copy $n := <a att='1'><b/></a> modify delete node $n/@att return $n")
 				.execute(ctx);
-		Node<?> a = ctx.getNodeFactory().element("a");
-		a.append(Kind.ELEMENT, "b");
+		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
+		a.append(Kind.ELEMENT, new QNm("b"));
 		ResultChecker.dCheck(a, res, false);
 	}
 
@@ -97,9 +100,9 @@ public class UpdateFacilityTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"copy $n := <a att='1'><b/></a> modify delete node $n return $n")
 				.execute(ctx);
-		Node<?> a = ctx.getNodeFactory().element("a");
-		a.setAttribute("att", "1");
-		a.append(Kind.ELEMENT, "b");
+		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
+		a.setAttribute(new QNm("att"), new Una("1"));
+		a.append(Kind.ELEMENT, new QNm("b"));
 		ResultChecker.dCheck(a, res, false);
 	}
 
@@ -108,11 +111,11 @@ public class UpdateFacilityTest extends XQueryBaseTest {
 		Sequence res = new XQuery(
 				"let $f := <a att='1'><b/></a> return copy $m := $f, $n := $f, $o := $f modify delete node $n/b return ($m, $n)")
 				.execute(ctx);
-		Node<?> a1 = ctx.getNodeFactory().element("a");
-		a1.setAttribute("att", "1");
-		a1.append(Kind.ELEMENT, "b");
-		Node<?> a2 = ctx.getNodeFactory().element("a");
-		a2.setAttribute("att", "1");
+		Node<?> a1 = ctx.getNodeFactory().element(new QNm("a"));
+		a1.setAttribute(new QNm("att"), new Una("1"));
+		a1.append(Kind.ELEMENT, new QNm("b"));
+		Node<?> a2 = ctx.getNodeFactory().element(new QNm("a"));
+		a2.setAttribute(new QNm("att"), new Una("1"));
 		ResultChecker.dCheck(new ItemSequence(a1, a2), res, false);
 	}
 

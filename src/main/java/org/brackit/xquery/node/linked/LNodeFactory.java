@@ -27,6 +27,9 @@
  */
 package org.brackit.xquery.node.linked;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.parser.NavigationalSubtreeParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.xdm.DocumentException;
@@ -40,32 +43,33 @@ import org.brackit.xquery.xdm.NodeFactory;
  */
 public final class LNodeFactory implements NodeFactory<LNode> {
 	@Override
-	public LNode attribute(String name, String value) throws DocumentException {
+	public LNode attribute(QNm name, Atomic value) throws DocumentException {
 		return new AttributeLNode(name, value);
 	}
 
 	@Override
-	public LNode comment(String value) throws DocumentException {
+	public LNode comment(Str value) throws DocumentException {
 		return new CommentLNode(value);
 	}
 
 	@Override
-	public LNode document(String name) throws DocumentException {
-		return new DocumentLNode(name);
+	public LNode document(Str name) throws DocumentException {
+		String s = (name != null) ? name.stringValue() : null;
+		return new DocumentLNode(s);
 	}
 
 	@Override
-	public LNode element(String name) throws DocumentException {
+	public LNode element(QNm name) throws DocumentException {
 		return new ElementLNode(name);
 	}
 
 	@Override
-	public LNode pi(String target, String value) throws DocumentException {
+	public LNode pi(QNm target, Str value) throws DocumentException {
 		return new PILNode(target, value);
 	}
 
 	@Override
-	public LNode text(String value) throws DocumentException {
+	public LNode text(Atomic value) throws DocumentException {
 		return new TextLNode(value);
 	}
 

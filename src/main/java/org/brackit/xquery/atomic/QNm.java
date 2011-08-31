@@ -37,10 +37,8 @@ import org.brackit.xquery.xdm.Type;
  * 
  */
 public class QNm extends AbstractAtomic {
-	public final String nsURI;
-
-	public final String prefix;
-
+	public final String nsURI; // must be null if not set
+	public final String prefix; // must null if not set
 	public final String localName;
 
 	private class DQnm extends QNm {
@@ -57,13 +55,13 @@ public class QNm extends AbstractAtomic {
 		}
 	}
 
-	public QNm(String namespaceURI, String prefix, String localName) {
-		this.nsURI = namespaceURI;
-		this.prefix = prefix;
+	public QNm(String nsURI, String prefix, String localName) {
+		this.nsURI = ((nsURI == null) || (nsURI.isEmpty())) ? null : nsURI;
+		this.prefix = ((prefix == null) || (prefix.isEmpty())) ? null : prefix;
 		this.localName = localName;
 	}
 
-	public QNm(String namespaceURI, String string) throws QueryException {
+	public QNm(String nsURI, String string) throws QueryException {
 		int prefixLength = string.indexOf(":");
 		if (prefixLength > -1) {
 			if ((prefixLength == 0) || (prefixLength == string.length() - 1)
@@ -75,9 +73,9 @@ public class QNm extends AbstractAtomic {
 			this.prefix = string.substring(0, prefixLength);
 			string = string.substring(prefixLength + 1);
 		} else {
-			prefix = "";
+			prefix = null;
 		}
-		this.nsURI = namespaceURI;
+		this.nsURI = ((nsURI == null) || (nsURI.isEmpty())) ? null : nsURI;
 		this.localName = string;
 	}
 
@@ -118,7 +116,6 @@ public class QNm extends AbstractAtomic {
 	public int cmp(Atomic other) throws QueryException {
 		if (other instanceof QNm) {
 			QNm qName = (QNm) other;
-
 			if (nsURI == null) {
 				if (qName.nsURI != null) {
 					return -1;

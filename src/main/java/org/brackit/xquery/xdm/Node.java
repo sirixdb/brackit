@@ -27,6 +27,10 @@
  */
 package org.brackit.xquery.xdm;
 
+import org.brackit.xquery.atomic.AnyURI;
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.parser.SubtreeParser;
 
 /**
@@ -54,8 +58,7 @@ import org.brackit.xquery.node.parser.SubtreeParser;
  * <li>
  * Insert operations always insert deep copies of the provided nodes. This is a
  * necessary constraint because the parent relationship of existing nodes must
- * only be set during node creation and can only unset with delete.
- * </li>
+ * only be set during node creation and can only unset with delete.</li>
  * <li>
  * Delete operations break up the relationship between a a node and its parent.
  * Logically, this node and all its descendant nodes then become deleted, i.e.,
@@ -237,7 +240,33 @@ public interface Node<E extends Node<E>> extends Item {
 	public Collection<E> getCollection();
 
 	/**
+	 * Returns the {@link AnyURI base URI} type of this node.
+	 * 
+	 * <p>
+	 * Realizes the dm:base-uri accessor.
+	 * </p>
+	 * 
+	 * @return the base URI of this node
+	 */
+	public AnyURI getBaseURI();
+	
+	/**
+	 * Returns the {@link Type} type of this node.
+	 * 
+	 * <p>
+	 * Realizes the dm:type-name accessor.
+	 * </p>
+	 * 
+	 * @return the type of this node
+	 */
+	public Type type();
+
+	/**
 	 * Returns the {@link Kind} type of this node.
+	 * 
+	 * <p>
+	 * Realizes the dm:node-kind accessor.
+	 * </p>
 	 * 
 	 * @return the kind of this node
 	 */
@@ -247,12 +276,16 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Returns the name of this node, and <code>null</code> if this type of node
 	 * has no name.
 	 * 
+	 * <p>
+	 * Realizes the dm:node-name accessor.
+	 * </p>
+	 * 
 	 * @return name of this node, and <code>null</code> if this type of node has
 	 *         no name
 	 * @throws DocumentException
 	 *             if the operation failed
 	 */
-	public String getName() throws DocumentException;
+	public QNm getName() throws DocumentException;
 
 	/**
 	 * Sets the name of this node to <code>name</code>.
@@ -264,19 +297,103 @@ public interface Node<E extends Node<E>> extends Item {
 	 * @throws DocumentException
 	 *             if the operation failed
 	 */
-	public void setName(String name) throws OperationNotSupportedException,
+	public void setName(QNm name) throws OperationNotSupportedException,
 			DocumentException;
 
 	/**
-	 * Returns the value of this node, and <code>null</code> if this type of
-	 * node has no value.
+	 * Returns the typed value of this node, and <code>null</code> if this type
+	 * of node has no value.
+	 * 
+	 * <p>
+	 * For nodes created from an Infoset, the type of the returned value is as
+	 * follows:
+	 * <table border="1">
+	 * <th>
+	 * <tr>
+	 * <td><b>node-kind</b></td>
+	 * <td><b>type of typed-value</b></td>
+	 * </tr>
+	 * </th>
+	 * <tr>
+	 * <td>{@link Kind#DOCUMENT DOCUMENT}</td>
+	 * <td>{@link Type#UNA xs:untypedAtomic}</td>
+	 * </tr>
+	 * <tr>
+	 * <td>{@link Kind#ELEMENT ELEMENT}</td>
+	 * <td>{@link Type#UNA xs:untypedAtomic}</td>
+	 * </tr>
+	 * <tr>
+	 * <td>{@link Kind#ATTIBUTE ATTRIBUTE}</td>
+	 * <td>{@link Type#UNA xs:untypedAtomic}</td>
+	 * </tr>
+	 * <tr>
+	 * <td>{@link Kind#NAMESPACE NAMESPACE}</td>
+	 * <td>{@link Type#UNA xs:untypedAtomic}</td>
+	 * </tr>
+	 * <tr>
+	 * <td>{@link Kind#PROCESSING_INSTRUCTION PROCESSING_INSTRUCTION}</td>
+	 * <td>{@link Type#STR xs:string}</td>
+	 * </tr>
+	 * <tr>
+	 * <td>{@link Kind#COMMENT COMMENT}</td>
+	 * <td>{@link Type#STR xs:string}</td>
+	 * </tr>
+	 * <tr>
+	 * <td>{@link Kind#TEXT TEXT}</td>
+	 * <td>{@link Type#UNA xs:untypedAtomic}</td>
+	 * </tr>
+	 * </table>
+	 * </p>
+	 * 
+	 * <p>
+	 * Realizes the dm:typed-value accessor.
+	 * </p>
+	 * 
+	 * <p>
+	 * Note, this method is not intended for the work with nodes created from a
+	 * PSVI (schema validated document) where the typed-value property of a node
+	 * may be a sequence for zero or more items. For documents with a schema you
+	 * should use {@link getValues()}.
+	 * </p>
+	 * 
+	 * @see http://www.w3.org/TR/xml-infoset/
 	 * 
 	 * @return value of this node, and <code>null</code> if this type of node
 	 *         has no value
 	 * @throws DocumentException
 	 *             if the operation failed
 	 */
-	public String getValue() throws DocumentException;
+	public Atomic getValue() throws DocumentException;
+
+	/**
+	 * Returns the typed values of this node, and an empty stream if this type
+	 * of node has no typed value.
+	 * 
+	 * <p>
+	 * Realizes the dm:typed-value accessor.
+	 * </p>
+	 * 
+	 * @return typed values of this node, and an empty stream if this type of
+	 *         node has no typed value
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
+	public Stream<Atomic> getValues() throws DocumentException;
+
+	/**
+	 * Returns the string value of this node, and <code>null</code> if this type
+	 * of node has no value.
+	 * 
+	 * <p>
+	 * Realizes the dm:string-value accessor.
+	 * </p>
+	 * 
+	 * @return value of this node, and <code>null</code> if this type of node
+	 *         has no value
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
+	public Str getStrValue() throws DocumentException;
 
 	/**
 	 * Sets the value of this node to <code>value</code>.
@@ -288,12 +405,16 @@ public interface Node<E extends Node<E>> extends Item {
 	 * @throws DocumentException
 	 *             if the operation failed
 	 */
-	public void setValue(String value) throws OperationNotSupportedException,
+	public void setValue(Atomic value) throws OperationNotSupportedException,
 			DocumentException;
 
 	/**
 	 * Returns the parent node, and <code>null</code> if this node has no
 	 * parent.
+	 * 
+	 * <p>
+	 * Realizes the dm:parent accessor.
+	 * </p>
 	 * 
 	 * @return the parent node, and <code>null</code> if this node has no parent
 	 * @throws DocumentException
@@ -326,6 +447,10 @@ public interface Node<E extends Node<E>> extends Item {
 	/**
 	 * Returns all children, and an empty {@link Stream} if this node has no
 	 * children.
+	 * 
+	 * <p>
+	 * Realizes the dm:children accessor.
+	 * </p>
 	 * 
 	 * @return all children, and an empty {link Stream} if this node has no
 	 *         children
@@ -408,7 +533,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 *             if this
 	 * @throws DocumentException
 	 */
-	public E append(Kind kind, String value)
+	public E append(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
 
 	public E append(Node<?> child) throws OperationNotSupportedException,
@@ -417,7 +542,7 @@ public interface Node<E extends Node<E>> extends Item {
 	public E append(SubtreeParser parser)
 			throws OperationNotSupportedException, DocumentException;
 
-	public E prepend(Kind kind, String value)
+	public E prepend(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
 
 	public E prepend(Node<?> child) throws OperationNotSupportedException,
@@ -426,7 +551,7 @@ public interface Node<E extends Node<E>> extends Item {
 	public E prepend(SubtreeParser parser)
 			throws OperationNotSupportedException, DocumentException;
 
-	public E insertBefore(Kind kind, String value)
+	public E insertBefore(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
 
 	public E insertBefore(Node<?> node) throws OperationNotSupportedException,
@@ -435,7 +560,7 @@ public interface Node<E extends Node<E>> extends Item {
 	public E insertBefore(SubtreeParser parser)
 			throws OperationNotSupportedException, DocumentException;
 
-	public E insertAfter(Kind kind, String value)
+	public E insertAfter(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
 
 	public E insertAfter(Node<?> node) throws OperationNotSupportedException,
@@ -447,18 +572,31 @@ public interface Node<E extends Node<E>> extends Item {
 	public E setAttribute(Node<?> attribute)
 			throws OperationNotSupportedException, DocumentException;
 
-	public E setAttribute(String name, String value)
+	public E setAttribute(QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
 
-	public boolean deleteAttribute(String name)
+	public boolean deleteAttribute(QNm name)
 			throws OperationNotSupportedException, DocumentException;
 
+	/**
+	 * Returns all attributes, and an empty {@link Stream} if this node has no
+	 * attributes.
+	 * 
+	 * <p>
+	 * Realizes the dm:attributes accessor.
+	 * </p>
+	 * 
+	 * @return all attributes, and an empty {link Stream} if this node has no
+	 *         attributes
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
 	public Stream<? extends E> getAttributes()
 			throws OperationNotSupportedException, DocumentException;
 
-	public String getAttributeValue(String name) throws DocumentException;
+	public String getAttributeValue(QNm name) throws DocumentException;
 
-	public E getAttribute(String name) throws DocumentException;
+	public E getAttribute(QNm name) throws DocumentException;
 
 	public E replaceWith(Node<?> node) throws OperationNotSupportedException,
 			DocumentException;
@@ -466,7 +604,7 @@ public interface Node<E extends Node<E>> extends Item {
 	public E replaceWith(SubtreeParser parser)
 			throws OperationNotSupportedException, DocumentException;
 
-	public E replaceWith(Kind kind, String value)
+	public E replaceWith(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
 
 	/**

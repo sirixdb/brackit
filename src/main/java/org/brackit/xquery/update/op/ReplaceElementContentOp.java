@@ -28,6 +28,7 @@
 package org.brackit.xquery.update.op;
 
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
 
@@ -39,11 +40,11 @@ import org.brackit.xquery.xdm.Node;
 public class ReplaceElementContentOp implements UpdateOp {
 	private final Node<?> target;
 
-	private final String text;
+	private final Atomic value;
 
-	public ReplaceElementContentOp(Node<?> target, String text) {
+	public ReplaceElementContentOp(Node<?> target, Atomic value) {
 		this.target = target;
-		this.text = text;
+		this.value = value;
 	}
 
 	@Override
@@ -53,8 +54,8 @@ public class ReplaceElementContentOp implements UpdateOp {
 			child.delete();
 		}
 
-		if (text != null) {
-			target.append(Kind.TEXT, text);
+		if (value != null) {
+			target.append(Kind.TEXT, value);
 		}
 	}
 

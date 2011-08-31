@@ -41,6 +41,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.brackit.xquery.ResultChecker;
 import org.brackit.xquery.XQueryBaseTest;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
@@ -209,7 +211,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 			// " is " + element.getNodeName());
 
 			assertEquals(String.format("Name of node %s", node), element
-					.getNodeName(), node.getName());
+					.getNodeName(), node.getName().toString());
 			compareAttributes(node, element);
 
 			NodeList domChildNodes = element.getChildNodes();
@@ -304,7 +306,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 			assertEquals(node + " is of type text : \"" + text.getNodeValue()
 					+ "\"", Kind.TEXT, node.getKind());
 			assertEquals(String.format("Text of node %s", node), text
-					.getNodeValue().trim(), node.getValue());
+					.getNodeValue().trim(), node.getValue().stringValue());
 		} else {
 			throw new DocumentException("Unexpected dom node: %s", domNode
 					.getClass());
@@ -346,7 +348,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 			// " level " + node.getLevel() + " is " + element.getNodeName());
 
 			assertEquals(String.format("Name of node %s", node), element
-					.getNodeName(), node.getName());
+					.getNodeName(), node.getName().stringValue());
 			compareAttributes(node, element);
 
 			NodeList domChildNodes = element.getChildNodes();
@@ -391,7 +393,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
 			assertEquals(node + " is of type text", Kind.TEXT, node.getKind());
 			assertEquals(String.format("Text of node %s", node), text
-					.getNodeValue().trim(), node.getValue());
+					.getNodeValue().trim(), node.getValue().stringValue());
 		} else {
 			throw new DocumentException("Unexpected dom node: %s", domNode
 					.getClass());
@@ -435,7 +437,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		// check if all stored attributes really exist
 		for (int i = 0; i < domAttributes.getLength(); i++) {
 			Attr domAttribute = (Attr) domAttributes.item(i);
-			E attribute = node.getAttribute(domAttribute.getName());
+			E attribute = node.getAttribute(new QNm(domAttribute.getName()));
 			assertNotNull(String.format("Attribute \"%s\" of node %s",
 					domAttribute.getName(), node), attribute);
 			assertEquals(attribute + " is of type attribute", Kind.ATTRIBUTE,
@@ -443,7 +445,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 			assertEquals(String.format(
 					"Value of attribute \"%s\" (%s) of node %s", domAttribute
 							.getName(), attribute, node), domAttribute
-					.getValue(), attribute.getValue());
+					.getValue(), attribute.getValue().stringValue());
 		}
 	}
 
@@ -455,9 +457,9 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 				"/docs/", "orga.xml")));
 
 		E onode = orig.getDocument().getFirstChild().getLastChild();
-		E test = onode.append(Kind.ELEMENT, "test");
-		test.append(Kind.ELEMENT, "a");
-		test.append(Kind.ELEMENT, "b");
+		E test = onode.append(Kind.ELEMENT, new QNm("test"));
+		test.append(Kind.ELEMENT, new QNm("a"));
+		test.append(Kind.ELEMENT, new QNm("b"));
 		
 		E cnode = doc.getDocument().getFirstChild().getLastChild();
 		DocumentParser docParser = new DocumentParser("<test><a/><b/></test>");
@@ -475,9 +477,9 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 				"/docs/", "orga.xml")));
 
 		E onode = orig.getDocument().getFirstChild().getLastChild();
-		E test = onode.replaceWith(Kind.ELEMENT, "test");
-		test.append(Kind.ELEMENT, "a");
-		test.append(Kind.ELEMENT, "b");
+		E test = onode.replaceWith(Kind.ELEMENT, new QNm("test"));
+		test.append(Kind.ELEMENT, new QNm("a"));
+		test.append(Kind.ELEMENT, new QNm("b"));
 		
 		E cnode = doc.getDocument().getFirstChild().getLastChild();
 		DocumentParser docParser = new DocumentParser("<test><a/><b/></test>");
@@ -498,8 +500,8 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		node = root.getFirstChild();
 		node = node.getNextSibling();
 		node = node.getNextSibling();
-		node.setAttribute("new", "CHECKME");
-		assertEquals("updated attribute value", "CHECKME", node.getAttribute("new").getValue());
+		node.setAttribute(new QNm("new"), new Una("CHECKME"));
+		assertEquals("updated attribute value", new Una("CHECKME"), node.getAttribute(new QNm("new")).getValue());
 	}
 
 

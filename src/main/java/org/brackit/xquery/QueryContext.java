@@ -28,7 +28,6 @@
 package org.brackit.xquery;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.brackit.xquery.atomic.AbstractTimeInstant;
@@ -48,7 +47,7 @@ import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.NodeFactory;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Store;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.xdm.type.ItemType;
 
 /**
  * 
@@ -68,7 +67,7 @@ public class QueryContext {
 
 	private Item extCtxItem;
 
-	private Type extCtxItemType;
+	private ItemType extCtxItemType;
 
 	private Map<QNm, Sequence> externalVars;
 
@@ -130,10 +129,10 @@ public class QueryContext {
 		return ((externalVars != null) && (externalVars.containsKey(name)));
 	}
 
-	public void setContextItem(Item item) {
+	public void setContextItem(Item item) throws QueryException {
 		extCtxItem = item;
 		if (item != null) {
-			extCtxItemType = item.type();
+			extCtxItemType = item.itemType();
 		}
 	}
 
@@ -141,7 +140,7 @@ public class QueryContext {
 		return extCtxItem;
 	}
 	
-	public Type getItemType() {
+	public ItemType getItemType() {
 		return extCtxItemType;
 	}
 

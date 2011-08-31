@@ -151,7 +151,7 @@ public class ResultChecker {
 								rItem = rs.next());
 						try {
 							assertEquals("Result item has same type", eItem
-									.type(), rItem.type());
+									.itemType(), rItem.itemType());
 
 							if (eItem instanceof Node<?>) {
 								compareNode(eItem, rItem, nodeIdentity);

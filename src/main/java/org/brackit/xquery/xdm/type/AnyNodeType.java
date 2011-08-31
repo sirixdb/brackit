@@ -25,12 +25,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence.type;
+package org.brackit.xquery.xdm.type;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
 
 /**
@@ -38,47 +36,28 @@ import org.brackit.xquery.xdm.Node;
  * @author Sebastian Baechle
  * 
  */
-public class PIType extends KindTest {
-	private final String piTarget;
+public final class AnyNodeType extends NodeType {
+	public static final AnyNodeType ANY_NODE = new AnyNodeType();
 
-	public PIType(String piTarget) {
-		this.piTarget = piTarget;
-	}
-
-	public PIType() {
-		this.piTarget = null;
-	}
-
-	@Override
-	public Kind getNodeKind() {
-		return Kind.PROCESSING_INSTRUCTION;
+	public AnyNodeType() {
 	}
 
 	@Override
 	public boolean matches(Node<?> node)
 			throws QueryException {
-		if (piTarget != null) {
-			throw new QueryException(
-					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-					"Processing instruction test with piTarget support not implemented yet.");
-		}
-		return (node.getKind() == Kind.COMMENT);
+		return true;
 	}
 
 	@Override
 	public boolean matches(Item item) throws QueryException {
-		if (piTarget != null) {
-			throw new QueryException(
-					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-					"Processing instruction test with piTarget support not implemented yet.");
-		}
-		return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.PROCESSING_INSTRUCTION));
+		return (item instanceof Node<?>);
 	}
 
-	@Override
 	public String toString() {
-		return (piTarget != null) ? String.format(
-				"processing-instruction(\"%s\")", piTarget)
-				: "processing-instruction()";
+		return "node()";
+	}
+	
+	public boolean equals(Object obj) {
+		return ((obj == this) || (obj instanceof AnyNodeType));
 	}
 }

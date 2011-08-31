@@ -33,12 +33,12 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.sequence.TypedSequence;
-import org.brackit.xquery.sequence.type.Cardinality;
-import org.brackit.xquery.sequence.type.ItemType;
-import org.brackit.xquery.sequence.type.SequenceType;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.type.Cardinality;
+import org.brackit.xquery.xdm.type.ItemType;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * Reference to the default context item,

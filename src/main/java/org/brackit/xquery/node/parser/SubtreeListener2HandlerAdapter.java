@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.node.parser;
 
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Node;
 
@@ -100,12 +101,12 @@ public final class SubtreeListener2HandlerAdapter implements
 
 	@Override
 	public <T extends Node<?>> void comment(T node) throws DocumentException {
-		handler.comment(node.getValue());
+		handler.comment(new Str(node.getValue().stringValue()));
 	}
 
 	@Override
 	public <T extends Node<?>> void processingInstruction(T node)
 			throws DocumentException {
-		handler.processingInstruction(node.getValue());
+		handler.processingInstruction(new Str(node.getValue().stringValue()));
 	}
 }

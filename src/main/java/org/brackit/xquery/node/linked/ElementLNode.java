@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.node.linked;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.node.stream.EmptyStream;
 import org.brackit.xquery.xdm.DocumentException;
@@ -41,21 +43,21 @@ import org.brackit.xquery.xdm.Stream;
  * 
  */
 public final class ElementLNode extends ParentLNode {
-	protected String name;
+	protected QNm name;
 
 	protected LNode firstAttribute;
 
-	public ElementLNode(String name) {
+	public ElementLNode(QNm name) {
 		this.name = name;
 	}
 
-	ElementLNode(ParentLNode parent, String name) {
+	ElementLNode(ParentLNode parent, QNm name) {
 		super(parent);
 		this.name = name;
 	}
 
 	@Override
-	public String getName() throws DocumentException {
+	public QNm getName() throws DocumentException {
 		return name;
 	}
 
@@ -64,7 +66,7 @@ public final class ElementLNode extends ParentLNode {
 	}
 
 	@Override
-	public LNode getAttribute(String name) throws DocumentException {
+	public LNode getAttribute(QNm name) throws DocumentException {
 		for (LNode attribute = firstAttribute; attribute != null; attribute = attribute.sibling) {
 			if (attribute.getName().equals(name)) {
 				return attribute;
@@ -85,9 +87,9 @@ public final class ElementLNode extends ParentLNode {
 	}
 
 	@Override
-	public String getAttributeValue(String name) throws DocumentException {
+	public String getAttributeValue(QNm name) throws DocumentException {
 		LNode attribute = getAttribute(name);
-		return (attribute != null) ? attribute.getValue() : null;
+		return (attribute != null) ? attribute.getValue().stringValue() : null;
 	}
 
 	@Override
@@ -123,7 +125,7 @@ public final class ElementLNode extends ParentLNode {
 	}
 
 	@Override
-	public boolean deleteAttribute(String name)
+	public boolean deleteAttribute(QNm name)
 			throws OperationNotSupportedException, DocumentException {
 		LNode prev = null;
 		for (LNode attribute = firstAttribute; attribute != null; attribute = attribute.sibling) {
@@ -153,7 +155,7 @@ public final class ElementLNode extends ParentLNode {
 	}
 
 	@Override
-	public LNode setAttribute(String name, String value)
+	public LNode setAttribute(QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		if (firstAttribute == null) {
 			return (firstAttribute = new AttributeLNode(this, name, value));
@@ -171,7 +173,7 @@ public final class ElementLNode extends ParentLNode {
 	}
 
 	@Override
-	public void setName(String name) throws OperationNotSupportedException,
+	public void setName(QNm name) throws OperationNotSupportedException,
 			DocumentException {
 		this.name = name;
 	}
@@ -186,7 +188,7 @@ public final class ElementLNode extends ParentLNode {
 	}
 
 	@Override
-	public LNode insertBefore(Kind kind, String value)
+	public LNode insertBefore(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		if (parent == null) {
 			throw new DocumentException("%s has no parent", this);
@@ -213,7 +215,7 @@ public final class ElementLNode extends ParentLNode {
 	}
 
 	@Override
-	public LNode replaceWith(Kind kind, String value)
+	public LNode replaceWith(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		if ((isRoot()) && (kind != Kind.ELEMENT)) {
 			throw new DocumentException(

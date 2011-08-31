@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.node;
 
+import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.Node;
 
@@ -51,5 +52,10 @@ public abstract class AbstractCollection<E extends Node<E>> implements
 	@Override
 	public String getName() {
 		return name;
+	}
+
+	@Override
+	public AnyURI getDocumentURI() {
+		return new AnyURI(name, false);
 	}
 }

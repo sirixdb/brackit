@@ -31,6 +31,8 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Node;
@@ -77,13 +79,12 @@ public class AttributeExpr extends ConstructedNodeBuilder implements Expr {
 		}
 
 		if (appendOnly) {
-			((Node<?>) tuple.get(tuple.getSize() - 1)).setAttribute(name
-					.getLocalName(), stringValue);
+			((Node<?>) tuple.get(tuple.getSize() - 1)).setAttribute(name, new Una(stringValue));
 			return null;
 		}
 
-		Node<?> attribute = ctx.getNodeFactory().attribute(name.getLocalName(),
-				stringValue);
+		Node<?> attribute = ctx.getNodeFactory().attribute(name,
+				new Str(stringValue));
 		return attribute;
 	}
 

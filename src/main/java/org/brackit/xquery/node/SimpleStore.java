@@ -29,6 +29,7 @@ package org.brackit.xquery.node;
 
 import java.util.HashMap;
 
+import org.brackit.xquery.node.d2linked.D2NodeFactory;
 import org.brackit.xquery.node.linked.LNodeFactory;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.xdm.Collection;
@@ -75,6 +76,6 @@ public class SimpleStore implements Store {
 	}
 
 	protected NodeFactory<?> getNodeFactory() {
-		return new LNodeFactory();
+		return new D2NodeFactory();
 	}
 }

@@ -25,44 +25,25 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence.type;
+package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.Item;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public abstract class KindTest implements ItemType {
-	@Override
-	public boolean isAnyItem() {
-		return false;
-	}
+public interface ItemType {
+	
+	public boolean matches(Item item) throws QueryException;
+	
+	public boolean isAnyItem();
 
-	@Override
-	public boolean isAtomic() {
-		return false;
-	}
+	public boolean isAtomic();
 
-	@Override
-	public boolean isNode() {
-		return true;
-	}
-
-	public abstract boolean matches(Node<?> node)
-			throws QueryException;
-
-	public Kind getNodeKind() {
-		// null indicates all node kinds
-		return null;
-	}
-
-	public QNm getQName() {
-		// null indicates any name
-		return null;
-	}
+	public boolean isNode();
+	
+	public boolean isFunction();
 }

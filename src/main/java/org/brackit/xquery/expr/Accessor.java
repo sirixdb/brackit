@@ -30,12 +30,12 @@ package org.brackit.xquery.expr;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.node.stream.AtomStream;
 import org.brackit.xquery.node.stream.EmptyStream;
-import org.brackit.xquery.sequence.type.KindTest;
 import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.type.NodeType;
 
 /**
  * Standard accessors for all document axes as defined in XQuery 1.0: 3.2.1.1
@@ -111,13 +111,17 @@ public abstract class Accessor {
 		}
 
 		@Override
-		public Stream<? extends Node<?>> performStep(Node<?> node, KindTest test)
+		public Stream<? extends Node<?>> performStep(Node<?> node, NodeType test)
 				throws QueryException {
 			if ((test.getNodeKind() == Kind.ATTRIBUTE)
 					&& (test.getQName() != null)) {
-				Node<?> att = node.getAttribute(test.getQName().getLocalName());
-				return (att != null) ? new AtomStream<Node<?>>(att)
-						: new EmptyStream<Node<?>>();
+				Node<?> att = node.getAttribute(test.getQName());
+				if ((att == null)
+						|| ((test.getType() != null) && (!att.type()
+								.instanceOf(test.getType())))) {
+					return new EmptyStream<Node<?>>();
+				}
+				return new AtomStream<Node<?>>(att);
 			}
 			return super.performStep(node, test);
 		}
@@ -294,10 +298,10 @@ public abstract class Accessor {
 	};
 
 	protected static class KindFilter implements Stream<Node<?>> {
-		private final KindTest test;
+		private final NodeType test;
 		private final Stream<? extends Node<?>> stream;
 
-		public KindFilter(KindTest test, Stream<? extends Node<?>> stream) {
+		public KindFilter(NodeType test, Stream<? extends Node<?>> stream) {
 			this.test = test;
 			this.stream = stream;
 		}
@@ -336,7 +340,7 @@ public abstract class Accessor {
 	public abstract Stream<? extends Node<?>> performStep(Node<?> node)
 			throws QueryException;
 
-	public Stream<? extends Node<?>> performStep(Node<?> node, KindTest test)
+	public Stream<? extends Node<?>> performStep(Node<?> node, NodeType test)
 			throws QueryException {
 		return new KindFilter(test, performStep(node));
 	}

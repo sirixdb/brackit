@@ -27,14 +27,22 @@
  */
 package org.brackit.xquery.function;
 
+import org.brackit.xquery.ErrorCode;
+import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.xdm.AbstractItem;
+import org.brackit.xquery.xdm.Function;
+import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.xdm.type.FunctionType;
+import org.brackit.xquery.xdm.type.ItemType;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public abstract class AbstractFunction implements Function {
+public abstract class AbstractFunction extends AbstractItem implements Function {
 	private final QNm name;
 
 	private final Signature signature;
@@ -81,5 +89,22 @@ public abstract class AbstractFunction implements Function {
 	@Override
 	public final String toString() {
 		return name.toString() + signature;
+	}
+
+	@Override
+	public Atomic atomize() throws QueryException {
+		throw new QueryException(ErrorCode.ERR_ITEM_HAS_NO_TYPED_VALUE,
+				"The atomized value of function items is undefined");
+	}
+
+	@Override
+	public ItemType itemType() throws QueryException {
+		return new FunctionType(signature);
+	}
+
+	@Override
+	public boolean booleanValue() throws QueryException {
+		throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+				"The effective boolean value of function items is undefined");
 	}
 }

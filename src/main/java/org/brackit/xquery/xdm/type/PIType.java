@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence.type;
+package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
@@ -38,65 +38,67 @@ import org.brackit.xquery.xdm.Node;
  * @author Sebastian Baechle
  * 
  */
-public class DocumentType extends KindTest {
-	public static final DocumentType DOC = new DocumentType();
+public final class PIType extends NodeType {
+	private final String piTarget;
 
-	private final ElementType elementType;
-
-	private final SchemaElementType schemaElementType;
-
-	public DocumentType() {
-		elementType = null;
-		schemaElementType = null;
+	public PIType(String piTarget) {
+		this.piTarget = piTarget;
 	}
 
-	public DocumentType(ElementType elementType) {
-		this.elementType = elementType;
-		this.schemaElementType = null;
-	}
-
-	public DocumentType(SchemaElementType schemaElementType) {
-		this.elementType = null;
-		this.schemaElementType = schemaElementType;
-	}
-
-	public ElementType getElementType() {
-		return elementType;
-	}
-
-	public SchemaElementType getSchemaElementType() {
-		return schemaElementType;
+	public PIType() {
+		this.piTarget = null;
 	}
 
 	@Override
 	public Kind getNodeKind() {
-		return Kind.DOCUMENT;
+		return Kind.PROCESSING_INSTRUCTION;
 	}
 
 	@Override
 	public boolean matches(Node<?> node)
 			throws QueryException {
-		if ((elementType != null) || (schemaElementType != null)) {
+		if (piTarget != null) {
 			throw new QueryException(
 					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-					"Document type test with element or schema element test support not implemented yet");
+					"Processing instruction test with piTarget support not implemented yet.");
 		}
-		return (node.getKind() == Kind.DOCUMENT);
+		return (node.getKind() == Kind.COMMENT);
 	}
 
 	@Override
 	public boolean matches(Item item) throws QueryException {
-		if ((elementType != null) || (schemaElementType != null)) {
+		if (piTarget != null) {
 			throw new QueryException(
 					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-					"Document type test with element or schema element test support not implemented yet");
+					"Processing instruction test with piTarget support not implemented yet.");
 		}
-		return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.DOCUMENT));
+		return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.PROCESSING_INSTRUCTION));
 	}
 
+	@Override
 	public String toString() {
-		return (elementType != null) ? String.format("document-node(\"%s\")",
-				elementType) : (schemaElementType != null) ? String.format(
-				"document-node(\"%s\")", schemaElementType) : "document-node()";
+		return (piTarget != null) ? String.format(
+				"processing-instruction(\"%s\")", piTarget)
+				: "processing-instruction()";
+	}
+	
+	public boolean equals(Object obj) {
+		if (obj == this) {
+			return true;
+		}
+		if (!(obj instanceof PIType)) {
+			return false;
+		}
+		PIType t = (PIType) obj;
+		if (piTarget == null) {
+			if (t.piTarget != null) {
+				return false;
+			}
+		} else {
+			if ((t.piTarget == null) || (!piTarget.equals(t.piTarget))) {
+				return false;
+			}
+		}		
+		return true;
 	}
 }

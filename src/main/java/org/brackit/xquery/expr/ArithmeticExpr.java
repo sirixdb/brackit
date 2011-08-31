@@ -31,6 +31,7 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.DTD;
 import org.brackit.xquery.atomic.Date;
 import org.brackit.xquery.atomic.DateTime;
@@ -96,13 +97,13 @@ public class ArithmeticExpr implements Expr {
 		left = left.atomize();
 		right = right.atomize();
 
-		Type leftType = left.type();
+		Type leftType = ((Atomic) left).type();
 		if (leftType.instanceOf(Type.UNA)) {
 			left = Cast.cast(left, Type.DBL, false);
 			leftType = Type.DBL;
 		}
 
-		Type rightType = right.type();
+		Type rightType = ((Atomic) right).type();
 		if (rightType.instanceOf(Type.UNA)) {
 			right = Cast.cast(right, Type.DBL, false);
 			rightType = Type.DBL;

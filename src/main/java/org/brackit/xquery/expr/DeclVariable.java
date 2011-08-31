@@ -33,10 +33,10 @@ import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.sequence.TypedSequence;
-import org.brackit.xquery.sequence.type.SequenceType;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * Resolves references to declared variables.

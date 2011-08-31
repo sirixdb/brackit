@@ -25,39 +25,55 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence.type;
+package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.Type;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public class CommentType extends KindTest {
-	public CommentType() {
+public abstract class NodeType implements ItemType {
+	@Override
+	public boolean isAnyItem() {
+		return false;
 	}
 
 	@Override
+	public boolean isAtomic() {
+		return false;
+	}
+
+	@Override
+	public boolean isNode() {
+		return true;
+	}
+	
+	@Override
+	public boolean isFunction() {
+		return false;
+	}
+
+	public abstract boolean matches(Node<?> node)
+			throws QueryException;
+
 	public Kind getNodeKind() {
-		return Kind.COMMENT;
+		// null indicates all node kinds
+		return null;
 	}
 
-	@Override
-	public boolean matches(Node<?> node)
-			throws QueryException {
-		return (node.getKind() == Kind.COMMENT);
+	public QNm getQName() {
+		// null indicates any name
+		return null;
 	}
-
-	@Override
-	public boolean matches(Item item) throws QueryException {
-		return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.COMMENT));
-	}
-
-	public String toString() {
-		return "comment()";
+	
+	public Type getType() {
+		// null indicates any type
+		return null;
 	}
 }

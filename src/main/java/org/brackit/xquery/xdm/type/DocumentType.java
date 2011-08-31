@@ -25,54 +25,83 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence.type;
+package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.Type;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public class SchemaElementType extends KindTest {
-	private final Type type;
+public final class DocumentType extends NodeType {
+	public static final DocumentType DOC = new DocumentType();
 
-	public SchemaElementType(Type type) {
-		this.type = type;
+	private final ElementType elementType;
+
+	public DocumentType() {
+		elementType = null;
+	}
+
+	public DocumentType(ElementType elementType) {
+		this.elementType = elementType;
+	}
+
+	public ElementType getElementType() {
+		return elementType;
 	}
 
 	@Override
 	public Kind getNodeKind() {
-		return Kind.ELEMENT;
+		return Kind.DOCUMENT;
 	}
 
 	@Override
-	public Type getType() {
-		return type;
-	}
-
-	@Override
-	public boolean matches(Node<?> node)
-			throws QueryException {
-		throw new QueryException(
-				ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-				"Schema element test support not implemented yet.");
+	public boolean matches(Node<?> node) throws QueryException {
+		if (elementType != null) {
+			throw new QueryException(
+					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
+					"Document type test with element or schema element test support not implemented yet");
+		}
+		return (node.getKind() == Kind.DOCUMENT);
 	}
 
 	@Override
 	public boolean matches(Item item) throws QueryException {
-		throw new QueryException(
-				ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-				"Schema element test support not implemented yet.");
+		if (elementType != null) {
+			throw new QueryException(
+					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
+					"Document type test with element or schema element test support not implemented yet");
+		}
+		return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.DOCUMENT));
 	}
 
 	public String toString() {
-		return String.format("schema-attribute(\"%s\")", type);
+		return (elementType != null) ? String.format("document-node(\"%s\")",
+				elementType) : "document-node()";
+	}
+
+	public boolean equals(Object obj) {
+		if (obj == this) {
+			return true;
+		}
+		if (!(obj instanceof DocumentType)) {
+			return false;
+		}
+		DocumentType t = (DocumentType) obj;
+		if (elementType == null) {
+			if (t.elementType != null) {
+				return false;
+			}
+		} else {
+			if ((t.elementType == null) || (!elementType.equals(t.elementType))) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.node.d2linked;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
@@ -39,13 +41,13 @@ import org.brackit.xquery.xdm.OperationNotSupportedException;
  * 
  */
 public class TextD2Node extends D2Node {
-	public String value;
+	public Atomic value;
 
-	public TextD2Node(String value) {
+	public TextD2Node(Atomic value) {
 		this(null, FIRST, value);
 	}
 
-	TextD2Node(ParentD2Node parent, int[] division, String value) {
+	TextD2Node(ParentD2Node parent, int[] division, Atomic value) {
 		super(parent, division);
 		this.value = value;
 	}
@@ -55,17 +57,17 @@ public class TextD2Node extends D2Node {
 	}
 
 	@Override
-	public String getName() throws DocumentException {
+	public QNm getName() throws DocumentException {
 		return null;
 	}
 
 	@Override
-	public String getValue() {
+	public Atomic getValue() {
 		return value;
 	}
 
 	@Override
-	public void setValue(String value) throws OperationNotSupportedException,
+	public void setValue(Atomic value) throws OperationNotSupportedException,
 			DocumentException {
 		this.value = value;
 	}
@@ -89,7 +91,7 @@ public class TextD2Node extends D2Node {
 	}
 
 	@Override
-	public D2Node insertAfter(Kind kind, String value)
+	public D2Node insertAfter(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		if (parent == null) {
 			throw new DocumentException("%s has no parent", this);
@@ -116,7 +118,7 @@ public class TextD2Node extends D2Node {
 	}
 
 	@Override
-	public D2Node insertBefore(Kind kind, String value)
+	public D2Node insertBefore(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		if (parent == null) {
 			throw new DocumentException("%s has no parent", this);
@@ -143,7 +145,7 @@ public class TextD2Node extends D2Node {
 	}
 
 	@Override
-	public D2Node replaceWith(Kind kind, String value)
+	public D2Node replaceWith(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		if ((kind != Kind.ELEMENT) || (kind != Kind.TEXT)
 				|| (kind != Kind.COMMENT)

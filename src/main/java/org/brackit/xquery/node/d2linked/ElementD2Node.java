@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.node.d2linked;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.node.stream.EmptyStream;
 import org.brackit.xquery.xdm.DocumentException;
@@ -41,22 +43,22 @@ import org.brackit.xquery.xdm.Stream;
  * 
  */
 public final class ElementD2Node extends ParentD2Node {
-	protected String name;
+	protected QNm name;
 
 	protected D2Node firstAttribute;
 
-	public ElementD2Node(String name) {
+	public ElementD2Node(QNm name) {
 		super(null, FIRST);
 		this.name = name;
 	}
 
-	ElementD2Node(ParentD2Node parent, int[] division, String name) {
+	ElementD2Node(ParentD2Node parent, int[] division, QNm name) {
 		super(parent, division);
 		this.name = name;
 	}
 
 	@Override
-	public String getName() throws DocumentException {
+	public QNm getName() throws DocumentException {
 		return name;
 	}
 
@@ -65,7 +67,7 @@ public final class ElementD2Node extends ParentD2Node {
 	}
 
 	@Override
-	public D2Node getAttribute(String name) throws DocumentException {
+	public D2Node getAttribute(QNm name) throws DocumentException {
 		for (D2Node attribute = firstAttribute; attribute != null; attribute = attribute.sibling) {
 			if (attribute.getName().equals(name)) {
 				return attribute;
@@ -86,9 +88,9 @@ public final class ElementD2Node extends ParentD2Node {
 	}
 
 	@Override
-	public String getAttributeValue(String name) throws DocumentException {
+	public String getAttributeValue(QNm name) throws DocumentException {
 		D2Node attribute = getAttribute(name);
-		return (attribute != null) ? attribute.getValue() : null;
+		return (attribute != null) ? attribute.getValue().stringValue() : null;
 	}
 
 	@Override
@@ -124,7 +126,7 @@ public final class ElementD2Node extends ParentD2Node {
 	}
 
 	@Override
-	public boolean deleteAttribute(String name)
+	public boolean deleteAttribute(QNm name)
 			throws OperationNotSupportedException, DocumentException {
 		D2Node prev = null;
 		for (D2Node attribute = firstAttribute; attribute != null; attribute = attribute.sibling) {
@@ -154,7 +156,7 @@ public final class ElementD2Node extends ParentD2Node {
 	}
 
 	@Override
-	public D2Node setAttribute(String name, String value)
+	public D2Node setAttribute(QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		if (firstAttribute == null) {
 			return (firstAttribute = new AttributeD2Node(this, name, value));
@@ -173,7 +175,7 @@ public final class ElementD2Node extends ParentD2Node {
 	}
 
 	@Override
-	public void setName(String name) throws OperationNotSupportedException,
+	public void setName(QNm name) throws OperationNotSupportedException,
 			DocumentException {
 		this.name = name;
 	}
@@ -188,7 +190,7 @@ public final class ElementD2Node extends ParentD2Node {
 	}
 
 	@Override
-	public D2Node insertBefore(Kind kind, String value)
+	public D2Node insertBefore(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		if (parent == null) {
 			throw new DocumentException("%s has no parent", this);
@@ -215,7 +217,7 @@ public final class ElementD2Node extends ParentD2Node {
 	}
 
 	@Override
-	public D2Node replaceWith(Kind kind, String value)
+	public D2Node replaceWith(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		if ((isRoot()) && (kind != Kind.ELEMENT)) {
 			throw new DocumentException(

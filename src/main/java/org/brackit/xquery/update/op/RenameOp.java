@@ -48,7 +48,7 @@ public class RenameOp implements UpdateOp {
 
 	@Override
 	public void apply() throws QueryException {
-		target.setName(name.getLocalName());
+		target.setName(name);
 	}
 
 	@Override

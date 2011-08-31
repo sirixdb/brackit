@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.node.linked;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
@@ -39,13 +41,13 @@ import org.brackit.xquery.xdm.OperationNotSupportedException;
  * 
  */
 public class TextLNode extends LNode {
-	public String value;
+	public Atomic value;
 
-	public TextLNode(String value) {
+	public TextLNode(Atomic value) {
 		this(null, value);
 	}
 
-	TextLNode(ParentLNode parent, String value) {
+	TextLNode(ParentLNode parent, Atomic value) {
 		super(parent);
 		this.value = value;
 	}
@@ -55,17 +57,17 @@ public class TextLNode extends LNode {
 	}
 
 	@Override
-	public String getName() throws DocumentException {
+	public QNm getName() throws DocumentException {
 		return null;
 	}
 
 	@Override
-	public String getValue() {
+	public Atomic getValue() {
 		return value;
 	}
 
 	@Override
-	public void setValue(String value) throws OperationNotSupportedException,
+	public void setValue(Atomic value) throws OperationNotSupportedException,
 			DocumentException {
 		this.value = value;
 	}
@@ -89,7 +91,7 @@ public class TextLNode extends LNode {
 	}
 
 	@Override
-	public LNode insertAfter(Kind kind, String value)
+	public LNode insertAfter(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		if (parent == null) {
 			throw new DocumentException("%s has no parent", this);
@@ -116,7 +118,7 @@ public class TextLNode extends LNode {
 	}
 
 	@Override
-	public LNode insertBefore(Kind kind, String value)
+	public LNode insertBefore(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		if (parent == null) {
 			throw new DocumentException("%s has no parent", this);
@@ -143,7 +145,7 @@ public class TextLNode extends LNode {
 	}
 
 	@Override
-	public LNode replaceWith(Kind kind, String value)
+	public LNode replaceWith(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		if ((kind != Kind.ELEMENT) || (kind != Kind.TEXT)
 				|| (kind != Kind.COMMENT)

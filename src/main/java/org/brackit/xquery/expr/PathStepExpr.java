@@ -260,7 +260,7 @@ public class PathStepExpr implements Expr {
 					throw new QueryException(
 							ErrorCode.ERR_PATH_STEP_RETURNED_ATOMIC_VALUE,
 							"Input for axis step is not a node: %s", runVar
-									.type());
+									.itemType());
 				}
 				currentNode = (Node<?>) runVar;
 

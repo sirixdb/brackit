@@ -25,57 +25,91 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.expr;
+package org.brackit.xquery.xdm;
 
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
- * Abstract typed variable
  * 
  * @author Sebastian Baechle
  * 
  */
-public abstract class Variable implements Expr {
-	protected final QNm name;
+public class Signature {
+	private final SequenceType resultType;
 
-	protected final SequenceType type;
+	private final SequenceType[] params;
 
-	public Variable(QNm name) {
-		this.name = name;
-		this.type = null;
+	private final boolean lastIsVarArg;
+
+	private final boolean defaultsIsContextItem;
+
+	public Signature(SequenceType resultType, SequenceType... params) {
+		this.resultType = resultType;
+		this.params = params;
+		this.lastIsVarArg = false;
+		this.defaultsIsContextItem = false;
 	}
 
-	public Variable(QNm name, SequenceType type) {
-		this.name = name;
-		this.type = type;
+	public Signature(SequenceType resultType, boolean lastIsVarArg,
+			boolean defaultIsContextItem, SequenceType... params) {
+		this.resultType = resultType;
+		this.params = params;
+		this.lastIsVarArg = lastIsVarArg;
+		this.defaultsIsContextItem = defaultIsContextItem;
 	}
 
-	public QNm getName() {
-		return name;
+	public SequenceType getResultType() {
+		return resultType;
 	}
 
-	public SequenceType getType() {
-		return type;
+	public SequenceType[] getParams() {
+		return params;
 	}
 
-	@Override
-	public boolean isUpdating() {
-		return false;
+	public boolean lastIsVarArg() {
+		return lastIsVarArg;
 	}
 
-	@Override
-	public boolean isVacuous() {
-		return false;
+	public boolean defaultIsContextItem() {
+		return defaultsIsContextItem;
 	}
 
 	public String toString() {
-		if ((type == null) || (type == SequenceType.ITEM_SEQUENCE)) {
-			return String.format("%s(%s)", getClass().getSimpleName(), name);
-		} else {
-			return String.format("%s(%s) of type %s", getClass()
-					.getSimpleName(), name, type);
+		StringBuilder st = new StringBuilder();
+		st.append("(");
+		if (params.length > 0) {
+			st.append(params[0]);
+			for (int i = 1; i < params.length; i++) {
+				st.append(", ");
+				st.append(params[i]);
+			}
 		}
+		st.append(") : ");
+		st.append(resultType);
+		return st.toString();
+	}
+
+	public boolean equals(Object obj) {
+		if (obj == this) {
+			return true;
+		}
+		if (!(obj instanceof Signature)) {
+			return false;
+		}
+		Signature s = (Signature) obj;
+		if (params.length != s.params.length) {
+			return false;
+		}
+		if ((!resultType.equals(s.resultType))
+				|| (lastIsVarArg != s.lastIsVarArg)
+				|| (defaultsIsContextItem != s.defaultsIsContextItem)) {
+			return false;
+		}
+		for (int i = 0; i < params.length; i++) {
+			if (!params[i].equals(s.params[i])) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

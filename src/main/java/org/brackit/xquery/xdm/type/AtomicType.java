@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.sequence.type;
+package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
@@ -135,8 +135,14 @@ public class AtomicType implements ItemType {
 	}
 
 	@Override
+	public boolean isFunction() {
+		return false;
+	}
+
+	@Override
 	public boolean matches(Item item) throws QueryException {
-		return item.type().instanceOf(type);
+		return (item instanceof Atomic)
+				&& ((Atomic) item).type().instanceOf(type);
 	}
 
 	public boolean instanceOf(AtomicType other) {
@@ -145,5 +151,10 @@ public class AtomicType implements ItemType {
 
 	public String toString() {
 		return type.toString();
+	}
+
+	public boolean equals(Object obj) {
+		return ((obj == this) || ((obj instanceof AtomicType) && (((AtomicType) obj).type
+				.equals(type))));
 	}
 }

@@ -397,6 +397,12 @@ public class ErrorCode {
 	 */
 	public static final QNm ERR_INVALID_REPLACEMENT_STRING = new QNm(ERR_NSURI,
 			ERR_PREFIX, "FORX0004");
+	
+	/**
+	 * err:FOTY0012
+	 */
+	public static final QNm ERR_ITEM_HAS_NO_TYPED_VALUE = new QNm(ERR_NSURI,
+			ERR_PREFIX, "FOTY0012");
 
 	/**
 	 * err:SENR0001

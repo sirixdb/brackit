@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.node.d2linked;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
@@ -37,25 +39,25 @@ import org.brackit.xquery.xdm.OperationNotSupportedException;
  * 
  */
 public final class PID2Node extends TextD2Node {
-	private String target;
+	private QNm target;
 
-	PID2Node(ParentD2Node parent, int[] division, String name, String value) {
+	PID2Node(ParentD2Node parent, int[] division, QNm name, Atomic value) {
 		super(parent, division, value);
 		this.target = name;
 	}
 
-	public PID2Node(String name, String value) {
+	public PID2Node(QNm name, Atomic value) {
 		super(value);
 		this.target = name;
 	}
 
 	@Override
-	public String getName() throws DocumentException {
+	public QNm getName() throws DocumentException {
 		return target;
 	}
 
 	@Override
-	public void setName(String name) throws OperationNotSupportedException,
+	public void setName(QNm name) throws OperationNotSupportedException,
 			DocumentException {
 		this.target = name;
 	}

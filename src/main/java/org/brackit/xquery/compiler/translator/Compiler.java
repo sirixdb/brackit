@@ -77,9 +77,7 @@ import org.brackit.xquery.expr.VCmpExpr;
 import org.brackit.xquery.expr.ArithmeticExpr.ArithmeticOp;
 import org.brackit.xquery.expr.NodeCmpExpr.NodeCmp;
 import org.brackit.xquery.expr.VCmpExpr.Cmp;
-import org.brackit.xquery.function.Function;
 import org.brackit.xquery.function.FunctionExpr;
-import org.brackit.xquery.function.Signature;
 import org.brackit.xquery.function.UDF;
 import org.brackit.xquery.function.bit.Every;
 import org.brackit.xquery.function.bit.Put;
@@ -102,21 +100,6 @@ import org.brackit.xquery.operator.OrderBy;
 import org.brackit.xquery.operator.Select;
 import org.brackit.xquery.operator.Start;
 import org.brackit.xquery.operator.OrderBy.OrderModifier;
-import org.brackit.xquery.sequence.type.AnyItemType;
-import org.brackit.xquery.sequence.type.AnyKindType;
-import org.brackit.xquery.sequence.type.AtomicType;
-import org.brackit.xquery.sequence.type.AttributeType;
-import org.brackit.xquery.sequence.type.Cardinality;
-import org.brackit.xquery.sequence.type.CommentType;
-import org.brackit.xquery.sequence.type.DocumentType;
-import org.brackit.xquery.sequence.type.ElementType;
-import org.brackit.xquery.sequence.type.ItemType;
-import org.brackit.xquery.sequence.type.KindTest;
-import org.brackit.xquery.sequence.type.PIType;
-import org.brackit.xquery.sequence.type.SchemaAttributeType;
-import org.brackit.xquery.sequence.type.SchemaElementType;
-import org.brackit.xquery.sequence.type.SequenceType;
-import org.brackit.xquery.sequence.type.TextType;
 import org.brackit.xquery.update.Delete;
 import org.brackit.xquery.update.Insert;
 import org.brackit.xquery.update.Rename;
@@ -127,7 +110,22 @@ import org.brackit.xquery.update.Insert.InsertType;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.xdm.Function;
+import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.xdm.type.AnyItemType;
+import org.brackit.xquery.xdm.type.AnyNodeType;
+import org.brackit.xquery.xdm.type.AtomicType;
+import org.brackit.xquery.xdm.type.AttributeType;
+import org.brackit.xquery.xdm.type.Cardinality;
+import org.brackit.xquery.xdm.type.CommentType;
+import org.brackit.xquery.xdm.type.DocumentType;
+import org.brackit.xquery.xdm.type.ElementType;
+import org.brackit.xquery.xdm.type.ItemType;
+import org.brackit.xquery.xdm.type.NodeType;
+import org.brackit.xquery.xdm.type.PIType;
+import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.xdm.type.TextType;
 
 /**
  * 
@@ -1463,7 +1461,7 @@ public class Compiler implements Translator {
 
 		int noOfPredicates = Math.max(node.getChildCount() - 2, 0);
 		Expr[] predicates = new Expr[noOfPredicates];
-		KindTest test = itemTest(child, axis.getAxis());
+		NodeType test = itemTest(child, axis.getAxis());
 		Binding itemBinding = table.bind(Namespaces.FS_DOT, SequenceType.NODE);
 		Binding posBinding = table.bind(Namespaces.FS_POSITION,
 				SequenceType.INTEGER);
@@ -1558,7 +1556,7 @@ public class Compiler implements Translator {
 		return new AtomicType(type);
 	}
 
-	protected KindTest itemTest(AST node, Axis axis) throws QueryException {
+	protected NodeType itemTest(AST node, Axis axis) throws QueryException {
 		if (node.getType() == XQ.NameTest) {
 			return nameTest(node, axis);
 		} else {
@@ -1566,10 +1564,10 @@ public class Compiler implements Translator {
 		}
 	}
 
-	protected KindTest kindTest(AST node) throws QueryException {
+	protected NodeType kindTest(AST node) throws QueryException {
 		switch (node.getType()) {
 		case XQ.KindTestAnyKind:
-			return AnyKindType.ANY_NODE;
+			return AnyNodeType.ANY_NODE;
 		case XQ.KindTestText:
 			return new TextType();
 		case XQ.KindTestElement:
@@ -1592,16 +1590,16 @@ public class Compiler implements Translator {
 		}
 	}
 
-	protected SchemaAttributeType schemaAttributeTest(AST child)
+	protected AttributeType schemaAttributeTest(AST child)
 			throws QueryException {
 		QNm qname = module.getNamespaces().qname(child.getChild(0).getValue());
-		return new SchemaAttributeType(module.getTypes().resolveSchemaType(qname));
+		return new AttributeType(qname, module.getTypes().resolveSchemaType(qname));
 	}
 
-	protected SchemaElementType schemaElementTest(AST child)
+	protected ElementType schemaElementTest(AST child)
 			throws QueryException {
 		QNm qname = module.getNamespaces().qname(child.getChild(0).getValue());
-		return new SchemaElementType(module.getTypes().resolveSchemaType(qname));
+		return new ElementType(qname, module.getTypes().resolveSchemaType(qname));
 	}
 
 	protected DocumentType documentTest(AST child) throws QueryException {
@@ -1638,7 +1636,7 @@ public class Compiler implements Translator {
 				.qname(name.getValue());
 	}
 
-	protected KindTest nameTest(AST child, Axis axis) throws QueryException {
+	protected NodeType nameTest(AST child, Axis axis) throws QueryException {
 		AST name = child.getChild(0);
 		if (axis != Axis.ATTRIBUTE)
 			return new ElementType(qNameOrWildcard(name));

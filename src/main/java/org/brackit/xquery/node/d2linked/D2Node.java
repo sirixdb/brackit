@@ -30,6 +30,8 @@ package org.brackit.xquery.node.d2linked;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.AbstractNode;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.node.stream.AtomStream;
@@ -313,24 +315,24 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	}
 
 	@Override
-	public D2Node append(Kind kind, String value)
+	public D2Node append(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
 
 	@Override
-	public D2Node prepend(Kind kind, String value)
+	public D2Node prepend(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
 
 	@Override
-	public D2Node getAttribute(String name) throws DocumentException {
+	public D2Node getAttribute(QNm name) throws DocumentException {
 		return null;
 	}
 
 	@Override
-	public String getAttributeValue(String name) throws DocumentException {
+	public String getAttributeValue(QNm name) throws DocumentException {
 		return null;
 	}
 
@@ -540,7 +542,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	}
 
 	@Override
-	public D2Node insertAfter(Kind kind, String value)
+	public D2Node insertAfter(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
@@ -558,7 +560,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	}
 
 	@Override
-	public D2Node insertBefore(Kind kind, String value)
+	public D2Node insertBefore(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
@@ -576,7 +578,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	}
 
 	@Override
-	public D2Node replaceWith(Kind kind, String value)
+	public D2Node replaceWith(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
@@ -594,25 +596,25 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	}
 
 	@Override
-	public boolean deleteAttribute(String name)
+	public boolean deleteAttribute(QNm name)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
 
 	@Override
-	public D2Node setAttribute(String name, String value)
+	public D2Node setAttribute(QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
 
 	@Override
-	public void setName(String name) throws OperationNotSupportedException,
+	public void setName(QNm name) throws OperationNotSupportedException,
 			DocumentException {
 		throw new OperationNotSupportedException();
 	}
 
 	@Override
-	public void setValue(String value) throws OperationNotSupportedException,
+	public void setValue(Atomic value) throws OperationNotSupportedException,
 			DocumentException {
 		throw new OperationNotSupportedException();
 	}

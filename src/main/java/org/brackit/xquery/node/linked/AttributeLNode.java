@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.node.linked;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
@@ -39,40 +41,40 @@ import org.brackit.xquery.xdm.OperationNotSupportedException;
  * 
  */
 public final class AttributeLNode extends LNode {
-	protected String name;
+	protected QNm name;
 
-	protected String value;
+	protected Atomic value;
 
-	AttributeLNode(ParentLNode parent, String name, String value) {
+	AttributeLNode(ParentLNode parent, QNm name, Atomic value) {
 		super(parent);
 		this.name = name;
 		this.value = value;
 	}
 
-	public AttributeLNode(String name, String value) {
+	public AttributeLNode(QNm name, Atomic value) {
 		super(null);
 		this.name = name;
 		this.value = value;
 	}
 
 	@Override
-	public String getName() throws DocumentException {
+	public QNm getName() throws DocumentException {
 		return name;
 	}
 
 	@Override
-	public String getValue() {
+	public Atomic getValue() {
 		return value;
 	}
 
 	@Override
-	public void setName(String name) throws OperationNotSupportedException,
+	public void setName(QNm name) throws OperationNotSupportedException,
 			DocumentException {
 		this.name = name;
 	}
 
 	@Override
-	public void setValue(String value) throws OperationNotSupportedException,
+	public void setValue(Atomic value) throws OperationNotSupportedException,
 			DocumentException {
 		this.value = value;
 	}
@@ -128,7 +130,7 @@ public final class AttributeLNode extends LNode {
 	}
 
 	@Override
-	public LNode replaceWith(Kind kind, String value)
+	public LNode replaceWith(Kind kind, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		if (kind != Kind.ATTRIBUTE) {
 			throw new DocumentException(
