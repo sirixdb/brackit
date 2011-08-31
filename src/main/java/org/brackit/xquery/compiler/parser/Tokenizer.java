@@ -1273,7 +1273,8 @@ public class Tokenizer {
 	}
 
 	private String scanPIContents(int pos) {
-		int e = pos;
+		int s = pos;
+		int e = s;
 		if (e >= end) {
 			return null;
 		}
@@ -1281,7 +1282,7 @@ public class Tokenizer {
 		char c;
 		while (e < end) {
 			c = input[e++];
-			if ((c == '?') && (e + 1 < end) && (input[e + 1] == '>')) {
+			if ((c == '?') && (e < end) && (input[e] == '>')) {
 				break;
 			}
 			if (!XMLChar.isChar(c)) {
@@ -1291,6 +1292,6 @@ public class Tokenizer {
 			}
 		}
 		lastScanEnd = pos + len;
-		return new String(input, e, len);
+		return new String(input, s, len);
 	}
 }
