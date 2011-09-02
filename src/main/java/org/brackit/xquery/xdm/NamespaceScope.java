@@ -25,61 +25,42 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.optimizer.walker;
+package org.brackit.xquery.xdm;
 
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.atomic.AnyURI;
+import org.brackit.xquery.atomic.Str;
 
 /**
- * Insert an orderBy clause in front of a groupBy clause that
- * orders the tuple stream in according to the grouping specification.
+ * A namespace scope comprises the default namespace and all namespace mappings
+ * w.r.t. to a specific {@link Node}.
+ * 
+ * @see http://www.w3.org/TR/xml-names/
  * 
  * @author Sebastian Baechle
  * 
  */
-public class OrderForGroupBy extends Walker {
+public interface NamespaceScope {
 
-	@Override
-	protected AST visit(AST node) {
-		if (node.getType() != XQ.GroupByClause) {
-			return node;
-		}
-		
-		// check if prev sibling is already the needed group by
-		AST prev = node.getParent().getChild(node.getChildIndex() - 1);
-		if (prev.getType() == XQ.OrderByClause) {
-			if (checkOrderBy(node, prev)) {
-				return node;
-			}
-		}
-		
-		// introduce order by
-		AST orderBy = new AST(XQ.OrderByClause, "OrderByClause");
-		for (int i = 0; i < node.getChildCount(); i++) {
-			AST groupBySpec = node.getChild(i);
-			AST orderBySpec = new AST(XQ.OrderBySpec, "OrderBySpec");			
-			for (int j = 0; j < groupBySpec.getChildCount(); j++) {
-				orderBySpec.addChild(groupBySpec.getChild(0).copyTree());
-			}
-			orderBy.addChild(orderBySpec);	
-		}
-		
-		node.getParent().insertChild(node.getChildIndex(), orderBy);
-		return orderBy;
-	}
+	public AnyURI defaultNS() throws DocumentException;
 
-	private boolean checkOrderBy(AST groupBy, AST orderBy) {
-		if (groupBy.getChildCount() != orderBy.getChildCount()) {
-			return false;
-		}
-		for (int i = 0; i < groupBy.getChildCount(); i++) {
-			QNm groupByVar = (QNm) groupBy.getChild(i).getChild(0).getValue();
-			QNm orderByVar = (QNm) orderBy.getChild(i).getChild(0).getValue();
-			if (!groupByVar.equals(orderByVar)) {
-				return false;
-			}
-		}
-		return true;
-	}
+	/**
+	 * Add a new namespace mapping to this scope.
+	 * 
+	 * <p>
+	 * It must be ensured that:
+	 * <ul>
+	 * <li>the prefix xml is not bound to some namespace URI other than
+	 * http://www.w3.org/XML/1998/namespace</li>
+	 * <li>a prefix other than xml is bound to the namespace URI
+	 * http://www.w3.org/XML/1998/namespace</li>
+	 * <li>the prefix xmlns is bound to any namespace URI</li>
+	 * <li>a prefix is bound to the namespace URI http://www.w3.org/2000/xmlns/</li>
+	 * 
+	 * @throws DocumentException
+	 */
+	public void addPrefix(Str prefix, AnyURI uri) throws DocumentException;
+
+	public AnyURI resolvePrefix(Str prefix) throws DocumentException;
+
+	public void setDefaultNS(AnyURI uri) throws DocumentException;
 }

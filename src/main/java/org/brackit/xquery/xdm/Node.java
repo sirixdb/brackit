@@ -240,6 +240,13 @@ public interface Node<E extends Node<E>> extends Item {
 	public Collection<E> getCollection();
 
 	/**
+	 * Returns the {@link NamespaceScope} for this node.
+	 * 
+	 * @return the {@link NamespaceScope} for this node
+	 */
+	public NamespaceScope getScope();
+	
+	/**
 	 * Returns the {@link AnyURI base URI} type of this node.
 	 * 
 	 * <p>

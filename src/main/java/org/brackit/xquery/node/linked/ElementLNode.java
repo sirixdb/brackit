@@ -27,12 +27,17 @@
  */
 package org.brackit.xquery.node.linked;
 
+import java.util.Map;
+
+import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.node.stream.EmptyStream;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
+import org.brackit.xquery.xdm.NamespaceScope;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
 import org.brackit.xquery.xdm.Stream;
@@ -43,9 +48,12 @@ import org.brackit.xquery.xdm.Stream;
  * 
  */
 public final class ElementLNode extends ParentLNode {
-	protected QNm name;
 
-	protected LNode firstAttribute;
+	Map<Str, AnyURI> nsMappings;
+
+	QNm name;
+
+	LNode firstAttribute;
 
 	public ElementLNode(QNm name) {
 		this.name = name;
@@ -63,6 +71,11 @@ public final class ElementLNode extends ParentLNode {
 
 	public Kind getKind() {
 		return Kind.ELEMENT;
+	}
+
+	@Override
+	public NamespaceScope getScope() {
+		return new LNSScope(this);
 	}
 
 	@Override

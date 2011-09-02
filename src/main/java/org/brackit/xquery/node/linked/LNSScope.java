@@ -25,61 +25,71 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.optimizer.walker;
+package org.brackit.xquery.node.linked;
 
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.XQ;
+import java.util.TreeMap;
+
+import org.brackit.xquery.atomic.AnyURI;
+import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.xdm.NamespaceScope;
 
 /**
- * Insert an orderBy clause in front of a groupBy clause that
- * orders the tuple stream in according to the grouping specification.
- * 
  * @author Sebastian Baechle
  * 
  */
-public class OrderForGroupBy extends Walker {
+public class LNSScope implements NamespaceScope {
 
-	@Override
-	protected AST visit(AST node) {
-		if (node.getType() != XQ.GroupByClause) {
-			return node;
-		}
-		
-		// check if prev sibling is already the needed group by
-		AST prev = node.getParent().getChild(node.getChildIndex() - 1);
-		if (prev.getType() == XQ.OrderByClause) {
-			if (checkOrderBy(node, prev)) {
-				return node;
-			}
-		}
-		
-		// introduce order by
-		AST orderBy = new AST(XQ.OrderByClause, "OrderByClause");
-		for (int i = 0; i < node.getChildCount(); i++) {
-			AST groupBySpec = node.getChild(i);
-			AST orderBySpec = new AST(XQ.OrderBySpec, "OrderBySpec");			
-			for (int j = 0; j < groupBySpec.getChildCount(); j++) {
-				orderBySpec.addChild(groupBySpec.getChild(0).copyTree());
-			}
-			orderBy.addChild(orderBySpec);	
-		}
-		
-		node.getParent().insertChild(node.getChildIndex(), orderBy);
-		return orderBy;
+	// may be null for unrooted non-element nodes
+	private final ElementLNode node;
+
+	public LNSScope(ElementLNode node) {
+		this.node = node;
 	}
 
-	private boolean checkOrderBy(AST groupBy, AST orderBy) {
-		if (groupBy.getChildCount() != orderBy.getChildCount()) {
-			return false;
+	@Override
+	public void addPrefix(Str prefix, AnyURI uri) throws DocumentException {
+		if (node == null) {
+			throw new DocumentException();
 		}
-		for (int i = 0; i < groupBy.getChildCount(); i++) {
-			QNm groupByVar = (QNm) groupBy.getChild(i).getChild(0).getValue();
-			QNm orderByVar = (QNm) orderBy.getChild(i).getChild(0).getValue();
-			if (!groupByVar.equals(orderByVar)) {
-				return false;
+		// TODO checks
+		if (node.nsMappings == null) {
+			// use tree map because we expect only a few
+			// entries and a tree map is much more space efficient
+			node.nsMappings = new TreeMap<Str, AnyURI>();
+		}
+		node.nsMappings.put(prefix, uri);
+	}
+
+	@Override
+	public AnyURI defaultNS() throws DocumentException {
+		return resolvePrefix(Str.EMPTY);
+	}
+
+	@Override
+	public void setDefaultNS(AnyURI uri) throws DocumentException {
+		addPrefix(Str.EMPTY, uri);
+	}
+
+	@Override
+	public AnyURI resolvePrefix(Str prefix) throws DocumentException {
+		if (node == null) {
+			throw new DocumentException();
+		}
+		ElementLNode n = node;
+		while (true) {
+			if (n.nsMappings != null) {
+				AnyURI uri = n.nsMappings.get(prefix);
+				if (uri != null) {
+					return uri;
+				}
 			}
+			ParentLNode p = n.parent;
+			if ((p == null) || (!(p instanceof ElementLNode))) {
+				break;
+			}
+			n = (ElementLNode) p;
 		}
-		return true;
+		return null;
 	}
 }

@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 
 /**
@@ -51,10 +52,10 @@ public abstract class PipelineVarTracker extends Walker {
 	protected static class Var {
 		final AST binding;
 		final int bndNo;
-		final String name;
+		final QNm name;
 		final int no;
 
-		Var(AST binding, int bindingNo, String name, int no) {
+		Var(AST binding, int bindingNo, QNm name, int no) {
 			this.binding = binding;
 			this.bndNo = bindingNo;
 			this.name = name;
@@ -148,14 +149,14 @@ public abstract class PipelineVarTracker extends Walker {
 		}
 	}
 
-	private Map<String, Var> byName = new HashMap<String, Var>();
+	private Map<QNm, Var> byName = new HashMap<QNm, Var>();
 
 	private Map<AST, List<Var>> byNode = new HashMap<AST, List<Var>>();
 
 	protected VarRef varRefs(AST node, VarRef refs) {
 		if (node.getType() == VariableRef) {
-			String value = node.getValue();
-			Var var = byName.get(value);
+			QNm name = (QNm) node.getValue();
+			Var var = byName.get(name);
 			if (var == null) {
 				return refs;
 			}
@@ -180,13 +181,13 @@ public abstract class PipelineVarTracker extends Walker {
 		for (int i = 0; i < childCount; i++) {
 			if ((node.getType() == ForBind)
 					&& ((i == 1) || ((i == 2) && (childCount == 4)))) {
-				register(node, node.getChild(i).getChild(0).getValue(),
+				register(node, (QNm) node.getChild(i).getChild(0).getValue(),
 						varcount++);
 			} else if ((node.getType() == LetBind) && (i == 1)) {
-				register(node, node.getChild(i).getChild(0).getValue(),
+				register(node, (QNm) node.getChild(i).getChild(0).getValue(),
 						varcount++);
 			} else if ((node.getType() == Count) && (i == 1)) {
-				register(node, node.getChild(i).getChild(0).getValue(),
+				register(node, (QNm) node.getChild(i).getChild(0).getValue(),
 						varcount++);
 			} else {
 				AST child = node.getChild(i);
@@ -197,7 +198,7 @@ public abstract class PipelineVarTracker extends Walker {
 		return varcount;
 	}
 
-	private void register(AST binding, String name, int no) {
+	private void register(AST binding, QNm name, int no) {
 		List<Var> vars = byNode.get(binding);
 		int bindingNo;
 		if (vars == null) {
@@ -219,10 +220,10 @@ public abstract class PipelineVarTracker extends Walker {
 				&& (node.getType() != Count)) {
 			throw new RuntimeException();
 		}
-		return findVar(node.getChild(1).getChild(0).getValue()).bndNo;
+		return findVar((QNm) node.getChild(1).getChild(0).getValue()).bndNo;
 	}
 	
-	protected Var findVar(String name) {
+	protected Var findVar(QNm name) {
 		return byName.get(name);
 	}
 

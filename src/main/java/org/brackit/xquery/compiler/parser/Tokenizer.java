@@ -30,6 +30,7 @@ package org.brackit.xquery.compiler.parser;
 import java.util.Arrays;
 
 import org.brackit.xquery.XQuery;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.util.log.Logger;
 import org.brackit.xquery.xdm.XMLChar;
 
@@ -50,6 +51,10 @@ public class Tokenizer {
 	public class TokenizerException extends Exception {
 		public TokenizerException(String message, Object... args) {
 			super(String.format(message, args));
+		}
+		
+		public TokenizerException(Exception e, String message, Object... args) {
+			super(String.format(message, args), e);
 		}
 	}
 
@@ -106,6 +111,10 @@ public class Tokenizer {
 		String string() {
 			return (prefix != null) ? prefix + ":" + ncname : ncname;
 		}
+		
+		QNm getQName() {
+			return new QNm(null, prefix, ncname);
+		}
 	}
 
 	protected class EQNameToken extends Token {
@@ -128,6 +137,10 @@ public class Tokenizer {
 
 		String string() {
 			return (uri != null) ? "\"" + uri + "\":" + ncname : ncname;
+		}
+		
+		QNm getQName() {
+			return new QNm(uri, null, ncname);
 		}
 	}
 
@@ -457,7 +470,7 @@ public class Tokenizer {
 	protected QNameToken laQName() {
 		return laQName(pos);
 	}
-
+	
 	protected QNameToken laQNameSkipWS(Token token) {
 		return laQName(token.end + ws(token.end));
 	}

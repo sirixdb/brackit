@@ -45,7 +45,7 @@ import org.brackit.xquery.module.Module;
  * 
  */
 public class CompileChain {
-	
+
 	public CompileChain() {
 	}
 

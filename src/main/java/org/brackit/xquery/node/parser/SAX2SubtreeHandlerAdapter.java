@@ -32,6 +32,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.atomic.Una;
@@ -256,8 +258,8 @@ public class SAX2SubtreeHandlerAdapter extends DefaultHandler2 {
 				name = attributes.getQName(i);
 				pos = name.indexOf(":");
 				prefix = (pos == -1) ? null : name.substring(0, pos);
-				handler.attribute(new QNm(attributes.getURI(i), prefix, attributes
-						.getLocalName(i)), new Una(attributes
+				handler.attribute(new QNm(attributes.getURI(i), prefix,
+						attributes.getLocalName(i)), new Una(attributes
 						.getValue(i)));
 			}
 		} catch (DocumentException e) {
@@ -276,5 +278,24 @@ public class SAX2SubtreeHandlerAdapter extends DefaultHandler2 {
 			inComment = true;
 		}
 		content.append(ch, start, length);
+	}
+
+	@Override
+	public void endPrefixMapping(String prefix) throws SAXException {
+		try {
+			handler.endMapping(new Str(prefix));
+		} catch (DocumentException e) {
+			throw new SAXException(e);
+		}
+	}
+
+	@Override
+	public void startPrefixMapping(String prefix, String uri)
+			throws SAXException {
+		try {
+			handler.startMapping(new Str(prefix), new AnyURI(uri));
+		} catch (QueryException e) {
+			throw new SAXException(e);
+		}
 	}
 }

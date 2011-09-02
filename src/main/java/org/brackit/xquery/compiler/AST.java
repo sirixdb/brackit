@@ -46,9 +46,9 @@ public class AST {
 
 	private int type;
 
-	private String value;
+	private Object value;
 
-	private Map<String, String> properties;
+	private Map<String, Object> properties;
 
 	private AST[] children;
 
@@ -56,13 +56,13 @@ public class AST {
 		this(type, XQ.NAMES[type]);
 	}
 
-	public AST(int type, String value, Map<String, String> properties) {
+	public AST(int type, Object value, Map<String, Object> properties) {
 		this.type = type;
 		this.value = value;
 		this.properties = properties;
 	}
 
-	public AST(int type, String value) {
+	public AST(int type, Object value) {
 		this.type = type;
 		this.value = value;
 	}
@@ -75,23 +75,35 @@ public class AST {
 		this.type = type;
 	}
 
-	public String getValue() {
+	public Object getValue() {
 		return value;
 	}
+	
+	public String getStringValue() {
+		return (value != null) ? value.toString() : "";
+	}
 
-	public void setValue(String value) {
+	public void setValue(Object value) {
 		this.value = value;
 	}
 
-	public void setProperty(String name, String value) {
+	public void setProperty(String name, Object value) {
 		if (properties == null) {
-			properties = new HashMap<String, String>();
+			properties = new HashMap<String, Object>();
 		}
 		properties.put(name, value);
 	}
 
-	public String getProperty(String name) {
+	public Object getProperty(String name) {
 		return (properties != null) ? properties.get(name) : null;
+	}
+	
+	public boolean checkProperty(String name) {
+		Object p = (properties != null) ? properties.get(name) : null;
+		if (p == null) {
+			return false;
+		}
+		return (Boolean) p;
 	}
 
 	public void delProperty(String name) {
@@ -219,7 +231,7 @@ public class AST {
 
 	public AST copy() {
 		return new AST(type, value, (properties == null) ? null
-				: new HashMap<String, String>(properties));
+				: new HashMap<String, Object>(properties));
 	}
 
 	public AST copyTree() {
@@ -249,13 +261,15 @@ public class AST {
 	private int toDot(int no, DotContext dt) {
 		final int myNo = no++;
 		String label = ((type > 0) && (type < XQ.NAMES.length)) ? (XQ.NAMES[type]
-				.equals(value)) ? value : XQ.NAMES[type] + "[" + value + "]"
-				: value;
+				.equals(value.toString())) ? value.toString() : XQ.NAMES[type]
+				+ "[" + value.toString() + "]"
+				: value.toString();
 		DotNode node = dt.addNode(String.valueOf(myNo));
 		node.addRow(label, null);
 		if (properties != null) {
-			for (Entry<String, String> prop : properties.entrySet()) {
-				node.addRow(prop.getKey(), prop.getValue());
+			for (Entry<String, Object> prop : properties.entrySet()) {
+				Object value = prop.getValue();
+				node.addRow(prop.getKey(), value != null ? value.toString() : "");
 			}
 		}
 		if (children != null) {
@@ -295,7 +309,7 @@ public class AST {
 
 	public String toString() {
 		int type = getType();
-		String value = getValue();
+		String value = getStringValue();
 		return ((type > 0) && (type < XQ.NAMES.length)) ? (XQ.NAMES[type]
 				.equals(value)) ? value : XQ.NAMES[type] + "[" + value + "]"
 				: value;

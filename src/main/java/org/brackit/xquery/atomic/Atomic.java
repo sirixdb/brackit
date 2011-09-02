@@ -39,7 +39,7 @@ import org.brackit.xquery.xdm.Type;
  * @author Sebastian Baechle
  * 
  */
-public interface Atomic extends Item, Expr {
+public interface Atomic extends Item, Expr, Comparable<Atomic> {
 		
 	public Type type();
 	

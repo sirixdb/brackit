@@ -71,6 +71,19 @@ public abstract class AbstractAtomic extends AbstractItem implements Atomic {
 
 	public abstract int hashCode();
 
+	@Override
+	public int compareTo(Atomic atomic) {
+		if (this == atomic) {
+			return 0;
+		}
+		int myCode = atomicCode();
+		int oCode = atomic.atomicCode();
+		if (myCode != oCode) {
+			return myCode < oCode ? -1 : 1;
+		}
+		return atomicCmpInternal(atomic);
+	}
+
 	protected abstract int atomicCmpInternal(Atomic atomic);
 
 	@Override

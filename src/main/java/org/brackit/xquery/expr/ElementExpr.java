@@ -30,7 +30,9 @@ package org.brackit.xquery.expr;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Kind;
@@ -43,8 +45,29 @@ import org.brackit.xquery.xdm.Sequence;
  * 
  */
 public class ElementExpr extends ConstructedNodeBuilder implements Expr {
+
+	public static class NS {
+		private final Str prefix;
+		private final AnyURI uri;
+
+		public NS(Str prefix, AnyURI uri) {
+			this.prefix = prefix;
+			this.uri = uri;
+		}
+
+		public Str getPrefix() {
+			return prefix;
+		}
+
+		public AnyURI getURI() {
+			return uri;
+		}
+	}
+
 	protected final Expr nameExpr;
 
+	protected final NS[] namespaces;
+	
 	protected final Expr[] contentExprs;
 
 	protected final boolean bind;
@@ -53,9 +76,10 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
 
 	protected final QNm name;
 
-	public ElementExpr(Expr nameExpr, Expr[] contentExpr, boolean bind,
+	public ElementExpr(Expr nameExpr, NS[] namespaces, Expr[] contentExpr, boolean bind,
 			boolean appendOnly) {
 		this.nameExpr = nameExpr;
+		this.namespaces = namespaces;
 		this.contentExprs = contentExpr;
 		this.bind = bind;
 		this.appendOnly = appendOnly;
@@ -82,6 +106,10 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
 					Kind.ELEMENT, name);
 		} else {
 			element = ctx.getNodeFactory().element(name);
+		}
+		
+		for (NS ns : namespaces) {
+			element.getScope().addPrefix(ns.getPrefix(), ns.getURI());
 		}
 
 		ContentSink sink = new ContentSink() {

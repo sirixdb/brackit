@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.node.parser;
 
+import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
@@ -48,6 +49,10 @@ public interface SubtreeHandler {
 	public void comment(Str content) throws DocumentException;
 
 	public void processingInstruction(Str content) throws DocumentException;
+
+	public void startMapping(Str prefix, AnyURI uri) throws DocumentException;
+
+	public void endMapping(Str prefix) throws DocumentException;
 
 	public void startElement(QNm name) throws DocumentException;
 

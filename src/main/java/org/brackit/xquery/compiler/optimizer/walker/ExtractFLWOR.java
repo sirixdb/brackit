@@ -32,6 +32,7 @@ import static org.brackit.xquery.compiler.XQ.LetClause;
 import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
 import static org.brackit.xquery.compiler.XQ.VariableRef;
 
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 
@@ -66,7 +67,7 @@ public class ExtractFLWOR extends Walker {
 			return node;
 		}
 
-		String varName = createVarName();
+		QNm varName = createVarName();
 		AST binding = new AST(TypedVariableBinding, "TypedVariableBinding");
 		binding.addChild(new AST(XQ.Variable, varName));
 		AST letClause = new AST(LetClause, "LetClause");		
@@ -84,7 +85,7 @@ public class ExtractFLWOR extends Walker {
 		return (grandAnc != null) && (grandAnc.getType() == FlowrExpr);
 	}
 
-	private String createVarName() {
-		return "_extracted;" + (extracedVarCount++);
+	private QNm createVarName() {
+		return new QNm("_extracted;" + (extracedVarCount++));
 	}
 }

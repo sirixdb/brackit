@@ -28,7 +28,10 @@
 package org.brackit.xquery.node;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.TreeMap;
 
+import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
@@ -44,6 +47,7 @@ import org.brackit.xquery.xdm.Node;
  */
 public abstract class AbstractBuilder<E extends Node<E>> implements
 		SubtreeListener<E>, SubtreeHandler {
+	@SuppressWarnings("unchecked")
 	private Node[] stack;
 
 	private int stackSize;
@@ -51,6 +55,22 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 	private E parent;
 
 	private E root;
+
+	private Map<Str, AnyURI> nsMappings;
+
+	@Override
+	public void endMapping(Str prefix) throws DocumentException {		
+		// ignore???
+	}
+
+	@Override
+	public void startMapping(Str prefix, AnyURI uri) throws DocumentException {
+		if (nsMappings == null) {
+			// use tree map for space-efficiency
+			nsMappings = new TreeMap<Str, AnyURI>();
+		}
+		nsMappings.put(prefix, uri);
+	}
 
 	public AbstractBuilder(E root) {
 		this.stack = new Node[5];
@@ -64,13 +84,14 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 
 	protected abstract E buildDocument() throws DocumentException;
 
-	protected abstract E buildElement(E parent, QNm name)
+	protected abstract E buildElement(E parent, QNm name, Map<Str, AnyURI> nsMappings)
 			throws DocumentException;
 
 	protected abstract E buildAttribute(E parent, QNm name, Atomic value)
 			throws DocumentException;
 
-	protected abstract E buildText(E parent, Atomic text) throws DocumentException;
+	protected abstract E buildText(E parent, Atomic text)
+			throws DocumentException;
 
 	protected abstract E buildComment(E parent, Str text)
 			throws DocumentException;
@@ -88,6 +109,7 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public E root() throws DocumentException {
 		if (root == null) {
 			root = (E) stack[0];
@@ -125,6 +147,7 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 		stack[stackSize++] = parent;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void endDocument() throws DocumentException {
 		parent = (E) (--stackSize > 0 ? stack[stackSize - 1] : null);
@@ -133,10 +156,11 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 	@Override
 	public <T extends E> void startElement(T node) throws DocumentException {
 		prepare();
-		parent = buildElement(parent, node.getName());
+		parent = buildElement(parent, node.getName(), null);
 		stack[stackSize++] = parent;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public <T extends E> void endElement(T node) throws DocumentException {
 		parent = (E) (--stackSize > 0 ? stack[stackSize - 1] : null);
@@ -174,10 +198,12 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 	@Override
 	public void startElement(QNm name) throws DocumentException {
 		prepare();
-		parent = buildElement(parent, name);
+		parent = buildElement(parent, name, nsMappings);
 		stack[stackSize++] = parent;
+		nsMappings = null; // clear mappings
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void endElement(QNm name) throws DocumentException {
 		parent = (E) (--stackSize > 0 ? stack[stackSize - 1] : null);

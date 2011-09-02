@@ -50,6 +50,7 @@ import static org.brackit.xquery.compiler.XQ.ValueCompLT;
 import static org.brackit.xquery.compiler.XQ.ValueCompNE;
 import static org.brackit.xquery.compiler.XQ.Variable;
 
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 
 /**
@@ -65,7 +66,7 @@ import org.brackit.xquery.compiler.AST;
 public class JoinRewriter extends PipelineVarTracker {
 
 	private int artificialGroupCountVarCount;
-	
+
 	@Override
 	protected AST prepare(AST root) {
 		collectVars(root);
@@ -144,7 +145,7 @@ public class JoinRewriter extends PipelineVarTracker {
 			// TODO window clause
 			if ((op.getType() == ForBind) || (op.getType() == LetBind)) {
 				// TODO move check to super class
-				int no = bindNo(op.getChild(pos++).getChild(0).getValue());
+				int no = bindNo((QNm) op.getChild(pos++).getChild(0).getValue());
 				if (no <= s2.var.no) {
 					atS2 = true;
 				}
@@ -191,7 +192,7 @@ public class JoinRewriter extends PipelineVarTracker {
 		AST leftIn = tmp.getChild(0);
 		// cut off left part from right
 		tmp.replaceChild(0, new AST(Start, "Start"));
-		
+
 		// upstream selects which access S2 but not S1
 		// can be included in the right input
 		AST parent = select.getParent();
@@ -215,21 +216,22 @@ public class JoinRewriter extends PipelineVarTracker {
 		join.addChild(condition);
 		join.addChild(rightIn);
 
-		String check = select.getProperty("check");
+		QNm check = (QNm) select.getProperty("check");
 		if (check != null) {
-			// convert to left join 
+			// convert to left join
 			// when we are in a lifted part
 			join.setProperty("check", check);
-			join.setProperty("leftJoin", "true");
+			join.setProperty("leftJoin", Boolean.TRUE);
 			// remove checks in right branch
-			for (AST tmp2 = rightIn; tmp2.getType() != Start; tmp2 = tmp2.getChild(0)) {
-				String check2 = tmp2.getProperty("check");
+			for (AST tmp2 = rightIn; tmp2.getType() != Start; tmp2 = tmp2
+					.getChild(0)) {
+				QNm check2 = (QNm) tmp2.getProperty("check");
 				if (check.equals(check2)) {
 					op.delProperty("check");
 				}
 			}
 		}
-		
+
 		// check grouping condition i.e. binding
 		// of max max in S0
 		if (s0 != null) {
@@ -292,7 +294,7 @@ public class JoinRewriter extends PipelineVarTracker {
 			tmp = tmp.getChild(0);
 			// TODO window clause
 			if ((tmp.getType() == ForBind) || (tmp.getType() == LetBind)) {
-				int bindingNo = bindNo(tmp.getChild(1).getChild(0)
+				int bindingNo = bindNo((QNm) tmp.getChild(1).getChild(0)
 						.getValue());
 				if (bindingNo <= s0.var.bndNo) {
 					while (tmp.getType() == LetBind) {
@@ -309,10 +311,10 @@ public class JoinRewriter extends PipelineVarTracker {
 		// -> everything is fine
 	}
 
-	private String introduceCount(AST in) {
+	private QNm introduceCount(AST in) {
 		// introduce an artificial enumeration node for the grouping
 		AST count = new AST(Count, "Count");
-		String grpVarName = createGroupCountVarName();
+		QNm grpVarName = createGroupCountVarName();
 		AST runVarBinding = new AST(TypedVariableBinding,
 				"TypedVariableBinding");
 		runVarBinding.addChild(new AST(Variable, grpVarName));
@@ -322,12 +324,12 @@ public class JoinRewriter extends PipelineVarTracker {
 		return grpVarName;
 	}
 
-	protected int bindNo(String text) {
-		Var var = findVar(text);
+	protected int bindNo(QNm name) {
+		Var var = findVar(name);
 		return (var != null) ? var.bndNo : -1;
 	}
 
-	private String createGroupCountVarName() {
-		return "_group;" + (artificialGroupCountVarCount++);
+	private QNm createGroupCountVarName() {
+		return new QNm("_group;" + (artificialGroupCountVarCount++));
 	}
 }

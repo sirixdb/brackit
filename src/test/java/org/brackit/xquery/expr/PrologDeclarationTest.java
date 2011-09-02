@@ -131,7 +131,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
 		Sequence result = new XQuery(
 				"declare default element namespace \"http://brackit.org/foo\"; <a/>")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx.getNodeFactory().element(new QNm("a")), result, false);
+		ResultChecker.dCheck(ctx.getNodeFactory().element(new QNm("http://brackit.org/foo", "a")), result, false);
 	}
 
 	@Test

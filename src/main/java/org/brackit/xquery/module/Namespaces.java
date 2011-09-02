@@ -49,7 +49,7 @@ public class Namespaces {
 	public static final String XS_NSURI = "http://www.w3.org/2001/XMLSchema";
 
 	public static final String XML_NSURI = "http://www.w3.org/XML/1998/namespace";
-	
+
 	public static final String XMLNS_NSURI = "http://www.w3.org/2000/xmlns";
 
 	public static final String ERR_NSURI = "http://www.w3.org/2005/xqt-errors";
@@ -95,7 +95,7 @@ public class Namespaces {
 
 	protected String defaultFunctionNamespace = FN_NSURI;
 
-	protected String defaultElementNamespace;
+	protected String defaultElementNamespace = null;
 
 	static {
 		predefine(XML_PREFIX, XML_NSURI);
@@ -128,13 +128,12 @@ public class Namespaces {
 		this.defaultElementNamespace = defaultElementNamespace;
 	}
 
-	public void declare(String prefix, String nsURI)
-			throws QueryException {
+	public void declare(String prefix, String nsURI) throws QueryException {
 		if ((XML_PREFIX.equals(prefix)) || (XMLNS_PREFIX.equals(prefix))) {
 			throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
 					"The prefix '%s' must not be used in a namespace declaration");
 		} else if (nsURI.isEmpty()) {
-				namespaces.remove(prefix);
+			namespaces.remove(prefix);
 		} else if ((XML_NSURI.equals(nsURI)) || (XMLNS_NSURI.equals(nsURI))) {
 			throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
 					"The namespace URI '%s' must not be used in a namespace declaration");
@@ -150,7 +149,7 @@ public class Namespaces {
 		}
 	}
 
-	public String resolveNamespace(String prefix) throws QueryException {
+	public String resolve(String prefix) throws QueryException {
 		NamespaceDecl nsDecl = namespaces.get(prefix);
 
 		if (nsDecl != null) {
@@ -171,48 +170,24 @@ public class Namespaces {
 				"Undefined namespace prefix: '%s'", prefix);
 	}
 
-	public QNm functionQName(String string) throws QueryException {
-		String namespaceURI = null;
-		String prefix = null;
-		String localName;
-		int prefixLength = string.indexOf(":");
-		if (prefixLength > -1) {
-			if ((prefixLength == 0) || (prefixLength == string.length() - 1)
-					|| (string.indexOf(":", prefixLength + 1) != -1)) {
-				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-						"Illegal QName: '%s'", string);
-			}
-
-			prefix = string.substring(0, prefixLength);
-			namespaceURI = resolveNamespace(prefix);
-			localName = string.substring(prefixLength + 1);
-		} else {
-			prefix = null;
-			namespaceURI = defaultFunctionNamespace;
-			localName = string;
-		}
-		return new QNm(namespaceURI, prefix, localName);
+	public QNm expand(QNm qname) throws QueryException {
+		return expand(qname, "");
 	}
 
-	public QNm qname(String string) throws QueryException {
-		String namespaceURI = null;
-		String prefix = null;
-		String localName;
-		int prefixLength = string.indexOf(":");
-		if (prefixLength > -1) {
-			if ((prefixLength == 0) || (prefixLength == string.length() - 1)
-					|| (string.indexOf(":", prefixLength + 1) != -1)) {
-				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-						"Illegal QName: '%s'", string);
-			}
+	public QNm expandElement(QNm qname) throws QueryException {
+		return expand(qname, defaultElementNamespace);
+	}
 
-			prefix = string.substring(0, prefixLength);
-			namespaceURI = resolveNamespace(prefix);
-			localName = string.substring(prefixLength + 1);
-		} else {
-			localName = string;
+	public QNm expandFunction(QNm qname) throws QueryException {
+		return expand(qname, defaultFunctionNamespace);
+	}
+
+	public QNm expand(QNm qname, String defaultNSURI) throws QueryException {
+		if (qname.getNamespaceURI() != null) {
+			return qname;
 		}
-
-		return new QNm(namespaceURI, prefix, localName);
+		String prefix = qname.getPrefix();
+		String namespaceURI = (prefix != null) ? resolve(prefix) : defaultNSURI;
+		return new QNm(namespaceURI, prefix, qname.getLocalName());
 	}
 }

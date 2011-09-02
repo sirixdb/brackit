@@ -27,6 +27,9 @@
  */
 package org.brackit.xquery.node.linked;
 
+import java.util.Map;
+
+import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
@@ -61,7 +64,7 @@ public class LNodeBuilder extends AbstractBuilder<LNode> {
 	}
 
 	@Override
-	protected LNode buildElement(LNode parent, QNm name)
+	protected LNode buildElement(LNode parent, QNm name, Map<Str, AnyURI> nsMappings)
 			throws DocumentException {
 		return (parent != null) ? parent.append(Kind.ELEMENT, name)
 				: new ElementLNode(name);

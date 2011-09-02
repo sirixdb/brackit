@@ -27,7 +27,10 @@
  */
 package org.brackit.xquery.node.d2linked;
 
+import java.util.Map;
+
 import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
@@ -41,6 +44,7 @@ import org.brackit.xquery.xdm.Kind;
  * 
  */
 public class D2NodeBuilder extends AbstractBuilder<D2Node> {
+
 	public D2NodeBuilder(QueryContext ctx, String name)
 			throws DocumentException {
 		super(new DocumentD2Node(name));
@@ -63,10 +67,12 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
 	}
 
 	@Override
-	protected D2Node buildElement(D2Node parent, QNm name)
+	protected D2Node buildElement(D2Node parent, QNm name, Map<Str, AnyURI> nsMappings)
 			throws DocumentException {
-		return (parent != null) ? parent.append(Kind.ELEMENT, name)
+		ElementD2Node e = (parent != null) ? (ElementD2Node) parent.append(Kind.ELEMENT, name)
 				: new ElementD2Node(name);
+		e.nsMappings = nsMappings;
+		return e;
 	}
 
 	@Override

@@ -48,15 +48,15 @@ import org.junit.Test;
 public class LibraryModulesTest extends XQueryBaseTest {
 
 	private static final String FOO = "module namespace foo=\"http://brackit.org/lib/foo\"; "
-			+ "declare function echo($s as item()*) as item()* "
+			+ "declare function foo:echo($s as item()*) as item()* "
 			+ "{ ($s, $s) };";
 
 	private static final String FOO2 = "module namespace foo=\"http://brackit.org/lib/foo\"; "
-			+ "declare function echo2($s as item()*) as item()* "
+			+ "declare function foo:echo2($s as item()*) as item()* "
 			+ "{ ($s, $s) };";
 
 	private static final String BAR = "module namespace bar=\"http://brackit.org/lib/bar\"; "
-			+ "declare function echo2($s as item()*) as item()* "
+			+ "declare function bar:echo2($s as item()*) as item()* "
 			+ "{ ($s, $s) };";
 
 	private static final String IMPORT_FOO = "import module namespace foo=\"http://brackit.org/lib/foo\"; ";

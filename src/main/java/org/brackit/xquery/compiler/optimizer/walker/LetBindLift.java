@@ -37,6 +37,7 @@ import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
 import static org.brackit.xquery.compiler.XQ.Variable;
 import static org.brackit.xquery.compiler.XQ.VariableRef;
 
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 
 /**
@@ -79,7 +80,7 @@ public class LetBindLift extends Walker {
 		AST lifted = null;
 
 		// create variable name for new group
-		String grpVarName = createEnumerateVarName();
+		QNm grpVarName = createEnumerateVarName();
 		
 		// create lifted copy
 		AST nested = opEx.getChild(0);
@@ -126,11 +127,11 @@ public class LetBindLift extends Walker {
 		groupBySpec.addChild(new AST(VariableRef, grpVarName));
 		groupBy.addChild(groupBySpec);
 		groupBy.setProperty("check", grpVarName);
-		groupBy.setProperty("onlyLast", "true");
+		groupBy.setProperty("onlyLast", Boolean.TRUE);
 		return groupBy;
 	}
 
-	private String createEnumerateVarName() {
-		return "_check;" + (artificialEnumerateVarCount++);
+	private QNm createEnumerateVarName() {
+		return new QNm("_check;" + (artificialEnumerateVarCount++));
 	}
 }

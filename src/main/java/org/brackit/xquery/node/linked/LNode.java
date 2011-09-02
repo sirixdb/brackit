@@ -38,6 +38,7 @@ import org.brackit.xquery.node.stream.EmptyStream;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
+import org.brackit.xquery.xdm.NamespaceScope;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
 import org.brackit.xquery.xdm.Stream;
@@ -68,6 +69,14 @@ public abstract class LNode extends AbstractNode<LNode> {
 		this.localFragmentID = (parent == null) ? localFragmentID
 				: parent.localFragmentID;
 		;
+	}
+	
+
+	@Override
+	public NamespaceScope getScope() {
+		return ((parent != null) && (parent.getKind() == Kind.ELEMENT)) ? parent
+				.getScope()
+				: new LNSScope(null);
 	}
 
 	private LNode getRoot() {

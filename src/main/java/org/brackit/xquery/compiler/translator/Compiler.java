@@ -35,10 +35,8 @@ import java.util.List;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.AnyURI;
+import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Bool;
-import org.brackit.xquery.atomic.Dbl;
-import org.brackit.xquery.atomic.Dec;
-import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
@@ -267,8 +265,8 @@ public class Compiler implements Translator {
 
 		// target namespace declaration
 		AST namespace = ast.getChild(0);
-		String prefix = namespace.getChild(0).getValue();
-		String nsURI = namespace.getChild(1).getValue();
+		String prefix = namespace.getChild(0).getStringValue();
+		String nsURI = namespace.getChild(1).getStringValue();
 		if ((nsURI == null) || (nsURI.isEmpty())) {
 			throw new QueryException(ErrorCode.ERR_TARGET_NS_EMPTY,
 					"The target namespace of a module must not be empty");
@@ -478,23 +476,23 @@ public class Compiler implements Translator {
 		}
 	}
 
-	private String importModule(AST ast) throws QueryException {
-		String prefix = null;
-		int pos = 0;
-		AST child = ast.getChild(pos++);
-		if (child.getType() == XQ.Namespace) {
-			prefix = child.getChild(0).getValue();
-			child = ast.getChild(pos++);
+	private String importModule(AST ast) throws QueryException {		
+		String prefix = "";
+		String nsURI;		
+		AST ns = ast.getChild(0);
+		if (ns.getChildCount() == 2) {
+			prefix = ns.getChild(0).getStringValue();
+			nsURI = ns.getChild(1).getStringValue();
+		} else {
+			nsURI = ns.getChild(0).getStringValue();
 		}
-		String nsURI = child.getValue();
-		int childCount = ast.getChildCount();
-		String locs[] = new String[childCount - pos];
-		int locPos = 0;
-		while (pos < childCount) {
-			locs[locPos++] = child.getChild(0).getValue();
-		}
-		List<Module> modList = resolver.resolve(nsURI, locs);
 
+		String locs[] = new String[ast.getChildCount() - 1];
+		for (int i = 1; i < locs.length; i++) {
+			locs[i - 1] = ns.getChild(i).getStringValue();
+		}
+
+		List<Module> modList = resolver.resolve(nsURI, locs);
 		for (Module mod : modList) {
 			// import module
 			module.importModule(mod);
@@ -509,13 +507,13 @@ public class Compiler implements Translator {
 	}
 
 	protected void declareDefaultCollation(AST node) {
-		String collation = node.getChild(0).getValue();
+		String collation = node.getChild(0).getStringValue();
 		module.setDefaultCollation(collation);
 	}
 
 	protected void declareBaseURI(AST node) throws QueryException {
-		String uri = node.getChild(0).getValue();
-		module.setBaseURI(new AnyURI(uri));
+		AnyURI uri = (AnyURI) node.getChild(0).getValue();
+		module.setBaseURI(uri);
 	}
 
 	protected void declareConstructionMode(AST node) {
@@ -546,26 +544,26 @@ public class Compiler implements Translator {
 	}
 
 	protected void declareDefaultElementNamespace(AST node) {
-		String functionNS = node.getChild(0).getValue();
+		String functionNS = node.getChild(0).getStringValue();
 		module.getNamespaces().setDefaultElementNamespace(
 				functionNS.isEmpty() ? null : functionNS);
 	}
 
 	protected void declareDefaultFunctionNamespace(AST node) {
-		String functionNS = node.getChild(0).getValue();
+		String functionNS = node.getChild(0).getStringValue();
 		module.getNamespaces().setDefaultFunctionNamespace(
 				functionNS.isEmpty() ? null : functionNS);
 	}
 
 	protected void declareNamespace(AST node) throws QueryException {
-		String prefix = node.getChild(0).getValue();
-		String uri = node.getChild(1).getValue();
+		String prefix = node.getChild(0).getStringValue();
+		String uri = node.getChild(1).getStringValue();
 		module.getNamespaces().declare(prefix, uri);
 	}
 
 	protected void declareOption(AST node) throws QueryException {
-		QNm name = module.getNamespaces().qname(node.getChild(0).getValue());
-		Str value = new Str(node.getChild(1).getValue());
+		QNm name = (QNm) node.getChild(0).getValue();
+		Str value = new Str(node.getChild(1).getStringValue());
 		module.addOption(name, value);
 	}
 
@@ -588,7 +586,7 @@ public class Compiler implements Translator {
 		int pos = 0;
 		SequenceType type = null;
 		AST child = node.getChild(pos++);
-		QNm varName = module.getNamespaces().qname(child.getValue());
+		QNm varName = (QNm) child.getValue();
 		child = node.getChild(pos++);
 		if (child.getType() == XQ.SequenceType) {
 			type = sequenceType(child);
@@ -619,7 +617,7 @@ public class Compiler implements Translator {
 		}
 
 		// function name
-		QNm name = namespaces.qname(child.getValue());
+		QNm name = (QNm) child.getValue();
 		child = node.getChild(pos++);
 		String namespaceURI = name.getNamespaceURI();
 
@@ -647,7 +645,7 @@ public class Compiler implements Translator {
 		QNm[] pNames = new QNm[noOfParameters];
 		SequenceType[] pTypes = new SequenceType[noOfParameters];
 		for (int i = 0; i < noOfParameters; i++) {
-			pNames[i] = namespaces.qname(child.getChild(0).getValue());
+			pNames[i] = (QNm) child.getChild(0).getValue();
 			if (child.getChildCount() == 2) {
 				pTypes[i] = sequenceType(child.getChild(1));
 			} else {
@@ -697,20 +695,15 @@ public class Compiler implements Translator {
 		case XQ.SequenceExpr:
 			return sequenceExpr(node);
 		case XQ.Int:
-			return Int32.parse(node.getValue());
+			return (Atomic) node.getValue();
 		case XQ.Str:
-			return new Str(Whitespace.normalizeXML11(node.getValue()));
+			return new Str(Whitespace.normalizeXML11(node.getStringValue()));
 		case XQ.Dbl:
-			return Dbl.parse(node.getValue());
+			return (Atomic) node.getValue();
 		case XQ.Dec:
-			return new Dec(node.getValue());
+			return (Atomic) node.getValue();
 		case XQ.QNm:
-			if (node.getValue().contains(":")) {
-				throw new QueryException(
-						ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-						"Namespaces are not supported yet.");
-			}
-			return new QNm(node.getValue());
+			return (Atomic) node.getValue();
 		case XQ.VariableRef:
 			return variableRefExpr(node);
 		case XQ.ArithmeticExpr:
@@ -820,7 +813,8 @@ public class Compiler implements Translator {
 		Expr expr = expr(node.getChild(0), true);
 		AST type = node.getChild(1);
 		AST aouType = type.getChild(0);
-		Type targetType = resolveType(aouType.getChild(0).getValue(), true);
+		Type targetType = resolveType((QNm) aouType.getChild(0).getValue(),
+				true);
 		boolean allowEmptySequence = ((type.getChildCount() == 2) && (type
 				.getChild(1).getType() == XQ.CardinalityZeroOrOne));
 		return new Cast(expr, targetType, allowEmptySequence);
@@ -830,7 +824,8 @@ public class Compiler implements Translator {
 		Expr expr = expr(node.getChild(0), true);
 		AST type = node.getChild(1);
 		AST aouType = type.getChild(0);
-		Type targetType = resolveType(aouType.getChild(0).getValue(), true);
+		Type targetType = resolveType((QNm) aouType.getChild(0).getValue(),
+				true);
 		boolean allowEmptySequence = ((type.getChildCount() == 2) && (type
 				.getChild(1).getType() == XQ.CardinalityZeroOrOne));
 		return new Castable(expr, targetType, allowEmptySequence);
@@ -872,7 +867,7 @@ public class Compiler implements Translator {
 
 			if (firstChild.getType() == XQ.Variable) {
 				c++;
-				varName = module.getNamespaces().qname(firstChild.getValue());
+				varName = (QNm) firstChild.getValue();
 			}
 
 			caseTypes[i] = sequenceType(caseNode.getChild(c++));
@@ -908,7 +903,7 @@ public class Compiler implements Translator {
 
 		if (firstChild.getType() == XQ.Variable) {
 			c++;
-			varName = module.getNamespaces().qname(firstChild.getValue());
+			varName = (QNm) firstChild.getValue();
 			binding = table.bind(varName, SequenceType.ITEM_SEQUENCE);
 		}
 
@@ -1024,8 +1019,7 @@ public class Compiler implements Translator {
 		int c = 0;
 
 		while ((current = node.getChild(c)).getType() == XQ.CopyVariableBinding) {
-			varName = module.getNamespaces().qname(
-					current.getChild(0).getValue());
+			varName = (QNm) current.getChild(0).getValue();
 			sourceExprs[c] = expr(current.getChild(1), true);
 			bindings[c++] = table.bind(varName, SequenceType.ITEM);
 		}
@@ -1073,8 +1067,7 @@ public class Compiler implements Translator {
 		AST child = node.getChild(pos++);
 
 		if (child.getType() == XQ.TypedVariableBinding) {
-			QNm runVarName = module.getNamespaces().qname(
-					child.getChild(0).getValue());
+			QNm runVarName = (QNm) child.getChild(0).getValue();
 			SequenceType type = SequenceType.ITEM_SEQUENCE;
 			if (child.getChildCount() == 2) {
 				type = sequenceType(child.getChild(1));
@@ -1095,7 +1088,7 @@ public class Compiler implements Translator {
 
 	protected Expr functionCall(AST node) throws QueryException {
 		int childCount = node.getChildCount();
-		QNm name = module.getNamespaces().functionQName(node.getValue());
+		QNm name = (QNm) node.getValue();
 
 		if ((name.equals(Functions.FN_POSITION))
 				|| (name.equals(Functions.FN_LAST))) {
@@ -1177,7 +1170,19 @@ public class Compiler implements Translator {
 	}
 
 	protected Expr elementExpr(AST node) throws QueryException {
-		Expr nameExpr = expr(node.getChild(0), true);
+		int pos = 0;
+		int nsCnt = 0;
+		while (node.getChild(nsCnt).getType() == XQ.NamespaceDeclaration) {
+			nsCnt++;
+		}
+		ElementExpr.NS[] ns = new ElementExpr.NS[nsCnt];
+		for (int i = 0; i < nsCnt; i++) {
+			AST nsDecl = node.getChild(pos++);
+			Str prefix = new Str(nsDecl.getChild(0).getStringValue());
+			AnyURI uri = new AnyURI(nsDecl.getChild(1).getStringValue());
+			ns[i] = new ElementExpr.NS(prefix, uri);
+		}
+		Expr nameExpr = expr(node.getChild(pos++), true);
 		boolean appendOnly = appendOnly(node);
 		boolean bind = false;
 		Expr[] contentExpr;
@@ -1186,14 +1191,14 @@ public class Compiler implements Translator {
 			Binding binding = table.bind(Namespaces.FS_PARENT,
 					SequenceType.ITEM);
 			boolean strip = module.isBoundarySpaceStrip();
-			contentExpr = contentSequence(node.getChild(1));
+			contentExpr = contentSequence(node.getChild(pos++));
 			table.unbind();
 			bind = binding.isReferenced();
 		} else {
 			contentExpr = new Expr[0];
 		}
 
-		return new ElementExpr(nameExpr, contentExpr, bind, appendOnly);
+		return new ElementExpr(nameExpr, ns, contentExpr, bind, appendOnly);
 	}
 
 	protected Expr[] contentSequence(AST node) throws QueryException {
@@ -1210,8 +1215,8 @@ public class Compiler implements Translator {
 		for (int i = 0; i < node.getChildCount(); i++) {
 			AST child = node.getChild(i);
 			if ((child.getType() == XQ.Str)) {
-				merged = (merged == null) ? child.getValue() : merged
-						+ child.getValue();
+				merged = (merged == null) ? child.getStringValue() : merged
+						+ child.getStringValue();
 			} else {
 				if ((merged != null) && (!merged.isEmpty())) {
 					subExprs[size++] = new Str(merged);
@@ -1306,7 +1311,7 @@ public class Compiler implements Translator {
 	}
 
 	protected Expr variableRefExpr(AST node) throws QueryException {
-		return table.resolve(module.getNamespaces().qname(node.getValue()));
+		return table.resolve((QNm) node.getValue());
 	}
 
 	protected Expr rangeExpr(AST node) throws QueryException {
@@ -1552,7 +1557,7 @@ public class Compiler implements Translator {
 	}
 
 	protected ItemType atomicOrUnionType(AST node) throws QueryException {
-		Type type = resolveType(node.getChild(0).getValue(), false);
+		Type type = resolveType((QNm) node.getChild(0).getValue(), false);
 		return new AtomicType(type);
 	}
 
@@ -1592,14 +1597,15 @@ public class Compiler implements Translator {
 
 	protected AttributeType schemaAttributeTest(AST child)
 			throws QueryException {
-		QNm qname = module.getNamespaces().qname(child.getChild(0).getValue());
-		return new AttributeType(qname, module.getTypes().resolveSchemaType(qname));
+		QNm qname = (QNm) child.getChild(0).getValue();
+		return new AttributeType(qname, module.getTypes().resolveSchemaType(
+				qname));
 	}
 
-	protected ElementType schemaElementTest(AST child)
-			throws QueryException {
-		QNm qname = module.getNamespaces().qname(child.getChild(0).getValue());
-		return new ElementType(qname, module.getTypes().resolveSchemaType(qname));
+	protected ElementType schemaElementTest(AST child) throws QueryException {
+		QNm qname = (QNm) child.getChild(0).getValue();
+		return new ElementType(qname, module.getTypes()
+				.resolveSchemaType(qname));
 	}
 
 	protected DocumentType documentTest(AST child) throws QueryException {
@@ -1618,7 +1624,7 @@ public class Compiler implements Translator {
 			return new AttributeType(qNameOrWildcard(child.getChild(0)));
 		else
 			return new AttributeType(qNameOrWildcard(child.getChild(0)),
-					resolveType(child.getChild(1).getValue(), false));
+					resolveType((QNm) child.getChild(1).getValue(), false));
 	}
 
 	protected ElementType elementTest(AST child) throws QueryException {
@@ -1628,12 +1634,11 @@ public class Compiler implements Translator {
 			return new ElementType(qNameOrWildcard(child.getChild(0)));
 		else
 			return new ElementType(qNameOrWildcard(child.getChild(0)),
-					resolveType(child.getChild(1).getValue(), false));
+					resolveType((QNm) child.getChild(1).getValue(), false));
 	}
 
 	protected QNm qNameOrWildcard(AST name) throws QueryException {
-		return (name.getType() == XQ.Wildcard) ? null : module.getNamespaces()
-				.qname(name.getValue());
+		return (name.getType() == XQ.Wildcard) ? null : (QNm) name.getValue();
 	}
 
 	protected NodeType nameTest(AST child, Axis axis) throws QueryException {
@@ -1644,9 +1649,7 @@ public class Compiler implements Translator {
 			return new AttributeType(qNameOrWildcard(name));
 	}
 
-	protected Type resolveType(String text, boolean atomic)
-			throws QueryException {
-		QNm qname = module.getNamespaces().qname(text);
+	protected Type resolveType(QNm qname, boolean atomic) throws QueryException {
 		if (atomic) {
 			return module.getTypes().resolveAtomicType(qname);
 		} else {
@@ -1731,8 +1734,7 @@ public class Compiler implements Translator {
 	protected ClauseBinding countClause(AST node, ClauseBinding in)
 			throws QueryException {
 		AST countVarDecl = node.getChild(0);
-		QNm posVarName = module.getNamespaces().qname(
-				countVarDecl.getChild(0).getValue());
+		QNm posVarName = (QNm) countVarDecl.getChild(0).getValue();
 		SequenceType posVarType = SequenceType.ITEM_SEQUENCE;
 		if (countVarDecl.getChildCount() == 2) {
 			posVarType = sequenceType(countVarDecl.getChild(1));
@@ -1777,7 +1779,7 @@ public class Compiler implements Translator {
 				AST empty = modifier.getChild(0);
 				emptyLeast = (empty.getType() == XQ.LEAST);
 			} else if (modifier.getType() == XQ.Collation) {
-				collation = modifier.getChild(0).getValue();
+				collation = modifier.getChild(0).getStringValue();
 			}
 		}
 		return new OrderModifier(asc, emptyLeast, collation);
@@ -1788,9 +1790,8 @@ public class Compiler implements Translator {
 		int groupSpecCount = node.getChildCount();
 		GroupBy groupBy = new GroupBy(in.operator, groupSpecCount, false);
 		for (int i = 0; i < groupSpecCount; i++) {
-			String grpVarName = node.getChild(i).getChild(0).getValue();
-			table.resolve(module.getNamespaces().qname(grpVarName), groupBy
-					.group(i));
+			QNm grpVarName = (QNm) node.getChild(i).getChild(0).getValue();
+			table.resolve(grpVarName, groupBy.group(i));
 		}
 		return new ClauseBinding(in, groupBy);
 	}
@@ -1807,8 +1808,7 @@ public class Compiler implements Translator {
 		int letClausePos = 0;
 		AST letClause = node;
 		AST letVarDecl = letClause.getChild(letClausePos++);
-		QNm letVarName = module.getNamespaces().qname(
-				letVarDecl.getChild(0).getValue());
+		QNm letVarName = (QNm) letVarDecl.getChild(0).getValue();
 		SequenceType letVarType = SequenceType.ITEM_SEQUENCE;
 		if (letVarDecl.getChildCount() == 2) {
 			letVarType = sequenceType(letVarDecl.getChild(1));
@@ -1833,8 +1833,7 @@ public class Compiler implements Translator {
 		int forClausePos = 0;
 		AST forClause = node;
 		AST runVarDecl = forClause.getChild(forClausePos++);
-		QNm runVarName = module.getNamespaces().qname(
-				runVarDecl.getChild(0).getValue());
+		QNm runVarName = (QNm) runVarDecl.getChild(0).getValue();
 		SequenceType runVarType = SequenceType.ITEM_SEQUENCE;
 		if (runVarDecl.getChildCount() == 2) {
 			runVarType = sequenceType(runVarDecl.getChild(1));
@@ -1842,8 +1841,7 @@ public class Compiler implements Translator {
 		AST posBindingOrSourceExpr = forClause.getChild(forClausePos++);
 
 		if (posBindingOrSourceExpr.getType() == XQ.TypedVariableBinding) {
-			posVarName = module.getNamespaces().qname(
-					posBindingOrSourceExpr.getChild(0).getValue());
+			posVarName = (QNm) posBindingOrSourceExpr.getChild(0).getValue();
 			posBindingOrSourceExpr = forClause.getChild(forClausePos);
 		}
 		Expr sourceExpr = expr(posBindingOrSourceExpr, true);

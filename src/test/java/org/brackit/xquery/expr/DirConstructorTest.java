@@ -296,4 +296,13 @@ public class DirConstructorTest extends XQueryBaseTest {
 		Assert.assertEquals("serialized result differs", "<a> € </a>", buf
 				.toString());
 	}
+	
+	@Test
+	public void elementWithNamespace() throws Exception {
+		PrintStream buf = createBuffer();
+		Sequence res = new XQuery("<e xmlns:f=\"foo\" xmlns=\"bla\" f:att=\"\"><f/></e>").execute(ctx);
+		System.out.println(res);
+	}
+	
+	//namespace-uri(<e xmlns:f="foo&lt;" xmlns="bla" f:att=""></e>/@*) eq "foo&#x003c;"
 }

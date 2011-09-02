@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 
@@ -42,7 +43,7 @@ import org.brackit.xquery.compiler.XQ;
  */
 public class LetVariableRefPullup extends Walker {
 
-	private final Map<String, Variable> variables = new HashMap<String, Variable>();
+	private final Map<QNm, Variable> variables = new HashMap<QNm, Variable>();
 
 	private int substitutionCount;
 
@@ -63,7 +64,7 @@ public class LetVariableRefPullup extends Walker {
 	protected AST visit(AST node) {
 		if (node.getType() == XQ.TypedVariableBinding) {
 			AST name = node.getChild(0);
-			variables.put(name.getValue(), new Variable(node.getParent()
+			variables.put((QNm) name.getValue(), new Variable(node.getParent()
 					.getType(), node, refNumber(name)));
 		} else if (node.getType() == XQ.VariableRef) {
 			Variable var = variables.get(node.getValue());
@@ -76,8 +77,8 @@ public class LetVariableRefPullup extends Walker {
 	}
 
 	private int refNumber(AST node) {
-		return Integer.parseInt(node.getValue().substring(
-				node.getValue().lastIndexOf(";") + 1));
+		return Integer.parseInt(node.getStringValue().substring(
+				node.getStringValue().lastIndexOf(";") + 1));
 	}
 
 	private AST pullUp(Variable var, AST node) {
@@ -94,7 +95,7 @@ public class LetVariableRefPullup extends Walker {
 			return node;
 		}
 		// create new let clause encapsulating the subtree rooted at parent
-		String substitueVariableName = substitutionName(var.number);
+		QNm substitueVariableName = substitutionName(var.number);
 		AST letClause = new AST(XQ.LetClause, "LetClause");
 		AST typedVarBinding = new AST(XQ.TypedVariableBinding,
 				"TypedVariableBinding");
@@ -149,8 +150,8 @@ public class LetVariableRefPullup extends Walker {
 		return subtree.getParent();
 	}
 
-	private String substitutionName(int number) {
-		return "_sub;" + (substitutionCount++) + ";" + number;
+	private QNm substitutionName(int number) {
+		return new QNm("_sub;" + (substitutionCount++) + ";" + number);
 	}
 
 	private boolean isRelocatable(int maxAllowedRefNumber, AST node) {

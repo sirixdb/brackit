@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 
@@ -47,7 +48,7 @@ public class LeftJoinGroupEmission extends Walker {
 			return node;
 		}
 
-		if (!Boolean.parseBoolean(node.getProperty("leftJoin"))) {
+		if (!node.checkProperty("leftJoin")) {
 			return node;
 		}
 		
@@ -57,15 +58,15 @@ public class LeftJoinGroupEmission extends Walker {
 		}
 		AST groupBy = letBind.getParent();
 		if ((groupBy.getType() != XQ.GroupBy) 
-			|| (!Boolean.parseBoolean(groupBy.getProperty("onlyLast")))) {
+			|| (!groupBy.checkProperty("onlyLast"))) {
 			return node;
 		}
 		
 		// join and bind/group combo must not be
 		// part of the same check level, i.e., be 
 		// part of different liftings
-		String joinCheck = node.getProperty("check");
-		String letCheck = letBind.getProperty("check");
+		QNm joinCheck = (QNm) node.getProperty("check");
+		QNm letCheck = (QNm) letBind.getProperty("check");
 		if ((joinCheck != null) && (joinCheck.equals(letCheck))) {
 			return node;
 		}

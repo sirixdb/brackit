@@ -31,6 +31,7 @@ import java.util.HashMap;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.QNm;
 
 /**
  * 
@@ -43,7 +44,7 @@ public class VarScopes {
 	private Scope root = new Scope(null);
 
 	private Scope current = root;
-	
+
 	private Scope resolveIn = root;
 
 	private int level;
@@ -51,7 +52,7 @@ public class VarScopes {
 	private class Scope {
 		Scope parent;
 
-		HashMap<String, Variable> mapping = new HashMap<String, Variable>();
+		HashMap<QNm, Variable> mapping = new HashMap<QNm, Variable>();
 
 		Scope(Scope parent) {
 			this.parent = parent;
@@ -63,17 +64,17 @@ public class VarScopes {
 	}
 
 	public class Variable {
-		String name;
+		QNm name;
 
-		public Variable(String name) {
+		public Variable(QNm name) {
 			this.name = name;
 		}
 
 		public String toString() {
-			return name;
+			return name.toString();
 		}
 	}
-	
+
 	public int scopeCount() {
 		return level;
 	}
@@ -82,8 +83,8 @@ public class VarScopes {
 		level++;
 		current = new Scope(current);
 	}
-	
-	public void offerScope() {		
+
+	public void offerScope() {
 		resolveIn = current;
 	}
 
@@ -96,19 +97,20 @@ public class VarScopes {
 		resolveIn = current;
 	}
 
-	public String declare(String name) throws QueryException {
+	public QNm declare(QNm name) throws QueryException {
 		if (current.mapping.containsKey(name)) {
 			throw new QueryException(ErrorCode.ERR_DUPLICATE_VARIABLE_DECL,
 					"Variable $%s has already been declared.", name);
 		}
 
-		Variable var = (level > 0) ? new Variable(name + ";" + idSequence++)
-				: new Variable(name);
+		Variable var = (level > 0) ? new Variable(new QNm(name
+				.getNamespaceURI(), name.getPrefix(), name.getLocalName() + ";"
+				+ idSequence++)) : new Variable(name);
 		current.mapping.put(name, var);
 		return var.name;
 	}
 
-	public String resolve(String name) throws QueryException {
+	public QNm resolve(QNm name) throws QueryException {
 		Scope scope = resolveIn;
 		Variable var = null;
 

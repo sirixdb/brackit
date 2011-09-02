@@ -174,4 +174,51 @@ public class QNm extends AbstractAtomic {
 	public String toString() {
 		return (prefix == null) ? localName : prefix + ":" + localName;
 	}
+
+	public String toExpandedString() {
+		String p = (prefix != null) ? prefix + ":" : "";
+		String n = (nsURI) != null ? "{" + nsURI + "}" : "";
+		return p + localName + n;
+	}
+
+	public static QNm fromExpandedString(String s) {				
+		String prefix = null;
+		String localName = null;
+		String nsURI = null;		
+		int prefixEnd = s.indexOf(':');
+		int localNameStart = 0;
+		int nsUriStart = s.indexOf('{');
+		if (prefixEnd != -1) {
+			prefix = s.substring(0, prefixEnd);
+			localNameStart = prefixEnd + 1;
+		}
+		if (nsUriStart != -1) {
+			localName = s.substring(localNameStart, nsUriStart);
+			nsURI = s.substring(nsUriStart + 1, s.length() - 1);
+		} else {
+			localName = s.substring(localNameStart, s.length()); 
+		}
+		return new QNm(nsURI, prefix, localName);
+	}
+
+	public static void main(String[] args) throws Exception {
+		check(new QNm("c", "a", "b"));
+		check(new QNm("b"));
+		check(new QNm("c", "a:b"));
+		check(new QNm("c", "b"));
+		check(new QNm("", "a", "b"));
+		check(new QNm(null, "a", "b"));
+	}
+
+	private static void check(QNm name) {
+		System.out.println("QNm\t" + name);
+		String s = name.toExpandedString();
+		System.out.println("ExQNm\t" + s);
+		QNm n = fromExpandedString(s);
+		System.out.println("Prefix\t" + n.getPrefix());
+		System.out.println("LName\t" + n.getLocalName());
+		System.out.println("NSURI\t" + n.getNamespaceURI());
+		System.out.println(name.atomicCmp(n));
+		System.out.println("-----------------------");
+	}
 }

@@ -111,6 +111,7 @@ import org.brackit.xquery.xdm.type.SequenceType;
  * 
  */
 public class Functions {
+
 	private static final Map<QNm, Function[]> predefined = new HashMap<QNm, Function[]>();
 
 	public static final QNm FN_POSITION = new QNm(Namespaces.FN_NSURI,
@@ -130,6 +131,15 @@ public class Functions {
 
 	public static final QNm FN_STATIC_BASE_URI = new QNm(Namespaces.FN_NSURI,
 			Namespaces.FS_PREFIX, "static-base-uri");
+
+	public static final QNm FN_COUNT = new QNm(Namespaces.FN_NSURI,
+			Namespaces.FN_PREFIX, "count");
+
+	public static final QNm FN_DISTINCT = new QNm(Namespaces.FN_NSURI,
+			Namespaces.FN_PREFIX, "distinct-values");
+	
+	public static final QNm FN_ROOT = new QNm(Namespaces.FN_NSURI,
+			Namespaces.FN_PREFIX, "root");
 
 	protected final Map<QNm, Function[]> functions = new HashMap<QNm, Function[]>();
 
@@ -689,13 +699,11 @@ public class Functions {
 				"number"), new Signature(new SequenceType(AnyNodeType.ANY_NODE,
 				Cardinality.ZeroOrOne), new SequenceType(AnyNodeType.ANY_NODE,
 				Cardinality.ZeroOrOne))));
-		predefine(new Root(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"root"), new Signature(new SequenceType(AnyNodeType.ANY_NODE,
-				Cardinality.ZeroOrOne), false, true)));
-		predefine(new Root(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"root"), new Signature(new SequenceType(AnyNodeType.ANY_NODE,
-				Cardinality.ZeroOrOne), new SequenceType(AnyNodeType.ANY_NODE,
-				Cardinality.ZeroOrOne))));
+		predefine(new Root(FN_ROOT, new Signature(new SequenceType(
+				AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne), false, true)));
+		predefine(new Root(FN_ROOT, new Signature(new SequenceType(
+				AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne), new SequenceType(
+				AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne))));
 
 		// See XQuery Functions and Operators 15.1 General Functions and
 		// Operators on Sequences
@@ -722,15 +730,13 @@ public class Functions {
 				Namespaces.FN_PREFIX, "exists"), false, new Signature(
 				new SequenceType(AtomicType.BOOL, Cardinality.One),
 				new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany))));
-		predefine(new Distinct(new QNm(Namespaces.FN_NSURI,
-				Namespaces.FN_PREFIX, "distinct-values"), new Signature(
-				new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-				new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-				new SequenceType(AtomicType.STR, Cardinality.One))));
-		predefine(new Distinct(new QNm(Namespaces.FN_NSURI,
-				Namespaces.FN_PREFIX, "distinct-values"), new Signature(
-				new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-				new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany))));
+		predefine(new Distinct(FN_DISTINCT, new Signature(new SequenceType(
+				AtomicType.ANA, Cardinality.ZeroOrMany), new SequenceType(
+				AtomicType.ANA, Cardinality.ZeroOrMany), new SequenceType(
+				AtomicType.STR, Cardinality.One))));
+		predefine(new Distinct(FN_DISTINCT, new Signature(new SequenceType(
+				AtomicType.ANA, Cardinality.ZeroOrMany), new SequenceType(
+				AtomicType.ANA, Cardinality.ZeroOrMany))));
 		predefine(new InsertBefore(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "insert-before"), new Signature(
 				new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
@@ -831,10 +837,9 @@ public class Functions {
 				new SequenceType(AtomicType.STR, Cardinality.One))));
 
 		// See XQuery Functions and Operators 15.4 Aggregate Functions
-		predefine(new Count(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"count"), new Signature(new SequenceType(AtomicType.INR,
-				Cardinality.One), new SequenceType(AnyItemType.ANY,
-				Cardinality.ZeroOrMany))));
+		predefine(new Count(FN_COUNT, new Signature(new SequenceType(
+				AtomicType.INR, Cardinality.One), new SequenceType(
+				AnyItemType.ANY, Cardinality.ZeroOrMany))));
 
 		predefine(new MinMax(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"min"), new Signature(new SequenceType(AtomicType.ANA,

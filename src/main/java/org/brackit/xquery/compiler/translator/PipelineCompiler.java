@@ -123,16 +123,15 @@ public class PipelineCompiler extends Compiler {
 	private Operator groupBy(AST node) throws QueryException {
 		Operator in = anyOp(node.getChild(0));
 		int groupSpecCount = node.getChildCount() - 1;
-		boolean onlyLast = Boolean.parseBoolean(node.getProperty("onlyLast"));
+		boolean onlyLast = node.checkProperty("onlyLast");
 		GroupBy groupBy = new GroupBy(in, groupSpecCount, onlyLast);
 		for (int i = 0; i < groupSpecCount; i++) {
-			String grpVarName = node.getChild(1 + i).getChild(0).getValue();
-			table.resolve(module.getNamespaces().qname(grpVarName), groupBy
-					.group(i));
+			QNm grpVarName = (QNm) node.getChild(1 + i).getChild(0).getValue();
+			table.resolve(grpVarName, groupBy.group(i));
 		}
-		String prop = node.getProperty("check");
+		QNm prop = (QNm) node.getProperty("check");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), groupBy.check());
+			table.resolve(module.getNamespaces().expand(prop), groupBy.check());
 		}
 		return groupBy;
 	}
@@ -163,18 +162,18 @@ public class PipelineCompiler extends Compiler {
 		Operator rightIn = anyOp(node.getChild(pos++));
 		Expr rightExpr = anyExpr(comparison.getChild(2));
 
-		boolean leftJoin = Boolean.parseBoolean(node.getProperty("leftJoin"));
-		boolean skipSort = Boolean.parseBoolean(node.getProperty("skipSort"));
+		boolean leftJoin = node.checkProperty("leftJoin");
+		boolean skipSort = node.checkProperty("skipSort");
 		TableJoin join = new TableJoin(cmp, isGcmp, leftJoin, skipSort, leftIn,
 				leftExpr, rightIn, rightExpr);
 
-		String prop = node.getProperty("group");
+		QNm prop = (QNm) node.getProperty("group");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), join.group());
+			table.resolve(prop, join.group());
 		}
-		prop = node.getProperty("check");
+		prop = (QNm) node.getProperty("check");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), join.check());
+			table.resolve(prop, join.check());
 		}
 
 		return join;
@@ -220,8 +219,7 @@ public class PipelineCompiler extends Compiler {
 		int forClausePos = 1; // child zero is the input
 		AST forClause = node;
 		AST runVarDecl = forClause.getChild(forClausePos++);
-		QNm runVarName = module.getNamespaces().qname(
-				runVarDecl.getChild(0).getValue());
+		QNm runVarName = (QNm) runVarDecl.getChild(0).getValue();
 		SequenceType runVarType = SequenceType.ITEM_SEQUENCE;
 		if (runVarDecl.getChildCount() == 2) {
 			runVarType = sequenceType(runVarDecl.getChild(1));
@@ -229,8 +227,7 @@ public class PipelineCompiler extends Compiler {
 		AST posBindingOrSourceExpr = forClause.getChild(forClausePos++);
 
 		if (posBindingOrSourceExpr.getType() == XQ.TypedVariableBinding) {
-			posVarName = module.getNamespaces().qname(
-					posBindingOrSourceExpr.getChild(0).getValue());
+			posVarName = (QNm) posBindingOrSourceExpr.getChild(0).getValue();
 			posBindingOrSourceExpr = forClause.getChild(forClausePos);
 		}
 		Expr sourceExpr = expr(posBindingOrSourceExpr, true);
@@ -251,9 +248,9 @@ public class PipelineCompiler extends Compiler {
 		if (posBinding != null) {
 			forBind.bindPosition(posBinding.isReferenced());
 		}
-		String prop = node.getProperty("check");
+		QNm prop = (QNm) node.getProperty("check");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), forBind.check());
+			table.resolve(prop, forBind.check());
 		}
 		return forBind;
 	}
@@ -263,8 +260,7 @@ public class PipelineCompiler extends Compiler {
 		int letClausePos = 1; // child zero is the input
 		AST letClause = node;
 		AST letVarDecl = letClause.getChild(letClausePos++);
-		QNm letVarName = module.getNamespaces().qname(
-				letVarDecl.getChild(0).getValue());
+		QNm letVarName = (QNm) letVarDecl.getChild(0).getValue();
 		SequenceType letVarType = SequenceType.ITEM_SEQUENCE;
 		if (letVarDecl.getChildCount() == 2) {
 			letVarType = sequenceType(letVarDecl.getChild(1));
@@ -276,9 +272,9 @@ public class PipelineCompiler extends Compiler {
 		// the variable anyway
 		table.resolve(letVarName);
 		LetBind letBind = new LetBind(in, sourceExpr);
-		String prop = node.getProperty("check");
+		QNm prop = (QNm) node.getProperty("check");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), letBind.check());
+			table.resolve(prop, letBind.check());
 		}
 		return letBind;
 	}
@@ -286,8 +282,7 @@ public class PipelineCompiler extends Compiler {
 	protected Operator count(AST node) throws QueryException {
 		Operator in = anyOp(node.getChild(0));
 		AST posVarDecl = node.getChild(1);
-		QNm posVarName = module.getNamespaces().qname(
-				posVarDecl.getChild(0).getValue());
+		QNm posVarName = (QNm) posVarDecl.getChild(0).getValue();
 		SequenceType posVarType = SequenceType.ITEM_SEQUENCE;
 		if (posVarDecl.getChildCount() == 2) {
 			posVarType = sequenceType(posVarDecl.getChild(1));
@@ -298,9 +293,9 @@ public class PipelineCompiler extends Compiler {
 		// the variable anyway
 		table.resolve(posVarName);
 		Count count = new Count(in);
-		String prop = node.getProperty("check");
+		QNm prop = (QNm) node.getProperty("check");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), count.check());
+			table.resolve(prop, count.check());
 		}
 		return count;
 	}
@@ -309,9 +304,9 @@ public class PipelineCompiler extends Compiler {
 		Operator in = anyOp(node.getChild(0));
 		Expr expr = anyExpr(node.getChild(1));
 		Select select = new Select(in, expr);
-		String prop = node.getProperty("check");
+		QNm prop = (QNm) node.getProperty("check");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), select.check());
+			table.resolve(prop, select.check());
 		}
 		return select;
 	}
@@ -328,9 +323,9 @@ public class PipelineCompiler extends Compiler {
 			orderBySpec[i] = orderModifier(orderBy);
 		}
 		OrderBy orderBy = new OrderBy(in, orderByExprs, orderBySpec);
-		String prop = node.getProperty("check");
+		QNm prop = (QNm) node.getProperty("check");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), orderBy.check());
+			table.resolve(module.getNamespaces().expand(prop), orderBy.check());
 		}
 		return orderBy;
 	}
