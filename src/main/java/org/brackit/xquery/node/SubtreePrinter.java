@@ -30,16 +30,21 @@ package org.brackit.xquery.node;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 
-import org.brackit.xquery.node.parser.DefaultListener;
-import org.brackit.xquery.node.parser.NavigationalSubtreeProcessor;
-import org.brackit.xquery.node.parser.StreamSubtreeProcessor;
-import org.brackit.xquery.node.parser.SubtreeListener;
+import org.brackit.xquery.atomic.AnyURI;
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.node.parser.DefaultHandler;
 import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
 
-public class SubtreePrinter extends DefaultListener<Node<?>> implements
-		SubtreeListener<Node<?>> {
+/**
+ * 
+ * @author Sebastian Baechle
+ * 
+ */
+public class SubtreePrinter extends DefaultHandler {
+
 	private final PrintWriter out;
 
 	private int level;
@@ -53,6 +58,22 @@ public class SubtreePrinter extends DefaultListener<Node<?>> implements
 	private boolean prettyPrint = true;
 
 	private boolean autoFlush = true;
+	
+	private NS ns;
+	
+	/**
+	 * Linked list of current namespace mappings	
+	 */
+	private static class NS {
+		private final Str prefix;
+		private final AnyURI uri;
+		private NS next;
+		
+		NS(Str prefix, AnyURI uri) {
+			this.prefix = prefix;
+			this.uri = uri;
+		}
+	}
 
 	public SubtreePrinter(PrintWriter out) {
 		this(out, false);
@@ -84,11 +105,11 @@ public class SubtreePrinter extends DefaultListener<Node<?>> implements
 	}
 
 	@Override
-	public <T extends Node<?>> void attribute(T node) throws DocumentException {
+	public void attribute(QNm name, Atomic value) throws DocumentException {
 		out.print(" ");
-		out.print(node.getName());
+		out.print(name);
 		out.print("=\"");
-		out.print(node.getValue());
+		out.print(value);
 		out.print("\"");
 	}
 
@@ -114,7 +135,7 @@ public class SubtreePrinter extends DefaultListener<Node<?>> implements
 	}
 
 	@Override
-	public <T extends Node<?>> void endElement(T node) throws DocumentException {
+	public void endElement(QNm name) throws DocumentException {
 		if (level == levelWithoutContent) {
 			out.print("/>");
 			openElement = false;
@@ -125,7 +146,7 @@ public class SubtreePrinter extends DefaultListener<Node<?>> implements
 			level--;
 			indent();
 			out.print("</");
-			out.print(node.getName());
+			out.print(name);
 			out.print(">");
 		}
 		if (prettyPrint) {
@@ -143,22 +164,33 @@ public class SubtreePrinter extends DefaultListener<Node<?>> implements
 	}
 
 	@Override
-	public <T extends Node<?>> void startElement(T node)
-			throws DocumentException {
+	public void startElement(QNm name) throws DocumentException {
 		checkOpenElement();
 		indent();
 		out.print("<");
-		out.print(node.getName());
+		out.print(name);
+		for (NS n = ns; n != null; n = n.next) {			
+			if (!n.prefix.str.isEmpty()) {
+				out.print(" xmlns:");
+				out.print(n.prefix);
+			} else {
+				out.print(" xmlns");
+			}			
+			out.print("=\"");
+			out.print(n.uri);
+			out.print("\"");
+		}
+		ns = null;
 		openElement = true;
 		level++;
 		levelWithoutContent = level;
 	}
 
 	@Override
-	public <T extends Node<?>> void text(T node) throws DocumentException {
+	public void text(Atomic value) throws DocumentException {
 		checkOpenElement();
 		indent();
-		out.print(node.getValue());
+		out.print(value);
 		levelWithoutContent = -1;
 		if (prettyPrint) {
 			out.println();
@@ -166,7 +198,7 @@ public class SubtreePrinter extends DefaultListener<Node<?>> implements
 	}
 
 	@Override
-	public <T extends Node<?>> void comment(T node) throws DocumentException {
+	public void comment(Atomic value) throws DocumentException {
 		checkOpenElement();
 		indent();
 		out.print("<!-- ");
@@ -174,7 +206,7 @@ public class SubtreePrinter extends DefaultListener<Node<?>> implements
 			out.println();
 		}
 		indent();
-		out.print(node.getValue());
+		out.print(value);
 		if (prettyPrint) {
 			out.println();
 		}
@@ -187,12 +219,11 @@ public class SubtreePrinter extends DefaultListener<Node<?>> implements
 	}
 
 	@Override
-	public <T extends Node<?>> void processingInstruction(T node)
-			throws DocumentException {
+	public void processingInstruction(QNm target, Atomic value) throws DocumentException {
 		checkOpenElement();
 		indent();
 		out.println("<? ");
-		out.println(node.getValue());
+		out.println(value);
 		out.println(" ?>");
 		levelWithoutContent = -1;
 	}
@@ -243,34 +274,40 @@ public class SubtreePrinter extends DefaultListener<Node<?>> implements
 	}
 
 	public void print(Node<?> node) throws DocumentException {
-		Kind kind = node.getKind();
-		if ((kind == Kind.ELEMENT) || (kind == Kind.DOCUMENT)) {
-			StreamSubtreeProcessor<? extends Node<?>> processor = new StreamSubtreeProcessor(
-					node.getSubtree(), this);
-			processor.process();
-		} else if (kind == Kind.TEXT) {
-			text(node);
-		} else if (kind == Kind.COMMENT) {
-			comment(node);
-		} else if (kind == Kind.PROCESSING_INSTRUCTION) {
-			processingInstruction(node);
-		} else {
-			throw new DocumentException(
-					"Cannot serialize single node of kind: %s", kind);
-		}
+		node.parse(this);
 	}
 
 	public static void print(Node<?> node, PrintStream out)
 			throws DocumentException {
-		StreamSubtreeProcessor<? extends Node<?>> processor = new StreamSubtreeProcessor(
-				node.getSubtree(), new SubtreePrinter(out));
-		processor.process();
+		node.parse(new SubtreePrinter(out));
 	}
 
 	public static void print(Node<?> node, PrintWriter out)
 			throws DocumentException {
-		StreamSubtreeProcessor<? extends Node<?>> processor = new StreamSubtreeProcessor(
-				node.getSubtree(), new SubtreePrinter(out));
-		processor.process();
+		node.parse(new SubtreePrinter(out));
+	}
+
+	@Override
+	public void endMapping(Str prefix) throws DocumentException {
+//		NS p = null;
+//		for (NS ns = this.ns; ns != null; ns = ns.next) {
+//			if (ns.prefix.atomicCmp(prefix) == 0) {
+//				if (p == null) {
+//					this.ns = ns.next;
+//				} else {
+//					p.next = ns.next;
+//				}
+//				return;
+//			}
+//			p = ns;
+//		}
+//		throw new DocumentException("Unknown namespace prefix: '%s'", prefix);
+	}
+
+	@Override
+	public void startMapping(Str prefix, AnyURI uri) throws DocumentException {
+		NS tmp = ns;
+		ns = new NS(prefix, uri);
+		ns.next = tmp;
 	}
 }

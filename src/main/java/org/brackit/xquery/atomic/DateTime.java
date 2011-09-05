@@ -336,7 +336,6 @@ public class DateTime extends AbstractTimeInstant {
 		int remainder = (micros - (seconds * 1000000));
 		String sTmp = ((seconds < 10) ? "0" : "") + String.valueOf(seconds);
 		if (remainder != 0) {
-			int cut = 1;
 			while ((remainder / 10) == 0)
 				remainder /= 10; // cut trailing zeros
 			sTmp += ":" + remainder;

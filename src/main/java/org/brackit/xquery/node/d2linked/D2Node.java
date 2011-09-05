@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.AbstractNode;
+import org.brackit.xquery.node.parser.SubtreeHandler;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.node.stream.AtomStream;
 import org.brackit.xquery.node.stream.EmptyStream;
@@ -51,9 +52,7 @@ import org.brackit.xquery.xdm.Stream;
  * 
  */
 public abstract class D2Node extends AbstractNode<D2Node> {
-	protected static final D2NodeFactory builder = new D2NodeFactory();
-
-	protected static final AtomicInteger idSource = new AtomicInteger();
+	protected static final AtomicInteger ID_SEQUENCE = new AtomicInteger();
 
 	public static final int NO_ADDITIONAL_STATIC_DIVISIONS = 63;
 
@@ -89,7 +88,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 		}
 		this.parent = parent;
 		this.division = division;
-		this.localFragmentID = (parent == null) ? localFragmentID
+		this.localFragmentID = (parent == null) ? localFragmentID()
 				: parent.localFragmentID;
 		;
 	}
@@ -98,7 +97,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	public NamespaceScope getScope() {
 		return ((parent != null) && (parent.getKind() == Kind.ELEMENT)) ? parent
 				.getScope()
-				: new D2NSScope(null);
+				: new D2NodeNSScope(null);
 	}
 
 	private D2Node getRoot() {
@@ -120,13 +119,13 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	}
 
 	private int localFragmentID() {
-		int localFragmentID = idSource.incrementAndGet();
+		int localFragmentID = ID_SEQUENCE.incrementAndGet();
 		while (localFragmentID < 0) {
-			if (idSource.compareAndSet(localFragmentID, 1)) {
+			if (ID_SEQUENCE.compareAndSet(localFragmentID, 1)) {
 				localFragmentID = 1;
 				return localFragmentID;
 			}
-			localFragmentID = idSource.incrementAndGet();
+			localFragmentID = ID_SEQUENCE.incrementAndGet();
 		}
 		return localFragmentID;
 	}
@@ -323,24 +322,19 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	}
 
 	@Override
-	public D2Node append(Kind kind, Atomic value)
+	public D2Node append(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
 
 	@Override
-	public D2Node prepend(Kind kind, Atomic value)
+	public D2Node prepend(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
 
 	@Override
 	public D2Node getAttribute(QNm name) throws DocumentException {
-		return null;
-	}
-
-	@Override
-	public String getAttributeValue(QNm name) throws DocumentException {
 		return null;
 	}
 
@@ -550,7 +544,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	}
 
 	@Override
-	public D2Node insertAfter(Kind kind, Atomic value)
+	public D2Node insertAfter(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
@@ -568,7 +562,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	}
 
 	@Override
-	public D2Node insertBefore(Kind kind, Atomic value)
+	public D2Node insertBefore(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
@@ -586,7 +580,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	}
 
 	@Override
-	public D2Node replaceWith(Kind kind, Atomic value)
+	public D2Node replaceWith(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		throw new OperationNotSupportedException();
 	}
@@ -630,11 +624,16 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	@Override
 	public void delete() throws DocumentException {
 		if (parent != null) {
-			if (this.getKind() == Kind.ATTRIBUTE) {
-				parent.deleteAttribute(this.getName());
+			if (getKind() == Kind.ATTRIBUTE) {
+				parent.deleteAttribute(getName());
 			} else {
 				parent.deleteChild(this);
 			}
 		}
+	}
+
+	@Override
+	public void parse(SubtreeHandler handler) throws DocumentException {
+		new D2NodeParser(this).parse(handler);
 	}
 }

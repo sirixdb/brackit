@@ -27,8 +27,6 @@
  */
 package org.brackit.xquery.node.d2linked;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.SingleCollection;
 import org.brackit.xquery.xdm.Collection;
@@ -43,7 +41,6 @@ import org.brackit.xquery.xdm.Node;
  * 
  */
 public class DocumentD2Node extends ParentD2Node {
-	static final AtomicInteger idSequence = new AtomicInteger();
 
 	private static class D2NodeCollection extends SingleCollection<D2Node> {
 		public D2NodeCollection(String name, DocumentD2Node document) {
@@ -52,8 +49,6 @@ public class DocumentD2Node extends ParentD2Node {
 	}
 
 	private final Collection<D2Node> collection;
-
-	private final long ID = idSequence.incrementAndGet();
 
 	public DocumentD2Node(String name) {
 		super(null, FIRST);
@@ -74,7 +69,7 @@ public class DocumentD2Node extends ParentD2Node {
 				return c.getScope();
 			}
 		}
-		return new D2NSScope(null);
+		return new D2NodeNSScope(null);
 	}
 
 	@Override

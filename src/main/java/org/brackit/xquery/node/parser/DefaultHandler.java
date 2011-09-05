@@ -52,7 +52,7 @@ public class DefaultHandler implements SubtreeHandler {
 	}
 
 	@Override
-	public void comment(Str content) throws DocumentException {
+	public void comment(Atomic content) throws DocumentException {
 	}
 
 	@Override
@@ -76,7 +76,7 @@ public class DefaultHandler implements SubtreeHandler {
 	}
 
 	@Override
-	public void processingInstruction(Str content) throws DocumentException {
+	public void processingInstruction(QNm target, Atomic content) throws DocumentException {
 	}
 
 	@Override

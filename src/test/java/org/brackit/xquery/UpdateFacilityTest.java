@@ -53,7 +53,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
 	@Test
 	public void insertInto() throws Exception {
 		ctx.setContextItem(doc);
-		orig.getFirstChild().append(Kind.ELEMENT, new QNm("test"));
+		orig.getFirstChild().append(Kind.ELEMENT, new QNm("test"), null);
 		new XQuery("insert node <test/> into ./a").execute(ctx);
 		ResultChecker.dCheck(orig, doc, false);
 	}
@@ -71,7 +71,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
 		ctx.setContextItem(doc);
 		new XQuery("replace node ./a/c with <d/>").execute(ctx);
 		orig.getFirstChild().getLastChild().replaceWith(Kind.ELEMENT,
-				new QNm("d"));
+				new QNm("d"), null);
 		ResultChecker.dCheck(orig, doc, false);
 	}
 
@@ -89,7 +89,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
 				"copy $n := <a att='1'><b/></a> modify delete node $n/@att return $n")
 				.execute(ctx);
 		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
-		a.append(Kind.ELEMENT, new QNm("b"));
+		a.append(Kind.ELEMENT, new QNm("b"), null);
 		ResultChecker.dCheck(a, res, false);
 	}
 
@@ -102,7 +102,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
 				.execute(ctx);
 		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
 		a.setAttribute(new QNm("att"), new Una("1"));
-		a.append(Kind.ELEMENT, new QNm("b"));
+		a.append(Kind.ELEMENT, new QNm("b"), null);
 		ResultChecker.dCheck(a, res, false);
 	}
 
@@ -113,7 +113,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
 				.execute(ctx);
 		Node<?> a1 = ctx.getNodeFactory().element(new QNm("a"));
 		a1.setAttribute(new QNm("att"), new Una("1"));
-		a1.append(Kind.ELEMENT, new QNm("b"));
+		a1.append(Kind.ELEMENT, new QNm("b"), null);
 		Node<?> a2 = ctx.getNodeFactory().element(new QNm("a"));
 		a2.setAttribute(new QNm("att"), new Una("1"));
 		ResultChecker.dCheck(new ItemSequence(a1, a2), res, false);

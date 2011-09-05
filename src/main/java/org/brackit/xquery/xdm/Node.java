@@ -31,42 +31,57 @@ import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.node.parser.SubtreeHandler;
 import org.brackit.xquery.node.parser.SubtreeParser;
 
 /**
  * A {@link Node} defines the common interface of an XML node in the system.
  * 
  * <p>
- * The API is designed to follow the general rules of the {@linkplain http 
- * ://www.w3.org/TR/2007/REC-xpath-datamodel-20070123/ XQuery 1.0 and XPath 2.0
- * Data Model (XDM)} and the {@link http
- * ://www.w3.org/TR/2009/CR-xquery-update-10-20090609/ XQuery Update Facility
- * 1.0}: <br/>
- * <ul>
- * <li>
+ * The API is designed to follow the general rules of the <b>XQuery and XPath
+ * Data Model 3.0</b> and the <b>XQuery Update Facility 1.0</b>.
+ * </p>
+ * <p>
  * Each document node has a unique immutable identity, but several instances of
  * {@link Node Nodes} in the system may represent the same (logical) document
  * node. Thus, the identity of a node must not be checked with the
- * <code>==</code> operator but only with {@link Node#equals(Object)}.</li>
- * <li>
+ * <code>==</code> operator but only with {@link Node#isSelf(Node)} or
+ * {@link Node#equals(Object)}. As a result, implementors have also to ensure to
+ * ensure to override {@link Object#equals(Object)} and
+ * {@link Object#hashCode()} appropriately.
+ * </p>
+ * <p>
  * Methods reading unsupported properties of nodes like, e.g. <i>children</i>
  * for an <em>attribute</em> do not throw an exception but return
- * <code>null</code> or empty {@link Stream Streams}.</li>
- * <li>
- * Attempts to modify unsupported properties of nodes like, e.g. <i>children</i>
- * for an <em>attribute</em> throw an {@link UnsupportedOperationException}.</li>
- * <li>
+ * <code>null</code> or empty {@link Stream Streams}.
+ * </p>
+ * <p>
+ * Updates must not violate any of the consistency constraints defined in in the
+ * data model. Consistency checks are generally not expected to be performed by
+ * the caller. Implementors must ensure to perform appropriate checks
+ * themselves. Note these checks do not include any validation according to
+ * a specific schema. Schema validation is not considered in this API. 
+ * </p>
+ * <p> 
+ * Attempts to modify unsupported properties of nodes like, e.g.
+ * <i>children</i> for an <em>attribute</em> throw an
+ * {@link UnsupportedOperationException}.
+ * </p>
+ * <p>
  * Insert operations always insert deep copies of the provided nodes. This is a
  * necessary constraint because the parent relationship of existing nodes must
- * only be set during node creation and can only unset with delete.</li>
- * <li>
+ * only be set during node creation and can only unset with delete.
+ * </p>
+ * <p>
  * Delete operations break up the relationship between a a node and its parent.
  * Logically, this node and all its descendant nodes then become deleted, i.e.,
  * depending on the underlying implementation, a delete operation might
  * propagate a physical deletion of all ancestors. The runtime behavior is
- * unspecified when attempting to access logically deleted nodes.</li>
- * </ul>
+ * unspecified when attempting to access logically deleted nodes.
  * </p>
+ * 
+ * @see http://www.w3.org/TR/xpath-datamodel-30/
+ * @see http://www.w3.org/TR/2009/CR-xquery-update-10-20090609/
  * 
  * @author Sebastian Baechle
  * 
@@ -245,7 +260,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * @return the {@link NamespaceScope} for this node
 	 */
 	public NamespaceScope getScope();
-	
+
 	/**
 	 * Returns the {@link AnyURI base URI} type of this node.
 	 * 
@@ -256,7 +271,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * @return the base URI of this node
 	 */
 	public AnyURI getBaseURI();
-	
+
 	/**
 	 * Returns the {@link Type} type of this node.
 	 * 
@@ -357,10 +372,10 @@ public interface Node<E extends Node<E>> extends Item {
 	 * </p>
 	 * 
 	 * <p>
-	 * Note, this method is not intended for the work with nodes created from a
-	 * PSVI (schema validated document) where the typed-value property of a node
-	 * may be a sequence for zero or more items. For documents with a schema you
-	 * should use {@link getValues()}.
+	 * Note, this method is not intended to work with nodes created from a PSVI
+	 * (schema validated document) where the typed-value property of a node may
+	 * be a sequence of zero or more items. For documents with a schema use
+	 * {@link getValues()}.
 	 * </p>
 	 * 
 	 * @see http://www.w3.org/TR/xml-infoset/
@@ -531,57 +546,182 @@ public interface Node<E extends Node<E>> extends Item {
 	public E getPreviousSibling() throws DocumentException;
 
 	/**
-	 * Appends a new node
+	 * Appends a new node.
 	 * 
-	 * @param kind
-	 * @param value
-	 * @return
+	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this
+	 *             if this operation is not supported
 	 * @throws DocumentException
+	 *             if the operation failed
 	 */
-	public E append(Kind kind, Atomic value)
+	public E append(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
 
+	/**
+	 * Appends a deep copy of the given node.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
 	public E append(Node<?> child) throws OperationNotSupportedException,
 			DocumentException;
 
+	/**
+	 * Appends a copy of the parsed fragment.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
 	public E append(SubtreeParser parser)
 			throws OperationNotSupportedException, DocumentException;
 
-	public E prepend(Kind kind, Atomic value)
+	/**
+	 * Prepends a new node.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
+	public E prepend(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
 
+	/**
+	 * Prepends a deep copy of the given node.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
 	public E prepend(Node<?> child) throws OperationNotSupportedException,
 			DocumentException;
 
+	/**
+	 * Prepends a copy of the parsed fragment.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
 	public E prepend(SubtreeParser parser)
 			throws OperationNotSupportedException, DocumentException;
 
-	public E insertBefore(Kind kind, Atomic value)
+	/**
+	 * Inserts a new node before this node.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
+	public E insertBefore(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
 
+	/**
+	 * Inserts a deep copy of the given node before this node.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
 	public E insertBefore(Node<?> node) throws OperationNotSupportedException,
 			DocumentException;
 
+	/**
+	 * Inserts a copy of the parsed fragment before this node.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
 	public E insertBefore(SubtreeParser parser)
 			throws OperationNotSupportedException, DocumentException;
 
-	public E insertAfter(Kind kind, Atomic value)
+	/**
+	 * Inserts a new node after this node.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
+	public E insertAfter(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
 
+	/**
+	 * Inserts a deep copy of the given node after this node.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
 	public E insertAfter(Node<?> node) throws OperationNotSupportedException,
 			DocumentException;
 
+	/**
+	 * Inserts a copy of the parsed fragment after this node.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
 	public E insertAfter(SubtreeParser parser)
 			throws OperationNotSupportedException, DocumentException;
 
+	/**
+	 * Inserts a copy of the given node as attribute.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
 	public E setAttribute(Node<?> attribute)
 			throws OperationNotSupportedException, DocumentException;
 
+	/**
+	 * Creates or updates an attribute with given name and the given value.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
 	public E setAttribute(QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
 
+	/**
+	 * Deletes the attribute.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
 	public boolean deleteAttribute(QNm name)
 			throws OperationNotSupportedException, DocumentException;
 
@@ -601,17 +741,49 @@ public interface Node<E extends Node<E>> extends Item {
 	public Stream<? extends E> getAttributes()
 			throws OperationNotSupportedException, DocumentException;
 
-	public String getAttributeValue(QNm name) throws DocumentException;
-
+	/**
+	 * Returns the attribute with the given name.
+	 * 
+	 * @return the attribute with the given name.
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
 	public E getAttribute(QNm name) throws DocumentException;
 
+	/**
+	 * Replaces this node with a deep copy of the given node.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
 	public E replaceWith(Node<?> node) throws OperationNotSupportedException,
 			DocumentException;
 
+	/**
+	 * Replaces this node with a copy of the parsed fragment.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
 	public E replaceWith(SubtreeParser parser)
 			throws OperationNotSupportedException, DocumentException;
 
-	public E replaceWith(Kind kind, Atomic value)
+	/**
+	 * Replaces this node with a new node.
+	 * 
+	 * @return the newly created node
+	 * @throws OperationNotSupportedException
+	 *             if this operation is not supported
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
+	public E replaceWith(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
 
 	/**
@@ -623,5 +795,19 @@ public interface Node<E extends Node<E>> extends Item {
 	 */
 	public boolean hasAttributes() throws DocumentException;
 
+	/**
+	 * Delete this node.
+	 * 
+	 * @throws DocumentException
+	 *             if the operation failed
+	 */
 	public void delete() throws DocumentException;
+
+	/**
+	 * Parse the subtree rooted at this node.
+	 * 
+	 * @throws DocumentException
+	 *             if the operation or the handler failed
+	 */
+	public void parse(SubtreeHandler handler) throws DocumentException;
 }

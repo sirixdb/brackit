@@ -55,7 +55,7 @@ public class ReplaceElementContentOp implements UpdateOp {
 		}
 
 		if (value != null) {
-			target.append(Kind.TEXT, value);
+			target.append(Kind.TEXT, null, value);
 		}
 	}
 

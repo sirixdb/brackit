@@ -32,7 +32,7 @@ import java.util.ArrayDeque;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Una;
-import org.brackit.xquery.node.linked.LNodeFactory;
+import org.brackit.xquery.node.d2linked.D2NodeFactory;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
@@ -62,9 +62,9 @@ public class FragmentHelper {
 
 	public FragmentHelper openElement(QNm name) throws DocumentException {
 		if (!stack.isEmpty()) {
-			stack.push(stack.peek().append(Kind.ELEMENT, name));
+			stack.push(stack.peek().append(Kind.ELEMENT, name, null));
 		} else {
-			root = (new LNodeFactory()).element(name);
+			root = (new D2NodeFactory()).element(name);
 			stack.push(root);
 		}
 
@@ -118,7 +118,7 @@ public class FragmentHelper {
 
 		Node<?> element = stack.peek();
 
-		element.append(Kind.TEXT, content);
+		element.append(Kind.TEXT, null, content);
 		return this;
 	}
 
@@ -131,7 +131,7 @@ public class FragmentHelper {
 			Node<?> element = stack.peek();
 			element.append(node);
 		} else if (node.getKind() == Kind.ELEMENT) {
-			root = (new LNodeFactory()).element(node.getName());
+			root = (new D2NodeFactory()).element(node.getName());
 			stack.push(root);
 		} else {
 			throw new DocumentException("Unexpected node type '%s'", node

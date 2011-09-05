@@ -103,7 +103,7 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
 
 		if (appendOnly) {
 			element = ((Node<?>) tuple.get(tuple.getSize() - 1)).append(
-					Kind.ELEMENT, name);
+					Kind.ELEMENT, name, null);
 		} else {
 			element = ctx.getNodeFactory().element(name);
 		}

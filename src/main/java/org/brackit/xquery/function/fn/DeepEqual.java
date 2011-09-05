@@ -171,7 +171,7 @@ public class DeepEqual extends AbstractFunction {
 		if (aKind == Kind.DOCUMENT) {
 			return childrenDeepEqual(ctx, a, b);
 		}
-		if ((aKind == Kind.PROCESSING_INSTRUCTION) || (aKind == Kind.NAMESPACE)) {
+		if (aKind == Kind.PROCESSING_INSTRUCTION) {
 			return ((a.getName().equals(b.getName())) && (a.getValue().equals(b
 					.getValue())));
 		}

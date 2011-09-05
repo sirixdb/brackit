@@ -184,7 +184,8 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		checkSubtreePreOrder(root, domRoot); // check document index
 	}
 
-	protected org.w3c.dom.Node createDomTree(InputSource source) throws Exception {
+	protected org.w3c.dom.Node createDomTree(InputSource source)
+			throws Exception {
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory
 					.newInstance();
@@ -198,7 +199,8 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		}
 	}
 
-	protected void checkSubtreePreOrder(final E node, org.w3c.dom.Node domNode) throws Exception {
+	protected void checkSubtreePreOrder(final E node, org.w3c.dom.Node domNode)
+			throws Exception {
 		E child = null;
 
 		if (domNode instanceof Element) {
@@ -336,7 +338,8 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		checkSubtreePostOrder(root, domRoot); // check document index
 	}
 
-	protected void checkSubtreePostOrder(E node, org.w3c.dom.Node domNode) throws Exception {
+	protected void checkSubtreePostOrder(E node, org.w3c.dom.Node domNode)
+			throws Exception {
 		E child = null;
 
 		if (domNode instanceof Element) {
@@ -400,8 +403,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		}
 	}
 
-	protected void compareAttributes(E node, Element element)
-			throws Exception {
+	protected void compareAttributes(E node, Element element) throws Exception {
 		NamedNodeMap domAttributes = element.getAttributes();
 		Stream<? extends E> attributes = node.getAttributes();
 
@@ -457,18 +459,17 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 				"/docs/", "orga.xml")));
 
 		E onode = orig.getDocument().getFirstChild().getLastChild();
-		E test = onode.append(Kind.ELEMENT, new QNm("test"));
-		test.append(Kind.ELEMENT, new QNm("a"));
-		test.append(Kind.ELEMENT, new QNm("b"));
-		
+		E test = onode.append(Kind.ELEMENT, new QNm("test"), null);
+		test.append(Kind.ELEMENT, new QNm("a"), null);
+		test.append(Kind.ELEMENT, new QNm("b"), null);
+
 		E cnode = doc.getDocument().getFirstChild().getLastChild();
 		DocumentParser docParser = new DocumentParser("<test><a/><b/></test>");
 		docParser.setParseAsFragment(true);
-		cnode.append(docParser);		
-
+		cnode.append(docParser);
 		ResultChecker.check(orig.getDocument(), doc.getDocument(), false);
 	}
-	
+
 	@Test
 	public void testReplaceSubtree() throws Exception {
 		Collection<E> orig = createDocument(new DocumentParser(readFile(
@@ -477,10 +478,10 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 				"/docs/", "orga.xml")));
 
 		E onode = orig.getDocument().getFirstChild().getLastChild();
-		E test = onode.replaceWith(Kind.ELEMENT, new QNm("test"));
-		test.append(Kind.ELEMENT, new QNm("a"));
-		test.append(Kind.ELEMENT, new QNm("b"));
-		
+		E test = onode.replaceWith(Kind.ELEMENT, new QNm("test"), null);
+		test.append(Kind.ELEMENT, new QNm("a"), null);
+		test.append(Kind.ELEMENT, new QNm("b"), null);
+
 		E cnode = doc.getDocument().getFirstChild().getLastChild();
 		DocumentParser docParser = new DocumentParser("<test><a/><b/></test>");
 		docParser.setParseAsFragment(true);
@@ -501,9 +502,9 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		node = node.getNextSibling();
 		node = node.getNextSibling();
 		node.setAttribute(new QNm("new"), new Una("CHECKME"));
-		assertEquals("updated attribute value", new Una("CHECKME"), node.getAttribute(new QNm("new")).getValue());
+		assertEquals("updated attribute value", new Una("CHECKME"), node
+				.getAttribute(new QNm("new")).getValue());
 	}
-
 
 	@After
 	public void tearDown() throws Exception {

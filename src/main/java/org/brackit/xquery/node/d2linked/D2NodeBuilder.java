@@ -45,13 +45,26 @@ import org.brackit.xquery.xdm.Kind;
  */
 public class D2NodeBuilder extends AbstractBuilder<D2Node> {
 
+	private final D2Node sibling;
+	private final boolean right;
+
 	public D2NodeBuilder(QueryContext ctx, String name)
 			throws DocumentException {
 		super(new DocumentD2Node(name));
+		sibling = null;
+		right = true;
 	}
 
 	public D2NodeBuilder() throws DocumentException {
-		super();
+		sibling = null;
+		right = true;
+	}
+
+	public D2NodeBuilder(D2Node parent, D2Node sibling, boolean right)
+			throws DocumentException {
+		super(parent);
+		this.sibling = sibling;
+		this.right = right;
 	}
 
 	@Override
@@ -62,15 +75,38 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
 	@Override
 	protected D2Node buildAttribute(D2Node parent, QNm name, Atomic value)
 			throws DocumentException {
-		return (parent != null) ? parent.setAttribute(name, value)
-				: new AttributeD2Node(name, value);
+		return (parent != null) ? parent.setAttribute(name, value) : first(
+				Kind.ATTRIBUTE, name, value);
+	}
+
+	D2Node first(Kind kind, QNm name, Atomic value) throws DocumentException {
+		D2Node child;
+		if (kind == Kind.ELEMENT) {
+			child = new ElementD2Node(name);
+		} else if (kind == Kind.TEXT) {
+			child = new TextD2Node(value);
+		} else if (kind == Kind.COMMENT) {
+			child = new CommentD2Node(value);
+		} else if (kind == Kind.PROCESSING_INSTRUCTION) {
+			child = new PID2Node(name, value);
+		} else if (kind == Kind.ATTRIBUTE) {
+			child = new AttributeD2Node(name, value);
+		} else {
+			throw new DocumentException("Illegal node kind: %s", kind);
+		}
+		return child;
 	}
 
 	@Override
-	protected D2Node buildElement(D2Node parent, QNm name, Map<Str, AnyURI> nsMappings)
-			throws DocumentException {
-		ElementD2Node e = (parent != null) ? (ElementD2Node) parent.append(Kind.ELEMENT, name)
-				: new ElementD2Node(name);
+	protected D2Node buildElement(D2Node parent, QNm name,
+			Map<Str, AnyURI> nsMappings) throws DocumentException {
+		ElementD2Node e;
+		if (parent != null) {
+			e = (ElementD2Node) ((ParentD2Node) parent).insertChild(sibling,
+					Kind.ELEMENT, name, null, right);
+		} else {
+			e = (ElementD2Node) first(Kind.ELEMENT, name, null);
+		}
 		e.nsMappings = nsMappings;
 		return e;
 	}
@@ -78,21 +114,33 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
 	@Override
 	protected D2Node buildText(D2Node parent, Atomic text)
 			throws DocumentException {
-		return (parent != null) ? parent.append(Kind.TEXT, text)
-				: new TextD2Node(text);
+		if (parent != null) {
+			return ((ParentD2Node) parent).insertChild(sibling, Kind.TEXT,
+					null, text.asUna(), right);
+		} else {
+			return first(Kind.TEXT, null, text);
+		}
 	}
 
 	@Override
-	protected D2Node buildComment(D2Node parent, Str text)
+	protected D2Node buildComment(D2Node parent, Atomic text)
 			throws DocumentException {
-		return (parent != null) ? parent.append(Kind.COMMENT, text)
-				: new CommentD2Node(text);
+		if (parent != null) {
+			return ((ParentD2Node) parent).insertChild(sibling, Kind.COMMENT,
+					null, text, right);
+		} else {
+			return first(Kind.COMMENT, null, text);
+		}
 	}
 
 	@Override
-	protected D2Node buildProcessingInstruction(D2Node parent, Str text)
-			throws DocumentException {
-		return (parent != null) ? parent.append(Kind.PROCESSING_INSTRUCTION,
-				text) : new PID2Node(null, text);
+	protected D2Node buildProcessingInstruction(D2Node parent, QNm target,
+			Atomic text) throws DocumentException {
+		if (parent != null) {
+			return ((ParentD2Node) parent).insertChild(sibling,
+					Kind.PROCESSING_INSTRUCTION, null, text, right);
+		} else {
+			return first(Kind.PROCESSING_INSTRUCTION, target, text);
+		}
 	}
 }

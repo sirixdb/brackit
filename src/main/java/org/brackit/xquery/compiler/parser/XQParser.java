@@ -2014,7 +2014,7 @@ public class XQParser extends Tokenizer {
 		}
 		AST expr = new AST(XQ.ArithmeticExpr);
 		expr.addChild(new AST(XQ.MultiplyOp));
-		expr.addChild(new AST(XQ.Int, "-1"));
+		expr.addChild(new AST(XQ.Int, Int32.N_ONE));
 		expr.addChild(valueExpr());
 		return expr;
 	}

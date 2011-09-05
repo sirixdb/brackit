@@ -35,7 +35,6 @@ import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
-import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.node.parser.SubtreeHandler;
 import org.brackit.xquery.node.parser.SubtreeListener;
 import org.brackit.xquery.xdm.DocumentException;
@@ -54,12 +53,12 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 
 	private E parent;
 
-	private E root;
+	private final E rootParent;
 
 	private Map<Str, AnyURI> nsMappings;
 
 	@Override
-	public void endMapping(Str prefix) throws DocumentException {		
+	public void endMapping(Str prefix) throws DocumentException {
 		// ignore???
 	}
 
@@ -72,20 +71,22 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 		nsMappings.put(prefix, uri);
 	}
 
-	public AbstractBuilder(E root) {
+	public AbstractBuilder(E parent) {
 		this.stack = new Node[5];
-		this.root = root;
-		stack[stackSize++] = root;
+		this.parent = parent;
+		this.rootParent = parent;
+		stack[stackSize++] = parent;
 	}
 
 	public AbstractBuilder() {
 		this.stack = new Node[5];
+		this.rootParent = null;
 	}
 
 	protected abstract E buildDocument() throws DocumentException;
 
-	protected abstract E buildElement(E parent, QNm name, Map<Str, AnyURI> nsMappings)
-			throws DocumentException;
+	protected abstract E buildElement(E parent, QNm name,
+			Map<Str, AnyURI> nsMappings) throws DocumentException;
 
 	protected abstract E buildAttribute(E parent, QNm name, Atomic value)
 			throws DocumentException;
@@ -93,15 +94,14 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 	protected abstract E buildText(E parent, Atomic text)
 			throws DocumentException;
 
-	protected abstract E buildComment(E parent, Str text)
+	protected abstract E buildComment(E parent, Atomic text)
 			throws DocumentException;
 
-	// TODO check params for PI's
-	protected abstract E buildProcessingInstruction(E parent, Str text)
-			throws DocumentException;
+	protected abstract E buildProcessingInstruction(E parent, QNm target,
+			Atomic text) throws DocumentException;
 
 	private void prepare() throws DocumentException {
-		if ((stackSize == 0) && (root != null)) {
+		if ((stackSize == 0) && (rootParent != null)) {
 			throw new DocumentException("A root already exists");
 		}
 		if (stackSize == stack.length) {
@@ -111,11 +111,9 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 
 	@SuppressWarnings("unchecked")
 	public E root() throws DocumentException {
+		E root = (E) ((rootParent == null) ? stack[0] : stack[1]);
 		if (root == null) {
-			root = (E) stack[0];
-			if (root == null) {
-				throw new DocumentException("No root node has been build");
-			}
+			throw new DocumentException("No root node has been build");
 		}
 		return root;
 	}
@@ -176,23 +174,21 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 	@Override
 	public <T extends E> void text(T node) throws DocumentException {
 		prepare();
-		stack[stackSize] = buildText(parent, new Una(node.getValue()
-				.stringValue()));
+		stack[stackSize] = buildText(parent, node.getValue().asUna());
 	}
 
 	@Override
 	public <T extends E> void comment(T node) throws DocumentException {
 		prepare();
-		stack[stackSize] = buildComment(parent, new Str(node.getValue()
-				.stringValue()));
+		stack[stackSize] = buildComment(parent, node.getValue().asStr());
 	}
 
 	@Override
 	public <T extends E> void processingInstruction(T node)
 			throws DocumentException {
 		prepare();
-		stack[stackSize] = buildProcessingInstruction(parent, new Str(node
-				.getValue().stringValue()));
+		stack[stackSize] = buildProcessingInstruction(parent, node.getName(),
+				node.getValue().asStr());
 	}
 
 	@Override
@@ -222,14 +218,15 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 	}
 
 	@Override
-	public void comment(Str content) throws DocumentException {
+	public void comment(Atomic content) throws DocumentException {
 		prepare();
 		stack[stackSize] = buildComment(parent, content);
 	}
 
 	@Override
-	public void processingInstruction(Str content) throws DocumentException {
+	public void processingInstruction(QNm target, Atomic content)
+			throws DocumentException {
 		prepare();
-		stack[stackSize] = buildProcessingInstruction(parent, content);
+		stack[stackSize] = buildProcessingInstruction(parent, target, content);
 	}
 }

@@ -102,7 +102,7 @@ public class CommentExpr extends ConstructedNodeBuilder implements Expr {
 
 		if (appendOnly) {
 			((Node<?>) tuple.get(tuple.getSize() - 1)).append(Kind.COMMENT,
-					new Str(content));
+					null, new Str(content));
 			return null;
 		}
 

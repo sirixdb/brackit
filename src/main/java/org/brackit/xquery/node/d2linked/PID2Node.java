@@ -29,26 +29,57 @@ package org.brackit.xquery.node.d2linked;
 
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
+import org.brackit.xquery.xdm.XMLChar;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public final class PID2Node extends TextD2Node {
-	private QNm target;
+public final class PID2Node extends ParentD2Node {
+	QNm target;
+	Str value;
 
-	PID2Node(ParentD2Node parent, int[] division, QNm name, Atomic value) {
-		super(parent, division, value);
-		this.target = name;
+	public PID2Node(QNm name, Atomic value) throws DocumentException {
+		this(null, FIRST, name, value);
+	}
+	
+	PID2Node(ParentD2Node parent, int[] division, QNm target, Atomic value) throws DocumentException {
+		super(parent, division);
+		this.target = checkName(target);
+		this.value = checkValue(value);
 	}
 
-	public PID2Node(QNm name, Atomic value) {
-		super(value);
-		this.target = name;
+	private QNm checkName(QNm target) throws DocumentException {		
+		if ((target.getNamespaceURI() != null) && (!target.getNamespaceURI().isEmpty())) {
+			throw new DocumentException("The target name of a processing instrcution must not have a namespace");
+		}
+		String s = target.stringValue();
+		for (int i = 0; i < s.length(); i++) {
+			if ((i == 0) && (!XMLChar.isNameStartChar(s.charAt(i)))) {
+				throw new DocumentException("Illegal target name: '%s'", s);
+			}
+			if ((i > 0) && (!XMLChar.isNameChar(s.charAt(i)))) {
+				throw new DocumentException("Illegal target name: '%s'", s);
+			}
+		}
+		return target;
+	}
+
+	private Str checkValue(Atomic value) throws DocumentException {
+		String s = value.stringValue();
+		if (s.contains("?>-")) {
+			throw new DocumentException("Processing instructions must not contain the character sequence \"?>\"");
+		}
+		return value.asStr();
+	}
+
+	public Kind getKind() {
+		return Kind.PROCESSING_INSTRUCTION;
 	}
 
 	@Override
@@ -59,10 +90,41 @@ public final class PID2Node extends TextD2Node {
 	@Override
 	public void setName(QNm name) throws OperationNotSupportedException,
 			DocumentException {
-		this.target = name;
+		this.target = checkName(name);
 	}
 
-	public Kind getKind() {
-		return Kind.PROCESSING_INSTRUCTION;
+	@Override
+	public Atomic getValue() {
+		return value;
+	}
+
+	@Override
+	public void setValue(Atomic value) throws OperationNotSupportedException,
+			DocumentException {
+		this.value = checkValue(value);
+	}
+
+	@Override
+	public D2Node getNextSibling() throws DocumentException {
+		if (parent == null) {
+			return null;
+		}
+
+		return parent.nextSiblingOf(this);
+	}
+
+	@Override
+	public D2Node getPreviousSibling() throws DocumentException {
+		if (parent == null) {
+			return null;
+		}
+
+		return parent.previousSiblingOf(this);
+	}
+
+	@Override
+	public String toString() {
+		return String.format("(type='%s', name='%s', value='%s')",
+				Kind.PROCESSING_INSTRUCTION, null, value);
 	}
 }

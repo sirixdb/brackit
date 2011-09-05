@@ -119,6 +119,11 @@ public abstract class AbstractAtomic extends AbstractItem implements Atomic {
 	public Str asStr() {
 		return new Str(stringValue());
 	}
+	
+	@Override
+	public Una asUna() {
+		return new Una(stringValue());
+	}
 
 	@Override
 	public ItemType itemType() throws QueryException {

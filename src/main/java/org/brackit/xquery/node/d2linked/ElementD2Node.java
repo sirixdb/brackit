@@ -33,7 +33,6 @@ import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
-import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.node.stream.EmptyStream;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
@@ -48,11 +47,8 @@ import org.brackit.xquery.xdm.Stream;
  * 
  */
 public final class ElementD2Node extends ParentD2Node {
-	
 	Map<Str, AnyURI> nsMappings;
-	
 	QNm name;
-
 	D2Node firstAttribute;
 
 	public ElementD2Node(QNm name) {
@@ -73,10 +69,10 @@ public final class ElementD2Node extends ParentD2Node {
 	public Kind getKind() {
 		return Kind.ELEMENT;
 	}
-	
+
 	@Override
 	public NamespaceScope getScope() {
-		return new D2NSScope(this);
+		return new D2NodeNSScope(this);
 	}
 
 	@Override
@@ -98,12 +94,6 @@ public final class ElementD2Node extends ParentD2Node {
 			}
 		}
 		return false;
-	}
-
-	@Override
-	public String getAttributeValue(QNm name) throws DocumentException {
-		D2Node attribute = getAttribute(name);
-		return (attribute != null) ? attribute.getValue().stringValue() : null;
 	}
 
 	@Override
@@ -194,102 +184,10 @@ public final class ElementD2Node extends ParentD2Node {
 	}
 
 	@Override
-	public D2Node insertAfter(SubtreeParser parser)
-			throws OperationNotSupportedException, DocumentException {
-		if (parent == null) {
-			throw new DocumentException("%s has no parent", this);
-		}
-		return parent.insertAfter(this, parser);
-	}
-
-	@Override
-	public D2Node insertBefore(Kind kind, Atomic value)
-			throws OperationNotSupportedException, DocumentException {
-		if (parent == null) {
-			throw new DocumentException("%s has no parent", this);
-		}
-		return parent.insertBefore(kind, value);
-	}
-
-	@Override
-	public D2Node insertBefore(Node<?> child)
-			throws OperationNotSupportedException, DocumentException {
-		if (parent == null) {
-			throw new DocumentException("%s has no parent", this);
-		}
-		return parent.insertBefore(this, child);
-	}
-
-	@Override
-	public D2Node insertBefore(SubtreeParser parser)
-			throws OperationNotSupportedException, DocumentException {
-		if (parent == null) {
-			throw new DocumentException("%s has no parent", this);
-		}
-		return parent.insertBefore(this, parser);
-	}
-
-	@Override
-	public D2Node replaceWith(Kind kind, Atomic value)
-			throws OperationNotSupportedException, DocumentException {
-		if ((isRoot()) && (kind != Kind.ELEMENT)) {
-			throw new DocumentException(
-					"Cannot replace root node with node of type: %s", kind);
-		}
-
-		if ((kind != Kind.ELEMENT) && (kind != Kind.TEXT)) {
-			throw new DocumentException(
-					"Cannot replace element with node of type: %s.", kind);
-		}
-
-		if (parent == null) {
-			throw new DocumentException("Cannot replace node without parent");
-		}
-
-		return parent.replace(this, kind, value);
-	}
-
-	@Override
-	public D2Node replaceWith(Node<?> node)
-			throws OperationNotSupportedException, DocumentException {
-		Kind kind = node.getKind();
-		if ((isRoot()) && (kind != Kind.ELEMENT)) {
-			throw new DocumentException(
-					"Cannot replace root node with node of type: %s", kind);
-		}
-
-		if ((kind != Kind.ELEMENT) && (kind != Kind.TEXT)) {
-			throw new DocumentException(
-					"Cannot replace element with node of type: %s.", kind);
-		}
-
-		if (parent == null) {
-			throw new DocumentException("Cannot replace node without parent");
-		}
-
-		return parent.replace(this, node);
-	}
-
-	@Override
-	public D2Node replaceWith(SubtreeParser parser)
-			throws OperationNotSupportedException, DocumentException {
-		D2Node node = builder.build(parser);
-		Kind kind = node.getKind();
-		if ((isRoot()) && (kind != Kind.ELEMENT)) {
-			throw new DocumentException(
-					"Cannot replace root node with node of type: %s", kind);
-		}
-
-		if ((kind != Kind.ELEMENT) && (kind != Kind.TEXT)) {
-			throw new DocumentException(
-					"Cannot replace element with node of type: %s.", kind);
-		}
-
-		if (parent == null) {
-			throw new DocumentException("Cannot replace node without parent");
-		}
-
-		return parent.replace(this, node);
+	public void setValue(Atomic value) throws OperationNotSupportedException,
+			DocumentException {
+		firstChild = null;
+		append(Kind.TEXT, null, value);
 	}
 
 	@Override

@@ -46,9 +46,9 @@ public interface SubtreeHandler {
 
 	public void text(Atomic content) throws DocumentException;
 
-	public void comment(Str content) throws DocumentException;
+	public void comment(Atomic content) throws DocumentException;
 
-	public void processingInstruction(Str content) throws DocumentException;
+	public void processingInstruction(QNm target, Atomic content) throws DocumentException;
 
 	public void startMapping(Str prefix, AnyURI uri) throws DocumentException;
 

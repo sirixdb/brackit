@@ -209,7 +209,7 @@ public class DirConstructorTest extends XQueryBaseTest {
 	public void directElementExprWithText() throws Exception {
 		Sequence result = new XQuery("<a>test</a>").execute(ctx);
 		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
-		a.append(Kind.TEXT, new Una("test"));
+		a.append(Kind.TEXT, null, new Una("test"));
 		ResultChecker.dCheck(a, result, false);
 	}
 
@@ -217,8 +217,8 @@ public class DirConstructorTest extends XQueryBaseTest {
 	public void directElementExprWithChildren() throws Exception {
 		Sequence result = new XQuery("<a><b/><c/></a>").execute(ctx);
 		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
-		a.append(Kind.ELEMENT, new QNm("b"));
-		a.append(Kind.ELEMENT, new QNm("c"));
+		a.append(Kind.ELEMENT, new QNm("b"), null);
+		a.append(Kind.ELEMENT, new QNm("c"), null);
 		ResultChecker.dCheck(a, result, false);
 	}
 
@@ -226,7 +226,7 @@ public class DirConstructorTest extends XQueryBaseTest {
 	public void directElementExprWithComputedContent() throws Exception {
 		Sequence result = new XQuery("<a>{(1 to 3)}</a>").execute(ctx);
 		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
-		a.append(Kind.TEXT, new Una("1 2 3"));
+		a.append(Kind.TEXT, null, new Una("1 2 3"));
 		ResultChecker.dCheck(a, result, false);
 	}
 
@@ -234,7 +234,7 @@ public class DirConstructorTest extends XQueryBaseTest {
 	public void directElementExprWithComputedSequenceContent() throws Exception {
 		Sequence result = new XQuery("<a>{1, 2, 3}</a>").execute(ctx);
 		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
-		a.append(Kind.TEXT, new Una("1 2 3"));
+		a.append(Kind.TEXT, null, new Una("1 2 3"));
 		ResultChecker.dCheck(a, result, false);
 	}
 
@@ -243,9 +243,9 @@ public class DirConstructorTest extends XQueryBaseTest {
 		Sequence result = new XQuery("<a>{<b>{2 + 4}</b>, 1}</a>")
 				.execute(ctx);
 		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
-		Node<?> b = a.append(Kind.ELEMENT, new QNm("b"));
-		b.append(Kind.TEXT, new Una("6"));
-		a.append(Kind.TEXT, new Una("1"));
+		Node<?> b = a.append(Kind.ELEMENT, new QNm("b"), null);
+		b.append(Kind.TEXT, null, new Una("6"));
+		a.append(Kind.TEXT, null, new Una("1"));
 		ResultChecker.dCheck(a, result, false);
 	}
 	

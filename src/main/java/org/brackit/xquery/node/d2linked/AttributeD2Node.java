@@ -29,6 +29,7 @@ package org.brackit.xquery.node.d2linked;
 
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
@@ -41,27 +42,23 @@ import org.brackit.xquery.xdm.OperationNotSupportedException;
  * 
  */
 public final class AttributeD2Node extends D2Node {
-	protected QNm name;
+	QNm name;
+	Una value;
 
-	protected Atomic value;
-
-	AttributeD2Node(ParentD2Node parent, int[] division, QNm name,
-			Atomic value) {
+	AttributeD2Node(ParentD2Node parent, int[] division, QNm name, Atomic value)
+			throws DocumentException {
 		super(parent, division);
 		this.name = name;
-		this.value = value;
+		this.value = value.asUna();
 	}
 
-	AttributeD2Node(ParentD2Node parent, QNm name, Atomic value) {
-		super(parent, FIRST);
-		this.name = name;
-		this.value = value;
+	AttributeD2Node(ParentD2Node parent, QNm name, Atomic value)
+			throws DocumentException {
+		this(parent, FIRST, name, value);
 	}
 
-	public AttributeD2Node(QNm name, Atomic value) {
-		super(null, FIRST);
-		this.name = name;
-		this.value = value;
+	public AttributeD2Node(QNm name, Atomic value) throws DocumentException {
+		this(null, FIRST, name, value);
 	}
 
 	@Override
@@ -83,7 +80,7 @@ public final class AttributeD2Node extends D2Node {
 	@Override
 	public void setValue(Atomic value) throws OperationNotSupportedException,
 			DocumentException {
-		this.value = value;
+		this.value = value.asUna();
 	}
 
 	public Kind getKind() {
@@ -137,7 +134,7 @@ public final class AttributeD2Node extends D2Node {
 	}
 
 	@Override
-	public D2Node replaceWith(Kind kind, Atomic value)
+	public D2Node replaceWith(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
 		if (kind != Kind.ATTRIBUTE) {
 			throw new DocumentException(
@@ -170,18 +167,25 @@ public final class AttributeD2Node extends D2Node {
 	@Override
 	public D2Node replaceWith(SubtreeParser parser)
 			throws OperationNotSupportedException, DocumentException {
-		D2Node node = builder.build(parser);
-		Kind kind = node.getKind();
-		if (kind != Kind.ATTRIBUTE) {
-			throw new DocumentException(
-					"Cannot replace attribute with node of type: %s.", kind);
-		}
+		D2NodeBuilder builder = new D2NodeBuilder() {
+			@Override
+			D2Node first(Kind kind, QNm name, Atomic value)
+					throws DocumentException {
+				if (kind != Kind.ATTRIBUTE) {
+					throw new DocumentException(
+							"Cannot replace attribute with node of type: %s.",
+							kind);
+				}
+				if (parent == null) {
+					throw new DocumentException(
+							"Cannot replace node without parent");
+				}
 
-		if (parent == null) {
-			throw new DocumentException("Cannot replace node without parent");
-		}
-
-		return parent.setAttribute(name, value);
+				return parent.setAttribute(name, value);
+			}
+		};
+		parser.parse(builder);
+		return builder.root();
 	}
 
 	@Override

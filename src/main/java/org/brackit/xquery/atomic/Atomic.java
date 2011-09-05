@@ -34,22 +34,42 @@ import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Type;
 
 /**
- * Base class for atomic items.
+ * An {@link Atomic} defines the common interface of an atomic value in the
+ * system.
+ * 
+ * <p>
+ * The API is designed to follow the general rules of the <b>XQuery and XPath
+ * Data Model 3.0</b> and <b>XQuery 3.0</b>.
+ * </p>
+ * <p>
+ * Implementors have to ensure to override {@link Object#equals(Object)} and
+ * {@link Object#hashCode()} appropriately. The methods
+ * {@link Object#equals(Object)} and {@link Comparable#compareTo(Object)} have
+ * to be consistent with {@link Atomic#atomicCmp(Atomic)}.
+ * </p>
+ * 
+ * @see http://www.w3.org/TR/xpath-datamodel-30/
+ * @see http://www.w3.org/TR/xquery-30/
  * 
  * @author Sebastian Baechle
  * 
  */
 public interface Atomic extends Item, Expr, Comparable<Atomic> {
-		
+
+	/**
+	 * Returns the {@link Type} of this value.
+	 * 
+	 * @return the {@link Type} of this value
+	 */
 	public Type type();
-	
+
 	/**
 	 * Compares this atomic with the given one. Numeric types are expected to
 	 * perform numeric type promotion as xs:anyURI is expected to be promoted to
 	 * xs:string.
 	 * 
 	 * This method backs up the operations lt, le, eq, ge, gt on atomic types as
-	 * defined in XQuery 1.0: B.2 Operator Mapping.
+	 * defined in XQuery 3.0: B.2 Operator Mapping.
 	 * 
 	 * The result is defined as in {@link Comparable#compareTo(Object)}.
 	 * 
@@ -64,7 +84,7 @@ public interface Atomic extends Item, Expr, Comparable<Atomic> {
 	 * xs:string.
 	 * 
 	 * This method backs up only the operation eq on atomic types as defined in
-	 * XQuery 1.0: B.2 Operator Mapping.
+	 * XQuery 3.0: B.2 Operator Mapping.
 	 * 
 	 * The result is defined as in {@link Comparable#compareTo(Object)}.
 	 * 
@@ -114,6 +134,13 @@ public interface Atomic extends Item, Expr, Comparable<Atomic> {
 	 * @see http://www.w3.org/TR/xquery-operators/#func-string
 	 */
 	public Str asStr();
+
+	/**
+	 * Returns the string value of this item as untyped atomic.
+	 * 
+	 * @see http://www.w3.org/TR/xquery-operators/#func-string
+	 */
+	public Una asUna();
 
 	/**
 	 * Returns a copy of this value of the given type. The value must be in the

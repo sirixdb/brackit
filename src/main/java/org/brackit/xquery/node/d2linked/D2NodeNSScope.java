@@ -25,44 +25,71 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.node.linked;
+package org.brackit.xquery.node.d2linked;
 
-import org.brackit.xquery.atomic.QNm;
+import java.util.TreeMap;
+
+import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.OperationNotSupportedException;
+import org.brackit.xquery.xdm.NamespaceScope;
 
 /**
- * 
  * @author Sebastian Baechle
  * 
  */
-public final class PILNode extends TextLNode {
-	private QNm target;
+public class D2NodeNSScope implements NamespaceScope {
 
-	PILNode(ParentLNode parent, QNm target, Str value) {
-		super(parent, value);
-		this.target = target;
-	}
+	// may be null for unrooted non-element nodes
+	private final ElementD2Node node;
 
-	public PILNode(QNm target, Str value) {
-		super(value);
-		this.target = target;
+	public D2NodeNSScope(ElementD2Node node) {
+		this.node = node;
 	}
 
 	@Override
-	public QNm getName() throws DocumentException {
-		return target;
+	public void addPrefix(Str prefix, AnyURI uri) throws DocumentException {
+		if (node == null) {
+			throw new DocumentException();
+		}
+		// TODO checks
+		if (node.nsMappings == null) {
+			// use tree map because we expect only a few
+			// entries and a tree map is much more space efficient
+			node.nsMappings = new TreeMap<Str, AnyURI>();
+		}
+		node.nsMappings.put(prefix, uri);
 	}
 
 	@Override
-	public void setName(QNm name) throws OperationNotSupportedException,
-			DocumentException {
-		this.target = name;
+	public AnyURI defaultNS() throws DocumentException {
+		return resolvePrefix(Str.EMPTY);
 	}
 
-	public Kind getKind() {
-		return Kind.PROCESSING_INSTRUCTION;
+	@Override
+	public void setDefaultNS(AnyURI uri) throws DocumentException {
+		addPrefix(Str.EMPTY, uri);
+	}
+
+	@Override
+	public AnyURI resolvePrefix(Str prefix) throws DocumentException {
+		if (node == null) {
+			throw new DocumentException();
+		}
+		ElementD2Node n = node;
+		while (true) {
+			if (n.nsMappings != null) {
+				AnyURI uri = n.nsMappings.get(prefix);
+				if (uri != null) {
+					return uri;
+				}
+			}
+			ParentD2Node p = n.parent;
+			if ((p == null) || (!(p instanceof ElementD2Node))) {
+				break;
+			}
+			n = (ElementD2Node) p;
+		}
+		return null;
 	}
 }

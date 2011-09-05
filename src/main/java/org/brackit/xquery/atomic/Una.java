@@ -70,6 +70,11 @@ public class Una extends AbstractAtomic {
 	public Atomic asType(Type type) throws QueryException {
 		return new DUna(str, type);
 	}
+	
+	@Override
+	public Una asUna() {
+		return this;
+	}
 
 	@Override
 	public boolean booleanValue() throws QueryException {

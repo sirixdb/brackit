@@ -95,7 +95,7 @@ public class TextExpr extends ConstructedNodeBuilder implements Expr {
 		String content = buf.toString();
 
 		if (appendOnly) {
-			((Node<?>) tuple.get(tuple.getSize() - 1)).append(Kind.TEXT,
+			((Node<?>) tuple.get(tuple.getSize() - 1)).append(Kind.TEXT, null,
 					new Str(content));
 			return null;
 		}

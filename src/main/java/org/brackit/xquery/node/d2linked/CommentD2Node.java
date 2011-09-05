@@ -27,24 +27,82 @@
  */
 package org.brackit.xquery.node.d2linked;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
+import org.brackit.xquery.xdm.OperationNotSupportedException;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public final class CommentD2Node extends TextD2Node {
-	public CommentD2Node(Str value) {
-		super(value);
+public final class CommentD2Node extends ParentD2Node {
+	private Str value;
+
+	public CommentD2Node(Atomic value) throws DocumentException {
+		this(null, FIRST, value);
 	}
 
-	CommentD2Node(ParentD2Node parent, int[] division, Str value) {
-		super(parent, division, value);
+	CommentD2Node(ParentD2Node parent, int[] division, Atomic value) throws DocumentException {
+		super(parent, division);
+		this.value = checkValue(value);
+	}
+
+	private Str checkValue(Atomic v) throws DocumentException {
+		String s = value.stringValue();
+		if (s.contains("--")) {
+			throw new DocumentException("Character sequence \"--\" is not allowed in comment content");
+		}
+		if (s.endsWith("-")) {
+			throw new DocumentException("Comment content must not end with \"-\"");
+		}
+		return value.asStr();
 	}
 
 	public Kind getKind() {
 		return Kind.COMMENT;
+	}
+
+	@Override
+	public QNm getName() throws DocumentException {
+		return null;
+	}
+
+	@Override
+	public Atomic getValue() {
+		return value;
+	}
+
+	@Override
+	public void setValue(Atomic value) throws OperationNotSupportedException,
+			DocumentException {
+		this.value = checkValue(value);
+	}
+
+	@Override
+	public D2Node getNextSibling() throws DocumentException {
+		if (parent == null) {
+			return null;
+		}
+
+		return parent.nextSiblingOf(this);
+	}
+
+	@Override
+	public D2Node getPreviousSibling() throws DocumentException {
+		if (parent == null) {
+			return null;
+		}
+
+		return parent.previousSiblingOf(this);
+	}
+
+	@Override
+	public String toString() {
+		return String.format("(type='%s', name='', value='%s')", Kind.COMMENT,
+				value);
 	}
 }

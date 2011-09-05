@@ -153,11 +153,13 @@ public class PIExpr extends ConstructedNodeBuilder implements Expr {
 
 		if (appendOnly) {
 			((Node<?>) tuple.get(tuple.getSize() - 1)).append(
-					Kind.PROCESSING_INSTRUCTION, new Str(content));
+					Kind.PROCESSING_INSTRUCTION, new QNm(target), new Str(
+							content));
 			return null;
 		}
 
-		Node<?> attribute = ctx.getNodeFactory().pi(new QNm(target), new Str(content));
+		Node<?> attribute = ctx.getNodeFactory().pi(new QNm(target),
+				new Str(content));
 		return attribute;
 	}
 
