@@ -582,7 +582,7 @@ public class XQParser extends Tokenizer {
 		}
 		consume(la);
 		consume(la2);
-		AST prefix = schemaPrefix();
+		AST schemaPrefix = schemaPrefix();
 		AST uri = uriLiteral(false, true);
 		AST[] locs = new AST[0];
 		if (attemptSymSkipWS("at")) {
@@ -592,11 +592,20 @@ public class XQParser extends Tokenizer {
 			}
 		}
 		AST imp = new AST(XQ.SchemaImport);
-		if (prefix != null) {
-			imp.addChild(prefix);
-		}
-		imp.addChild(uri);
+		schemaPrefix.addChild(uri);
+		imp.addChild(schemaPrefix);
 		imp.addChildren(locs);
+		try {
+			if (schemaPrefix.getType() == XQ.NamespaceDeclaration) {
+				String prefix = schemaPrefix.getChild(0).getStringValue();
+				staticNS.declare(prefix, uri.getStringValue());
+			} else {
+				staticNS.setDefaultElementNamespace(uri.getStringValue());
+			}
+		} catch (QueryException e) {
+			throw new XQTokenizerException(e.getCode(), "%s: %s", e
+					.getMessage(), paraphrase());
+		}
 		return imp;
 	}
 
@@ -606,7 +615,7 @@ public class XQParser extends Tokenizer {
 			consume(la);
 			AST ncname = ncnameLiteral(false, true);
 			consumeSkipWS("=");
-			AST ns = new AST(XQ.Namespace);
+			AST ns = new AST(XQ.NamespaceDeclaration);
 			ns.addChild(ncname);
 			return ns;
 		}
@@ -767,7 +776,7 @@ public class XQParser extends Tokenizer {
 			}
 			funcDecl.addChild(param);
 		} while (attemptSkipWS(","));
-		consume(")");
+		consumeSkipWS(")");
 		offerScope();
 		if (attemptSymSkipWS("as")) {
 			funcDecl.addChild(sequenceType());
@@ -3541,8 +3550,8 @@ public class XQParser extends Tokenizer {
 			return new AST(XQ.Dbl, new Dbl(la.string()));
 		} catch (QueryException e) {
 			// this should never happen...
-			throw new TokenizerException(e, "Error parsing double literal: '%s'",
-					paraphrase());
+			throw new TokenizerException(e,
+					"Error parsing double literal: '%s'", paraphrase());
 		}
 	}
 
@@ -3561,8 +3570,8 @@ public class XQParser extends Tokenizer {
 			return new AST(XQ.Dec, new Dec(la.string()));
 		} catch (QueryException e) {
 			// this should never happen...
-			throw new TokenizerException(e, "Error parsing decimal literal: '%s'",
-					paraphrase());
+			throw new TokenizerException(e,
+					"Error parsing decimal literal: '%s'", paraphrase());
 		}
 	}
 
@@ -3581,8 +3590,8 @@ public class XQParser extends Tokenizer {
 			return new AST(XQ.Int, Int32.parse(la.string()));
 		} catch (QueryException e) {
 			// this should never happen...
-			throw new TokenizerException(e, "Error parsing integer literal: '%s'",
-					paraphrase());
+			throw new TokenizerException(e,
+					"Error parsing integer literal: '%s'", paraphrase());
 		}
 	}
 

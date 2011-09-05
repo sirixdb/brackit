@@ -66,7 +66,7 @@ public abstract class AbstractModule implements Module {
 
 	protected String defaultCollation = "http://www.w3.org/2005/xpath-functions/collation/codepoint";
 
-	protected AnyURI baseURI = null;
+	protected AnyURI baseURI = AnyURI.EMPTY;
 
 	protected boolean constructionModeStrip = false;
 

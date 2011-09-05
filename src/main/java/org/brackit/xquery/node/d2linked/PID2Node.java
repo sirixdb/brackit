@@ -70,12 +70,12 @@ public final class PID2Node extends ParentD2Node {
 		return target;
 	}
 
-	private Str checkValue(Atomic value) throws DocumentException {
-		String s = value.stringValue();
+	private Str checkValue(Atomic v) throws DocumentException {
+		String s = v.stringValue();
 		if (s.contains("?>-")) {
 			throw new DocumentException("Processing instructions must not contain the character sequence \"?>\"");
 		}
-		return value.asStr();
+		return v.asStr();
 	}
 
 	public Kind getKind() {

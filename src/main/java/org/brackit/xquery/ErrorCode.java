@@ -536,6 +536,13 @@ public class ErrorCode {
 			ERR_PREFIX, "XQDY0041");
 
 	/**
+	 * err:XQDY0044
+	 */
+	public static final QNm ERR_ILLEGAL_NAME_OF_CONSTRUCTED_ATTRIBUTE = new QNm(ERR_NSURI,
+			ERR_PREFIX, "err:XQDY0044");
+	
+
+	/**
 	 * err:XQDY0064
 	 */
 	public static final QNm ERR_PI_TARGET_IS_XML = new QNm(ERR_NSURI,

@@ -52,14 +52,14 @@ public final class CommentD2Node extends ParentD2Node {
 	}
 
 	private Str checkValue(Atomic v) throws DocumentException {
-		String s = value.stringValue();
+		String s = v.stringValue();
 		if (s.contains("--")) {
 			throw new DocumentException("Character sequence \"--\" is not allowed in comment content");
 		}
 		if (s.endsWith("-")) {
 			throw new DocumentException("Comment content must not end with \"-\"");
 		}
-		return value.asStr();
+		return v.asStr();
 	}
 
 	public Kind getKind() {

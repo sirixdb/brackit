@@ -75,7 +75,7 @@ public class ItemSequence implements Sequence {
 		if ((Int32.ZERO.cmp(pos) >= 0) || (size().cmp(pos) < 0)) {
 			return null;
 		}
-		return items[pos.intValue()];
+		return items[pos.intValue() - 1];
 	}
 
 	@Override
