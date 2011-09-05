@@ -71,12 +71,15 @@ public class InstanceOf implements Expr {
 			} else {
 				Sequence typed = TypedSequence.toTypedSequence(ctx, expected,
 						sequence);
-				Iter it = typed.iterate();
-				try {
-					while (it.next() != null)
-						;
-				} finally {
-					it.close();
+				
+				if (typed != null) {
+					Iter it = typed.iterate();
+					try {
+						while (it.next() != null)
+							;
+					} finally {
+						it.close();
+					}
 				}
 			}
 			return Bool.TRUE;
