@@ -40,7 +40,9 @@ import org.brackit.xquery.atomic.Str;
  * 
  */
 public interface NamespaceScope {
-
+	
+	public Stream<Str> localPrefixes() throws DocumentException;
+	
 	public AnyURI defaultNS() throws DocumentException;
 
 	/**

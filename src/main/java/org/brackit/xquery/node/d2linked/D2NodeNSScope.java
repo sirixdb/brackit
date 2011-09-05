@@ -31,8 +31,11 @@ import java.util.TreeMap;
 
 import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.node.stream.EmptyStream;
+import org.brackit.xquery.node.stream.IteratorStream;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.NamespaceScope;
+import org.brackit.xquery.xdm.Stream;
 
 /**
  * @author Sebastian Baechle
@@ -45,6 +48,17 @@ public class D2NodeNSScope implements NamespaceScope {
 
 	public D2NodeNSScope(ElementD2Node node) {
 		this.node = node;
+	}
+
+	@Override
+	public Stream<Str> localPrefixes() throws DocumentException {
+		if (node == null) {
+			throw new DocumentException();
+		}
+		if (node.nsMappings == null) {
+			return new EmptyStream<Str>();
+		}
+		return new IteratorStream<Str>(node.nsMappings.keySet());
 	}
 
 	@Override
