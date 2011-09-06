@@ -32,6 +32,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.translator.Reference;
+import org.brackit.xquery.sequence.TypedSequence;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
@@ -64,8 +65,9 @@ public class BoundVariable extends Variable implements Reference {
 	@Override
 	public Sequence evaluate(QueryContext ctx, Tuple tuple)
 			throws QueryException {
+		Sequence s;
 		try {
-			return tuple.get(pos);
+			s = tuple.get(pos);
 		} catch (QueryException e) {
 			throw new QueryException(
 					e,
@@ -73,6 +75,10 @@ public class BoundVariable extends Variable implements Reference {
 					"Could not resolve variable %s in tuple[%s] at position %s: %s",
 					name, tuple.getSize(), pos, tuple);
 		}
+		if (type != null) {
+			s = TypedSequence.toTypedSequence(ctx, type, s);
+		}
+		return s;
 	}
 
 	@Override
@@ -88,7 +94,11 @@ public class BoundVariable extends Variable implements Reference {
 					"Could not resolve variable %s in tuple at position %s: %s",
 					name, tuple.getSize(), pos, tuple);
 		}
-		return ExprUtil.asItem(s);
+		if (type != null) {
+			return TypedSequence.toTypedItem(ctx, type, s);
+		} else {
+			return ExprUtil.asItem(s);
+		}
 	}
 
 	@Override

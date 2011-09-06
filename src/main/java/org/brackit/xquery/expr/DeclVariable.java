@@ -57,7 +57,7 @@ public class DeclVariable extends Variable {
 			throws QueryException {
 		if (ctx.isBound(name)) {
 			return ctx.resolve(name);
-		}		
+		}
 		Sequence res = expr.evaluate(ctx, TupleImpl.EMPTY_TUPLE);
 		if (type != null) {
 			res = TypedSequence.toTypedSequence(ctx, type, res);

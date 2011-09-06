@@ -57,19 +57,20 @@ public class ExtVariable extends Variable {
 	@Override
 	public Sequence evaluate(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		Sequence res = ctx.resolve(name);
-		if (res == null) {
-			if ((ctx.isBound(name)) && (defaultExpr == null)) {
-				throw new QueryException(
-						ErrorCode.ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED,
-						"External variable %s has not been bound", name);
-			}
-			res = defaultExpr.evaluate(ctx, TupleImpl.EMPTY_TUPLE);
+		Sequence s;
+		if (ctx.isBound(name)) {
+			s = ctx.resolve(name);
+		} else if (defaultExpr != null) {
+			s = defaultExpr.evaluate(ctx, TupleImpl.EMPTY_TUPLE);
+		} else {
+			throw new QueryException(
+					ErrorCode.ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED,
+					"External variable %s has not been bound", name);
 		}
 		if (type != null) {
-			res = TypedSequence.toTypedSequence(ctx, type, res);
+			s = TypedSequence.toTypedSequence(ctx, type, s);
 		}
-		return res;
+		return s;
 	}
 
 	@Override
