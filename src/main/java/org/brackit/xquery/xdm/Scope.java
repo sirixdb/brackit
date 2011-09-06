@@ -72,8 +72,8 @@ public interface Scope {
 	 * Resolves the namespace URI prefix for a given prefix. If the prefix is
 	 * <code>null</code> or the empty string, the default namespace URI is
 	 * returned. The method returns <code>null</code> if the given prefix is
-	 * <code>null</code> or the empty string and is not bound to a namespace
-	 * URI.
+	 * neither <code>null</code> nor the empty string and is not bound to a
+	 * namespace URI.
 	 * 
 	 * <p>
 	 * It must be ensured that:

@@ -259,6 +259,7 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
 	@Override
 	public String resolvePrefix(String prefix) throws DocumentException {
 		if (prefix == null) {
+			// search for the default namespace
 			prefix = "";
 		}
 		ElementD2Node n = this;
@@ -278,7 +279,7 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
 		if (prefix.equals("xml")) {
 			return "http://www.w3.org/XML/1998/namespace";
 		}
-		return "";
+		return ((prefix == null) || (prefix.isEmpty())) ? "" : null;
 	}
 
 	@Override
