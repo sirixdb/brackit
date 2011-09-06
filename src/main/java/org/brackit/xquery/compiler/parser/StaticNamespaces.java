@@ -63,10 +63,12 @@ public class StaticNamespaces {
 			return null;
 		}
 
-		QNm expand(String prefix, String localname, String defaultNSURI)
+		QNm expand(String prefix, String localname)
 				throws QueryException {
-			String namespaceURI = (prefix != null) ? resolve(prefix)
-					: defaultNSURI;
+			String namespaceURI = resolve(prefix);
+			if (namespaceURI == null) {
+				return null;
+			}
 			return new QNm(namespaceURI, prefix, localname);
 		}
 
@@ -118,7 +120,7 @@ public class StaticNamespaces {
 	QNm expand(String prefix, String localname) throws QueryException {
 		if (current != null) {
 			String p = (prefix == null) ? "" : prefix;
-			QNm resolved = current.expand(p, localname, "");
+			QNm resolved = current.expand(p, localname);
 			if (resolved != null) {
 				return resolved;
 			}
@@ -129,8 +131,7 @@ public class StaticNamespaces {
 	QNm expandElement(String prefix, String localname) throws QueryException {
 		if (current != null) {
 			String p = (prefix == null) ? "" : prefix;
-			QNm resolved = current.expand(p, localname, ns
-					.getDefaultElementNamespace());
+			QNm resolved = current.expand(p, localname);
 			if (resolved != null) {
 				return resolved;
 			}
@@ -141,8 +142,7 @@ public class StaticNamespaces {
 	QNm expandFunction(String prefix, String localname) throws QueryException {
 		if (current != null) {
 			String p = (prefix == null) ? "" : prefix;
-			QNm resolved = current.expand(p, localname, ns
-					.getDefaultFunctionNamespace());
+			QNm resolved = current.expand(p, localname);
 			if (resolved != null) {
 				return resolved;
 			}
