@@ -52,7 +52,7 @@ public class Tokenizer {
 		public TokenizerException(String message, Object... args) {
 			super(String.format(message, args));
 		}
-		
+
 		public TokenizerException(Exception e, String message, Object... args) {
 			super(String.format(message, args), e);
 		}
@@ -96,35 +96,17 @@ public class Tokenizer {
 		}
 	}
 
-	protected class QNameToken extends EQNameToken {
-		final String prefix;
-
-		public QNameToken(int start, int end, String prefix, String localPart) {
-			super(start, end, null, localPart);
-			this.prefix = prefix;
-		}
-
-		String prefix() {
-			return prefix;
-		}
-
-		String string() {
-			return (prefix != null) ? prefix + ":" + ncname : ncname;
-		}
-		
-		QNm getQName() {
-			return new QNm(null, prefix, ncname);
-		}
-	}
-
 	protected class EQNameToken extends Token {
 		final String uri;
+		final String prefix;
 		final String ncname;
 
-		public EQNameToken(int start, int end, String uri, String ncname) {
+		public EQNameToken(int start, int end, String uri, String prefix,
+				String ncname) {
 			super(start, end);
 			this.uri = uri;
 			this.ncname = ncname;
+			this.prefix = prefix;
 		}
 
 		String uri() {
@@ -135,12 +117,14 @@ public class Tokenizer {
 			return ncname;
 		}
 
-		String string() {
-			return (uri != null) ? "\"" + uri + "\":" + ncname : ncname;
+		String prefix() {
+			return prefix;
 		}
-		
-		QNm getQName() {
-			return new QNm(uri, null, ncname);
+
+		String string() {
+			return (uri != null) ? ("\"" + uri + "\":")
+					+ ((prefix != null) ? prefix + ":" + ncname : ncname)
+					: ((prefix != null) ? prefix + ":" + ncname : ncname);
 		}
 	}
 
@@ -238,7 +222,7 @@ public class Tokenizer {
 		// see A.2.2 Terminal Delimitation for details
 		return ((XMLChar.isWS(c)) || (c == '!') || (c == '\'') || (c == '"')
 				|| (c == '#') || (c == '$') || (c == '%') || (c == '(')
-				|| (c == ')') || (c == '*')|| (c == '+')  || (c == ',')
+				|| (c == ')') || (c == '*') || (c == '+') || (c == ',')
 				|| (c == '-') || (c == '.') || (c == '/') || (c == ':')
 				|| (c == ';') || (c == '<') || (c == '=') || (c == '>')
 				|| (c == '?') || (c == '@') || (c == '[') || (c == ']')
@@ -392,8 +376,7 @@ public class Tokenizer {
 		}
 
 		if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
-			log.debug("Skipping whitespace from " + pos + " to "
-					+ (pos + s));
+			log.debug("Skipping whitespace from " + pos + " to " + (pos + s));
 		}
 		pos += s;
 		return true;
@@ -467,42 +450,42 @@ public class Tokenizer {
 		return 0;
 	}
 
-	protected QNameToken laQName() {
+	protected EQNameToken laQName() {
 		return laQName(pos);
 	}
-	
-	protected QNameToken laQNameSkipWS(Token token) {
+
+	protected EQNameToken laQNameSkipWS(Token token) {
 		return laQName(token.end + ws(token.end));
 	}
 
-	protected QNameToken laQNameSkipWS() {
+	protected EQNameToken laQNameSkipWS() {
 		return laQName(pos + ws(pos));
 	}
 
-	protected QNameToken laQName(Token token) {
+	protected EQNameToken laQName(Token token) {
 		return laQName(token.end);
 	}
 
-	private QNameToken laQName(int pos) {
+	private EQNameToken laQName(int pos) {
 		Token la = laNCName(pos);
 		if (la == null) {
 			return null;
 		}
 		int e = la.end;
 		if (e >= end) {
-			return new QNameToken(la.start, la.end, null, la.string());
+			return new EQNameToken(la.start, la.end, null, null, la.string());
 		}
 		char c = input[e++];
 		if (c != ':') {
-			return new QNameToken(la.start, la.end, null, la.string());
+			return new EQNameToken(la.start, la.end, null, null, la.string());
 		}
 		Token la2 = laNCName(e);
 		if (la2 == null) {
 			// TODO illegal? throw exception?
-			return new QNameToken(la.start, la.end, null, la.string());
+			return new EQNameToken(la.start, la.end, null, null, la.string());
 		}
 		e = la2.end;
-		return new QNameToken(pos, e, la.string(), la2.string());
+		return new EQNameToken(pos, e, null, la.string(), la2.string());
 	}
 
 	protected EQNameToken laEQName(boolean cond) throws TokenizerException {
@@ -526,7 +509,7 @@ public class Tokenizer {
 
 	private EQNameToken laEQName(int pos, boolean cond)
 			throws TokenizerException {
-		QNameToken la = laQName(pos);
+		EQNameToken la = laQName(pos);
 		if (la != null) {
 			return la;
 		}
@@ -543,7 +526,8 @@ public class Tokenizer {
 			// TODO illegal? throw exception?
 			return la;
 		}
-		return new EQNameToken(pos, ncname.end, uri.string(), ncname.string());
+		return new EQNameToken(pos, ncname.end, uri.string(), null, ncname
+				.string());
 	}
 
 	protected Token laNCName() {

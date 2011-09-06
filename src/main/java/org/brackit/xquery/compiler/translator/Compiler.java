@@ -1178,8 +1178,8 @@ public class Compiler implements Translator {
 		ElementExpr.NS[] ns = new ElementExpr.NS[nsCnt];
 		for (int i = 0; i < nsCnt; i++) {
 			AST nsDecl = node.getChild(pos++);
-			Str prefix = new Str(nsDecl.getChild(0).getStringValue());
-			AnyURI uri = new AnyURI(nsDecl.getChild(1).getStringValue());
+			String prefix = nsDecl.getChild(0).getStringValue();
+			String uri = nsDecl.getChild(1).getStringValue();
 			ns[i] = new ElementExpr.NS(prefix, uri);
 		}
 		Expr nameExpr = expr(node.getChild(pos++), true);

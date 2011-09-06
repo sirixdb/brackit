@@ -28,17 +28,17 @@
 package org.brackit.xquery.node.d2linked;
 
 import java.util.Map;
+import java.util.TreeMap;
 
-import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.stream.EmptyStream;
+import org.brackit.xquery.node.stream.IteratorStream;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.NamespaceScope;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
+import org.brackit.xquery.xdm.Scope;
 import org.brackit.xquery.xdm.Stream;
 
 /**
@@ -46,19 +46,55 @@ import org.brackit.xquery.xdm.Stream;
  * @author Sebastian Baechle
  * 
  */
-public final class ElementD2Node extends ParentD2Node {
-	Map<Str, AnyURI> nsMappings;
+public final class ElementD2Node extends ParentD2Node implements Scope {
+	Map<String, String> nsMappings;
 	QNm name;
 	D2Node firstAttribute;
 
-	public ElementD2Node(QNm name) {
+	public ElementD2Node(QNm name) throws DocumentException {
 		super(null, FIRST);
-		this.name = name;
+		this.name = checkName(name);
 	}
 
-	ElementD2Node(ParentD2Node parent, int[] division, QNm name) {
+	ElementD2Node(ParentD2Node parent, int[] division, QNm name)
+			throws DocumentException {
 		super(parent, division);
-		this.name = name;
+		this.name = checkName(name);
+	}
+
+	QNm checkName(QNm name) throws DocumentException {
+		if (name.getPrefix() == null) {
+			return name;
+		}
+		String mappedUri = resolvePrefix(name.getPrefix());
+		String uri = name.getNamespaceURI();
+		if (mappedUri == null) {
+			addPrefix(name.getPrefix(), uri);
+			return name;
+		}
+		if (mappedUri.equals(uri)) {
+			return name;
+		}
+		// create a subsitute prefix name
+		if (nsMappings == null) {
+			name = new QNm(uri, name.getPrefix() + "_1", name.getLocalName());
+			addPrefix(name.getPrefix(), uri);
+			return name;
+		}
+		int i = 1;
+		while (true) {
+			String newPrefix = name.getPrefix() + "_" + i++;
+			mappedUri = nsMappings.get(newPrefix);
+			if (mappedUri == null) {
+				name = new QNm(uri, newPrefix, name.getLocalName());
+				addPrefix(name.getPrefix(), uri);
+				return name;
+			} else if (mappedUri.equals(uri)) {
+				// re-use prefix
+				name = new QNm(uri, newPrefix, name.getLocalName());
+				return name;
+			}
+		}
 	}
 
 	@Override
@@ -68,11 +104,6 @@ public final class ElementD2Node extends ParentD2Node {
 
 	public Kind getKind() {
 		return Kind.ELEMENT;
-	}
-
-	@Override
-	public NamespaceScope getScope() {
-		return new D2NodeNSScope(this);
 	}
 
 	@Override
@@ -161,14 +192,15 @@ public final class ElementD2Node extends ParentD2Node {
 	@Override
 	public D2Node setAttribute(QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
+		checkName(name);
 		if (firstAttribute == null) {
 			return (firstAttribute = new AttributeD2Node(this, name, value));
 		} else {
 			D2Node prev = null;
 			for (D2Node attribute = firstAttribute; attribute != null; attribute = attribute.sibling) {
 				if (attribute.getName().equals(name)) {
-					attribute.setValue(value);
-					return attribute;
+					throw new DocumentException(
+							"Attribute '%s' already exists", name);
 				}
 				prev = attribute;
 			}
@@ -180,7 +212,7 @@ public final class ElementD2Node extends ParentD2Node {
 	@Override
 	public void setName(QNm name) throws OperationNotSupportedException,
 			DocumentException {
-		this.name = name;
+		this.name = checkName(name);
 	}
 
 	@Override
@@ -188,6 +220,65 @@ public final class ElementD2Node extends ParentD2Node {
 			DocumentException {
 		firstChild = null;
 		append(Kind.TEXT, null, value);
+	}
+
+	@Override
+	public Scope getScope() {
+		return this;
+	}
+
+	@Override
+	public Stream<String> localPrefixes() throws DocumentException {
+		if (nsMappings == null) {
+			return new EmptyStream<String>();
+		}
+		return new IteratorStream<String>(nsMappings.keySet());
+	}
+
+	@Override
+	public void addPrefix(String prefix, String uri) throws DocumentException {
+		// TODO checks
+		if (nsMappings == null) {
+			// use tree map because we expect only a few
+			// entries and a tree map is much more space efficient
+			nsMappings = new TreeMap<String, String>();
+		}
+		nsMappings.put(prefix, uri);
+	}
+
+	@Override
+	public String defaultNS() throws DocumentException {
+		return resolvePrefix("");
+	}
+
+	@Override
+	public void setDefaultNS(String uri) throws DocumentException {
+		addPrefix("", uri);
+	}
+
+	@Override
+	public String resolvePrefix(String prefix) throws DocumentException {
+		if (prefix == null) {
+			prefix = "";
+		}
+		ElementD2Node n = this;
+		while (true) {
+			if (n.nsMappings != null) {
+				String uri = n.nsMappings.get(prefix);
+				if (uri != null) {
+					return uri;
+				}
+			}
+			ParentD2Node p = n.parent;
+			if ((p == null) || (!(p instanceof ElementD2Node))) {
+				break;
+			}
+			n = (ElementD2Node) p;
+		}
+		if (prefix.equals("xml")) {
+			return "http://www.w3.org/XML/1998/namespace";
+		}
+		return "";
 	}
 
 	@Override

@@ -170,24 +170,20 @@ public class Namespaces {
 				"Undefined namespace prefix: '%s'", prefix);
 	}
 
-	public QNm expand(QNm qname) throws QueryException {
-		return expand(qname, "");
+	public QNm expand(String prefix, String localname) throws QueryException {
+		return expand(prefix, localname, "");
 	}
 
-	public QNm expandElement(QNm qname) throws QueryException {
-		return expand(qname, defaultElementNamespace);
+	public QNm expandElement(String prefix, String localname) throws QueryException {
+		return expand(prefix, localname, defaultElementNamespace);
 	}
 
-	public QNm expandFunction(QNm qname) throws QueryException {
-		return expand(qname, defaultFunctionNamespace);
+	public QNm expandFunction(String prefix, String localname) throws QueryException {
+		return expand(prefix, localname, defaultFunctionNamespace);
 	}
 
-	public QNm expand(QNm qname, String defaultNSURI) throws QueryException {
-		if (qname.getNamespaceURI() != null) {
-			return qname;
-		}
-		String prefix = qname.getPrefix();
+	public QNm expand(String prefix, String localname, String defaultNSURI) throws QueryException {
 		String namespaceURI = (prefix != null) ? resolve(prefix) : defaultNSURI;
-		return new QNm(namespaceURI, prefix, qname.getLocalName());
+		return new QNm(namespaceURI, prefix, localname);
 	}
 }

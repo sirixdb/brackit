@@ -45,20 +45,27 @@ public final class AttributeD2Node extends D2Node {
 	QNm name;
 	Una value;
 
-	AttributeD2Node(ParentD2Node parent, int[] division, QNm name, Atomic value)
+	AttributeD2Node(ElementD2Node parent, int[] division, QNm name, Atomic value)
 			throws DocumentException {
 		super(parent, division);
-		this.name = name;
+		this.name = checkName(name);
 		this.value = value.asUna();
 	}
 
-	AttributeD2Node(ParentD2Node parent, QNm name, Atomic value)
+	AttributeD2Node(ElementD2Node parent, QNm name, Atomic value)
 			throws DocumentException {
 		this(parent, FIRST, name, value);
 	}
 
 	public AttributeD2Node(QNm name, Atomic value) throws DocumentException {
 		this(null, FIRST, name, value);
+	}
+
+	private QNm checkName(QNm name) throws DocumentException {
+		if ((name.getPrefix() == null) || (parent == null)) {
+			return name;
+		}
+		return ((ElementD2Node) parent).checkName(name);
 	}
 
 	@Override
@@ -74,7 +81,7 @@ public final class AttributeD2Node extends D2Node {
 	@Override
 	public void setName(QNm name) throws OperationNotSupportedException,
 			DocumentException {
-		this.name = name;
+		this.name = checkName(name);
 	}
 
 	@Override
@@ -186,6 +193,88 @@ public final class AttributeD2Node extends D2Node {
 		};
 		parser.parse(builder);
 		return builder.root();
+	}
+
+	@Override
+	public D2Node getPreviousSibling() throws DocumentException {
+		return null;
+	}
+
+	@Override
+	public D2Node getNextSibling() throws DocumentException {
+		return null;
+	}
+
+	@Override
+	public D2Node append(Kind kind, QNm name, Atomic value)
+			throws OperationNotSupportedException, DocumentException {
+		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public D2Node append(Node<?> child) throws OperationNotSupportedException,
+			DocumentException {
+		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public D2Node append(SubtreeParser parser)
+			throws OperationNotSupportedException, DocumentException {
+		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public D2Node insertAfter(Kind kind, QNm name, Atomic value)
+			throws OperationNotSupportedException, DocumentException {
+		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public D2Node insertAfter(Node<?> node)
+			throws OperationNotSupportedException, DocumentException {
+		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public D2Node insertAfter(SubtreeParser parser)
+			throws OperationNotSupportedException, DocumentException {
+		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public D2Node insertBefore(Kind kind, QNm name, Atomic value)
+			throws OperationNotSupportedException, DocumentException {
+		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public D2Node insertBefore(Node<?> node)
+			throws OperationNotSupportedException, DocumentException {
+		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public D2Node insertBefore(SubtreeParser parser)
+			throws OperationNotSupportedException, DocumentException {
+		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public D2Node prepend(Kind kind, QNm name, Atomic value)
+			throws OperationNotSupportedException, DocumentException {
+		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public D2Node prepend(Node<?> child) throws OperationNotSupportedException,
+			DocumentException {
+		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public D2Node prepend(SubtreeParser parser)
+			throws OperationNotSupportedException, DocumentException {
+		throw new OperationNotSupportedException();
 	}
 
 	@Override

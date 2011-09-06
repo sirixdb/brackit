@@ -31,10 +31,8 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.parser.SubtreeHandler;
 import org.brackit.xquery.node.parser.SubtreeListener;
 import org.brackit.xquery.xdm.DocumentException;
@@ -55,18 +53,18 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 
 	private final E rootParent;
 
-	private Map<Str, AnyURI> nsMappings;
+	private Map<String, String> nsMappings;
 
 	@Override
-	public void endMapping(Str prefix) throws DocumentException {
+	public void endMapping(String prefix) throws DocumentException {
 		// ignore???
 	}
 
 	@Override
-	public void startMapping(Str prefix, AnyURI uri) throws DocumentException {
+	public void startMapping(String prefix, String uri) throws DocumentException {
 		if (nsMappings == null) {
 			// use tree map for space-efficiency
-			nsMappings = new TreeMap<Str, AnyURI>();
+			nsMappings = new TreeMap<String, String>();
 		}
 		nsMappings.put(prefix, uri);
 	}
@@ -86,7 +84,7 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 	protected abstract E buildDocument() throws DocumentException;
 
 	protected abstract E buildElement(E parent, QNm name,
-			Map<Str, AnyURI> nsMappings) throws DocumentException;
+			Map<String, String> nsMappings) throws DocumentException;
 
 	protected abstract E buildAttribute(E parent, QNm name, Atomic value)
 			throws DocumentException;

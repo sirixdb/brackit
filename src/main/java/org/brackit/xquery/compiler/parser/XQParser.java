@@ -2731,7 +2731,8 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		consume(la);
-		AST call = new AST(XQ.FunctionCall, expandFunction(la.getQName()));
+		AST call = new AST(XQ.FunctionCall, expandFunction(la.uri(), la
+				.prefix(), la.ncname()));
 		call.addChildren(argumentList());
 		return call;
 	}
@@ -2843,27 +2844,32 @@ public class XQParser extends Tokenizer {
 		// in-scope namespaces are now complete
 		// we can start to expand the QNames
 		// of the current element and all direct attributes
-		QNm stagQname = (QNm) stag.getValue();
-		stag.setValue(expandElement(stagQname));
+		QNm unexNam = (QNm) stag.getValue();
+		QNm name = expandElement(null, unexNam.getPrefix(), unexNam
+				.getLocalName());
+		stag.setValue(name);
 		for (int i = 0; i < cseq.getChildCount(); i++) {
 			att = cseq.getChild(i);
 			AST attName = att.getChild(0);
 			// CAVEAT: unprefixed attributes are not
 			// in the default element namespace!
-			attName.setValue(expandElement((QNm) attName.getValue()));
+			QNm unExAtt = (QNm) attName.getValue();
+			attName.setValue(expand(null, unExAtt.getPrefix(), unExAtt
+					.getLocalName()));
 		}
 
 		if (!attempt("/>")) {
 			consume(">");
 			dirElementContentList(cseq);
 			consume("</");
-			QNm eTagQname = qname(false, true, Expand.SKIP);
+			skipS();
+			EQNameToken la = laQName();
 			// match nesting based on literal qname string
-			if ((eTagQname == null)
-					|| (!eTagQname.toString().equals(stagQname.toString()))) {
+			if ((la == null) || (!la.string().equals(name.toString()))) {
 				throw new TokenizerException("Expected closing tag </%s>: %s",
-						stagQname, paraphrase());
+						name, paraphrase());
 			}
+			consume(la);
 			skipS();
 			consume(">");
 		}
@@ -3172,21 +3178,21 @@ public class XQParser extends Tokenizer {
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laEQNameSkipWS(la, true);
+		EQNameToken la2 = laEQNameSkipWS(la, true);
 		AST elem;
 		if (la2 != null) {
 			consume(la);
 			consume(la2);
 			elem = new AST(XQ.CompElementConstructor);
-			QNm qname = expandElement(((EQNameToken) la2).getQName());
+			QNm qname = expandElement(la2.uri(), la2.prefix(), la2.ncname());
 			elem.addChild(new AST(XQ.QNm, qname));
 		} else {
-			la2 = laSkipWS(la, "{");
-			if (la2 == null) {
+			Token la3 = laSkipWS(la, "{");
+			if (la3 == null) {
 				return null;
 			}
 			consume(la);
-			consume(la2);
+			consume(la3);
 			elem = new AST(XQ.CompElementConstructor);
 			elem.addChild(expr());
 			consumeSkipWS("}");
@@ -3209,21 +3215,21 @@ public class XQParser extends Tokenizer {
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laEQNameSkipWS(la, true);
+		EQNameToken la2 = laEQNameSkipWS(la, true);
 		AST attr;
 		if (la2 != null) {
 			consume(la);
 			consume(la2);
 			attr = new AST(XQ.CompAttributeConstructor);
-			QNm qname = expand(((EQNameToken) la2).getQName());
+			QNm qname = expand(la2.uri(), la2.prefix(), la2.ncname());
 			attr.addChild(new AST(XQ.QNm, qname));
 		} else {
-			la2 = laSkipWS(la, "{");
-			if (la2 == null) {
+			Token la3 = laSkipWS(la, "{");
+			if (la3 == null) {
 				return null;
 			}
 			consume(la);
-			consume(la2);
+			consume(la3);
 			attr = new AST(XQ.CompAttributeConstructor);
 			attr.addChild(expr());
 			consumeSkipWS("}");
@@ -3364,7 +3370,8 @@ public class XQParser extends Tokenizer {
 		if (la2 == null) {
 			return null;
 		}
-		AST eqname = new AST(XQ.QNm, expandFunction(la.getQName()));
+		AST eqname = new AST(XQ.QNm, expandFunction(la.uri(), la.prefix(), la
+				.ncname()));
 		consume(la);
 		consume(la2);
 		AST no = integerLiteral(false, true);
@@ -3493,7 +3500,7 @@ public class XQParser extends Tokenizer {
 			throw new TokenizerException("Expected QName: '%s'", paraphrase());
 		}
 		consume(la);
-		return expand(la.getQName(), expand);
+		return expand(la.uri(), la.prefix, la.ncname(), expand);
 	}
 
 	private AST eqnameLiteral(boolean cond, boolean skipWS, Expand expand)
@@ -3506,12 +3513,12 @@ public class XQParser extends Tokenizer {
 			throw new TokenizerException("Expected QName: '%s'", paraphrase());
 		}
 		consume(la);
-		return new AST(XQ.QNm, expand(la.getQName(), expand));
+		return new AST(XQ.QNm, expand(la.uri(), la.prefix, la.ncname(), expand));
 	}
 
 	private QNm qname(boolean cond, boolean skipWS, Expand expand)
 			throws TokenizerException {
-		QNameToken la = (skipWS) ? laQNameSkipWS() : laQName();
+		EQNameToken la = (skipWS) ? laQNameSkipWS() : laQName();
 		if (la == null) {
 			if (cond) {
 				return null;
@@ -3519,12 +3526,12 @@ public class XQParser extends Tokenizer {
 			throw new TokenizerException("Expected QName: '%s'", paraphrase());
 		}
 		consume(la);
-		return expand(la.getQName(), expand);
+		return expand(la.uri(), la.prefix, la.ncname(), expand);
 	}
 
 	private AST qnameLiteral(boolean cond, boolean skipWS, Expand expand)
 			throws TokenizerException {
-		QNameToken la = (skipWS) ? laQNameSkipWS() : laQName();
+		EQNameToken la = (skipWS) ? laQNameSkipWS() : laQName();
 		if (la == null) {
 			if (cond) {
 				return null;
@@ -3532,7 +3539,7 @@ public class XQParser extends Tokenizer {
 			throw new TokenizerException("Expected QName: '%s'", paraphrase());
 		}
 		consume(la);
-		return new AST(XQ.QNm, expand(la.getQName(), expand));
+		return new AST(XQ.QNm, expand(la.uri(), la.prefix, la.ncname(), expand));
 	}
 
 	private AST doubleLiteral(boolean cond, boolean skipWS)
@@ -3608,49 +3615,68 @@ public class XQParser extends Tokenizer {
 		return asts;
 	}
 
-	private QNm expandElement(QNm qname) throws TokenizerException {
+	private QNm expandElement(String uri, String prefix, String localname)
+			throws TokenizerException {
 		if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
-			log.debug("Expand element QName " + qname);
+			log.debug(String.format(
+					"Expand element QName URI=%s prefix=%s localname=%s", uri,
+					prefix, localname));
 		}
 		try {
-			return staticNS.expandElement(qname);
+			if (uri != null) {
+				return new QNm(uri, prefix, localname);
+			}
+			return staticNS.expandElement(prefix, localname);
 		} catch (QueryException e) {
 			throw new XQTokenizerException(e.getCode(), e.getMessage());
 		}
 	}
 
-	private QNm expandFunction(QNm qname) throws TokenizerException {
+	private QNm expandFunction(String uri, String prefix, String localname)
+			throws TokenizerException {
 		if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
-			log.debug("Expand function QName " + qname);
+			log.debug(String.format(
+					"Expand function QName URI=%s prefix=%s localname=%s", uri,
+					prefix, localname));
 		}
 		try {
-			return staticNS.expandFunction(qname);
+			if (uri != null) {
+				return new QNm(uri, prefix, localname);
+			}
+			return staticNS.expandFunction(prefix, localname);
 		} catch (QueryException e) {
 			throw new XQTokenizerException(e.getCode(), e.getMessage());
 		}
 	}
 
-	private QNm expand(QNm qname) throws TokenizerException {
+	private QNm expand(String uri, String prefix, String localname)
+			throws TokenizerException {
 		if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
-			log.debug("Expand function QName " + qname);
+			log.debug(String.format(
+					"Expand QName URI=%s prefix=%s localname=%s", uri, prefix,
+					localname));
 		}
 		try {
-			return staticNS.expand(qname);
+			if (uri != null) {
+				return new QNm(uri, prefix, localname);
+			}
+			return staticNS.expand(prefix, localname);
 		} catch (QueryException e) {
 			throw new XQTokenizerException(e.getCode(), e.getMessage());
 		}
 	}
 
-	private QNm expand(QNm qname, Expand expand) throws TokenizerException {
+	private QNm expand(String uri, String prefix, String localname,
+			Expand expand) throws TokenizerException {
 		switch (expand) {
 		case QNAME:
-			return expand(qname);
+			return expand(uri, prefix, localname);
 		case ELEMENT_OR_TYPE:
-			return expandElement(qname);
+			return expandElement(uri, prefix, localname);
 		case FUNCTION:
-			return expandFunction(qname);
+			return expandFunction(uri, prefix, localname);
 		default:
-			return qname;
+			return new QNm(uri, prefix, localname);
 		}
 	}
 

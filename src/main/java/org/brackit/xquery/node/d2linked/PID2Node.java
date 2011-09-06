@@ -40,7 +40,7 @@ import org.brackit.xquery.xdm.XMLChar;
  * @author Sebastian Baechle
  * 
  */
-public final class PID2Node extends ParentD2Node {
+public final class PID2Node extends D2Node {
 	QNm target;
 	Str value;
 
@@ -55,7 +55,7 @@ public final class PID2Node extends ParentD2Node {
 	}
 
 	private QNm checkName(QNm target) throws DocumentException {		
-		if ((target.getNamespaceURI() != null) && (!target.getNamespaceURI().isEmpty())) {
+		if (target.getNamespaceURI() != null) {
 			throw new DocumentException("The target name of a processing instrcution must not have a namespace");
 		}
 		String s = target.stringValue();

@@ -30,9 +30,7 @@ package org.brackit.xquery.expr;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Kind;
@@ -47,19 +45,19 @@ import org.brackit.xquery.xdm.Sequence;
 public class ElementExpr extends ConstructedNodeBuilder implements Expr {
 
 	public static class NS {
-		private final Str prefix;
-		private final AnyURI uri;
+		private final String prefix;
+		private final String uri;
 
-		public NS(Str prefix, AnyURI uri) {
+		public NS(String prefix, String uri) {
 			this.prefix = prefix;
 			this.uri = uri;
 		}
 
-		public Str getPrefix() {
+		public String getPrefix() {
 			return prefix;
 		}
 
-		public AnyURI getURI() {
+		public String getURI() {
 			return uri;
 		}
 	}

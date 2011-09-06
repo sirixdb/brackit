@@ -131,7 +131,7 @@ public class PipelineCompiler extends Compiler {
 		}
 		QNm prop = (QNm) node.getProperty("check");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().expand(prop), groupBy.check());
+			table.resolve(prop, groupBy.check());
 		}
 		return groupBy;
 	}
@@ -325,7 +325,7 @@ public class PipelineCompiler extends Compiler {
 		OrderBy orderBy = new OrderBy(in, orderByExprs, orderBySpec);
 		QNm prop = (QNm) node.getProperty("check");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().expand(prop), orderBy.check());
+			table.resolve(prop, orderBy.check());
 		}
 		return orderBy;
 	}

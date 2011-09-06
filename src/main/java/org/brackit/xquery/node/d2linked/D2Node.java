@@ -40,7 +40,7 @@ import org.brackit.xquery.node.stream.EmptyStream;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.NamespaceScope;
+import org.brackit.xquery.xdm.Scope;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
 import org.brackit.xquery.xdm.Stream;
@@ -69,10 +69,6 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 		}
 	}
 
-	public static void main(String[] args) {
-
-	}
-
 	protected final ParentD2Node parent;
 
 	protected final int[] division;
@@ -91,13 +87,6 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 		this.localFragmentID = (parent == null) ? localFragmentID()
 				: parent.localFragmentID;
 		;
-	}
-
-	@Override
-	public NamespaceScope getScope() {
-		return ((parent != null) && (parent.getKind() == Kind.ELEMENT)) ? parent
-				.getScope()
-				: new D2NodeNSScope(null);
 	}
 
 	private D2Node getRoot() {
@@ -304,95 +293,13 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	}
 
 	@Override
-	public D2Node setAttribute(Node<?> attribute)
-			throws OperationNotSupportedException, DocumentException {
-		throw new OperationNotSupportedException();
-	}
-
-	@Override
-	public D2Node append(Node<?> child) throws OperationNotSupportedException,
-			DocumentException {
-		throw new OperationNotSupportedException();
-	}
-
-	@Override
-	public D2Node append(SubtreeParser parser)
-			throws OperationNotSupportedException, DocumentException {
-		throw new OperationNotSupportedException();
-	}
-
-	@Override
-	public D2Node append(Kind kind, QNm name, Atomic value)
-			throws OperationNotSupportedException, DocumentException {
-		throw new OperationNotSupportedException();
-	}
-
-	@Override
-	public D2Node prepend(Kind kind, QNm name, Atomic value)
-			throws OperationNotSupportedException, DocumentException {
-		throw new OperationNotSupportedException();
-	}
-
-	@Override
-	public D2Node getAttribute(QNm name) throws DocumentException {
-		return null;
-	}
-
-	@Override
-	public Stream<D2Node> getAttributes()
-			throws OperationNotSupportedException, DocumentException {
-		return new EmptyStream<D2Node>();
-	}
-
-	@Override
-	public Stream<D2Node> getChildren() throws DocumentException {
-		return new EmptyStream<D2Node>();
-	}
-
-	@Override
-	public D2Node getFirstChild() throws DocumentException {
-		return null;
-	}
-
-	@Override
-	public D2Node getLastChild() throws DocumentException {
-		return null;
-	}
-
-	@Override
-	public D2Node getNextSibling() throws DocumentException {
-		return null;
+	public Scope getScope() {
+		throw null;
 	}
 
 	@Override
 	public D2Node getParent() throws DocumentException {
 		return parent;
-	}
-
-	@Override
-	public D2Node getPreviousSibling() throws DocumentException {
-		return null;
-	}
-
-	@Override
-	public Stream<D2Node> getSubtree() throws DocumentException {
-		return new AtomStream<D2Node>(this);
-	}
-
-	@Override
-	public Stream<? extends D2Node> getDescendantOrSelf()
-			throws DocumentException {
-		return new AtomStream<D2Node>(this);
-	}
-
-	@Override
-	public boolean hasAttributes() throws DocumentException {
-		return false;
-	}
-
-	@Override
-	public boolean hasChildren() throws DocumentException {
-		return false;
 	}
 
 	@Override
@@ -518,10 +425,6 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 		return (parent == null);
 	}
 
-	public boolean isDocumentOf(Node<?> node) {
-		return false;
-	}
-
 	@Override
 	public boolean isSiblingOf(Node<?> node) {
 		return (node != null)
@@ -529,6 +432,144 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 				// node
 				&& ((Object) node != this) && (parent != null)
 				&& (node.isChildOf(parent));
+	}
+	
+	public boolean isDocumentOf(Node<?> node) {
+		return false;
+	}
+
+	@Override
+	public boolean hasAttributes() throws DocumentException {
+		return false;
+	}
+
+	@Override
+	public boolean hasChildren() throws DocumentException {
+		return false;
+	}
+	
+	@Override
+	public void delete() throws DocumentException {
+		if (parent != null) {
+			if (getKind() == Kind.ATTRIBUTE) {
+				parent.deleteAttribute(getName());
+			} else {
+				parent.deleteChild(this);
+			}
+		}
+	}
+
+	@Override
+	public void parse(SubtreeHandler handler) throws DocumentException {
+		new D2NodeParser(this).parse(handler);
+	}
+	
+	@Override
+	public D2Node getNextSibling() throws DocumentException {
+		if (parent == null) {
+			return null;
+		}
+		return parent.nextSiblingOf(this);
+	}
+
+	@Override
+	public D2Node getPreviousSibling() throws DocumentException {
+		if (parent == null) {
+			return null;
+		}
+		return parent.previousSiblingOf(this);
+	}
+	
+	@Override
+	public D2Node getFirstChild() throws DocumentException {
+		return null;
+	}
+
+	@Override
+	public D2Node getLastChild() throws DocumentException {
+		return null;
+	}
+
+	@Override
+	public Stream<D2Node> getChildren() throws DocumentException {
+		return new EmptyStream<D2Node>();
+	}
+
+	@Override
+	public D2Node getAttribute(QNm name) throws DocumentException {
+		return null;
+	}
+
+	@Override
+	public Stream<D2Node> getAttributes()
+			throws OperationNotSupportedException, DocumentException {
+		return new EmptyStream<D2Node>();
+	}
+
+	@Override
+	public Stream<D2Node> getSubtree() throws DocumentException {
+		return new AtomStream<D2Node>(this);
+	}
+
+	@Override
+	public Stream<? extends D2Node> getDescendantOrSelf()
+			throws DocumentException {
+		return new AtomStream<D2Node>(this);
+	}
+
+	
+	@Override
+	public void setName(QNm name) throws OperationNotSupportedException,
+			DocumentException {
+		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public void setValue(Atomic value) throws OperationNotSupportedException,
+			DocumentException {
+		throw new OperationNotSupportedException();
+	}
+	
+	@Override
+	public D2Node setAttribute(Node<?> attribute)
+			throws OperationNotSupportedException, DocumentException {
+		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public D2Node setAttribute(QNm name, Atomic value)
+			throws OperationNotSupportedException, DocumentException {
+		throw new OperationNotSupportedException();
+	}
+	
+	@Override
+	public boolean deleteAttribute(QNm name)
+			throws OperationNotSupportedException, DocumentException {
+		throw new OperationNotSupportedException();
+	}
+	
+	@Override
+	public D2Node append(Node<?> child) throws OperationNotSupportedException,
+			DocumentException {
+		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public D2Node append(SubtreeParser parser)
+			throws OperationNotSupportedException, DocumentException {
+		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public D2Node append(Kind kind, QNm name, Atomic value)
+			throws OperationNotSupportedException, DocumentException {
+		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public D2Node prepend(Kind kind, QNm name, Atomic value)
+			throws OperationNotSupportedException, DocumentException {
+		throw new OperationNotSupportedException();
 	}
 
 	@Override
@@ -546,94 +587,94 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	@Override
 	public D2Node insertAfter(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
-		throw new OperationNotSupportedException();
+		if (parent == null) {
+			throw new DocumentException("%s has no parent", this);
+		}
+		return parent.insertAfter(kind, name, value);
 	}
 
 	@Override
 	public D2Node insertAfter(Node<?> child)
 			throws OperationNotSupportedException, DocumentException {
-		throw new OperationNotSupportedException();
+		if (parent == null) {
+			throw new DocumentException("%s has no parent", this);
+		}
+		return parent.insertAfter(this, child);
 	}
 
 	@Override
 	public D2Node insertAfter(SubtreeParser parser)
 			throws OperationNotSupportedException, DocumentException {
-		throw new OperationNotSupportedException();
+		if (parent == null) {
+			throw new DocumentException("%s has no parent", this);
+		}
+		return parent.insertAfter(this, parser);
 	}
 
 	@Override
 	public D2Node insertBefore(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
-		throw new OperationNotSupportedException();
+		if (parent == null) {
+			throw new DocumentException("%s has no parent", this);
+		}
+		return parent.insertBefore(kind, name, value);
 	}
 
 	@Override
 	public D2Node insertBefore(Node<?> child)
 			throws OperationNotSupportedException, DocumentException {
-		throw new OperationNotSupportedException();
+		if (parent == null) {
+			throw new DocumentException("%s has no parent", this);
+		}
+		return parent.insertBefore(this, child);
 	}
 
 	@Override
 	public D2Node insertBefore(SubtreeParser parser)
 			throws OperationNotSupportedException, DocumentException {
-		throw new OperationNotSupportedException();
+		if (parent == null) {
+			throw new DocumentException("%s has no parent", this);
+		}
+		return parent.insertBefore(this, parser);
 	}
 
 	@Override
 	public D2Node replaceWith(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
-		throw new OperationNotSupportedException();
+		if (parent == null) {
+			throw new DocumentException("Cannot replace node without parent");
+		}
+
+		return parent.replace(this, kind, name, value);
 	}
 
 	@Override
 	public D2Node replaceWith(Node<?> node)
 			throws OperationNotSupportedException, DocumentException {
-		throw new OperationNotSupportedException();
+		if (parent == null) {
+			throw new DocumentException("Cannot replace node without parent");
+		}
+
+		return parent.replace(this, node);
 	}
 
 	@Override
 	public D2Node replaceWith(SubtreeParser parser)
 			throws OperationNotSupportedException, DocumentException {
-		throw new OperationNotSupportedException();
-	}
+		final D2Node me = this;
+		D2NodeBuilder builder = new D2NodeBuilder() {
+			@Override
+			D2Node first(Kind kind, QNm name, Atomic value)
+					throws DocumentException {
+				if (parent == null) {
+					throw new DocumentException(
+							"Cannot replace node without parent");
+				}
 
-	@Override
-	public boolean deleteAttribute(QNm name)
-			throws OperationNotSupportedException, DocumentException {
-		throw new OperationNotSupportedException();
-	}
-
-	@Override
-	public D2Node setAttribute(QNm name, Atomic value)
-			throws OperationNotSupportedException, DocumentException {
-		throw new OperationNotSupportedException();
-	}
-
-	@Override
-	public void setName(QNm name) throws OperationNotSupportedException,
-			DocumentException {
-		throw new OperationNotSupportedException();
-	}
-
-	@Override
-	public void setValue(Atomic value) throws OperationNotSupportedException,
-			DocumentException {
-		throw new OperationNotSupportedException();
-	}
-
-	@Override
-	public void delete() throws DocumentException {
-		if (parent != null) {
-			if (getKind() == Kind.ATTRIBUTE) {
-				parent.deleteAttribute(getName());
-			} else {
-				parent.deleteChild(this);
+				return parent.replace(me, kind, name, value);
 			}
-		}
-	}
-
-	@Override
-	public void parse(SubtreeHandler handler) throws DocumentException {
-		new D2NodeParser(this).parse(handler);
+		};
+		parser.parse(builder);
+		return builder.root();
 	}
 }

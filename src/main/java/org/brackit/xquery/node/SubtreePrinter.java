@@ -30,10 +30,8 @@ package org.brackit.xquery.node;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 
-import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.parser.DefaultHandler;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Node;
@@ -65,11 +63,11 @@ public class SubtreePrinter extends DefaultHandler {
 	 * Linked list of current namespace mappings	
 	 */
 	private static class NS {
-		private final Str prefix;
-		private final AnyURI uri;
+		private final String prefix;
+		private final String uri;
 		private NS next;
 		
-		NS(Str prefix, AnyURI uri) {
+		NS(String prefix, String uri) {
 			this.prefix = prefix;
 			this.uri = uri;
 		}
@@ -170,7 +168,7 @@ public class SubtreePrinter extends DefaultHandler {
 		out.print("<");
 		out.print(name);
 		for (NS n = ns; n != null; n = n.next) {			
-			if (!n.prefix.str.isEmpty()) {
+			if (n.prefix != null) {
 				out.print(" xmlns:");
 				out.print(n.prefix);
 			} else {
@@ -288,7 +286,7 @@ public class SubtreePrinter extends DefaultHandler {
 	}
 
 	@Override
-	public void endMapping(Str prefix) throws DocumentException {
+	public void endMapping(String prefix) throws DocumentException {
 //		NS p = null;
 //		for (NS ns = this.ns; ns != null; ns = ns.next) {
 //			if (ns.prefix.atomicCmp(prefix) == 0) {
@@ -305,7 +303,7 @@ public class SubtreePrinter extends DefaultHandler {
 	}
 
 	@Override
-	public void startMapping(Str prefix, AnyURI uri) throws DocumentException {
+	public void startMapping(String prefix, String uri) throws DocumentException {
 		NS tmp = ns;
 		ns = new NS(prefix, uri);
 		ns.next = tmp;

@@ -99,7 +99,7 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
 
 	@Override
 	protected D2Node buildElement(D2Node parent, QNm name,
-			Map<Str, AnyURI> nsMappings) throws DocumentException {
+			Map<String, String> nsMappings) throws DocumentException {
 		ElementD2Node e;
 		if (parent != null) {
 			e = (ElementD2Node) ((ParentD2Node) parent).insertChild(sibling,

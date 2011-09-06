@@ -68,7 +68,7 @@ public class D2NodeParser implements SubtreeParser {
 		if (kind == Kind.ELEMENT) {
 			ElementD2Node elem = (ElementD2Node) node;
 			if (elem.nsMappings != null) {
-				for (Entry<Str, AnyURI> ns : elem.nsMappings.entrySet()) {
+				for (Entry<String, String> ns : elem.nsMappings.entrySet()) {
 					handler.startMapping(ns.getKey(), ns.getValue());
 				}
 			}
@@ -82,7 +82,7 @@ public class D2NodeParser implements SubtreeParser {
 			}
 			handler.endElement(elem.name);
 			if (elem.nsMappings != null) {
-				for (Entry<Str, AnyURI> ns : elem.nsMappings.entrySet()) {
+				for (Entry<String, String> ns : elem.nsMappings.entrySet()) {
 					handler.endMapping(ns.getKey());
 				}
 			}

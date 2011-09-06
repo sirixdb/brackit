@@ -27,26 +27,32 @@
  */
 package org.brackit.xquery.xdm;
 
-import org.brackit.xquery.atomic.AnyURI;
-import org.brackit.xquery.atomic.Str;
-
 /**
- * A namespace scope comprises the default namespace and all namespace mappings
- * w.r.t. to a specific {@link Node}.
+ * <p>
+ * A scope comprises the in-scope namespace mappings and in-scope schema types.
+ * </p>
  * 
- * @see http://www.w3.org/TR/xml-names/
+ * @see http://www.w3.org/TR/xpath-datamodel-30/
+ * @see http://www.w3.org/TR/xml-names11/
  * 
  * @author Sebastian Baechle
  * 
  */
-public interface NamespaceScope {
-	
-	public Stream<Str> localPrefixes() throws DocumentException;
-	
-	public AnyURI defaultNS() throws DocumentException;
+public interface Scope {
+
+	public Stream<String> localPrefixes() throws DocumentException;
 
 	/**
-	 * Add a new namespace mapping to this scope.
+	 * Returns the namespace URI for unprefixed QNames.
+	 * 
+	 * @return the namespace URI for unprefixed QNames
+	 * @throws DocumentException
+	 */
+	public String defaultNS() throws DocumentException;
+
+	/**
+	 * Add a new namespace mapping to this scope. If the prefix is
+	 * <code>null</code> or the empty string, the default namespace URI is set.
 	 * 
 	 * <p>
 	 * It must be ensured that:
@@ -60,9 +66,28 @@ public interface NamespaceScope {
 	 * 
 	 * @throws DocumentException
 	 */
-	public void addPrefix(Str prefix, AnyURI uri) throws DocumentException;
+	public void addPrefix(String prefix, String uri) throws DocumentException;
 
-	public AnyURI resolvePrefix(Str prefix) throws DocumentException;
+	/**
+	 * Resolves the namespace URI prefix for a given prefix. If the prefix is
+	 * <code>null</code> or the empty string, the default namespace URI is
+	 * returned. The method returns <code>null</code> if the given prefix is
+	 * <code>null</code> or the empty string and is not bound to a namespace
+	 * URI.
+	 * 
+	 * <p>
+	 * It must be ensured that:
+	 * <ul>
+	 * <li>the prefix xml is not bound to some namespace URI other than
+	 * http://www.w3.org/XML/1998/namespace</li>
+	 * <li>a prefix other than xml is bound to the namespace URI
+	 * http://www.w3.org/XML/1998/namespace</li>
+	 * <li>the prefix xmlns is bound to any namespace URI</li>
+	 * <li>a prefix is bound to the namespace URI http://www.w3.org/2000/xmlns/</li>
+	 * 
+	 * @throws DocumentException
+	 */
+	public String resolvePrefix(String prefix) throws DocumentException;
 
-	public void setDefaultNS(AnyURI uri) throws DocumentException;
+	public void setDefaultNS(String uri) throws DocumentException;
 }

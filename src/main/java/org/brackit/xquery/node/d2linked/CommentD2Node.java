@@ -39,7 +39,7 @@ import org.brackit.xquery.xdm.OperationNotSupportedException;
  * @author Sebastian Baechle
  * 
  */
-public final class CommentD2Node extends ParentD2Node {
+public final class CommentD2Node extends D2Node {
 	private Str value;
 
 	public CommentD2Node(Atomic value) throws DocumentException {

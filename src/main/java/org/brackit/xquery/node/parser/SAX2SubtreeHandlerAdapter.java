@@ -33,7 +33,6 @@ import java.io.FileReader;
 import java.io.IOException;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.atomic.Una;
@@ -283,7 +282,7 @@ public class SAX2SubtreeHandlerAdapter extends DefaultHandler2 {
 	@Override
 	public void endPrefixMapping(String prefix) throws SAXException {
 		try {
-			handler.endMapping(new Str(prefix));
+			handler.endMapping(prefix);
 		} catch (DocumentException e) {
 			throw new SAXException(e);
 		}
@@ -293,7 +292,7 @@ public class SAX2SubtreeHandlerAdapter extends DefaultHandler2 {
 	public void startPrefixMapping(String prefix, String uri)
 			throws SAXException {
 		try {
-			handler.startMapping(new Str(prefix), new AnyURI(uri));
+			handler.startMapping(prefix, uri);
 		} catch (QueryException e) {
 			throw new SAXException(e);
 		}

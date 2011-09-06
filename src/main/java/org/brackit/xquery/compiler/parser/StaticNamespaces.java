@@ -63,10 +63,11 @@ public class StaticNamespaces {
 			return ns.resolve(prefix);
 		}
 
-		QNm expand(QNm qname, String defaultNSURI) throws QueryException {
-			String prefix = qname.getPrefix();
-			String namespaceURI = (prefix != null) ? resolve(prefix) : defaultNSURI;			
-			return new QNm(namespaceURI, prefix, qname.getLocalName());
+		QNm expand(String prefix, String localname, String defaultNSURI)
+				throws QueryException {
+			String namespaceURI = (prefix != null) ? resolve(prefix)
+					: defaultNSURI;
+			return new QNm(namespaceURI, prefix, localname);
 		}
 
 		void declare(String prefix, String uri) throws QueryException {
@@ -114,27 +115,20 @@ public class StaticNamespaces {
 		ns.setDefaultFunctionNamespace(uri);
 	}
 
-	QNm expand(QNm qname) throws QueryException {
-		if (qname.getNamespaceURI() != null) {
-			return qname;
-		}
-		return (current != null) ? current.expand(qname, "") : ns
-				.expand(qname);
+	QNm expand(String prefix, String localname) throws QueryException {
+		return (current != null) ? current.expand(prefix, localname, "") : ns
+				.expand(prefix, localname);
 	}
 
-	QNm expandElement(QNm qname) throws QueryException {
-		if (qname.getNamespaceURI() != null) {
-			return qname;
-		}
-		return (current != null) ? current.expand(qname, ns
-				.getDefaultElementNamespace()) : ns.expandElement(qname);
+	QNm expandElement(String prefix, String localname) throws QueryException {
+		return (current != null) ? current.expand(prefix, localname, ns
+				.getDefaultElementNamespace()) : ns.expandElement(prefix,
+				localname);
 	}
 
-	QNm expandFunction(QNm qname) throws QueryException {
-		if (qname.getNamespaceURI() != null) {
-			return qname;
-		}
-		return (current != null) ? current.expand(qname, ns
-				.getDefaultFunctionNamespace()) : ns.expandFunction(qname);
+	QNm expandFunction(String prefix, String localname) throws QueryException {
+		return (current != null) ? current.expand(prefix, localname, ns
+				.getDefaultFunctionNamespace()) : ns.expandFunction(prefix,
+				localname);
 	}
 }

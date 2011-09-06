@@ -27,10 +27,8 @@
  */
 package org.brackit.xquery.node.parser;
 
-import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.xdm.DocumentException;
 
 /**
@@ -92,10 +90,10 @@ public class DefaultHandler implements SubtreeHandler {
 	}
 
 	@Override
-	public void endMapping(Str prefix) throws DocumentException {
+	public void endMapping(String prefix) throws DocumentException {
 	}
 
 	@Override
-	public void startMapping(Str prefix, AnyURI uri) throws DocumentException {	
+	public void startMapping(String prefix, String uri) throws DocumentException {	
 	}
 }

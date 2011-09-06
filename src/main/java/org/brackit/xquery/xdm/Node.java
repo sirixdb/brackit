@@ -38,50 +38,67 @@ import org.brackit.xquery.node.parser.SubtreeParser;
  * A {@link Node} defines the common interface of an XML node in the system.
  * 
  * <p>
- * The API is designed to follow the general rules of the <b>XQuery and XPath
- * Data Model 3.0</b> and the <b>XQuery Update Facility 1.0</b>.
+ * The API is designed to follow the general rules of the following standards:
+ * <ul>
+ * <li><b>XQuery and XPath Data Model 3.0</b></li>
+ * <li><b>Namespaces in XML 1.1</b></li>
+ * <li><b>XQuery Update Facility 1.0</b></li>
+ * </ul>
  * </p>
  * <p>
  * Each document node has a unique immutable identity, but several instances of
- * {@link Node Nodes} in the system may represent the same (logical) document
- * node. Thus, the identity of a node must not be checked with the
- * <code>==</code> operator but only with {@link Node#isSelf(Node)} or
- * {@link Node#equals(Object)}. As a result, implementors have also to ensure to
- * ensure to override {@link Object#equals(Object)} and
- * {@link Object#hashCode()} appropriately.
+ * {@link Node Nodes} in the system may represent the same (logical) XML node.
+ * Thus, the identity of a node must not be checked with the <code>==</code>
+ * operator but only with {@link Node#isSelf(Node)} or
+ * {@link Node#equals(Object)}. Implementors have also to ensure to ensure to
+ * override {@link Object#equals(Object)} and {@link Object#hashCode()}
+ * appropriately.
  * </p>
  * <p>
- * Methods reading unsupported properties of nodes like, e.g. <i>children</i>
+ * Methods reading unsupported properties of nodes like {@link #getChildren()}
  * for an <em>attribute</em> do not throw an exception but return
- * <code>null</code> or empty {@link Stream Streams}.
+ * <code>null</code> or an empty {@link Stream}.
  * </p>
  * <p>
  * Updates must not violate any of the consistency constraints defined in in the
- * data model. Consistency checks are generally not expected to be performed by
- * the caller. Implementors must ensure to perform appropriate checks
- * themselves. Note these checks do not include any validation according to
- * a specific schema. Schema validation is not considered in this API. 
+ * data model. This includes checks for invalid tree structures (e.g. more than
+ * one root element), invalid values (e.g. the character sequence "--" in
+ * comment values), and namespace violations (e.g. QName prefixes not bound to a
+ * valid namespace URI).
  * </p>
- * <p> 
- * Attempts to modify unsupported properties of nodes like, e.g.
- * <i>children</i> for an <em>attribute</em> throw an
+ * <p>
+ * Consistency checks are generally not expected to be performed by the caller.
+ * Implementors must ensure to perform appropriate checks themselves. Note these
+ * checks do not include any validation according to a specific schema. Schema
+ * validation is not considered in this API.
+ * </p>
+ * <p>
+ * Attempts to modify unsupported properties of nodes like
+ * {@link #append(Kind, QNm, Atomic)} for an <em>attribute</em> throw an
  * {@link UnsupportedOperationException}.
  * </p>
  * <p>
- * Insert operations always insert deep copies of the provided nodes. This is a
- * necessary constraint because the parent relationship of existing nodes must
- * only be set during node creation and can only unset with delete.
+ * <b>Insert operations</b> always insert deep copies of the provided nodes.
+ * This is a necessary constraint because the parent relationship of existing
+ * nodes must only be set during node creation and can be only unset with
+ * delete.
  * </p>
  * <p>
- * Delete operations break up the relationship between a a node and its parent.
- * Logically, this node and all its descendant nodes then become deleted, i.e.,
- * depending on the underlying implementation, a delete operation might
- * propagate a physical deletion of all ancestors. The runtime behavior is
+ * <b>Delete operations</b> break up the relationship between a a node and its
+ * parent. Logically, this node and all its descendant nodes then become
+ * deleted, i.e., depending on the underlying implementation, a delete operation
+ * might propagate a physical deletion of all ancestors. The runtime behavior is
  * unspecified when attempting to access logically deleted nodes.
+ * </p>
+ * <p>
+ * <b>Update operations</b> modify an existing node but do not change its
+ * identity. Implementations must ensure that updates are visible and consistent
+ * in all objects representing the same logical XML node.
  * </p>
  * 
  * @see http://www.w3.org/TR/xpath-datamodel-30/
  * @see http://www.w3.org/TR/2009/CR-xquery-update-10-20090609/
+ * @see http://www.w3.org/TR/xml-names11/
  * 
  * @author Sebastian Baechle
  * 
@@ -255,11 +272,11 @@ public interface Node<E extends Node<E>> extends Item {
 	public Collection<E> getCollection();
 
 	/**
-	 * Returns the {@link NamespaceScope} for this node.
+	 * Returns the {@link Scope} for this node.
 	 * 
-	 * @return the {@link NamespaceScope} for this node
+	 * @return the {@link Scope} for this node
 	 */
-	public NamespaceScope getScope();
+	public Scope getScope();
 
 	/**
 	 * Returns the {@link AnyURI base URI} type of this node.

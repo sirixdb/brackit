@@ -32,7 +32,6 @@ import org.brackit.xquery.node.SingleCollection;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.NamespaceScope;
 import org.brackit.xquery.xdm.Node;
 
 /**
@@ -60,16 +59,6 @@ public class DocumentD2Node extends ParentD2Node {
 		this.collection = new D2NodeCollection(String.format("%s_%s_%s.xml",
 				Thread.currentThread().getName(), "noname", Long
 						.toString(System.currentTimeMillis())), this);
-	}
-
-	@Override
-	public NamespaceScope getScope() {
-		for (D2Node c = firstChild; c != null; c = c.sibling) {
-			if (c.getKind() == Kind.ELEMENT) {
-				return c.getScope();
-			}
-		}
-		return new D2NodeNSScope(null);
 	}
 
 	@Override
