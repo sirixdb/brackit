@@ -74,6 +74,9 @@ public final class SequenceType {
 			return "*";
 		case ZeroOrOne:
 			return "?";
+		case One:
+		case Zero:
+			return "";
 		default:
 			throw new RuntimeException();
 		}
