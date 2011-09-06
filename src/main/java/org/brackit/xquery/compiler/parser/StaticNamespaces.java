@@ -41,7 +41,7 @@ import org.brackit.xquery.module.Namespaces;
  */
 public class StaticNamespaces {
 
-	private final class Scope {
+	private static final class Scope {
 		private final Scope parent;
 		private Map<String, String> localNS;
 
@@ -60,7 +60,7 @@ public class StaticNamespaces {
 				}
 				s = s.parent;
 			}
-			return ns.resolve(prefix);
+			return null;
 		}
 
 		QNm expand(String prefix, String localname, String defaultNSURI)
@@ -116,19 +116,37 @@ public class StaticNamespaces {
 	}
 
 	QNm expand(String prefix, String localname) throws QueryException {
-		return (current != null) ? current.expand(prefix, localname, "") : ns
-				.expand(prefix, localname);
+		if (current != null) {
+			String p = (prefix == null) ? "" : prefix;
+			QNm resolved = current.expand(p, localname, "");
+			if (resolved != null) {
+				return resolved;
+			}
+		}
+		return ns.expand(prefix, localname);
 	}
 
 	QNm expandElement(String prefix, String localname) throws QueryException {
-		return (current != null) ? current.expand(prefix, localname, ns
-				.getDefaultElementNamespace()) : ns.expandElement(prefix,
-				localname);
+		if (current != null) {
+			String p = (prefix == null) ? "" : prefix;
+			QNm resolved = current.expand(p, localname, ns
+					.getDefaultElementNamespace());
+			if (resolved != null) {
+				return resolved;
+			}
+		}
+		return ns.expandElement(prefix, localname);
 	}
 
 	QNm expandFunction(String prefix, String localname) throws QueryException {
-		return (current != null) ? current.expand(prefix, localname, ns
-				.getDefaultFunctionNamespace()) : ns.expandFunction(prefix,
-				localname);
+		if (current != null) {
+			String p = (prefix == null) ? "" : prefix;
+			QNm resolved = current.expand(p, localname, ns
+					.getDefaultFunctionNamespace());
+			if (resolved != null) {
+				return resolved;
+			}
+		}
+		return ns.expandFunction(prefix, localname);
 	}
 }

@@ -129,7 +129,10 @@ public class Namespaces {
 	}
 
 	public void declare(String prefix, String nsURI) throws QueryException {
-		if ((XML_PREFIX.equals(prefix)) || (XMLNS_PREFIX.equals(prefix))) {
+		if ((prefix == null) || (prefix.isEmpty())) {
+			throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
+					"Illegal empty namespace prefix");
+		} else if ((XML_PREFIX.equals(prefix)) || (XMLNS_PREFIX.equals(prefix))) {
 			throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
 					"The prefix '%s' must not be used in a namespace declaration");
 		} else if (nsURI.isEmpty()) {
@@ -150,6 +153,9 @@ public class Namespaces {
 	}
 
 	public String resolve(String prefix) throws QueryException {
+		if ((prefix == null) || (prefix.isEmpty())) {
+			return null;
+		}
 		NamespaceDecl nsDecl = namespaces.get(prefix);
 
 		if (nsDecl != null) {
@@ -174,16 +180,22 @@ public class Namespaces {
 		return expand(prefix, localname, "");
 	}
 
-	public QNm expandElement(String prefix, String localname) throws QueryException {
+	public QNm expandElement(String prefix, String localname)
+			throws QueryException {
 		return expand(prefix, localname, defaultElementNamespace);
 	}
 
-	public QNm expandFunction(String prefix, String localname) throws QueryException {
+	public QNm expandFunction(String prefix, String localname)
+			throws QueryException {
 		return expand(prefix, localname, defaultFunctionNamespace);
 	}
 
-	public QNm expand(String prefix, String localname, String defaultNSURI) throws QueryException {
-		String namespaceURI = (prefix != null) ? resolve(prefix) : defaultNSURI;
+	public QNm expand(String prefix, String localname, String defaultNSURI)
+			throws QueryException {
+		String namespaceURI = resolve(prefix);
+		if (namespaceURI == null) {
+			namespaceURI = defaultNSURI;
+		}
 		return new QNm(namespaceURI, prefix, localname);
 	}
 }

@@ -2820,15 +2820,15 @@ public class XQParser extends Tokenizer {
 		AST stag = qnameLiteral(false, false, Expand.SKIP);
 		AST elem = new AST(XQ.CompElementConstructor);
 		elem.addChild(stag);
-		AST cseq = new AST(XQ.ContentSequence);
-		elem.addChild(cseq);
 
+		// Remember current position and make a first
+		// pass over all attributes to resolve the
+		// namespace declarations
+		int pos = position();
 		boolean hasLocalNS = false;
 		AST att;
-		while ((att = dirAttribute()) != null) {
-			if (att.getType() == XQ.CompAttributeConstructor) {
-				cseq.addChild(att);
-			} else {
+		while ((att = dirAttribute(false)) != null) {
+			if (att.getType() == XQ.NamespaceDeclaration) {
 				if (!hasLocalNS) {
 					staticNS.openScope();
 					hasLocalNS = true;
@@ -2839,24 +2839,27 @@ public class XQParser extends Tokenizer {
 				elem.insertChild(0, att);
 			}
 		}
-		skipS();
-
 		// in-scope namespaces are now complete
-		// we can start to expand the QNames
-		// of the current element and all direct attributes
+
+		// expand the QName of the current element
 		QNm unexNam = (QNm) stag.getValue();
 		QNm name = expandElement(null, unexNam.getPrefix(), unexNam
 				.getLocalName());
 		stag.setValue(name);
-		for (int i = 0; i < cseq.getChildCount(); i++) {
-			att = cseq.getChild(i);
-			AST attName = att.getChild(0);
-			// CAVEAT: unprefixed attributes are not
-			// in the default element namespace!
-			QNm unExAtt = (QNm) attName.getValue();
-			attName.setValue(expand(null, unExAtt.getPrefix(), unExAtt
-					.getLocalName()));
+
+		AST cseq = new AST(XQ.ContentSequence);
+		elem.addChild(cseq);
+
+		// reset and parse again the attributes and
+		// expand their names
+		resetTo(pos);
+		while ((att = dirAttribute(true)) != null) {
+			if (att.getType() != XQ.NamespaceDeclaration) {
+				cseq.addChild(att);
+			}
 		}
+
+		skipS();
 
 		if (!attempt("/>")) {
 			consume(">");
@@ -2881,7 +2884,7 @@ public class XQParser extends Tokenizer {
 		return elem;
 	}
 
-	private AST dirAttribute() throws TokenizerException {
+	private AST dirAttribute(boolean expand) throws TokenizerException {
 		skipS();
 		// name is expanded later in parent element constructor
 		AST attName = qnameLiteral(true, false, Expand.SKIP);
@@ -2899,6 +2902,11 @@ public class XQParser extends Tokenizer {
 			return dirNamespace(qname.getLocalName());
 		} else if ("xmlns".equals(qname.getLocalName())) {
 			return dirNamespace("");
+		}
+		if (expand) {
+			qname = expand(qname.getNamespaceURI(), qname.getPrefix(), qname
+					.getLocalName());
+			attName.setValue(qname);
 		}
 		AST att = new AST(XQ.CompAttributeConstructor);
 		att.addChild(attName);

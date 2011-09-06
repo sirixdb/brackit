@@ -30,7 +30,6 @@ package org.brackit.xquery.compiler.parser;
 import java.util.Arrays;
 
 import org.brackit.xquery.XQuery;
-import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.util.log.Logger;
 import org.brackit.xquery.xdm.XMLChar;
 
@@ -131,6 +130,17 @@ public class Tokenizer {
 	public Tokenizer(String s) {
 		this.input = s.toCharArray();
 		this.end = input.length;
+	}
+	
+	protected int position() {
+		return pos;
+	}
+	
+	protected void resetTo(int pos) throws TokenizerException {
+		if ((pos < 0) || (pos > end)) {
+			throw new TokenizerException("Illegal position: %s", pos);
+		}
+		this.pos = pos;
 	}
 
 	protected Token la(String token) {
