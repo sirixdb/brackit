@@ -697,7 +697,7 @@ public class Functions {
 				Cardinality.One), false, true)));
 		predefine(new Number(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"number"), new Signature(new SequenceType(AtomicType.DBL,
-				Cardinality.One), new SequenceType(AnyNodeType.ANY_NODE,
+				Cardinality.One), new SequenceType(AtomicType.ANA,
 				Cardinality.ZeroOrOne))));
 		predefine(new Root(FN_ROOT, new Signature(new SequenceType(
 				AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne), false, true)));
