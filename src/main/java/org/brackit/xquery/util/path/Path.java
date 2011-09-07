@@ -42,7 +42,7 @@ import java.util.List;
  * @author Sebastian Baechle
  * 
  */
-public class Path<E extends Comparable<E>> {
+public class Path<E> {
 	public enum Axis {
 		PARENT(".."), SELF("."), DESC("//"), CHILD("/"), DESC_ATTRIBUTE("//@"), CHILD_ATTRIBUTE(
 				"/@");
@@ -373,7 +373,7 @@ public class Path<E extends Comparable<E>> {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof Path)) {
+		if (!(obj instanceof Path<?>)) {
 			return false;
 		}
 
