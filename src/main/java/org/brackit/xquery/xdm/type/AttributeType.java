@@ -85,11 +85,6 @@ public final class AttributeType extends NodeType {
 				.type().instanceOf(type))));
 	}
 
-	@Override
-	public boolean matches(Item item) throws QueryException {
-		return ((item instanceof Node<?>) && (matches((Node<?>) item)));
-	}
-
 	public String toString() {
 		return (type == null) ? String.format("attribute(\"%s\")", name)
 				: String.format("attribute(\"%s\", \"%s\")", name, type);

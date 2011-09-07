@@ -84,11 +84,6 @@ public final class ElementType extends NodeType {
 				.type().instanceOf(type))));
 	}
 
-	@Override
-	public boolean matches(Item item) throws QueryException {
-		return ((item instanceof Node<?>) && (matches((Node<?>) item)));
-	}
-
 	public String toString() {
 		return (name != null) ? (type == null) ? String.format(
 				"element(\"%s\")", name) : String.format(

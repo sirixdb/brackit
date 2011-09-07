@@ -120,7 +120,7 @@ public class Tokenizer {
 		String prefix() {
 			return prefix;
 		}
-		
+
 		QNm qname() {
 			return new QNm(uri, prefix, ncname);
 		}
@@ -136,11 +136,11 @@ public class Tokenizer {
 		this.input = s.toCharArray();
 		this.end = input.length;
 	}
-	
+
 	protected int position() {
 		return pos;
 	}
-	
+
 	protected void resetTo(int pos) throws TokenizerException {
 		if ((pos < 0) || (pos > end)) {
 			throw new TokenizerException("Illegal position: %s", pos);
@@ -303,7 +303,7 @@ public class Tokenizer {
 		}
 	}
 
-	protected void consumeSkipWSWS(String token) throws TokenizerException {
+	protected void consumeSymSkipWS(String token) throws TokenizerException {
 		Token la = laSymSkipWS(pos, token);
 		if (la == null) {
 			throw new TokenizerException("Expected '%s': '%s'", token,
@@ -1032,9 +1032,13 @@ public class Tokenizer {
 		char c;
 		while (e < end) {
 			c = input[e++];
-			if ((c == ']')
-					&& ((end - e <= 2) || (input[e + 1] != ']') || (input[e + 2] != '>'))) {
-				break;
+			if (c == ']') {
+				if (end - e <= 1) {
+					return null;
+				}
+				if ((input[e] == ']') && (input[e + 1] == '>')) {
+					break;
+				}
 			}
 			if (!XMLChar.isChar(c)) {
 				throw new TokenizerException(
@@ -1105,7 +1109,7 @@ public class Tokenizer {
 			e++; // consume 'x'
 			while (e < end) {
 				c = input[e++];
-				if (!((('0' <= c) && (c <= '9')) || (('a' <= c) && (c <= 'z')) || (('A' <= c) && (c <= 'Z')))) {				
+				if (!((('0' <= c) && (c <= '9')) || (('a' <= c) && (c <= 'z')) || (('A' <= c) && (c <= 'Z')))) {
 					if ((c != ';') || (len == 0)) {
 						return null;
 					}

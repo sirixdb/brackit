@@ -28,38 +28,38 @@
 package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.xdm.Kind;
+import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Type;
 
 /**
- * 
  * @author Sebastian Baechle
  * 
  */
-public final class NumericType extends AtomicType {
-	public static NumericType INSTANCE = new NumericType();
+public class NSNameWildcardTest extends NodeType {
 
-	private NumericType() {
-		super(Type.DBL);
+	private final Kind kind;
+	private final String nsURI;
+
+	public NSNameWildcardTest(Kind kind, String nsURI) {
+		super();
+		this.kind = kind;
+		this.nsURI = nsURI;
 	}
 
 	@Override
-	public boolean matches(Item item) throws QueryException {
-		if (!(item instanceof Atomic)) {
-			return false;
-		}
-		Type type = ((Atomic) item).type();
+	public Kind getNodeKind() {
+		return kind;
+	}
 
-		return (type.instanceOf(Type.DBL)) || (type.instanceOf(Type.FLO))
-				|| (type.instanceOf(Type.DEC));
+	@Override
+	public boolean matches(Node<?> node) throws QueryException {
+		return ((kind == node.getKind()) && (nsURI.equals(node.getName()
+				.getNamespaceURI())));
 	}
 
 	public String toString() {
-		return "numeric";
-	}
-
-	public boolean equals(Object obj) {
-		return ((obj == this) || (obj instanceof NumericType));
+		return kind + "{\"" + nsURI + "\":*}";
 	}
 }

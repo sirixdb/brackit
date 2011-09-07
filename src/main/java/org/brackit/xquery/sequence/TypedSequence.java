@@ -52,12 +52,12 @@ import org.brackit.xquery.xdm.type.SequenceType;
 public class TypedSequence extends LazySequence {
 
 	private static final Int32 TWO = Int32.ZERO_TWO_TWENTY[2];
-	
+
 	private final class TypedIter extends BaseIter {
 		Cardinality card = type.getCardinality();
 		ItemType iType = type.getItemType();
-		boolean expectAtomicType = iType.isAtomic();
-		Type aType = (expectAtomicType) ? ((AtomicType) iType).getType() : null;
+		boolean expectAType = (iType instanceof AtomicType);
+		Type aType = (expectAType) ? ((AtomicType) iType).getType() : null;
 		Counter pos = new Counter();
 		Iter s;
 
@@ -77,7 +77,7 @@ public class TypedSequence extends LazySequence {
 				safe = true; // remember that sequence type is OK
 				return null;
 			}
-			
+
 			pos.inc();
 			if ((card == Cardinality.Zero)
 					|| ((pos.cmp(TWO) == 0) && (card.atMostOne()))) {
@@ -88,7 +88,7 @@ public class TypedSequence extends LazySequence {
 			}
 
 			// See XQuery 3.1.5 Function Calls
-			if (expectAtomicType) {
+			if (expectAType) {
 				Atomic atomic = item.atomize();
 				Type type = atomic.type();
 

@@ -29,6 +29,7 @@ package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Type;
@@ -53,27 +54,37 @@ public abstract class NodeType implements ItemType {
 	public boolean isNode() {
 		return true;
 	}
-	
+
 	@Override
 	public boolean isFunction() {
 		return false;
 	}
 
-	public abstract boolean matches(Node<?> node)
-			throws QueryException;
-
+	/**
+	 * null indicates any node kind
+	 */
 	public Kind getNodeKind() {
-		// null indicates all node kinds
 		return null;
 	}
 
+	/**
+	 * null indicates any name
+	 */
 	public QNm getQName() {
-		// null indicates any name
+		return null;
+	}
+
+	/**
+	 * null indicates any type
+	 */
+	public Type getType() {
 		return null;
 	}
 	
-	public Type getType() {
-		// null indicates any type
-		return null;
+	@Override
+	public boolean matches(Item item) throws QueryException {
+		return ((item instanceof Node<?>) && (matches((Node<?>) item)));
 	}
+
+	public abstract boolean matches(Node<?> node) throws QueryException;	
 }

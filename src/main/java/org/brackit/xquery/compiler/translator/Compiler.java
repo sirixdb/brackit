@@ -109,6 +109,7 @@ import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Function;
+import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Type;
 import org.brackit.xquery.xdm.type.AnyItemType;
@@ -120,6 +121,8 @@ import org.brackit.xquery.xdm.type.CommentType;
 import org.brackit.xquery.xdm.type.DocumentType;
 import org.brackit.xquery.xdm.type.ElementType;
 import org.brackit.xquery.xdm.type.ItemType;
+import org.brackit.xquery.xdm.type.NSNameWildcardTest;
+import org.brackit.xquery.xdm.type.NSWildcardNameTest;
 import org.brackit.xquery.xdm.type.NodeType;
 import org.brackit.xquery.xdm.type.PIType;
 import org.brackit.xquery.xdm.type.SequenceType;
@@ -476,9 +479,9 @@ public class Compiler implements Translator {
 		}
 	}
 
-	private String importModule(AST ast) throws QueryException {		
+	private String importModule(AST ast) throws QueryException {
 		String prefix = "";
-		String nsURI;		
+		String nsURI;
 		AST ns = ast.getChild(0);
 		if (ns.getChildCount() == 2) {
 			prefix = ns.getChild(0).getStringValue();
@@ -773,8 +776,8 @@ public class Compiler implements Translator {
 			return exceptExpr(node);
 		case XQ.IntersectExpr:
 			return intersectExpr(node);
-		case XQ.Pragma:
-			return pragma(node);
+		case XQ.ExtensionExpr:
+			return extensionExpr(node);
 		case XQ.ValidateExpr:
 			throw new QueryException(
 					ErrorCode.ERR_SCHEMA_VALIDATION_FEATURE_NOT_SUPPORTED,
@@ -786,8 +789,8 @@ public class Compiler implements Translator {
 		}
 	}
 
-	protected Expr pragma(AST node) throws QueryException {
-		return (node.getChildCount() == 1) ? anyExpr(node.getChild(0))
+	protected Expr extensionExpr(AST node) throws QueryException {
+		return (node.getChildCount() == 2) ? anyExpr(node.getChild(1))
 				: new EmptyExpr();
 	}
 
@@ -1466,7 +1469,7 @@ public class Compiler implements Translator {
 
 		int noOfPredicates = Math.max(node.getChildCount() - 2, 0);
 		Expr[] predicates = new Expr[noOfPredicates];
-		NodeType test = itemTest(child, axis.getAxis());
+		NodeType test = nodeTest(child, axis.getAxis());
 		Binding itemBinding = table.bind(Namespaces.FS_DOT, SequenceType.NODE);
 		Binding posBinding = table.bind(Namespaces.FS_POSITION,
 				SequenceType.INTEGER);
@@ -1561,7 +1564,7 @@ public class Compiler implements Translator {
 		return new AtomicType(type);
 	}
 
-	protected NodeType itemTest(AST node, Axis axis) throws QueryException {
+	protected NodeType nodeTest(AST node, Axis axis) throws QueryException {
 		if (node.getType() == XQ.NameTest) {
 			return nameTest(node, axis);
 		} else {
@@ -1643,10 +1646,28 @@ public class Compiler implements Translator {
 
 	protected NodeType nameTest(AST child, Axis axis) throws QueryException {
 		AST name = child.getChild(0);
-		if (axis != Axis.ATTRIBUTE)
-			return new ElementType(qNameOrWildcard(name));
-		else
-			return new AttributeType(qNameOrWildcard(name));
+		switch (name.getType()) {
+		case XQ.Wildcard:
+			if (axis != Axis.ATTRIBUTE) {
+				return new ElementType(null);
+			} else {
+				return new AttributeType(null);
+			}
+		case XQ.NSWildcardNameTest:
+			return new NSNameWildcardTest(
+					(axis == Axis.ATTRIBUTE) ? Kind.ATTRIBUTE : Kind.ELEMENT,
+					name.getStringValue());
+		case XQ.NSNameWildcardTest:
+			return new NSNameWildcardTest(
+					(axis == Axis.ATTRIBUTE) ? Kind.ATTRIBUTE : Kind.ELEMENT,
+					name.getStringValue());
+		default:
+			if (axis != Axis.ATTRIBUTE) {
+				return new ElementType((QNm) name.getValue());
+			} else {
+				return new AttributeType((QNm) name.getValue());
+			}
+		}
 	}
 
 	protected Type resolveType(QNm qname, boolean atomic) throws QueryException {

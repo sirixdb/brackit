@@ -119,7 +119,7 @@ public class FunctionExpr implements Expr {
 		} else if (s instanceof Item) {
 			// short-circuit wrapping of single item parameter
 			ItemType iType = sType.getItemType();
-			if (iType.isAtomic()) {
+			if (iType instanceof AtomicType) {
 				Atomic atomic = ((Item) s).atomize();
 				Type expected = ((AtomicType) iType).getType();
 				Type type = atomic.type();
