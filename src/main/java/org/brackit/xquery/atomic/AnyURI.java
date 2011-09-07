@@ -28,7 +28,7 @@
 package org.brackit.xquery.atomic;
 
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.URLEncoder;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
@@ -67,10 +67,12 @@ public class AnyURI extends AbstractAtomic {
 			this.absolute = false;
 		} else {
 			try {
-				this.absolute = new URI(str).isAbsolute();
+				this.absolute = new URI(URLEncoder.encode(str, "UTF-8"))
+						.isAbsolute();
 				this.str = str;
-			} catch (URISyntaxException e) {
-				throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
+			} catch (Exception e) {
+				throw new QueryException(e,
+						ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
 						"Cannot cast '%s' to xs:anyURI", str);
 			}
 		}
