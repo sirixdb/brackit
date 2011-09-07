@@ -30,6 +30,7 @@ package org.brackit.xquery.compiler.parser;
 import java.util.Arrays;
 
 import org.brackit.xquery.XQuery;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.util.log.Logger;
 import org.brackit.xquery.xdm.XMLChar;
 
@@ -118,6 +119,10 @@ public class Tokenizer {
 
 		String prefix() {
 			return prefix;
+		}
+		
+		QNm qname() {
+			return new QNm(uri, prefix, ncname);
 		}
 
 		String string() {
@@ -1100,7 +1105,7 @@ public class Tokenizer {
 			e++; // consume 'x'
 			while (e < end) {
 				c = input[e++];
-				if (!((('0' <= c) && (c <= '9')))) {
+				if (!((('0' <= c) && (c <= '9')) || (('a' <= c) && (c <= 'z')) || (('A' <= c) && (c <= 'Z')))) {				
 					if ((c != ';') || (len == 0)) {
 						return null;
 					}
@@ -1111,7 +1116,7 @@ public class Tokenizer {
 		} else {
 			while (e < end) {
 				c = input[e++];
-				if (!((('0' <= c) && (c <= '9')) || (('a' <= c) && (c <= 'z')) || (('A' <= c) && (c <= 'Z')))) {
+				if (!((('0' <= c) && (c <= '9')))) {
 					if ((c != ';') || (len == 0)) {
 						return null;
 					}
