@@ -77,13 +77,17 @@ public class FunctionExpr implements Expr {
 			args = new Sequence[exprs.length];
 
 			for (int i = 0; i < exprs.length; i++) {
-				SequenceType sequenceType = (i < params.length) ? params[i]
+				SequenceType sType = (i < params.length) ? params[i]
 						: params[params.length - 1];
-				boolean many = sequenceType.getCardinality().many();
-				Sequence s = many ? exprs[i].evaluate(ctx, tuple) : exprs[i]
-						.evaluateToItem(ctx, tuple);
-				args[i] = ((many) && (sequenceType.getItemType().isAnyItem())) ? s
-						: convToTypedSequence(ctx, sequenceType, s);
+				if (sType.getCardinality().many()) {
+					args[i] = exprs[i].evaluate(ctx, tuple);
+					if (!(sType.getItemType().isAnyItem())) {
+						args[i] = asTypedSequence(sType, args[i]);
+					}
+				} else {
+					args[i] = exprs[i].evaluateToItem(ctx, tuple);
+					args[i] = asTypedSequence(sType, args[i]);
+				}
 			}
 		}
 
@@ -96,7 +100,7 @@ public class FunctionExpr implements Expr {
 					"Execution of function '%s' was aborted because of too deep recursion.",
 					function.getName());
 		}
-		return (function.isBuiltIn()) ? res : convToTypedSequence(ctx, function
+		return (function.isBuiltIn()) ? res : asTypedSequence(function
 				.getSignature().getResultType(), res);
 	}
 
@@ -104,21 +108,20 @@ public class FunctionExpr implements Expr {
 	 * See XQuery 3.1.5 Function Calls (function conversion rules) and compare
 	 * with TypedSequence.
 	 */
-	private Sequence convToTypedSequence(QueryContext ctx,
-			SequenceType sequenceType, Sequence s) throws QueryException {
+	private Sequence asTypedSequence(SequenceType sType, Sequence s)
+			throws QueryException {
 		if (s == null) {
-			if (sequenceType.getCardinality().moreThanZero()) {
+			if (sType.getCardinality().moreThanZero()) {
 				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 						"Invalid empty-sequence()");
 			}
 			return null;
 		} else if (s instanceof Item) {
 			// short-circuit wrapping of single item parameter
-			ItemType itemType = sequenceType.getItemType();
-
-			if (itemType instanceof AtomicType) {
+			ItemType iType = sType.getItemType();
+			if (iType.isAtomic()) {
 				Atomic atomic = ((Item) s).atomize();
-				Type expected = ((AtomicType) itemType).type;
+				Type expected = ((AtomicType) iType).getType();
 				Type type = atomic.type();
 
 				if ((type == Type.UNA) && (expected != Type.UNA)) {
@@ -127,7 +130,7 @@ public class FunctionExpr implements Expr {
 					} else {
 						atomic = Cast.cast(atomic, expected, false);
 					}
-				} else if (!itemType.matches(atomic)) {
+				} else if (!iType.matches(atomic)) {
 					if ((expected.isNumeric()) && (type.isNumeric())) {
 						atomic = Cast.cast(atomic, expected, false);
 					} else if ((expected.instanceOf(Type.STR))
@@ -137,27 +140,27 @@ public class FunctionExpr implements Expr {
 						throw new QueryException(
 								ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 								"Item of invalid atomic type in typed sequence (expected %s): %s",
-								itemType, atomic);
+								iType, atomic);
 					}
 				}
 
 				return atomic;
-			} else if (!itemType.matches((Item) s)) {
+			} else if (!iType.matches((Item) s)) {
 				throw new QueryException(
 						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 						"Item of invalid type in typed sequence (expected %s): %s",
-						itemType, s);
+						iType, s);
 			}
 
 			return s;
 		} else {
-			boolean applyFunctionConversion = ((sequenceType.getItemType() instanceof AtomicType) && (((AtomicType) sequenceType
-					.getItemType()).type.isNumeric()));
+			boolean applyFunctionConversion = ((sType.getItemType() instanceof AtomicType) && (((AtomicType) sType
+					.getItemType()).getType().isNumeric()));
 			boolean enforceDouble = function.isBuiltIn();
-			TypedSequence typedSequence = new TypedSequence(sequenceType, s,
+			TypedSequence typedSequence = new TypedSequence(sType, s,
 					applyFunctionConversion, enforceDouble);
 
-			if (sequenceType.getCardinality().atMostOne()) {
+			if (sType.getCardinality().atMostOne()) {
 				Iter it = typedSequence.iterate();
 				try {
 					return it.next();

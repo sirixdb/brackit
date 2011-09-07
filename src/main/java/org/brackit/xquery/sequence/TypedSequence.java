@@ -56,8 +56,8 @@ public class TypedSequence extends LazySequence {
 	private final class TypedIter extends BaseIter {
 		Cardinality card = type.getCardinality();
 		ItemType iType = type.getItemType();
-		boolean expectAtomicType = (iType instanceof AtomicType);
-		Type aType = (expectAtomicType) ? ((AtomicType) iType).type : null;
+		boolean expectAtomicType = iType.isAtomic();
+		Type aType = (expectAtomicType) ? ((AtomicType) iType).getType() : null;
 		Counter pos = new Counter();
 		Iter s;
 

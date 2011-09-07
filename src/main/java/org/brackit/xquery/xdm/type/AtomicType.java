@@ -113,10 +113,14 @@ public class AtomicType implements ItemType {
 	 */
 	public static final AtomicType ANA = new AtomicType(Type.ANA);
 
-	public final Type type;
+	private final Type type;
 
 	public AtomicType(Type type) {
 		this.type = type;
+	}
+	
+	public Type getType() {
+		return type;
 	}
 
 	@Override
