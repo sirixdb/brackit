@@ -91,7 +91,7 @@ public class SumAvg extends AbstractFunction {
 			in.close();
 		}
 
-		return agg;
+		return ((agg == null) && (!avg) && (args.length == 2)) ? args[1] : agg;
 	}
 
 	private Atomic durationAggregate(QueryContext ctx, Iter in, Atomic agg)
