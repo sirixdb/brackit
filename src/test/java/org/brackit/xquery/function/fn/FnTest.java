@@ -844,7 +844,29 @@ public class FnTest extends XQueryBaseTest {
 			assertEquals(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, e.getCode());
 		}
 	}
-
+	
+	@Test
+	public void fnMatchesTrailingBackslash() throws Exception {
+		try {
+			Sequence result = new XQuery("fn:matches('brabra', '(bra)\\')")
+					.execute(ctx);
+			fail("Trailing back slash.");
+		} catch (QueryException e) {
+			assertEquals(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, e.getCode());
+		}
+	}
+	
+	@Test
+	public void fnMatchesBackRefToGroup0() throws Exception {
+		try {
+			Sequence result = new XQuery("fn:matches('brabra', '(bra)\\0')")
+					.execute(ctx);
+			fail("Back ref to group 0.");
+		} catch (QueryException e) {
+			assertEquals(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, e.getCode());
+		}
+	}
+	
 	@Test
 	public void fnMatchesIllegalBackRefInCharClass() throws Exception {
 		try {
