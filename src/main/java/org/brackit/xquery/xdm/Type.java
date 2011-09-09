@@ -471,10 +471,10 @@ public final class Type {
 	public static final Type[] builtInTypes;
 
 	static {
-		builtInTypes = new Type[] { ANY, UN, ANA, IDRS, NMTS, ENTS, UNA, DATI,
-				DATE, TIME, DUR, YMD, DTD, FLO, DBL, DEC, INR, NPI, NINR, LON,
-				INT, SHO, BYT, NNI, ULON, UINT, USHO, UBYT, PINR, GYM, STR,
-				NSTR, TOK, LAN, NMT, NAM, NCN, ID, IDR, ENT, GYE, GMD, GDAY,
+		builtInTypes = new Type[] { ANY, UN, ANS, IDRS, NMT, ENTS, ANA, UNA,
+				DATI, DATE, TIME, DUR, YMD, DTD, FLO, DBL, DEC, INR, NPI, NINR,
+				LON, INT, SHO, BYT, NNI, ULON, UINT, USHO, UBYT, PINR, STR,
+				NSTR, TOK, LAN, NMTS, NAM, NCN, ID, IDR, ENT, GYM, GYE, GMD, GDAY,
 				GMON, BOOL, B64, HEX, AURI, QNM, NOT };
 	}
 
