@@ -202,7 +202,7 @@ public class FilterExpr implements Expr {
 					Item first = it.next();
 					if ((first != null) && (it.next() == null)
 							&& (first instanceof Numeric)) {
-						IntNumeric pos = ((Numeric) fs).asIntNumeric();
+						IntNumeric pos = ((Numeric) first).asIntNumeric();
 						return (pos != null) ? s.get(pos) : null;
 					}
 				} finally {
