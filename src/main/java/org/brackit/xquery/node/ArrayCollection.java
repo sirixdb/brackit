@@ -27,8 +27,10 @@
  */
 package org.brackit.xquery.node;
 
+import java.util.Arrays;
+
 import org.brackit.xquery.node.parser.SubtreeParser;
-import org.brackit.xquery.node.stream.AtomStream;
+import org.brackit.xquery.node.stream.ArrayStream;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
@@ -39,28 +41,43 @@ import org.brackit.xquery.xdm.Stream;
  * @author Sebastian Baechle
  * 
  */
-public class SingleCollection<E extends Node<E>> extends AbstractCollection<E> {
-	protected E documentNode;
+public class ArrayCollection<E extends Node<E>> extends AbstractCollection<E> {
+	protected Node[] docs;
 
-	public SingleCollection(String name, E documentNode) {
+	public ArrayCollection(String name, E doc) {
 		super(name);
-		this.documentNode = documentNode;
+		this.docs = new Node[]{doc};
+	}
+	
+	public ArrayCollection(String name, E... docs) {
+		super(name);
+		this.docs = docs;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public E getDocument() throws DocumentException {
-		return documentNode;
+		if (docs.length == 1) {
+			return (E) docs[0];
+		}
+		throw new DocumentException("Illegal access to non-singular collection");
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Stream<? extends E> getDocuments() throws DocumentException {
-		return new AtomStream<E>(documentNode);
+		return new ArrayStream(docs);
 	}
 
 	@Override
 	public E add(SubtreeParser parser) throws OperationNotSupportedException,
 			DocumentException {
 		throw new OperationNotSupportedException();
+	}
+	
+	public void add(Node<? super E> doc) {
+		this.docs = Arrays.copyOf(docs, docs.length + 1);
+		this.docs[docs.length - 1] = doc;
 	}
 
 	@Override

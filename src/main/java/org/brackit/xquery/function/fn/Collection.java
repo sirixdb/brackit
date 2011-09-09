@@ -33,7 +33,6 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.sequence.CollectionSequence;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
@@ -66,10 +65,9 @@ public class Collection extends AbstractFunction {
 							"No default collection defined.");
 				}
 
-				return new CollectionSequence(ctx, collection);
+				return collection;
 			} else {
-				return new CollectionSequence(ctx, ctx.getStore().lookup(
-						name.stringValue()));
+				return ctx.getStore().lookup(name.stringValue());
 			}
 		} catch (DocumentException e) {
 			throw new QueryException(e, ErrorCode.ERR_COLLECTION_NOT_FOUND,

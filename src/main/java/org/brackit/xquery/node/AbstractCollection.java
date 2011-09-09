@@ -27,9 +27,15 @@
  */
 package org.brackit.xquery.node;
 
+import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.AnyURI;
+import org.brackit.xquery.sequence.BaseIter;
+import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.xdm.Collection;
+import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.Stream;
 
 /**
  * 
@@ -37,8 +43,8 @@ import org.brackit.xquery.xdm.Node;
  * 
  * @param <E>
  */
-public abstract class AbstractCollection<E extends Node<E>> implements
-		Collection<E> {
+public abstract class AbstractCollection<E extends Node<E>> extends
+		LazySequence implements Collection<E> {
 	protected String name;
 
 	public AbstractCollection(String name) {
@@ -57,5 +63,27 @@ public abstract class AbstractCollection<E extends Node<E>> implements
 	@Override
 	public AnyURI getDocumentURI() {
 		return new AnyURI(name, false);
+	}
+
+	@Override
+	public Iter iterate() {
+		return new BaseIter() {
+			Stream<? extends Node<?>> docs;
+
+			@Override
+			public void close() {
+				if (docs != null) {
+					docs.close();
+				}
+			}
+
+			@Override
+			public Item next() throws QueryException {
+				if (docs == null) {
+					docs = getDocuments();
+				}
+				return docs.next();
+			}
+		};
 	}
 }

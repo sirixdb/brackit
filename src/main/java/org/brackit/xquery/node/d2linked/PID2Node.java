@@ -47,16 +47,18 @@ public final class PID2Node extends D2Node {
 	public PID2Node(QNm name, Atomic value) throws DocumentException {
 		this(null, FIRST, name, value);
 	}
-	
-	PID2Node(ParentD2Node parent, int[] division, QNm target, Atomic value) throws DocumentException {
+
+	PID2Node(ParentD2Node parent, int[] division, QNm target, Atomic value)
+			throws DocumentException {
 		super(parent, division);
 		this.target = checkName(target);
 		this.value = checkValue(value);
 	}
 
-	private QNm checkName(QNm target) throws DocumentException {		
-		if (target.getNamespaceURI() != null) {
-			throw new DocumentException("The target name of a processing instrcution must not have a namespace");
+	private QNm checkName(QNm target) throws DocumentException {
+		if (!target.getNamespaceURI().isEmpty()) {
+			throw new DocumentException(
+					"The target name of a processing instruction must not have a namespace");
 		}
 		String s = target.stringValue();
 		for (int i = 0; i < s.length(); i++) {
@@ -73,7 +75,8 @@ public final class PID2Node extends D2Node {
 	private Str checkValue(Atomic v) throws DocumentException {
 		String s = v.stringValue();
 		if (s.contains("?>-")) {
-			throw new DocumentException("Processing instructions must not contain the character sequence \"?>\"");
+			throw new DocumentException(
+					"Processing instructions must not contain the character sequence \"?>\"");
 		}
 		return v.asStr();
 	}

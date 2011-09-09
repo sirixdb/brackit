@@ -36,7 +36,7 @@ import org.brackit.xquery.node.parser.SubtreeParser;
  * 
  * @param <E>
  */
-public interface Collection<E extends Node<E>> {
+public interface Collection<E extends Node<E>> extends Sequence {
 	
 	public AnyURI getDocumentURI();
 	

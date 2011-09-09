@@ -25,71 +25,30 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.node;
+package org.brackit.xquery.node.stream;
 
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-
-import org.brackit.xquery.node.d2linked.D2NodeFactory;
-import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.node.parser.SubtreeParser;
-import org.brackit.xquery.util.URIHandler;
-import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.NodeFactory;
-import org.brackit.xquery.xdm.Store;
+import org.brackit.xquery.xdm.Stream;
 
 /**
- * 
  * @author Sebastian Baechle
  * 
  */
-public class SimpleStore implements Store {
-	private HashMap<String, Collection<?>> docs = new HashMap<String, Collection<?>>();
+public class ArrayStream<E> implements Stream<E> {
 
-	@Override
-	public Collection<?> create(String name) throws DocumentException {
-		throw new DocumentException(
-				"Multi-document collections are not supported");
+	private final E[] v;
+	private int pos;
+
+	public ArrayStream(E[] v) {
+		this.v = v;
 	}
 
 	@Override
-	public Collection<?> create(String name, SubtreeParser parser)
-			throws DocumentException {
-		Collection<?> coll = getNodeFactory().build(parser).getCollection();
-		docs.put(name, coll);
-		return coll;
+	public void close() {
 	}
 
 	@Override
-	public void drop(String name) throws DocumentException {
-		if (docs.remove(name) == null) {
-			throw new DocumentException("Collection %s not found", name);
-		}
-	}
-
-	@Override
-	public Collection<?> lookup(String name) throws DocumentException {
-		Collection<?> coll = docs.get(name);
-		if (coll != null) {
-			return coll;
-		}
-		try {
-			InputStream in = URIHandler.getInputStream(new URI(name));
-			DocumentParser p = new DocumentParser(in);
-			Node<?> doc = getNodeFactory().build(p);
-			coll = doc.getCollection();
-			docs.put(name, coll);
-			return coll;
-		} catch (URISyntaxException e) {
-			throw new DocumentException(e, "Collection %s not found", name);
-		}
-	}
-
-	protected NodeFactory<?> getNodeFactory() {
-		return new D2NodeFactory();
+	public E next() throws DocumentException {
+		return (pos < v.length) ? v[pos++] : null;
 	}
 }

@@ -30,10 +30,8 @@ package org.brackit.xquery.node.d2linked;
 import java.util.Map;
 
 import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.AbstractBuilder;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
@@ -138,7 +136,7 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
 			Atomic text) throws DocumentException {
 		if (parent != null) {
 			return ((ParentD2Node) parent).insertChild(sibling,
-					Kind.PROCESSING_INSTRUCTION, null, text, right);
+					Kind.PROCESSING_INSTRUCTION, target, text, right);
 		} else {
 			return first(Kind.PROCESSING_INSTRUCTION, target, text);
 		}

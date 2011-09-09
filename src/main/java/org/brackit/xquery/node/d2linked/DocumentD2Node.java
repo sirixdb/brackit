@@ -28,7 +28,7 @@
 package org.brackit.xquery.node.d2linked;
 
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.node.SingleCollection;
+import org.brackit.xquery.node.ArrayCollection;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
@@ -41,7 +41,7 @@ import org.brackit.xquery.xdm.Node;
  */
 public class DocumentD2Node extends ParentD2Node {
 
-	private static class D2NodeCollection extends SingleCollection<D2Node> {
+	private static class D2NodeCollection extends ArrayCollection<D2Node> {
 		public D2NodeCollection(String name, DocumentD2Node document) {
 			super(name, document);
 		}
