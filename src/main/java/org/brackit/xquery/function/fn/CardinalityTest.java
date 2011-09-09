@@ -87,13 +87,13 @@ public class CardinalityTest extends AbstractFunction {
 		Sequence s = args[0];
 		if (s == null) {
 			throw new QueryException(ErrorCode.ERR_ONE_OR_MORE_FAILED,
-					"fn:one-or-more called with a sequence containing no items");
+					"fn:one-or-more called with an empty sequence");
 		} else if (!(s instanceof Item)) {
 			Iter it = s.iterate();
 			try {
 				if (it.next() == null) {
 					throw new QueryException(ErrorCode.ERR_ONE_OR_MORE_FAILED,
-							"fn:one-or-more called with a sequence containing no items");
+							"fn:one-or-more called with an empty sequence");
 				}
 			} finally {
 				it.close();
@@ -106,11 +106,15 @@ public class CardinalityTest extends AbstractFunction {
 		Sequence s = args[0];
 		if (s == null) {
 			throw new QueryException(ErrorCode.ERR_EXACTLY_ONCE_FAILED,
-					"fn:exactly-one called with a sequence containing no items");
+					"fn:exactly-one called with an empty sequence");
 		} else if (!(s instanceof Item)) {
 			Iter it = s.iterate();
 			try {
-				if (((s = it.next()) == null) || (it.next() != null)) {
+				if ((s = it.next()) == null) {
+					throw new QueryException(ErrorCode.ERR_EXACTLY_ONCE_FAILED,
+							"fn:exactly-one called with an empty sequence");
+				}
+				if (it.next() != null) {
 					throw new QueryException(ErrorCode.ERR_EXACTLY_ONCE_FAILED,
 							"fn:exactly-one called with a sequence containing more than one item");
 				}
