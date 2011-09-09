@@ -491,23 +491,33 @@ public class XQParser extends Tokenizer {
 		}
 	}
 
+	//"declare" (("decimal-format" EQName) | ("default" "decimal-format")) (DFPropertyName "=" StringLiteral)*
 	private AST decimalFormatDecl() throws TokenizerException {
 		Token la = laSymSkipWS("declare");
 		if (la == null) {
 			return null;
 		}
-		Token la2 = laSymSkipWS(la, "default");
-		Token la3 = laSymSkipWS((la2 != null) ? la2 : la, "decimal-format");
-		if (la3 == null) {
+		
+		AST format;
+		Token la2 = laSymSkipWS(la, "decimal-format");
+		if (la2 != null) {
+			consume(la);
+			consume(la2);
+			format = eqnameLiteral(false, true, Expand.QNAME);
+		} else if ((la2 = laSymSkipWS(la, "default")) != null) {
+			Token la3 = laSymSkipWS(la2, "decimal-format");
+			if (la3 == null) {
+				return null;
+			}
+			consume(la);
+			consume(la2);
+			consume(la3);
+			format = new AST(XQ.DecimalFormatDefault);
+		} else {
 			return null;
 		}
-		consume(la);
-		if (la2 != null) {
-			consume(la2);
-		}
-		consume(la3);
 		AST decl = new AST(XQ.DecimalFormatDeclaration);
-		;
+		decl.addChild(format);
 		AST[] dfProperties = new AST[0];
 		AST dfPropertyName;
 		while ((dfPropertyName = dfPropertyName()) != null) {
