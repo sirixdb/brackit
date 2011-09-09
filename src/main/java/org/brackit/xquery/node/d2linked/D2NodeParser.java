@@ -89,7 +89,7 @@ public class D2NodeParser implements SubtreeParser {
 		} else if (kind == Kind.TEXT) {
 			handler.text(node.getValue());
 		} else if (kind == Kind.COMMENT) {
-			handler.text(node.getStrValue());
+			handler.comment(node.getStrValue());
 		} else if (kind == Kind.PROCESSING_INSTRUCTION) {
 			handler.processingInstruction(node.getName(), node.getStrValue());
 		} else if (kind == Kind.ATTRIBUTE) {
