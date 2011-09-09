@@ -64,6 +64,13 @@ public class SumAvg extends AbstractFunction {
 		Atomic agg = null;
 		Type aggType = null;
 
+		if (seq == null) {
+			if (avg) {
+				return null;
+			}
+			return (args.length == 2) ? args[1] : Int32.ZERO;
+		}
+		
 		Iter in = seq.iterate();
 		try {
 			if ((item = in.next()) != null) {
