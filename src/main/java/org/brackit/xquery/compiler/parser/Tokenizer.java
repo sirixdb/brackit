@@ -297,7 +297,10 @@ public class Tokenizer {
 
 	protected void consumeEOF() throws TokenizerException {
 		int ws = ws(pos);
-		if (pos + ws != end) {
+		int p = pos + ws;
+		// ignore trailing '\0'
+		while ((p < end) && (input[p] == '\u0000' )) p++;
+		if (p != end) {
 			throw new TokenizerException("Expected end of query: %s",
 					paraphrase());
 		}
@@ -835,17 +838,16 @@ public class Tokenizer {
 	}
 
 	private Token laPragma(int pos, boolean cond) throws TokenizerException {
+		int s = pos;
 		int e = pos;
 		if (e >= end) {
 			return null;
 		}
 		int len = 0;
 		while (e < end) {
-			char c = input[e++];
-			if (c == '#') {
-				pos = e;
-				e += len;
-				return new Token(pos, e);
+			int c = input[e++];
+			if ((c == '#') && (e < end) && (input[e] == ')')) {
+				return new Token(s, s + len);
 			} else if (!XMLChar.isChar(c)) {
 				if (cond) {
 					return null;
@@ -984,7 +986,10 @@ public class Tokenizer {
 		char c;
 		while (e < end) {
 			c = input[e++];
-			if ((c == escapeChar) || (c == '{') || (c == '}') || (c == '<')
+			if ((c == escapeChar) && (e < end) && (input[e] == escapeChar)) {
+				e++;
+				len +=2;
+			} else if ((c == escapeChar) || (c == '{') || (c == '}') || (c == '<')
 					|| (c == '&') || (!XMLChar.isChar(c))) {
 				break;
 			} else {
