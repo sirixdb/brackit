@@ -318,18 +318,11 @@ public class Functions {
 				new SequenceType(AtomicType.STR, Cardinality.One),
 				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
 				new SequenceType(AtomicType.STR, Cardinality.One),
-				new SequenceType(AtomicType.STR, Cardinality.One))));
+				new SequenceType(AtomicType.STR, Cardinality.One))));		
 		predefine(new StringNormalize(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "normalize-space"), new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.One),
-				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne))));
-		predefine(new StringNormalize(new QNm(Namespaces.FN_NSURI,
-				Namespaces.FN_PREFIX, "normalize-space"), new Signature(
-				new SequenceType(AtomicType.STR, Cardinality.One), false, true)));
-		predefine(new StringNormalize(new QNm(Namespaces.FN_NSURI,
-				Namespaces.FN_PREFIX, "normalize-space"), new Signature(
-				new SequenceType(AtomicType.STR, Cardinality.One),
-				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne))));
+				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne))));		
 		predefine(new StringNormalize(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "normalize-space"), new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.One), false, true)));
@@ -715,12 +708,12 @@ public class Functions {
 				Namespaces.FN_PREFIX, "index-of"), new Signature(
 				new SequenceType(AtomicType.INR, Cardinality.ZeroOrOne),
 				new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-				new SequenceType(AnyItemType.ANY, Cardinality.One))));
+				new SequenceType(AtomicType.ANA, Cardinality.One))));
 		predefine(new IndexOf(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "index-of"), new Signature(
 				new SequenceType(AtomicType.INR, Cardinality.ZeroOrOne),
 				new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-				new SequenceType(AnyItemType.ANY, Cardinality.One),
+				new SequenceType(AtomicType.ANA, Cardinality.One),
 				new SequenceType(AtomicType.STR, Cardinality.One))));
 		predefine(new EmptySequence(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "empty"), true, new Signature(
