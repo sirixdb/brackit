@@ -29,6 +29,7 @@ package org.brackit.xquery.atomic;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Type;
 
 /**
@@ -68,6 +69,7 @@ public class YMD extends AbstractDuration {
 		byte months = 0; // 0..11 -> year wrap on overflow, highest bit used to
 		// indicate negative duration
 
+		str = Whitespace.collapseTrimOnly(str);
 		char[] charArray = str.toCharArray();
 		int pos = 0;
 		int length = charArray.length;
