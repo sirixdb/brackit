@@ -85,4 +85,36 @@ public class XMLChar {
 				|| (('\u0020' <= c) && (c <= '\uD7FF')) || (('\uE000' <= c) && (c <= '\uFFFD')));
 		// TODO: Howto add range [#x10000-#xEFFFF]?
 	}
+
+	public static boolean isQName(String s) {
+		int pos = s.indexOf(':');
+		if (pos == -1) {
+			return isNCName(s);
+		} else if ((pos > 0) && (pos < s.length() - 1)) {
+			return (isNCName(s, 0, pos)) && (isNCName(s, pos + 1, s.length()));
+		}
+		return false;
+	}
+
+	public static boolean isNCName(String s) {
+		return isNCName(s, 0, s.length());
+	}
+
+	public static boolean isNCName(String s, int start, int end) {
+		if (end <= start) {
+			return false;
+		}
+		int i = start;
+		char c = s.charAt(i++);
+		if (((c == ':')) || (!isNameStartChar(c))) {
+			return false;
+		}
+		while (i < end) {
+			c = s.charAt(i++);
+			if (((c == ':')) || (!isNameChar(c))) {
+				return false;
+			}
+		}
+		return true;
+	}
 }

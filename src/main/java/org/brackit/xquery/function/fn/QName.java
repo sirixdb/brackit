@@ -30,11 +30,12 @@ package org.brackit.xquery.function.fn;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.xdm.XMLChar;
 
 /**
  * 
@@ -49,24 +50,16 @@ public class QName extends AbstractFunction {
 	@Override
 	public Sequence execute(QueryContext ctx, Sequence[] args)
 			throws QueryException {
-		Str namespaceURIArg = (Str) args[0];
-		Str nameArg = (Str) args[1];
-
-		if ((nameArg == null) || (nameArg.str.isEmpty())) {
+		String name = ((Atomic) args[1]).stringValue();
+		String uri = (args[0] != null) ? ((Atomic) args[1]).stringValue() : "";
+		if (!XMLChar.isQName(name)) {
 			throw new QueryException(ErrorCode.ERR_INVALID_LEXICAL_VALUE,
-					"Illegal empty QName.");
+					"Invalid QName: '%s'", name);
 		}
-
-		String name = nameArg.str;
-		String uri = null;
-
-		if ((namespaceURIArg != null) && (!namespaceURIArg.str.isEmpty())) {
-			uri = namespaceURIArg.str;
-		} else if (name.contains(":")) {
+		if ((uri.isEmpty()) && (name.contains(":"))) {
 			throw new QueryException(ErrorCode.ERR_INVALID_LEXICAL_VALUE,
-					"Prefixes are not allowed for QNames in the null namespace");
+					"Invalid QName in empty namespace: '%s'", name);
 		}
-
 		return new QNm(uri, name);
 	}
 }
