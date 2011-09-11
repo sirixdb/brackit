@@ -218,58 +218,59 @@ public final class XQ {
 	public static final int CopyNamespacesInheritModeInherit = 172;
 	public static final int CopyNamespacesInheritModeNoInherit = 173;
 	public static final int DecimalFormatDeclaration = 174;
-	public static final int DecimalFormatProperty = 175;
-	public static final int DecimalFormatPropertyDecimalSeparator = 176;
-	public static final int DecimalFormatPropertyGroupingSeparator = 177;
-	public static final int DecimalFormatPropertyInfinity = 178;
-	public static final int DecimalFormatPropertyMinusSign = 179;
-	public static final int DecimalFormatPropertyNaN = 180;
-	public static final int DecimalFormatPropertyPercent = 181;
-	public static final int DecimalFormatPropertyPerMille = 182;
-	public static final int DecimalFormatPropertyZeroDigit = 183;
-	public static final int DecimalFormatPropertyDigit = 184;
-	public static final int DecimalFormatPropertyPatternSeparator = 185;
-	public static final int OptionDeclaration = 186;
-	public static final int CompNamespaceConstructor = 187;
-	public static final int CompProcessingInstructionConstructor = 188;
-	public static final int Predicate = 189;
-	public static final int FilterExpr = 190;
-	public static final int DynamicFunctionCallExpr = 191;
-	public static final int SlidingWindowClause = 192;
-	public static final int TumblingWindowClause = 193;
-	public static final int WindowStartCondition = 194;
-	public static final int WindowEndCondition = 195;
-	public static final int PreviousItemBinding = 196;
-	public static final int NextItemBinding = 197;
+	public static final int DecimalFormatDefault = 175;
+	public static final int DecimalFormatProperty = 176;
+	public static final int DecimalFormatPropertyDecimalSeparator = 177;
+	public static final int DecimalFormatPropertyGroupingSeparator = 178;
+	public static final int DecimalFormatPropertyInfinity = 179;
+	public static final int DecimalFormatPropertyMinusSign = 180;
+	public static final int DecimalFormatPropertyNaN = 181;
+	public static final int DecimalFormatPropertyPercent = 182;
+	public static final int DecimalFormatPropertyPerMille = 183;
+	public static final int DecimalFormatPropertyZeroDigit = 184;
+	public static final int DecimalFormatPropertyDigit = 185;
+	public static final int DecimalFormatPropertyPatternSeparator = 186;
+	public static final int OptionDeclaration = 187;
+	public static final int CompNamespaceConstructor = 188;
+	public static final int CompProcessingInstructionConstructor = 189;
+	public static final int Predicate = 190;
+	public static final int FilterExpr = 191;
+	public static final int DynamicFunctionCallExpr = 192;
+	public static final int SlidingWindowClause = 193;
+	public static final int TumblingWindowClause = 194;
+	public static final int WindowStartCondition = 195;
+	public static final int WindowEndCondition = 196;
+	public static final int PreviousItemBinding = 197;
+	public static final int NextItemBinding = 198;
 	// Begin XQuery Update Facility 1.0
-	public static final int RevalidationDeclaration = 198;
-	public static final int RevalidationModeStrict = 199;
-	public static final int RevalidationModeLax = 200;
-	public static final int RevalidationModeSkip = 201;
-	public static final int InsertExpr = 202;
-	public static final int InsertFirst = 203;
-	public static final int InsertLast = 204;
-	public static final int InsertAfter = 205;
-	public static final int InsertBefore = 206;
-	public static final int InsertInto = 207;
-	public static final int DeleteExpr = 208;
-	public static final int ReplaceValueExpr = 209;
-	public static final int ReplaceNodeExpr = 210;
-	public static final int RenameExpr = 211;
-	public static final int TransformExpr = 212;
-	public static final int CopyVariableBinding = 213;
+	public static final int RevalidationDeclaration = 199;
+	public static final int RevalidationModeStrict = 200;
+	public static final int RevalidationModeLax = 201;
+	public static final int RevalidationModeSkip = 202;
+	public static final int InsertExpr = 203;
+	public static final int InsertFirst = 204;
+	public static final int InsertLast = 205;
+	public static final int InsertAfter = 206;
+	public static final int InsertBefore = 207;
+	public static final int InsertInto = 208;
+	public static final int DeleteExpr = 209;
+	public static final int ReplaceValueExpr = 210;
+	public static final int ReplaceNodeExpr = 211;
+	public static final int RenameExpr = 212;
+	public static final int TransformExpr = 213;
+	public static final int CopyVariableBinding = 214;
 	// Begin XQuery Update Facility 1.0
 	// Begin brackit's set-oriented extensions
-	public static final int ReturnExpr = 214;
-	public static final int Selection = 215;
-	public static final int GroupBy = 216;
-	public static final int OrderBy = 217;
-	public static final int Join = 218;
-	public static final int JoinClause = 219;
-	public static final int Start = 220;
-	public static final int ForBind = 221;
-	public static final int LetBind = 222;
-	public static final int Count = 223;
+	public static final int ReturnExpr = 215;
+	public static final int Selection = 216;
+	public static final int GroupBy = 217;
+	public static final int OrderBy = 218;
+	public static final int Join = 219;
+	public static final int JoinClause = 220;
+	public static final int Start = 221;
+	public static final int ForBind = 222;
+	public static final int LetBind = 223;
+	public static final int Count = 224;
 	// End brackit's set-oriented extensions
 
 	public static final String NAMES[] = new String[] { "XQuery",
@@ -326,7 +327,8 @@ public final class XQ {
 			"CopyNamespacesPreserveModeNoPreserve",
 			"CopyNamespacesInheritModeInherit",
 			"CopyNamespacesInheritModeNoInherit", "DecimalFormatDeclaration",
-			"DecimalFormatProperty", "DecimalFormatPropertyDecimalSeparator",
+			"DecimalFormatDefault", "DecimalFormatProperty",
+			"DecimalFormatPropertyDecimalSeparator",
 			"DecimalFormatPropertyGroupingSeparator",
 			"DecimalFormatPropertyInfinity", "DecimalFormatPropertyMinusSign",
 			"DecimalFormatPropertyNaN", "DecimalFormatPropertyPercent",
