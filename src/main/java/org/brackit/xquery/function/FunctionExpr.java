@@ -27,12 +27,15 @@
  */
 package org.brackit.xquery.function;
 
+import java.util.ArrayList;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.expr.Cast;
+import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.sequence.TypedSequence;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Function;
@@ -100,8 +103,28 @@ public class FunctionExpr implements Expr {
 					"Execution of function '%s' was aborted because of too deep recursion.",
 					function.getName());
 		}
-		return (function.isBuiltIn()) ? res : asTypedSequence(function
-				.getSignature().getResultType(), res);
+		if (function.isBuiltIn()) {
+			return res;
+		}
+		res = asTypedSequence(function.getSignature().getResultType(), res);
+		
+		// TODO
+		// how to decide cleverly if we should materialize or not???
+		if ((res == null) || (res instanceof Item)) {
+			return res;
+		}
+		ArrayList<Item> buffer = new ArrayList<Item>();
+		Iter it = res.iterate();
+		try {
+			Item item;
+			while ((item = it.next()) != null) {
+				buffer.add(item);
+			}
+		} finally {
+			it.close();
+		}
+		res = new ItemSequence(buffer.toArray(new Item[buffer.size()]));
+		return res;
 	}
 
 	/**
