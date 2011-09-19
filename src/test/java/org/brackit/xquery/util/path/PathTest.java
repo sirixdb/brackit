@@ -37,7 +37,7 @@ import org.junit.Test;
 
 /**
  * 
- * @author Sebastian Baechle
+ * @author Sebastian Baechle, Max Bechtold
  * 
  */
 public class PathTest {
@@ -86,6 +86,49 @@ public class PathTest {
 		Path<QNm> expected = (new Path<QNm>()).child(new QNm(null, "foo", "tag"));
 		Path<QNm> parsed = (new PathParser(expected.toString())).parse();
 		assertEquals("Path parsed correctly", expected, parsed);
+	}
+	
+	@Test
+	public void testQualifiedPathPreamble() throws Exception {
+		Path<QNm> expected = (new Path<QNm>()).child(
+				new QNm("http://brackit.org/ns/bit", "bit", "tag"));
+		String path = "namespace foo = 'localhost'; " +
+				"namespace bit = 'http://brackit.org/ns/bit'; " + expected.toString();
+		Path<QNm> parsed = (new PathParser(path)).parse();
+		assertEquals("Path parsed correctly", expected, parsed);
+	}
+	
+	@Test
+	public void testQualifiedPathMalformedPreamble() throws Exception {
+		Path<QNm> expected = (new Path<QNm>()).child(
+				new QNm("http://brackit.org/ns/bit", "bit", "tag"));
+		String path = "namespace foo = 'localhost'" + expected.toString();
+		try {
+			Path<QNm> parsed = (new PathParser(path)).parse();
+			assertTrue("Malformed preamble recognized", false);
+		} catch (PathException e) {
+		}
+	}
+	
+	@Test
+	public void testQualifiedPathPredefinedPrefix() throws Exception {
+		Path<QNm> expected = (new Path<QNm>()).child(
+				new QNm("http://brackit.org/ns/bit", "bit", "tag"));
+		String path = "namespace foo = 'localhost'; " + expected.toString();
+		Path<QNm> parsed = (new PathParser(path)).parse();
+		assertEquals("Path parsed correctly", expected, parsed);
+	}
+	
+	@Test
+	public void testQualifiedPathUndefinedPrefix() throws Exception {
+		Path<QNm> expected = (new Path<QNm>()).child(
+				new QNm("http://brackit.org/ns/bit", "xzibit", "tag"));
+		String path = "namespace foo = 'localhost'; " + expected.toString();
+		try {
+			Path<QNm> parsed = (new PathParser(path)).parse();
+			assertTrue("Missing namespace declaration recognized", false);
+		} catch (PathException e) {
+		}
 	}
 	
 	@Test

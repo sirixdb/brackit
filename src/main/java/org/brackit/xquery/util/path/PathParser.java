@@ -27,16 +27,20 @@
  */
 package org.brackit.xquery.util.path;
 
+import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.parser.Tokenizer;
+import org.brackit.xquery.module.Namespaces;
 
 /**
- * @author Sebastian Baechle
+ * @author Sebastian Baechle, Max Bechtold
  *
  */
 public class PathParser extends Tokenizer {
 
 	private final Path<QNm> p;
+	
+	private Namespaces namespaces;
 	
 	public PathParser(String s) {
 		super(s);
@@ -45,6 +49,7 @@ public class PathParser extends Tokenizer {
 
 	public Path<QNm> parse() throws PathException {
 		try {
+			nsPreamble();
 			startStep();
 			while (axisStep());
 			attributeStep();
@@ -54,8 +59,54 @@ public class PathParser extends Tokenizer {
 			throw new PathException(e, e.getMessage());
 		}
 	}
+	
+	/**
+	 * Allows for inlined namespace declarations of the form 
+	 * ( "namespace" NCNAME "=" stringLiteral ";")&#042; preceding a path 
+	 * expression.
+	 */
+	private void nsPreamble() throws TokenizerException, PathException {
+		Token la = la("namespace");
+		while (la != null) {
+			consume(la);
+			String prefix;
+			String uri;
+			Token pfx = laNCNameSkipWS();
+			if (pfx == null) {
+				throw new MismatchException("NCName");
+			}
+			prefix = pfx.toString();
+			consume(pfx);
+			
+			if (!attemptSymSkipWS("=")) {
+				throw new MismatchException("=");
+			}
+			
+			Token uriToken = laStringSkipWS(false);
+			if (uriToken == null) {
+				throw new MismatchException("URI");
+			}
+			uri = uriToken.toString();
+			consume(uriToken);
+			
+			if (!attemptSymSkipWS(";")) {
+				throw new MismatchException(";");
+			}
+			
+			if (namespaces == null) {
+				namespaces = new Namespaces();
+			}
+			try {
+				namespaces.declare(prefix, uri);
+			} catch (QueryException e) {
+				throw new PathException(e);
+			}
+			attemptWS();
+			la = la("namespace");
+		}
+	}
 
-	private void startStep() {
+	private void startStep() throws PathException {
 		if (attempt("..")) {
 			p.parent();			
 		} else if (attempt(".")) {
@@ -64,12 +115,12 @@ public class PathParser extends Tokenizer {
 			 EQNameToken la = laQName();
 			 if (la != null) {
 				 consume(la);
-				 p.self().child(la.qname());
+				 p.self().child(expand(la.qname()));
 			 }
 		}
 	}
 
-	private boolean axisStep() throws TokenizerException {
+	private boolean axisStep() throws TokenizerException, PathException {
 		return ((parentStep()) || (selfStep()) || (namedStep()));
 	}
 
@@ -89,7 +140,7 @@ public class PathParser extends Tokenizer {
 		return false;
 	}
 
-	private boolean namedStep() throws TokenizerException {
+	private boolean namedStep() throws TokenizerException, PathException {
 		QNm q = null;
 		Token la = la("//");
 		if (la != null) {
@@ -105,7 +156,7 @@ public class PathParser extends Tokenizer {
 				consume(ela);
 				q = ela.qname();
 			}
-			p.descendant(q);
+			p.descendant(expand(q));
 			return true;
 		} else if ((la = la("/")) != null) {
 			if (la(la, "@") != null) {
@@ -120,13 +171,13 @@ public class PathParser extends Tokenizer {
 				consume(ela);
 				q = ela.qname();
 			}
-			p.child(q);
+			p.child(expand(q));
 			return true;
 		}
 		return false;
 	}
 
-	private void attributeStep() throws TokenizerException {
+	private void attributeStep() throws TokenizerException, PathException {
 		QNm q = null;
 		if (attempt("//@")) {
 			if (!attempt("*")) {
@@ -137,7 +188,7 @@ public class PathParser extends Tokenizer {
 				consume(la);
 				q = la.qname();
 			}
-			p.descendantAttribute(q);
+			p.descendantAttribute(expand(q));
 		} else if (attempt("/@")) {			
 			if (!attempt("*")) {
 				EQNameToken la = laQName();
@@ -147,7 +198,23 @@ public class PathParser extends Tokenizer {
 				consume(la);
 				q = la.qname();
 			}
-			p.attribute(q);
+			p.attribute(expand(q));
+		}
+	}
+	
+	/**
+	 * Resolves prefixed named steps like 'bit:email' against the namespace 
+	 * declarations in the preamble (if any).
+	 * 
+	 */
+	private QNm expand(QNm qname) throws PathException {
+		if (namespaces == null || qname.prefix == null) {
+			return qname;
+		}
+		try {
+			return namespaces.expand(qname.prefix, qname.localName);
+		} catch (QueryException e) {
+			throw new PathException(e);
 		}
 	}
 }
