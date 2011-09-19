@@ -64,8 +64,7 @@ public class Subsequence extends AbstractFunction {
 			return null;
 		}
 
-		IntNumeric tmp = Cast.asInteger(((Dbl) args[1]).round()
-				.doubleValue());
+		IntNumeric tmp = Cast.asInteger(((Dbl) args[1]).round().doubleValue());
 		if (tmp.cmp(Int32.ZERO) <= 0) {
 			tmp = Int32.ONE;
 		}
@@ -101,7 +100,7 @@ public class Subsequence extends AbstractFunction {
 
 						if (it == null) {
 							it = seq.iterate();
-							it.skip(start);
+							it.skip((IntNumeric) start.subtract(Int32.ONE));
 						}
 
 						return it.next();
