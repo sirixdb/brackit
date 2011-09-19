@@ -668,7 +668,7 @@ public class Compiler implements Translator {
 	protected Expr documentExpr(AST node) throws QueryException {
 		boolean bind = false;
 		Binding binding = table.bind(Namespaces.FS_PARENT, SequenceType.ITEM);
-		Expr[] contentExpr = contentSequence(node.getChild(0));
+		Expr contentExpr = expr(node.getChild(0), false);
 		table.unbind();
 		bind = binding.isReferenced();
 		return new DocumentExpr(contentExpr, bind);

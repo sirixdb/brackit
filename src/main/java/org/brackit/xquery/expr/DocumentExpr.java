@@ -42,11 +42,11 @@ import org.brackit.xquery.xdm.Sequence;
  * 
  */
 public class DocumentExpr extends ConstructedNodeBuilder implements Expr {
-	protected final Expr[] contentExpr;
+	protected final Expr contentExpr;
 
 	protected final boolean bind;
 
-	public DocumentExpr(Expr[] contentExpr, boolean bind) {
+	public DocumentExpr(Expr contentExpr, boolean bind) {
 		this.contentExpr = contentExpr;
 		this.bind = bind;
 	}
@@ -78,22 +78,15 @@ public class DocumentExpr extends ConstructedNodeBuilder implements Expr {
 			}
 		};
 
-		Tuple t = (contentExpr.length > 0) ? tuple.concat(document) : tuple;
-
-		for (int i = 0; i < contentExpr.length; i++) {
-			Sequence content = contentExpr[i].evaluate(ctx, t);
-			buildContentSequence(ctx, sink, content);
-		}
+		Tuple t = tuple.concat(document);
+		Sequence content = contentExpr.evaluate(ctx, t);
+		buildContentSequence(ctx, sink, content);
 		return document;
 	}
 
 	@Override
 	public boolean isUpdating() {
-		for (int i = 0; i < contentExpr.length; i++) {
-			if (contentExpr[i].isUpdating())
-				return true;
-		}
-		return false;
+		return (contentExpr.isUpdating());
 	}
 
 	@Override
