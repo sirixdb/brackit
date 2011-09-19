@@ -1252,7 +1252,7 @@ public class Analyzer {
 		if (expr.getType() != XQ.OrExpr) {
 			return andExpr(expr);
 		}
-		andExpr(expr.getChild(0));
+		orExpr(expr.getChild(0));
 		andExpr(expr.getChild(1));
 		return true;
 	}
@@ -1261,7 +1261,7 @@ public class Analyzer {
 		if (expr.getType() != XQ.AndExpr) {
 			return comparisonExpr(expr);
 		}
-		comparisonExpr(expr.getChild(0));
+		andExpr(expr.getChild(0));
 		comparisonExpr(expr.getChild(1));
 		return true;
 	}
@@ -1270,7 +1270,7 @@ public class Analyzer {
 		if (expr.getType() != XQ.ComparisonExpr) {
 			return rangeExpr(expr);
 		}
-		rangeExpr(expr.getChild(1));
+		comparisonExpr(expr.getChild(1));
 		rangeExpr(expr.getChild(2));
 		return true;
 	}
@@ -1279,7 +1279,7 @@ public class Analyzer {
 		if (expr.getType() != XQ.RangeExpr) {
 			return additiveExpr(expr);
 		}
-		additiveExpr(expr.getChild(0));
+		rangeExpr(expr.getChild(0));
 		additiveExpr(expr.getChild(1));
 		return true;
 	}
@@ -1290,7 +1290,7 @@ public class Analyzer {
 						0).getType() != XQ.SubtractOp))) {
 			return multiplicativeExpr(expr);
 		}
-		multiplicativeExpr(expr.getChild(1));
+		additiveExpr(expr.getChild(1));
 		multiplicativeExpr(expr.getChild(2));
 		return true;
 	}
@@ -1299,7 +1299,7 @@ public class Analyzer {
 		if (expr.getType() != XQ.ArithmeticExpr) {
 			return unionExpr(expr);
 		}
-		unionExpr(expr.getChild(1));
+		multiplicativeExpr(expr.getChild(1));
 		unionExpr(expr.getChild(2));
 		return true;
 	}
@@ -1308,7 +1308,7 @@ public class Analyzer {
 		if (expr.getType() != XQ.UnionExpr) {
 			return intersectExpr(expr);
 		}
-		intersectExpr(expr.getChild(0));
+		unionExpr(expr.getChild(0));
 		intersectExpr(expr.getChild(1));
 		return true;
 	}
@@ -1317,7 +1317,7 @@ public class Analyzer {
 		if (expr.getType() != XQ.IntersectExpr) {
 			return instanceOfExpr(expr);
 		}
-		instanceOfExpr(expr.getChild(0));
+		intersectExpr(expr.getChild(0));
 		instanceOfExpr(expr.getChild(1));
 		return true;
 	}
@@ -1558,25 +1558,27 @@ public class Analyzer {
 		boolean nilled = false;
 		Type type = null;
 		QNm name = null;
-		AST child = test.getChild(0);
-		if (child.getType() == XQ.Wildcard) {
-			name = null;
-		} else if (child.getType() == XQ.QNm) {
-			name = (QNm) child.getValue();
-			// expand and update AST
-			name = expand(name, DefaultNS.ELEMENT_OR_TYPE);
-			child.setValue(name);
-		}
-		if (test.getChildCount() >= 2) {
-			child = test.getChild(1);
-			QNm typeName = (QNm) child.getValue();
-			// expand and update AST
-			typeName = expand(typeName, DefaultNS.ELEMENT_OR_TYPE);
-			child.setValue(typeName);
-			type = ctx.getTypes().resolveType(typeName);
-			if (test.getChildCount() >= 3) {
-				child = test.getChild(2);
-				nilled = (child.getType() == XQ.Nilled);
+		if (test.getChildCount() >= 1) {
+			AST child = test.getChild(0);
+			if (child.getType() == XQ.Wildcard) {
+				name = null;
+			} else if (child.getType() == XQ.QNm) {
+				name = (QNm) child.getValue();
+				// expand and update AST
+				name = expand(name, DefaultNS.ELEMENT_OR_TYPE);
+				child.setValue(name);
+			}
+			if (test.getChildCount() >= 2) {
+				child = test.getChild(1);
+				QNm typeName = (QNm) child.getValue();
+				// expand and update AST
+				typeName = expand(typeName, DefaultNS.ELEMENT_OR_TYPE);
+				child.setValue(typeName);
+				type = ctx.getTypes().resolveType(typeName);
+				if (test.getChildCount() >= 3) {
+					child = test.getChild(2);
+					nilled = (child.getType() == XQ.Nilled);
+				}
 			}
 		}
 		return new ElementType(name, type);
@@ -1881,7 +1883,7 @@ public class Analyzer {
 			return false;
 		}
 		// TODO change order mode in static context
-		expr(expr);
+		expr(expr.getChild(0));
 		return true;
 	}
 
@@ -1890,7 +1892,7 @@ public class Analyzer {
 			return false;
 		}
 		// TODO change order mode in static context
-		expr(expr);
+		expr(expr.getChild(0));
 		return true;
 	}
 
