@@ -121,7 +121,7 @@ public class Tokenizer {
 			return prefix;
 		}
 
-		QNm qname() {
+		public QNm qname() {
 			return new QNm(uri, prefix, ncname);
 		}
 

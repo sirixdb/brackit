@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.util.path;
 
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.parser.Tokenizer;
 
 /**
@@ -35,14 +36,14 @@ import org.brackit.xquery.compiler.parser.Tokenizer;
  */
 public class PathParser extends Tokenizer {
 
-	private final Path<String> p;
+	private final Path<QNm> p;
 	
 	public PathParser(String s) {
 		super(s);
-		p = new Path<String>();
+		p = new Path<QNm>();
 	}
 
-	public Path<String> parse() throws PathException {
+	public Path<QNm> parse() throws PathException {
 		try {
 			startStep();
 			while (axisStep());
@@ -60,10 +61,10 @@ public class PathParser extends Tokenizer {
 		} else if (attempt(".")) {
 			p.self();
 		} else {
-			 Token la = laQName();
+			 EQNameToken la = laQName();
 			 if (la != null) {
 				 consume(la);
-				 p.self().child(la.toString());
+				 p.self().child(la.qname());
 			 }
 		}
 	}
@@ -89,7 +90,7 @@ public class PathParser extends Tokenizer {
 	}
 
 	private boolean namedStep() throws TokenizerException {
-		String s = null;
+		QNm q = null;
 		Token la = la("//");
 		if (la != null) {
 			if (la(la, "@") != null) {
@@ -97,14 +98,14 @@ public class PathParser extends Tokenizer {
 			}
 			consume(la);
 			if (!attempt("*")) {
-				la = laQName();
-				if (la == null) {
+				EQNameToken ela = laQName();
+				if (ela == null) {
 					throw new MismatchException("Wildcard", "QName");
 				}
-				consume(la);
-				s = la.toString();
+				consume(ela);
+				q = ela.qname();
 			}
-			p.descendant(s);
+			p.descendant(q);
 			return true;
 		} else if ((la = la("/")) != null) {
 			if (la(la, "@") != null) {
@@ -112,41 +113,41 @@ public class PathParser extends Tokenizer {
 			}
 			consume(la);
 			if (!attempt("*")) {
-				la = laQName();
-				if (la == null) {
+				EQNameToken ela = laQName();
+				if (ela == null) {
 					throw new MismatchException("Wildcard", "QName");
 				}
-				consume(la);
-				s = la.toString();
+				consume(ela);
+				q = ela.qname();
 			}
-			p.child(s);
+			p.child(q);
 			return true;
 		}
 		return false;
 	}
 
 	private void attributeStep() throws TokenizerException {
-		String s = null;
+		QNm q = null;
 		if (attempt("//@")) {
 			if (!attempt("*")) {
-				Token la = laQName();
+				EQNameToken la = laQName();
 				if (la == null) {
 					throw new MismatchException("Wildcard", "QName");
 				}
 				consume(la);
-				s = la.toString();
+				q = la.qname();
 			}
-			p.descendantAttribute(s);
+			p.descendantAttribute(q);
 		} else if (attempt("/@")) {			
 			if (!attempt("*")) {
-				Token la = laQName();
+				EQNameToken la = laQName();
 				if (la == null) {
 					throw new MismatchException("Wildcard", "QName");
 				}
 				consume(la);
-				s = la.toString();
+				q = la.qname();
 			}
-			p.attribute(s);
+			p.attribute(q);
 		}
 	}
 }

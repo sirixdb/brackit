@@ -32,6 +32,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import org.brackit.xquery.atomic.QNm;
 import org.junit.Test;
 
 /**
@@ -42,69 +43,76 @@ import org.junit.Test;
 public class PathTest {
 	@Test
 	public void testSimplePath() throws Exception {
-		Path<String> expected = (new Path<String>()).child("tag");
-		Path<String> parsed = (new PathParser(expected.toString())).parse();
+		Path<QNm> expected = (new Path<QNm>()).child(new QNm("tag"));
+		Path<QNm> parsed = (new PathParser(expected.toString())).parse();
 		assertEquals("Path parsed correctly", expected, parsed);
 	}
 
 	@Test
 	public void testSimplePath2() throws Exception {
-		Path<String> expected = (new Path<String>()).child("tag")
-				.child("hallo").descendant("aha");
-		Path<String> parsed = (new PathParser(expected.toString())).parse();
+		Path<QNm> expected = (new Path<QNm>()).child(new QNm("tag"))
+				.child(new QNm("hallo")).descendant(new QNm("aha"));
+		Path<QNm> parsed = (new PathParser(expected.toString())).parse();
 		assertEquals("Path parsed correctly", expected, parsed);
 	}
 
 	@Test
 	public void testSimplePath3() throws Exception {
-		Path<String> expected = (new Path<String>()).self().child("tag").child(
-				"hallo").descendant("aha");
-		Path<String> parsed = (new PathParser(expected.toString())).parse();
+		Path<QNm> expected = (new Path<QNm>()).self().child(new QNm("tag"))
+			.child(new QNm("hallo")).descendant(new QNm("aha"));
+		Path<QNm> parsed = (new PathParser(expected.toString())).parse();
 		assertEquals("Path parsed correctly", expected, parsed);
 	}
 
 	@Test
 	public void testSimplePath4() throws Exception {
-		Path<String> expected = (new Path<String>()).self().child("tag").child(
-				"hallo").descendant("aha");
+		Path<QNm> expected = (new Path<QNm>()).self().child(new QNm("tag"))
+			.child(new QNm("hallo")).descendant(new QNm("aha"));
 		String implicitSelfPath = expected.toString().substring(2);
-		Path<String> parsed = (new PathParser(implicitSelfPath)).parse();
+		Path<QNm> parsed = (new PathParser(implicitSelfPath)).parse();
 		assertEquals("Path parsed correctly", expected, parsed);
 	}
 
 	@Test
 	public void testSelfPath4() throws Exception {
-		Path<String> expected = (new Path<String>()).self().self().descendant(
-				"aha");
-		Path<String> parsed = (new PathParser(expected.toString())).parse();
+		Path<QNm> expected = (new Path<QNm>()).self().self().descendant(
+				new QNm("aha"));
+		Path<QNm> parsed = (new PathParser(expected.toString())).parse();
 		assertEquals("Path parsed correctly", expected, parsed);
 	}
 
 	@Test
+	public void testQualifiedPath() throws Exception {
+		Path<QNm> expected = (new Path<QNm>()).child(new QNm(null, "foo", "tag"));
+		Path<QNm> parsed = (new PathParser(expected.toString())).parse();
+		assertEquals("Path parsed correctly", expected, parsed);
+	}
+	
+	@Test
 	public void testFilePath() throws Exception {
-		Path<String> parsed = (new PathParser("/test.xml")).parse();
-		assertEquals("Path parsed correctly", new Path<String>()
-				.child("test.xml"), parsed);
+		Path<QNm> parsed = (new PathParser("/test.xml")).parse();
+		assertEquals("Path parsed correctly", new Path<QNm>()
+				.child(new QNm("test.xml")), parsed);
 	}
 
 	@Test
 	public void testFile2Path() throws Exception {
-		Path<String> parsed = (new PathParser("_test.xml")).parse();
-		assertEquals("Path parsed correctly", new Path<String>().self().child(
-				"_test.xml"), parsed);
+		Path<QNm> parsed = (new PathParser("_test.xml")).parse();
+		assertEquals("Path parsed correctly", new Path<QNm>().self().child(
+				new QNm("_test.xml")), parsed);
 	}
 
 	@Test
 	public void testFilePath2() throws Exception {
-		Path<String> parsed = (new PathParser("../conf.d//test.xml")).parse();
-		assertEquals("Path parsed correctly", new Path<String>().parent()
-				.child("conf.d").descendant("test.xml"), parsed);
+		Path<QNm> parsed = (new PathParser("../conf.d//test.xml")).parse();
+		assertEquals("Path parsed correctly", new Path<QNm>().parent()
+				.child(new QNm("conf.d")).descendant(new QNm("test.xml")), parsed);
 	}
 
 	@Test
 	public void testInvalidPath1() throws Exception {
 		try {
-			Path<String> parsed = (new PathParser("/a/..b/c")).parse();
+			Path<QNm> parsed = (new PathParser("/a/..b/c")).parse();
 			fail("Parser accepted invalid input");
 		} catch (PathException e) {
 			// expected
@@ -113,15 +121,15 @@ public class PathTest {
 
 	@Test
 	public void testMatchWithBacktracking() throws Exception {
-		Path<String> pattern = (new PathParser("//a/b//c")).parse();
-		Path<String> path = (new PathParser("/e/a/b/b/f/b/e/c")).parse();
+		Path<QNm> pattern = (new PathParser("//a/b//c")).parse();
+		Path<QNm> path = (new PathParser("/e/a/b/b/f/b/e/c")).parse();
 		assertTrue("Pattern matches path", pattern.matches(path));
 	}
 
 	@Test
 	public void testMatchWithDoubleTwoStagedBacktracking() throws Exception {
-		Path<String> pattern = (new PathParser("//a/b/c//d")).parse();
-		Path<String> path = (new PathParser("/a/b/c/a/b/b/c/f/b/c/e/d"))
+		Path<QNm> pattern = (new PathParser("//a/b/c//d")).parse();
+		Path<QNm> path = (new PathParser("/a/b/c/a/b/b/c/f/b/c/e/d"))
 				.parse();
 		assertTrue("Pattern does match path", pattern.matches(path));
 	}
@@ -129,37 +137,37 @@ public class PathTest {
 	@Test
 	public void testNoMatchWithBacktrackingButNoDescendantStartAxis()
 			throws Exception {
-		Path<String> pattern = (new PathParser("/a/b//c")).parse();
-		Path<String> path = (new PathParser("/e/a/b/b/f/b/e/c")).parse();
+		Path<QNm> pattern = (new PathParser("/a/b//c")).parse();
+		Path<QNm> path = (new PathParser("/e/a/b/b/f/b/e/c")).parse();
 		assertFalse("Pattern matches path", pattern.matches(path));
 	}
 
 	@Test
 	public void testNoMatchWithDoubleTwoStagedBacktracking() throws Exception {
-		Path<String> pattern = (new PathParser("//a/b/c//d")).parse();
-		Path<String> path = (new PathParser("/a/b/b/c/f/b/c/e/d")).parse();
+		Path<QNm> pattern = (new PathParser("//a/b/c//d")).parse();
+		Path<QNm> path = (new PathParser("/a/b/b/c/f/b/c/e/d")).parse();
 		assertFalse("Pattern does not match path", pattern.matches(path));
 	}
 
 	@Test
 	public void testNoMatchWithDoubleTwoStagedBacktrackingButNoDescendantStartAxis()
 			throws Exception {
-		Path<String> pattern = (new PathParser("/a/b/c//d")).parse();
-		Path<String> path = (new PathParser("/e/a/b/c/a/b/b/c/f/b/c/e/d"))
+		Path<QNm> pattern = (new PathParser("/a/b/c//d")).parse();
+		Path<QNm> path = (new PathParser("/e/a/b/c/a/b/b/c/f/b/c/e/d"))
 				.parse();
 		assertFalse("Pattern does match path", pattern.matches(path));
 	}
 
 	@Test
 	public void testMatch() throws Exception {
-		Path<String> pattern = (new PathParser("//c")).parse();
-		Path<String> path = (new PathParser("//a/b/c")).parse();
+		Path<QNm> pattern = (new PathParser("//c")).parse();
+		Path<QNm> path = (new PathParser("//a/b/c")).parse();
 		assertTrue("Pattern does match path", pattern.matches(path));
 	}
 
 	@Test
 	public void testVerySimplePath() throws Exception {
-		Path<String> parsed = (new PathParser("l")).parse();
+		Path<QNm> parsed = (new PathParser("l")).parse();
 		assertFalse(parsed.isEmpty());
 	}
 }
