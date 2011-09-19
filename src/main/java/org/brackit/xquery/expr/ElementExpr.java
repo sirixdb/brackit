@@ -65,7 +65,7 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
 	protected final Expr nameExpr;
 
 	protected final NS[] namespaces;
-	
+
 	protected final Expr[] contentExprs;
 
 	protected final boolean bind;
@@ -74,8 +74,8 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
 
 	protected final QNm name;
 
-	public ElementExpr(Expr nameExpr, NS[] namespaces, Expr[] contentExpr, boolean bind,
-			boolean appendOnly) {
+	public ElementExpr(Expr nameExpr, NS[] namespaces, Expr[] contentExpr,
+			boolean bind, boolean appendOnly) {
 		this.nameExpr = nameExpr;
 		this.namespaces = namespaces;
 		this.contentExprs = contentExpr;
@@ -105,9 +105,15 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
 		} else {
 			element = ctx.getNodeFactory().element(name);
 		}
-		
+
 		for (NS ns : namespaces) {
-			element.getScope().addPrefix(ns.getPrefix(), ns.getURI());
+			String prefix = ns.getPrefix();
+			String uri = ns.getURI();
+			if (prefix == null) {
+				element.getScope().setDefaultNS(uri);
+			} else {
+				element.getScope().addPrefix(prefix, uri);
+			}
 		}
 
 		ContentSink sink = new ContentSink() {

@@ -25,29 +25,16 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.module;
+package org.brackit.xquery.compiler;
 
 import org.brackit.xquery.xdm.Expr;
 
 /**
+ * A compilation unit, e.g. a main module or a function.
  * 
  * @author Sebastian Baechle
- * 
+ *
  */
-public class LibraryModule extends AbstractModule {
-
-	private String nsURI;
-
-	public String getTargetNS() {
-		return nsURI;
-	}
-
-	public void setTargetNS(String nsURI) {
-		this.nsURI = nsURI;
-	}
-
-	@Override
-	public Expr getBody() {
-		return null;
-	}
+public interface Unit {
+	public void setExpr(Expr expr);
 }

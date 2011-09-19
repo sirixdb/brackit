@@ -142,7 +142,7 @@ public final class XQ {
 	public static final int KindTestNamespaceNode = 96;
 	public static final int NSWildcardNameTest = 97;
 	public static final int NSNameWildcardTest = 98;
-	public static final int EmptySequence = 99;
+	public static final int ParenthesizedExpr = 99;
 	public static final int ContextItemExpr = 100;
 	public static final int ArgumentPlaceHolder = 101;
 	public static final int OrderedExpr = 102;
@@ -153,7 +153,7 @@ public final class XQ {
 	public static final int Dbl = 107;
 	public static final int Dec = 108;
 	public static final int AnyURI = 109;
-	public static final int EStr = 110;
+	public static final int Bool = 110;
 	public static final int Annotation = 111;
 	public static final int FunctionTest = 112;
 	public static final int AnyFunctionType = 113;
@@ -184,93 +184,97 @@ public final class XQ {
 	public static final int CompCommentConstructor = 138;
 	public static final int ContentSequence = 139;
 	public static final int EnclosedExpr = 140;
-	public static final int DirPIConstructor = 141;
-	public static final int PITarget = 142;
-	public static final int CompDocumentConstructor = 143;
-	public static final int CompTextConstructor = 144;
-	public static final int DefaultElementNamespace = 145;
-	public static final int DefaultFunctionNamespace = 146;
-	public static final int SchemaImport = 147;
-	public static final int ModuleImport = 148;
-	public static final int Namespace = 149;
-	public static final int ContextItemDeclaration = 150;
-	public static final int ExternalVariable = 151;
-	public static final int AnnotatedDecl = 152;
-	public static final int FunctionDecl = 153;
-	public static final int ExternalFunction = 154;
-	public static final int BoundarySpaceDeclaration = 155;
-	public static final int BoundarySpaceModePreserve = 156;
-	public static final int BoundarySpaceModeStrip = 157;
-	public static final int CollationDeclaration = 158;
-	public static final int BaseURIDeclaration = 159;
-	public static final int ConstructionDeclaration = 160;
-	public static final int ConstructionModePreserve = 161;
-	public static final int ConstructionModeStrip = 162;
-	public static final int OrderingModeDeclaration = 163;
-	public static final int OrderingModeOrdered = 164;
-	public static final int OrderingModeUnordered = 165;
-	public static final int EmptyOrderDeclaration = 166;
-	public static final int EmptyOrderModeGreatest = 167;
-	public static final int EmptyOrderModeLeast = 168;
-	public static final int CopyNamespacesDeclaration = 169;
-	public static final int CopyNamespacesPreserveModePreserve = 170;
-	public static final int CopyNamespacesPreserveModeNoPreserve = 171;
-	public static final int CopyNamespacesInheritModeInherit = 172;
-	public static final int CopyNamespacesInheritModeNoInherit = 173;
-	public static final int DecimalFormatDeclaration = 174;
-	public static final int DecimalFormatDefault = 175;
-	public static final int DecimalFormatProperty = 176;
-	public static final int DecimalFormatPropertyDecimalSeparator = 177;
-	public static final int DecimalFormatPropertyGroupingSeparator = 178;
-	public static final int DecimalFormatPropertyInfinity = 179;
-	public static final int DecimalFormatPropertyMinusSign = 180;
-	public static final int DecimalFormatPropertyNaN = 181;
-	public static final int DecimalFormatPropertyPercent = 182;
-	public static final int DecimalFormatPropertyPerMille = 183;
-	public static final int DecimalFormatPropertyZeroDigit = 184;
-	public static final int DecimalFormatPropertyDigit = 185;
-	public static final int DecimalFormatPropertyPatternSeparator = 186;
-	public static final int OptionDeclaration = 187;
-	public static final int CompNamespaceConstructor = 188;
-	public static final int CompProcessingInstructionConstructor = 189;
-	public static final int Predicate = 190;
-	public static final int FilterExpr = 191;
-	public static final int DynamicFunctionCallExpr = 192;
-	public static final int SlidingWindowClause = 193;
-	public static final int TumblingWindowClause = 194;
-	public static final int WindowStartCondition = 195;
-	public static final int WindowEndCondition = 196;
-	public static final int PreviousItemBinding = 197;
-	public static final int NextItemBinding = 198;
+	public static final int DirElementConstructor = 141;
+	public static final int DirAttributeConstructor = 142;
+	public static final int DirCommentConstructor = 143;
+	public static final int DirPIConstructor = 144;
+	public static final int PITarget = 145;
+	public static final int CompDocumentConstructor = 146;
+	public static final int CompTextConstructor = 147;
+	public static final int DefaultElementNamespace = 148;
+	public static final int DefaultFunctionNamespace = 149;
+	public static final int SchemaImport = 150;
+	public static final int ModuleImport = 151;
+	public static final int Namespace = 152;
+	public static final int ContextItemDeclaration = 153;
+	public static final int ExternalVariable = 154;
+	public static final int AnnotatedDecl = 155;
+	public static final int FunctionDecl = 156;
+	public static final int ExternalFunction = 157;
+	public static final int BoundarySpaceDeclaration = 158;
+	public static final int BoundarySpaceModePreserve = 159;
+	public static final int BoundarySpaceModeStrip = 160;
+	public static final int CollationDeclaration = 161;
+	public static final int BaseURIDeclaration = 162;
+	public static final int ConstructionDeclaration = 163;
+	public static final int ConstructionModePreserve = 164;
+	public static final int ConstructionModeStrip = 165;
+	public static final int OrderingModeDeclaration = 166;
+	public static final int OrderingModeOrdered = 167;
+	public static final int OrderingModeUnordered = 168;
+	public static final int EmptyOrderDeclaration = 169;
+	public static final int EmptyOrderModeGreatest = 170;
+	public static final int EmptyOrderModeLeast = 171;
+	public static final int CopyNamespacesDeclaration = 172;
+	public static final int CopyNamespacesPreserveModePreserve = 173;
+	public static final int CopyNamespacesPreserveModeNoPreserve = 174;
+	public static final int CopyNamespacesInheritModeInherit = 175;
+	public static final int CopyNamespacesInheritModeNoInherit = 176;
+	public static final int DecimalFormatDeclaration = 177;
+	public static final int DecimalFormatDefault = 178;
+	public static final int DecimalFormatProperty = 179;
+	public static final int DecimalFormatPropertyDecimalSeparator = 180;
+	public static final int DecimalFormatPropertyGroupingSeparator = 181;
+	public static final int DecimalFormatPropertyInfinity = 182;
+	public static final int DecimalFormatPropertyMinusSign = 183;
+	public static final int DecimalFormatPropertyNaN = 184;
+	public static final int DecimalFormatPropertyPercent = 185;
+	public static final int DecimalFormatPropertyPerMille = 186;
+	public static final int DecimalFormatPropertyZeroDigit = 187;
+	public static final int DecimalFormatPropertyDigit = 188;
+	public static final int DecimalFormatPropertyPatternSeparator = 189;
+	public static final int OptionDeclaration = 190;
+	public static final int CompNamespaceConstructor = 191;
+	public static final int CompPIConstructor = 192;
+	public static final int Predicate = 193;
+	public static final int FilterExpr = 194;
+	public static final int DynamicFunctionCallExpr = 195;
+	public static final int SlidingWindowClause = 196;
+	public static final int TumblingWindowClause = 197;
+	public static final int WindowStartCondition = 198;
+	public static final int WindowEndCondition = 199;
+	public static final int WindowVars = 200;
+	public static final int PreviousItemBinding = 201;
+	public static final int NextItemBinding = 202;
 	// Begin XQuery Update Facility 1.0
-	public static final int RevalidationDeclaration = 199;
-	public static final int RevalidationModeStrict = 200;
-	public static final int RevalidationModeLax = 201;
-	public static final int RevalidationModeSkip = 202;
-	public static final int InsertExpr = 203;
-	public static final int InsertFirst = 204;
-	public static final int InsertLast = 205;
-	public static final int InsertAfter = 206;
-	public static final int InsertBefore = 207;
-	public static final int InsertInto = 208;
-	public static final int DeleteExpr = 209;
-	public static final int ReplaceValueExpr = 210;
-	public static final int ReplaceNodeExpr = 211;
-	public static final int RenameExpr = 212;
-	public static final int TransformExpr = 213;
-	public static final int CopyVariableBinding = 214;
+	public static final int RevalidationDeclaration = 203;
+	public static final int RevalidationModeStrict = 204;
+	public static final int RevalidationModeLax = 205;
+	public static final int RevalidationModeSkip = 206;
+	public static final int InsertExpr = 207;
+	public static final int InsertFirst = 208;
+	public static final int InsertLast = 209;
+	public static final int InsertAfter = 210;
+	public static final int InsertBefore = 211;
+	public static final int InsertInto = 212;
+	public static final int DeleteExpr = 213;
+	public static final int ReplaceValueExpr = 214;
+	public static final int ReplaceNodeExpr = 215;
+	public static final int RenameExpr = 216;
+	public static final int TransformExpr = 217;
+	public static final int CopyVariableBinding = 218;
 	// Begin XQuery Update Facility 1.0
 	// Begin brackit's set-oriented extensions
-	public static final int ReturnExpr = 215;
-	public static final int Selection = 216;
-	public static final int GroupBy = 217;
-	public static final int OrderBy = 218;
-	public static final int Join = 219;
-	public static final int JoinClause = 220;
-	public static final int Start = 221;
-	public static final int ForBind = 222;
-	public static final int LetBind = 223;
-	public static final int Count = 224;
+	public static final int ReturnExpr = 219;
+	public static final int Selection = 220;
+	public static final int GroupBy = 221;
+	public static final int OrderBy = 222;
+	public static final int Join = 223;
+	public static final int JoinClause = 224;
+	public static final int Start = 225;
+	public static final int ForBind = 226;
+	public static final int LetBind = 227;
+	public static final int Count = 228;
 	// End brackit's set-oriented extensions
 
 	public static final String NAMES[] = new String[] { "XQuery",
@@ -299,10 +303,10 @@ public final class XQ {
 			"Nilled", "KindTestElement", "KindTestAttribute",
 			"KindTestSchemaElement", "KindTestSchemaAttribute", "KindTestPi",
 			"KindTestComment", "KindTestText", "KindTestNamespaceNode",
-			"NSWildcardNameTest", "NSNameWildcardTest", "EmptySequence",
+			"NSWildcardNameTest", "NSNameWildcardTest", "ParenthesizedExpr",
 			"ContextItemExpr", "ArgumentPlaceHolder", "OrderedExpr",
 			"UnorderedExpr", "Int", "Str", "QNm", "Dbl", "Dec", "AnyURI",
-			"EStr", "Annotation", "FunctionTest", "AnyFunctionType",
+			"Bool", "Annotation", "FunctionTest", "AnyFunctionType",
 			"TypedFunctionType", "SomeQuantifier", "EveryQuantifier",
 			"QuantifiedExpr", "SwitchExpr", "SwitchClause", "TypeSwitch",
 			"TypeSwitchCase", "IfExpr", "TryCatchExpr", "CatchClause",
@@ -311,19 +315,21 @@ public final class XQ {
 			"LiteralFuncItem", "InlineFuncItem", "TypedVariableDeclaration",
 			"CompElementConstructor", "CompAttributeConstructor",
 			"CompCommentConstructor", "ContentSequence", "EnclosedExpr",
-			"DirPIConstructor", "PITarget", "CompDocumentConstructor",
-			"CompTextConstructor", "DefaultElementNamespace",
-			"DefaultFunctionNamespace", "SchemaImport", "ModuleImport",
-			"Namespace", "ContextItemDeclaration", "ExternalVariable",
-			"AnnotatedDecl", "FunctionDecl", "ExternalFunction",
-			"BoundarySpaceDeclaration", "BoundarySpaceModePreserve",
-			"BoundarySpaceModeStrip", "CollationDeclaration",
-			"BaseURIDeclaration", "ConstructionDeclaration",
-			"ConstructionModePreserve", "ConstructionModeStrip",
-			"OrderingModeDeclaration", "OrderingModeOrdered",
-			"OrderingModeUnordered", "EmptyOrderDeclaration",
-			"EmptyOrderModeGreatest", "EmptyOrderModeLeast",
-			"CopyNamespacesDeclaration", "CopyNamespacesPreserveModePreserve",
+			"DirElementConstructor", "DirAttributeConstructor",
+			"DirCommentConstructor", "DirPIConstructor", "PITarget",
+			"CompDocumentConstructor", "CompTextConstructor",
+			"DefaultElementNamespace", "DefaultFunctionNamespace",
+			"SchemaImport", "ModuleImport", "Namespace",
+			"ContextItemDeclaration", "ExternalVariable", "AnnotatedDecl",
+			"FunctionDecl", "ExternalFunction", "BoundarySpaceDeclaration",
+			"BoundarySpaceModePreserve", "BoundarySpaceModeStrip",
+			"CollationDeclaration", "BaseURIDeclaration",
+			"ConstructionDeclaration", "ConstructionModePreserve",
+			"ConstructionModeStrip", "OrderingModeDeclaration",
+			"OrderingModeOrdered", "OrderingModeUnordered",
+			"EmptyOrderDeclaration", "EmptyOrderModeGreatest",
+			"EmptyOrderModeLeast", "CopyNamespacesDeclaration",
+			"CopyNamespacesPreserveModePreserve",
 			"CopyNamespacesPreserveModeNoPreserve",
 			"CopyNamespacesInheritModeInherit",
 			"CopyNamespacesInheritModeNoInherit", "DecimalFormatDeclaration",
@@ -335,13 +341,13 @@ public final class XQ {
 			"DecimalFormatPropertyPerMille", "DecimalFormatPropertyZeroDigit",
 			"DecimalFormatPropertyDigit",
 			"DecimalFormatPropertyPatternSeparator", "OptionDeclaration",
-			"CompNamespaceConstructor", "CompProcessingInstructionConstructor",
-			"Predicate", "FilterExpr",
-			"DynamicFunctionCallExpr",
+			"CompNamespaceConstructor", "CompPIConstructor", "Predicate",
+			"FilterExpr", "DynamicFunctionCallExpr",
 			"SlidingWindowClause",
 			"TumblingWindowClause",
 			"WindowStartCondition",
 			"WindowEndCondition",
+			"WindowVars",
 			"PreviousItemBinding",
 			"NextItemBinding",
 			// Begin XQuery Update Facility 1.0

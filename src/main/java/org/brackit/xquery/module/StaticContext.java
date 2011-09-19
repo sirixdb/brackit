@@ -27,75 +27,77 @@
  */
 package org.brackit.xquery.module;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.TreeMap;
-
+import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.expr.DeclVariable;
-import org.brackit.xquery.expr.DefaultCtxItem;
-import org.brackit.xquery.expr.DefaultCtxPos;
-import org.brackit.xquery.expr.DefaultCtxSize;
-import org.brackit.xquery.expr.Variable;
-import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
+ * <p>
+ * The <b>static context</b> as defined in XQuery 3.0 except the in-scope
+ * variables.
+ * </p>
+ * <p>
+ * Variables are not included because they are treated differently in several
+ * parts of the compilation chain and it would be cumbersome to maintain and
+ * synchronize the different representations during query rewriting.
+ * </p>
+ * <p>
+ * Solely the 
+ * </p>
+ * 
  * @author Sebastian Baechle
  * 
  */
-public class Variables {
+public interface StaticContext {
 
-	protected final Map<QNm, Variable> vars = new TreeMap<QNm, Variable>();
+	public static final String UNICODE_COLLATION = "http://www.w3.org/2005/xpath-functions/collation/codepoint";
 
-	protected final DefaultCtxItem dftItem = new DefaultCtxItem();
+	/**
+	 * Returns the mapping of statically known namespaces (mapping of prefixes
+	 * to namespace URIs), the default element namespace and the default
+	 * function namespace.
+	 */
+	public Namespaces getNamespaces();
 
-	protected final DefaultCtxPos dftPos = new DefaultCtxPos(dftItem);
+	public Functions getFunctions();
 
-	protected final DefaultCtxSize dftSize = new DefaultCtxSize(dftItem);
-	
-	protected LinkedList<Variables> imports = new LinkedList<Variables>();
+	public Types getTypes();
 
-	public Variables() {
-	}
+	public void setBoundarySpaceStrip(boolean strip);
 
-	public boolean isDeclared(QNm name) {
-		return vars.containsKey(name);
-	}
+	public boolean isBoundarySpaceStrip();
 
-	public Variable resolve(QNm name) {
-		Variable var = vars.get(name);
-		if (var != null) {
-			return var;
-		} else if (name.equals(Namespaces.FS_DOT)) {
-			return dftItem;
-		} else if (name.equals(Namespaces.FS_POSITION)) {
-			return dftPos;
-		} else if (name.equals(Namespaces.FS_LAST)) {
-			return var;
-		}
-		for (Variables v : imports) {
-			// TODO check only public vars!
-			var = v.resolve(name);
-			if (v != null) {
-				return var;
-			}
-		}
-		return null;		
-	}
-	
-	public void importVariables(Variables variables) {
-		imports.add(variables);
-	}
+	public String getDefaultCollation();
 
-	public DeclVariable declare(QNm name, SequenceType type, boolean external) {
-		DeclVariable var = new DeclVariable(name, type);
-		vars.put(name, var);
-		return var;
-	}
+	public void setDefaultCollation(String collation);
 
-	public Collection<Variable> getDeclaredVariables() {
-		return Collections.unmodifiableCollection(vars.values());
-	}
+	public AnyURI getBaseURI();
+
+	public void setBaseURI(AnyURI uri);
+
+	public void setConstructionModeStrip(boolean strip);
+
+	public boolean isConstructionModeStrip();
+
+	public void setOrderingModeOrdered(boolean ordered);
+
+	public boolean isOrderingModeOrdered();
+
+	public void setEmptyOrderGreatest(boolean greatest);
+
+	public boolean isEmptyOrderGreatest();
+
+	public boolean isCopyNSPreserve();
+
+	public void setCopyNSPreserve(boolean copyNSPreserve);
+
+	public boolean isCopyNSInherit();
+
+	public void setCopyNSInherit(boolean copyNSInherit);
+
+	public void setDefaultDecimalFormat(DecimalFormat df);
+
+	public void setDecimalFormat(QNm name, DecimalFormat df);
+
+	public DecimalFormat getDecimalFormat(QNm name);
+
 }

@@ -25,28 +25,45 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm;
+package org.brackit.xquery.compiler;
+
+import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.xdm.Expr;
 
 /**
+ * 
+ * A compilation target for a specific unit.
+ * 
  * @author Sebastian Baechle
- *
+ * 
  */
-public class NamespaceDecl {
-	
-	private final String prefix;
-	private final String nsUri;
+public final class Target {
 
-	public NamespaceDecl(String prefix, String nsUri) {
-		super();
-		this.prefix = prefix;
-		this.nsUri = nsUri;
+	protected final StaticContext ctx;
+	protected final AST expr;
+	protected final Unit unit;
+	protected final boolean allowUpdate;
+
+	public Target(StaticContext ctx, AST expr, Unit unit, boolean allowUpdate) {
+		this.ctx = ctx;
+		this.expr = expr;
+		this.unit = unit;
+		this.allowUpdate = allowUpdate;
 	}
 
-	public String getPrefix() {
-		return prefix;
+	public StaticContext getStaticContext() {
+		return ctx;
 	}
 
-	public String getUri() {
-		return nsUri;
+	public AST getExpr() {
+		return expr;
+	}
+
+	public void finalize(Expr expr) {
+		this.unit.setExpr(expr);
+	}
+
+	public boolean allowUpdate() {
+		return allowUpdate;
 	}
 }

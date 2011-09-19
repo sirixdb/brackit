@@ -28,7 +28,6 @@
 package org.brackit.xquery.compiler.parser;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
@@ -98,17 +97,6 @@ public class XQParserTest extends XQueryBaseTest {
 		} catch (QueryException e) {
 			assertEquals("illegal error code", ErrorCode.ERR_PARSING_ERROR, e
 					.getCode());
-		}
-	}
-
-	@Test
-	public void runVarAccessInBinding() throws Exception {
-		try {
-			new XQParser("for $a in $a return $a").parse();
-			fail("illegal var access");
-		} catch (QueryException e) {
-			assertEquals("illegal error code",
-					ErrorCode.ERR_UNDEFINED_REFERENCE, e.getCode());
 		}
 	}
 

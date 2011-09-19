@@ -71,7 +71,8 @@ public class XQueryBaseTest {
 		Item item;
 		try {
 			while ((item = it.next()) != null) {
-				System.out.println(item);
+				System.out.print(item);
+				System.out.print(" ");
 				if ((item instanceof Node<?>)
 						&& (((Node<?>) item).getKind() != Kind.ATTRIBUTE)) {
 					new SubtreePrinter(System.out, false, false)
@@ -81,6 +82,7 @@ public class XQueryBaseTest {
 		} finally {
 			it.close();
 		}
+		System.out.println();
 	}
 
 	protected XQuery xquery(String query) throws QueryException {

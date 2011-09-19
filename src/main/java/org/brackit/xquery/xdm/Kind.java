@@ -34,7 +34,7 @@ package org.brackit.xquery.xdm;
  */
 public enum Kind {
 	DOCUMENT((byte) 0), ELEMENT((byte) 1), ATTRIBUTE((byte) 2), TEXT((byte) 3), PROCESSING_INSTRUCTION(
-			(byte) 4), COMMENT((byte) 5);
+			(byte) 4), COMMENT((byte) 5), NAMESPACE((byte) 6);
 
 	public final byte ID;
 

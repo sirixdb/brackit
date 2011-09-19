@@ -65,6 +65,12 @@ public class Tokenizer {
 		}
 	}
 
+	public class IllegalCharRefException extends TokenizerException {
+		public IllegalCharRefException(String charRef) {
+			super("Illegal Unicode codepoint %s: '%s'", charRef, paraphrase());
+		}
+	}
+
 	protected class Token {
 		final int start;
 		final int end;
@@ -299,7 +305,8 @@ public class Tokenizer {
 		int ws = ws(pos);
 		int p = pos + ws;
 		// ignore trailing '\0'
-		while ((p < end) && (input[p] == '\u0000' )) p++;
+		while ((p < end) && (input[p] == '\u0000'))
+			p++;
 		if (p != end) {
 			throw new TokenizerException("Expected end of query: %s",
 					paraphrase());
@@ -988,9 +995,9 @@ public class Tokenizer {
 			c = input[e++];
 			if ((c == escapeChar) && (e < end) && (input[e] == escapeChar)) {
 				e++;
-				len +=2;
-			} else if ((c == escapeChar) || (c == '{') || (c == '}') || (c == '<')
-					|| (c == '&') || (!XMLChar.isChar(c))) {
+				len += 2;
+			} else if ((c == escapeChar) || (c == '{') || (c == '}')
+					|| (c == '<') || (c == '&') || (!XMLChar.isChar(c))) {
 				break;
 			} else {
 				len++;
@@ -1142,15 +1149,13 @@ public class Tokenizer {
 			if (cond) {
 				return null;
 			}
-			throw new TokenizerException("Illegal Unicode codepoint '%s': %s",
-					tmp, paraphrase());
+			throw new IllegalCharRefException(tmp);
 		}
 		if (!XMLChar.isChar(charRef)) {
 			if (cond) {
 				return null;
 			}
-			throw new TokenizerException("Illegal Unicode codepoint '%s': %s",
-					tmp, paraphrase());
+			throw new IllegalCharRefException(tmp);
 		}
 		lastScanEnd = s + len + 1;
 		return Character.toString((char) charRef);

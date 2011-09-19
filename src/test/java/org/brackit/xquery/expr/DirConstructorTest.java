@@ -138,8 +138,7 @@ public class DirConstructorTest extends XQueryBaseTest {
 		DocumentParser parser = new DocumentParser(
 				"<fact>I saw <howmany>8</howmany> cats.</fact>");
 		parser.setRetainWhitespace(true);
-		Node<?> doc = ctx.getNodeFactory().build(
-				parser);
+		Node<?> doc = ctx.getNodeFactory().build(parser);
 		Node<?> fact = doc.getFirstChild();
 		ResultChecker.dCheck(fact, res, false);
 	}
@@ -151,13 +150,15 @@ public class DirConstructorTest extends XQueryBaseTest {
 				"declare boundary-space strip; <cat>\n    <breed>2</breed>\n    <color>4</color>2 	\n</cat>")
 				.serialize(ctx, buf);
 		Assert.assertEquals("serialized result differs",
-				"<cat><breed>2</breed><color>4</color>2 	\n</cat>", buf.toString());
+				"<cat><breed>2</breed><color>4</color>2 	\n</cat>", buf
+						.toString());
 	}
 
 	@Test
 	public void directElementExpr() throws Exception {
 		Sequence result = new XQuery("<a/>").execute(ctx);
-		ResultChecker.dCheck(ctx.getNodeFactory().element(new QNm("a")), result, false);
+		ResultChecker.dCheck(ctx.getNodeFactory().element(new QNm("a")),
+				result, false);
 	}
 
 	@Test
@@ -240,69 +241,78 @@ public class DirConstructorTest extends XQueryBaseTest {
 
 	@Test
 	public void nesteddirectElementExprInSequence() throws Exception {
-		Sequence result = new XQuery("<a>{<b>{2 + 4}</b>, 1}</a>")
-				.execute(ctx);
+		Sequence result = new XQuery("<a>{<b>{2 + 4}</b>, 1}</a>").execute(ctx);
 		Node<?> a = ctx.getNodeFactory().element(new QNm("a"));
 		Node<?> b = a.append(Kind.ELEMENT, new QNm("b"), null);
 		b.append(Kind.TEXT, null, new Una("6"));
 		a.append(Kind.TEXT, null, new Una("1"));
 		ResultChecker.dCheck(a, result, false);
 	}
-	
+
 	@Test
 	public void boundarySpace1() throws Exception {
 		PrintStream buf = createBuffer();
-		new XQuery("declare boundary-space strip; <a> {\"abc\"} </a>").serialize(ctx, buf);
+		new XQuery("declare boundary-space strip; <a> {\"abc\"} </a>")
+				.serialize(ctx, buf);
 		Assert.assertEquals("serialized result differs", "<a>abc</a>", buf
 				.toString());
 	}
-	
+
 	@Test
 	public void boundarySpace2() throws Exception {
 		PrintStream buf = createBuffer();
-		new XQuery("declare boundary-space preserve; <a> {\"abc\"} </a>").serialize(ctx, buf);
+		new XQuery("declare boundary-space preserve; <a> {\"abc\"} </a>")
+				.serialize(ctx, buf);
 		Assert.assertEquals("serialized result differs", "<a> abc </a>", buf
 				.toString());
-	}	
+	}
 
 	@Test
 	public void boundarySpace3() throws Exception {
 		PrintStream buf = createBuffer();
-		new XQuery("declare boundary-space preserve; <a> z {\"abc\"}</a>").serialize(ctx, buf);
+		new XQuery("declare boundary-space preserve; <a> z {\"abc\"}</a>")
+				.serialize(ctx, buf);
 		Assert.assertEquals("serialized result differs", "<a> z abc</a>", buf
 				.toString());
 	}
-	
+
 	@Test
 	public void boundarySpace4() throws Exception {
 		PrintStream buf = createBuffer();
-		new XQuery("declare boundary-space preserve; <a>&#x20;{\"abc\"}</a>").serialize(ctx, buf);
+		new XQuery("declare boundary-space preserve; <a>&#x20;{\"abc\"}</a>")
+				.serialize(ctx, buf);
 		Assert.assertEquals("serialized result differs", "<a> abc</a>", buf
 				.toString());
 	}
-	
+
 	@Test
 	public void boundarySpace5() throws Exception {
 		PrintStream buf = createBuffer();
-		new XQuery("declare boundary-space preserve; <a>  &#x20;  {\"abc\"}</a>").serialize(ctx, buf);
+		new XQuery(
+				"declare boundary-space preserve; <a>  &#x20;  {\"abc\"}</a>")
+				.serialize(ctx, buf);
 		Assert.assertEquals("serialized result differs", "<a>     abc</a>", buf
 				.toString());
 	}
-	
+
 	@Test
 	public void boundarySpace6() throws Exception {
 		PrintStream buf = createBuffer();
-		new XQuery("declare boundary-space preserve; <a> &#8364; </a>").serialize(ctx, buf);
+		new XQuery("declare boundary-space preserve; <a> &#8364; </a>")
+				.serialize(ctx, buf);
 		Assert.assertEquals("serialized result differs", "<a> € </a>", buf
 				.toString());
 	}
-	
+
 	@Test
 	public void elementWithNamespace() throws Exception {
 		PrintStream buf = createBuffer();
-		Sequence res = new XQuery("<e xmlns:f=\"foo\" xmlns=\"bla\" f:att=\"\"><f/></e>").execute(ctx);
+		Sequence res = new XQuery(
+				"<e xmlns:f=\"foo\" xmlns=\"bla\" f:att=\"\"><f/></e>")
+				.execute(ctx);
 		System.out.println(res);
 	}
-	
-	//namespace-uri(<e xmlns:f="foo&lt;" xmlns="bla" f:att=""></e>/@*) eq "foo&#x003c;"
+
+	// namespace-uri(<e xmlns:f="foo&lt;" xmlns="bla" f:att=""></e>/@*) eq
+	// "foo&#x003c;"
 }

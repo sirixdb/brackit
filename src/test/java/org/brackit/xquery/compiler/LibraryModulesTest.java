@@ -83,7 +83,7 @@ public class LibraryModulesTest extends XQueryBaseTest {
 		};
 		XQuery xq = new XQuery(chain, FOO);
 		LibraryModule module = (LibraryModule) xq.getModule();
-		res.register(module.getTargetNS().getUri(), module);
+		res.register(module.getTargetNS(), module);
 		XQuery xq2 = new XQuery(chain, IMPORT_FOO + "foo:echo('y')");
 		QueryContext ctx = createContext();
 		Sequence result = xq2.execute(ctx);
@@ -103,10 +103,10 @@ public class LibraryModulesTest extends XQueryBaseTest {
 		};
 		XQuery xq = new XQuery(chain, FOO);
 		LibraryModule module = (LibraryModule) xq.getModule();
-		res.register(module.getTargetNS().getUri(), module);
+		res.register(module.getTargetNS(), module);
 		xq = new XQuery(chain, FOO2);
 		module = (LibraryModule) xq.getModule();
-		res.register(module.getTargetNS().getUri(), module);
+		res.register(module.getTargetNS(), module);
 		XQuery xq2 = new XQuery(chain, IMPORT_FOO
 				+ "(foo:echo('y'), foo:echo2('y'))");
 		QueryContext ctx = createContext();
@@ -128,10 +128,10 @@ public class LibraryModulesTest extends XQueryBaseTest {
 		};
 		XQuery xq = new XQuery(chain, FOO);
 		LibraryModule module = (LibraryModule) xq.getModule();
-		res.register(module.getTargetNS().getUri(), module);
+		res.register(module.getTargetNS(), module);
 		xq = new XQuery(chain, BAR);
 		module = (LibraryModule) xq.getModule();
-		res.register(module.getTargetNS().getUri(), module);
+		res.register(module.getTargetNS(), module);
 		XQuery xq2 = new XQuery(chain, IMPORT_FOO + IMPORT_BAR
 				+ "(foo:echo('y'), bar:echo2('y'))");
 		QueryContext ctx = createContext();
@@ -153,10 +153,10 @@ public class LibraryModulesTest extends XQueryBaseTest {
 		};
 		XQuery xq = new XQuery(chain, FOO);
 		LibraryModule module = (LibraryModule) xq.getModule();
-		res.register(module.getTargetNS().getUri(), module);
+		res.register(module.getTargetNS(), module);
 		xq = new XQuery(chain, FOO);
 		module = (LibraryModule) xq.getModule();
-		res.register(module.getTargetNS().getUri(), module);
+		res.register(module.getTargetNS(), module);
 		try {
 			new XQuery(chain, IMPORT_FOO + "foo:echo('y')");
 			fail("double definition of function not detected");

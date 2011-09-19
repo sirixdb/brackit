@@ -39,7 +39,6 @@ import org.brackit.xquery.compiler.optimizer.walker.DoSNStepMerger;
 import org.brackit.xquery.compiler.optimizer.walker.ExtractFLWOR;
 import org.brackit.xquery.compiler.optimizer.walker.JoinRewriter;
 import org.brackit.xquery.compiler.optimizer.walker.JoinSortElimination;
-import org.brackit.xquery.compiler.optimizer.walker.JoinTree;
 import org.brackit.xquery.compiler.optimizer.walker.LetBindLift;
 import org.brackit.xquery.compiler.optimizer.walker.LetVariableRefPullup;
 import org.brackit.xquery.compiler.optimizer.walker.OrderForGroupBy;
