@@ -267,6 +267,12 @@ public class ErrorCode {
 			"XQST0088");
 
 	/**
+	 * err:XQST0089
+	 */
+	public static final QNm ERR_FOR_VAR_AND_POS_VAR_EQUAL = new QNm(ERR_NSURI, ERR_PREFIX,
+			"XQST0089");
+	
+	/**
 	 * err:XQST0090
 	 */
 	public static final QNm ERR_UNDEFINED_CHARACTER_REFERENCE = new QNm(

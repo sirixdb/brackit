@@ -1552,6 +1552,9 @@ public class XQParser extends Tokenizer {
 
 	private AST orExpr() throws TokenizerException {
 		AST first = andExpr();
+		if (first == null) {
+			return null;
+		}
 		while (true) {
 			if (!attemptSymSkipWS("or")) {
 				return first;
@@ -1566,6 +1569,9 @@ public class XQParser extends Tokenizer {
 
 	private AST andExpr() throws TokenizerException {
 		AST first = comparisonExpr();
+		if (first == null) {
+			return null;
+		}
 		while (true) {
 			if (!attemptSymSkipWS("and")) {
 				return first;
@@ -1580,6 +1586,9 @@ public class XQParser extends Tokenizer {
 
 	private AST comparisonExpr() throws TokenizerException {
 		AST first = rangeExpr();
+		if (first == null) {
+			return null;
+		}
 		AST cmp;
 		if (attemptSkipWS("=")) {
 			cmp = new AST(XQ.GeneralCompEQ);
@@ -1624,6 +1633,9 @@ public class XQParser extends Tokenizer {
 
 	private AST rangeExpr() throws TokenizerException {
 		AST first = additiveExpr();
+		if (first == null) {
+			return null;
+		}
 		if (!attemptSymSkipWS("to")) {
 			return first;
 		}
@@ -1636,6 +1648,9 @@ public class XQParser extends Tokenizer {
 
 	private AST additiveExpr() throws TokenizerException {
 		AST first = multiplicativeExpr();
+		if (first == null) {
+			return null;
+		}
 		while (true) {
 			AST op;
 			if (attemptSkipWS("+")) {
@@ -1656,6 +1671,9 @@ public class XQParser extends Tokenizer {
 
 	private AST multiplicativeExpr() throws TokenizerException {
 		AST first = unionExpr();
+		if (first == null) {
+			return null;
+		}
 		while (true) {
 			AST op;
 			if (attemptSkipWS("*")) {
@@ -1680,6 +1698,9 @@ public class XQParser extends Tokenizer {
 
 	private AST unionExpr() throws TokenizerException {
 		AST first = intersectExpr();
+		if (first == null) {
+			return null;
+		}
 		while (true) {
 			if ((!attemptSymSkipWS("union")) && (!attemptSkipWS("|"))) {
 				return first;
@@ -1694,6 +1715,9 @@ public class XQParser extends Tokenizer {
 
 	private AST intersectExpr() throws TokenizerException {
 		AST first = instanceOfExpr();
+		if (first == null) {
+			return null;
+		}
 		while (true) {
 			AST expr;
 			if (attemptSymSkipWS("intersect")) {
@@ -1712,6 +1736,9 @@ public class XQParser extends Tokenizer {
 
 	private AST instanceOfExpr() throws TokenizerException {
 		AST first = treatExpr();
+		if (first == null) {
+			return null;
+		}
 		if (!attemptSymSkipWS("instance")) {
 			return first;
 		}
@@ -1910,6 +1937,9 @@ public class XQParser extends Tokenizer {
 
 	private AST treatExpr() throws TokenizerException {
 		AST first = castableExpr();
+		if (first == null) {
+			return null;
+		}
 		if (!attemptSymSkipWS("treat")) {
 			return first;
 		}
@@ -1923,6 +1953,9 @@ public class XQParser extends Tokenizer {
 
 	private AST castableExpr() throws TokenizerException {
 		AST first = castExpr();
+		if (first == null) {
+			return null;
+		}
 		if (!attemptSymSkipWS("castable")) {
 			return first;
 		}
@@ -1936,6 +1969,9 @@ public class XQParser extends Tokenizer {
 
 	private AST castExpr() throws TokenizerException {
 		AST first = unaryExpr();
+		if (first == null) {
+			return null;
+		}
 		if (!attemptSymSkipWS("cast")) {
 			return first;
 		}
@@ -2511,18 +2547,20 @@ public class XQParser extends Tokenizer {
 	}
 
 	private AST wildcard() throws TokenizerException {
-		if (attemptSkipWS("*:")) {
-			Token la = laNCNameSkipWS();
-			if (la == null) {
+		Token la = laSkipWS("*:");
+		if (la != null) {
+			Token la2 = laNCName(la);
+			if (la2 == null) {
 				return null;
 			}
 			consume(la);
-			AST wbc = new AST(XQ.NSWildcardNameTest, la.string());
+			consume(la2);
+			AST wbc = new AST(XQ.NSWildcardNameTest, la2.string());
 			return wbc;
 		} else if (attemptSkipWS("*")) {
 			return new AST(XQ.Wildcard);
 		} else {
-			Token la = laNCNameSkipWS();
+			la = laNCNameSkipWS();
 			if (la == null) {
 				return null;
 			}
@@ -2990,7 +3028,7 @@ public class XQParser extends Tokenizer {
 		Token target = laPITarget(false);
 		consume(target);
 		AST piCon = new AST(XQ.DirPIConstructor);
-		piCon.addChild(new AST(XQ.PITarget, target.string()));
+		piCon.addChild(new AST(XQ.Str, target.string()));
 		if (skipS()) {
 			Token content = laPIContents();
 			consume(content);

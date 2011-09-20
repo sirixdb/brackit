@@ -544,8 +544,8 @@ public class Analyzer {
 		for (Variable ivar : ivars.getDeclaredVariables()) {
 			if (lvars.isDeclared(ivar.getName())) {
 				throw new QueryException(ErrorCode.ERR_DUPLICATE_VARIABLE_DECL,
-						"Import variable $%s has already been declared", ivar
-								.getName());
+						"Import variable $%s has already been declared",
+						ivar.getName());
 			}
 		}
 		Map<QNm, Function[]> ifunMap = ifuns.getDeclaredFunctions();
@@ -939,13 +939,23 @@ public class Analyzer {
 		openScope();
 		int pos = 0;
 		AST child = clause.getChild(pos++);
-		typedVarBinding(child);
+		QNm forVar = typedVarBinding(child);
 		child = clause.getChild(pos++);
 		if (child.getType() == XQ.AllowingEmpty) {
 			child = clause.getChild(pos++);
 		}
 		if (child.getType() == XQ.TypedVariableBinding) {
-			positionalVar(child);
+			try {
+				positionalVar(child);
+			} catch (QueryException e) {
+				if (e.getCode().equals(ErrorCode.ERR_DUPLICATE_VARIABLE_DECL)) {
+					throw new QueryException(
+							ErrorCode.ERR_FOR_VAR_AND_POS_VAR_EQUAL,
+							"Bound variable '%s' and its associated positional variable have the same name",
+							forVar);
+				}
+				throw e;
+			}
 			child = clause.getChild(pos++);
 		}
 		exprSingle(child);
@@ -953,11 +963,11 @@ public class Analyzer {
 		return true;
 	}
 
-	private boolean typedVarBinding(AST binding) throws QueryException {
+	private QNm typedVarBinding(AST binding) throws QueryException {
 		QNm name = (QNm) binding.getChild(0).getValue();
 		// expand, bind and update AST
-		name = expand(name, DefaultNS.EMPTY);
-		name = bind(name);
+		QNm expanded = expand(name, DefaultNS.EMPTY);
+		name = bind(expanded);
 		binding.getChild(0).setValue(name);
 		SequenceType stype;
 		if (binding.getChildCount() >= 2) {
@@ -965,21 +975,21 @@ public class Analyzer {
 		} else {
 			stype = new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany);
 		}
-		return true;
+		return expanded;
 	}
 
 	private SequenceType typeDeclaration(AST decl) throws QueryException {
 		return sequenceType(decl);
 	}
 
-	private boolean positionalVar(AST binding) throws QueryException {
+	private QNm positionalVar(AST binding) throws QueryException {
 		QNm name = (QNm) binding.getChild(0).getValue();
 		// expand, bind and update AST
-		name = expand(name, DefaultNS.EMPTY);
-		name = bind(name);
+		QNm expanded = expand(name, DefaultNS.EMPTY);
+		name = bind(expanded);
 		binding.getChild(0).setValue(name);
 		SequenceType stype = new SequenceType(AtomicType.INR, Cardinality.One);
-		return true;
+		return expanded;
 	}
 
 	private boolean letClause(AST clause) throws QueryException {
@@ -1175,11 +1185,10 @@ public class Analyzer {
 		}
 		openScope();
 		expr(expr.getChild(0));
-		for (int i = 1; i < expr.getChildCount() - 2; i++) {
+		for (int i = 1; i < expr.getChildCount() - 1; i++) {
+			// handle default case as case clause
 			caseClause(expr.getChild(i));
 		}
-		// handle default case as case clause
-		caseClause(expr.getChild(expr.getChildCount() - 2));
 		exprSingle(expr.getChild(expr.getChildCount() - 1));
 		closeScope();
 		return true;
@@ -1187,14 +1196,18 @@ public class Analyzer {
 
 	private boolean caseClause(AST clause) throws QueryException {
 		openScope();
-		QNm name = (QNm) clause.getChild(0).getValue();
-		// expand, bind and update AST
-		name = expand(name, DefaultNS.EMPTY);
-		name = bind(name);
-		clause.getChild(0).setValue(name);
-
-		for (int i = 1; i < clause.getChildCount() - 1; i++) {
-			sequenceType(clause.getChild(i));
+		int pos = 0;
+		AST varOrType = clause.getChild(pos);
+		if (varOrType.getType() == XQ.Variable) {
+			QNm name = (QNm) varOrType.getValue();
+			// expand, bind and update AST
+			name = expand(name, DefaultNS.EMPTY);
+			name = bind(name);
+			varOrType.setValue(name);
+			pos++;
+		}
+		while (pos < clause.getChildCount() - 1) {
+			sequenceType(clause.getChild(pos++));
 		}
 		offerScope();
 		exprSingle(clause.getChild(clause.getChildCount() - 1));
@@ -1332,10 +1345,11 @@ public class Analyzer {
 	}
 
 	private SequenceType sequenceType(AST stype) throws QueryException {
-		if (stype.getType() == XQ.EmptySequenceType) {
+		AST type = stype.getChild(0);
+		if (type.getType() == XQ.EmptySequenceType) {
 			return SequenceType.EMPTY_SEQUENCE;
 		}
-		ItemType itype = itemType(stype.getChild(0));
+		ItemType itype = itemType(type);
 		Cardinality card = Cardinality.ZeroOrMany;
 		if (stype.getChildCount() == 2) {
 			card = occurrenceIndicator(stype.getChild(1));
@@ -1590,22 +1604,24 @@ public class Analyzer {
 		}
 		Type type = null;
 		QNm name = null;
-		AST child = test.getChild(0);
-		if (child.getType() == XQ.Wildcard) {
-			name = null;
-		} else if (child.getType() == XQ.QNm) {
-			name = (QNm) child.getValue();
-			// expand and update AST
-			name = expand(name, DefaultNS.EMPTY);
-			child.setValue(name);
-		}
-		if (test.getChildCount() >= 2) {
-			child = test.getChild(1);
-			QNm typeName = (QNm) child.getValue();
-			// expand and update AST
-			typeName = expand(typeName, DefaultNS.ELEMENT_OR_TYPE);
-			child.setValue(typeName);
-			type = ctx.getTypes().resolveType(typeName);
+		if (test.getChildCount() >= 1) {
+			AST child = test.getChild(0);
+			if (child.getType() == XQ.Wildcard) {
+				name = null;
+			} else if (child.getType() == XQ.QNm) {
+				name = (QNm) child.getValue();
+				// expand and update AST
+				name = expand(name, DefaultNS.EMPTY);
+				child.setValue(name);
+			}
+			if (test.getChildCount() >= 2) {
+				child = test.getChild(1);
+				QNm typeName = (QNm) child.getValue();
+				// expand and update AST
+				typeName = expand(typeName, DefaultNS.ELEMENT_OR_TYPE);
+				child.setValue(typeName);
+				type = ctx.getTypes().resolveType(typeName);
+			}
 		}
 		return new AttributeType(name, type);
 	}
@@ -1640,11 +1656,16 @@ public class Analyzer {
 		if (test.getType() != XQ.KindTestPi) {
 			return null;
 		}
-		String target = test.getChild(0).getStringValue();
-		target = Whitespace.normalizeXML11(target);
-		if (!XMLChar.isNCName(target)) {
-			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-					"PI target name is not a valid NCName: %s", target);
+		String target = null;
+
+		if (test.getChildCount() == 1) {
+			target = test.getChild(0).getStringValue();
+			target = Whitespace.normalizeXML11(target);
+			target = Whitespace.collapse(target);
+			if (!XMLChar.isNCName(target)) {
+				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+						"PI target name is not a valid NCName: %s", target);
+			}
 		}
 		return new PIType(target);
 	}
@@ -2227,15 +2248,15 @@ public class Analyzer {
 		Namespaces ns = ctx.getNamespaces();
 		if (mode == DefaultNS.ELEMENT_OR_TYPE) {
 			if (prefix == null) {
-				return new QNm(ns.getDefaultElementNamespace(), null, name
-						.getLocalName());
+				return new QNm(ns.getDefaultElementNamespace(), null,
+						name.getLocalName());
 			} else if ((uri = ns.resolve(prefix)) != null) {
 				return new QNm(uri, prefix, name.getLocalName());
 			}
 		} else if (mode == DefaultNS.FUNCTION) {
 			if (prefix == null) {
-				return new QNm(ns.getDefaultFunctionNamespace(), null, name
-						.getLocalName());
+				return new QNm(ns.getDefaultFunctionNamespace(), null,
+						name.getLocalName());
 			} else if ((uri = ns.resolve(prefix)) != null) {
 				return new QNm(uri, prefix, name.getLocalName());
 			}

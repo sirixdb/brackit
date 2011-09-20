@@ -40,6 +40,7 @@ import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.expr.Accessor;
 import org.brackit.xquery.expr.AndExpr;
 import org.brackit.xquery.expr.ArithmeticExpr;
+import org.brackit.xquery.expr.ArithmeticExpr.ArithmeticOp;
 import org.brackit.xquery.expr.AttributeExpr;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.expr.Castable;
@@ -54,6 +55,7 @@ import org.brackit.xquery.expr.IfExpr;
 import org.brackit.xquery.expr.InstanceOf;
 import org.brackit.xquery.expr.IntersectExpr;
 import org.brackit.xquery.expr.NodeCmpExpr;
+import org.brackit.xquery.expr.NodeCmpExpr.NodeCmp;
 import org.brackit.xquery.expr.OrExpr;
 import org.brackit.xquery.expr.PIExpr;
 import org.brackit.xquery.expr.PathStepExpr;
@@ -61,13 +63,12 @@ import org.brackit.xquery.expr.RangeExpr;
 import org.brackit.xquery.expr.ReturnExpr;
 import org.brackit.xquery.expr.SequenceExpr;
 import org.brackit.xquery.expr.StepExpr;
+import org.brackit.xquery.expr.SwitchExpr;
 import org.brackit.xquery.expr.TextExpr;
 import org.brackit.xquery.expr.Treat;
 import org.brackit.xquery.expr.TypeswitchExpr;
 import org.brackit.xquery.expr.UnionExpr;
 import org.brackit.xquery.expr.VCmpExpr;
-import org.brackit.xquery.expr.ArithmeticExpr.ArithmeticOp;
-import org.brackit.xquery.expr.NodeCmpExpr.NodeCmp;
 import org.brackit.xquery.expr.VCmpExpr.Cmp;
 import org.brackit.xquery.function.FunctionExpr;
 import org.brackit.xquery.function.bit.Every;
@@ -86,16 +87,16 @@ import org.brackit.xquery.operator.GroupBy;
 import org.brackit.xquery.operator.LetBind;
 import org.brackit.xquery.operator.Operator;
 import org.brackit.xquery.operator.OrderBy;
+import org.brackit.xquery.operator.OrderBy.OrderModifier;
 import org.brackit.xquery.operator.Select;
 import org.brackit.xquery.operator.Start;
-import org.brackit.xquery.operator.OrderBy.OrderModifier;
 import org.brackit.xquery.update.Delete;
 import org.brackit.xquery.update.Insert;
+import org.brackit.xquery.update.Insert.InsertType;
 import org.brackit.xquery.update.Rename;
 import org.brackit.xquery.update.ReplaceNode;
 import org.brackit.xquery.update.ReplaceValue;
 import org.brackit.xquery.update.Transform;
-import org.brackit.xquery.update.Insert.InsertType;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.Expr;
@@ -283,6 +284,8 @@ public class Compiler implements Translator {
 			return typeswitchExpr(node);
 		case XQ.IfExpr:
 			return ifExpr(node);
+		case XQ.SwitchExpr:
+			return switchExpr(node);
 		case XQ.FilterExpr:
 			return filterExpr(node);
 		case XQ.DirElementConstructor:
@@ -338,8 +341,8 @@ public class Compiler implements Translator {
 					"Schema validation feature is not supported.");
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-					"Unexpected AST expr node '%s' of type: %s", node, node
-							.getType());
+					"Unexpected AST expr node '%s' of type: %s", node,
+					node.getType());
 		}
 	}
 
@@ -653,7 +656,13 @@ public class Compiler implements Translator {
 		if (childCount > 0) {
 			args = new Expr[childCount];
 			for (int i = 0; i < childCount; i++) {
-				args[i] = expr(node.getChild(i), true);
+				AST arg = node.getChild(i);
+				if (arg.getType() == XQ.ArgumentPlaceHolder) {
+					throw new QueryException(
+							ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
+							"Partial function application is not supported yet");
+				}
+				args[i] = expr(arg, true);
 			}
 		} else if (function.getSignature().defaultIsContextItem()) {
 			Expr contextItemRef = table.resolve(Namespaces.FS_DOT);
@@ -817,6 +826,21 @@ public class Compiler implements Translator {
 		}
 
 		return new IfExpr(condExpr, ifExpr, elseExpr);
+	}
+
+	protected Expr switchExpr(AST node) throws QueryException {
+		Expr opExpr = expr(node.getChild(0), true);
+		Expr[][] cases = new Expr[node.getChildCount() - 2][];
+		for (int i = 1; i < node.getChildCount() - 1; i++) {
+			AST caseClause = node.getChild(i);
+			Expr[] caseOps = new Expr[caseClause.getChildCount()];
+			for (int j = 0; j < caseClause.getChildCount(); j++) {
+				caseOps[j] = expr(caseClause.getChild(j), false);
+			}
+			cases[i - 1] = caseOps;
+		}
+		Expr dftExpr = expr(node.getChild(node.getChildCount() - 1), false);
+		return new SwitchExpr(opExpr, cases, dftExpr);
 	}
 
 	protected Expr variableRefExpr(AST node) throws QueryException {
@@ -990,9 +1014,9 @@ public class Compiler implements Translator {
 		table.unbind();
 		table.unbind();
 
-		return new StepExpr(axis, test, in, predicates, itemBinding
-				.isReferenced(), posBinding.isReferenced(), sizeBinding
-				.isReferenced());
+		return new StepExpr(axis, test, in, predicates,
+				itemBinding.isReferenced(), posBinding.isReferenced(),
+				sizeBinding.isReferenced());
 	}
 
 	protected Accessor axis(AST node) throws QueryException {

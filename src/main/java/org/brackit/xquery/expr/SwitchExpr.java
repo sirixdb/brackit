@@ -25,80 +25,84 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm.type;
+package org.brackit.xquery.expr;
 
-import org.brackit.xquery.ErrorCode;
+import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.Tuple;
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.function.fn.DeepEqual;
+import org.brackit.xquery.util.ExprUtil;
+import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.Sequence;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public final class PIType extends NodeType {
-	private final String piTarget;
+public class SwitchExpr implements Expr {
+	final Expr operand;
+	final Expr[][] cases;
+	final Expr dftValue;
 
-	public PIType(String piTarget) {
-		this.piTarget = piTarget;
-	}
-
-	public PIType() {
-		this.piTarget = null;
-	}
-
-	@Override
-	public Kind getNodeKind() {
-		return Kind.PROCESSING_INSTRUCTION;
+	public SwitchExpr(Expr operand, Expr[][] cases, Expr dftValue) {
+		this.operand = operand;
+		this.cases = cases;
+		this.dftValue = dftValue;
 	}
 
 	@Override
-	public boolean matches(Node<?> node)
+	public Sequence evaluate(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		if (piTarget != null) {
-			throw new QueryException(
-					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-					"Processing instruction test with piTarget support not implemented yet.");
+		Item oi = operand.evaluateToItem(ctx, tuple);
+		Atomic oa = (oi != null) ? oi.atomize() : null;
+		for (int i = 0; i < cases.length; i++) {
+			for (int j = 0; j < cases[i].length - 1; j++) {
+				Item cij = cases[i][j].evaluateToItem(ctx, tuple);
+				Atomic ca = (cij != null) ? cij.atomize() : null;
+				if (DeepEqual.deepEquals(oa, ca).booleanValue()) {
+					return cases[i][cases[i].length - 1].evaluate(ctx, tuple);
+				}
+			}
 		}
-		return (node.getKind() == Kind.PROCESSING_INSTRUCTION);
+		return dftValue.evaluate(ctx, tuple);
 	}
 
 	@Override
-	public boolean matches(Item item) throws QueryException {
-		if (piTarget != null) {
-			throw new QueryException(
-					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-					"Processing instruction test with piTarget support not implemented yet.");
-		}
-		return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.PROCESSING_INSTRUCTION));
+	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
+			throws QueryException {
+		return ExprUtil.asItem(evaluate(ctx, tuple));
 	}
 
 	@Override
-	public String toString() {
-		return (piTarget != null) ? String.format(
-				"processing-instruction(\"%s\")", piTarget)
-				: "processing-instruction()";
-	}
-	
-	public boolean equals(Object obj) {
-		if (obj == this) {
+	public boolean isUpdating() {
+		if ((operand.isUpdating()) || (dftValue.isUpdating())) {
 			return true;
 		}
-		if (!(obj instanceof PIType)) {
-			return false;
+		for (int i = 0; i < cases.length; i++) {
+			for (int j = 0; j < cases[i].length; j++) {
+				if (cases[i][j].isUpdating()) {
+					return true;
+				}
+			}
 		}
-		PIType t = (PIType) obj;
-		if (piTarget == null) {
-			if (t.piTarget != null) {
-				return false;
+		return false;
+	}
+
+	@Override
+	public boolean isVacuous() {
+		if ((operand.isVacuous()) || (dftValue.isVacuous())) {
+			return true;
+		}
+		for (int i = 0; i < cases.length; i++) {
+			for (int j = 0; j < cases[i].length; j++) {
+				if (cases[i][j].isVacuous()) {
+					return true;
+				}
 			}
-		} else {
-			if ((t.piTarget == null) || (!piTarget.equals(t.piTarget))) {
-				return false;
-			}
-		}		
-		return true;
+		}
+		return false;
 	}
 }

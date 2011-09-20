@@ -90,14 +90,9 @@ public class DeclVariable extends Variable implements Unit {
 		}
 		return ExprUtil.asItem(res);
 	}
-	
+
 	@Override
 	public void setExpr(Expr expr) {
 		this.expr = expr;
-	}
-
-	@Override
-	public boolean isUpdating() {
-		return expr.isUpdating();
 	}
 }
