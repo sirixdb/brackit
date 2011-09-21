@@ -159,8 +159,9 @@ public class OrderBy implements Operator {
 					break;
 				}
 				if (check >= 0) {
+					// check if next tuple belongs to different iteration
 					Atomic ngk = (Atomic) next.get(check);
-					if (gk.atomicCmp(ngk) != 0) {
+					if ((ngk == null) || (gk.atomicCmp(ngk) != 0)) {
 						break;
 					}
 				}
@@ -179,7 +180,7 @@ public class OrderBy implements Operator {
 				Item item = orderByExprs[i].evaluateToItem(ctx, t);
 				Atomic atomic = (item != null) ? item.atomize() : null;
 				if ((atomic != null) && (atomic.type().instanceOf(Type.UNA))) {
-					atomic = Cast.cast(atomic, Type.STR);
+					atomic = Cast.cast(null, atomic, Type.STR);
 				}
 				concat[i] = atomic;
 			}
