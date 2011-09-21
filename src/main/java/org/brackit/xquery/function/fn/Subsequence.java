@@ -108,7 +108,9 @@ public class Subsequence extends AbstractFunction {
 
 					@Override
 					public void close() {
-						it.close();
+						if (it != null) {
+							it.close();
+						}
 					}
 				};
 			};
