@@ -45,6 +45,12 @@ public class ErrorCode {
 			ERR_PREFIX, "FOER0000");
 
 	/**
+	 * err:FONS0004
+	 */
+	public static final QNm ERR_NO_NAMESPACE_FOR_PREFIX = new QNm(ERR_NSURI,
+			ERR_PREFIX, "FONS0004");
+	
+	/**
 	 * err:XPDY0002
 	 */
 	public static final QNm ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED = new QNm(
@@ -248,6 +254,12 @@ public class ErrorCode {
 	public static final QNm ERR_ILLEGAL_NAMESPACE_DECL = new QNm(ERR_NSURI,
 			ERR_PREFIX, "XQST0070");
 
+	/**
+	 * err:XQDY0074
+	 */
+	public static final QNm ERR_UNKNOWN_NS_PREFIX_IN_COMP_CONSTR = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQDY0074");
+	
 	/**
 	 * err:XQST0075
 	 */

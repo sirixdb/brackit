@@ -37,6 +37,7 @@ import org.brackit.xquery.atomic.Numeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.function.AbstractFunction;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
@@ -57,7 +58,7 @@ public class SumAvg extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException {
 		Sequence seq = args[0];
 		Item item;
@@ -78,7 +79,7 @@ public class SumAvg extends AbstractFunction {
 				aggType = agg.type();
 
 				if (aggType == Type.UNA) {
-					agg = Cast.cast(agg, Type.DBL, false);
+					agg = Cast.cast(null, agg, Type.DBL, false);
 					aggType = Type.DBL;
 				}
 
@@ -118,7 +119,7 @@ public class SumAvg extends AbstractFunction {
 			Type type = s.type();
 
 			if (type == Type.UNA) {
-				s = Cast.cast(s, Type.DBL, false);
+				s = Cast.cast(null, s, Type.DBL, false);
 				type = Type.DBL;
 			} else if (!(s instanceof Numeric)) {
 				throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,

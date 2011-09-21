@@ -103,7 +103,7 @@ public class Analyzer {
 
 	// AST subtrees that are checked deferred
 	private List<Deferment> deferred;
-	private StaticContext ctx;
+	private StaticContext sctx;
 	private Module module;
 
 	public Analyzer(ModuleResolver resolver, AST xquery) throws QueryException {
@@ -133,7 +133,8 @@ public class Analyzer {
 	private void libraryModule(AST module) throws QueryException {
 		LibraryModule lm = new LibraryModule();
 		this.module = lm;
-		this.ctx = lm.getStaticContext();
+		this.sctx = lm.getStaticContext();
+		module.setStaticContext(sctx);
 		AST ns = module.getChild(0);
 		String prefix = ns.getChild(0).getStringValue();
 		String uri = ns.getChild(1).getStringValue();
@@ -148,13 +149,14 @@ public class Analyzer {
 	private void mainModule(AST module) throws QueryException {
 		MainModule mm = new MainModule();
 		this.module = mm;
-		this.ctx = mm.getStaticContext();
+		this.sctx = mm.getStaticContext();
+		module.setStaticContext(sctx);
 		AST prologOrBody = module.getChild(0);
 		if (prolog(prologOrBody)) {
 			prologOrBody = module.getChild(1);
 		}
 		queryBody(prologOrBody);
-		targets.add(new Target(ctx, prologOrBody.getChild(0), mm, true));
+		targets.add(new Target(sctx, prologOrBody.getChild(0), mm, true));
 	}
 
 	private boolean prolog(AST prolog) throws QueryException {
@@ -176,11 +178,11 @@ public class Analyzer {
 	private boolean defaultNamespaceDecl(AST decl) throws QueryException {
 		if (decl.getType() == XQ.DefaultElementNamespace) {
 			String uri = decl.getChild(0).getStringValue();
-			ctx.getNamespaces().setDefaultElementNamespace(uri);
+			sctx.getNamespaces().setDefaultElementNamespace(uri);
 			return true;
 		} else if (decl.getType() == XQ.DefaultFunctionNamespace) {
 			String uri = decl.getChild(0).getStringValue();
-			ctx.getNamespaces().setDefaultFunctionNamespace(uri);
+			sctx.getNamespaces().setDefaultFunctionNamespace(uri);
 			return true;
 		} else {
 			return false;
@@ -210,9 +212,9 @@ public class Analyzer {
 		}
 		AST mode = decl.getChild(0);
 		if (mode.getType() == XQ.BoundarySpaceModePreserve) {
-			ctx.setBoundarySpaceStrip(false);
+			sctx.setBoundarySpaceStrip(false);
 		} else {
-			ctx.setBoundarySpaceStrip(true);
+			sctx.setBoundarySpaceStrip(true);
 		}
 		declaredCo = true;
 		return true;
@@ -228,7 +230,7 @@ public class Analyzer {
 					"Unsupported collation: %s", col);
 		}
 
-		ctx.setDefaultCollation(col);
+		sctx.setDefaultCollation(col);
 		return true;
 	}
 
@@ -243,7 +245,7 @@ public class Analyzer {
 					"Base URI already declared");
 		}
 		String uri = decl.getChild(0).getStringValue();
-		ctx.setBaseURI(new AnyURI(uri));
+		sctx.setBaseURI(new AnyURI(uri));
 		declaredBaseURI = true;
 		return true;
 	}
@@ -260,9 +262,9 @@ public class Analyzer {
 		}
 		AST mode = decl.getChild(0);
 		if (mode.getType() == XQ.ConstructionModePreserve) {
-			ctx.setConstructionModeStrip(false);
+			sctx.setConstructionModeStrip(false);
 		} else {
-			ctx.setConstructionModeStrip(true);
+			sctx.setConstructionModeStrip(true);
 		}
 		declaredConstructionMode = true;
 		return true;
@@ -281,9 +283,9 @@ public class Analyzer {
 		}
 		AST mode = decl.getChild(0);
 		if (mode.getType() == XQ.OrderingModeOrdered) {
-			ctx.setOrderingModeOrdered(true);
+			sctx.setOrderingModeOrdered(true);
 		} else {
-			ctx.setOrderingModeOrdered(false);
+			sctx.setOrderingModeOrdered(false);
 		}
 		declaredOrderingMode = true;
 		return true;
@@ -302,9 +304,9 @@ public class Analyzer {
 		}
 		AST mode = decl.getChild(0);
 		if (mode.getType() == XQ.EmptyOrderModeGreatest) {
-			ctx.setEmptyOrderGreatest(true);
+			sctx.setEmptyOrderGreatest(true);
 		} else {
-			ctx.setEmptyOrderGreatest(false);
+			sctx.setEmptyOrderGreatest(false);
 		}
 		declaredEmptyOrder = true;
 		return true;
@@ -348,9 +350,9 @@ public class Analyzer {
 
 	private boolean preserveMode(AST mode) throws QueryException {
 		if (mode.getType() == XQ.CopyNamespacesPreserveModePreserve) {
-			ctx.setCopyNSPreserve(true);
+			sctx.setCopyNSPreserve(true);
 		} else if (mode.getType() == XQ.CopyNamespacesPreserveModeNoPreserve) {
-			ctx.setCopyNSPreserve(false);
+			sctx.setCopyNSPreserve(false);
 		} else {
 			return false;
 		}
@@ -359,9 +361,9 @@ public class Analyzer {
 
 	private boolean inheritMode(AST mode) throws QueryException {
 		if (mode.getType() == XQ.CopyNamespacesInheritModeInherit) {
-			ctx.setCopyNSInherit(true);
+			sctx.setCopyNSInherit(true);
 		} else if (mode.getType() == XQ.CopyNamespacesInheritModeNoInherit) {
-			ctx.setCopyNSInherit(false);
+			sctx.setCopyNSInherit(false);
 		} else {
 			return false;
 		}
@@ -386,13 +388,13 @@ public class Analyzer {
 			for (int i = 1; i < decl.getChildCount(); i++) {
 				dfProperty(df, decl.getChild(i));
 			}
-			ctx.setDefaultDecimalFormat(df);
+			sctx.setDefaultDecimalFormat(df);
 		} else {
 			QNm name = (QNm) format.getValue();
 			// expand and update AST
 			name = expand(name, DefaultNS.EMPTY);
 			format.setValue(name);
-			if (ctx.getDecimalFormat(name) != null) {
+			if (sctx.getDecimalFormat(name) != null) {
 				throw new QueryException(
 						ErrorCode.ERR_DECIMAL_FORMAT_ALREADY_DECLARED,
 						"Decimal-format already declared: %s", name);
@@ -401,7 +403,7 @@ public class Analyzer {
 			for (int i = 1; i < decl.getChildCount(); i++) {
 				dfProperty(df, decl.getChild(i));
 			}
-			ctx.setDecimalFormat(name, df);
+			sctx.setDecimalFormat(name, df);
 		}
 		return true;
 	}
@@ -454,7 +456,7 @@ public class Analyzer {
 					"The URI '%s' must not be used in a namespace declaration",
 					uri);
 		}
-		Namespaces ns = ctx.getNamespaces();
+		Namespaces ns = sctx.getNamespaces();
 		if ((ns.resolve(prefix) != null) && (!ns.isPredefined(prefix))) {
 			throw new QueryException(
 					ErrorCode.ERR_MULTIPLE_NS_BINDINGS_FOR_PREFIX,
@@ -493,14 +495,14 @@ public class Analyzer {
 						"The prefix '%s' must not be used for a module import",
 						prefix);
 			}
-			if (ctx.getNamespaces().resolve(prefix) != null) {
+			if (sctx.getNamespaces().resolve(prefix) != null) {
 				throw new QueryException(
 						ErrorCode.ERR_MULTIPLE_NS_BINDINGS_FOR_PREFIX,
 						"Namespace prefix '%s' is already bound to '%s",
 						prefix, uri);
 			}
 			// declare module namespace prefix
-			ctx.getNamespaces().declare(prefix, uri);
+			sctx.getNamespaces().declare(prefix, uri);
 		} else {
 			uri = ns.getStringValue();
 		}
@@ -525,7 +527,7 @@ public class Analyzer {
 					"Module '%s' not found", uri);
 		}
 		Variables lvars = module.getVariables();
-		Functions lfuns = ctx.getFunctions();
+		Functions lfuns = sctx.getFunctions();
 		for (Module m : modules) {
 			// check variables and functions to import
 			Variables ivars = m.getVariables();
@@ -585,7 +587,7 @@ public class Analyzer {
 		if (defaultValue != null) {
 			// TODO check circle!!!
 			expr(defaultValue);
-			targets.add(new Target(ctx, defaultValue, var, false));
+			targets.add(new Target(sctx, defaultValue, var, false));
 		}
 
 		return true;
@@ -663,7 +665,7 @@ public class Analyzer {
 					exprSingle(tmp);
 				}
 			});
-			targets.add(new Target(ctx, defaultValue, var, false));
+			targets.add(new Target(sctx, defaultValue, var, false));
 		}
 
 		return true;
@@ -760,7 +762,7 @@ public class Analyzer {
 		// register function beforehand to support recursion
 		Signature signature = new Signature(resultType, pTypes);
 		UDF udf = new UDF(name, signature, updating);
-		ctx.getFunctions().declare(udf);
+		sctx.getFunctions().declare(udf);
 
 		// defer function body because functions
 		// can depend on declared variables and other
@@ -781,7 +783,7 @@ public class Analyzer {
 			}
 		});
 
-		targets.add(new Target(ctx, decl, udf, udf.isUpdating()));
+		targets.add(new Target(sctx, decl, udf, udf.isUpdating()));
 
 		return true;
 	}
@@ -1434,7 +1436,7 @@ public class Analyzer {
 		// expand and update AST
 		name = expand(name, DefaultNS.ELEMENT_OR_TYPE);
 		type.getChild(0).setValue(name);
-		Type t = ctx.getTypes().resolveType(name);
+		Type t = sctx.getTypes().resolveType(name);
 		return new AtomicType(t);
 	}
 
@@ -1588,7 +1590,7 @@ public class Analyzer {
 				// expand and update AST
 				typeName = expand(typeName, DefaultNS.ELEMENT_OR_TYPE);
 				child.setValue(typeName);
-				type = ctx.getTypes().resolveType(typeName);
+				type = sctx.getTypes().resolveType(typeName);
 				if (test.getChildCount() >= 3) {
 					child = test.getChild(2);
 					nilled = (child.getType() == XQ.Nilled);
@@ -1620,7 +1622,7 @@ public class Analyzer {
 				// expand and update AST
 				typeName = expand(typeName, DefaultNS.ELEMENT_OR_TYPE);
 				child.setValue(typeName);
-				type = ctx.getTypes().resolveType(typeName);
+				type = sctx.getTypes().resolveType(typeName);
 			}
 		}
 		return new AttributeType(name, type);
@@ -1635,7 +1637,7 @@ public class Analyzer {
 		// expand and update AST
 		name = expand(name, DefaultNS.ELEMENT_OR_TYPE);
 		child.setValue(name);
-		Type type = ctx.getTypes().resolveType(name);
+		Type type = sctx.getTypes().resolveType(name);
 		return new ElementType(name, type);
 	}
 
@@ -1648,7 +1650,7 @@ public class Analyzer {
 		// expand and update AST
 		name = expand(name, DefaultNS.ELEMENT_OR_TYPE);
 		child.setValue(name);
-		Type type = ctx.getTypes().resolveType(name);
+		Type type = sctx.getTypes().resolveType(name);
 		return new AttributeType(name, type);
 	}
 
@@ -1750,7 +1752,7 @@ public class Analyzer {
 			// expand and update AST
 			name = expand(name, DefaultNS.ELEMENT_OR_TYPE);
 			expr.getChild(0).setValue(name);
-			ctx.getTypes().resolveType(name);
+			sctx.getTypes().resolveType(name);
 		}
 		expr(expr.getChild(1));
 		return true;
@@ -1826,7 +1828,7 @@ public class Analyzer {
 		for (int i = 0; i < expr.getChildCount(); i++) {
 			argument(expr.getChild(i));
 		}
-		Function fun = ctx.getFunctions().resolve(name, expr.getChildCount());
+		Function fun = sctx.getFunctions().resolve(name, expr.getChildCount());
 		if (fun == null) {
 			String argp = (expr.getChildCount() > 0) ? "?" : "";
 			for (int i = 1; i < expr.getChildCount(); i++) {
@@ -1876,7 +1878,7 @@ public class Analyzer {
 			}
 			// change expr to string literal
 			expr.setType(XQ.Str);
-			expr.setValue(new Str(ctx.getDefaultCollation()));
+			expr.setValue(new Str(sctx.getDefaultCollation()));
 			return true;
 		}
 		if (name.equals(Functions.FN_STATIC_BASE_URI)) {
@@ -1887,7 +1889,7 @@ public class Analyzer {
 			}
 			// change expr to uri literal
 			expr.setType(XQ.AnyURI);
-			expr.setValue(ctx.getBaseURI());
+			expr.setValue(sctx.getBaseURI());
 			return true;
 		}
 		return false;
@@ -1930,8 +1932,9 @@ public class Analyzer {
 			return false;
 		}
 		// create new static context
-		StaticContext pctx = ctx;
-		this.ctx = new NestedContext(pctx);
+		StaticContext psctx = sctx;
+		this.sctx = new NestedContext(psctx);
+		expr.setStaticContext(sctx);
 
 		QNm name = (QNm) expr.getChild(0).getValue();
 
@@ -1948,7 +1951,7 @@ public class Analyzer {
 				String prefix = attName.getLocalName();
 				String uri = extractURIFromDirNSAttContent(att.getChild(0));
 				checkDirNSAttBinding(prefix, uri);
-				ctx.getNamespaces().declare(prefix, uri);
+				sctx.getNamespaces().declare(prefix, uri);
 				// delete from context sequence
 				// and prepend prefixed namespace declaration
 				// in element constructor
@@ -1959,7 +1962,7 @@ public class Analyzer {
 				expr.insertChild(0, nsDecl);
 			} else if ("xmlns".equals(attName.getLocalName())) {
 				String uri = extractURIFromDirNSAttContent(att.getChild(0));
-				ctx.getNamespaces().setDefaultElementNamespace(uri);
+				sctx.getNamespaces().setDefaultElementNamespace(uri);
 				// delete from context sequence
 				// and prepend prefixed namespace declaration
 				// in element constructor
@@ -1980,7 +1983,7 @@ public class Analyzer {
 		for (int i = 0; i < cseq.getChildCount(); i++) {
 			AST c = cseq.getChild(i);
 			if (c.getType() == XQ.Str) {
-				if ((ctx.isBoundarySpaceStrip())
+				if ((sctx.isBoundarySpaceStrip())
 						&& (c.checkProperty("boundaryWS"))) {
 					cseq.deleteChild(i--);
 					merge = 0;
@@ -2018,7 +2021,7 @@ public class Analyzer {
 		}
 
 		// restore static context
-		this.ctx = pctx;
+		this.sctx = psctx;
 		return true;
 	}
 
@@ -2245,7 +2248,7 @@ public class Analyzer {
 	private QNm expand(QNm name, DefaultNS mode) throws QueryException {
 		String prefix = name.getPrefix();
 		String uri;
-		Namespaces ns = ctx.getNamespaces();
+		Namespaces ns = sctx.getNamespaces();
 		if (mode == DefaultNS.ELEMENT_OR_TYPE) {
 			if (prefix == null) {
 				return new QNm(ns.getDefaultElementNamespace(), null,

@@ -46,6 +46,7 @@ import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.Namespaces;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -73,7 +74,7 @@ public class Writeline extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, final Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, final Sequence[] args)
 			throws QueryException {
 		if (args[1] == null) {
 			return Int32.ZERO;
@@ -132,18 +133,5 @@ public class Writeline extends AbstractFunction {
 			throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
 					"Unsupported protocol: %s", scheme);
 		}
-	}
-
-	public static void main(String[] args) throws Exception {
-		Writeline rl = new Writeline();
-		AnyURI uri = new AnyURI("/data/10k.dat");// new
-		// AnyURI("http://lgis.informatik.uni-kl.de");
-		Sequence s = rl.execute(null, new Sequence[] { uri });
-		Iter it = s.iterate();
-		Item line;
-		while ((line = it.next()) != null) {
-			System.out.println(line);
-		}
-		it.close();
 	}
 }

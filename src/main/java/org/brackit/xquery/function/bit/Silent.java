@@ -39,6 +39,7 @@ import org.brackit.xquery.atomic.Int64;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.Namespaces;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.node.SubtreePrinter;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -75,7 +76,7 @@ public class Silent extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException {
 		Sequence sequence = args[0];
 		if (sequence == null) {

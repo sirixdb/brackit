@@ -137,7 +137,7 @@ public class DefaultOptimizer implements Optimizer {
 	private static class Unnest implements Stage {
 		public AST rewrite(AST ast) throws QueryException {
 			new LetBindLift().walk(ast);
-			new BindingPushupAfterLifting().walk(ast); // 2nd chance for pushing
+//			new BindingPushupAfterLifting().walk(ast); // 2nd chance for pushing
 			return ast;
 		}
 	}

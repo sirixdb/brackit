@@ -31,6 +31,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Kind;
@@ -62,20 +63,17 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
 		}
 	}
 
+	protected final StaticContext sctx;
 	protected final Expr nameExpr;
-
 	protected final NS[] namespaces;
-
 	protected final Expr[] contentExprs;
-
 	protected final boolean bind;
-
 	protected final boolean appendOnly;
-
 	protected final QNm name;
 
-	public ElementExpr(Expr nameExpr, NS[] namespaces, Expr[] contentExpr,
-			boolean bind, boolean appendOnly) {
+	public ElementExpr(StaticContext sctx, Expr nameExpr, NS[] namespaces,
+			Expr[] contentExpr, boolean bind, boolean appendOnly) {
+		this.sctx = sctx;
 		this.nameExpr = nameExpr;
 		this.namespaces = namespaces;
 		this.contentExprs = contentExpr;
@@ -94,7 +92,7 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
 		// See XQuery 3.7.3.1 Computed Element Constructors
-		QNm name = (this.name != null) ? this.name : buildElementName(ctx,
+		QNm name = (this.name != null) ? this.name : buildElementName(sctx,
 				nameExpr.evaluateToItem(ctx, tuple));
 
 		final Node<?> element;

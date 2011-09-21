@@ -95,18 +95,18 @@ public class TypedSequence extends LazySequence {
 				if ((type == Type.UNA) && (aType != Type.UNA)
 						&& (applyFunctionConversion)) {
 					if (enforceDouble) {
-						atomic = Cast.cast(atomic, Type.DBL, false);
+						atomic = Cast.cast(null, atomic, Type.DBL, false);
 					} else {
-						atomic = Cast.cast(atomic, aType, false);
+						atomic = Cast.cast(null, atomic, aType, false);
 					}
 				} else if (!iType.matches(atomic)) {
 					if ((applyFunctionConversion) && (aType.isNumeric())
 							&& (type.isNumeric())) {
-						atomic = Cast.cast(atomic, aType, false);
+						atomic = Cast.cast(null, atomic, aType, false);
 					} else if ((applyFunctionConversion)
 							&& (aType.instanceOf(Type.STR))
 							&& (type.instanceOf(Type.AURI))) {
-						atomic = Cast.cast(atomic, aType, false);
+						atomic = Cast.cast(null, atomic, aType, false);
 					} else {
 						throw new QueryException(
 								ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,

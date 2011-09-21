@@ -45,6 +45,7 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.Namespaces;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
@@ -72,7 +73,7 @@ public class Readline extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, final Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, final Sequence[] args)
 			throws QueryException {
 		return new LazySequence() {
 			@Override
@@ -151,18 +152,5 @@ public class Readline extends AbstractFunction {
 				};
 			}
 		};
-	}
-
-	public static void main(String[] args) throws Exception {
-		Readline rl = new Readline();
-		AnyURI uri = new AnyURI("/data/10k.dat");// new
-		// AnyURI("http://lgis.informatik.uni-kl.de");
-		Sequence s = rl.execute(null, new Sequence[] { uri });
-		Iter it = s.iterate();
-		Item line;
-		while ((line = it.next()) != null) {
-			System.out.println(line);
-		}
-		it.close();
 	}
 }

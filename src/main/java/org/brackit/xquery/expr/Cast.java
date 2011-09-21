@@ -62,6 +62,7 @@ import org.brackit.xquery.atomic.Time;
 import org.brackit.xquery.atomic.TimeInstant;
 import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.atomic.YMD;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
@@ -73,13 +74,13 @@ import org.brackit.xquery.xdm.Type;
  * 
  */
 public class Cast implements Expr {
-	private Expr expr;
-
+	private final StaticContext sctx;
+	private final Expr expr;
 	private final Type target;
-
 	private final boolean allowEmptySequence;
 
-	public Cast(Expr expr, Type targetType, boolean allowEmptySequence) {
+	public Cast(StaticContext sctx, Expr expr, Type targetType, boolean allowEmptySequence) {
+		this.sctx = sctx;
 		this.expr = expr;
 		this.target = targetType;
 		this.allowEmptySequence = allowEmptySequence;
@@ -89,7 +90,7 @@ public class Cast implements Expr {
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
 		Item item = expr.evaluateToItem(ctx, tuple);
-		return cast(item, target, allowEmptySequence);
+		return cast(sctx, item, target, allowEmptySequence);
 	}
 
 	@Override
@@ -98,7 +99,7 @@ public class Cast implements Expr {
 		return evaluateToItem(ctx, tuple);
 	}
 
-	public static Atomic cast(Item item, Type target, boolean allowEmptySequence) throws QueryException {
+	public static Atomic cast(StaticContext sctx, Item item, Type target, boolean allowEmptySequence) throws QueryException {
 		// See XQuery 1.0: 3.12.3 Cast
 		if (item == null) {
 			if (allowEmptySequence) {
@@ -122,13 +123,13 @@ public class Cast implements Expr {
 		}
 
 		if (target.isCastPrimitive()) {
-			return toPrimitive(atomic, source, target);
+			return toPrimitive(sctx, atomic, source, target);
 		} else {
-			return toDerived(atomic, source, target);
+			return toDerived(sctx, atomic, source, target);
 		}
 	}
 
-	public static Atomic cast(Atomic atomic, Type target) throws QueryException {
+	public static Atomic cast(StaticContext sctx, Atomic atomic, Type target) throws QueryException {
 		// See XQuery 1.0: 3.12.3 Cast
 		if (!target.isAtomic()) {
 			throw new QueryException(ErrorCode.ERR_UNKNOWN_ATOMIC_SCHEMA_TYPE,
@@ -143,13 +144,13 @@ public class Cast implements Expr {
 		}
 
 		if (target.isCastPrimitive()) {
-			return toPrimitive(atomic, source, target);
+			return toPrimitive(sctx, atomic, source, target);
 		} else {
-			return toDerived(atomic, source, target);
+			return toDerived(sctx, atomic, source, target);
 		}
 	}
 
-	private static Atomic toDerived(Atomic atomic, Type source, Type target)
+	private static Atomic toDerived(StaticContext sctx, Atomic atomic, Type source, Type target)
 			throws QueryException {
 		if (source.instanceOf(target)) {
 			// source is a real subtype of target
@@ -163,14 +164,14 @@ public class Cast implements Expr {
 			// source and target do not have the same
 			// primitive base type
 			// See XQuery 1.0: 17.5 Casting across the type hierarchy
-			Atomic temp = toPrimitive(atomic, source, sourceBase);
+			Atomic temp = toPrimitive(sctx, atomic, source, sourceBase);
 
 			if ((sourceBase == Type.STR) || (sourceBase == Type.UNA)) {
 				// TODO check upcasted atomic
 				// against the pattern facets of target
 			}
 
-			atomic = castPrimitiveToPrimitive(temp, sourceBase, targetBase);
+			atomic = castPrimitiveToPrimitive(sctx, temp, sourceBase, targetBase);
 		}
 
 		// See XQuery 1.0: 17.4 Casting within a branch of the type hierarchy
@@ -182,10 +183,10 @@ public class Cast implements Expr {
 		return atomic.asType(target);
 	}
 
-	private static Atomic toPrimitive(Atomic atomic, Type source, Type target)
+	private static Atomic toPrimitive(StaticContext sctx, Atomic atomic, Type source, Type target)
 			throws QueryException {
 		if (source.isCastPrimitive()) {
-			return castPrimitiveToPrimitive(atomic, source, target);
+			return castPrimitiveToPrimitive(sctx, atomic, source, target);
 		} else if (source.instanceOf(target)) {
 			// source is a real subtype of target
 			return atomic.asType(target);
@@ -200,17 +201,17 @@ public class Cast implements Expr {
 						source, target);
 			}
 
-			Atomic temp = toPrimitive(atomic, source, sourceBase);
+			Atomic temp = toPrimitive(sctx, atomic, source, sourceBase);
 			// target is primitive and has not pattern facets.
 			// No need to check any
-			return castPrimitiveToPrimitive(temp, sourceBase, target);
+			return castPrimitiveToPrimitive(sctx, temp, sourceBase, target);
 		}
 	}
 
 	/*
 	 * // See XQuery 1.0: 17.1 Casting from primitive types to primitive types
 	 */
-	private static Atomic castPrimitiveToPrimitive(Atomic atomic, Type source,
+	private static Atomic castPrimitiveToPrimitive(StaticContext sctx, Atomic atomic, Type source,
 			Type target) throws QueryException {
 		// Compare with columns in cast
 		if (target == source) {
@@ -296,8 +297,24 @@ public class Cast implements Expr {
 			} else if (source.instanceOf(Type.NOT)) {
 				return new QNm(atomic.stringValue());
 			} else {
-				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-						"Illegal cast from %s to %s", source, target);
+				QNm qnm = new QNm(atomic.stringValue());
+				if (qnm.getPrefix() != null) {
+					String uri = sctx.getNamespaces().resolve(qnm.getPrefix());
+					if (uri == null) {
+						throw new QueryException(
+								ErrorCode.ERR_UNKNOWN_NS_PREFIX_IN_COMP_CONSTR,
+								"Statically unkown namespace prefix: '%s'",
+								qnm.getPrefix());
+					}
+					return new QNm(uri, null, qnm.getLocalName());
+				} else {
+					String uri = sctx.getNamespaces().getDefaultElementNamespace();
+					if ((uri == null) || (uri.isEmpty())) {
+						return qnm;
+					} else {
+						return new QNm(uri, null, qnm.getLocalName());
+					}
+				}
 			}
 		} else if ((target == Type.NOT) || (target == Type.ANA)) {
 			throw new QueryException(ErrorCode.ERR_ILLEGAL_CAST_TARGET_TYPE,

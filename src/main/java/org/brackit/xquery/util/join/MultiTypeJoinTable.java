@@ -88,7 +88,7 @@ public class MultiTypeJoinTable {
 		Type type = atomic.type().getPrimitiveBase();
 
 		if ((!isGCmp) && (type == Type.UNA)) {
-			atomic = Cast.cast(atomic, Type.STR, false);
+			atomic = Cast.cast(null, atomic, Type.STR, false);
 			type = Type.STR;
 		}
 
@@ -111,13 +111,13 @@ public class MultiTypeJoinTable {
 		Type type = atomic.type().getPrimitiveBase();
 
 		if ((!isGCmp) && (type == Type.UNA)) {
-			atomic = Cast.cast(atomic, Type.STR, false);
+			atomic = Cast.cast(null, atomic, Type.STR, false);
 			type = Type.STR;
 		}
 
 		if (type == Type.UNA) {
 			for (Type nnType : nonNumericTypes) {
-				probeAtomic(matches, Cast.cast(atomic, nnType, false),
+				probeAtomic(matches, Cast.cast(null, atomic, nnType, false),
 						nnType);
 			}
 			if (numericPresent) {
@@ -127,7 +127,7 @@ public class MultiTypeJoinTable {
 					addToTable(Type.FLO, Type.DBL);
 					promotedNumericToDbl = true;
 				}
-				probeAtomic(matches, Cast.cast(atomic, Type.DBL, false),
+				probeAtomic(matches, Cast.cast(null, atomic, Type.DBL, false),
 						Type.DBL);
 			}
 		} else if (type.isNumeric()) {
@@ -146,21 +146,21 @@ public class MultiTypeJoinTable {
 				addToTable(Type.INR, Type.FLO);
 				addToTable(Type.DEC, Type.FLO);
 				promotedNumericToFlo = true;
-				probeAtomic(matches, Cast.cast(atomic, Type.DBL, false),
+				probeAtomic(matches, Cast.cast(null, atomic, Type.DBL, false),
 						Type.DBL);
 			} else if ((type == Type.DEC) && (!promotedNumericToDec)) {
 				addToTable(Type.INR, Type.DEC);
 				promotedNumericToDec = true;
-				probeAtomic(matches, Cast.cast(atomic, Type.DBL, false),
+				probeAtomic(matches, Cast.cast(null, atomic, Type.DBL, false),
 						Type.DBL);
-				probeAtomic(matches, Cast.cast(atomic, Type.FLO, false),
+				probeAtomic(matches, Cast.cast(null, atomic, Type.FLO, false),
 						Type.FLO);
 			} else if (type == Type.INR) {
-				probeAtomic(matches, Cast.cast(atomic, Type.DBL, false),
+				probeAtomic(matches, Cast.cast(null, atomic, Type.DBL, false),
 						Type.DBL);
-				probeAtomic(matches, Cast.cast(atomic, Type.FLO, false),
+				probeAtomic(matches, Cast.cast(null, atomic, Type.FLO, false),
 						Type.FLO);
-				probeAtomic(matches, Cast.cast(atomic, Type.DEC, false),
+				probeAtomic(matches, Cast.cast(null, atomic, Type.DEC, false),
 						Type.DEC);
 			}
 
@@ -175,10 +175,10 @@ public class MultiTypeJoinTable {
 			probeAtomic(matches, atomic, type);
 
 			if (type == Type.STR) {
-				probeAtomic(matches, Cast.cast(atomic, Type.AURI, false),
+				probeAtomic(matches, Cast.cast(null, atomic, Type.AURI, false),
 						Type.AURI);
 			} else if (type == Type.AURI) {
-				probeAtomic(matches, Cast.cast(atomic, Type.STR, false),
+				probeAtomic(matches, Cast.cast(null, atomic, Type.STR, false),
 						Type.STR);
 			}
 		}
@@ -198,7 +198,7 @@ public class MultiTypeJoinTable {
 		}
 
 		for (TEntry entry : fromTable.entries()) {
-			table.add(Cast.cast(entry.key.atomic, to, false),
+			table.add(Cast.cast(null, entry.key.atomic, to, false),
 					entry.value.pos, entry.value.bindings);
 		}
 

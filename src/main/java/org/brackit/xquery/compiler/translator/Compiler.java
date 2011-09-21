@@ -377,7 +377,8 @@ public class Compiler implements Translator {
 				true);
 		boolean allowEmptySequence = ((type.getChildCount() == 2) && (type
 				.getChild(1).getType() == XQ.CardinalityZeroOrOne));
-		return new Cast(expr, targetType, allowEmptySequence);
+		StaticContext sctx = node.getStaticContext();
+		return new Cast(sctx, expr, targetType, allowEmptySequence);
 	}
 
 	protected Expr castableExpr(AST node) throws QueryException {
@@ -388,7 +389,8 @@ public class Compiler implements Translator {
 				true);
 		boolean allowEmptySequence = ((type.getChildCount() == 2) && (type
 				.getChild(1).getType() == XQ.CardinalityZeroOrOne));
-		return new Castable(expr, targetType, allowEmptySequence);
+		StaticContext sctx = node.getStaticContext();
+		return new Castable(sctx, expr, targetType, allowEmptySequence);
 	}
 
 	protected Expr treatExpr(AST node) throws QueryException {
@@ -565,7 +567,7 @@ public class Compiler implements Translator {
 	protected Expr renameExpr(AST node) throws QueryException {
 		Expr targetExpr = expr(node.getChild(0), true);
 		Expr sourceExpr = expr(node.getChild(1), true);
-		return new Rename(sourceExpr, targetExpr);
+		return new Rename(node.getStaticContext(), sourceExpr, targetExpr);
 	}
 
 	protected Expr transformExpr(AST node) throws QueryException {
@@ -618,8 +620,8 @@ public class Compiler implements Translator {
 			function = BIT_EVERY_FUNC;
 		}
 
-		return new IfExpr(new FunctionExpr(function, bindingSequenceExpr),
-				Bool.TRUE, Bool.FALSE);
+		return new IfExpr(new FunctionExpr(node.getStaticContext(), function,
+				bindingSequenceExpr), Bool.TRUE, Bool.FALSE);
 	}
 
 	protected Expr quantifiedBindings(Operator in, AST node, int pos)
@@ -671,7 +673,7 @@ public class Compiler implements Translator {
 			args = new Expr[0];
 		}
 
-		return new FunctionExpr(function, args);
+		return new FunctionExpr(node.getStaticContext(), function, args);
 	}
 
 	protected Expr documentExpr(AST node) throws QueryException {
@@ -716,7 +718,9 @@ public class Compiler implements Translator {
 			contentExpr = new Expr[0];
 		}
 
-		return new ElementExpr(nameExpr, ns, contentExpr, bind, appendOnly);
+		StaticContext sctx = node.getStaticContext();
+		return new ElementExpr(sctx, nameExpr, ns, contentExpr, bind,
+				appendOnly);
 	}
 
 	protected Expr[] contentSequence(AST node) throws QueryException {
@@ -755,7 +759,8 @@ public class Compiler implements Translator {
 		Expr nameExpr = expr(node.getChild(0), true);
 		Expr[] contentExpr = (node.getChildCount() > 1) ? contentSequence(node
 				.getChild(1)) : new Expr[0];
-		return new AttributeExpr(nameExpr, contentExpr, appendOnly(node));
+		StaticContext sctx = node.getStaticContext();
+		return new AttributeExpr(sctx, nameExpr, contentExpr, appendOnly(node));
 	}
 
 	protected Expr commentExpr(AST node) throws QueryException {
@@ -890,8 +895,7 @@ public class Compiler implements Translator {
 			return new NodeCmpExpr(NodeCmp.preceding, firstArg, secondArg);
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-					"Unexpected AST comparison node '%s' of type: %s", cmpNode,
-					cmpNode.getType());
+					"Unexpected comparison: '%s'", cmpNode);
 		}
 	}
 
