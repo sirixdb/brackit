@@ -31,7 +31,7 @@ import static org.brackit.xquery.compiler.XQ.Count;
 import static org.brackit.xquery.compiler.XQ.GroupBy;
 import static org.brackit.xquery.compiler.XQ.GroupBySpec;
 import static org.brackit.xquery.compiler.XQ.LetBind;
-import static org.brackit.xquery.compiler.XQ.ReturnExpr;
+import static org.brackit.xquery.compiler.XQ.PipeExpr;
 import static org.brackit.xquery.compiler.XQ.Start;
 import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
 import static org.brackit.xquery.compiler.XQ.Variable;
@@ -60,7 +60,7 @@ public class LetBindLift extends Walker {
 
 		AST opEx = node.getChild(2);
 
-		if (opEx.getType() != ReturnExpr) {
+		if (opEx.getType() != PipeExpr) {
 			return node;
 		}
 

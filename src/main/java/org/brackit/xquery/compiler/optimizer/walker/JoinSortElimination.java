@@ -78,7 +78,7 @@ public class JoinSortElimination extends Walker {
 					return node;
 				}
 			}
-			if (parent.getType() == XQ.ReturnExpr) {
+			if (parent.getType() == XQ.PipeExpr) {
 				break;
 			}
 		}

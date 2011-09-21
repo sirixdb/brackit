@@ -45,26 +45,25 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  * 
  */
-public class ReturnExpr implements Expr {
-	private final Operator operator;
-
+public class PipeExpr implements Expr {
+	private final Operator op;
 	private final Expr expr;
 
-	public ReturnExpr(Operator operator, Expr expr) {
-		this.operator = operator;
+	public PipeExpr(Operator op, Expr expr) {
+		this.op = op;
 		this.expr = expr;
 	}
 
-	public static class OpSequence extends LazySequence {
+	public static class PipeSequence extends LazySequence {
 		final QueryContext ctx;
-		final Operator operator;
+		final Operator op;
 		final Expr expr;
 		final Tuple tuple;
 
-		public OpSequence(QueryContext ctx, Operator operator, Expr expr,
+		public PipeSequence(QueryContext ctx, Operator op, Expr expr,
 				Tuple tuple) {
 			this.ctx = ctx;
-			this.operator = operator;
+			this.op = op;
 			this.expr = expr;
 			this.tuple = tuple;
 		}
@@ -86,7 +85,7 @@ public class ReturnExpr implements Expr {
 							it.close();
 							it = null;
 						} else if (cursor == null) {
-							cursor = operator.create(ctx, tuple);
+							cursor = op.create(ctx, tuple);
 							cursor.open(ctx);
 						}
 
@@ -124,7 +123,7 @@ public class ReturnExpr implements Expr {
 	@Override
 	public Sequence evaluate(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		return new OpSequence(ctx, operator, expr, tuple);
+		return new PipeSequence(ctx, op, expr, tuple);
 	}
 
 	@Override
@@ -145,6 +144,6 @@ public class ReturnExpr implements Expr {
 	}
 
 	public String toString() {
-		return ReturnExpr.class.getSimpleName();
+		return PipeExpr.class.getSimpleName();
 	}
 }

@@ -60,7 +60,7 @@ import org.brackit.xquery.expr.OrExpr;
 import org.brackit.xquery.expr.PIExpr;
 import org.brackit.xquery.expr.PathStepExpr;
 import org.brackit.xquery.expr.RangeExpr;
-import org.brackit.xquery.expr.ReturnExpr;
+import org.brackit.xquery.expr.PipeExpr;
 import org.brackit.xquery.expr.SequenceExpr;
 import org.brackit.xquery.expr.StepExpr;
 import org.brackit.xquery.expr.SwitchExpr;
@@ -644,7 +644,7 @@ public class Compiler implements Translator {
 			forBind.bindPosition(false);
 			return returnExpr;
 		} else {
-			return new ReturnExpr(in, expr(child, true));
+			return new PipeExpr(in, expr(child, true));
 		}
 	}
 
@@ -1245,8 +1245,8 @@ public class Compiler implements Translator {
 				node, 0, childCount - 2);
 		Expr returnExpr = expr(node.getChild(childCount - 1).getChild(0), false);
 		cb.unbind();
-		Expr opExpr = new ReturnExpr(cb.operator, returnExpr);
-		return opExpr;
+		Expr pipeExpr = new PipeExpr(cb.operator, returnExpr);
+		return pipeExpr;
 	}
 
 	private ClauseBinding flowrClause(ClauseBinding in, AST node, int pos,

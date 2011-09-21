@@ -29,7 +29,7 @@ package org.brackit.xquery.compiler.optimizer.walker;
 
 import static org.brackit.xquery.compiler.XQ.GroupBy;
 import static org.brackit.xquery.compiler.XQ.LetBind;
-import static org.brackit.xquery.compiler.XQ.ReturnExpr;
+import static org.brackit.xquery.compiler.XQ.PipeExpr;
 
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
@@ -73,7 +73,7 @@ public class BindingPushupAfterLifting extends BindingPushup {
 				break;
 			}
 		}
-		while ((parent = parent.getParent()).getType() != ReturnExpr) {
+		while ((parent = parent.getParent()).getType() != PipeExpr) {
 			if (dependsOn(parent, binding)) {
 				return false;
 			}

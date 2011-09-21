@@ -33,7 +33,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
-import org.brackit.xquery.expr.ReturnExpr;
+import org.brackit.xquery.expr.PipeExpr;
 import org.brackit.xquery.expr.VCmpExpr.Cmp;
 import org.brackit.xquery.operator.Count;
 import org.brackit.xquery.operator.ForBind;
@@ -68,14 +68,14 @@ public class PipelineCompiler extends Compiler {
 
 	@Override
 	protected Expr anyExpr(AST node) throws QueryException {
-		if (node.getType() == XQ.ReturnExpr) {
+		if (node.getType() == XQ.PipeExpr) {
 			// switch to bottom up compilation
-			return returnExpr(node);
+			return pipeExpr(node);
 		}
 		return super.anyExpr(node);
 	}
 
-	protected Expr returnExpr(AST node) throws QueryException {
+	protected Expr pipeExpr(AST node) throws QueryException {
 		int initialBindSize = table.bound().length;
 		Operator root = anyOp(node.getChild(0));
 		Expr expr = anyExpr(node.getChild(1));
@@ -86,7 +86,7 @@ public class PipelineCompiler extends Compiler {
 			table.unbind();
 		}
 
-		return new ReturnExpr(root, expr);
+		return new PipeExpr(root, expr);
 	}
 
 	protected Operator anyOp(AST node) throws QueryException {

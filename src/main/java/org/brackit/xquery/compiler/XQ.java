@@ -264,7 +264,7 @@ public final class XQ {
 	public static final int CopyVariableBinding = 217;
 	// Begin XQuery Update Facility 1.0
 	// Begin brackit's set-oriented extensions
-	public static final int ReturnExpr = 218;
+	public static final int PipeExpr = 218;
 	public static final int Selection = 219;
 	public static final int GroupBy = 220;
 	public static final int OrderBy = 221;
@@ -358,7 +358,7 @@ public final class XQ {
 			"CopyVariableBinding",
 			// End XQuery Update Facility 1.0
 			// Begin brackit's set-oriented extensions
-			"ReturnExpr", "Selection", "GroupBy", "OrderBy", "Join",
+			"PipeExpr", "Selection", "GroupBy", "OrderBy", "Join",
 			"JoinClause", "Start", "ForBind", "LetBind", "Count"
 	// End brackit's set-oriented extensions
 	};
