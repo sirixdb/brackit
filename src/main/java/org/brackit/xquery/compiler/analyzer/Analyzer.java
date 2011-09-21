@@ -1185,11 +1185,10 @@ public class Analyzer {
 		}
 		openScope();
 		expr(expr.getChild(0));
-		for (int i = 1; i < expr.getChildCount() - 1; i++) {
+		for (int i = 1; i < expr.getChildCount(); i++) {
 			// handle default case as case clause
 			caseClause(expr.getChild(i));
 		}
-		exprSingle(expr.getChild(expr.getChildCount() - 1));
 		closeScope();
 		return true;
 	}
@@ -1327,7 +1326,8 @@ public class Analyzer {
 	}
 
 	private boolean intersectExpr(AST expr) throws QueryException {
-		if (expr.getType() != XQ.IntersectExpr) {
+		if ((expr.getType() != XQ.IntersectExpr)
+				&& (expr.getType() != XQ.ExceptExpr)) {
 			return instanceOfExpr(expr);
 		}
 		intersectExpr(expr.getChild(0));
@@ -1678,7 +1678,7 @@ public class Analyzer {
 	}
 
 	private ItemType textTest(AST test) throws QueryException {
-		if (test.getType() != XQ.KindTestComment) {
+		if (test.getType() != XQ.KindTestText) {
 			return null;
 		}
 		return new TextType();
