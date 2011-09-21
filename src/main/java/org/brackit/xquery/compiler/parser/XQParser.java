@@ -89,9 +89,12 @@ public class XQParser extends Tokenizer {
 			AST xquery = new AST(XQ.XQuery);
 			xquery.addChild(module);
 			return xquery;
+		} catch (IllegalCharRefException e) {
+			throw new QueryException(e,
+					ErrorCode.ERR_UNDEFINED_CHARACTER_REFERENCE, e.getMessage());
 		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
+			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR,
+					e.getMessage());
 		}
 	}
 
