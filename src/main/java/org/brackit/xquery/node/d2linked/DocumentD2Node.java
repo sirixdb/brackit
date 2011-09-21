@@ -29,10 +29,12 @@ package org.brackit.xquery.node.d2linked;
 
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.ArrayCollection;
+import org.brackit.xquery.node.d2linked.ParentD2Node.DescendantScanner;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.Stream;
 
 /**
  * 
@@ -79,6 +81,14 @@ public class DocumentD2Node extends ParentD2Node {
 	@Override
 	public Kind getKind() {
 		return Kind.DOCUMENT;
+	}
+	
+	@Override
+	public Stream<? extends D2Node> getDescendantOrSelf()
+			throws DocumentException {
+		DescendantScanner desc = new DescendantScanner(this);
+		desc.next(); // pop document
+		return desc;
 	}
 
 	@Override

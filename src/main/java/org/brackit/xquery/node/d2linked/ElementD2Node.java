@@ -144,6 +144,12 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
 
 		return parent.nextSiblingOf(this);
 	}
+	
+	@Override
+	public Stream<? extends D2Node> getDescendantOrSelf()
+			throws DocumentException {
+		return new DescendantScanner(this);
+	}
 
 	@Override
 	public D2Node getPreviousSibling() throws DocumentException {
