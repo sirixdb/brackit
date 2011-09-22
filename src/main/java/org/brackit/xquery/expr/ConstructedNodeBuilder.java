@@ -36,6 +36,7 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Kind;
@@ -286,13 +287,16 @@ public abstract class ConstructedNodeBuilder {
 		if (type == Type.NCN) {
 			target = new QNm(atomic.stringValue());
 		} else if ((type == Type.STR) || (type == Type.UNA)) {
-			if (!XMLChar.isNCName(atomic.stringValue())) {
+			String ncname = atomic.stringValue();
+			ncname = Whitespace.normalizeXML11(ncname);
+			ncname = Whitespace.collapse(ncname);
+			if (!XMLChar.isNCName(ncname)) {
 				throw new QueryException(
 						ErrorCode.ERR_PI_TARGET_CAST_TO_NCNAME,
 						"Cast target of processing instruction to xs:NCName failed: %s",
-						atomic.stringValue());
+						ncname);
 			}
-			target = new QNm(atomic.stringValue());
+			target = new QNm(ncname);
 		} else {
 			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 					"Invalid target in processing instruction");
@@ -301,7 +305,7 @@ public abstract class ConstructedNodeBuilder {
 		if (target.getLocalName().toLowerCase().equals("xml")) {
 			throw new QueryException(
 					ErrorCode.ERR_PI_TARGET_IS_XML,
-					"NCName in processing instruction is not allowed to be 'XML': %s",
+					"Illegal NCName in processing instruction: '%s'",
 					target);
 		}
 		return target;
