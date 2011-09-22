@@ -306,6 +306,10 @@ public class DateTime extends AbstractTimeInstant {
 		return (DateTime) add(!yearMonthDuration.isNegative(),
 				yearMonthDuration, timezone);
 	}
+	
+	public DTD subtract(DateTime dateTime) throws QueryException {
+		return super.subtract(dateTime);
+	}
 
 	@Override
 	public int cmp(Atomic atomic) throws QueryException {

@@ -183,6 +183,10 @@ public class Time extends AbstractTimeInstant {
 		return (Time) add(!dayTimeDuration.isNegative(), dayTimeDuration,
 				timezone);
 	}
+	
+	public DTD subtract(Time time) throws QueryException {
+		return super.subtract(time);
+	}
 
 	@Override
 	public int cmp(Atomic atomic) throws QueryException {

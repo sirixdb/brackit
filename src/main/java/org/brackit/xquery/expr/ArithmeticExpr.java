@@ -173,17 +173,17 @@ public class ArithmeticExpr implements Expr {
 				case PLUS:
 					return ((DateTime) left).add((YMD) right);
 				case MINUS:
-					return ((DateTime) left).add((YMD) right);
+					return ((DateTime) left).subtract((YMD) right);
 				}
 			} else if (rightType.instanceOf(Type.DTD)) {
 				switch (op) {
 				case PLUS:
 					return ((DateTime) left).add((DTD) right);
 				case MINUS:
-					return ((DateTime) left).add((DTD) right);
+					return ((DateTime) left).subtract((DTD) right);
 				}
 			} else if (rightType.instanceOf(Type.DATI)) {
-				// return ((DateTime) left).subtract((DateTime) right);
+				return ((DateTime) left).subtract((DateTime) right);
 			}
 		} else if (leftType.instanceOf(Type.DATE)) {
 			if (rightType.instanceOf(Type.YMD)) {
@@ -191,15 +191,17 @@ public class ArithmeticExpr implements Expr {
 				case PLUS:
 					return ((Date) left).add((YMD) right);
 				case MINUS:
-					return ((Date) left).add((YMD) right);
+					return ((Date) left).subtract((YMD) right);
 				}
 			} else if (rightType.instanceOf(Type.DTD)) {
 				switch (op) {
 				case PLUS:
 					return ((Date) left).add((DTD) right);
 				case MINUS:
-					return ((Date) left).add((DTD) right);
+					return ((Date) left).subtract((DTD) right);
 				}
+			} else if (rightType.instanceOf(Type.DATE)) {
+				return ((Date) left).subtract((Date) right);
 			}
 		} else if (leftType.instanceOf(Type.TIME)) {
 			if (rightType.instanceOf(Type.DTD)) {
@@ -207,8 +209,10 @@ public class ArithmeticExpr implements Expr {
 				case PLUS:
 					return ((Time) left).add((DTD) right);
 				case MINUS:
-					return ((Time) left).add((DTD) right);
+					return ((Time) left).subtract((DTD) right);
 				}
+			} else if (rightType.instanceOf(Type.TIME)) {
+				return ((Time) left).subtract((Time) right);
 			}
 		}
 
