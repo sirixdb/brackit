@@ -126,7 +126,7 @@ public class Flt extends AbstractNumeric implements FltNumeric {
 
 	@Override
 	public boolean booleanValue() throws QueryException {
-		return ((v != 0) && (v != Float.NaN) && (v != Float.MAX_VALUE) && (v != Float.MIN_VALUE));
+		return ((v != 0) && (!Float.isNaN(v)) && (Float.isInfinite(v)));
 	}
 
 	@Override
@@ -151,12 +151,10 @@ public class Flt extends AbstractNumeric implements FltNumeric {
 
 	@Override
 	public String stringValue() {
-		if (v == Float.NaN)
+		if (Float.isNaN(v))
 			return "NaN";
-		if (v == Float.NEGATIVE_INFINITY)
-			return "-INF";
-		if (v == Float.POSITIVE_INFINITY)
-			return "INF";
+		if (Float.isInfinite(v))
+			return (v > 0) ? "INF" : "-INF";
 		if (v == 0)
 			return (v == -0.0f) ? "-0" : "0";
 		return killTrailingZeros(((v > 0) && (v >= 1e-6) && (v < 1e6) || (-v >= 1e-6)

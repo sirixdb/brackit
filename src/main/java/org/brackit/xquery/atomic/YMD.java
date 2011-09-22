@@ -204,10 +204,10 @@ public class YMD extends AbstractDuration {
 	public YMD multiply(Dbl dbl) throws QueryException {
 		double v = dbl.doubleValue();
 
-		if (v == Double.NaN) {
+		if (Double.isNaN(v)) {
 			throw new QueryException(ErrorCode.ERR_PARAMETER_NAN);
 		}
-		if ((v == Double.NEGATIVE_INFINITY) || (v == Double.POSITIVE_INFINITY)) {
+		if (Double.isInfinite(v)) {
 			throw new QueryException(
 					ErrorCode.ERR_OVERFLOW_UNDERFLOW_IN_DURATION);
 		}
@@ -235,10 +235,10 @@ public class YMD extends AbstractDuration {
 	public YMD divide(Dbl dbl) throws QueryException {
 		double v = dbl.doubleValue();
 
-		if (v == Double.NaN) {
+		if (Double.isNaN(v)) {
 			throw new QueryException(ErrorCode.ERR_PARAMETER_NAN);
 		}
-		if ((v == Double.NEGATIVE_INFINITY) || (v == Double.POSITIVE_INFINITY)) {
+		if (Double.isInfinite(v)) {
 			return new YMD(false, (short) 0, (byte) 0);
 		}
 

@@ -136,7 +136,7 @@ public class Dbl extends AbstractNumeric implements DblNumeric {
 
 	@Override
 	public boolean booleanValue() throws QueryException {
-		return ((v != 0) && (v != Double.NaN) && (v != Double.MAX_VALUE) && (v != Double.MIN_VALUE));
+		return ((v != 0) && (!Double.isNaN(v)) && (!Double.isInfinite(v)));
 	}
 
 	@Override
@@ -157,12 +157,10 @@ public class Dbl extends AbstractNumeric implements DblNumeric {
 
 	@Override
 	public String stringValue() {
-		if (v == Double.NaN)
+		if (Double.isNaN(v))
 			return "NaN";
-		if (v == Double.NEGATIVE_INFINITY)
-			return "-INF";
-		if (v == Double.POSITIVE_INFINITY)
-			return "INF";
+		if (Double.isInfinite(v))
+			return (v > 0) ? "INF" : "-INF"; 
 		if (v == 0)
 			return (v == -0.0D) ? "-0" : "0";
 		return killTrailingZeros(((v > 0) && (v >= 1e-6) && (v < 1e6) || (-v >= 1e-6)
