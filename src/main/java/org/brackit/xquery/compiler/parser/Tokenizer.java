@@ -551,8 +551,8 @@ public class Tokenizer {
 			// TODO illegal? throw exception?
 			return la;
 		}
-		return new EQNameToken(pos, ncname.end, uri.string(), null, ncname
-				.string());
+		return new EQNameToken(pos, ncname.end, uri.string(), null,
+				ncname.string());
 	}
 
 	protected Token laNCName() {
@@ -815,9 +815,9 @@ public class Tokenizer {
 			if (end != null) {
 				return new StringToken(pos, end.end, s);
 			} else {
-				if (cond) {
-					return null;
-				}
+//				if (cond) {
+//					return null;
+//				}
 				throw new TokenizerException("Unclosed string literal: %s",
 						paraphrase());
 			}
@@ -829,9 +829,9 @@ public class Tokenizer {
 				if (end != null) {
 					return new StringToken(pos, end.end, s);
 				} else {
-					if (cond) {
-						return null;
-					}
+//					if (cond) {
+//						return null;
+//					}
 					throw new TokenizerException("Unclosed string literal: %s",
 							paraphrase());
 				}
@@ -874,7 +874,7 @@ public class Tokenizer {
 
 	protected Token laQuotAttrContentChar() {
 		int s = pos;
-		String content = scanAttrContentChar(s, '"');
+		String content = scanAttrContentChar(s, '"', "\"\"", "\"");
 		if (content == null) {
 			return null;
 		}
@@ -883,7 +883,7 @@ public class Tokenizer {
 
 	protected Token laAposAttrContentChar() {
 		int s = pos;
-		String content = scanAttrContentChar(s, '\'');
+		String content = scanAttrContentChar(s, '\'', "''", "'");
 		if (content == null) {
 			return null;
 		}
@@ -983,17 +983,20 @@ public class Tokenizer {
 		return new StringToken(s, lastScanEnd, content);
 	}
 
-	private String scanAttrContentChar(int pos, char escapeChar) {
+	private String scanAttrContentChar(int pos, char escapeChar,
+			String escapeStr, String replace) {
 		int s = pos;
 		int e = pos;
 		if (e >= end) {
 			return null;
 		}
+		boolean hasEscapes = false;
 		int len = 0;
 		char c;
 		while (e < end) {
 			c = input[e++];
 			if ((c == escapeChar) && (e < end) && (input[e] == escapeChar)) {
+				hasEscapes = true;
 				e++;
 				len += 2;
 			} else if ((c == escapeChar) || (c == '{') || (c == '}')
@@ -1007,7 +1010,13 @@ public class Tokenizer {
 			return null;
 		}
 		lastScanEnd = pos + len;
-		return new String(input, s, len);
+		String content = new String(input, s, len);
+		if (hasEscapes) {
+			// TODO this can be easily improved to avoid
+			// the pattern matching
+			content = content.replace(escapeStr, replace);
+		}
+		return content;
 	}
 
 	private String scanElemContentChar(int pos) {
@@ -1067,8 +1076,12 @@ public class Tokenizer {
 	private String scanPredefEntityRef(int pos, boolean cond)
 			throws TokenizerException {
 		int e = pos;
-		if ((end - e <= 4) || (input[e++] != '&') || (input[e] == '#')) {
+		if ((input[e++] != '&') || (input[e] == '#')) {
 			return null;
+		}
+		if (end - e <= 3) {
+			throw new TokenizerException("Illegal PredefinedEntityRef '%s': %s",
+					new String(input, pos, Math.min(4, end - pos)), paraphrase());
 		}
 		if ((input[e] == 'l') && (input[e + 1] == 't') && (input[e + 2] == ';')) {
 			lastScanEnd = pos + 4;
@@ -1099,17 +1112,20 @@ public class Tokenizer {
 				return "\"";
 			}
 		}
-		if (cond) {
-			return null;
-		}
+//		if (cond) {
+//			return null;
+//		}
 		throw new TokenizerException("Illegal PredefinedEntityRef '%s': %s",
 				new String(input, pos, 6), paraphrase());
 	}
 
 	private String scanCharRef(int pos, boolean cond) throws TokenizerException {
 		int e = pos;
-		if ((end - e <= 4) || (input[e++] != '&') || (input[e++] != '#')) {
+		if ((input[e++] != '&') || (input[e++] != '#')) {
 			return null;
+		}
+		if (end - e <= 3) {
+			throw new IllegalCharRefException(new String(input, pos, Math.min(4, end - pos)));
 		}
 		int len = 0;
 		int s = e;
@@ -1146,15 +1162,15 @@ public class Tokenizer {
 		try {
 			charRef = Integer.parseInt(tmp, radix);
 		} catch (NumberFormatException e1) {
-			if (cond) {
-				return null;
-			}
+//			if (cond) {
+//				return null;
+//			}
 			throw new IllegalCharRefException(tmp);
 		}
 		if (!XMLChar.isChar(charRef)) {
-			if (cond) {
-				return null;
-			}
+//			if (cond) {
+//				return null;
+//			}
 			throw new IllegalCharRefException(tmp);
 		}
 		lastScanEnd = s + len + 1;
@@ -1168,7 +1184,7 @@ public class Tokenizer {
 		char c;
 		while (e < end) {
 			c = input[e++];
-			if (c == escapeChar) {
+			if ((c == escapeChar) || (c == '&')) {
 				break;
 			} else {
 				len++;
