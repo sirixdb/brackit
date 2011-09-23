@@ -162,7 +162,7 @@ public class Dbl extends AbstractNumeric implements DblNumeric {
 		if (Double.isInfinite(v))
 			return (v > 0) ? "INF" : "-INF"; 
 		if (v == 0)
-			return (v == -0.0D) ? "-0" : "0";
+			return (1/v == 1/0.0) ? "0" : "-0";
 		return killTrailingZeros(((v > 0) && (v >= 1e-6) && (v < 1e6) || (-v >= 1e-6)
 				&& (-v < 1e6)) ? DD.format(v) : SD.format(v));
 	}
