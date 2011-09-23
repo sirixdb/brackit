@@ -2071,7 +2071,10 @@ public class XQParser extends Tokenizer {
 		} else if (attemptSkipWS("/")) {
 			step = stepExpr();
 			if (step == null) {
-				// leading-lone-slash rule:
+				if (!checkLeadingLoneSlash()) {
+					throw new TokenizerException("Incomplete path step: %s",
+							paraphrase());
+				}
 				// single '/' is translated to
 				// (fn:root(self::node()) treat as document-node())
 				return fnRootTreatAsDocument();
@@ -2109,6 +2112,15 @@ public class XQParser extends Tokenizer {
 		AST pathExpr = new AST(XQ.PathExpr);
 		pathExpr.addChildren(path);
 		return pathExpr;
+	}
+
+	private boolean checkLeadingLoneSlash() {
+		// leading-lone-slash rule:
+		// check if next token can form the start of
+		// a relative path expression...
+		return ((laSkipWS("*") == null) && (laSkipWS("<") == null)
+				&& (laNCNameSkipWS() == null) && (laQNameSkipWS() == null)
+				&& (laSkipWS("\"") == null) && (laSkipWS("'") == null));
 	}
 
 	private AST descendantOrSelfNode() {

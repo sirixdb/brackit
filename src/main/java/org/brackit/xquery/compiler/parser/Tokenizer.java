@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.compiler.parser;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 
 import org.brackit.xquery.XQuery;
@@ -1171,8 +1172,9 @@ public class Tokenizer {
 		if ((input[e++] != '&') || (input[e++] != '#')) {
 			return null;
 		}
-		if (end - e <= 3) {
-			throw new IllegalCharRefException(new String(input, pos, Math.min(4, end - pos)));
+		if (end - e <= 3) {			
+			String charRef = new String(input, pos, Math.min(4, end - pos));
+			throw new TokenizerException("Illegal Unicode character reference '%s' %s: '%s'", charRef, paraphrase());
 		}
 		int len = 0;
 		int s = e;
@@ -1205,23 +1207,23 @@ public class Tokenizer {
 			}
 		}
 		String tmp = new String(input, s, len);
-		int charRef;
+		BigInteger charRef;
 		try {
-			charRef = Integer.parseInt(tmp, radix);
+			charRef = new BigInteger(tmp, radix);
 		} catch (NumberFormatException e1) {
 //			if (cond) {
 //				return null;
 //			}
-			throw new IllegalCharRefException(tmp);
+			throw new TokenizerException("Illegal Unicode character reference '%s' %s: '%s'", tmp, paraphrase());
 		}
-		if (!XMLChar.isChar(charRef)) {
+		if ((charRef.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0) || (!XMLChar.isChar(charRef.intValue()))) {
 //			if (cond) {
 //				return null;
 //			}
 			throw new IllegalCharRefException(tmp);
 		}
 		lastScanEnd = s + len + 1;
-		return Character.toString((char) charRef);
+		return Character.toString((char) charRef.intValue());
 	}
 
 	private String scanString(int pos, char escapeChar) {
