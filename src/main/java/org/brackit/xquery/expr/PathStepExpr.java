@@ -84,7 +84,7 @@ public class PathStepExpr implements Expr {
 		}
 		IntNumeric size = (bindSize) ? in.size() : null;
 		Sequence out = new PathStepSequence(ctx, tuple, in, size);
-		if ((sortResult) && ((!(in instanceof Node<?>)))) {
+		if ((sortResult) && ((lastStep) || ((!(in instanceof Node<?>))))) {
 			out = new DdoOrAtomicSequence(out);
 		}
 		return out;
