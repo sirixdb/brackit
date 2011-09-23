@@ -80,7 +80,7 @@ public class Tokenizer {
 			this.end = end;
 		}
 
-		String string() {
+		public String string() {
 			return new String(input, start, end - start);
 		}
 
@@ -97,7 +97,7 @@ public class Tokenizer {
 			this.s = s;
 		}
 
-		String string() {
+		public String string() {
 			return s;
 		}
 	}
@@ -115,23 +115,23 @@ public class Tokenizer {
 			this.prefix = prefix;
 		}
 
-		String uri() {
+		public String uri() {
 			return uri;
 		}
 
-		String ncname() {
+		public String ncname() {
 			return ncname;
 		}
 
-		String prefix() {
+		public String prefix() {
 			return prefix;
 		}
 
-		QNm qname() {
+		public QNm qname() {
 			return new QNm(uri, prefix, ncname);
 		}
 
-		String string() {
+		public String string() {
 			return (uri != null) ? ("\"" + uri + "\":")
 					+ ((prefix != null) ? prefix + ":" + ncname : ncname)
 					: ((prefix != null) ? prefix + ":" + ncname : ncname);
@@ -209,15 +209,31 @@ public class Tokenizer {
 	}
 
 	protected Token laSymSkipWS(String token) {
-		return laSkipWS(pos, token);
+		return laSymSkipWS(pos, token);
+	}
+	
+	protected Token laSymSkipS(Token prev, String token) {
+		return laSymSkipS(prev.end, token);
+	}
+	
+	private Token laSymSkipS(int from, String token) {
+		return laSym(from + s(from), token);
+	}
+	
+	protected Token laSymSkipS(String token) {
+		return laSymSkipWS(pos + s(pos), token);
 	}
 
 	protected Token laSymSkipWS(Token prev, String token) {
-		return laSkipWS(prev.end, token);
+		return laSymSkipWS(prev.end, token);
 	}
 
 	private Token laSymSkipWS(int from, String token) {
-		int s = from + ws(from);
+		return laSym(from + ws(from), token);
+	}
+
+	private Token laSym(int pos, String token) {
+		int s = pos;
 		int e = s;
 		int len = token.length();
 		if (end - e < len) {
@@ -273,6 +289,15 @@ public class Tokenizer {
 		consume(la);
 		return true;
 	}
+	
+	protected boolean attemptS() {
+		Token la = laS();
+		if (la == null) {
+			return false;
+		}
+		consume(la);
+		return true;
+	}
 
 	protected boolean attemptSkipWS(String token) {
 		Token la = laSkipWS(pos, token);
@@ -282,9 +307,27 @@ public class Tokenizer {
 		consume(la);
 		return true;
 	}
+	
+	protected boolean attemptSkipS(String token) {
+		Token la = laSkipS(pos, token);
+		if (la == null) {
+			return false;
+		}
+		consume(la);
+		return true;
+	}
 
 	protected boolean attemptSymSkipWS(String token) {
 		Token la = laSymSkipWS(pos, token);
+		if (la == null) {
+			return false;
+		}
+		consume(la);
+		return true;
+	}
+	
+	protected boolean attemptSymSkipS(String token) {
+		Token la = laSymSkipS(pos, token);
 		if (la == null) {
 			return false;
 		}
@@ -561,6 +604,10 @@ public class Tokenizer {
 
 	protected Token laNCNameSkipWS() {
 		return laNCName(pos + ws(pos));
+	}
+	
+	protected Token laNCNameSkipS() {
+		return laNCName(pos + s(pos));
 	}
 
 	protected Token laNCName(Token token) {

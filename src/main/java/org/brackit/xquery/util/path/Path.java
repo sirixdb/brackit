@@ -33,6 +33,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.brackit.xquery.atomic.QNm;
+
 /**
  * General purpose representation of a path or a path expression.
  * 
@@ -431,7 +433,7 @@ public class Path<E> {
 		return path.size();
 	}
 
-	public static Path<String> parse(String path) throws PathException {
+	public static Path<QNm> parse(String path) throws PathException {
 		return (new PathParser(path)).parse();
 	}
 
