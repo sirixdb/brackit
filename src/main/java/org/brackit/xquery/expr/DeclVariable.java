@@ -62,6 +62,9 @@ public class DeclVariable extends Variable implements Unit {
 			s = ctx.resolve(name);
 		} else if (expr != null) {
 			s = expr.evaluate(ctx, TupleImpl.EMPTY_TUPLE);
+			// bind sequence to preserve sequence identity
+			// for future references
+			ctx.bind(name, s);
 		} else {
 			throw new QueryException(
 					ErrorCode.ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED,
