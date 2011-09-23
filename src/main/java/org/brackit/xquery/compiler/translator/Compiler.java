@@ -966,8 +966,9 @@ public class Compiler implements Translator {
 			boolean bindItem = itemBinding.isReferenced();
 			boolean bindPos = posBinding.isReferenced();
 			boolean bindSize = sizeBinding.isReferenced();
+			boolean lastStep = (position + 2 == childCount);
 			return new PathStepExpr(step, nextStep, sortResult, bindItem,
-					bindPos, bindSize);
+					bindPos, bindSize, lastStep);
 		}
 	}
 

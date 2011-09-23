@@ -69,34 +69,28 @@ public class ErrorCode {
 			"XPST0003");
 
 	/**
-	 * err:XPTY0018
-	 */
-	public static final QNm ERR_LAST_STEP_RETURNED_MIXED_NODE_AND_ATOMIC = new QNm(
-			ERR_NSURI, ERR_PREFIX, "XPTY0018");
-
-	/**
-	 * err:XPTY0019
-	 */
-	public static final QNm ERR_INTERMEDIARY_STEP_RETURNED_ATOMIC = new QNm(
-			ERR_NSURI, ERR_PREFIX, "XPTY0019");
-
-	/**
-	 * err:XPTY0020
-	 */
-	public static final QNm ERR_TYPE_NOT_A_NODE = new QNm(ERR_NSURI,
-			ERR_PREFIX, "XPTY0020");
-
-	/**
 	 * err:XPTY0004
 	 */
 	public static final QNm ERR_TYPE_INAPPROPRIATE_TYPE = new QNm(ERR_NSURI,
 			ERR_PREFIX, "XPTY0004");
 
 	/**
+	 * err:XPTY0018
+	 */
+	public static final QNm ERR_PATH_STEP_RETURNED_NODE_AND_NON_NODE_VALUES = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XPTY0018");
+	
+	/**
 	 * err:XPTY0019
 	 */
-	public static final QNm ERR_PATH_STEP_RETURNED_ATOMIC_VALUE = new QNm(
+	public static final QNm ERR_PATH_STEP_RETURNED_NON_NODE_VALUE = new QNm(
 			ERR_NSURI, ERR_PREFIX, "XPTY0019");
+	
+	/**
+	 * err:XPTY0020
+	 */
+	public static final QNm ERR_PATH_STEP_CONTEXT_ITEM_IS_NOT_A_NODE = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XPTY0020");
 
 	/**
 	 * err:XQTY0024

@@ -31,12 +31,12 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.Numeric;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
+import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -52,23 +52,17 @@ import org.brackit.xquery.xdm.type.NodeType;
  */
 public class StepExpr implements Expr {
 	final Accessor axis;
-
 	final Expr input;
-
 	final NodeType test;
-
 	final Expr[] predicates;
-
 	final boolean bindItem;
-
 	final boolean bindPos;
-
 	final boolean bindSize;
-
 	final int bindCount;
 
-	public StepExpr(Accessor axis, NodeType test, Expr input, Expr[] predicates,
-			boolean bindItem, boolean bindPos, boolean bindSize) {
+	public StepExpr(Accessor axis, NodeType test, Expr input,
+			Expr[] predicates, boolean bindItem, boolean bindPos,
+			boolean bindSize) {
 		this.axis = axis;
 		this.test = test;
 		this.input = input;
@@ -82,33 +76,30 @@ public class StepExpr implements Expr {
 	@Override
 	public Sequence evaluate(final QueryContext ctx, final Tuple tuple)
 			throws QueryException {
-		final Sequence nodes = input.evaluate(ctx, tuple);
+		Sequence node = input.evaluate(ctx, tuple);
 
-		if (nodes == null) {
+		if (node == null) {
 			return null;
 		}
 
-		if (nodes instanceof Atomic) {
-			throw new QueryException(
-					ErrorCode.ERR_PATH_STEP_RETURNED_ATOMIC_VALUE,
-					"Input for axis step '%s' is not a node: %s", axis,
-					((Atomic) nodes).type());
-		}
-
-		if (!(nodes instanceof Node<?>)) {
+		if (!(node instanceof Item)) {
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-					"Input %s is not a single node", nodes);
+					"Context item in axis step is not an item: %s", node);
 		}
-
-		return new AxisStepSequence(ctx, tuple, nodes);
+		if (!(node instanceof Node<?>)) {
+			throw new QueryException(
+					ErrorCode.ERR_PATH_STEP_CONTEXT_ITEM_IS_NOT_A_NODE,
+					"Context item in axis step is not a node: %s", ((Item) node).itemType());
+		}
+		return new AxisStepSequence(ctx, tuple, (Node<?>) node);
 	}
 
 	private class AxisStepSequence extends LazySequence {
-		final Sequence n;
+		final Node<?> n;
 		final QueryContext ctx;
 		final Tuple tuple;
 
-		AxisStepSequence(QueryContext ctx, Tuple tuple, Sequence n) {
+		AxisStepSequence(QueryContext ctx, Tuple tuple, Node<?> n) {
 			this.n = n;
 			this.ctx = ctx;
 			this.tuple = tuple;
@@ -116,7 +107,7 @@ public class StepExpr implements Expr {
 
 		@Override
 		public Iter iterate() {
-			return new AxisStepSequenceIter(ctx, tuple, (Node<?>) n);
+			return new AxisStepSequenceIter(ctx, tuple, n);
 		}
 	}
 
@@ -219,23 +210,7 @@ public class StepExpr implements Expr {
 	@Override
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		Sequence res = evaluate(ctx, tuple);
-		if ((res == null) || (res instanceof Item)) {
-			return (Item) res;
-		}
-		Iter s = res.iterate();
-		try {
-			Item item = s.next();
-			if (item == null) {
-				return null;
-			}
-			if (s.next() != null) {
-				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
-			}
-			return item;
-		} finally {
-			s.close();
-		}
+		return ExprUtil.asItem(evaluate(ctx, tuple));
 	}
 
 	@Override
