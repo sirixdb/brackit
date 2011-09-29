@@ -167,6 +167,12 @@ public class QNm extends AbstractAtomic {
 
 	@Override
 	public String toString() {
-		return (prefix == null) ? localName : prefix + ":" + localName;
+		String pre = null;
+		if (prefix != null) {
+			pre = prefix;
+		} else if (nsURI != null && !nsURI.isEmpty()) {
+			pre = nsURI;
+		}
+		return (pre == null) ? localName : pre + ":" + localName;
 	}
 }

@@ -51,7 +51,7 @@ public class QName extends AbstractFunction {
 	public Sequence execute(QueryContext ctx, Sequence[] args)
 			throws QueryException {
 		String name = ((Atomic) args[1]).stringValue();
-		String uri = (args[0] != null) ? ((Atomic) args[1]).stringValue() : "";
+		String uri = (args[0] != null) ? ((Atomic) args[0]).stringValue() : "";
 		if (!XMLChar.isQName(name)) {
 			throw new QueryException(ErrorCode.ERR_INVALID_LEXICAL_VALUE,
 					"Invalid QName: '%s'", name);

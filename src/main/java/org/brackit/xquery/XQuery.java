@@ -51,7 +51,7 @@ public class XQuery {
 	public static final String DEBUG_CFG = "org.brackit.xquery.debug";
 	public static final String DEBUG_DIR_CFG = "org.brackit.xquery.debugDir";
 	public static boolean DEBUG = Cfg.asBool(DEBUG_CFG, false);
-	public static String DEBUG_DIR = Cfg.asString(DEBUG_DIR_CFG, "debug");
+	public static String DEBUG_DIR = Cfg.asString(DEBUG_DIR_CFG, "debug/");
 
 	private final Module module;
 	private boolean prettyPrint;
