@@ -36,7 +36,7 @@ public class ConjunctionSplitting extends Walker {
 			AST andLeft = predicate.getChild(0);
 			AST andRight = predicate.getChild(1);
 			
-			AST newSelection = new AST(XQ.Selection, "Selection");
+			AST newSelection = new AST(XQ.Selection);
 			newSelection.addChild(input);
 			newSelection.addChild(andLeft);
 			

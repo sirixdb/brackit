@@ -25,68 +25,103 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler;
+package org.brackit.xquery.compiler.analyzer;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.CharBuffer;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.module.Module;
-import org.brackit.xquery.util.URIHandler;
+import org.brackit.xquery.atomic.QNm;
 
 /**
- * 
  * @author Sebastian Baechle
  * 
  */
-public class BaseResolver implements ModuleResolver {
+class Dependencies<E> {
 
-	private Map<String, List<Module>> modules;
+	Map<E, List<E>> map = new HashMap<E, List<E>>();	
+	List<List<E>> cycles;
 
-	public void register(String targetNSUri, Module module) {
-		List<Module> list = null;
-		if (modules == null) {
-			modules = new HashMap<String, List<Module>>();
+	List<List<E>> findCycles() {
+		ArrayDeque<E> path = new ArrayDeque<E>();
+		for (E u : map.keySet()) {
+			chase(path, u);
 		}
-		list = modules.get(targetNSUri);
-		if (list == null) {
-			list = new ArrayList<Module>(1);
-			modules.put(targetNSUri, list);
-		}
-		list.add(module);
+		return cycles;
 	}
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public List<Module> resolve(String uri, String... locUris) {
-		List<Module> list = (modules != null) ? modules.get(uri) : null;
-		return (list == null) ? Collections.EMPTY_LIST : list;
-	}
-
-	@Override
-	public List<String> load(String uri, String[] locations) throws IOException {
-		List<String> loaded = new LinkedList<String>();
-		for (String loc : locations) {
-			try {
-				InputStreamReader in = new InputStreamReader(
-						URIHandler.getInputStream(new URI(loc)));
-				CharBuffer buf = CharBuffer.allocate(1024 * 521);
-				int read = in.read(buf);
-				in.close();
-				loaded.add(buf.rewind().toString());
-			} catch (URISyntaxException e) {
-				// location URI's must not be valid -> ignore
+	private boolean chase(ArrayDeque<E> path, E u) {
+		if (path.contains(u)) {
+			extract(path, u);
+			return true;
+		}
+		path.push(u);
+		List<E> deps = map.get(u);
+		if (deps != null) {
+			List<E> copy = new ArrayList<E>(deps);
+			for (E dep : copy) {
+				if (chase(path, dep)) {
+					// this dep caused a cycle
+					// remove edge
+					deps.remove(dep);
+				}
 			}
 		}
-		return loaded;
+		path.pop();
+		return false;
+	}
+
+	private void extract(ArrayDeque<E> path, E u) {
+		List<E> cycle = new LinkedList<E>();
+		for (E t : path) {
+			cycle.add(t);
+			if (t.equals(u)) {
+				break;
+			}
+		}
+		if (cycles == null) {
+			cycles = new LinkedList<List<E>>();
+		}
+		cycles.add(cycle);
+	}
+
+	void dependsOn(E unit, E dependency) {
+		List<E> deps = map.get(unit);
+		if (deps == null) {
+			deps = new LinkedList<E>();
+			deps.add(dependency);
+			map.put(unit, deps);
+		} else {
+			for (E dep : deps) {
+				if (dep == dependency) {
+					return;
+				}
+			}
+			deps.add(dependency);
+		}
+	}
+
+	public static void main(String[] args) throws Exception {
+		QNm a = new QNm("a");
+		QNm b = new QNm("b");
+		QNm c = new QNm("c");
+		QNm d = new QNm("d");
+		QNm e = new QNm("e");
+
+		Dependencies<QNm> deps = new Dependencies<QNm>();
+		deps.dependsOn(a, b);
+		deps.dependsOn(a, d);
+		deps.dependsOn(b, c);
+		deps.dependsOn(c, d);
+		deps.dependsOn(d, b);
+		
+		deps.dependsOn(d, a);
+		
+		deps.dependsOn(e, d);		
+		deps.dependsOn(d, e);
+		System.out.println(deps.findCycles());
 	}
 }

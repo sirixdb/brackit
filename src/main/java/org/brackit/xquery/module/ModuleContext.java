@@ -42,7 +42,7 @@ public class ModuleContext implements StaticContext {
 	protected String defaultElementNamespace = null;
 	protected boolean boundarySpaceStrip = true;
 	protected String defaultCollation = "http://www.w3.org/2005/xpath-functions/collation/codepoint";
-	protected AnyURI baseURI = AnyURI.EMPTY;
+	protected AnyURI baseURI = null;
 	protected boolean constructionModeStrip = false;
 	protected boolean orderingModeOrdered = true;
 	protected boolean emptyOrderGreatest = false;

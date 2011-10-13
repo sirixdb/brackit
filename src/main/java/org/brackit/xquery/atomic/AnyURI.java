@@ -28,7 +28,7 @@
 package org.brackit.xquery.atomic;
 
 import java.net.URI;
-import java.net.URLEncoder;
+import java.net.URL;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
@@ -41,17 +41,14 @@ import org.brackit.xquery.xdm.Type;
  * 
  */
 public class AnyURI extends AbstractAtomic {
-	public static final AnyURI EMPTY = new AnyURI("", false);
-
-	public final String str;
-
-	public final boolean absolute;
+	public static final AnyURI EMPTY = new AnyURI((URI) null);
+	public final URI uri;
 
 	private class DAnyURI extends AnyURI {
 		private final Type type;
 
-		public DAnyURI(String str, Type type, boolean absolute) {
-			super(str, absolute);
+		public DAnyURI(URI uri, Type type) {
+			super(uri);
 			this.type = type;
 		}
 
@@ -63,13 +60,11 @@ public class AnyURI extends AbstractAtomic {
 
 	public AnyURI(String str) throws QueryException {
 		if ((str == null) || ((str = Whitespace.collapse(str)).isEmpty())) {
-			this.str = "";
-			this.absolute = false;
+			this.uri = null;
 		} else {
 			try {
-				this.absolute = new URI(URLEncoder.encode(str, "UTF-8"))
-						.isAbsolute();
-				this.str = str;
+				// str = URLEncoder.encode(str, "UTF-8");
+				this.uri = URI.create(str);
 			} catch (Exception e) {
 				throw new QueryException(e,
 						ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
@@ -78,11 +73,25 @@ public class AnyURI extends AbstractAtomic {
 		}
 	}
 
-	public AnyURI(String str, boolean absolute) {
-		if (str == null)
-			str = "";
-		this.str = str;
-		this.absolute = absolute;
+	public AnyURI(URI uri) {
+		this.uri = uri;
+	}
+
+	public static AnyURI fromString(String str) {
+		return new AnyURI(URI.create(str));
+	}
+
+	public static boolean isValid(String str) {
+		if ((str == null) && ((str = Whitespace.collapse(str)).isEmpty())) {
+			return false;
+		}
+		try {
+			// str = URLEncoder.encode(str, "UTF-8");
+			new URI(str);
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
 	}
 
 	@Override
@@ -92,21 +101,18 @@ public class AnyURI extends AbstractAtomic {
 
 	@Override
 	public Atomic asType(Type type) throws QueryException {
-		return new DAnyURI(str, type, absolute);
+		return new DAnyURI(uri, type);
 	}
 
 	@Override
 	public boolean booleanValue() throws QueryException {
-		return (!str.isEmpty());
+		return (uri != null);
 	}
 
 	@Override
 	public int cmp(Atomic other) throws QueryException {
-		if (other instanceof AnyURI) {
-			return (str.compareTo(((AnyURI) other).str));
-		}
-		if (other instanceof Str) {
-			return (str.compareTo(other.stringValue()));
+		if ((other instanceof AnyURI) || (other instanceof Str)) {
+			return stringValue().compareTo(other.stringValue());
 		}
 		throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 				"Cannot compare '%s' with '%s'", type(), other.type());
@@ -114,7 +120,7 @@ public class AnyURI extends AbstractAtomic {
 
 	@Override
 	protected int atomicCmpInternal(Atomic atomic) {
-		return (str.compareTo(atomic.stringValue()));
+		return stringValue().compareTo(atomic.stringValue());
 	}
 
 	@Override
@@ -124,15 +130,31 @@ public class AnyURI extends AbstractAtomic {
 
 	@Override
 	public String stringValue() {
-		return str;
+		return (uri != null) ? uri.toString() : "";
 	}
 
 	public boolean isAbsolute() {
-		return absolute;
+		return ((uri != null) && (uri.isAbsolute()));
 	}
 
 	@Override
 	public int hashCode() {
-		return str.hashCode();
+		return (uri != null) ? uri.hashCode() : 0;
+	}
+
+	public AnyURI absolutize(AnyURI baseURI) throws QueryException {
+		try {
+			return new AnyURI(baseURI.uri.resolve(uri));
+		} catch (IllegalArgumentException e) {
+			throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR);
+		}
+	}
+
+	public URL toURL() throws QueryException {
+		try {
+			return uri.toURL();
+		} catch (Exception e) {
+			throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR);
+		}
 	}
 }

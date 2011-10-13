@@ -25,67 +25,29 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.optimizer.walker;
+package org.brackit.xquery.compiler.analyzer;
 
-import static org.brackit.xquery.compiler.XQ.FlowrExpr;
-import static org.brackit.xquery.compiler.XQ.LetClause;
-import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
-import static org.brackit.xquery.compiler.XQ.VariableRef;
-
-import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.QueryException;
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.compiler.Target;
+import org.brackit.xquery.module.MainModule;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public class ExtractFLWOR extends Walker {
+public class BodyDecl extends ForwardDeclaration {
+	final AST body;
 
-	private int extracedVarCount;
+	public BodyDecl(MainModule module, AST body) {
+		super(module, module);
+		this.body = body;
+	}
 
 	@Override
-	protected AST visit(AST node) {
-		if (node.getType() != FlowrExpr) {
-			return node;
-		}
-
-		final AST parent = node.getParent();
-		if (isFLWORClause(parent)) {
-			return node;
-		} 
-		AST anc = parent;
-		while (anc != null) {
-			if (isFLWORClause(anc)) {
-				break;
-			}
-			anc = anc.getParent();
-		}
-
-		if (anc == null) {
-			return node;
-		}
-
-		QNm varName = createVarName();
-		AST binding = new AST(TypedVariableBinding);
-		binding.addChild(new AST(XQ.Variable, varName));
-		AST letClause = new AST(LetClause);		
-		letClause.addChild(binding);
-		letClause.addChild(node.copyTree());
-		
-		AST varRef = new AST(VariableRef, varName);
-		parent.replaceChild(node.getChildIndex(), varRef);
-		anc.getParent().insertChild(anc.getChildIndex(), letClause);
-		return letClause;
-	}
-
-	private boolean isFLWORClause(AST anc) {
-		AST grandAnc = anc.getParent();
-		return (grandAnc != null) && (grandAnc.getType() == FlowrExpr);
-	}
-
-	private QNm createVarName() {
-		return new QNm("_extracted;" + (extracedVarCount++));
+	public Target process() throws QueryException {
+		new ExprAnalyzer(module).expr(body);
+		return new Target(module, sctx, body, (MainModule) module, true);
 	}
 }

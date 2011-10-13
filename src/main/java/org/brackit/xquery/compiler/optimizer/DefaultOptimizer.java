@@ -97,54 +97,54 @@ public class DefaultOptimizer implements Optimizer {
 
 	private static class Simplification implements Stage {
 		public AST rewrite(AST ast) {
-			new DoSNStepMerger().walk(ast);
-			new OrderForGroupBy().walk(ast);
+			ast = new DoSNStepMerger().walk(ast);
+			ast = new OrderForGroupBy().walk(ast);
 			if (VARIABLE_PULLUP) {
-				new LetVariableRefPullup().walk(ast);
+				ast = new LetVariableRefPullup().walk(ast);
 			}
-			new ExtractFLWOR().walk(ast);
+			ast = new ExtractFLWOR().walk(ast);
 			return ast;
 		}
 	}
 
 	private static class Pipelining implements Stage {
 		public AST rewrite(AST ast) throws QueryException {
-			new UnnestRewriter().walk(ast);
+			ast = new UnnestRewriter().walk(ast);
 			return ast;
 		}
 	}
 	
 	private static class Reordering implements Stage {
 		public AST rewrite(AST ast) throws QueryException {
-			new ConjunctionSplitting().walk(ast);
-			new SelectPushdown().walk(ast);
-			new BindingPushup().walk(ast);
+			ast = new ConjunctionSplitting().walk(ast);
+			ast = new SelectPushdown().walk(ast);
+			ast = new BindingPushup().walk(ast);
 			return ast;
 		}
 	}
 
 	private static class JoinRecognition implements Stage {
 		public AST rewrite(AST ast) throws QueryException {
-			new JoinRewriter().walk(ast);
-//			new JoinTree().walk(ast);
-//			new JoinTree().walk(ast);
-			new JoinSortElimination().walk(ast);
-//			new LeftJoinGroupEmission().walk(ast);
+			ast = new JoinRewriter().walk(ast);
+//			ast = new JoinTree().walk(ast);
+//			ast = new JoinTree().walk(ast);
+			ast = new JoinSortElimination().walk(ast);
+//			ast = new LeftJoinGroupEmission().walk(ast);
 			return ast;
 		}
 	}
 	
 	private static class Unnest implements Stage {
 		public AST rewrite(AST ast) throws QueryException {
-			new LetBindLift().walk(ast);
-//			new BindingPushupAfterLifting().walk(ast); // 2nd chance for pushing
+			ast = new LetBindLift().walk(ast);
+//			ast = new BindingPushupAfterLifting().walk(ast); // 2nd chance for pushing
 			return ast;
 		}
 	}
 	
 	private static class Finalize implements Stage {
 		public AST rewrite(AST ast) throws QueryException {
-			new PredicateConjunction().walk(ast);
+			ast = new PredicateConjunction().walk(ast);
 			return ast;
 		}
 	}

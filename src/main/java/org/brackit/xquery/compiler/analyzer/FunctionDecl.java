@@ -25,67 +25,46 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.optimizer.walker;
+package org.brackit.xquery.compiler.analyzer;
 
-import static org.brackit.xquery.compiler.XQ.FlowrExpr;
-import static org.brackit.xquery.compiler.XQ.LetClause;
-import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
-import static org.brackit.xquery.compiler.XQ.VariableRef;
-
+import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.compiler.Target;
+import org.brackit.xquery.compiler.translator.Translator;
+import org.brackit.xquery.function.UDF;
+import org.brackit.xquery.module.Module;
+import org.brackit.xquery.xdm.Expr;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public class ExtractFLWOR extends Walker {
+public class FunctionDecl extends ForwardDeclaration {
+	final UDF udf;
+	final QNm[] params;
+	AST body;
+	
+	public FunctionDecl(Module module, UDF udf, QNm[] params, AST body) {
+		super(module, udf);
+		this.udf = udf;
+		this.params = params;
+		this.body = body;
+	}
 
-	private int extracedVarCount;
-
-	@Override
-	protected AST visit(AST node) {
-		if (node.getType() != FlowrExpr) {
-			return node;
+	public Target process() throws QueryException {
+		for (int i = 0; i < params.length; i++) {
+			params[i] = bind(params[i]);
 		}
+		functionBody(body);
+		return new Target(module, sctx, body, unit, udf.isUpdating()) {
 
-		final AST parent = node.getParent();
-		if (isFLWORClause(parent)) {
-			return node;
-		} 
-		AST anc = parent;
-		while (anc != null) {
-			if (isFLWORClause(anc)) {
-				break;
+			@Override
+			public void translate(Translator translator) throws QueryException {
+				Expr expr = translator.function(module, sctx, udf, params, ast, allowUpdate);
+				unit.setExpr(expr);
 			}
-			anc = anc.getParent();
-		}
-
-		if (anc == null) {
-			return node;
-		}
-
-		QNm varName = createVarName();
-		AST binding = new AST(TypedVariableBinding);
-		binding.addChild(new AST(XQ.Variable, varName));
-		AST letClause = new AST(LetClause);		
-		letClause.addChild(binding);
-		letClause.addChild(node.copyTree());
-		
-		AST varRef = new AST(VariableRef, varName);
-		parent.replaceChild(node.getChildIndex(), varRef);
-		anc.getParent().insertChild(anc.getChildIndex(), letClause);
-		return letClause;
-	}
-
-	private boolean isFLWORClause(AST anc) {
-		AST grandAnc = anc.getParent();
-		return (grandAnc != null) && (grandAnc.getType() == FlowrExpr);
-	}
-
-	private QNm createVarName() {
-		return new QNm("_extracted;" + (extracedVarCount++));
-	}
+		};
+	}	
 }

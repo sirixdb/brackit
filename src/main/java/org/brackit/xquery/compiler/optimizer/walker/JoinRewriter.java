@@ -191,7 +191,7 @@ public class JoinRewriter extends PipelineVarTracker {
 		}
 		AST leftIn = tmp.getChild(0);
 		// cut off left part from right
-		tmp.replaceChild(0, new AST(Start, "Start"));
+		tmp.replaceChild(0, new AST(Start));
 
 		// upstream selects which access S2 but not S1
 		// can be included in the right input
@@ -207,8 +207,8 @@ public class JoinRewriter extends PipelineVarTracker {
 		}
 
 		// build join
-		AST join = new AST(Join, "Join");
-		AST condition = new AST(ComparisonExpr, "ComparisonExpr");
+		AST join = new AST(Join);
+		AST condition = new AST(ComparisonExpr);
 		condition.addChild(comparison.copy());
 		condition.addChild(s1Expr.copyTree());
 		condition.addChild(s2Expr.copyTree());
@@ -240,7 +240,7 @@ public class JoinRewriter extends PipelineVarTracker {
 
 		parent.replaceChild(child.getChildIndex(), join);
 
-		return parent;
+		return join;
 	}
 
 	private boolean filtersS2(AST select, VarRef s2, VarRef s1) {
@@ -260,28 +260,28 @@ public class JoinRewriter extends PipelineVarTracker {
 	private AST swapCmp(AST comparison) {
 		switch (comparison.getType()) {
 		case GeneralCompGE:
-			comparison = new AST(GeneralCompLE, "GeneralCompLE");
+			comparison = new AST(GeneralCompLE);
 			break;
 		case GeneralCompGT:
-			comparison = new AST(GeneralCompLT, "GeneralCompLT");
+			comparison = new AST(GeneralCompLT);
 			break;
 		case GeneralCompLE:
-			comparison = new AST(GeneralCompGE, "GeneralCompGE");
+			comparison = new AST(GeneralCompGE);
 			break;
 		case GeneralCompLT:
-			comparison = new AST(GeneralCompGT, "GeneralCompGT");
+			comparison = new AST(GeneralCompGT);
 			break;
 		case ValueCompGE:
-			comparison = new AST(ValueCompLE, "ValueCompLE");
+			comparison = new AST(ValueCompLE);
 			break;
 		case ValueCompGT:
-			comparison = new AST(ValueCompLT, "ValueCompLT");
+			comparison = new AST(ValueCompLT);
 			break;
 		case ValueCompLE:
-			comparison = new AST(ValueCompGE, "ValueCompGE");
+			comparison = new AST(ValueCompGE);
 			break;
 		case ValueCompLT:
-			comparison = new AST(ValueCompGT, "ValueCompGT");
+			comparison = new AST(ValueCompGT);
 			break;
 		}
 		return comparison;
@@ -313,10 +313,9 @@ public class JoinRewriter extends PipelineVarTracker {
 
 	private QNm introduceCount(AST in) {
 		// introduce an artificial enumeration node for the grouping
-		AST count = new AST(Count, "Count");
+		AST count = new AST(Count);
 		QNm grpVarName = createGroupCountVarName();
-		AST runVarBinding = new AST(TypedVariableBinding,
-				"TypedVariableBinding");
+		AST runVarBinding = new AST(TypedVariableBinding);
 		runVarBinding.addChild(new AST(Variable, grpVarName));
 		count.addChild(in.copyTree());
 		count.addChild(runVarBinding);

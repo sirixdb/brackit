@@ -73,12 +73,12 @@ public class LeftJoinGroupEmission extends Walker {
 		
 		AST groupinJoin = node.copyTree();
 		AST letCopy = letBind.copy();
-		letCopy.addChild(new AST(XQ.Start, "Start"));
+		letCopy.addChild(new AST(XQ.Start));
 		letCopy.addChild(letBind.getChild(1));
 		letCopy.addChild(letBind.getChild(2));
 		groupinJoin.addChild(letCopy);
 		AST parent = groupBy.getParent();
 		parent.replaceChild(groupBy.getChildIndex(), groupinJoin);
-		return parent;
+		return groupinJoin;
 	}
 }

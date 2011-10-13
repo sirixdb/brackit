@@ -30,7 +30,7 @@ package org.brackit.xquery.xdm;
 /**
  * 
  * @author Sebastian Baechle
- *
+ * 
  */
 public class XMLChar {
 
@@ -66,8 +66,8 @@ public class XMLChar {
 				|| (('\u2070' <= c) && (c <= '\u218F'))
 				|| (('\u2C00' <= c) && (c <= '\u2FEF'))
 				|| (('\u3001' <= c) && (c <= '\uD7FF'))
-				|| (('\uF900' <= c) && (c <= '\uFDCF')) || (('\uFDF0' <= c) && (c <= '\uFFFD')));
-		// TODO: Howto add range [#x10000-#xEFFFF]?
+				|| (('\uF900' <= c) && (c <= '\uFDCF'))
+				|| (('\uFDF0' <= c) && (c <= '\uFFFD')) || ((0x10000 <= c) && (c <= 0xEFFFF)));
 	}
 
 	public static boolean isNameChar(int c) {
@@ -82,8 +82,12 @@ public class XMLChar {
 
 	public static boolean isChar(int c) {
 		return ((c == '\t') || (c == '\n') || (c == '\r')
-				|| (('\u0020' <= c) && (c <= '\uD7FF')) || (('\uE000' <= c) && (c <= '\uFFFD')));
-		// TODO: Howto add range [#x10000-#xEFFFF]?
+				|| (('\u0020' <= c) && (c <= '\uD7FF'))
+				|| (('\uE000' <= c) && (c <= '\uFFFD')) || ((0x10000 <= c) && (c <= 0xEFFFF)));
+	}
+	
+	public static String toString(int c) {
+		return new String(Character.toChars(c));
 	}
 
 	public static boolean isQName(String s) {

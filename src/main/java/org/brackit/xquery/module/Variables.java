@@ -48,13 +48,9 @@ import org.brackit.xquery.xdm.type.SequenceType;
 public class Variables {
 
 	protected final Map<QNm, Variable> vars = new TreeMap<QNm, Variable>();
-
 	protected final DefaultCtxItem dftItem = new DefaultCtxItem();
-
 	protected final DefaultCtxPos dftPos = new DefaultCtxPos(dftItem);
-
 	protected final DefaultCtxSize dftSize = new DefaultCtxSize(dftItem);
-	
 	protected LinkedList<Variables> imports = new LinkedList<Variables>();
 
 	public Variables() {
@@ -62,6 +58,18 @@ public class Variables {
 
 	public boolean isDeclared(QNm name) {
 		return vars.containsKey(name);
+	}
+
+	public DefaultCtxItem getDftCtxItem() {
+		return dftItem;
+	}
+
+	public DefaultCtxPos getDftCtxPos() {
+		return dftPos;
+	}
+
+	public DefaultCtxSize getDftCtxSize() {
+		return dftSize;
 	}
 
 	public Variable resolve(QNm name) {

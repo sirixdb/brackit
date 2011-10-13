@@ -59,8 +59,8 @@ import org.brackit.xquery.expr.NodeCmpExpr.NodeCmp;
 import org.brackit.xquery.expr.OrExpr;
 import org.brackit.xquery.expr.PIExpr;
 import org.brackit.xquery.expr.PathStepExpr;
-import org.brackit.xquery.expr.RangeExpr;
 import org.brackit.xquery.expr.PipeExpr;
+import org.brackit.xquery.expr.RangeExpr;
 import org.brackit.xquery.expr.SequenceExpr;
 import org.brackit.xquery.expr.StepExpr;
 import org.brackit.xquery.expr.SwitchExpr;
@@ -71,6 +71,7 @@ import org.brackit.xquery.expr.UnionExpr;
 import org.brackit.xquery.expr.VCmpExpr;
 import org.brackit.xquery.expr.VCmpExpr.Cmp;
 import org.brackit.xquery.function.FunctionExpr;
+import org.brackit.xquery.function.UDF;
 import org.brackit.xquery.function.bit.Every;
 import org.brackit.xquery.function.bit.Put;
 import org.brackit.xquery.function.bit.Silent;
@@ -176,55 +177,32 @@ public class Compiler implements Translator {
 	public Compiler() {
 	}
 
-	public Expr translate(Module module, StaticContext ctx, AST expr,
+	public Expr expression(Module module, StaticContext ctx, AST expr,
 			boolean allowUpdate) throws QueryException {
 		this.table = new VariableTable(module);
 		this.ctx = ctx;
-		boolean isFun = expr.getType() == XQ.FunctionDecl;
-		Expr e = isFun ? function(expr, !allowUpdate)
-				: expr(expr, !allowUpdate);
+		Expr e = expr(expr, !allowUpdate);
 		table.resolvePositions();
 		return e;
 	}
 
-	protected Expr function(AST fun, boolean disallowUpdating)
+	public Expr function(Module module, StaticContext ctx, UDF udf, QNm[] params, AST expr,
+			boolean allowUpdate)
 			throws QueryException {
-		int pos = 0;
-		AST child = fun.getChild(pos++);
-
-		// ignore annotations
-		while (child.getType() == XQ.Annotation) {
-			child = fun.getChild(pos++);
-		}
-
-		// resolve function name
-		QNm name = (QNm) child.getValue();
-
-		// bind parameters
-		child = fun.getChild(pos++);
-		int noOfParameters = (fun.getChildCount() - pos - 1);
-		for (int i = 0; i < noOfParameters; i++) {
-			QNm param = (QNm) child.getChild(0).getValue();
-			SequenceType type;
-			if (child.getChildCount() == 2) {
-				type = sequenceType(child.getChild(1));
-			} else {
-				type = SequenceType.ITEM_SEQUENCE;
-			}
-			table.bind(param, type);
-			child = fun.getChild(pos++);
-		}
-
-		// skip return type
-		child = fun.getChild(pos++);
-
+		this.table = new VariableTable(module);
+		this.ctx = ctx;
+		// bind parameter
+		SequenceType[] types = udf.getSignature().getParams();
+		for (int i = 0; i < params.length; i++) {
+			table.bind(params[i], types[i]);
+		}		
 		// compile body
-		Expr body = expr(child, disallowUpdating);
-
+		Expr body = expr(expr, !allowUpdate);
 		// unbind parameters
-		for (int i = 0; i < noOfParameters; i++) {
+		for (int i = 0; i < params.length; i++) {
 			table.unbind();
 		}
+		table.resolvePositions();
 		return body;
 	}
 

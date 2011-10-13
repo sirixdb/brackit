@@ -27,9 +27,9 @@
  */
 package org.brackit.xquery.node;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 
 import org.brackit.xquery.node.d2linked.D2NodeFactory;
@@ -78,13 +78,13 @@ public class SimpleStore implements Store {
 			return coll;
 		}
 		try {
-			InputStream in = URIHandler.getInputStream(new URI(name));
+			InputStream in = URIHandler.getInputStream(URI.create(name));
 			DocumentParser p = new DocumentParser(in);
 			Node<?> doc = getNodeFactory().build(p);
 			coll = doc.getCollection();
 			docs.put(name, coll);
 			return coll;
-		} catch (URISyntaxException e) {
+		} catch (IOException e) {
 			throw new DocumentException(e, "Collection %s not found", name);
 		}
 	}

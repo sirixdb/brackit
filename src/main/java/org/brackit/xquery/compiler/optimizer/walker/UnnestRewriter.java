@@ -42,15 +42,14 @@ public class UnnestRewriter extends Walker {
 			return node;
 		}
 
-		AST in = new AST(XQ.Start, "Start");
+		AST in = new AST(XQ.Start);
 		AST[] unnested = unnestFlowr(in, node);
-		AST opExpr = new AST(XQ.PipeExpr, "ReturnExpr");
-		opExpr.addChild(unnested[0]);
-		opExpr.addChild(unnested[1]);
-		node.getParent().replaceChild(node.getChildIndex(), opExpr);
-		snapshot();
+		AST pipeExpr = new AST(XQ.PipeExpr);
+		pipeExpr.addChild(unnested[0]);
+		pipeExpr.addChild(unnested[1]);
+		node.getParent().replaceChild(node.getChildIndex(), pipeExpr);
 
-		return node.getParent();
+		return pipeExpr;
 	}
 
 	private AST[] unnestFlowr(AST in, AST node) {
@@ -60,23 +59,22 @@ public class UnnestRewriter extends Walker {
 
 			switch (clause.getType()) {
 			case XQ.ForClause:
-				in = unnestClause(in, clause, XQ.ForBind, "ForBind");
+				in = unnestClause(in, clause, XQ.ForBind);
 				break;
 			case XQ.LetClause:
-				in = unnestClause(in, clause, XQ.LetBind, "LetBind");
+				in = unnestClause(in, clause, XQ.LetBind);
 				break;
 			case XQ.WhereClause:
-				in = unnestClause(in, clause, XQ.Selection,
-						"Selection");
+				in = unnestClause(in, clause, XQ.Selection);
 				break;
 			case XQ.OrderByClause:
-				in = unnestClause(in, clause, XQ.OrderBy, "OrderBy");
+				in = unnestClause(in, clause, XQ.OrderBy);
 				break;
 			case XQ.CountClause:
-				in = unnestClause(in, clause, XQ.Count, "Count");
+				in = unnestClause(in, clause, XQ.Count);
 				break;
 			case XQ.GroupByClause:
-				in = unnestClause(in, clause, XQ.GroupBy, "GroupBy");
+				in = unnestClause(in, clause, XQ.GroupBy);
 				break;
 			default:
 				throw new IllegalStateException();
@@ -92,9 +90,8 @@ public class UnnestRewriter extends Walker {
 		}
 	}
 
-	private AST unnestClause(AST in, AST forClause, int unnestType,
-			String unnestString) {
-		AST letBind = new AST(unnestType, unnestString);
+	private AST unnestClause(AST in, AST forClause, int unnestType) {
+		AST letBind = new AST(unnestType);
 		letBind.addChild(in);
 		for (int i = 0; i < forClause.getChildCount(); i++) {
 			letBind.addChild(forClause.getChild(i).copyTree());

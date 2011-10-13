@@ -17,14 +17,14 @@ public class PredicateConjunction extends Walker {
 	protected AST visit(AST select) {
 		if (select.getType() != Selection) {
 			return select;
-		}
-		AST predicate = select.getChild(1);
+		}		
 		AST input = select.getChild(0);
 		if (input.getType() != Selection) {
 			return select;
 		}
+		AST predicate = select.getChild(1);
 		while (input.getType() == Selection) {
-			AST tmp = new AST(AndExpr, "AndExpr");
+			AST tmp = new AST(AndExpr);
 			tmp.addChild(predicate);
 			tmp.addChild(input.getChild(1));
 			input = input.getChild(0);
@@ -32,7 +32,7 @@ public class PredicateConjunction extends Walker {
 			select.replaceChild(0, input);
 		}
 
-		return select.getParent();
+		return select;
 	}
 
 }

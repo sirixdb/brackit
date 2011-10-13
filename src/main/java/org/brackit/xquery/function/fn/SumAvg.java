@@ -31,10 +31,13 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.DTD;
+import org.brackit.xquery.atomic.Dbl;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.Numeric;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.YMD;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
@@ -58,8 +61,8 @@ public class SumAvg extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
+	public Sequence execute(StaticContext sctx, QueryContext ctx,
+			Sequence[] args) throws QueryException {
 		Sequence seq = args[0];
 		Item item;
 		Atomic agg = null;
@@ -71,7 +74,7 @@ public class SumAvg extends AbstractFunction {
 			}
 			return (args.length == 2) ? args[1] : Int32.ZERO;
 		}
-		
+
 		Iter in = seq.iterate();
 		try {
 			if ((item = in.next()) != null) {
@@ -85,9 +88,10 @@ public class SumAvg extends AbstractFunction {
 
 				if (aggType.isNumeric()) {
 					agg = numericAggregate(ctx, in, (Numeric) agg);
-				} else if (aggType.instanceOf(Type.YMD)
-						|| aggType.instanceOf(Type.DTD)) {
-					agg = durationAggregate(ctx, in, agg);
+				} else if (aggType.instanceOf(Type.YMD)) {
+					agg = ymdAggregate(ctx, in, (YMD) agg);
+				} else if (aggType.instanceOf(Type.DTD)) {
+					agg = dtdAggregate(ctx, in, (DTD) agg);
 				} else {
 					throw new QueryException(
 							ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
@@ -99,14 +103,8 @@ public class SumAvg extends AbstractFunction {
 			in.close();
 		}
 
-		return ((agg != null) || (avg)) ? agg : ((args.length == 2) ? args[1] : Int32.ZERO);
-	}
-
-	private Atomic durationAggregate(QueryContext ctx, Iter in, Atomic agg)
-			throws QueryException {
-		throw new QueryException(
-				ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-				"Sum/avg for duration types not implemented yet.");
+		return ((agg != null) || (avg)) ? agg : ((args.length == 2) ? args[1]
+				: Int32.ZERO);
 	}
 
 	private Atomic numericAggregate(QueryContext ctx, Iter in, Numeric agg)
@@ -131,5 +129,51 @@ public class SumAvg extends AbstractFunction {
 			count = count.inc();
 		}
 		return (Atomic) (avg ? agg.div(count) : agg);
+	}
+
+	private Atomic ymdAggregate(QueryContext ctx, Iter in, YMD agg)
+			throws QueryException {
+		Item item;
+		IntNumeric count = Int32.ONE;
+
+		while ((item = in.next()) != null) {
+			Atomic s = item.atomize();
+			Type type = s.type();
+
+			if (type == Type.UNA) {
+				s = Cast.cast(null, s, Type.YMD, false);
+			} else if (!type.instanceOf(Type.YMD)) {
+				throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+						"Incompatible types in aggregate function: %s and %s.",
+						Type.YMD, type);
+			}
+
+			agg = agg.add((YMD) s);
+			count = count.inc();
+		}
+		return (Atomic) (avg ? agg.divide(new Dbl(count.doubleValue())) : agg);
+	}
+
+	private Atomic dtdAggregate(QueryContext ctx, Iter in, DTD agg)
+			throws QueryException {
+		Item item;
+		IntNumeric count = Int32.ONE;
+
+		while ((item = in.next()) != null) {
+			Atomic s = item.atomize();
+			Type type = s.type();
+
+			if (type == Type.UNA) {
+				s = Cast.cast(null, s, Type.DTD, false);
+			} else if (!type.instanceOf(Type.DTD)) {
+				throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+						"Incompatible types in aggregate function: %s and %s.",
+						Type.DTD, type);
+			}
+
+			agg = agg.add((DTD) s);
+			count = count.inc();
+		}
+		return (Atomic) (avg ? agg.divide(new Dbl(count.doubleValue())) : agg);
 	}
 }

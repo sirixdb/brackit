@@ -37,7 +37,7 @@ import java.util.HashSet;
 import org.brackit.xquery.compiler.AST;
 
 /**
- * Push variable bindings downstream in a pipeline to reduce
+ * Push select operators downstream in a pipeline to reduce
  * number of tuples in a pipeline.
  * 
  * @author Sebastian Baechle
@@ -83,6 +83,6 @@ public class SelectPushdown extends PipelineVarTracker {
 		node.replaceChild(0, tmp);
 		parent.replaceChild(0, in);
 		pushed.add(node);
-		return parent;
+		return in;
 	}
 }

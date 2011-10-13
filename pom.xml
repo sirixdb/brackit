@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.brackit</groupId>
   <artifactId>brackit</artifactId>
-  <version>0.0.6</version>
+  <version>0.0.7</version>
   <name>Brackit Engine</name>
   <url>http://brackit.org</url>
   <properties>

@@ -27,9 +27,9 @@
  */
 package org.brackit.xquery.compiler;
 
+import java.io.IOException;
 import java.util.List;
 
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.module.Module;
 
 /**
@@ -39,10 +39,14 @@ import org.brackit.xquery.module.Module;
  */
 public interface ModuleResolver {
 
+	public void register(String targetNSUri, Module module);
+	
 	/**
 	 * Resolve the set of modules identified by the target namespace
 	 * <code>targetNSUri</code>
 	 */
-	public List<Module> resolve(String targetNSUri, String... locationUris)
-			throws QueryException;
+	public List<Module> resolve(String targetNSUri, String... locationUris);
+
+	public List<String> load(String uri, String[] locations)
+			throws IOException;
 }

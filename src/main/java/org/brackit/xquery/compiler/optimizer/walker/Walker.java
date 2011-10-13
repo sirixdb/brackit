@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
+import java.io.File;
+
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.parser.DotUtil;
@@ -42,12 +44,18 @@ public class Walker {
 	private int snapshot;
 	private boolean restart;
 
-	public final void walk(AST node) {
+	public final AST walk(AST node) {
 		snapshot = 0;
 		root = node;
 		root = prepare(root);
-		root = walkInternal(root);
+		AST result = walkInternal(root);
+		while (result != root) {
+			root = result;
+			result = walkInternal(root);
+		}
+		root = result;
 		root = finish(root);
+		return root;
 	}
 
 	private AST walkInternal(AST node) {
@@ -56,14 +64,21 @@ public class Walker {
 			restart = true;
 			return replacement;
 		}
-
+		// BEWARE: child count can change when a rewrite
+		// introduces new siblings before the current node 
 		for (int i = 0; i < node.getChildCount(); i++) {
 			AST child = node.getChild(i);
-			AST subtree = walkInternal(child);
-
-			if (subtree != child) {
-				return subtree;
-			} else if (restart) {
+			AST result = walkInternal(child);
+			while (result != child) {
+				if (result.getParent() == node) {
+					child = result;
+					result = walkInternal(child);
+				} else {
+					// propagate
+					return result;
+				}
+			}
+			if (restart) {
 				i--;
 				restart = false;
 				snapshot();
@@ -81,8 +96,9 @@ public class Walker {
 	}
 
 	/**
-	 * Visit a node to perform restructuring if desired. This method must return
-	 * an ancestor of the given node where the walk should restart
+	 * Visit the node this perform restructuring. This method must return
+	 * the node closest to the root that was modified/replaced/inserted
+	 * in the AST to ensure that the tree traversal is restarted at the correct node.
 	 */
 	protected AST visit(AST node) {
 		System.out.println("Visiting Node " + node.getValue());

@@ -33,20 +33,15 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.sequence.FunctionConversionSequence;
 import org.brackit.xquery.sequence.ItemSequence;
-import org.brackit.xquery.sequence.TypedSequence;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Function;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.Type;
-import org.brackit.xquery.xdm.type.AtomicType;
-import org.brackit.xquery.xdm.type.ItemType;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
@@ -58,11 +53,14 @@ public class FunctionExpr implements Expr {
 	private final StaticContext sctx;
 	private final Function function;
 	private final Expr[] exprs;
+	private final boolean builtin;
 
-	public FunctionExpr(StaticContext sctx, Function function, Expr... exprs) throws QueryException {
+	public FunctionExpr(StaticContext sctx, Function function, Expr... exprs)
+			throws QueryException {
 		this.sctx = sctx;
 		this.function = function;
 		this.exprs = exprs;
+		this.builtin = function.isBuiltIn();
 	}
 
 	public Signature getSignature() {
@@ -87,11 +85,13 @@ public class FunctionExpr implements Expr {
 				if (sType.getCardinality().many()) {
 					args[i] = exprs[i].evaluate(ctx, tuple);
 					if (!(sType.getItemType().isAnyItem())) {
-						args[i] = asTypedSequence(sType, args[i]);
+						args[i] = FunctionConversionSequence.asTypedSequence(
+								sType, args[i], builtin);
 					}
 				} else {
 					args[i] = exprs[i].evaluateToItem(ctx, tuple);
-					args[i] = asTypedSequence(sType, args[i]);
+					args[i] = FunctionConversionSequence.asTypedSequence(sType,
+							args[i], builtin);
 				}
 			}
 		}
@@ -108,8 +108,9 @@ public class FunctionExpr implements Expr {
 		if (function.isBuiltIn()) {
 			return res;
 		}
-		res = asTypedSequence(function.getSignature().getResultType(), res);
-		
+		res = FunctionConversionSequence.asTypedSequence(function
+				.getSignature().getResultType(), res, builtin);
+
 		// TODO
 		// how to decide cleverly if we should materialize or not???
 		if ((res == null) || (res instanceof Item)) {
@@ -127,75 +128,6 @@ public class FunctionExpr implements Expr {
 		}
 		res = new ItemSequence(buffer.toArray(new Item[buffer.size()]));
 		return res;
-	}
-
-	/**
-	 * See XQuery 3.1.5 Function Calls (function conversion rules) and compare
-	 * with TypedSequence.
-	 */
-	private Sequence asTypedSequence(SequenceType sType, Sequence s)
-			throws QueryException {
-		if (s == null) {
-			if (sType.getCardinality().moreThanZero()) {
-				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-						"Invalid empty-sequence()");
-			}
-			return null;
-		} else if (s instanceof Item) {
-			// short-circuit wrapping of single item parameter
-			ItemType iType = sType.getItemType();
-			if (iType instanceof AtomicType) {
-				Atomic atomic = ((Item) s).atomize();
-				Type expected = ((AtomicType) iType).getType();
-				Type type = atomic.type();
-
-				if ((type == Type.UNA) && (expected != Type.UNA)) {
-					if ((function.isBuiltIn()) && (expected.isNumeric())) {
-						atomic = Cast.cast(null, atomic, expected, false);
-					} else {
-						atomic = Cast.cast(null, atomic, expected, false);
-					}
-				} else if (!iType.matches(atomic)) {
-					if ((expected.isNumeric()) && (type.isNumeric())) {
-						atomic = Cast.cast(null, atomic, expected, false);
-					} else if ((expected.instanceOf(Type.STR))
-							&& (type.instanceOf(Type.AURI))) {
-						atomic = Cast.cast(null, atomic, expected, false);
-					} else {
-						throw new QueryException(
-								ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-								"Item of invalid atomic type in typed sequence (expected %s): %s",
-								iType, atomic);
-					}
-				}
-
-				return atomic;
-			} else if (!iType.matches((Item) s)) {
-				throw new QueryException(
-						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-						"Item of invalid type in typed sequence (expected %s): %s",
-						iType, s);
-			}
-
-			return s;
-		} else {
-			boolean applyFunctionConversion = ((sType.getItemType() instanceof AtomicType) && (((AtomicType) sType
-					.getItemType()).getType().isNumeric()));
-			boolean enforceDouble = function.isBuiltIn();
-			TypedSequence typedSequence = new TypedSequence(sType, s,
-					applyFunctionConversion, enforceDouble);
-
-			if (sType.getCardinality().atMostOne()) {
-				Iter it = typedSequence.iterate();
-				try {
-					return it.next();
-				} finally {
-					it.close();
-				}
-			}
-
-			return typedSequence;
-		}
 	}
 
 	@Override

@@ -1223,7 +1223,7 @@ public class Tokenizer {
 			throw new IllegalCharRefException(tmp);
 		}
 		lastScanEnd = s + len + 1;
-		return Character.toString((char) charRef.intValue());
+		return XMLChar.toString(charRef.intValue());
 	}
 
 	private String scanString(int pos, char escapeChar) {

@@ -62,7 +62,7 @@ public abstract class AbstractCollection<E extends Node<E>> extends
 
 	@Override
 	public AnyURI getDocumentURI() {
-		return new AnyURI(name, false);
+		return AnyURI.fromString(name);
 	}
 
 	@Override

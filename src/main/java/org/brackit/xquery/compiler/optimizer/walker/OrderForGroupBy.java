@@ -32,8 +32,8 @@ import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 
 /**
- * Insert an orderBy clause in front of a groupBy clause that
- * orders the tuple stream in according to the grouping specification.
+ * Insert an orderBy clause in front of a groupBy clause that orders the tuple
+ * stream in according to the grouping specification.
  * 
  * @author Sebastian Baechle
  * 
@@ -45,7 +45,7 @@ public class OrderForGroupBy extends Walker {
 		if (node.getType() != XQ.GroupByClause) {
 			return node;
 		}
-		
+
 		// check if prev sibling is already the needed group by
 		AST prev = node.getParent().getChild(node.getChildIndex() - 1);
 		if (prev.getType() == XQ.OrderByClause) {
@@ -53,18 +53,18 @@ public class OrderForGroupBy extends Walker {
 				return node;
 			}
 		}
-		
+
 		// introduce order by
-		AST orderBy = new AST(XQ.OrderByClause, "OrderByClause");
+		AST orderBy = new AST(XQ.OrderByClause);
 		for (int i = 0; i < node.getChildCount(); i++) {
 			AST groupBySpec = node.getChild(i);
-			AST orderBySpec = new AST(XQ.OrderBySpec, "OrderBySpec");			
+			AST orderBySpec = new AST(XQ.OrderBySpec);
 			for (int j = 0; j < groupBySpec.getChildCount(); j++) {
 				orderBySpec.addChild(groupBySpec.getChild(0).copyTree());
 			}
-			orderBy.addChild(orderBySpec);	
+			orderBy.addChild(orderBySpec);
 		}
-		
+
 		node.getParent().insertChild(node.getChildIndex(), orderBy);
 		return orderBy;
 	}

@@ -163,8 +163,8 @@ public class TupleSort {
 	}
 
 	private void sortBuffer() throws QueryException {
-		if (log.isDebugEnabled()) {
-			log.debug(String.format("Start main memory sort of %s items.'",
+		if (log.isTraceEnabled()) {
+			log.trace(String.format("Start main memory sort of %s items.'",
 					count));
 		}
 
@@ -179,8 +179,8 @@ public class TupleSort {
 			throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR);
 		}
 
-		if (log.isDebugEnabled()) {
-			log.debug(String.format("Finished main memory sort of %s items",
+		if (log.isTraceEnabled()) {
+			log.trace(String.format("Finished main memory sort of %s items",
 					count));
 		}
 	}

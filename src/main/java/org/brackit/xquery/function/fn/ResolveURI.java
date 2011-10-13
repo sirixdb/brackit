@@ -31,117 +31,68 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.AnyURI;
-import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.Stream;
 
 /**
- * Implementation of predefined functions fn:doc($arg1) and
- * fn:doc-available($arg1) as per http://www.w3.org/TR/xpath-functions/#func-doc
- * and http://www.w3.org/TR/xpath-functions/#func-doc-available. Also note
- * correction in
- * http://www.w3.org/XML/2007/qt-errata/xpath-functions-errata.html#E26
  * 
  * @author Sebastian Baechle
- * @author Max Bechtold
  * 
  */
-public class Doc extends AbstractFunction {
-	private boolean retrieve;
-
-	public Doc(QNm name, boolean retrieve, Signature signature) {
+public class ResolveURI extends AbstractFunction {
+	public ResolveURI(QNm name, Signature signature) {
 		super(name, signature, true);
-		this.retrieve = retrieve;
 	}
 
 	@Override
 	public Sequence execute(StaticContext sctx, QueryContext ctx,
 			Sequence[] args) throws QueryException {
 		if (args[0] == null) {
-			return (retrieve ? null : Bool.FALSE);
+			return null;
 		}
+		String relStr = ((Str) args[0]).stringValue();
+		String baseStr = (args.length == 2) ? ((Str) args[1]).stringValue()
+				: null;
 
-		String name = ((Str) args[0]).stringValue();
-
+		AnyURI relative;
+		AnyURI base;
 		try {
-			Node<?> document;
-			if (name.isEmpty()) {
-				// Implementation defined: Handle empty name in the sense of
-				// fn:doc() which is in fact not defined by XQuery
-				document = ctx.getDefaultDocument();
-
-				if (document == null) {
-					if (retrieve) {
-						throw new QueryException(
-								ErrorCode.ERR_DOCUMENT_NOT_FOUND,
-								"No default document defined.");
-					} else {
-						return Bool.FALSE;
-					}
-				}
-
-				return document;
-			} else {
-				AnyURI uri = resolve(sctx, name);
-				Collection<?> collection = ctx.getStore().lookup(uri.stringValue());
-				Stream<? extends Node<?>> docs = collection.getDocuments();
-				try {
-					document = (Node<?>) docs.next();
-
-					if (document == null) {
-						if (retrieve) {
-							throw new QueryException(
-									ErrorCode.ERR_DOCUMENT_NOT_FOUND,
-									"Empty collection");
-						} else {
-							return Bool.FALSE;
-						}
-					}
-
-					if (docs.next() != null) {
-						throw new QueryException(
-								ErrorCode.ERR_DOCUMENT_NOT_FOUND,
-								"Collection %s contains more than one document",
-								name);
-					}
-
-					if (retrieve) {
-						return document;
-					} else {
-						return Bool.FALSE;
-					}
-				} finally {
-					docs.close();
-				}
-			}
+			relative = new AnyURI(relStr);
 		} catch (DocumentException e) {
-			if (retrieve) {
-				throw new QueryException(e, ErrorCode.ERR_DOCUMENT_NOT_FOUND,
-						"Document '%s' not found.", name);
-			} else {
-				return Bool.FALSE;
-			}
+			throw new QueryException(ErrorCode.ERR_INVALID_URI,
+					"Invalid relative URI: %s", relStr);
 		}
+		try {
+			base = (baseStr != null) ? new AnyURI(baseStr) : null;
+		} catch (DocumentException e) {
+			throw new QueryException(ErrorCode.ERR_INVALID_URI,
+					"Invalid base URI: %s", baseStr);
+		}
+
+		return resolve(sctx, base, relative);
 	}
-	
-	public AnyURI resolve(StaticContext sctx, AnyURI base,
+
+	public static AnyURI resolve(StaticContext sctx, AnyURI base,
 			AnyURI relative) throws QueryException {
 		if (relative.isAbsolute()) {
 			return relative;
 		}
 		if (base == null) {
 			base = sctx.getBaseURI();
-			if ((base == null) || (!base.isAbsolute())) {
-				return relative;
+			if (base == null) {
+				throw new QueryException(
+						ErrorCode.ERR_UNDEFINED_STATIC_BASE_URI,
+						"Base-URI not defined in static context");
 			}
+		}
+		if (!base.isAbsolute()) {
+			throw new QueryException(ErrorCode.ERR_INVALID_URI,
+					"Base URI is not an absolute URI: %s", base);
 		}
 		try {
 			return relative.absolutize(base);
@@ -151,7 +102,7 @@ public class Doc extends AbstractFunction {
 		}
 	}
 
-	public AnyURI resolve(StaticContext sctx, String relStr)
+	public static AnyURI resolve(StaticContext sctx, String relStr)
 			throws QueryException {
 		try {
 			AnyURI relative = new AnyURI(relStr);

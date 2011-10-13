@@ -59,7 +59,6 @@ public class XQParser extends Tokenizer {
 			"schema-element", "switch", "text", "typeswitch" };
 
 	public class IllegalNestingException extends TokenizerException {
-
 		private final String expected;
 
 		public IllegalNestingException(String expected) {
@@ -69,6 +68,19 @@ public class XQParser extends Tokenizer {
 
 		public String getExpected() {
 			return expected;
+		}
+	}
+
+	public class InvalidURIException extends TokenizerException {
+		private final String uri;
+
+		public InvalidURIException(String uri) {
+			super("Invalid uri literal '%s': %s", uri, paraphrase());
+			this.uri = uri;
+		}
+
+		public String getUri() {
+			return uri;
 		}
 	}
 
@@ -92,6 +104,9 @@ public class XQParser extends Tokenizer {
 		} catch (IllegalCharRefException e) {
 			throw new QueryException(e,
 					ErrorCode.ERR_UNDEFINED_CHARACTER_REFERENCE, e.getMessage());
+		} catch (InvalidURIException e) {
+			throw new QueryException(e, ErrorCode.ERR_INVALID_URI_LITERAL,
+					e.getMessage());
 		} catch (Exception e) {
 			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR,
 					e.getMessage());
@@ -2063,7 +2078,7 @@ public class XQParser extends Tokenizer {
 						paraphrase());
 			}
 			// initial '//' is translated to
-			// fn:root(self::node()) treat as
+			// (fn:root(self::node()) treat as
 			// document-node())/descendant-or-self::node()/
 			AST treat = fnRootTreatAsDocument();
 			AST dosn = descendantOrSelfNode();
@@ -2145,7 +2160,9 @@ public class XQParser extends Tokenizer {
 		call.addChild(step);
 		treat.addChild(call);
 		treat.addChild(seqType);
-		return treat;
+		AST parenthesized = new AST(XQ.ParenthesizedExpr);
+		parenthesized.addChild(treat);
+		return parenthesized;
 	}
 
 	private AST stepExpr() throws TokenizerException {
@@ -3393,9 +3410,7 @@ public class XQParser extends Tokenizer {
 		try {
 			return new AST(XQ.AnyURI, new AnyURI(la.string()));
 		} catch (QueryException e) {
-			// this should never happen...
-			throw new TokenizerException(e, "Error parsing URI literal: '%s'",
-					paraphrase());
+			throw new InvalidURIException(la.string());
 		}
 	}
 

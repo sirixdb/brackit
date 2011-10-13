@@ -61,7 +61,8 @@ public class LetVariableRefPullup extends Walker {
 	}
 
 	@Override
-	protected AST visit(AST node) {
+	protected AST visit(AST node) {		
+		if (true) throw new RuntimeException("FIXME");
 		if (node.getType() == XQ.TypedVariableBinding) {
 			AST name = node.getChild(0);
 			variables.put((QNm) name.getValue(), new Variable(node.getParent()
@@ -96,11 +97,9 @@ public class LetVariableRefPullup extends Walker {
 		}
 		// create new let clause encapsulating the subtree rooted at parent
 		QNm substitueVariableName = substitutionName(var.number);
-		AST letClause = new AST(XQ.LetClause, "LetClause");
-		AST typedVarBinding = new AST(XQ.TypedVariableBinding,
-				"TypedVariableBinding");
-		AST substituteVariable = new AST(XQ.Variable,
-				substitueVariableName);
+		AST letClause = new AST(XQ.LetClause);
+		AST typedVarBinding = new AST(XQ.TypedVariableBinding);
+		AST substituteVariable = new AST(XQ.Variable, substitueVariableName);
 		typedVarBinding.addChild(substituteVariable);
 		letClause.addChild(typedVarBinding);
 		AST clonedSubtree = subtree.copyTree();
@@ -129,9 +128,8 @@ public class LetVariableRefPullup extends Walker {
 		} else {
 			AST bindingReturnClause = bindingFlowr.getChild(bindingFlowr
 					.getChildCount() - 1);
-			AST flowr = new AST(XQ.FlowrExpr, "FlowrExpr");
-			AST returnClause = new AST(XQ.ReturnClause,
-					"ReturnClause");
+			AST flowr = new AST(XQ.FlowrExpr);
+			AST returnClause = new AST(XQ.ReturnClause);
 			returnClause.addChild(bindingReturnClause.getChild(0));
 			flowr.addChild(letClause);
 			flowr.addChild(returnClause);
@@ -139,15 +137,14 @@ public class LetVariableRefPullup extends Walker {
 		}
 
 		// substitute subtree with new variable
-		AST variableRef = new AST(XQ.VariableRef,
-				substitueVariableName);
+		AST variableRef = new AST(XQ.VariableRef, substitueVariableName);
 		subtree.getParent().replaceChild(subtree.getChildIndex(), variableRef);
 
 		System.out.println("Pullup " + var.bind.getChild(0).getValue());
 
 		snapshot();
 
-		return subtree.getParent();
+		return variableRef;
 	}
 
 	private QNm substitutionName(int number) {
@@ -167,7 +164,7 @@ public class LetVariableRefPullup extends Walker {
 				&& ((node.getValue().equals("position()"))
 						|| (node.getValue().equals("last()"))
 						|| (node.getValue().equals("fn:position()")) || (node
-						.getValue().equals("fn:last()")))) {
+							.getValue().equals("fn:last()")))) {
 			return false;
 		}
 

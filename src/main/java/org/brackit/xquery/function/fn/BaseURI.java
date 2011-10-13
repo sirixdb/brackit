@@ -62,9 +62,6 @@ public class BaseURI extends AbstractFunction {
 					"Context item is not a node: %s", item);
 		}
 
-		Node<?> root = (Node<?>) item;
-
-		// TODO realize base URI
-		return ctx.getBaseUri();
+		return ((Node<?>) item).getBaseURI();
 	}
 }

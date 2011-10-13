@@ -27,6 +27,10 @@
  */
 package org.brackit.xquery.compiler;
 
+import org.brackit.xquery.QueryException;
+import org.brackit.xquery.compiler.optimizer.Optimizer;
+import org.brackit.xquery.compiler.translator.Translator;
+import org.brackit.xquery.module.Module;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Expr;
 
@@ -37,30 +41,41 @@ import org.brackit.xquery.xdm.Expr;
  * @author Sebastian Baechle
  * 
  */
-public final class Target {
+public class Target {
 
-	protected final StaticContext ctx;
-	protected final AST expr;
+	protected final Module module;
+	protected final StaticContext sctx;
 	protected final Unit unit;
 	protected final boolean allowUpdate;
+	protected AST ast;
 
-	public Target(StaticContext ctx, AST expr, Unit unit, boolean allowUpdate) {
-		this.ctx = ctx;
-		this.expr = expr;
+	public Target(Module module, StaticContext sctx, AST ast, Unit unit, boolean allowUpdate) {
+		this.module = module;
+		this.sctx = sctx;
+		this.ast = ast;
 		this.unit = unit;
 		this.allowUpdate = allowUpdate;
 	}
+	
+	public void optimize(Optimizer optimizer) throws QueryException {
+		ast = optimizer.optimize(ast);
+	}
+	
+	public void translate(Translator translator) throws QueryException {
+		Expr expr = translator.expression(module, sctx, ast, allowUpdate);
+		unit.setExpr(expr);
+	}
+
+	public Module getModule() {
+		return module;
+	}
 
 	public StaticContext getStaticContext() {
-		return ctx;
+		return sctx;
 	}
 
-	public AST getExpr() {
-		return expr;
-	}
-
-	public void finalize(Expr expr) {
-		this.unit.setExpr(expr);
+	public AST getAst() {
+		return ast;
 	}
 
 	public boolean allowUpdate() {

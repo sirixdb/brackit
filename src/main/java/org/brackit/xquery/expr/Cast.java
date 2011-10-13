@@ -63,6 +63,7 @@ import org.brackit.xquery.atomic.TimeInstant;
 import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.atomic.YMD;
 import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
@@ -570,7 +571,7 @@ public class Cast implements Expr {
 	private static Atomic primitiveToBool(Atomic atomic, Type source,
 			Type target) throws QueryException {
 		if ((source == Type.UNA) || (source == Type.STR)) {
-			String s = atomic.stringValue();
+			String s = Whitespace.collapseTrimOnly(atomic.stringValue());
 			if (("true".equals(s)) || ("1".equals(s))) {
 				return Bool.TRUE;
 			} else if (("false".equals(s)) || ("0".equals(s))) {
@@ -603,6 +604,9 @@ public class Cast implements Expr {
 		if ((source == Type.UNA) || (source == Type.STR)) {
 			return new Hex(atomic.stringValue());
 		}
+		if (source == Type.B64) {
+			return new Hex(((B64) atomic).getBytes());
+		}
 
 		throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 				"Illegal cast from %s to %s", source, target);
@@ -612,6 +616,9 @@ public class Cast implements Expr {
 			throws QueryException {
 		if ((source == Type.UNA) || (source == Type.STR)) {
 			return new B64(atomic.stringValue());
+		}
+		if (source == Type.HEX) {
+			return new B64(((Hex) atomic).getBytes());
 		}
 
 		throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,

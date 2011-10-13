@@ -49,15 +49,22 @@ import org.brackit.xquery.xdm.type.SequenceType;
  * @author Sebastian Baechle
  * 
  */
-public class TypedSequence extends LazySequence {
+public class FunctionConversionSequence extends LazySequence {
 
 	private static final Int32 TWO = Int32.ZERO_TWO_TWENTY[2];
 
-	private final class TypedIter extends BaseIter {
-		Cardinality card = type.getCardinality();
-		ItemType iType = type.getItemType();
+	private final class AtomicTypedIter extends BaseIter {
+		final Cardinality card;
+		final AtomicType iType;
+		final Type expected;
 		Counter pos = new Counter();
 		Iter s;
+
+		AtomicTypedIter(Cardinality card, AtomicType iType) {
+			this.card = card;
+			this.iType = iType;
+			this.expected = iType.getType();
+		}
 
 		@Override
 		public Item next() throws QueryException {
@@ -85,6 +92,91 @@ public class TypedSequence extends LazySequence {
 						card, pos);
 			}
 
+			// See XQuery 3.1.5 Function Calls
+			Atomic atomic = item.atomize();
+			Type type = atomic.type();
+
+			if ((type == Type.UNA) && (expected != Type.UNA)) {
+				if ((builtin) && (expected.isNumeric())) {
+					atomic = Cast.cast(null, atomic, Type.DBL, false);
+				} else if ((expected.instanceOf(Type.QNM))
+						|| (expected.instanceOf(Type.NOT))) {
+					throw new QueryException(
+							ErrorCode.ERR_TYPE_CAST_TO_NAMESPACE_SENSITIVE_TYPE,
+							"Cannot cast %s to namespace-sensitive type %s",
+							type, expected);
+				} else {
+					atomic = Cast.cast(null, atomic, expected, false);
+				}
+			} else if (!iType.matches(atomic)) {
+				if ((expected.isNumeric()) && (type.isNumeric())) {
+					atomic = Cast.cast(null, atomic, expected, false);
+				} else if ((expected.instanceOf(Type.STR))
+						&& (type.instanceOf(Type.AURI))) {
+					atomic = Cast.cast(null, atomic, expected, false);
+				} else {
+					throw new QueryException(
+							ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+							"Item of invalid atomic type in typed sequence (expected %s): %s",
+							iType, atomic);
+				}
+			}
+
+			return atomic;
+		}
+
+		@Override
+		public void skip(IntNumeric i) throws QueryException {
+			if (s == null) {
+				s = arg.iterate();
+			}
+			s.skip(i);
+		}
+
+		@Override
+		public void close() {
+			if (s != null) {
+				s.close();
+			}
+		}
+	}
+
+	private final class TypedIter extends BaseIter {
+		final Cardinality card;
+		final ItemType iType;
+		Counter pos = new Counter();
+		Iter s;
+
+		TypedIter(Cardinality card, ItemType iType) {
+			this.card = card;
+			this.iType = iType;
+		}
+
+		@Override
+		public Item next() throws QueryException {
+			if (s == null) {
+				s = arg.iterate();
+			}
+
+			Item item = s.next();
+			if (item == null) {
+				if ((pos.cmp(Int32.ZERO) == 0) && (card.moreThanZero())) {
+					throw new QueryException(
+							ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+							"Invalid empty typed sequence (expected %s)", card);
+				}
+				safe = true; // remember that sequence type is OK
+				return null;
+			}
+
+			pos.inc();
+			if ((card == Cardinality.Zero)
+					|| ((pos.cmp(TWO) == 0) && (card.atMostOne()))) {
+				throw new QueryException(
+						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+						"Invalid cardinality of typed sequence (expected %s): >= %s",
+						card, pos);
+			}
 			if (!iType.matches(item)) {
 				throw new QueryException(
 						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
@@ -113,12 +205,15 @@ public class TypedSequence extends LazySequence {
 
 	final SequenceType type;
 	final Sequence arg;
+	final boolean builtin;
 	// volatile field because safe is evaluated lazy
 	volatile boolean safe;
 
-	public TypedSequence(SequenceType type, Sequence arg) {
+	public FunctionConversionSequence(SequenceType type, Sequence arg,
+			boolean builtin) {
 		this.type = type;
 		this.arg = arg;
+		this.builtin = builtin;
 	}
 
 	@Override
@@ -126,7 +221,13 @@ public class TypedSequence extends LazySequence {
 		if (safe) {
 			return arg.iterate();
 		}
-		return new TypedIter();
+		Cardinality card = type.getCardinality();
+		ItemType iType = type.getItemType();
+		if (iType instanceof AtomicType) {
+			return new AtomicTypedIter(card, (AtomicType) iType);
+		} else {
+			return new TypedIter(card, iType);
+		}
 	}
 
 	@Override
@@ -164,8 +265,12 @@ public class TypedSequence extends LazySequence {
 		return item;
 	}
 
-	public static Sequence toTypedSequence(QueryContext ctx,
-			SequenceType sType, Sequence s) throws QueryException {
+	/**
+	 * See XQuery 3.1.5 Function Calls (function conversion rules) and compare
+	 * with TypedSequence.
+	 */
+	public static Sequence asTypedSequence(SequenceType sType, Sequence s,
+			boolean builtin) throws QueryException {
 		if (s == null) {
 			if (sType.getCardinality().moreThanZero()) {
 				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
@@ -174,79 +279,60 @@ public class TypedSequence extends LazySequence {
 			return null;
 		} else if (s instanceof Item) {
 			// short-circuit wrapping of single item parameter
-			ItemType itemType = sType.getItemType();
+			ItemType iType = sType.getItemType();
+			if (iType instanceof AtomicType) {
+				Atomic atomic = ((Item) s).atomize();
+				Type expected = ((AtomicType) iType).getType();
+				Type type = atomic.type();
 
-			if (!itemType.matches((Item) s)) {
+				if ((type == Type.UNA) && (expected != Type.UNA)) {
+					if ((builtin) && (expected.isNumeric())) {
+						atomic = Cast.cast(null, atomic, expected, false);
+					} else if ((expected.instanceOf(Type.QNM))
+							|| (expected.instanceOf(Type.NOT))) {
+						throw new QueryException(
+								ErrorCode.ERR_TYPE_CAST_TO_NAMESPACE_SENSITIVE_TYPE,
+								"Cannot cast %s to namespace-sensitive type %s",
+								type, expected);
+					} else {
+						atomic = Cast.cast(null, atomic, expected, false);
+					}
+				} else if (!iType.matches(atomic)) {
+					if ((expected.isNumeric()) && (type.isNumeric())) {
+						atomic = Cast.cast(null, atomic, expected, false);
+					} else if ((expected.instanceOf(Type.STR))
+							&& (type.instanceOf(Type.AURI))) {
+						atomic = Cast.cast(null, atomic, expected, false);
+					} else {
+						throw new QueryException(
+								ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+								"Item of invalid atomic type in typed sequence (expected %s): %s",
+								iType, atomic);
+					}
+				}
+
+				return atomic;
+			} else if (!iType.matches((Item) s)) {
 				throw new QueryException(
 						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 						"Item of invalid type in typed sequence (expected %s): %s",
-						itemType, s);
+						iType, s);
 			}
 
 			return s;
 		} else {
-			return new TypedSequence(sType, s);
-		}
-	}
+			Sequence ts = new FunctionConversionSequence(sType, s, builtin);
 
-	public static Item toTypedItem(QueryContext ctx, SequenceType sType,
-			Item item) throws QueryException {
-		if (item == null) {
-			if (sType.getCardinality().moreThanZero()) {
-				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-						"Invalid empty-sequence()");
-			}
-			return null;
-		} else {
-			// short-circuit wrapping of single item parameter
-			ItemType itemType = sType.getItemType();
-
-			if (!itemType.matches(item)) {
-				throw new QueryException(
-						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-						"Item of invalid type in typed sequence (expected %s): %s",
-						itemType, item);
-			}
-
-			return item;
-		}
-	}
-
-	public static Item toTypedItem(QueryContext ctx, SequenceType sType,
-			Sequence s) throws QueryException {
-		if (s == null) {
-			if (sType.getCardinality().moreThanZero()) {
-				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-						"Invalid empty-sequence()");
-			}
-			return null;
-		} else if (s instanceof Item) {
-			// short-circuit wrapping of single item parameter
-			ItemType itemType = sType.getItemType();
-			Item item = (Item) s;
-
-			if (!itemType.matches(item)) {
-				throw new QueryException(
-						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-						"Item of invalid type in typed sequence (expected %s): %s",
-						itemType, item);
-			}
-
-			return item;
-		} else {
-			Iter it = s.iterate();
-			try {
-				Item item = it.next();
-				if (it.next() != null) {
-					throw new QueryException(
-							ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-							"Cannot convert %s typed sequence %s to single item",
-							sType, s);
+			if (sType.getCardinality().atMostOne()) {
+				Iter it = ts.iterate();
+				try {
+					return it.next();
+				} finally {
+					it.close();
 				}
-				return toTypedItem(ctx, sType, item);
-			} finally {
-				it.close();
 			}
+
+			return ts;
 		}
 	}
 }

@@ -73,6 +73,7 @@ import org.brackit.xquery.function.fn.Number;
 import org.brackit.xquery.function.fn.QName;
 import org.brackit.xquery.function.fn.RegEx;
 import org.brackit.xquery.function.fn.Remove;
+import org.brackit.xquery.function.fn.ResolveURI;
 import org.brackit.xquery.function.fn.Reverse;
 import org.brackit.xquery.function.fn.Root;
 import org.brackit.xquery.function.fn.Round;
@@ -336,6 +337,15 @@ public class Functions {
 				new SequenceType(AtomicType.STR, Cardinality.One),
 				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
 				new SequenceType(AtomicType.STR, Cardinality.One),
+				new SequenceType(AtomicType.STR, Cardinality.One))));
+		predefine(new ResolveURI(new QNm(Namespaces.FN_NSURI,
+				Namespaces.FN_PREFIX, "resolve-uri"), new Signature(
+				new SequenceType(AtomicType.AURI, Cardinality.ZeroOrOne),
+				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne))));
+		predefine(new ResolveURI(new QNm(Namespaces.FN_NSURI,
+				Namespaces.FN_PREFIX, "resolve-uri"), new Signature(
+				new SequenceType(AtomicType.AURI, Cardinality.ZeroOrOne),
+				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
 				new SequenceType(AtomicType.STR, Cardinality.One))));
 		predefine(new Encode(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"encode-for-uri"), Encode.Mode.ENCODE_FOR_URI, new Signature(

@@ -30,6 +30,7 @@ package org.brackit.xquery.function.fn;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
@@ -49,15 +50,12 @@ public class Collection extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(StaticContext sctx, final QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		Str name = null;
+	public Sequence execute(StaticContext sctx, final QueryContext ctx,
+			Sequence[] args) throws QueryException {
+		String name = (args.length > 0) ? ((Str) args[0]).stringValue() : null;
 		try {
-			name = (args.length > 0) ? (Str) args[0] : null;
-
 			org.brackit.xquery.xdm.Collection<?> collection;
-
-			if ((name == null) || (name.stringValue().isEmpty())) {
+			if ((name == null) || (name.isEmpty())) {
 				collection = ctx.getDefaultCollection();
 
 				if (collection == null) {
@@ -68,7 +66,8 @@ public class Collection extends AbstractFunction {
 
 				return collection;
 			} else {
-				return ctx.getStore().lookup(name.stringValue());
+				AnyURI uri = ResolveURI.resolve(sctx, name);
+				return ctx.getStore().lookup(uri.stringValue());
 			}
 		} catch (DocumentException e) {
 			throw new QueryException(e, ErrorCode.ERR_COLLECTION_NOT_FOUND,

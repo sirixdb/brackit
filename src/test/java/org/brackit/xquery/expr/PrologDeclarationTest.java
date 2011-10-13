@@ -85,8 +85,8 @@ public class PrologDeclarationTest extends XQueryBaseTest {
 			fail("Illegal declaration not detected");
 		} catch (QueryException e) {
 			assertEquals("Correct error code",
-					ErrorCode.ERR_FUNCTION_DECL_IN_ILLEGAL_NAMESPACE, e
-							.getCode());
+					ErrorCode.ERR_FUNCTION_DECL_IN_ILLEGAL_NAMESPACE,
+					e.getCode());
 		}
 	}
 
@@ -119,6 +119,45 @@ public class PrologDeclarationTest extends XQueryBaseTest {
 	}
 
 	@Test
+	public void declareVariableWithCylicInitializer() throws Exception {
+		QueryContext ctx = createContext();
+		ctx.setContextItem(new Int(1));
+		try {
+			new XQuery("declare variable $a := $a + 1; $a");
+			fail("Illegal cycle in initializer not detected");
+		} catch (QueryException e) {
+			assertEquals("Correct error code",
+					ErrorCode.ERR_CIRCULAR_VARIABLE_DEPENDENCY, e.getCode());
+		}
+	}
+	
+	@Test
+	public void declare2VariablesWithCylicInitializer() throws Exception {
+		QueryContext ctx = createContext();
+		ctx.setContextItem(new Int(1));
+		try {
+			new XQuery("declare variable $a := $b + 1; declare variable $b := $a + 1; $a + $b");
+			fail("Illegal cycle in initializer not detected");
+		} catch (QueryException e) {
+			assertEquals("Correct error code",
+					ErrorCode.ERR_CIRCULAR_VARIABLE_DEPENDENCY, e.getCode());
+		}
+	}
+	
+	@Test
+	public void declare2VariablesAndFunctionWithCylicInitializer() throws Exception {
+		QueryContext ctx = createContext();
+		ctx.setContextItem(new Int(1));
+		try {
+			new XQuery("declare variable $a := local:foo(); declare variable $b := $a + 1; declare function local:foo() { $b + 1 }; $a + $b");
+			fail("Illegal cycle in initializer not detected");
+		} catch (QueryException e) {
+			assertEquals("Correct error code",
+					ErrorCode.ERR_CIRCULAR_VARIABLE_DEPENDENCY, e.getCode());
+		}
+	}
+
+	@Test
 	public void declareNS() throws Exception {
 		Sequence result = new XQuery(
 				"declare namespace foo=\"http://brackit.org/foo\"; (<a/>)/foo:a")
@@ -131,7 +170,9 @@ public class PrologDeclarationTest extends XQueryBaseTest {
 		Sequence result = new XQuery(
 				"declare default element namespace \"http://brackit.org/foo\"; <a/>")
 				.execute(ctx);
-		ResultChecker.dCheck(ctx.getNodeFactory().element(new QNm("http://brackit.org/foo", "a")), result, false);
+		ResultChecker.dCheck(
+				ctx.getNodeFactory().element(
+						new QNm("http://brackit.org/foo", "a")), result, false);
 	}
 
 	@Test
@@ -186,14 +227,31 @@ public class PrologDeclarationTest extends XQueryBaseTest {
 	public void declareContextItemContextDependentDefaultValue()
 			throws Exception {
 		try {
-			QueryContext ctx = createContext();
-			ctx.setContextItem(new Int(1));
 			new XQuery("declare context item as item() := 1 + .; .");
 			fail("Illegal context item declaration accepted");
 		} catch (QueryException e) {
 			assertEquals("Correct error code",
-					ErrorCode.ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER, e
-							.getCode());
+					ErrorCode.ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER,
+					e.getCode());
 		}
+	}
+	
+	@Test
+	public void declareContextItemContextDependentDefaultValue2()
+			throws Exception {
+		try {
+			new XQuery("declare context item as item() := 1 + a; .");
+			fail("Illegal context item declaration accepted");
+		} catch (QueryException e) {
+			assertEquals("Correct error code",
+					ErrorCode.ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER,
+					e.getCode());
+		}
+	}
+	
+	@Test
+	public void declareContextItemContextDefaultValue()
+			throws Exception {
+		new XQuery("declare context item as item() := 1 + (<a/>)//a/(.); .");
 	}
 }

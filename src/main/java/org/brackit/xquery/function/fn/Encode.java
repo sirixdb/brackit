@@ -41,11 +41,6 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
 
 /**
- * Implementation of predefined functions fn:doc($arg1) and
- * fn:doc-available($arg1) as per
- * http://www.w3.org/TR/xpath-functions/#func-substring-before Also note
- * correction in
- * http://www.w3.org/XML/2007/qt-errata/xpath-functions-errata.html#E8
  * 
  * @author Max Bechtold
  * 
