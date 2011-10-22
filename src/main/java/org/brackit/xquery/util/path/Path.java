@@ -173,6 +173,23 @@ public class Path<E> {
 		return this;
 	}
 
+	/**
+	 * The semantics of this method are twofold, as one has to distinguish
+	 * abstract <i>path patterns</i> from absolute <i>path instances</i>: It 
+	 * returns true if 
+	 * <ol><li>a path instance matches a path pattern, i.e.
+	 * path pattern X matches Y if Y is absolute and X matches Y</li>
+	 * <li>a path pattern is subsumed by another pattern, i.e. X and Y are path
+	 * patterns and every absolute path matching Y also matches X.</li></ol><br/>
+	 * Examples:
+	 * <ol><li>/a/b//c matches /a/b/c<br/>
+	 * /a/b//d matches /a/b/c/d<br/>
+	 * /a/b/d does not match /a/b/c/d</li>
+	 * <li>/a/b/c matches /a/b//c<br/>
+	 * /a/b//c matches /a/b//c<br/>
+	 * /a//b/c matches a/b//b/c<br/>
+	 * /a//b/c does not match /a/b//c (cf. /a/b/d/c)</li></ol>
+	 */
 	@SuppressWarnings("unchecked")
 	public boolean matches(Path<E> other) throws PathException {
 		if (isEmpty()) {
