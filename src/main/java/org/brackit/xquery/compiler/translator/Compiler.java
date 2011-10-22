@@ -27,24 +27,20 @@
  */
 package org.brackit.xquery.compiler.translator;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.ModuleResolver;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.expr.Accessor;
 import org.brackit.xquery.expr.AndExpr;
 import org.brackit.xquery.expr.ArithmeticExpr;
+import org.brackit.xquery.expr.ArithmeticExpr.ArithmeticOp;
 import org.brackit.xquery.expr.AttributeExpr;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.expr.Castable;
@@ -53,30 +49,28 @@ import org.brackit.xquery.expr.DocumentExpr;
 import org.brackit.xquery.expr.ElementExpr;
 import org.brackit.xquery.expr.EmptyExpr;
 import org.brackit.xquery.expr.ExceptExpr;
-import org.brackit.xquery.expr.ExtVariable;
 import org.brackit.xquery.expr.FilterExpr;
 import org.brackit.xquery.expr.GCmpExpr;
 import org.brackit.xquery.expr.IfExpr;
 import org.brackit.xquery.expr.InstanceOf;
 import org.brackit.xquery.expr.IntersectExpr;
 import org.brackit.xquery.expr.NodeCmpExpr;
+import org.brackit.xquery.expr.NodeCmpExpr.NodeCmp;
 import org.brackit.xquery.expr.OrExpr;
 import org.brackit.xquery.expr.PIExpr;
 import org.brackit.xquery.expr.PathStepExpr;
 import org.brackit.xquery.expr.RangeExpr;
-import org.brackit.xquery.expr.ReturnExpr;
+import org.brackit.xquery.expr.PipeExpr;
 import org.brackit.xquery.expr.SequenceExpr;
 import org.brackit.xquery.expr.StepExpr;
+import org.brackit.xquery.expr.SwitchExpr;
 import org.brackit.xquery.expr.TextExpr;
 import org.brackit.xquery.expr.Treat;
 import org.brackit.xquery.expr.TypeswitchExpr;
 import org.brackit.xquery.expr.UnionExpr;
 import org.brackit.xquery.expr.VCmpExpr;
-import org.brackit.xquery.expr.ArithmeticExpr.ArithmeticOp;
-import org.brackit.xquery.expr.NodeCmpExpr.NodeCmp;
 import org.brackit.xquery.expr.VCmpExpr.Cmp;
 import org.brackit.xquery.function.FunctionExpr;
-import org.brackit.xquery.function.UDF;
 import org.brackit.xquery.function.bit.Every;
 import org.brackit.xquery.function.bit.Put;
 import org.brackit.xquery.function.bit.Silent;
@@ -84,27 +78,25 @@ import org.brackit.xquery.function.bit.Some;
 import org.brackit.xquery.function.io.Readline;
 import org.brackit.xquery.function.io.Writeline;
 import org.brackit.xquery.module.Functions;
-import org.brackit.xquery.module.LibraryModule;
-import org.brackit.xquery.module.MainModule;
 import org.brackit.xquery.module.Module;
-import org.brackit.xquery.module.NamespaceDecl;
 import org.brackit.xquery.module.Namespaces;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.operator.Count;
 import org.brackit.xquery.operator.ForBind;
 import org.brackit.xquery.operator.GroupBy;
 import org.brackit.xquery.operator.LetBind;
 import org.brackit.xquery.operator.Operator;
 import org.brackit.xquery.operator.OrderBy;
+import org.brackit.xquery.operator.OrderBy.OrderModifier;
 import org.brackit.xquery.operator.Select;
 import org.brackit.xquery.operator.Start;
-import org.brackit.xquery.operator.OrderBy.OrderModifier;
 import org.brackit.xquery.update.Delete;
 import org.brackit.xquery.update.Insert;
+import org.brackit.xquery.update.Insert.InsertType;
 import org.brackit.xquery.update.Rename;
 import org.brackit.xquery.update.ReplaceNode;
 import org.brackit.xquery.update.ReplaceValue;
 import org.brackit.xquery.update.Transform;
-import org.brackit.xquery.update.Insert.InsertType;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.Expr;
@@ -122,7 +114,6 @@ import org.brackit.xquery.xdm.type.DocumentType;
 import org.brackit.xquery.xdm.type.ElementType;
 import org.brackit.xquery.xdm.type.ItemType;
 import org.brackit.xquery.xdm.type.NSNameWildcardTest;
-import org.brackit.xquery.xdm.type.NSWildcardNameTest;
 import org.brackit.xquery.xdm.type.NodeType;
 import org.brackit.xquery.xdm.type.PIType;
 import org.brackit.xquery.xdm.type.SequenceType;
@@ -153,62 +144,6 @@ public class Compiler implements Translator {
 		}
 	}
 
-	protected abstract class DeferredExpr {
-		final AST ast;
-		final boolean updating;
-
-		public DeferredExpr(AST ast, boolean updating) {
-			this.ast = ast;
-			this.updating = updating;
-		}
-
-		abstract void compile() throws QueryException;
-	}
-
-	protected class UDFBody extends DeferredExpr {
-		final UDF udf;
-		final QNm[] names;
-		final SequenceType[] types;
-
-		UDFBody(UDF udf, QNm[] names, SequenceType[] types, AST ast,
-				boolean updating) {
-			super(ast, updating);
-			this.udf = udf;
-			this.names = names;
-			this.types = types;
-		}
-
-		void compile() throws QueryException {
-			// safe current variable table
-			for (int i = 0; i < names.length; i++) {
-				table.bind(names[i], types[i]);
-			}
-			Expr expr = expr(ast, !updating);
-			for (int i = 0; i < names.length; i++) {
-				table.unbind();
-			}
-			table.resolvePositions();
-			udf.setBody(expr);
-		}
-	}
-
-	protected class CtxItemExpr extends DeferredExpr {
-		private final ItemType type;
-		private final boolean external;
-
-		public CtxItemExpr(ItemType type, boolean external, AST ast,
-				boolean updating) {
-			super(ast, updating);
-			this.type = type;
-			this.external = external;
-		}
-
-		void compile() throws QueryException {
-			Expr expr = (ast != null) ? expr(ast, !updating) : null;
-			table.declareDefaultCtxItem(expr, type, external);
-		}
-	}
-
 	private static final Every BIT_EVERY_FUNC = new Every(new QNm(
 			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "every"),
 			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
@@ -234,446 +169,63 @@ public class Compiler implements Translator {
 		Functions.predefine(new Silent());
 	}
 
-	protected final VariableTable table = new VariableTable();
+	protected VariableTable table;
 
-	protected final ModuleResolver resolver;
+	protected StaticContext ctx;
 
-	protected Module module;
-
-	public Compiler(ModuleResolver resolver) {
-		this.resolver = resolver;
+	public Compiler() {
 	}
 
-	public Module translate(AST ast) throws QueryException {
-		if (ast.getChildCount() == 0) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-					"No module definition found");
-		}
-		AST module = ast.getChild(0);
-		switch (module.getType()) {
-		case XQ.MainModule:
-			return mainmodule(module);
-		case XQ.LibraryModule:
-			return libraryModule(module);
-		default:
-			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-					"Unexpected AST root '%s' of type: %s", ast, ast.getType());
-		}
-	}
-
-	protected LibraryModule libraryModule(AST ast) throws QueryException {
-		LibraryModule module = createLibraryModule();
-		NamespaceDecl nsDecl = null;
-		this.module = module;
-
-		// target namespace declaration
-		AST namespace = ast.getChild(0);
-		String prefix = namespace.getChild(0).getStringValue();
-		String nsURI = namespace.getChild(1).getStringValue();
-		if ((nsURI == null) || (nsURI.isEmpty())) {
-			throw new QueryException(ErrorCode.ERR_TARGET_NS_EMPTY,
-					"The target namespace of a module must not be empty");
-		}
-		nsDecl = new NamespaceDecl(prefix, nsURI);
-		module.getNamespaces().declare(prefix, nsURI);
-		module.setTargetNS(nsDecl);
-
-		// target ns is default ns for functions in this module
-		module.getNamespaces().setDefaultFunctionNamespace(nsURI);
-
-		prolog(ast.getChild(1));
-
-		// verify that all declared variables are in the target ns
-		for (ExtVariable var : module.getVariables().getDeclaredVariables()) {
-			if (!nsURI.equals(var.getName().getNamespaceURI())) {
-				throw new QueryException(
-						ErrorCode.ERR_FUN_OR_VAR_NOT_IN_TARGET_NS,
-						"Declared variable '%s' is not in the module's target namespace '%s'",
-						var.getName(), nsURI);
-			}
-		}
-		// verify that all functions are in the target ns
-		for (Function[] funs : module.getFunctions().getDeclaredFunctions()) {
-			Function fun = funs[0];
-			if (!nsURI.equals(fun.getName().getNamespaceURI())) {
-				throw new QueryException(
-						ErrorCode.ERR_FUN_OR_VAR_NOT_IN_TARGET_NS,
-						"Declared function '%s' is not in the module's target namespace '%s'",
-						fun.getName(), nsURI);
-			}
-		}
-
-		return module;
-	}
-
-	protected MainModule mainmodule(AST ast) throws QueryException {
-		MainModule module = createMainModule();
-		this.module = module;
-		AST child = ast.getChild(0);
-		if (child.getType() == XQ.Prolog) {
-			prolog(child);
-			child = ast.getChild(1);
-		}
-		if (child.getType() != XQ.QueryBody) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-					"Unexpected AST node '%s' of type: %s", child, child
-							.getType());
-		}
-		Expr root = expr(child.getChild(0), false);
+	public Expr translate(Module module, StaticContext ctx, AST expr,
+			boolean allowUpdate) throws QueryException {
+		this.table = new VariableTable(module);
+		this.ctx = ctx;
+		boolean isFun = expr.getType() == XQ.FunctionDecl;
+		Expr e = isFun ? function(expr, !allowUpdate)
+				: expr(expr, !allowUpdate);
 		table.resolvePositions();
-		module.setBody(root);
-		return module;
+		return e;
 	}
 
-	protected MainModule createMainModule() {
-		return new MainModule();
-	}
-
-	protected LibraryModule createLibraryModule() {
-		return new LibraryModule();
-	}
-
-	protected void prolog(AST node) throws QueryException {
-		HashSet<String> importedModules = new HashSet<String>(0);
-		List<UDFBody> udfs = new ArrayList<UDFBody>(0);
-		CtxItemExpr ctxItemExpr = null;
-		boolean defaultElementNSDeclared = false;
-		boolean defaultFunctionNSDeclared = false;
-		boolean boundarySpaceDeclared = false;
-		boolean baseURIDeclared = false;
-		boolean constructionModeDeclared = false;
-		boolean orderingModeDeclared = false;
-		boolean emptyOrderDeclared = false;
-		boolean copyNamespacesDeclared = false;
-		boolean contextItemDeclared = false;
-
-		int childCount = node.getChildCount();
-		for (int i = 0; i < childCount; i++) {
-			AST child = node.getChild(i);
-
-			switch (child.getType()) {
-			case XQ.TypedVariableDeclaration:
-				declareVariable(child);
-				break;
-			case XQ.FunctionDecl:
-				udfs.add(declareFunction(child));
-				break;
-			case XQ.NamespaceDeclaration:
-				declareNamespace(child);
-				break;
-			case XQ.OptionDeclaration:
-				declareOption(child);
-				break;
-			case XQ.DefaultElementNamespace:
-				if (defaultElementNSDeclared) {
-					throw new QueryException(
-							ErrorCode.ERR_DEFAULT_NS_ALREADY_DECLARED,
-							"Default element namespace declared more than once");
-				}
-				declareDefaultElementNamespace(child);
-				defaultElementNSDeclared = true;
-				break;
-			case XQ.DefaultFunctionNamespace:
-				if (defaultFunctionNSDeclared) {
-					throw new QueryException(
-							ErrorCode.ERR_DEFAULT_NS_ALREADY_DECLARED,
-							"Default function namespace declared more than once");
-				}
-				declareDefaultFunctionNamespace(child);
-				defaultFunctionNSDeclared = true;
-				break;
-			case XQ.SchemaImport:
-				throw new QueryException(
-						ErrorCode.ERR_SCHEMA_IMPORT_FEATURE_NOT_SUPPORTED,
-						"Schema import is not supported.");
-			case XQ.ModuleImport:
-				String nsURI = importModule(child);
-				if (!importedModules.add(nsURI)) {
-					throw new QueryException(
-							ErrorCode.ERR_MULTIPLE_IMPORTS_IN_SAME_NS,
-							"Multiple module imports of the same target namespace: '%s'",
-							nsURI);
-				}
-				break;
-			case XQ.BoundarySpaceDeclaration:
-				if (boundarySpaceDeclared) {
-					throw new QueryException(
-							ErrorCode.ERR_BOUNDARY_SPACE_ALREADY_DECLARED,
-							"Boundary space declared more than once");
-				}
-				declareBoundarySpace(child);
-				defaultFunctionNSDeclared = true;
-				break;
-			case XQ.CollationDeclaration:
-				declareDefaultCollation(node);
-				break;
-			case XQ.BaseURIDeclaration:
-				if (baseURIDeclared) {
-					throw new QueryException(
-							ErrorCode.ERR_BASE_URI_ALREADY_DECLARED,
-							"Base URI declared more than once");
-				}
-				declareBaseURI(child);
-				baseURIDeclared = true;
-				break;
-			case XQ.ConstructionDeclaration:
-				if (constructionModeDeclared) {
-					throw new QueryException(
-							ErrorCode.ERR_CONSTRUCTION_ALREADY_DECLARED,
-							"Construction mode declared more than once");
-				}
-				declareConstructionMode(child);
-				constructionModeDeclared = true;
-				break;
-			case XQ.OrderingModeDeclaration:
-				if (orderingModeDeclared) {
-					throw new QueryException(
-							ErrorCode.ERR_ORDERING_MODE_ALREADY_DECLARED,
-							"Ordering mode declared more than once");
-				}
-				declareOrderingMode(child);
-				orderingModeDeclared = true;
-				break;
-			case XQ.EmptyOrderDeclaration:
-				if (emptyOrderDeclared) {
-					throw new QueryException(
-							ErrorCode.ERR_EMPTY_ORDER_ALREADY_DECLARED,
-							"Empty order declared more than once");
-				}
-				declareEmptyOrder(child);
-				emptyOrderDeclared = true;
-				break;
-			case XQ.CopyNamespacesDeclaration:
-				if (copyNamespacesDeclared) {
-					throw new QueryException(
-							ErrorCode.ERR_COPY_NAMESPACES_ALREADY_DECLARED,
-							"Copy namespaces declared more than once");
-				}
-				declareCopyNamespaces(child);
-				copyNamespacesDeclared = true;
-				break;
-			case XQ.ContextItemDeclaration:
-				if (contextItemDeclared) {
-					throw new QueryException(
-							ErrorCode.ERR_CONTEXT_ITEM_ALREADY_DECLARED,
-							"Context item declared more than once");
-				}
-				ctxItemExpr = declareContextItem(child);
-				contextItemDeclared = true;
-				break;
-			default:
-				throw new QueryException(
-						ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-						"Unexpected AST node '%s' of type: %s", child, child
-								.getType());
-			}
-		}
-
-		if (ctxItemExpr != null) {
-			ctxItemExpr.compile();
-		} else {
-			table.declareDefaultCtxItem(null, AnyItemType.ANY, true);
-		}
-		for (UDFBody f : udfs) {
-			f.compile();
-		}
-	}
-
-	private String importModule(AST ast) throws QueryException {
-		String prefix = "";
-		String nsURI;
-		AST ns = ast.getChild(0);
-		if (ns.getChildCount() == 2) {
-			prefix = ns.getChild(0).getStringValue();
-			nsURI = ns.getChild(1).getStringValue();
-		} else {
-			nsURI = ns.getChild(0).getStringValue();
-		}
-
-		String locs[] = new String[ast.getChildCount() - 1];
-		for (int i = 1; i < locs.length; i++) {
-			locs[i - 1] = ns.getChild(i).getStringValue();
-		}
-
-		List<Module> modList = resolver.resolve(nsURI, locs);
-		for (Module mod : modList) {
-			// import module
-			module.importModule(mod);
-		}
-		return nsURI;
-	}
-
-	protected void declareBoundarySpace(AST node) {
-		int mode = node.getChild(0).getType();
-		boolean strip = (mode == XQ.BoundarySpaceModeStrip);
-		module.setBoundarySpaceStrip(strip);
-	}
-
-	protected void declareDefaultCollation(AST node) {
-		String collation = node.getChild(0).getStringValue();
-		module.setDefaultCollation(collation);
-	}
-
-	protected void declareBaseURI(AST node) throws QueryException {
-		AnyURI uri = (AnyURI) node.getChild(0).getValue();
-		module.setBaseURI(uri);
-	}
-
-	protected void declareConstructionMode(AST node) {
-		int mode = node.getChild(0).getType();
-		boolean strip = (mode == XQ.ConstructionModeStrip);
-		module.setConstructionModeStrip(strip);
-	}
-
-	protected void declareOrderingMode(AST node) {
-		int mode = node.getChild(0).getType();
-		boolean ordered = (mode == XQ.OrderingModeOrdered);
-		module.setOrderingModeOrdered(ordered);
-	}
-
-	protected void declareEmptyOrder(AST node) {
-		int mode = node.getChild(0).getType();
-		boolean greatest = (mode == XQ.EmptyOrderModeGreatest);
-		module.setEmptyOrderGreatest(greatest);
-	}
-
-	protected void declareCopyNamespaces(AST node) {
-		int mode = node.getChild(0).getType();
-		boolean preserve = (mode == XQ.CopyNamespacesPreserveModePreserve);
-		module.setCopyNSPreserve(preserve);
-		int mode2 = node.getChild(0).getType();
-		boolean inherit = (mode2 == XQ.CopyNamespacesInheritModeInherit);
-		module.setCopyNSInherit(inherit);
-	}
-
-	protected void declareDefaultElementNamespace(AST node) {
-		String functionNS = node.getChild(0).getStringValue();
-		module.getNamespaces().setDefaultElementNamespace(
-				functionNS.isEmpty() ? null : functionNS);
-	}
-
-	protected void declareDefaultFunctionNamespace(AST node) {
-		String functionNS = node.getChild(0).getStringValue();
-		module.getNamespaces().setDefaultFunctionNamespace(
-				functionNS.isEmpty() ? null : functionNS);
-	}
-
-	protected void declareNamespace(AST node) throws QueryException {
-		String prefix = node.getChild(0).getStringValue();
-		String uri = node.getChild(1).getStringValue();
-		module.getNamespaces().declare(prefix, uri);
-	}
-
-	protected void declareOption(AST node) throws QueryException {
-		QNm name = (QNm) node.getChild(0).getValue();
-		Str value = new Str(node.getChild(1).getStringValue());
-		module.addOption(name, value);
-	}
-
-	protected CtxItemExpr declareContextItem(AST node) throws QueryException {
-		ItemType type = itemType(node.getChild(0));
-		boolean external = false;
-		AST defaultExpr = null;
-		if (node.getChild(1).getType() == XQ.ExternalVariable) {
-			external = true;
-			if (node.getChildCount() == 3) {
-				defaultExpr = node.getChild(2);
-			}
-		} else {
-			defaultExpr = node.getChild(1);
-		}
-		return new CtxItemExpr(type, external, defaultExpr, false);
-	}
-
-	protected void declareVariable(AST node) throws QueryException {
+	protected Expr function(AST fun, boolean disallowUpdating)
+			throws QueryException {
 		int pos = 0;
-		SequenceType type = null;
-		AST child = node.getChild(pos++);
-		QNm varName = (QNm) child.getValue();
-		child = node.getChild(pos++);
-		if (child.getType() == XQ.SequenceType) {
-			type = sequenceType(child);
-			child = node.getChild(pos++);
-		}
-		if (child.getType() == XQ.ExternalVariable) {
-			Expr expr = (child.getChildCount() == 1) ? expr(child.getChild(0),
-					true) : null;
-			module.getVariables().declare(
-					(ExtVariable) table.declare(varName, expr, type, true));
-		} else {
-			Expr expr = expr(child, true);
-			table.declare(varName, expr, type, false);
-		}
-	}
+		AST child = fun.getChild(pos++);
 
-	protected UDFBody declareFunction(AST node) throws QueryException {
-		Namespaces namespaces = module.getNamespaces();
-		boolean updating = false;
-		int pos = 0;
-		AST child = node.getChild(pos++);
-
-		// annotation
+		// ignore annotations
 		while (child.getType() == XQ.Annotation) {
-			// TODO
-			// ignore annotation
-			child = node.getChild(pos++);
+			child = fun.getChild(pos++);
 		}
 
-		// function name
+		// resolve function name
 		QNm name = (QNm) child.getValue();
-		child = node.getChild(pos++);
-		String namespaceURI = name.getNamespaceURI();
 
-		if (namespaceURI == null) {
-			namespaceURI = namespaces.getDefaultFunctionNamespace();
-
-			if (namespaceURI == null) {
-				throw new QueryException(ErrorCode.ERR_FUNCTION_DECL_NOT_IN_NS,
-						"Declared function '%s' is not in a namespace", name);
-			}
-			name = new QNm(namespaceURI, null, name.getLocalName());
-		}
-		if ((namespaceURI.equals(Namespaces.XML_NSURI))
-				|| (namespaceURI.equals(Namespaces.XS_NSURI))
-				|| (namespaceURI.equals(Namespaces.XSI_NSURI))
-				|| (namespaceURI.equals(Namespaces.FN_NSURI))) {
-			throw new QueryException(
-					ErrorCode.ERR_FUNCTION_DECL_IN_ILLEGAL_NAMESPACE,
-					"Declared function '%s' is in illegal namespace '%s'",
-					name, namespaceURI);
-		}
-
-		// parameters
-		int noOfParameters = (node.getChildCount() - pos - 1);
-		QNm[] pNames = new QNm[noOfParameters];
-		SequenceType[] pTypes = new SequenceType[noOfParameters];
+		// bind parameters
+		child = fun.getChild(pos++);
+		int noOfParameters = (fun.getChildCount() - pos - 1);
 		for (int i = 0; i < noOfParameters; i++) {
-			pNames[i] = (QNm) child.getChild(0).getValue();
+			QNm param = (QNm) child.getChild(0).getValue();
+			SequenceType type;
 			if (child.getChildCount() == 2) {
-				pTypes[i] = sequenceType(child.getChild(1));
+				type = sequenceType(child.getChild(1));
 			} else {
-				pTypes[i] = SequenceType.ITEM_SEQUENCE;
+				type = SequenceType.ITEM_SEQUENCE;
 			}
-			child = node.getChild(pos++);
+			table.bind(param, type);
+			child = fun.getChild(pos++);
 		}
 
-		// result type
-		SequenceType resultType = sequenceType(child);
-		child = node.getChild(pos++);
+		// skip return type
+		child = fun.getChild(pos++);
 
-		// Register function before compiling body to allow recursion
-		Signature signature = new Signature(resultType, pTypes);
-		UDF udf = new UDF(name, signature, updating);
-		module.getFunctions().declare(udf);
+		// compile body
+		Expr body = expr(child, disallowUpdating);
 
-		// function body
-		if (child.getType() == XQ.ExternalFunction) {
-			throw new QueryException(
-					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-					"External functions not supported yet.");
+		// unbind parameters
+		for (int i = 0; i < noOfParameters; i++) {
+			table.unbind();
 		}
-
-		return new UDFBody(udf, pNames, pTypes, child, updating);
+		return body;
 	}
 
 	protected Expr expr(AST node, boolean disallowUpdatingExpr)
@@ -695,17 +247,18 @@ public class Compiler implements Translator {
 			return flowrExpr(node);
 		case XQ.QuantifiedExpr:
 			return quantifiedExpr(node);
+		case XQ.EnclosedExpr:
+		case XQ.ParenthesizedExpr:
 		case XQ.SequenceExpr:
 			return sequenceExpr(node);
-		case XQ.Int:
-			return (Atomic) node.getValue();
 		case XQ.Str:
 			return new Str(Whitespace.normalizeXML11(node.getStringValue()));
+		case XQ.Int:
 		case XQ.Dbl:
-			return (Atomic) node.getValue();
 		case XQ.Dec:
-			return (Atomic) node.getValue();
 		case XQ.QNm:
+		case XQ.AnyURI:
+		case XQ.Bool:
 			return (Atomic) node.getValue();
 		case XQ.VariableRef:
 			return variableRefExpr(node);
@@ -731,24 +284,28 @@ public class Compiler implements Translator {
 			return typeswitchExpr(node);
 		case XQ.IfExpr:
 			return ifExpr(node);
+		case XQ.SwitchExpr:
+			return switchExpr(node);
 		case XQ.FilterExpr:
 			return filterExpr(node);
+		case XQ.DirElementConstructor:
 		case XQ.CompElementConstructor:
 			return elementExpr(node);
+		case XQ.DirAttributeConstructor:
 		case XQ.CompAttributeConstructor:
 			return attributeExpr(node);
+		case XQ.DirCommentConstructor:
 		case XQ.CompCommentConstructor:
 			return commentExpr(node);
 		case XQ.CompTextConstructor:
 			return textExpr(node);
 		case XQ.CompDocumentConstructor:
 			return documentExpr(node);
-		case XQ.CompProcessingInstructionConstructor:
+		case XQ.DirPIConstructor:
+		case XQ.CompPIConstructor:
 			return piExpr(node);
 		case XQ.FunctionCall:
 			return functionCall(node);
-		case XQ.EmptySequence:
-			return new SequenceExpr();
 		case XQ.PathExpr:
 			return pathExpr(node);
 		case XQ.StepExpr:
@@ -784,8 +341,8 @@ public class Compiler implements Translator {
 					"Schema validation feature is not supported.");
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-					"Unexpected AST expr node '%s' of type: %s", node, node
-							.getType());
+					"Unexpected AST expr node '%s' of type: %s", node,
+					node.getType());
 		}
 	}
 
@@ -820,7 +377,8 @@ public class Compiler implements Translator {
 				true);
 		boolean allowEmptySequence = ((type.getChildCount() == 2) && (type
 				.getChild(1).getType() == XQ.CardinalityZeroOrOne));
-		return new Cast(expr, targetType, allowEmptySequence);
+		StaticContext sctx = node.getStaticContext();
+		return new Cast(sctx, expr, targetType, allowEmptySequence);
 	}
 
 	protected Expr castableExpr(AST node) throws QueryException {
@@ -831,7 +389,8 @@ public class Compiler implements Translator {
 				true);
 		boolean allowEmptySequence = ((type.getChildCount() == 2) && (type
 				.getChild(1).getType() == XQ.CardinalityZeroOrOne));
-		return new Castable(expr, targetType, allowEmptySequence);
+		StaticContext sctx = node.getStaticContext();
+		return new Castable(sctx, expr, targetType, allowEmptySequence);
 	}
 
 	protected Expr treatExpr(AST node) throws QueryException {
@@ -1008,7 +567,7 @@ public class Compiler implements Translator {
 	protected Expr renameExpr(AST node) throws QueryException {
 		Expr targetExpr = expr(node.getChild(0), true);
 		Expr sourceExpr = expr(node.getChild(1), true);
-		return new Rename(sourceExpr, targetExpr);
+		return new Rename(node.getStaticContext(), sourceExpr, targetExpr);
 	}
 
 	protected Expr transformExpr(AST node) throws QueryException {
@@ -1061,8 +620,8 @@ public class Compiler implements Translator {
 			function = BIT_EVERY_FUNC;
 		}
 
-		return new IfExpr(new FunctionExpr(function, bindingSequenceExpr),
-				Bool.TRUE, Bool.FALSE);
+		return new IfExpr(new FunctionExpr(node.getStaticContext(), function,
+				bindingSequenceExpr), Bool.TRUE, Bool.FALSE);
 	}
 
 	protected Expr quantifiedBindings(Operator in, AST node, int pos)
@@ -1085,7 +644,7 @@ public class Compiler implements Translator {
 			forBind.bindPosition(false);
 			return returnExpr;
 		} else {
-			return new ReturnExpr(in, expr(child, true));
+			return new PipeExpr(in, expr(child, true));
 		}
 	}
 
@@ -1093,57 +652,19 @@ public class Compiler implements Translator {
 		int childCount = node.getChildCount();
 		QNm name = (QNm) node.getValue();
 
-		if ((name.equals(Functions.FN_POSITION))
-				|| (name.equals(Functions.FN_LAST))) {
-			if (childCount != 0) {
-				throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-						"Illegal number of parameters for function %s() : %s'",
-						name, childCount);
-			}
-			return table
-					.resolve(name.equals(Functions.FN_POSITION) ? Namespaces.FS_POSITION
-							: Namespaces.FS_LAST);
-		}
-		if (name.equals(Functions.FN_TRUE)) {
-			if (childCount != 0) {
-				throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-						"Illegal number of parameters for function %s() : %s'",
-						name, childCount);
-			}
-			return Bool.TRUE;
-		}
-		if (name.equals(Functions.FN_FALSE)) {
-			if (childCount != 0) {
-				throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-						"Illegal number of parameters for function %s() : %s'",
-						name, childCount);
-			}
-			return Bool.FALSE;
-		}
-		if (name.equals(Functions.FN_DEFAULT_COLLATION)) {
-			if (childCount != 0) {
-				throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-						"Illegal number of parameters for function %s() : %s'",
-						name, childCount);
-			}
-			return new Str(module.getDefaultCollation());
-		}
-		if (name.equals(Functions.FN_STATIC_BASE_URI)) {
-			if (childCount != 0) {
-				throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-						"Illegal number of parameters for function %s() : %s'",
-						name, childCount);
-			}
-			return module.getBaseURI();
-		}
-
-		Function function = module.getFunctions().resolve(name, childCount);
+		Function function = ctx.getFunctions().resolve(name, childCount);
 		Expr[] args;
 
 		if (childCount > 0) {
 			args = new Expr[childCount];
 			for (int i = 0; i < childCount; i++) {
-				args[i] = expr(node.getChild(i), true);
+				AST arg = node.getChild(i);
+				if (arg.getType() == XQ.ArgumentPlaceHolder) {
+					throw new QueryException(
+							ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
+							"Partial function application is not supported yet");
+				}
+				args[i] = expr(arg, true);
 			}
 		} else if (function.getSignature().defaultIsContextItem()) {
 			Expr contextItemRef = table.resolve(Namespaces.FS_DOT);
@@ -1152,23 +673,15 @@ public class Compiler implements Translator {
 			args = new Expr[0];
 		}
 
-		return new FunctionExpr(function, args);
+		return new FunctionExpr(node.getStaticContext(), function, args);
 	}
 
 	protected Expr documentExpr(AST node) throws QueryException {
 		boolean bind = false;
-		Expr[] contentExpr;
-
-		if (node.getChildCount() > 0) {
-			Binding binding = table.bind(Namespaces.FS_PARENT,
-					SequenceType.ITEM);
-			contentExpr = contentSequence(node.getChild(0));
-			table.unbind();
-			bind = binding.isReferenced();
-		} else {
-			contentExpr = new Expr[0];
-		}
-
+		Binding binding = table.bind(Namespaces.FS_PARENT, SequenceType.ITEM);
+		Expr contentExpr = expr(node.getChild(0), false);
+		table.unbind();
+		bind = binding.isReferenced();
 		return new DocumentExpr(contentExpr, bind);
 	}
 
@@ -1181,9 +694,14 @@ public class Compiler implements Translator {
 		ElementExpr.NS[] ns = new ElementExpr.NS[nsCnt];
 		for (int i = 0; i < nsCnt; i++) {
 			AST nsDecl = node.getChild(pos++);
-			String prefix = nsDecl.getChild(0).getStringValue();
-			String uri = nsDecl.getChild(1).getStringValue();
-			ns[i] = new ElementExpr.NS(prefix, uri);
+			if (nsDecl.getChildCount() == 2) {
+				String prefix = nsDecl.getChild(0).getStringValue();
+				String uri = nsDecl.getChild(1).getStringValue();
+				ns[i] = new ElementExpr.NS(prefix, uri);
+			} else {
+				String uri = nsDecl.getChild(0).getStringValue();
+				ns[i] = new ElementExpr.NS(null, uri);
+			}
 		}
 		Expr nameExpr = expr(node.getChild(pos++), true);
 		boolean appendOnly = appendOnly(node);
@@ -1193,7 +711,6 @@ public class Compiler implements Translator {
 		if (node.getChildCount() > 0) {
 			Binding binding = table.bind(Namespaces.FS_PARENT,
 					SequenceType.ITEM);
-			boolean strip = module.isBoundarySpaceStrip();
 			contentExpr = contentSequence(node.getChild(pos++));
 			table.unbind();
 			bind = binding.isReferenced();
@@ -1201,7 +718,9 @@ public class Compiler implements Translator {
 			contentExpr = new Expr[0];
 		}
 
-		return new ElementExpr(nameExpr, ns, contentExpr, bind, appendOnly);
+		StaticContext sctx = node.getStaticContext();
+		return new ElementExpr(sctx, nameExpr, ns, contentExpr, bind,
+				appendOnly);
 	}
 
 	protected Expr[] contentSequence(AST node) throws QueryException {
@@ -1240,7 +759,8 @@ public class Compiler implements Translator {
 		Expr nameExpr = expr(node.getChild(0), true);
 		Expr[] contentExpr = (node.getChildCount() > 1) ? contentSequence(node
 				.getChild(1)) : new Expr[0];
-		return new AttributeExpr(nameExpr, contentExpr, appendOnly(node));
+		StaticContext sctx = node.getStaticContext();
+		return new AttributeExpr(sctx, nameExpr, contentExpr, appendOnly(node));
 	}
 
 	protected Expr commentExpr(AST node) throws QueryException {
@@ -1313,6 +833,21 @@ public class Compiler implements Translator {
 		return new IfExpr(condExpr, ifExpr, elseExpr);
 	}
 
+	protected Expr switchExpr(AST node) throws QueryException {
+		Expr opExpr = expr(node.getChild(0), true);
+		Expr[][] cases = new Expr[node.getChildCount() - 2][];
+		for (int i = 1; i < node.getChildCount() - 1; i++) {
+			AST caseClause = node.getChild(i);
+			Expr[] caseOps = new Expr[caseClause.getChildCount()];
+			for (int j = 0; j < caseClause.getChildCount(); j++) {
+				caseOps[j] = expr(caseClause.getChild(j), false);
+			}
+			cases[i - 1] = caseOps;
+		}
+		Expr dftExpr = expr(node.getChild(node.getChildCount() - 1), false);
+		return new SwitchExpr(opExpr, cases, dftExpr);
+	}
+
 	protected Expr variableRefExpr(AST node) throws QueryException {
 		return table.resolve((QNm) node.getValue());
 	}
@@ -1360,8 +895,7 @@ public class Compiler implements Translator {
 			return new NodeCmpExpr(NodeCmp.preceding, firstArg, secondArg);
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-					"Unexpected AST comparison node '%s' of type: %s", cmpNode,
-					cmpNode.getType());
+					"Unexpected comparison: '%s'", cmpNode);
 		}
 	}
 
@@ -1484,9 +1018,9 @@ public class Compiler implements Translator {
 		table.unbind();
 		table.unbind();
 
-		return new StepExpr(axis, test, in, predicates, itemBinding
-				.isReferenced(), posBinding.isReferenced(), sizeBinding
-				.isReferenced());
+		return new StepExpr(axis, test, in, predicates,
+				itemBinding.isReferenced(), posBinding.isReferenced(),
+				sizeBinding.isReferenced());
 	}
 
 	protected Accessor axis(AST node) throws QueryException {
@@ -1601,14 +1135,12 @@ public class Compiler implements Translator {
 	protected AttributeType schemaAttributeTest(AST child)
 			throws QueryException {
 		QNm qname = (QNm) child.getChild(0).getValue();
-		return new AttributeType(qname, module.getTypes().resolveSchemaType(
-				qname));
+		return new AttributeType(qname, ctx.getTypes().resolveSchemaType(qname));
 	}
 
 	protected ElementType schemaElementTest(AST child) throws QueryException {
 		QNm qname = (QNm) child.getChild(0).getValue();
-		return new ElementType(qname, module.getTypes()
-				.resolveSchemaType(qname));
+		return new ElementType(qname, ctx.getTypes().resolveSchemaType(qname));
 	}
 
 	protected DocumentType documentTest(AST child) throws QueryException {
@@ -1672,9 +1204,9 @@ public class Compiler implements Translator {
 
 	protected Type resolveType(QNm qname, boolean atomic) throws QueryException {
 		if (atomic) {
-			return module.getTypes().resolveAtomicType(qname);
+			return ctx.getTypes().resolveAtomicType(qname);
 		} else {
-			return module.getTypes().resolveType(qname);
+			return ctx.getTypes().resolveType(qname);
 		}
 	}
 
@@ -1713,8 +1245,8 @@ public class Compiler implements Translator {
 				node, 0, childCount - 2);
 		Expr returnExpr = expr(node.getChild(childCount - 1).getChild(0), false);
 		cb.unbind();
-		Expr opExpr = new ReturnExpr(cb.operator, returnExpr);
-		return opExpr;
+		Expr pipeExpr = new PipeExpr(cb.operator, returnExpr);
+		return pipeExpr;
 	}
 
 	private ClauseBinding flowrClause(ClauseBinding in, AST node, int pos,

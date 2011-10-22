@@ -62,7 +62,7 @@ public final class PIType extends NodeType {
 					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
 					"Processing instruction test with piTarget support not implemented yet.");
 		}
-		return (node.getKind() == Kind.COMMENT);
+		return (node.getKind() == Kind.PROCESSING_INSTRUCTION);
 	}
 
 	@Override

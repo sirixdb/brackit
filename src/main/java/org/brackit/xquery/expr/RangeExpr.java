@@ -69,11 +69,11 @@ public class RangeExpr implements Expr {
 		Atomic right = rItem.atomize();
 
 		if (!(left instanceof IntNumeric)) {
-			left = Cast.cast(left, Type.INT, false);
+			left = Cast.cast(null, left, Type.INT, false);
 		}
 
 		if (!(right instanceof IntNumeric)) {
-			right = Cast.cast(right, Type.INT, false);
+			right = Cast.cast(null, right, Type.INT, false);
 		}
 
 		int comparison = left.cmp(right);
@@ -100,11 +100,11 @@ public class RangeExpr implements Expr {
 		Atomic right = rItem.atomize();
 
 		if (!(left instanceof IntNumeric)) {
-			left = Cast.cast(left, Type.INT, false);
+			left = Cast.cast(null, left, Type.INT, false);
 		}
 
 		if (!(right instanceof IntNumeric)) {
-			right = Cast.cast(right, Type.INT, false);
+			right = Cast.cast(null, right, Type.INT, false);
 		}
 
 		int comparison = left.cmp(right);

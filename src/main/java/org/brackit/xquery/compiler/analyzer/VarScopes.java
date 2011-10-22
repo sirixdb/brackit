@@ -25,12 +25,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.parser;
+package org.brackit.xquery.compiler.analyzer;
 
 import java.util.HashMap;
 
-import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 
 /**
@@ -40,18 +38,13 @@ import org.brackit.xquery.atomic.QNm;
  */
 public class VarScopes {
 	private int idSequence;
-
 	private Scope root = new Scope(null);
-
 	private Scope current = root;
-
 	private Scope resolveIn = root;
-
 	private int level;
 
 	private class Scope {
 		Scope parent;
-
 		HashMap<QNm, Variable> mapping = new HashMap<QNm, Variable>();
 
 		Scope(Scope parent) {
@@ -88,21 +81,20 @@ public class VarScopes {
 		resolveIn = current;
 	}
 
-	public void closeScope() throws QueryException {
+	public void closeScope() {
 		if (level == 0) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR);
+			throw new RuntimeException();
 		}
 		level--;
 		current = current.parent;
 		resolveIn = current;
 	}
+	
+	public boolean check(QNm name) {
+		return current.mapping.containsKey(name);
+	}
 
-	public QNm declare(QNm name) throws QueryException {
-		if (current.mapping.containsKey(name)) {
-			throw new QueryException(ErrorCode.ERR_DUPLICATE_VARIABLE_DECL,
-					"Variable $%s has already been declared.", name);
-		}
-
+	public QNm declare(QNm name) {
 		Variable var = (level > 0) ? new Variable(new QNm(name
 				.getNamespaceURI(), name.getPrefix(), name.getLocalName() + ";"
 				+ idSequence++)) : new Variable(name);
@@ -110,7 +102,7 @@ public class VarScopes {
 		return var.name;
 	}
 
-	public QNm resolve(QNm name) throws QueryException {
+	public QNm resolve(QNm name) {
 		Scope scope = resolveIn;
 		Variable var = null;
 
@@ -119,8 +111,7 @@ public class VarScopes {
 			;
 
 		if (var == null) {
-			throw new QueryException(ErrorCode.ERR_UNDEFINED_REFERENCE,
-					"Variable $%s has not been declared.", name);
+			return null;
 		}
 
 		return var.name;

@@ -35,6 +35,8 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Kind;
@@ -42,6 +44,7 @@ import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.xdm.XMLChar;
 
 /**
  * Abstract base for expressions that have to construct computed nodes as
@@ -129,8 +132,8 @@ public abstract class ConstructedNodeBuilder {
 			}
 		} else {
 			if ((prevSibling != null) && (prevSibling.getKind() == Kind.TEXT)) {
-				prevSibling.setValue(new Str(prevSibling.getValue().stringValue() + " "
-						+ ((Atomic) item).stringValue()));
+				prevSibling.setValue(new Str(prevSibling.getValue()
+						.stringValue() + " " + ((Atomic) item).stringValue()));
 				return prevSibling;
 			} else {
 				Node<?> node = ctx.getNodeFactory().text(
@@ -197,10 +200,7 @@ public abstract class ConstructedNodeBuilder {
 		}
 	}
 
-	/**
-	 * TODO Switch to QNames with namespace handling
-	 */
-	protected QNm buildElementName(QueryContext ctx, Item name)
+	protected QNm buildElementName(StaticContext ctx, Item name)
 			throws QueryException {
 		if (name == null) {
 			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
@@ -209,27 +209,34 @@ public abstract class ConstructedNodeBuilder {
 		Atomic atomicName = name.atomize();
 		Type nameType = atomicName.type();
 
-		if ((nameType.instanceOf(Type.STR)) || (nameType.instanceOf(Type.UNA))) {
-			String nameString = atomicName.stringValue();
-
-			if (nameString.contains(":")) {
-				throw new QueryException(
-						ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-						"Namespaces are not supported yet.");
-			}
-
-			return new QNm(nameString);
-		} else if (nameType.instanceOf(Type.QNM)) {
+		if (nameType.instanceOf(Type.QNM)) {
 			return (QNm) name;
+		} else if ((nameType.instanceOf(Type.STR))
+				|| (nameType.instanceOf(Type.UNA))) {
+			QNm qnm = new QNm(atomicName.stringValue());
+			if (qnm.getPrefix() != null) {
+				String uri = ctx.getNamespaces().resolve(qnm.getPrefix());
+				if (uri == null) {
+					throw new QueryException(
+							ErrorCode.ERR_UNKNOWN_NS_PREFIX_IN_COMP_CONSTR,
+							"Statically unkown namespace prefix in computed element constructor: '%s'",
+							qnm.getPrefix());
+				}
+				return new QNm(uri, null, qnm.getLocalName());
+			} else {
+				String uri = ctx.getNamespaces().getDefaultElementNamespace();
+				if ((uri == null) || (uri.isEmpty())) {
+					return qnm;
+				} else {
+					return new QNm(uri, null, qnm.getLocalName());
+				}
+			}
 		} else {
 			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
 		}
 	}
 
-	/**
-	 * TODO Switch to QNames with namespace handling
-	 */
-	protected QNm buildAttributeName(QueryContext ctx, Item name)
+	protected QNm buildAttributeName(StaticContext ctx, Item name)
 			throws QueryException {
 		if (name == null) {
 			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
@@ -238,49 +245,120 @@ public abstract class ConstructedNodeBuilder {
 		Atomic atomicName = name.atomize();
 		Type nameType = atomicName.type();
 
-		if ((nameType.instanceOf(Type.STR)) || (nameType.instanceOf(Type.UNA))) {
-			String nameString = atomicName.stringValue();
-
-			if (nameString.contains(":")) {
-				throw new QueryException(
-						ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-						"Namespaces are not supported yet.");
-			}
-
-			return new QNm(nameString);
-		} else if (nameType.instanceOf(Type.QNM)) {
+		if (nameType.instanceOf(Type.QNM)) {
 			return (QNm) name;
+		} else if ((nameType.instanceOf(Type.STR))
+				|| (nameType.instanceOf(Type.UNA))) {
+			QNm qnm = new QNm(atomicName.stringValue());
+			if (qnm.getPrefix() != null) {
+				String uri = ctx.getNamespaces().resolve(qnm.getPrefix());
+				if (uri == null) {
+					throw new QueryException(
+							ErrorCode.ERR_UNKNOWN_NS_PREFIX_IN_COMP_CONSTR,
+							"Statically unkown namespace prefix in computed element constructor: '%s'",
+							qnm.getPrefix());
+				}
+				return new QNm(uri, null, qnm.getLocalName());
+			} else {
+				String uri = ctx.getNamespaces().getDefaultElementNamespace();
+				if ((uri == null) || (uri.isEmpty())) {
+					return qnm;
+				} else {
+					return new QNm(uri, null, qnm.getLocalName());
+				}
+			}
 		} else {
 			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
 		}
 	}
 
-	/**
-	 * TODO Switch to QNames with namespace handling
-	 */
-	protected QNm buildPIName(QueryContext ctx, Item name)
+	protected QNm buildPITarget(QueryContext ctx, Item item)
 			throws QueryException {
-		if (name == null) {
-			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
+
+		if (item == null) {
+			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+					"Empty target in processing instruction");
 		}
 
-		Atomic atomicName = name.atomize();
-		Type nameType = atomicName.type();
+		Atomic atomic = item.atomize();
+		Type type = atomic.type();
+		QNm target;
 
-		if ((nameType.instanceOf(Type.STR)) || (nameType.instanceOf(Type.UNA))) {
-			String nameString = atomicName.stringValue();
-
-			if (nameString.contains(":")) {
+		if (type == Type.NCN) {
+			target = new QNm(atomic.stringValue());
+		} else if ((type == Type.STR) || (type == Type.UNA)) {
+			String ncname = atomic.stringValue();
+			ncname = Whitespace.normalizeXML11(ncname);
+			ncname = Whitespace.collapse(ncname);
+			if (!XMLChar.isNCName(ncname)) {
 				throw new QueryException(
-						ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-						"Namespaces are not supported yet.");
+						ErrorCode.ERR_PI_TARGET_CAST_TO_NCNAME,
+						"Cast target of processing instruction to xs:NCName failed: %s",
+						ncname);
 			}
-
-			return new QNm(nameString);
-		} else if (nameType.instanceOf(Type.QNM)) {
-			return (QNm) name;
+			target = new QNm(ncname);
 		} else {
-			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
+			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+					"Invalid target in processing instruction");
 		}
+		
+		if (target.getLocalName().toLowerCase().equals("xml")) {
+			throw new QueryException(
+					ErrorCode.ERR_PI_TARGET_IS_XML,
+					"Illegal NCName in processing instruction: '%s'",
+					target);
+		}
+		return target;
+	}
+	
+	protected String buildPIContent(Sequence s) throws QueryException {
+		StringBuilder buf = new StringBuilder("");
+
+		Atomic atomic;
+		if (s != null) {
+			if (s instanceof Item) {
+				atomic = ((Item) s).atomize();
+
+				if (!atomic.type().instanceOf(Type.STR)) {
+					atomic = Cast.cast(null, atomic, Type.STR, true);
+				}
+
+				buf.append(atomic.stringValue());
+			} else {
+				boolean first = true;
+				Iter it = s.iterate();
+				try {
+					Item item;
+					while ((item = it.next()) != null) {
+						atomic = item.atomize();
+
+						if (!atomic.type().instanceOf(Type.STR)) {
+							atomic = Cast.cast(null, atomic, Type.STR, true);
+						}
+
+						String str = atomic.stringValue();
+						if (!str.isEmpty()) {
+							if (!first) {
+								buf.append(' ');
+							}
+							first = false;
+							buf.append(str);
+						}
+					}
+				} finally {
+					it.close();
+				}
+			}
+		}
+
+		String content = buf.toString();
+
+		if (content.contains("?>")) {
+			throw new QueryException(
+					ErrorCode.ERR_PI_WOULD_CONTAIN_ILLEGAL_STRING,
+					"Content expression of processing instruction illegal string '?>'",
+					content);
+		}
+		return content;
 	}
 }

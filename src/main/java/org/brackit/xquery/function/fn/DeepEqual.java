@@ -37,6 +37,7 @@ import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -57,7 +58,7 @@ public class DeepEqual extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException {
 		if (args.length == 3) {
 			Str collation = (Str) args[2];
@@ -72,6 +73,10 @@ public class DeepEqual extends AbstractFunction {
 		Sequence a = args[0];
 		Sequence b = args[1];
 
+		return deepEquals(a, b);
+	}
+
+	public static Bool deepEquals(Sequence a, Sequence b) throws QueryException {
 		if (a == null) {
 			if (b == null) {
 				return Bool.TRUE;
@@ -100,7 +105,7 @@ public class DeepEqual extends AbstractFunction {
 			Item bItem;
 			while ((aItem = aIt.next()) != null) {
 				bItem = bIt.next();
-				if (!deepEquals(ctx, aItem, bItem)) {
+				if (!deepEquals(aItem, bItem)) {
 					return Bool.FALSE;
 				}
 			}
@@ -113,8 +118,7 @@ public class DeepEqual extends AbstractFunction {
 		}
 	}
 
-	private boolean deepEquals(QueryContext ctx, Item a, Item b)
-			throws QueryException {
+	private static boolean deepEquals(Item a, Item b) throws QueryException {
 		if ((a == null)) {
 			return (b == null);
 		}
@@ -131,7 +135,7 @@ public class DeepEqual extends AbstractFunction {
 				return false;
 			}
 			try {
-				return nodeDeepEquals(ctx, (Node<?>) a, (Node<?>) b);
+				return nodeDeepEquals((Node<?>) a, (Node<?>) b);
 			} catch (DocumentException e) {
 				throw new QueryException(e,
 						ErrorCode.BIT_DYN_DOCUMENT_ACCESS_ERROR);
@@ -139,7 +143,7 @@ public class DeepEqual extends AbstractFunction {
 		}
 	}
 
-	private boolean nodeDeepEquals(QueryContext ctx, Node<?> a, Node<?> b)
+	private static boolean nodeDeepEquals(Node<?> a, Node<?> b)
 			throws DocumentException, QueryException {
 		Kind aKind = a.getKind();
 		if (aKind != b.getKind()) {
@@ -153,11 +157,11 @@ public class DeepEqual extends AbstractFunction {
 
 			// TODO For schema support add typing details from
 			// XQuery 1.0 and XPath 2.0 Functions: 15.3.1 fn:deep-equal
-			if (!attributesDeepEqual(ctx, a, b).bool) {
+			if (!attributesDeepEqual(a, b).bool) {
 				return false;
 			}
 
-			return childrenDeepEqual(ctx, a, b);
+			return childrenDeepEqual(a, b);
 		}
 		if (aKind == Kind.ATTRIBUTE) {
 			// TODO Type support requires comparison of typed value not string
@@ -169,7 +173,7 @@ public class DeepEqual extends AbstractFunction {
 			return (a.getValue().equals(b.getValue()));
 		}
 		if (aKind == Kind.DOCUMENT) {
-			return childrenDeepEqual(ctx, a, b);
+			return childrenDeepEqual(a, b);
 		}
 		if (aKind == Kind.PROCESSING_INSTRUCTION) {
 			return ((a.getName().equals(b.getName())) && (a.getValue().equals(b
@@ -179,7 +183,7 @@ public class DeepEqual extends AbstractFunction {
 				"Unexpected node kind: '%s'", aKind);
 	}
 
-	private boolean childrenDeepEqual(QueryContext ctx, Node<?> a, Node<?> b)
+	private static boolean childrenDeepEqual(Node<?> a, Node<?> b)
 			throws DocumentException, QueryException {
 		Node<?> aChild = a.getFirstChild();
 		Node<?> bChild = b.getFirstChild();
@@ -200,7 +204,7 @@ public class DeepEqual extends AbstractFunction {
 				}
 			}
 			if ((aChild != null) && (bChild != null)) {
-				if (!nodeDeepEquals(ctx, aChild, bChild)) {
+				if (!nodeDeepEquals(aChild, bChild)) {
 					return false;
 				}
 				aChild = aChild.getNextSibling();
@@ -211,7 +215,7 @@ public class DeepEqual extends AbstractFunction {
 		return ((aChild == null) && (bChild == null));
 	}
 
-	private Bool attributesDeepEqual(QueryContext ctx, Node<?> a, Node<?> b)
+	private static Bool attributesDeepEqual(Node<?> a, Node<?> b)
 			throws DocumentException {
 		Stream<? extends Node<?>> aAttributes = a.getAttributes();
 		Node<?>[] allAAttributes = new Node<?>[0];
@@ -264,7 +268,8 @@ public class DeepEqual extends AbstractFunction {
 		return (aSize == bSize) ? Bool.TRUE : Bool.FALSE;
 	}
 
-	private boolean atomicDeepEquals(Atomic a, Atomic b) throws QueryException {
+	private static boolean atomicDeepEquals(Atomic a, Atomic b)
+			throws QueryException {
 		try {
 			return (a.eq(b));
 		} catch (QueryException e) {
@@ -273,10 +278,5 @@ public class DeepEqual extends AbstractFunction {
 			}
 			throw e;
 		}
-	}
-
-	private Bool oneOrBothNull(Sequence a, Sequence b) throws QueryException {
-
-		return null;
 	}
 }

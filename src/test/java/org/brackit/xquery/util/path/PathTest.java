@@ -111,15 +111,6 @@ public class PathTest {
 	}
 	
 	@Test
-	public void testQualifiedPathPredefinedPrefix() throws Exception {
-		Path<QNm> expected = (new Path<QNm>()).child(
-				new QNm("http://brackit.org/ns/bit", "bit", "tag"));
-		String path = "namespace foo = 'localhost'; " + expected.toString();
-		Path<QNm> parsed = (new PathParser(path)).parse();
-		assertEquals("Path parsed correctly", expected, parsed);
-	}
-	
-	@Test
 	public void testQualifiedPathUndefinedPrefix() throws Exception {
 		Path<QNm> expected = (new Path<QNm>()).child(
 				new QNm("http://brackit.org/ns/bit", "xzibit", "tag"));

@@ -65,6 +65,12 @@ public class Tokenizer {
 		}
 	}
 
+	public class IllegalCharRefException extends TokenizerException {
+		public IllegalCharRefException(String charRef) {
+			super("Illegal Unicode codepoint %s: '%s'", charRef, paraphrase());
+		}
+	}
+
 	protected class Token {
 		final int start;
 		final int end;
@@ -74,7 +80,7 @@ public class Tokenizer {
 			this.end = end;
 		}
 
-		String string() {
+		public String string() {
 			return new String(input, start, end - start);
 		}
 
@@ -91,7 +97,7 @@ public class Tokenizer {
 			this.s = s;
 		}
 
-		String string() {
+		public String string() {
 			return s;
 		}
 	}
@@ -109,15 +115,15 @@ public class Tokenizer {
 			this.prefix = prefix;
 		}
 
-		String uri() {
+		public String uri() {
 			return uri;
 		}
 
-		String ncname() {
+		public String ncname() {
 			return ncname;
 		}
 
-		String prefix() {
+		public String prefix() {
 			return prefix;
 		}
 
@@ -125,7 +131,7 @@ public class Tokenizer {
 			return new QNm(uri, prefix, ncname);
 		}
 
-		String string() {
+		public String string() {
 			return (uri != null) ? ("\"" + uri + "\":")
 					+ ((prefix != null) ? prefix + ":" + ncname : ncname)
 					: ((prefix != null) ? prefix + ":" + ncname : ncname);
@@ -203,15 +209,31 @@ public class Tokenizer {
 	}
 
 	protected Token laSymSkipWS(String token) {
-		return laSkipWS(pos, token);
+		return laSymSkipWS(pos, token);
+	}
+	
+	protected Token laSymSkipS(Token prev, String token) {
+		return laSymSkipS(prev.end, token);
+	}
+	
+	private Token laSymSkipS(int from, String token) {
+		return laSym(from + s(from), token);
+	}
+	
+	protected Token laSymSkipS(String token) {
+		return laSymSkipWS(pos + s(pos), token);
 	}
 
 	protected Token laSymSkipWS(Token prev, String token) {
-		return laSkipWS(prev.end, token);
+		return laSymSkipWS(prev.end, token);
 	}
 
 	private Token laSymSkipWS(int from, String token) {
-		int s = from + ws(from);
+		return laSym(from + ws(from), token);
+	}
+
+	private Token laSym(int pos, String token) {
+		int s = pos;
 		int e = s;
 		int len = token.length();
 		if (end - e < len) {
@@ -267,6 +289,15 @@ public class Tokenizer {
 		consume(la);
 		return true;
 	}
+	
+	protected boolean attemptS() {
+		Token la = laS();
+		if (la == null) {
+			return false;
+		}
+		consume(la);
+		return true;
+	}
 
 	protected boolean attemptSkipWS(String token) {
 		Token la = laSkipWS(pos, token);
@@ -276,9 +307,27 @@ public class Tokenizer {
 		consume(la);
 		return true;
 	}
+	
+	protected boolean attemptSkipS(String token) {
+		Token la = laSkipS(pos, token);
+		if (la == null) {
+			return false;
+		}
+		consume(la);
+		return true;
+	}
 
 	protected boolean attemptSymSkipWS(String token) {
 		Token la = laSymSkipWS(pos, token);
+		if (la == null) {
+			return false;
+		}
+		consume(la);
+		return true;
+	}
+	
+	protected boolean attemptSymSkipS(String token) {
+		Token la = laSymSkipS(pos, token);
 		if (la == null) {
 			return false;
 		}
@@ -299,7 +348,8 @@ public class Tokenizer {
 		int ws = ws(pos);
 		int p = pos + ws;
 		// ignore trailing '\0'
-		while ((p < end) && (input[p] == '\u0000' )) p++;
+		while ((p < end) && (input[p] == '\u0000'))
+			p++;
 		if (p != end) {
 			throw new TokenizerException("Expected end of query: %s",
 					paraphrase());
@@ -544,8 +594,8 @@ public class Tokenizer {
 			// TODO illegal? throw exception?
 			return la;
 		}
-		return new EQNameToken(pos, ncname.end, uri.string(), null, ncname
-				.string());
+		return new EQNameToken(pos, ncname.end, uri.string(), null,
+				ncname.string());
 	}
 
 	protected Token laNCName() {
@@ -554,6 +604,10 @@ public class Tokenizer {
 
 	protected Token laNCNameSkipWS() {
 		return laNCName(pos + ws(pos));
+	}
+	
+	protected Token laNCNameSkipS() {
+		return laNCName(pos + s(pos));
 	}
 
 	protected Token laNCName(Token token) {
@@ -808,9 +862,9 @@ public class Tokenizer {
 			if (end != null) {
 				return new StringToken(pos, end.end, s);
 			} else {
-				if (cond) {
-					return null;
-				}
+//				if (cond) {
+//					return null;
+//				}
 				throw new TokenizerException("Unclosed string literal: %s",
 						paraphrase());
 			}
@@ -822,9 +876,9 @@ public class Tokenizer {
 				if (end != null) {
 					return new StringToken(pos, end.end, s);
 				} else {
-					if (cond) {
-						return null;
-					}
+//					if (cond) {
+//						return null;
+//					}
 					throw new TokenizerException("Unclosed string literal: %s",
 							paraphrase());
 				}
@@ -867,7 +921,7 @@ public class Tokenizer {
 
 	protected Token laQuotAttrContentChar() {
 		int s = pos;
-		String content = scanAttrContentChar(s, '"');
+		String content = scanAttrContentChar(s, '"', "\"\"", "\"");
 		if (content == null) {
 			return null;
 		}
@@ -876,7 +930,7 @@ public class Tokenizer {
 
 	protected Token laAposAttrContentChar() {
 		int s = pos;
-		String content = scanAttrContentChar(s, '\'');
+		String content = scanAttrContentChar(s, '\'', "''", "'");
 		if (content == null) {
 			return null;
 		}
@@ -976,21 +1030,24 @@ public class Tokenizer {
 		return new StringToken(s, lastScanEnd, content);
 	}
 
-	private String scanAttrContentChar(int pos, char escapeChar) {
+	private String scanAttrContentChar(int pos, char escapeChar,
+			String escapeStr, String replace) {
 		int s = pos;
 		int e = pos;
 		if (e >= end) {
 			return null;
 		}
+		boolean hasEscapes = false;
 		int len = 0;
 		char c;
 		while (e < end) {
 			c = input[e++];
 			if ((c == escapeChar) && (e < end) && (input[e] == escapeChar)) {
+				hasEscapes = true;
 				e++;
-				len +=2;
-			} else if ((c == escapeChar) || (c == '{') || (c == '}') || (c == '<')
-					|| (c == '&') || (!XMLChar.isChar(c))) {
+				len += 2;
+			} else if ((c == escapeChar) || (c == '{') || (c == '}')
+					|| (c == '<') || (c == '&') || (!XMLChar.isChar(c))) {
 				break;
 			} else {
 				len++;
@@ -1000,7 +1057,13 @@ public class Tokenizer {
 			return null;
 		}
 		lastScanEnd = pos + len;
-		return new String(input, s, len);
+		String content = new String(input, s, len);
+		if (hasEscapes) {
+			// TODO this can be easily improved to avoid
+			// the pattern matching
+			content = content.replace(escapeStr, replace);
+		}
+		return content;
 	}
 
 	private String scanElemContentChar(int pos) {
@@ -1060,8 +1123,12 @@ public class Tokenizer {
 	private String scanPredefEntityRef(int pos, boolean cond)
 			throws TokenizerException {
 		int e = pos;
-		if ((end - e <= 4) || (input[e++] != '&') || (input[e] == '#')) {
+		if ((input[e++] != '&') || (input[e] == '#')) {
 			return null;
+		}
+		if (end - e <= 3) {
+			throw new TokenizerException("Illegal PredefinedEntityRef '%s': %s",
+					new String(input, pos, Math.min(4, end - pos)), paraphrase());
 		}
 		if ((input[e] == 'l') && (input[e + 1] == 't') && (input[e + 2] == ';')) {
 			lastScanEnd = pos + 4;
@@ -1092,17 +1159,20 @@ public class Tokenizer {
 				return "\"";
 			}
 		}
-		if (cond) {
-			return null;
-		}
+//		if (cond) {
+//			return null;
+//		}
 		throw new TokenizerException("Illegal PredefinedEntityRef '%s': %s",
 				new String(input, pos, 6), paraphrase());
 	}
 
 	private String scanCharRef(int pos, boolean cond) throws TokenizerException {
 		int e = pos;
-		if ((end - e <= 4) || (input[e++] != '&') || (input[e++] != '#')) {
+		if ((input[e++] != '&') || (input[e++] != '#')) {
 			return null;
+		}
+		if (end - e <= 3) {
+			throw new IllegalCharRefException(new String(input, pos, Math.min(4, end - pos)));
 		}
 		int len = 0;
 		int s = e;
@@ -1139,18 +1209,16 @@ public class Tokenizer {
 		try {
 			charRef = Integer.parseInt(tmp, radix);
 		} catch (NumberFormatException e1) {
-			if (cond) {
-				return null;
-			}
-			throw new TokenizerException("Illegal Unicode codepoint '%s': %s",
-					tmp, paraphrase());
+//			if (cond) {
+//				return null;
+//			}
+			throw new IllegalCharRefException(tmp);
 		}
 		if (!XMLChar.isChar(charRef)) {
-			if (cond) {
-				return null;
-			}
-			throw new TokenizerException("Illegal Unicode codepoint '%s': %s",
-					tmp, paraphrase());
+//			if (cond) {
+//				return null;
+//			}
+			throw new IllegalCharRefException(tmp);
 		}
 		lastScanEnd = s + len + 1;
 		return Character.toString((char) charRef);
@@ -1163,7 +1231,7 @@ public class Tokenizer {
 		char c;
 		while (e < end) {
 			c = input[e++];
-			if (c == escapeChar) {
+			if ((c == escapeChar) || (c == '&')) {
 				break;
 			} else {
 				len++;

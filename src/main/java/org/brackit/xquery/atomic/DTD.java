@@ -319,22 +319,22 @@ public class DTD extends AbstractDuration {
 	}
 
 	public DTD add(DTD other) throws QueryException {
-		return addInternal(other.isNegative(), other.getDays(), other
-				.getHours(), other.getMinutes(), other.getMicros());
+		return addInternal(other.isNegative(), other.getDays(),
+				other.getHours(), other.getMinutes(), other.getMicros());
 	}
 
 	public DTD subtract(DTD other) throws QueryException {
-		return addInternal(!other.isNegative(), other.getDays(), other
-				.getHours(), other.getMinutes(), other.getMicros());
+		return addInternal(!other.isNegative(), other.getDays(),
+				other.getHours(), other.getMinutes(), other.getMicros());
 	}
 
 	public DTD multiply(Dbl dbl) throws QueryException {
 		double v = dbl.doubleValue();
 
-		if (v == Double.NaN) {
+		if (Double.isNaN(v)) {
 			throw new QueryException(ErrorCode.ERR_PARAMETER_NAN);
 		}
-		if ((v == Double.NEGATIVE_INFINITY) || (v == Double.POSITIVE_INFINITY)) {
+		if (Double.isInfinite(v)) {
 			throw new QueryException(
 					ErrorCode.ERR_OVERFLOW_UNDERFLOW_IN_DURATION);
 		}
@@ -371,10 +371,10 @@ public class DTD extends AbstractDuration {
 	public DTD divide(Dbl dbl) throws QueryException {
 		double v = dbl.doubleValue();
 
-		if (v == Double.NaN) {
+		if (Double.isNaN(v)) {
 			throw new QueryException(ErrorCode.ERR_PARAMETER_NAN);
 		}
-		if ((v == Double.NEGATIVE_INFINITY) || (v == Double.POSITIVE_INFINITY)) {
+		if (Double.isInfinite(v)) {
 			return new DTD(false, (short) 0, (byte) 0, (byte) 0, 0);
 		}
 
@@ -411,8 +411,7 @@ public class DTD extends AbstractDuration {
 		long a = ((((((getDays() * 24l) + getHours()) * 59l) + getMinutes()) * 59l) * 1000000)
 				+ getMicros();
 		long b = ((((((dur.getDays() * 24l) + dur.getHours()) * 59l) + dur
-				.getMinutes()) * 59l) * 1000000)
-				+ dur.getMicros();
+				.getMinutes()) * 59l) * 1000000) + dur.getMicros();
 
 		if (b == 0) {
 			throw new QueryException(ErrorCode.ERR_DIVISION_BY_ZERO);

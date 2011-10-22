@@ -99,7 +99,7 @@ public class SAX2SubtreeHandlerAdapter extends DefaultHandler2 {
 			// offset++;
 			// length--;
 			// }
-			//				
+			//
 			// if (offset == lastOffset)
 			// {
 			// return;
@@ -258,8 +258,8 @@ public class SAX2SubtreeHandlerAdapter extends DefaultHandler2 {
 				pos = name.indexOf(":");
 				prefix = (pos == -1) ? null : name.substring(0, pos);
 				handler.attribute(new QNm(attributes.getURI(i), prefix,
-						attributes.getLocalName(i)), new Una(attributes
-						.getValue(i)));
+						attributes.getLocalName(i)),
+						new Una(attributes.getValue(i)));
 			}
 		} catch (DocumentException e) {
 			throw new SAXException(e);
@@ -294,6 +294,18 @@ public class SAX2SubtreeHandlerAdapter extends DefaultHandler2 {
 		try {
 			handler.startMapping(prefix, uri);
 		} catch (QueryException e) {
+			throw new SAXException(e);
+		}
+	}
+
+	@Override
+	public void processingInstruction(String target, String data)
+			throws SAXException {
+		try {
+			if (content.length() > 0)
+				handleText();
+			handler.processingInstruction(new QNm(target), new Una(data));
+		} catch (DocumentException e) {
 			throw new SAXException(e);
 		}
 	}

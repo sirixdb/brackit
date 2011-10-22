@@ -35,17 +35,9 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.expr.BoundVariable;
-import org.brackit.xquery.expr.DeclVariable;
-import org.brackit.xquery.expr.DefaultCtxItem;
-import org.brackit.xquery.expr.DefaultCtxPos;
-import org.brackit.xquery.expr.DefaultCtxSize;
-import org.brackit.xquery.expr.ExtVariable;
 import org.brackit.xquery.expr.Variable;
 import org.brackit.xquery.module.Module;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.util.log.Logger;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.type.ItemType;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
@@ -56,17 +48,14 @@ import org.brackit.xquery.xdm.type.SequenceType;
 public class VariableTable {
 	private static final Logger log = Logger.getLogger(VariableTable.class);
 
-	Variable[] dVariables;
-	int dLength;
 	Binding[][] bTable;
 	int bLength;
 	int bTableCounts;
 	Module module;
-	DefaultCtxItem defaultItem;
 
-	public VariableTable() {
+	public VariableTable(Module module) {
 		bTable = new Binding[1][3];
-		dVariables = new Variable[1];
+		this.module = module;
 	}
 
 	/**
@@ -113,40 +102,12 @@ public class VariableTable {
 			}
 		}
 
-		if (Namespaces.FS_DOT.equals(name)) {
-			if (defaultItem == null) {
-				throw new QueryException(
-						ErrorCode.ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER,
-						"Context item initializer depends on context item");
-			}
-			return defaultItem;
+		Variable varRef = module.getVariables().resolve(name);
+		if (varRef != null) {
+			return varRef;
 		}
-		if (Namespaces.FS_POSITION.equals(name)) {
-			if (defaultItem == null) {
-				throw new QueryException(
-						ErrorCode.ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER,
-						"Context item initializer depends on context item");
-			}
-			return new DefaultCtxPos(defaultItem);
-		}
-		if (Namespaces.FS_LAST.equals(name)) {
-			if (defaultItem == null) {
-				throw new QueryException(
-						ErrorCode.ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER,
-						"Context item initializer depends on context item");
-			}
-			return new DefaultCtxSize(defaultItem);
-		}
-
-		for (int i = 0; i < dLength; i++) {
-			if (dVariables[i].getName().equals(name)) {
-				return dVariables[i];
-			}
-		}
-
-		log.error(dumpTable());
 		throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-				"Cannot resolve var %s", name);
+				"Could not resolve variable %s", name);
 	}
 
 	public Binding bind(QNm name, SequenceType type) {
@@ -175,26 +136,6 @@ public class VariableTable {
 		}
 		bTable[bTableCounts][bLength++] = binding;
 		return binding;
-	}
-
-	Variable declare(QNm name, Expr expr, SequenceType type, boolean external) {
-		if (dLength == dVariables.length) {
-			dVariables = Arrays.copyOf(dVariables,
-					((dVariables.length * 3) / 2 + 1));
-		}
-		if (external) {
-			ExtVariable extVariable = new ExtVariable(name, type, expr);
-			dVariables[dLength++] = extVariable;
-			return extVariable;
-		} else {
-			DeclVariable declVariable = new DeclVariable(name, type, expr);
-			dVariables[dLength++] = declVariable;
-			return declVariable;
-		}
-	}
-
-	Variable declareDefaultCtxItem(Expr expr, ItemType type, boolean external) {
-		return (defaultItem = new DefaultCtxItem(expr, type, external));
 	}
 
 	public void unbind() {

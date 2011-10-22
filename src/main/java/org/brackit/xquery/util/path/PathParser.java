@@ -27,21 +27,22 @@
  */
 package org.brackit.xquery.util.path;
 
-import org.brackit.xquery.QueryException;
+import java.util.Map;
+import java.util.TreeMap;
+
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.parser.Tokenizer;
-import org.brackit.xquery.module.Namespaces;
 
 /**
  * @author Sebastian Baechle, Max Bechtold
- *
+ * 
  */
 public class PathParser extends Tokenizer {
 
 	private final Path<QNm> p;
-	
-	private Namespaces namespaces;
-	
+
+	private Map<String, String> namespaces;
+
 	public PathParser(String s) {
 		super(s);
 		p = new Path<QNm>();
@@ -50,8 +51,10 @@ public class PathParser extends Tokenizer {
 	public Path<QNm> parse() throws PathException {
 		try {
 			nsPreamble();
+			attemptS();
 			startStep();
-			while (axisStep());
+			while (axisStep())
+				;
 			attributeStep();
 			consumeEOF();
 			return p;
@@ -59,64 +62,62 @@ public class PathParser extends Tokenizer {
 			throw new PathException(e, e.getMessage());
 		}
 	}
-	
+
 	/**
-	 * Allows for inlined namespace declarations of the form 
-	 * ( "namespace" NCNAME "=" stringLiteral ";")&#042; preceding a path 
-	 * expression.
+	 * Allows for inlined namespace declarations of the form ( "namespace"
+	 * NCNAME "=" stringLiteral ";")&#042; preceding a path expression.
 	 */
 	private void nsPreamble() throws TokenizerException, PathException {
-		Token la = la("namespace");
+		Token la = laSymSkipS("namespace");
 		while (la != null) {
 			consume(la);
 			String prefix;
 			String uri;
-			Token pfx = laNCNameSkipWS();
+			Token pfx = laNCNameSkipS();
 			if (pfx == null) {
 				throw new MismatchException("NCName");
 			}
 			prefix = pfx.toString();
 			consume(pfx);
-			
-			if (!attemptSymSkipWS("=")) {
+
+			if (!attemptSkipS("=")) {
 				throw new MismatchException("=");
 			}
-			
-			Token uriToken = laStringSkipWS(false);
+			attemptS();
+			Token uriToken = laString(false);
 			if (uriToken == null) {
 				throw new MismatchException("URI");
 			}
 			uri = uriToken.toString();
 			consume(uriToken);
-			
-			if (!attemptSymSkipWS(";")) {
+
+			if (!attemptSkipS(";")) {
 				throw new MismatchException(";");
 			}
-			
+
 			if (namespaces == null) {
-				namespaces = new Namespaces();
+				namespaces = new TreeMap<String, String>();
 			}
-			try {
-				namespaces.declare(prefix, uri);
-			} catch (QueryException e) {
-				throw new PathException(e);
+			if (namespaces.put(prefix, uri) != null) {
+				throw new PathException(
+						"Multiple declaration of namespace prefix: '%s'",
+						prefix);
 			}
-			attemptWS();
-			la = la("namespace");
+			la = laSymSkipS("namespace");
 		}
 	}
 
 	private void startStep() throws PathException {
 		if (attempt("..")) {
-			p.parent();			
+			p.parent();
 		} else if (attempt(".")) {
 			p.self();
 		} else {
-			 EQNameToken la = laQName();
-			 if (la != null) {
-				 consume(la);
-				 p.self().child(expand(la.qname()));
-			 }
+			EQNameToken la = laQName();
+			if (la != null) {
+				consume(la);
+				p.self().child(expand(la.qname()));
+			}
 		}
 	}
 
@@ -131,7 +132,7 @@ public class PathParser extends Tokenizer {
 		}
 		return false;
 	}
-	
+
 	private boolean selfStep() {
 		if (attempt("/.")) {
 			p.self();
@@ -189,7 +190,7 @@ public class PathParser extends Tokenizer {
 				q = la.qname();
 			}
 			p.descendantAttribute(expand(q));
-		} else if (attempt("/@")) {			
+		} else if (attempt("/@")) {
 			if (!attempt("*")) {
 				EQNameToken la = laQName();
 				if (la == null) {
@@ -201,9 +202,9 @@ public class PathParser extends Tokenizer {
 			p.attribute(expand(q));
 		}
 	}
-	
+
 	/**
-	 * Resolves prefixed named steps like 'bit:email' against the namespace 
+	 * Resolves prefixed named steps like 'bit:email' against the namespace
 	 * declarations in the preamble (if any).
 	 * 
 	 */
@@ -211,10 +212,11 @@ public class PathParser extends Tokenizer {
 		if (namespaces == null || qname.prefix == null) {
 			return qname;
 		}
-		try {
-			return namespaces.expand(qname.prefix, qname.localName);
-		} catch (QueryException e) {
-			throw new PathException(e);
+		String uri = namespaces.get(qname.prefix);
+		if (uri == null) {
+			throw new PathException("Undefined namespace prefix: %s",
+					qname.prefix);
 		}
+		return new QNm(uri, qname.prefix, qname.localName);
 	}
 }

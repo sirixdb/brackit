@@ -31,6 +31,8 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.Unit;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Sequence;
@@ -41,19 +43,20 @@ import org.brackit.xquery.xdm.Signature;
  * @author Sebastian Baechle
  * 
  */
-public class UDF extends AbstractFunction {
+public class UDF extends AbstractFunction implements Unit {
 	private Expr body;
 
 	public UDF(QNm name, Signature signature, boolean updating) {
 		super(name, signature, false, updating);
 	}
 
-	public void setBody(Expr body) {
+	@Override
+	public void setExpr(Expr body) {
 		this.body = body;
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException {
 		Tuple tuple = new TupleImpl(args);
 		return body.evaluate(ctx, tuple);

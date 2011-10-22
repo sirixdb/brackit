@@ -210,9 +210,9 @@ public class FLWORTest extends XQueryBaseTest {
 		Sequence result = new XQuery(
 				"let $a := (1,2,3) let $b := (4,5,6) let $c := (7,8,9) for $d in $a for $e in $b for $f in $c let $g := ($d + $f) return $d + $d + $f ")
 				.execute(ctx);
-		ResultChecker.dCheck(intSequence(9, 11, 13, 10, 12, 14, 11, 13, 15, 9,
-				11, 13, 10, 12, 14, 11, 13, 15, 9, 11, 13, 10, 12, 14, 11, 13,
-				15), result);
+		Sequence ints = intSequence(9, 10, 11, 9, 10, 11, 9, 10, 11, 11, 12,
+				13, 11, 12, 13, 11, 12, 13, 13, 14, 15, 13, 14, 15, 13, 14, 15);
+		ResultChecker.dCheck(ints, result);
 	}
 
 	@Test
@@ -223,7 +223,8 @@ public class FLWORTest extends XQueryBaseTest {
 					.execute(ctx);
 			Iter it = result.iterate();
 			try {
-				while (it.next() != null);
+				while (it.next() != null)
+					;
 			} finally {
 				it.close();
 			}

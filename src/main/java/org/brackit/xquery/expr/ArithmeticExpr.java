@@ -99,13 +99,13 @@ public class ArithmeticExpr implements Expr {
 
 		Type leftType = ((Atomic) left).type();
 		if (leftType.instanceOf(Type.UNA)) {
-			left = Cast.cast(left, Type.DBL, false);
+			left = Cast.cast(null, left, Type.DBL, false);
 			leftType = Type.DBL;
 		}
 
 		Type rightType = ((Atomic) right).type();
 		if (rightType.instanceOf(Type.UNA)) {
-			right = Cast.cast(right, Type.DBL, false);
+			right = Cast.cast(null, right, Type.DBL, false);
 			rightType = Type.DBL;
 		}
 		// End evaluate operands
@@ -138,7 +138,7 @@ public class ArithmeticExpr implements Expr {
 					return ((DTD) left).divide((DTD) right);
 				}
 			} else if (rightType.isNumeric()) {
-				right = Cast.cast(right, Type.DBL, false);
+				right = Cast.cast(null, right, Type.DBL, false);
 
 				switch (op) {
 				case MULT:
@@ -158,7 +158,7 @@ public class ArithmeticExpr implements Expr {
 					return ((YMD) left).divide((YMD) right);
 				}
 			} else if (rightType.isNumeric()) {
-				right = Cast.cast(right, Type.DBL, false);
+				right = Cast.cast(null, right, Type.DBL, false);
 
 				switch (op) {
 				case MULT:
@@ -173,17 +173,17 @@ public class ArithmeticExpr implements Expr {
 				case PLUS:
 					return ((DateTime) left).add((YMD) right);
 				case MINUS:
-					return ((DateTime) left).add((YMD) right);
+					return ((DateTime) left).subtract((YMD) right);
 				}
 			} else if (rightType.instanceOf(Type.DTD)) {
 				switch (op) {
 				case PLUS:
 					return ((DateTime) left).add((DTD) right);
 				case MINUS:
-					return ((DateTime) left).add((DTD) right);
+					return ((DateTime) left).subtract((DTD) right);
 				}
 			} else if (rightType.instanceOf(Type.DATI)) {
-				// return ((DateTime) left).subtract((DateTime) right);
+				return ((DateTime) left).subtract((DateTime) right);
 			}
 		} else if (leftType.instanceOf(Type.DATE)) {
 			if (rightType.instanceOf(Type.YMD)) {
@@ -191,15 +191,17 @@ public class ArithmeticExpr implements Expr {
 				case PLUS:
 					return ((Date) left).add((YMD) right);
 				case MINUS:
-					return ((Date) left).add((YMD) right);
+					return ((Date) left).subtract((YMD) right);
 				}
 			} else if (rightType.instanceOf(Type.DTD)) {
 				switch (op) {
 				case PLUS:
 					return ((Date) left).add((DTD) right);
 				case MINUS:
-					return ((Date) left).add((DTD) right);
+					return ((Date) left).subtract((DTD) right);
 				}
+			} else if (rightType.instanceOf(Type.DATE)) {
+				return ((Date) left).subtract((Date) right);
 			}
 		} else if (leftType.instanceOf(Type.TIME)) {
 			if (rightType.instanceOf(Type.DTD)) {
@@ -207,8 +209,10 @@ public class ArithmeticExpr implements Expr {
 				case PLUS:
 					return ((Time) left).add((DTD) right);
 				case MINUS:
-					return ((Time) left).add((DTD) right);
+					return ((Time) left).subtract((DTD) right);
 				}
+			} else if (rightType.instanceOf(Type.TIME)) {
+				return ((Time) left).subtract((Time) right);
 			}
 		}
 

@@ -27,12 +27,16 @@
  */
 package org.brackit.xquery.function;
 
+import java.util.ArrayList;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.expr.Cast;
+import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.sequence.TypedSequence;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Function;
@@ -51,11 +55,12 @@ import org.brackit.xquery.xdm.type.SequenceType;
  * 
  */
 public class FunctionExpr implements Expr {
+	private final StaticContext sctx;
 	private final Function function;
-
 	private final Expr[] exprs;
 
-	public FunctionExpr(Function function, Expr... exprs) throws QueryException {
+	public FunctionExpr(StaticContext sctx, Function function, Expr... exprs) throws QueryException {
+		this.sctx = sctx;
 		this.function = function;
 		this.exprs = exprs;
 	}
@@ -92,7 +97,7 @@ public class FunctionExpr implements Expr {
 		}
 
 		try {
-			res = function.execute(ctx, args);
+			res = function.execute(sctx, ctx, args);
 		} catch (StackOverflowError e) {
 			throw new QueryException(
 					e,
@@ -100,8 +105,28 @@ public class FunctionExpr implements Expr {
 					"Execution of function '%s' was aborted because of too deep recursion.",
 					function.getName());
 		}
-		return (function.isBuiltIn()) ? res : asTypedSequence(function
-				.getSignature().getResultType(), res);
+		if (function.isBuiltIn()) {
+			return res;
+		}
+		res = asTypedSequence(function.getSignature().getResultType(), res);
+		
+		// TODO
+		// how to decide cleverly if we should materialize or not???
+		if ((res == null) || (res instanceof Item)) {
+			return res;
+		}
+		ArrayList<Item> buffer = new ArrayList<Item>();
+		Iter it = res.iterate();
+		try {
+			Item item;
+			while ((item = it.next()) != null) {
+				buffer.add(item);
+			}
+		} finally {
+			it.close();
+		}
+		res = new ItemSequence(buffer.toArray(new Item[buffer.size()]));
+		return res;
 	}
 
 	/**
@@ -126,16 +151,16 @@ public class FunctionExpr implements Expr {
 
 				if ((type == Type.UNA) && (expected != Type.UNA)) {
 					if ((function.isBuiltIn()) && (expected.isNumeric())) {
-						atomic = Cast.cast(atomic, expected, false);
+						atomic = Cast.cast(null, atomic, expected, false);
 					} else {
-						atomic = Cast.cast(atomic, expected, false);
+						atomic = Cast.cast(null, atomic, expected, false);
 					}
 				} else if (!iType.matches(atomic)) {
 					if ((expected.isNumeric()) && (type.isNumeric())) {
-						atomic = Cast.cast(atomic, expected, false);
+						atomic = Cast.cast(null, atomic, expected, false);
 					} else if ((expected.instanceOf(Type.STR))
 							&& (type.instanceOf(Type.AURI))) {
-						atomic = Cast.cast(atomic, expected, false);
+						atomic = Cast.cast(null, atomic, expected, false);
 					} else {
 						throw new QueryException(
 								ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,

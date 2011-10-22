@@ -135,7 +135,7 @@ abstract class ParentD2Node extends D2Node {
 		}
 	}
 
-	private final class DescendantScanner implements Stream<D2Node> {
+	protected final class DescendantScanner implements Stream<D2Node> {
 		D2Node current;
 
 		D2Node root;
@@ -177,12 +177,6 @@ abstract class ParentD2Node extends D2Node {
 			}
 			return null;
 		}
-	}
-
-	@Override
-	public Stream<? extends D2Node> getDescendantOrSelf()
-			throws DocumentException {
-		return new DescendantScanner(this);
 	}
 
 	public Stream<D2Node> getSubtree() throws DocumentException {

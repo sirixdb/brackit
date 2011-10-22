@@ -28,11 +28,11 @@
 package org.brackit.xquery.compiler;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.module.Module;
 
@@ -59,14 +59,11 @@ public class BaseResolver implements ModuleResolver {
 		list.add(module);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public List<Module> resolve(String uri, String... locUris)
 			throws QueryException {
 		List<Module> list = (modules != null) ? modules.get(uri) : null;
-		if (list == null) {
-			throw new QueryException(ErrorCode.ERR_SCHEMA_OR_MODULE_NOT_FOUND,
-					"Module '%s' not found", uri);
-		}
-		return list;
+		return (list == null) ? Collections.EMPTY_LIST : list;
 	}
 }

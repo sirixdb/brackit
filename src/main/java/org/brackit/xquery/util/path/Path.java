@@ -206,13 +206,13 @@ public class Path<E> {
 
 			Axis oAxis = o[oPos].axis;
 			boolean oIsAttributeChildStep = (oAxis == Axis.CHILD_ATTRIBUTE);
-			boolean oIsNodeChildStep = (oAxis == Axis.CHILD);
+			boolean oIsNodeStep = (oAxis == Axis.CHILD) || (oAxis == Axis.DESC);
 
 			if (!pIsNodeStep && !pIsAttributeStep) {
 				throw new PathException("Illegal pattern path: %s", this);
 			}
 
-			if (!oIsAttributeChildStep && !oIsNodeChildStep) {
+			if (!oIsAttributeChildStep && !oIsNodeStep) {
 				throw new PathException("Illegal path: %s", path);
 			}
 
@@ -221,7 +221,9 @@ public class Path<E> {
 
 			if (((p[pPos].value == null) || o[oPos].value
 					.equals((p[pPos].value)))
-					&& ((pIsNodeStep && oIsNodeChildStep) || (pIsAttributeStep && oIsAttributeChildStep))) {
+					&& ((pAxis == oAxis)
+							|| ((pAxis == Axis.DESC) && (oAxis == Axis.CHILD)) 
+							|| ((pAxis == Axis.DESC_ATTRIBUTE) && (oAxis == Axis.CHILD_ATTRIBUTE)))) {
 				// System.out.println("match " + p[pPos]);
 				matchTable[pPos] = oPos;
 				oPos--;
@@ -277,8 +279,8 @@ public class Path<E> {
 		if (path.size() == 0) {
 			return new Path<E>();
 		} else {
-			return new Path<E>(new ArrayList<Step<E>>(path.subList(0, path
-					.size() - 1)));
+			return new Path<E>(new ArrayList<Step<E>>(path.subList(0,
+					path.size() - 1)));
 		}
 	}
 
@@ -460,10 +462,10 @@ public class Path<E> {
 		System.out.println("Explode " + path.explode());
 
 		// pattern.descendant("title");
-		//		
+		//
 		// System.out.println("Path:" + path);
 		// System.out.println("Pattern:" + pattern);
-		//				
+		//
 		// System.out.println("Path matches pattern: " + pattern.matches(path));
 	}
 }

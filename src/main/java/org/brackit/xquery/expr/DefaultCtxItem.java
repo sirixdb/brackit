@@ -31,11 +31,13 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.compiler.Unit;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.sequence.TypedSequence;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.type.AnyItemType;
 import org.brackit.xquery.xdm.type.Cardinality;
 import org.brackit.xquery.xdm.type.ItemType;
 import org.brackit.xquery.xdm.type.SequenceType;
@@ -46,17 +48,27 @@ import org.brackit.xquery.xdm.type.SequenceType;
  * @author Sebastian Baechle
  * 
  */
-public class DefaultCtxItem extends Variable {
+public class DefaultCtxItem extends Variable implements Unit {
 
-	private final Expr dftExpr;
-	private final ItemType type;
-	private final boolean external;
+	private Expr expr;
+	private ItemType type = AnyItemType.ANY;
+	private boolean external = true;
 	private Item item;
 
-	public DefaultCtxItem(Expr dftExpr, ItemType type, boolean external) {
+	public DefaultCtxItem() {
 		super(Namespaces.FS_DOT);
-		this.dftExpr = dftExpr;
+	}
+
+	@Override
+	public void setExpr(Expr expr) {
+		this.expr = expr;
+	}
+
+	public void setType(ItemType type) {
 		this.type = type;
+	}
+
+	public void setExternal(boolean external) {
 		this.external = external;
 	}
 
@@ -76,8 +88,8 @@ public class DefaultCtxItem extends Variable {
 		if (external) {
 			i = ctx.getContextItem();
 		}
-		if ((i == null) && (dftExpr != null)) {
-			i = dftExpr.evaluateToItem(ctx, tuple);
+		if ((i == null) && (expr != null)) {
+			i = expr.evaluateToItem(ctx, tuple);
 		}
 		if (i == null) {
 			throw new QueryException(

@@ -45,6 +45,12 @@ public class ErrorCode {
 			ERR_PREFIX, "FOER0000");
 
 	/**
+	 * err:FONS0004
+	 */
+	public static final QNm ERR_NO_NAMESPACE_FOR_PREFIX = new QNm(ERR_NSURI,
+			ERR_PREFIX, "FONS0004");
+	
+	/**
 	 * err:XPDY0002
 	 */
 	public static final QNm ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED = new QNm(
@@ -139,6 +145,12 @@ public class ErrorCode {
 	 */
 	public static final QNm ERR_MODULE_IMPORT_OR_DECLARATION_FEATURE_NOT_SUPPORTED = new QNm(
 			ERR_NSURI, ERR_PREFIX, "XQST0016");
+	
+	/**
+	 * err:XQST0040
+	 */
+	public static final QNm ERR_ENCLOSED_EXPR_IN_NS_ATTRIBUTE = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0040");
 
 	/**
 	 *  err:XQST0032
@@ -157,6 +169,12 @@ public class ErrorCode {
 	 */
 	public static final QNm ERR_MULTIPLE_FUNCTION_DECLARATIONS = new QNm(
 			ERR_NSURI, ERR_PREFIX, "XQST0034");
+	
+	/**
+	 * err:XQST0039
+	 */
+	public static final QNm ERR_DUPLICATE_FUN_PARAMETER = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0039");
 
 	/**
 	 * err:XQST0045
@@ -237,10 +255,22 @@ public class ErrorCode {
 			ERR_PREFIX, "XQST0070");
 
 	/**
+	 * err:XQDY0074
+	 */
+	public static final QNm ERR_UNKNOWN_NS_PREFIX_IN_COMP_CONSTR = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQDY0074");
+	
+	/**
 	 * err:XQST0075
 	 */
 	public static final QNm ERR_SCHEMA_VALIDATION_FEATURE_NOT_SUPPORTED = new QNm(
 			ERR_NSURI, ERR_PREFIX, "XQST0075");
+	
+	/**
+	 * err:XQST0076
+	 */
+	public static final QNm ERR_UNKNOWN_COLLATION_IN_FLWOR_CLAUSE = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0076");
 
 	/**
 	 * err:XQST0088
@@ -248,6 +278,12 @@ public class ErrorCode {
 	public static final QNm ERR_TARGET_NS_EMPTY = new QNm(ERR_NSURI, ERR_PREFIX,
 			"XQST0088");
 
+	/**
+	 * err:XQST0089
+	 */
+	public static final QNm ERR_FOR_VAR_AND_POS_VAR_EQUAL = new QNm(ERR_NSURI, ERR_PREFIX,
+			"XQST0089");
+	
 	/**
 	 * err:XQST0090
 	 */
@@ -261,10 +297,28 @@ public class ErrorCode {
 			ERR_NSURI, ERR_PREFIX, "XQST0099");
 	
 	/**
+	 * err:XQST0106
+	 */
+	public static QNm ERR_FUN_PRIVATE_OR_PUBLIC_ALREADY_DECLARED = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0106");
+	
+	/**
 	 * err:XQST0107
 	 */
 	public static final QNm ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER = new QNm(
 			ERR_NSURI, ERR_PREFIX, "XQST0107");
+	
+	/**
+	 * err:XQST0114
+	 */
+	public static QNm ERR_DECIMAL_FORMAT_ALREADY_DECLARED = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0114");
+	
+	/**
+	 * err:XQST0116
+	 */
+	public static QNm ERR_VAR_PRIVATE_OR_PUBLIC_ALREADY_DECLARED = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0116");
 	
 	/**
 	 * err:FOAR0001

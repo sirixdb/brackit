@@ -31,12 +31,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedList;
 import java.util.Map;
-import java.util.Map.Entry;
 
-import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.ConstructorFunction;
 import org.brackit.xquery.function.fn.Abs;
@@ -115,22 +112,22 @@ public class Functions {
 	private static final Map<QNm, Function[]> predefined = new HashMap<QNm, Function[]>();
 
 	public static final QNm FN_POSITION = new QNm(Namespaces.FN_NSURI,
-			Namespaces.FS_PREFIX, "position");
+			Namespaces.FN_PREFIX, "position");
 
 	public static final QNm FN_LAST = new QNm(Namespaces.FN_NSURI,
-			Namespaces.FS_PREFIX, "last");
+			Namespaces.FN_PREFIX, "last");
 
 	public static final QNm FN_TRUE = new QNm(Namespaces.FN_NSURI,
-			Namespaces.FS_PREFIX, "true");
+			Namespaces.FN_PREFIX, "true");
 
 	public static final QNm FN_FALSE = new QNm(Namespaces.FN_NSURI,
-			Namespaces.FS_PREFIX, "false");
+			Namespaces.FN_PREFIX, "false");
 
 	public static final QNm FN_DEFAULT_COLLATION = new QNm(Namespaces.FN_NSURI,
-			Namespaces.FS_PREFIX, "default-collation");
+			Namespaces.FN_PREFIX, "default-collation");
 
 	public static final QNm FN_STATIC_BASE_URI = new QNm(Namespaces.FN_NSURI,
-			Namespaces.FS_PREFIX, "static-base-uri");
+			Namespaces.FN_PREFIX, "static-base-uri");
 
 	public static final QNm FN_COUNT = new QNm(Namespaces.FN_NSURI,
 			Namespaces.FN_PREFIX, "count");
@@ -143,7 +140,7 @@ public class Functions {
 
 	protected final Map<QNm, Function[]> functions = new HashMap<QNm, Function[]>();
 
-	protected final List<Functions> imports = new ArrayList<Functions>(0);
+	protected final LinkedList<Functions> imports = new LinkedList<Functions>();
 
 	static {
 		// See XQuery Functions and Operators 2 Accessors
@@ -318,11 +315,11 @@ public class Functions {
 				new SequenceType(AtomicType.STR, Cardinality.One),
 				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
 				new SequenceType(AtomicType.STR, Cardinality.One),
-				new SequenceType(AtomicType.STR, Cardinality.One))));		
+				new SequenceType(AtomicType.STR, Cardinality.One))));
 		predefine(new StringNormalize(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "normalize-space"), new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.One),
-				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne))));		
+				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne))));
 		predefine(new StringNormalize(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "normalize-space"), new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.One), false, true)));
@@ -910,7 +907,7 @@ public class Functions {
 		}
 	}
 
-	public Function resolve(QNm name, int argCount) throws QueryException {
+	public Function resolve(QNm name, int argCount) {
 		// collect all available functions for the given name
 		ArrayList<Function> available = new ArrayList<Function>();
 		Function[] declaredFuns = functions.get(name);
@@ -926,6 +923,7 @@ public class Functions {
 			}
 		}
 		for (Functions imported : imports) {
+			// TODO check only public funs!
 			Function[] importedFuns = imported.functions.get(name);
 			if (importedFuns != null) {
 				for (Function f : importedFuns) {
@@ -935,8 +933,7 @@ public class Functions {
 		}
 
 		if (available.isEmpty()) {
-			throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-					"Unknown function: '%s'", name);
+			return null;
 		}
 
 		// find function with matching arity
@@ -950,71 +947,27 @@ public class Functions {
 				return f;
 			}
 		}
-
-		throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-				"Illegal number of parameters for function %s : %s'", name,
-				argCount);
+		return null;
 	}
 
-	public void declare(Function function) throws QueryException {
+	public void declare(Function function) {
 		Function[] funs = functions.get(function.getName());
 
 		if (funs == null) {
 			funs = new Function[] { function };
 			functions.put(function.getName(), funs);
 		} else {
-			for (int i = 0; i < funs.length; i++) {
-				if (funs[i].getSignature().getParams().length == function
-						.getSignature().getParams().length) {
-					throw new QueryException(
-							ErrorCode.ERR_MULTIPLE_FUNCTION_DECLARATIONS,
-							"Found multiple declarations of function %s",
-							function);
-				}
-			}
 			funs = Arrays.copyOf(funs, funs.length + 1);
 			funs[funs.length - 1] = function;
 		}
 	}
 
-	public void importFunctions(Functions functions) throws QueryException {
-		for (Entry<QNm, Function[]> extFuncs : functions.functions.entrySet()) {
-			Function[] extFuns = extFuncs.getValue();
-			QNm name = extFuncs.getKey();
-
-			Function[] localFuns = this.functions.get(name);
-			if (localFuns != null) {
-				checkDuplicateDecl(localFuns, extFuns);
-			}
-
-			for (Functions imported : imports) {
-				Function[] importedFuns = imported.functions.get(name);
-				if (importedFuns != null) {
-					checkDuplicateDecl(importedFuns, extFuns);
-				}
-			}
-		}
+	public void importFunctions(Functions functions) {
 		imports.add(functions);
 	}
 
-	public List<Function[]> getDeclaredFunctions() {
-		return Collections.unmodifiableList(new ArrayList<Function[]>(functions
-				.values()));
-	}
-
-	private void checkDuplicateDecl(Function[] localFuns, Function[] extFuns)
-			throws QueryException {
-		for (int i = 0; i < localFuns.length; i++) {
-			for (int j = 0; j < extFuns.length; j++) {
-				if (localFuns[i].getSignature().getParams().length == extFuns[j]
-						.getSignature().getParams().length) {
-					throw new QueryException(
-							ErrorCode.ERR_MULTIPLE_FUNCTION_DECLARATIONS,
-							"Found multiple declarations of function %s",
-							extFuns[j].getName());
-				}
-			}
-		}
+	public Map<QNm, Function[]> getDeclaredFunctions() {
+		return Collections.unmodifiableMap(functions);
 	}
 
 	public static void predefine(Function function) {

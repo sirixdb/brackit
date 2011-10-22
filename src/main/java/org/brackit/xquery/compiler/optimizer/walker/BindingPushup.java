@@ -31,7 +31,7 @@ import static org.brackit.xquery.compiler.XQ.Count;
 import static org.brackit.xquery.compiler.XQ.ForBind;
 import static org.brackit.xquery.compiler.XQ.GroupBy;
 import static org.brackit.xquery.compiler.XQ.LetBind;
-import static org.brackit.xquery.compiler.XQ.ReturnExpr;
+import static org.brackit.xquery.compiler.XQ.PipeExpr;
 
 import java.util.HashSet;
 
@@ -66,7 +66,7 @@ public class BindingPushup extends PipelineVarTracker {
 		final AST parent = node.getParent();
 		final AST in = parent;
 		AST tmp = in;
-		while (tmp.getType() != ReturnExpr) {
+		while (tmp.getType() != PipeExpr) {
 			if (tmp.getType() == GroupBy) {
 				break;
 			} else if ((tmp.getType() == Count) && (!pushableAfterCount(node, tmp))) {

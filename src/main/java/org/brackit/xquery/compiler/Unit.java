@@ -25,45 +25,16 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.function.fn;
+package org.brackit.xquery.compiler;
 
-import java.util.Locale;
-
-import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
-import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.xdm.Expr;
 
 /**
- * Implementation of predefined functions fn:upper-case($arg1) and
- * fn:lower-case($arg1) as per
- * http://www.w3.org/TR/xpath-functions/#func-upper-case ff.
+ * A compilation unit, e.g. a main module or a function.
  * 
- * @author Max Bechtold
- * 
+ * @author Sebastian Baechle
+ *
  */
-public class StringCase extends AbstractFunction {
-	private boolean upperCase;
-
-	public StringCase(QNm name, boolean upperCase, Signature signature) {
-		super(name, signature, true);
-		this.upperCase = upperCase;
-	}
-
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		if (args[0] == null) {
-			return Str.EMPTY;
-		} else if (upperCase) {
-			return new Str(((Str) args[0]).str.toUpperCase(Locale.ENGLISH));
-		} else {
-			return new Str(((Str) args[0]).str.toLowerCase(Locale.ENGLISH));
-		}
-	}
-
+public interface Unit {
+	public void setExpr(Expr expr);
 }

@@ -79,7 +79,9 @@ public abstract class Accessor {
 				throws QueryException {
 			final Stream<? extends Node<?>> subtree = node
 					.getDescendantOrSelf();
-			subtree.next(); // consume self
+			if (node.getKind() == Kind.ELEMENT) {
+				subtree.next(); // consume self
+			}
 			return subtree;
 		}
 	};
@@ -88,8 +90,12 @@ public abstract class Accessor {
 		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
-			Stream<? extends Node<?>> subtree = node.getPath();
-			return subtree;
+			if (node.getKind() == Kind.ELEMENT) {
+				return node.getPath();
+			}
+			Node<?> parent = node.getParent();
+			return (parent != null) ? parent.getPath()
+					: new EmptyStream<Node<?>>();
 		}
 	};
 	public static final Accessor DESCENDANT_OR_SELF = new Accessor(

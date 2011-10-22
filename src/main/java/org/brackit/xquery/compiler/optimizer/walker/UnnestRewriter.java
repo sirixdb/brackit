@@ -44,7 +44,7 @@ public class UnnestRewriter extends Walker {
 
 		AST in = new AST(XQ.Start, "Start");
 		AST[] unnested = unnestFlowr(in, node);
-		AST opExpr = new AST(XQ.ReturnExpr, "ReturnExpr");
+		AST opExpr = new AST(XQ.PipeExpr, "ReturnExpr");
 		opExpr.addChild(unnested[0]);
 		opExpr.addChild(unnested[1]);
 		node.getParent().replaceChild(node.getChildIndex(), opExpr);

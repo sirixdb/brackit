@@ -33,6 +33,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -45,13 +46,13 @@ import org.brackit.xquery.xdm.Type;
  * 
  */
 public class Castable implements Expr {
+	private final StaticContext sctx;
 	private final Expr expr;
-
 	private final Type target;
-
 	private final boolean allowEmptySequence;
 
-	public Castable(Expr expr, Type targetType, boolean allowEmptySequence) {
+	public Castable(StaticContext sctx, Expr expr, Type targetType, boolean allowEmptySequence) {
+		this.sctx = sctx;
 		this.expr = expr;
 		this.target = targetType;
 		this.allowEmptySequence = allowEmptySequence;
@@ -94,7 +95,7 @@ public class Castable implements Expr {
 		}
 
 		try {
-			Cast.cast(item, target, allowEmptySequence);
+			Cast.cast(sctx, item, target, allowEmptySequence);
 			return Bool.TRUE;
 		} catch (QueryException e) {
 			QNm code = e.getCode();

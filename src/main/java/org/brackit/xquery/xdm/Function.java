@@ -30,6 +30,7 @@ package org.brackit.xquery.xdm;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.module.StaticContext;
 
 /**
  * 
@@ -41,7 +42,7 @@ public interface Function extends Item {
 
 	public Signature getSignature();
 
-	public Sequence execute(QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException;
 
 	public boolean isUpdating();

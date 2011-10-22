@@ -31,7 +31,6 @@ import java.io.File;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.ModuleResolver;
 import org.brackit.xquery.compiler.translator.PipelineCompiler;
 import org.brackit.xquery.module.MainModule;
 import org.brackit.xquery.operator.Operator;
@@ -55,9 +54,9 @@ public class ProfilingCompiler extends PipelineCompiler {
 
 		private ProfileExpr expr;
 
-		public void setBody(Expr rootExpr) {
+		public void setExpr(Expr rootExpr) {
 			this.expr = (ProfileExpr) rootExpr;
-			super.setBody(rootExpr);
+			super.setExpr(rootExpr);
 		}
 
 		public void visualize(String outputDir) {
@@ -85,13 +84,8 @@ public class ProfilingCompiler extends PipelineCompiler {
 		}
 	}
 	
-	public ProfilingCompiler(ModuleResolver resolver) {
-		super(resolver);
-	}
-
-	@Override
-	protected MainModule createMainModule() {
-		return new ProfilingMainModule();
+	public ProfilingCompiler() {
+		super();
 	}
 
 	@Override

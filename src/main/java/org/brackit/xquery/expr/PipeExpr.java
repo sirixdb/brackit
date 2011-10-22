@@ -27,76 +27,123 @@
  */
 package org.brackit.xquery.expr;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.operator.TupleImpl;
-import org.brackit.xquery.sequence.TypedSequence;
+import org.brackit.xquery.operator.Cursor;
+import org.brackit.xquery.operator.Operator;
+import org.brackit.xquery.sequence.BaseIter;
+import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
- * Resolves references to declared external variables.
  * 
  * @author Sebastian Baechle
  * 
  */
-public class ExtVariable extends Variable {
-	private final Expr defaultExpr;
+public class PipeExpr implements Expr {
+	private final Operator op;
+	private final Expr expr;
 
-	public ExtVariable(QNm name, SequenceType type, Expr defaultExpr) {
-		super(name, type);
-		this.defaultExpr = defaultExpr;
+	public PipeExpr(Operator op, Expr expr) {
+		this.op = op;
+		this.expr = expr;
+	}
+
+	public static class PipeSequence extends LazySequence {
+		final QueryContext ctx;
+		final Operator op;
+		final Expr expr;
+		final Tuple tuple;
+
+		public PipeSequence(QueryContext ctx, Operator op, Expr expr,
+				Tuple tuple) {
+			this.ctx = ctx;
+			this.op = op;
+			this.expr = expr;
+			this.tuple = tuple;
+		}
+
+		@Override
+		public Iter iterate() {
+			return new BaseIter() {
+				Cursor cursor;
+				Iter it;
+
+				@Override
+				public Item next() throws QueryException {
+					while (true) {
+						if (it != null) {
+							Item i = it.next();
+							if (i != null) {
+								return i;
+							}
+							it.close();
+							it = null;
+						} else if (cursor == null) {
+							cursor = op.create(ctx, tuple);
+							cursor.open(ctx);
+						}
+
+						Tuple t = cursor.next(ctx);
+
+						if (t == null) {
+							return null;
+						}
+
+						Sequence s = expr.evaluate(ctx, t);
+
+						if (s == null) {
+							continue;
+						}
+						if (s instanceof Item) {
+							return (Item) s;
+						}
+						it = s.iterate();
+					}
+				}
+
+				@Override
+				public void close() {
+					if (it != null) {
+						it.close();
+					}
+					if (cursor != null) {
+						cursor.close(ctx);
+					}
+				}
+			};
+		}
 	}
 
 	@Override
 	public Sequence evaluate(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		Sequence s;
-		if (ctx.isBound(name)) {
-			s = ctx.resolve(name);
-		} else if (defaultExpr != null) {
-			s = defaultExpr.evaluate(ctx, TupleImpl.EMPTY_TUPLE);
-		} else {
-			throw new QueryException(
-					ErrorCode.ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED,
-					"External variable %s has not been bound", name);
-		}
-		if (type != null) {
-			s = TypedSequence.toTypedSequence(ctx, type, s);
-		}
-		return s;
+		return new PipeSequence(ctx, op, expr, tuple);
 	}
 
 	@Override
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		Sequence res = ctx.resolve(name);
-		if (res == null) {
-			if (defaultExpr == null) {
-				throw new QueryException(
-						ErrorCode.ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED,
-						"External variable %s has not been bound", name);
-			}
-			res = defaultExpr.evaluate(ctx, TupleImpl.EMPTY_TUPLE);
-		}
-		if (type != null) {
-			return TypedSequence.toTypedItem(ctx, type, res);
-		}
-		return ExprUtil.asItem(res);
-	}
-
-	public boolean required() {
-		return (defaultExpr == null);
+		return ExprUtil.asItem(evaluate(ctx, tuple));
 	}
 
 	@Override
 	public boolean isUpdating() {
-		return ((defaultExpr != null) && (defaultExpr.isUpdating()));
+		// TODO
+		return false;
+	}
+
+	@Override
+	public boolean isVacuous() {
+		return false;
+	}
+
+	public String toString() {
+		return PipeExpr.class.getSimpleName();
 	}
 }

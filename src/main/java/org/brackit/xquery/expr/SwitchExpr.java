@@ -30,14 +30,11 @@ package org.brackit.xquery.expr;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.operator.Cursor;
-import org.brackit.xquery.operator.Operator;
-import org.brackit.xquery.sequence.BaseIter;
-import org.brackit.xquery.sequence.LazySequence;
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.function.fn.DeepEqual;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
@@ -45,86 +42,32 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  * 
  */
-public class ReturnExpr implements Expr {
-	private final Operator operator;
+public class SwitchExpr implements Expr {
+	final Expr operand;
+	final Expr[][] cases;
+	final Expr dftValue;
 
-	private final Expr expr;
-
-	public ReturnExpr(Operator operator, Expr expr) {
-		this.operator = operator;
-		this.expr = expr;
-	}
-
-	public static class OpSequence extends LazySequence {
-		final QueryContext ctx;
-		final Operator operator;
-		final Expr expr;
-		final Tuple tuple;
-
-		public OpSequence(QueryContext ctx, Operator operator, Expr expr,
-				Tuple tuple) {
-			this.ctx = ctx;
-			this.operator = operator;
-			this.expr = expr;
-			this.tuple = tuple;
-		}
-
-		@Override
-		public Iter iterate() {
-			return new BaseIter() {
-				Cursor cursor;
-				Iter it;
-
-				@Override
-				public Item next() throws QueryException {
-					while (true) {
-						if (it != null) {
-							Item i = it.next();
-							if (i != null) {
-								return i;
-							}
-							it.close();
-							it = null;
-						} else if (cursor == null) {
-							cursor = operator.create(ctx, tuple);
-							cursor.open(ctx);
-						}
-
-						Tuple t = cursor.next(ctx);
-
-						if (t == null) {
-							return null;
-						}
-
-						Sequence s = expr.evaluate(ctx, t);
-
-						if (s == null) {
-							continue;
-						}
-						if (s instanceof Item) {
-							return (Item) s;
-						}
-						it = s.iterate();
-					}
-				}
-
-				@Override
-				public void close() {
-					if (it != null) {
-						it.close();
-					}
-					if (cursor != null) {
-						cursor.close(ctx);
-					}
-				}
-			};
-		}
+	public SwitchExpr(Expr operand, Expr[][] cases, Expr dftValue) {
+		this.operand = operand;
+		this.cases = cases;
+		this.dftValue = dftValue;
 	}
 
 	@Override
 	public Sequence evaluate(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		return new OpSequence(ctx, operator, expr, tuple);
+		Item oi = operand.evaluateToItem(ctx, tuple);
+		Atomic oa = (oi != null) ? oi.atomize() : null;
+		for (int i = 0; i < cases.length; i++) {
+			for (int j = 0; j < cases[i].length - 1; j++) {
+				Item cij = cases[i][j].evaluateToItem(ctx, tuple);
+				Atomic ca = (cij != null) ? cij.atomize() : null;
+				if (DeepEqual.deepEquals(oa, ca).booleanValue()) {
+					return cases[i][cases[i].length - 1].evaluate(ctx, tuple);
+				}
+			}
+		}
+		return dftValue.evaluate(ctx, tuple);
 	}
 
 	@Override
@@ -135,16 +78,31 @@ public class ReturnExpr implements Expr {
 
 	@Override
 	public boolean isUpdating() {
-		// TODO
+		if ((operand.isUpdating()) || (dftValue.isUpdating())) {
+			return true;
+		}
+		for (int i = 0; i < cases.length; i++) {
+			for (int j = 0; j < cases[i].length; j++) {
+				if (cases[i][j].isUpdating()) {
+					return true;
+				}
+			}
+		}
 		return false;
 	}
 
 	@Override
 	public boolean isVacuous() {
+		if ((operand.isVacuous()) || (dftValue.isVacuous())) {
+			return true;
+		}
+		for (int i = 0; i < cases.length; i++) {
+			for (int j = 0; j < cases[i].length; j++) {
+				if (cases[i][j].isVacuous()) {
+					return true;
+				}
+			}
+		}
 		return false;
-	}
-
-	public String toString() {
-		return ReturnExpr.class.getSimpleName();
 	}
 }

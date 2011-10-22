@@ -30,11 +30,13 @@ package org.brackit.xquery.compiler.translator;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.module.Module;
+import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.xdm.Expr;
 
 /**
  * @author Sebastian Baechle
  *
  */
 public interface Translator {
-	public Module translate(AST ast) throws QueryException;
+	public Expr translate(Module module, StaticContext ctx, AST expr, boolean allowUpdate) throws QueryException;
 }

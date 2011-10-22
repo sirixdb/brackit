@@ -29,6 +29,7 @@ package org.brackit.xquery.compiler;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
+import org.brackit.xquery.compiler.analyzer.Analyzer;
 import org.brackit.xquery.compiler.optimizer.DefaultOptimizer;
 import org.brackit.xquery.compiler.optimizer.Optimizer;
 import org.brackit.xquery.compiler.parser.DotUtil;
@@ -37,6 +38,8 @@ import org.brackit.xquery.compiler.parser.XQParser;
 import org.brackit.xquery.compiler.translator.PipelineCompiler;
 import org.brackit.xquery.compiler.translator.Translator;
 import org.brackit.xquery.module.Module;
+import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.xdm.Expr;
 
 /**
  * Compiles an {@link Module XQuery module}.
@@ -63,7 +66,7 @@ public class CompileChain {
 	}
 
 	protected Translator getTranslator() {
-		return new PipelineCompiler(getModuleResolver());
+		return new PipelineCompiler();
 	}
 
 	protected ModuleResolver getModuleResolver() {
@@ -74,14 +77,21 @@ public class CompileChain {
 		if (XQuery.DEBUG) {
 			System.out.println(String.format("Compiling query:\n%s", query));
 		}
-		AST ast = getParser().parse(query);
+		AST xquery = getParser().parse(query);
 		if (XQuery.DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR, "parsed");
+			DotUtil.drawDotToFile(xquery.dot(), XQuery.DEBUG_DIR, "parsed");
 		}
-		ast = getOptimizer().optimize(ast);
-		Module module = getTranslator().translate(ast);
+		Analyzer analyzer = new Analyzer(getModuleResolver(), xquery);
+		Module module = analyzer.getModule();
+		for (Target t : analyzer.getTargets()) {
+			AST ast = getOptimizer().optimize(t.getExpr());
+			StaticContext ctx = t.getStaticContext();
+			Expr expr = getTranslator().translate(module, ctx, ast,
+					t.allowUpdate());
+			t.finalize(expr);
+		}
 		if (XQuery.DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR, "xquery");
+			DotUtil.drawDotToFile(xquery.dot(), XQuery.DEBUG_DIR, "xquery");
 		}
 		return module;
 	}

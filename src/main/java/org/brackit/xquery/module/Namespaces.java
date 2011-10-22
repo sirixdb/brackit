@@ -29,9 +29,8 @@ package org.brackit.xquery.module;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
-import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 
 /**
@@ -43,6 +42,8 @@ public class Namespaces {
 	public static final String LOCAL_NSURI = "http://www.w3.org/2005/xquery-local-functions";
 
 	public static final String FN_NSURI = "http://www.w3.org/2005/xpath-functions";
+
+	public static final String FNMATH_NSURI = "http://www.w3.org/2005/xpath-functions/math";
 
 	public static final String XSI_NSURI = "http://www.w3.org/2001/XMLSchema-instance";
 
@@ -74,11 +75,12 @@ public class Namespaces {
 
 	public static final String XMLNS_PREFIX = "xmlns";
 
-	public static final String FS_PREFIX = "fs";
-
 	public static final String ERR_PREFIX = "err";
 
+	/* BEGIN TODO */
 	public static final String FS_NSURI = "FormalSemanticsOnly";
+	
+	public static final String FS_PREFIX = "fs";
 
 	public static final QNm FS_DOT = new QNm(FS_NSURI, FS_PREFIX, "dot");
 
@@ -88,10 +90,13 @@ public class Namespaces {
 			"position");
 
 	public static final QNm FS_PARENT = new QNm(FS_NSURI, FS_PREFIX, "parent");
+	/* END TODO */
 
 	protected static final Map<String, NamespaceDecl> predefined = new HashMap<String, NamespaceDecl>();
 
-	protected final Map<String, NamespaceDecl> namespaces = new HashMap<String, NamespaceDecl>();
+	protected final Map<String, NamespaceDecl> namespaces = new TreeMap<String, NamespaceDecl>();
+
+	protected final Namespaces parent;
 
 	protected String defaultFunctionNamespace = FN_NSURI;
 
@@ -106,6 +111,16 @@ public class Namespaces {
 		predefine(ERR_PREFIX, ERR_NSURI);
 		predefine(BIT_PREFIX, BIT_NSURI);
 		predefine(IO_PREFIX, IO_NSURI);
+	}
+
+	public Namespaces() {
+		this.parent = null;
+	}
+
+	public Namespaces(Namespaces parent) {
+		this.parent = parent;
+		this.defaultElementNamespace = parent.defaultElementNamespace;
+		this.defaultFunctionNamespace = parent.defaultFunctionNamespace;
 	}
 
 	public static void predefine(String prefix, String nsUri) {
@@ -128,74 +143,31 @@ public class Namespaces {
 		this.defaultElementNamespace = defaultElementNamespace;
 	}
 
-	public void declare(String prefix, String nsURI) throws QueryException {
-		if ((prefix == null) || (prefix.isEmpty())) {
-			throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
-					"Illegal empty namespace prefix");
-		} else if ((XML_PREFIX.equals(prefix)) || (XMLNS_PREFIX.equals(prefix))) {
-			throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
-					"The prefix '%s' must not be used in a namespace declaration");
-		} else if (nsURI.isEmpty()) {
-			namespaces.remove(prefix);
-		} else if ((XML_NSURI.equals(nsURI)) || (XMLNS_NSURI.equals(nsURI))) {
-			throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
-					"The namespace URI '%s' must not be used in a namespace declaration");
-		} else {
-			NamespaceDecl pNsDecl = namespaces.put(prefix, new NamespaceDecl(
-					prefix, nsURI));
-			if ((pNsDecl != null) && (!nsURI.equals(pNsDecl.getUri()))) {
-				throw new QueryException(
-						ErrorCode.ERR_MULTIPLE_NS_BINDINGS_FOR_PREFIX,
-						"Namespace prefix '%s' is already bound to '%s",
-						prefix, pNsDecl.getUri());
-			}
-		}
-	}
+	public void declare(String prefix, String nsURI) {
+		namespaces.put(prefix, new NamespaceDecl(prefix, nsURI));
+	}	
 
-	public String resolve(String prefix) throws QueryException {
+	public String resolve(String prefix) {
 		if ((prefix == null) || (prefix.isEmpty())) {
 			return null;
 		}
 		NamespaceDecl nsDecl = namespaces.get(prefix);
 
 		if (nsDecl != null) {
-			if (nsDecl.getUri().isEmpty()) {
-				throw new QueryException(
-						ErrorCode.ERR_UNDEFINED_NAMESPACE_PREFIX,
-						"Undefined namespace prefix: '%s'", prefix);
-			}
 			return nsDecl.getUri();
 		}
-
+		if (parent != null) {
+			return parent.resolve(prefix);
+		}
 		nsDecl = predefined.get(prefix);
 		if (nsDecl != null) {
 			return nsDecl.getUri();
 		}
-
-		throw new QueryException(ErrorCode.ERR_UNDEFINED_NAMESPACE_PREFIX,
-				"Undefined namespace prefix: '%s'", prefix);
+		return null;
 	}
-
-	public QNm expand(String prefix, String localname) throws QueryException {
-		return expand(prefix, localname, "");
-	}
-
-	public QNm expandElement(String prefix, String localname)
-			throws QueryException {
-		return expand(prefix, localname, defaultElementNamespace);
-	}
-
-	public QNm expandFunction(String prefix, String localname)
-			throws QueryException {
-		return expand(prefix, localname, defaultFunctionNamespace);
-	}
-
-	public QNm expand(String prefix, String localname, String defaultNSURI)
-			throws QueryException {
-		String namespaceURI = resolve(prefix);
-		if (namespaceURI == null) {
-			namespaceURI = defaultNSURI;
-		}
-		return new QNm(namespaceURI, prefix, localname);
+	
+	
+	public boolean isPredefined(String prefix) {
+		return predefined.containsKey(prefix);
 	}
 }

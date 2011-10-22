@@ -35,6 +35,7 @@ import java.util.Map.Entry;
 
 import org.brackit.xquery.compiler.profiler.DotContext;
 import org.brackit.xquery.compiler.profiler.DotNode;
+import org.brackit.xquery.module.StaticContext;
 
 /**
  * 
@@ -43,22 +44,21 @@ import org.brackit.xquery.compiler.profiler.DotNode;
  */
 public class AST {
 	private AST parent;
-
 	private int type;
-
 	private Object value;
-
 	private Map<String, Object> properties;
-
+	private StaticContext sctx;
 	private AST[] children;
 
 	public AST(int type) {
 		this(type, XQ.NAMES[type]);
 	}
 
-	public AST(int type, Object value, Map<String, Object> properties) {
+	private AST(int type, Object value, StaticContext sctx,
+			Map<String, Object> properties) {
 		this.type = type;
 		this.value = value;
+		this.sctx = sctx;
 		this.properties = properties;
 	}
 
@@ -78,7 +78,7 @@ public class AST {
 	public Object getValue() {
 		return value;
 	}
-	
+
 	public String getStringValue() {
 		return (value != null) ? value.toString() : "";
 	}
@@ -97,7 +97,7 @@ public class AST {
 	public Object getProperty(String name) {
 		return (properties != null) ? properties.get(name) : null;
 	}
-	
+
 	public boolean checkProperty(String name) {
 		Object p = (properties != null) ? properties.get(name) : null;
 		if (p == null) {
@@ -230,7 +230,7 @@ public class AST {
 	}
 
 	public AST copy() {
-		return new AST(type, value, (properties == null) ? null
+		return new AST(type, value, sctx, (properties == null) ? null
 				: new HashMap<String, Object>(properties));
 	}
 
@@ -262,14 +262,14 @@ public class AST {
 		final int myNo = no++;
 		String label = ((type > 0) && (type < XQ.NAMES.length)) ? (XQ.NAMES[type]
 				.equals(value.toString())) ? value.toString() : XQ.NAMES[type]
-				+ "[" + value.toString() + "]"
-				: value.toString();
+				+ "[" + value.toString() + "]" : value.toString();
 		DotNode node = dt.addNode(String.valueOf(myNo));
 		node.addRow(label, null);
 		if (properties != null) {
 			for (Entry<String, Object> prop : properties.entrySet()) {
 				Object value = prop.getValue();
-				node.addRow(prop.getKey(), value != null ? value.toString() : "");
+				node.addRow(prop.getKey(), value != null ? value.toString()
+						: "");
 			}
 		}
 		if (children != null) {
@@ -293,14 +293,29 @@ public class AST {
 		return null;
 	}
 
+	public void setStaticContext(StaticContext sctx) {
+		this.sctx = sctx;
+	}
+
+	public StaticContext getStaticContext() {
+		AST n = this;
+		while (n != null) {
+			if (n.sctx != null) {
+				return n.sctx;
+			}
+			n = n.parent;
+		}
+		return null;
+	}
+
 	public void display() {
 		try {
 			File file = File.createTempFile("ast", ".dot");
 			file.deleteOnExit();
 			dot(file);
-			Runtime.getRuntime().exec(
-					new String[] { "/usr/bin/dotty", file.getAbsolutePath() })
-					.waitFor();
+			Runtime.getRuntime()
+					.exec(new String[] { "/usr/bin/dotty",
+							file.getAbsolutePath() }).waitFor();
 			file.delete();
 		} catch (Exception e) {
 			e.printStackTrace();
