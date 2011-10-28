@@ -173,6 +173,23 @@ public class Path<E> {
 		return this;
 	}
 
+	/**
+	 * The semantics of this method are twofold, as one has to distinguish
+	 * abstract <i>path patterns</i> from absolute <i>path instances</i>: It 
+	 * returns true if 
+	 * <ol><li>a path instance matches a path pattern, i.e.
+	 * path pattern X matches Y if Y is absolute and X matches Y</li>
+	 * <li>a path pattern is subsumed by another pattern, i.e. X and Y are path
+	 * patterns and every absolute path matching Y also matches X.</li></ol><br/>
+	 * Examples:
+	 * <ol><li>/a/b//c matches /a/b/c<br/>
+	 * /a/b//d matches /a/b/c/d<br/>
+	 * /a/b/d does not match /a/b/c/d</li>
+	 * <li>/a/b/c matches /a/b//c<br/>
+	 * /a/b//c matches /a/b//c<br/>
+	 * /a//b/c matches a/b//b/c<br/>
+	 * /a//b/c does not match /a/b//c (cf. /a/b/d/c)</li></ol>
+	 */
 	@SuppressWarnings("unchecked")
 	public boolean matches(Path<E> other) throws PathException {
 		if (isEmpty()) {
@@ -206,13 +223,13 @@ public class Path<E> {
 
 			Axis oAxis = o[oPos].axis;
 			boolean oIsAttributeChildStep = (oAxis == Axis.CHILD_ATTRIBUTE);
-			boolean oIsNodeChildStep = (oAxis == Axis.CHILD);
+			boolean oIsNodeStep = (oAxis == Axis.CHILD) || (oAxis == Axis.DESC);
 
 			if (!pIsNodeStep && !pIsAttributeStep) {
 				throw new PathException("Illegal pattern path: %s", this);
 			}
 
-			if (!oIsAttributeChildStep && !oIsNodeChildStep) {
+			if (!oIsAttributeChildStep && !oIsNodeStep) {
 				throw new PathException("Illegal path: %s", path);
 			}
 
@@ -221,7 +238,9 @@ public class Path<E> {
 
 			if (((p[pPos].value == null) || o[oPos].value
 					.equals((p[pPos].value)))
-					&& ((pIsNodeStep && oIsNodeChildStep) || (pIsAttributeStep && oIsAttributeChildStep))) {
+					&& ((pAxis == oAxis)
+							|| ((pAxis == Axis.DESC) && (oAxis == Axis.CHILD)) 
+							|| ((pAxis == Axis.DESC_ATTRIBUTE) && (oAxis == Axis.CHILD_ATTRIBUTE)))) {
 				// System.out.println("match " + p[pPos]);
 				matchTable[pPos] = oPos;
 				oPos--;
@@ -277,8 +296,8 @@ public class Path<E> {
 		if (path.size() == 0) {
 			return new Path<E>();
 		} else {
-			return new Path<E>(new ArrayList<Step<E>>(path.subList(0, path
-					.size() - 1)));
+			return new Path<E>(new ArrayList<Step<E>>(path.subList(0,
+					path.size() - 1)));
 		}
 	}
 
@@ -460,10 +479,10 @@ public class Path<E> {
 		System.out.println("Explode " + path.explode());
 
 		// pattern.descendant("title");
-		//		
+		//
 		// System.out.println("Path:" + path);
 		// System.out.println("Pattern:" + pattern);
-		//				
+		//
 		// System.out.println("Path matches pattern: " + pattern.matches(path));
 	}
 }
