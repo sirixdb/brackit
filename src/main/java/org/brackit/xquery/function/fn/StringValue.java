@@ -33,10 +33,11 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 
 /**
  * Implementation of predefined functions fn:string() and fn:string($arg1) as
@@ -52,7 +53,7 @@ public class StringValue extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException {
 		if (args[0] == null) {
 			return Str.EMPTY;

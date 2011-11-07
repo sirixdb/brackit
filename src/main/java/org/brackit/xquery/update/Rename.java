@@ -35,6 +35,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.expr.ConstructedNodeBuilder;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.update.op.RenameOp;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
@@ -52,11 +53,12 @@ public class Rename extends ConstructedNodeBuilder implements Expr {
 	private static final EnumSet<Kind> renameNodeKind = EnumSet.of(
 			Kind.ELEMENT, Kind.ATTRIBUTE, Kind.PROCESSING_INSTRUCTION);
 
+	private final StaticContext sctx;
 	private final Expr sourceExpr;
-
 	private final Expr targetExpr;
 
-	public Rename(Expr sourceExpr, Expr targetExpr) {
+	public Rename(StaticContext sctx, Expr sourceExpr, Expr targetExpr) {
+		this.sctx = sctx;
 		this.sourceExpr = sourceExpr;
 		this.targetExpr = targetExpr;
 	}
@@ -107,18 +109,18 @@ public class Rename extends ConstructedNodeBuilder implements Expr {
 		if (!renameNodeKind.contains(node.getKind())) {
 			throw new QueryException(
 					ErrorCode.ERR_UPDATE_RENAME_TARGET_NOT_A_EAP_NODE,
-					"Target node kind %s is not allowed for rename node: %",
+					"Target node kind is not allowed for rename node: %s",
 					node.getKind());
 		}
 
 		QNm name;
 		Item nameItem = sourceExpr.evaluateToItem(ctx, tuple);
 		if (node.getKind() == Kind.ELEMENT) {
-			name = buildElementName(ctx, nameItem);
+			name = buildElementName(sctx, nameItem);
 		} else if (node.getKind() == Kind.ATTRIBUTE) {
-			name = buildAttributeName(ctx, nameItem);
+			name = buildAttributeName(sctx, nameItem);
 		} else {
-			name = buildPIName(ctx, nameItem);
+			name = buildPITarget(ctx, nameItem);
 		}
 
 		ctx.addPendingUpdate(new RenameOp(node, name));

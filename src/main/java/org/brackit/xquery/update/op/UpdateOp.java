@@ -27,7 +27,6 @@
  */
 package org.brackit.xquery.update.op;
 
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Node;
 
@@ -39,7 +38,7 @@ import org.brackit.xquery.xdm.Node;
 public interface UpdateOp {
 	public Node<?> getTarget();
 
-	public void apply(QueryContext ctx) throws QueryException;
+	public void apply() throws QueryException;
 
 	public OpType getType();
 }

@@ -30,15 +30,17 @@ package org.brackit.xquery.function.fn;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Stream;
 
 /**
@@ -61,17 +63,17 @@ public class Doc extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
-			throws QueryException {
+	public Sequence execute(StaticContext sctx, QueryContext ctx,
+			Sequence[] args) throws QueryException {
 		if (args[0] == null) {
 			return (retrieve ? null : Bool.FALSE);
 		}
 
-		Str name = (Str) args[0];
+		String name = ((Str) args[0]).stringValue();
 
 		try {
 			Node<?> document;
-			if (name.stringValue().isEmpty()) {
+			if (name.isEmpty()) {
 				// Implementation defined: Handle empty name in the sense of
 				// fn:doc() which is in fact not defined by XQuery
 				document = ctx.getDefaultDocument();
@@ -88,8 +90,8 @@ public class Doc extends AbstractFunction {
 
 				return document;
 			} else {
-				Collection<?> collection = ctx.getStore().lookup(
-						name.stringValue());
+				AnyURI uri = resolve(sctx, name);
+				Collection<?> collection = ctx.getStore().lookup(uri.stringValue());
 				Stream<? extends Node<?>> docs = collection.getDocuments();
 				try {
 					document = (Node<?>) docs.next();
@@ -127,6 +129,36 @@ public class Doc extends AbstractFunction {
 			} else {
 				return Bool.FALSE;
 			}
+		}
+	}
+	
+	public AnyURI resolve(StaticContext sctx, AnyURI base,
+			AnyURI relative) throws QueryException {
+		if (relative.isAbsolute()) {
+			return relative;
+		}
+		if (base == null) {
+			base = sctx.getBaseURI();
+			if ((base == null) || (!base.isAbsolute())) {
+				return relative;
+			}
+		}
+		try {
+			return relative.absolutize(base);
+		} catch (Exception e) {
+			throw new QueryException(e, ErrorCode.ERR_FN_RESOLVE_URI,
+					"Error resolving URI %s against base URI %s");
+		}
+	}
+
+	public AnyURI resolve(StaticContext sctx, String relStr)
+			throws QueryException {
+		try {
+			AnyURI relative = new AnyURI(relStr);
+			return resolve(sctx, null, relative);
+		} catch (DocumentException e) {
+			throw new QueryException(ErrorCode.ERR_INVALID_URI,
+					"Invalid relative URI: %s", relStr);
 		}
 	}
 }

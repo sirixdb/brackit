@@ -43,11 +43,12 @@ import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.Signature;
 import org.brackit.xquery.module.Namespaces;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 
 /**
  * 
@@ -63,7 +64,7 @@ public class Put extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException {
 		URLConnection conn = null;
 
@@ -124,12 +125,5 @@ public class Put extends AbstractFunction {
 				}
 			}
 		}
-	}
-
-	public static void main(String[] args) throws Exception {
-		Put p = new Put(null, null);
-		p
-				.execute(null, new Sequence[] { new AnyURI(
-						"file://docs/xmark8.xml") });
 	}
 }

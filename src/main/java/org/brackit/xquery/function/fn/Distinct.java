@@ -38,12 +38,13 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 
 /**
  * 
@@ -56,7 +57,7 @@ public class Distinct extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(final QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, final QueryContext ctx, Sequence[] args)
 			throws QueryException {
 		if (args.length == 2) {
 			Str collation = (Str) args[1];

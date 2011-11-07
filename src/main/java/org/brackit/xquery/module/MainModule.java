@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.module;
 
+import org.brackit.xquery.compiler.Unit;
 import org.brackit.xquery.xdm.Expr;
 
 /**
@@ -34,7 +35,7 @@ import org.brackit.xquery.xdm.Expr;
  * @author Sebastian Baechle
  * 
  */
-public class MainModule extends AbstractModule {
+public class MainModule extends AbstractModule implements Unit {
 	private Expr body;
 
 	@Override
@@ -42,12 +43,13 @@ public class MainModule extends AbstractModule {
 		return body;
 	}
 
-	public void setBody(Expr body) {
+	@Override
+	public void setExpr(Expr body) {
 		this.body = body;
 	}
 
 	@Override
-	public NamespaceDecl getTargetNS() {
+	public String getTargetNS() {
 		return null;
 	}
 }

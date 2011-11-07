@@ -40,9 +40,10 @@ import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 
 /**
  * Implementation of predefined functions fn:matches($arg1, $arg2),
@@ -58,9 +59,9 @@ import org.brackit.xquery.xdm.Sequence;
  * 
  */
 public class RegEx extends AbstractFunction {
-	private final static List<Character> WHITESPACE = Arrays.asList(Character
-			.toChars(0x09)[0], Character.toChars(0x0A)[0], Character
-			.toChars(0x0D)[0], Character.toChars(0x20)[0]);
+	private final static List<Character> WHITESPACE = Arrays.asList(
+			Character.toChars(0x09)[0], Character.toChars(0x0A)[0],
+			Character.toChars(0x0D)[0], Character.toChars(0x20)[0]);
 
 	public static enum Mode {
 		MATCH, REPLACE, TOKENIZE
@@ -74,8 +75,8 @@ public class RegEx extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
-			throws QueryException {
+	public Sequence execute(StaticContext sctx, QueryContext ctx,
+			Sequence[] args) throws QueryException {
 		boolean removeWhitespace = false;
 		int flagMask = Pattern.UNIX_LINES;
 
@@ -140,15 +141,15 @@ public class RegEx extends AbstractFunction {
 			String replace = ((Str) args[2]).str;
 
 			// Disallowed in replacement string: backslash or dollar sign as
-			// only character in string, or dollar sign not preceded by 
-			// backslash and not followed by a digit, or backslash not 
+			// only character in string, or dollar sign not preceded by
+			// backslash and not followed by a digit, or backslash not
 			// preceded by backslash and not followed by a dollar sign
 			String pat = "(\\$|\\\\|.*[^\\\\]\\$\\D.*|.*[^\\\\]\\\\[^\\$].*)";
 			if (Pattern.matches(pat, replace)) {
 				throw (new QueryException(
 						ErrorCode.ERR_INVALID_REPLACEMENT_STRING,
-						"Replacement string matches makes illegal " +
-						"use of chars '\\' or '$'."));
+						"Replacement string matches makes illegal "
+								+ "use of chars '\\' or '$'."));
 			}
 
 			StringBuffer sb = new StringBuffer();
@@ -199,15 +200,15 @@ public class RegEx extends AbstractFunction {
 					throw new QueryException(
 							ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
 							"Reference to group 0 not allowed");
-				} else if (c >= '0' && c <='9') {
+				} else if (c >= '0' && c <= '9') {
 					if (charClassDepth > 0) {
 						throw new QueryException(
 								ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
-								"Back references in character class expressions" +
-								" are disallowed.");
+								"Back references in character class expressions"
+										+ " are disallowed.");
 					}
-					backRef = backRef * 10 
-								+ Integer.parseInt(Character.toString(c));
+					backRef = backRef * 10
+							+ Integer.parseInt(Character.toString(c));
 					continue;
 				}
 			}
@@ -270,7 +271,7 @@ public class RegEx extends AbstractFunction {
 			groupStart = false;
 			escaped = false;
 		}
-		
+
 		// Check for trailing '\' (only valid with subsequent characters)
 		if (escaped && backRef == 0) {
 			throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,

@@ -35,12 +35,13 @@ import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 
 /**
  * Implementation of predefined function fn:subsequence($arg1, $arg2) as per
@@ -56,7 +57,7 @@ public class Subsequence extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException {
 
 		final Sequence s = args[0];
@@ -64,8 +65,7 @@ public class Subsequence extends AbstractFunction {
 			return null;
 		}
 
-		IntNumeric tmp = Cast.asInteger(((Dbl) args[1]).round()
-				.doubleValue());
+		IntNumeric tmp = Cast.asInteger(((Dbl) args[1]).round().doubleValue());
 		if (tmp.cmp(Int32.ZERO) <= 0) {
 			tmp = Int32.ONE;
 		}
@@ -101,7 +101,7 @@ public class Subsequence extends AbstractFunction {
 
 						if (it == null) {
 							it = seq.iterate();
-							it.skip(start);
+							it.skip((IntNumeric) start.subtract(Int32.ONE));
 						}
 
 						return it.next();
@@ -109,7 +109,9 @@ public class Subsequence extends AbstractFunction {
 
 					@Override
 					public void close() {
-						it.close();
+						if (it != null) {
+							it.close();
+						}
 					}
 				};
 			};

@@ -35,14 +35,14 @@ import org.brackit.xquery.atomic.Counter;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.expr.Cast;
-import org.brackit.xquery.sequence.type.AtomicType;
-import org.brackit.xquery.sequence.type.Cardinality;
-import org.brackit.xquery.sequence.type.ItemType;
-import org.brackit.xquery.sequence.type.SequenceType;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.xdm.type.AtomicType;
+import org.brackit.xquery.xdm.type.Cardinality;
+import org.brackit.xquery.xdm.type.ItemType;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * 
@@ -52,12 +52,10 @@ import org.brackit.xquery.xdm.Type;
 public class TypedSequence extends LazySequence {
 
 	private static final Int32 TWO = Int32.ZERO_TWO_TWENTY[2];
-	
+
 	private final class TypedIter extends BaseIter {
 		Cardinality card = type.getCardinality();
 		ItemType iType = type.getItemType();
-		boolean expectAtomicType = (iType instanceof AtomicType);
-		Type aType = (expectAtomicType) ? ((AtomicType) iType).type : null;
 		Counter pos = new Counter();
 		Iter s;
 
@@ -77,7 +75,7 @@ public class TypedSequence extends LazySequence {
 				safe = true; // remember that sequence type is OK
 				return null;
 			}
-			
+
 			pos.inc();
 			if ((card == Cardinality.Zero)
 					|| ((pos.cmp(TWO) == 0) && (card.atMostOne()))) {
@@ -87,36 +85,7 @@ public class TypedSequence extends LazySequence {
 						card, pos);
 			}
 
-			// See XQuery 3.1.5 Function Calls
-			if (expectAtomicType) {
-				Atomic atomic = item.atomize();
-				Type type = atomic.type();
-
-				if ((type == Type.UNA) && (aType != Type.UNA)
-						&& (applyFunctionConversion)) {
-					if (enforceDouble) {
-						atomic = Cast.cast(atomic, Type.DBL, false);
-					} else {
-						atomic = Cast.cast(atomic, aType, false);
-					}
-				} else if (!iType.matches(atomic)) {
-					if ((applyFunctionConversion) && (aType.isNumeric())
-							&& (type.isNumeric())) {
-						atomic = Cast.cast(atomic, aType, false);
-					} else if ((applyFunctionConversion)
-							&& (aType.instanceOf(Type.STR))
-							&& (type.instanceOf(Type.AURI))) {
-						atomic = Cast.cast(atomic, aType, false);
-					} else {
-						throw new QueryException(
-								ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-								"Item of invalid atomic type in typed sequence (expected %s): %s",
-								iType, atomic);
-					}
-				}
-
-				return atomic;
-			} else if (!iType.matches(item)) {
+			if (!iType.matches(item)) {
 				throw new QueryException(
 						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 						"Item of invalid type in typed sequence (expected %s): %s",
@@ -144,24 +113,12 @@ public class TypedSequence extends LazySequence {
 
 	final SequenceType type;
 	final Sequence arg;
-	final boolean applyFunctionConversion;
-	final boolean enforceDouble;
 	// volatile field because safe is evaluated lazy
 	volatile boolean safe;
 
 	public TypedSequence(SequenceType type, Sequence arg) {
 		this.type = type;
 		this.arg = arg;
-		this.applyFunctionConversion = false;
-		this.enforceDouble = false;
-	}
-
-	public TypedSequence(SequenceType type, Sequence arg,
-			boolean applyFunctionConversion, boolean enforceDouble) {
-		this.type = type;
-		this.arg = arg;
-		this.applyFunctionConversion = applyFunctionConversion;
-		this.enforceDouble = enforceDouble;
 	}
 
 	@Override

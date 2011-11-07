@@ -27,7 +27,6 @@
  */
 package org.brackit.xquery.update.op;
 
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.Node;
@@ -48,8 +47,8 @@ public class RenameOp implements UpdateOp {
 	}
 
 	@Override
-	public void apply(QueryContext ctx) throws QueryException {
-		target.setName(name.getLocalName());
+	public void apply() throws QueryException {
+		target.setName(name);
 	}
 
 	@Override

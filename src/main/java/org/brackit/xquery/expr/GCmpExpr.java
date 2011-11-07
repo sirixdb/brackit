@@ -117,7 +117,7 @@ public class GCmpExpr extends VCmpExpr {
 				 * Cast.cast(ctx, lAtomic, Type.STR, false);
 				 */
 			} else {
-				lAtomic = Cast.cast(lAtomic, rAtomic.type(), false);
+				lAtomic = Cast.cast(null, lAtomic, rAtomic.type(), false);
 			}
 		} else if (rType.instanceOf(Type.UNA)) {
 			if (lType.isNumeric()) {
@@ -129,7 +129,7 @@ public class GCmpExpr extends VCmpExpr {
 				 * Cast.cast(ctx, rAtomic, Type.STR, false);
 				 */
 			} else {
-				rAtomic = Cast.cast(rAtomic, lAtomic.type(), false);
+				rAtomic = Cast.cast(null, rAtomic, lAtomic.type(), false);
 			}
 		}
 

@@ -31,6 +31,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Kind;
@@ -43,19 +44,38 @@ import org.brackit.xquery.xdm.Sequence;
  * 
  */
 public class ElementExpr extends ConstructedNodeBuilder implements Expr {
+
+	public static class NS {
+		private final String prefix;
+		private final String uri;
+
+		public NS(String prefix, String uri) {
+			this.prefix = prefix;
+			this.uri = uri;
+		}
+
+		public String getPrefix() {
+			return prefix;
+		}
+
+		public String getURI() {
+			return uri;
+		}
+	}
+
+	protected final StaticContext sctx;
 	protected final Expr nameExpr;
-
+	protected final NS[] namespaces;
 	protected final Expr[] contentExprs;
-
 	protected final boolean bind;
-
 	protected final boolean appendOnly;
-
 	protected final QNm name;
 
-	public ElementExpr(Expr nameExpr, Expr[] contentExpr, boolean bind,
-			boolean appendOnly) {
+	public ElementExpr(StaticContext sctx, Expr nameExpr, NS[] namespaces,
+			Expr[] contentExpr, boolean bind, boolean appendOnly) {
+		this.sctx = sctx;
 		this.nameExpr = nameExpr;
+		this.namespaces = namespaces;
 		this.contentExprs = contentExpr;
 		this.bind = bind;
 		this.appendOnly = appendOnly;
@@ -72,16 +92,26 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
 		// See XQuery 3.7.3.1 Computed Element Constructors
-		QNm name = (this.name != null) ? this.name : buildElementName(ctx,
+		QNm name = (this.name != null) ? this.name : buildElementName(sctx,
 				nameExpr.evaluateToItem(ctx, tuple));
 
 		final Node<?> element;
 
 		if (appendOnly) {
 			element = ((Node<?>) tuple.get(tuple.getSize() - 1)).append(
-					Kind.ELEMENT, name.getLocalName());
+					Kind.ELEMENT, name, null);
 		} else {
-			element = ctx.getNodeFactory().element(name.getLocalName());
+			element = ctx.getNodeFactory().element(name);
+		}
+
+		for (NS ns : namespaces) {
+			String prefix = ns.getPrefix();
+			String uri = ns.getURI();
+			if (prefix == null) {
+				element.getScope().setDefaultNS(uri);
+			} else {
+				element.getScope().addPrefix(prefix, uri);
+			}
 		}
 
 		ContentSink sink = new ContentSink() {

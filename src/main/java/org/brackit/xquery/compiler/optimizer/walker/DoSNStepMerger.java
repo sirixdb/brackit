@@ -28,7 +28,7 @@
 package org.brackit.xquery.compiler.optimizer.walker;
 
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.parser.XQueryParser;
+import org.brackit.xquery.compiler.XQ;
 
 /**
  * Merge descendant-or-self::node/child::X to descendant::X
@@ -39,7 +39,7 @@ import org.brackit.xquery.compiler.parser.XQueryParser;
 public class DoSNStepMerger extends Walker {
 	@Override
 	protected AST visit(AST node) {
-		if (node.getType() != XQueryParser.PathExpr) {
+		if (node.getType() != XQ.PathExpr) {
 			return node;
 		}
 
@@ -50,11 +50,9 @@ public class DoSNStepMerger extends Walker {
 				AST nextStep = node.getChild(i + 1);
 
 				if (isChildStepWithoutPredicate(nextStep)) {
-					AST newStep = new AST(XQueryParser.StepExpr, "StepExpr");
-					AST axis = new AST(XQueryParser.AxisSpec, "AxisSpec");
-					axis
-							.addChild(new AST(XQueryParser.DESCENDANT,
-									"DESCENDANT"));
+					AST newStep = new AST(XQ.StepExpr);
+					AST axis = new AST(XQ.AxisSpec);
+					axis.addChild(new AST(XQ.DESCENDANT));
 					newStep.addChild(axis);
 					newStep.addChild(nextStep.getChild(1).copyTree());
 					node.replaceChild(i, newStep);
@@ -70,17 +68,17 @@ public class DoSNStepMerger extends Walker {
 	}
 
 	private boolean isChildStepWithoutPredicate(AST child) {
-		return ((child.getType() == XQueryParser.StepExpr)
-				&& (child.getChild(0).getType() == XQueryParser.AxisSpec)
-				&& (child.getChild(0).getChild(0).getType() == XQueryParser.CHILD) && (child
-				.getChildCount() == 2)); // no predicate
+		return ((child.getType() == XQ.StepExpr)
+				&& (child.getChild(0).getType() == XQ.AxisSpec)
+				&& (child.getChild(0).getChild(0).getType() == XQ.CHILD) && (child
+					.getChildCount() == 2)); // no predicate
 	}
 
 	private boolean isDescendantOrSelfNodeStepWithoutPredicate(AST child) {
-		return ((child.getType() == XQueryParser.StepExpr)
-				&& (child.getChild(0).getType() == XQueryParser.AxisSpec)
-				&& (child.getChild(0).getChild(0).getType() == XQueryParser.DESCENDANT_OR_SELF)
-				&& (child.getChild(1).getType() == XQueryParser.KindTestAnyKind) && (child
-				.getChildCount() == 2)); // no predicate
+		return ((child.getType() == XQ.StepExpr)
+				&& (child.getChild(0).getType() == XQ.AxisSpec)
+				&& (child.getChild(0).getChild(0).getType() == XQ.DESCENDANT_OR_SELF)
+				&& (child.getChild(1).getType() == XQ.KindTestAnyKind) && (child
+					.getChildCount() == 2)); // no predicate
 	}
 }

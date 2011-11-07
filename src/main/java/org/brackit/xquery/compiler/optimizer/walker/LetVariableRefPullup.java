@@ -32,8 +32,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.parser.XQueryParser;
+import org.brackit.xquery.compiler.XQ;
 
 /**
  * 
@@ -42,7 +43,7 @@ import org.brackit.xquery.compiler.parser.XQueryParser;
  */
 public class LetVariableRefPullup extends Walker {
 
-	private final Map<String, Variable> variables = new HashMap<String, Variable>();
+	private final Map<QNm, Variable> variables = new HashMap<QNm, Variable>();
 
 	private int substitutionCount;
 
@@ -60,15 +61,16 @@ public class LetVariableRefPullup extends Walker {
 	}
 
 	@Override
-	protected AST visit(AST node) {
-		if (node.getType() == XQueryParser.TypedVariableBinding) {
+	protected AST visit(AST node) {		
+		if (true) throw new RuntimeException("FIXME");
+		if (node.getType() == XQ.TypedVariableBinding) {
 			AST name = node.getChild(0);
-			variables.put(name.getValue(), new Variable(node.getParent()
+			variables.put((QNm) name.getValue(), new Variable(node.getParent()
 					.getType(), node, refNumber(name)));
-		} else if (node.getType() == XQueryParser.VariableRef) {
+		} else if (node.getType() == XQ.VariableRef) {
 			Variable var = variables.get(node.getValue());
 
-			if ((var != null) && (var.btype == XQueryParser.LetClause)) {
+			if ((var != null) && (var.btype == XQ.LetClause)) {
 				return pullUp(var, node);
 			}
 		}
@@ -76,17 +78,17 @@ public class LetVariableRefPullup extends Walker {
 	}
 
 	private int refNumber(AST node) {
-		return Integer.parseInt(node.getValue().substring(
-				node.getValue().lastIndexOf(";") + 1));
+		return Integer.parseInt(node.getStringValue().substring(
+				node.getStringValue().lastIndexOf(";") + 1));
 	}
 
 	private AST pullUp(Variable var, AST node) {
 		AST subtree = node.getParent();
 
-		while ((subtree.getType() == XQueryParser.ContentSequence)
-				|| (subtree.getType() == XQueryParser.SequenceExpr)
-				|| (subtree.getType() == XQueryParser.ForClause)
-				|| (subtree.getType() == XQueryParser.JoinClause)) {
+		while ((subtree.getType() == XQ.ContentSequence)
+				|| (subtree.getType() == XQ.SequenceExpr)
+				|| (subtree.getType() == XQ.ForClause)
+				|| (subtree.getType() == XQ.JoinClause)) {
 			subtree = subtree.getParent();
 		}
 
@@ -94,12 +96,10 @@ public class LetVariableRefPullup extends Walker {
 			return node;
 		}
 		// create new let clause encapsulating the subtree rooted at parent
-		String substitueVariableName = substitutionName(var.number);
-		AST letClause = new AST(XQueryParser.LetClause, "LetClause");
-		AST typedVarBinding = new AST(XQueryParser.TypedVariableBinding,
-				"TypedVariableBinding");
-		AST substituteVariable = new AST(XQueryParser.Variable,
-				substitueVariableName);
+		QNm substitueVariableName = substitutionName(var.number);
+		AST letClause = new AST(XQ.LetClause);
+		AST typedVarBinding = new AST(XQ.TypedVariableBinding);
+		AST substituteVariable = new AST(XQ.Variable, substitueVariableName);
 		typedVarBinding.addChild(substituteVariable);
 		letClause.addChild(typedVarBinding);
 		AST clonedSubtree = subtree.copyTree();
@@ -108,11 +108,11 @@ public class LetVariableRefPullup extends Walker {
 		// copy subtree expression to after let triggering let expression
 		AST bindingLetClause = var.bind.getParent();
 		AST bindingFlowr = bindingLetClause.getParent();
-		if (bindingFlowr.getChild(0).getType() == XQueryParser.ForClause) {
+		if (bindingFlowr.getChild(0).getType() == XQ.ForClause) {
 			// insert let clause after last let clause in binding flowr
 			int insertPos = bindingLetClause.getChildIndex();
 			int bindingFlowrChildCount = bindingFlowr.getChildCount();
-			while (bindingFlowr.getChild(++insertPos).getType() == XQueryParser.LetClause)
+			while (bindingFlowr.getChild(++insertPos).getType() == XQ.LetClause)
 				;
 
 			AST[] following = new AST[bindingFlowrChildCount - insertPos];
@@ -128,9 +128,8 @@ public class LetVariableRefPullup extends Walker {
 		} else {
 			AST bindingReturnClause = bindingFlowr.getChild(bindingFlowr
 					.getChildCount() - 1);
-			AST flowr = new AST(XQueryParser.FlowrExpr, "FlowrExpr");
-			AST returnClause = new AST(XQueryParser.ReturnClause,
-					"ReturnClause");
+			AST flowr = new AST(XQ.FlowrExpr);
+			AST returnClause = new AST(XQ.ReturnClause);
 			returnClause.addChild(bindingReturnClause.getChild(0));
 			flowr.addChild(letClause);
 			flowr.addChild(returnClause);
@@ -138,35 +137,34 @@ public class LetVariableRefPullup extends Walker {
 		}
 
 		// substitute subtree with new variable
-		AST variableRef = new AST(XQueryParser.VariableRef,
-				substitueVariableName);
+		AST variableRef = new AST(XQ.VariableRef, substitueVariableName);
 		subtree.getParent().replaceChild(subtree.getChildIndex(), variableRef);
 
 		System.out.println("Pullup " + var.bind.getChild(0).getValue());
 
 		snapshot();
 
-		return subtree.getParent();
+		return variableRef;
 	}
 
-	private String substitutionName(int number) {
-		return "_sub;" + (substitutionCount++) + ";" + number;
+	private QNm substitutionName(int number) {
+		return new QNm("_sub;" + (substitutionCount++) + ";" + number);
 	}
 
 	private boolean isRelocatable(int maxAllowedRefNumber, AST node) {
-		if ((node.getType() == XQueryParser.VariableRef)
+		if ((node.getType() == XQ.VariableRef)
 				&& (refNumber(node) > maxAllowedRefNumber)) {
 			return false;
 		}
-		if (node.getType() == XQueryParser.ContextItemExpr) {
+		if (node.getType() == XQ.ContextItemExpr) {
 			return false;
 		}
 		// TODO resolve function properly
-		if ((node.getType() == XQueryParser.FunctionCall)
+		if ((node.getType() == XQ.FunctionCall)
 				&& ((node.getValue().equals("position()"))
 						|| (node.getValue().equals("last()"))
 						|| (node.getValue().equals("fn:position()")) || (node
-						.getValue().equals("fn:last()")))) {
+							.getValue().equals("fn:last()")))) {
 			return false;
 		}
 

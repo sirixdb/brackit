@@ -30,11 +30,6 @@ package org.brackit.xquery.compiler.parser;
 import java.io.File;
 import java.io.FileWriter;
 
-import org.antlr.runtime.tree.CommonTreeAdaptor;
-import org.antlr.runtime.tree.DOTTreeGenerator;
-import org.antlr.runtime.tree.Tree;
-import org.antlr.runtime.tree.TreeAdaptor;
-import org.antlr.stringtemplate.StringTemplate;
 import org.brackit.xquery.util.log.Logger;
 
 /**
@@ -46,44 +41,6 @@ public class DotUtil {
 	public static final String PLOT_TYPE = "svg";
 
 	private static final Logger log = Logger.getLogger(DotUtil.class);
-
-	public static class DotTypedTreeGenerator extends DOTTreeGenerator {
-		protected String[] tokenNames;
-
-		public DotTypedTreeGenerator(String[] tokenNames) {
-			this.tokenNames = tokenNames;
-		}
-
-		@Override
-		protected StringTemplate getNodeST(TreeAdaptor adaptor, Object t) {
-			// if (true)
-			// return super.getNodeST(adaptor, t);
-
-			String type = tokenNames[adaptor.getType(t)];
-			String text = adaptor.getText(t);
-			if (!type.equals(text)) {
-				text = type + "['" + text + "']";
-			}
-
-			StringTemplate nodeST = _nodeST.getInstanceOf();
-			String uniqueName = "n" + getNodeNumber(t);
-			nodeST.setAttribute("name", uniqueName);
-
-			nodeST.setAttribute("text", fixString(text));
-			return nodeST;
-		}
-	}
-
-	public static void drawToDotFile(Tree ast, String[] tokenNames, String dir,
-			String name) {
-		drawDotToFile(getDotFromAst(ast, tokenNames), dir, name);
-	}
-
-	private static String getDotFromAst(Tree t, String[] tokenNames) {
-		DOTTreeGenerator gen = new DotTypedTreeGenerator(tokenNames);
-		StringTemplate st = gen.toDOT(t, new CommonTreeAdaptor());
-		return st.toString();
-	}
 
 	public static void drawDotToFile(String dotString, String dir, String name) {
 		String svgFile = dir + name + "." + PLOT_TYPE;

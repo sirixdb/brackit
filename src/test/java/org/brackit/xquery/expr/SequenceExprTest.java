@@ -46,21 +46,21 @@ public class SequenceExprTest {
 	public void simpleSequence() throws Exception {
 		SequenceExpr expr = new SequenceExpr(new Int32(1), new Int32(2),
 				new Int32(3));
-		ResultChecker.dCheck(ctx, new ItemSequence(new Int32(1), new Int32(2),
+		ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2),
 				new Int32(3)), expr.evaluate(ctx, new TupleImpl()));
 	}
 
 	@Test
 	public void emptySequence() throws Exception {
 		SequenceExpr expr = new SequenceExpr();
-		ResultChecker.dCheck(ctx, null, expr.evaluate(ctx, new TupleImpl()));
+		ResultChecker.dCheck(null, expr.evaluate(ctx, new TupleImpl()));
 	}
 
 	@Test
 	public void simpleAndEmptySequence() throws Exception {
 		SequenceExpr expr = new SequenceExpr(new Int32(1), new SequenceExpr(),
 				new Int32(2), new Int32(3));
-		ResultChecker.dCheck(ctx, new ItemSequence(new Int32(1), new Int32(2),
+		ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2),
 				new Int32(3)), expr.evaluate(ctx, new TupleImpl()));
 	}
 
@@ -69,7 +69,7 @@ public class SequenceExprTest {
 		SequenceExpr expr = new SequenceExpr(new Int32(1), new SequenceExpr(
 				new Int32(2), new Int32(3)), new Int32(4), new SequenceExpr(
 				new Int32(5), new Int32(6), new Int32(7)));
-		ResultChecker.dCheck(ctx, new ItemSequence(new Int32(1), new Int32(2),
+		ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2),
 				new Int32(3), new Int32(4), new Int32(5), new Int32(6),
 				new Int32(7)), expr.evaluate(ctx, new TupleImpl()));
 	}

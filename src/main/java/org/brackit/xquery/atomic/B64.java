@@ -182,10 +182,14 @@ public class B64 extends AbstractAtomic {
 	public Atomic asType(Type type) throws QueryException {
 		throw new QueryException(ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR);
 	}
+	
+	public byte[] getBytes() {
+		return bytes;
+	}
 
 	@Override
 	public int hashCode() {
-		throw new RuntimeException("Not implemented yet");
+		return Arrays.hashCode(bytes);
 	}
 
 	@Override

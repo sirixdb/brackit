@@ -33,11 +33,11 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.sequence.TypedSequence;
-import org.brackit.xquery.sequence.type.SequenceType;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * 
@@ -71,12 +71,15 @@ public class InstanceOf implements Expr {
 			} else {
 				Sequence typed = TypedSequence.toTypedSequence(ctx, expected,
 						sequence);
-				Iter it = typed.iterate();
-				try {
-					while (it.next() != null)
-						;
-				} finally {
-					it.close();
+				
+				if (typed != null) {
+					Iter it = typed.iterate();
+					try {
+						while (it.next() != null)
+							;
+					} finally {
+						it.close();
+					}
 				}
 			}
 			return Bool.TRUE;

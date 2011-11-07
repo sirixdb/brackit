@@ -27,13 +27,14 @@
  */
 package org.brackit.xquery.node.d2linked;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.brackit.xquery.node.SingleCollection;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.node.ArrayCollection;
+import org.brackit.xquery.node.d2linked.ParentD2Node.DescendantScanner;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.Stream;
 
 /**
  * 
@@ -41,17 +42,14 @@ import org.brackit.xquery.xdm.Node;
  * 
  */
 public class DocumentD2Node extends ParentD2Node {
-	static final AtomicInteger idSequence = new AtomicInteger();
 
-	private static class D2NodeCollection extends SingleCollection<D2Node> {
+	private static class D2NodeCollection extends ArrayCollection<D2Node> {
 		public D2NodeCollection(String name, DocumentD2Node document) {
 			super(name, document);
 		}
 	}
 
 	private final Collection<D2Node> collection;
-
-	private final long ID = idSequence.incrementAndGet();
 
 	public DocumentD2Node(String name) {
 		super(null, FIRST);
@@ -71,7 +69,7 @@ public class DocumentD2Node extends ParentD2Node {
 	}
 
 	@Override
-	public String getName() throws DocumentException {
+	public QNm getName() throws DocumentException {
 		return null;
 	}
 
@@ -83,6 +81,14 @@ public class DocumentD2Node extends ParentD2Node {
 	@Override
 	public Kind getKind() {
 		return Kind.DOCUMENT;
+	}
+	
+	@Override
+	public Stream<? extends D2Node> getDescendantOrSelf()
+			throws DocumentException {
+		DescendantScanner desc = new DescendantScanner(this);
+		desc.next(); // pop document
+		return desc;
 	}
 
 	@Override

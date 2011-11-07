@@ -27,29 +27,30 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
-import static org.brackit.xquery.compiler.parser.XQueryParser.ComparisonExpr;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Count;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ForBind;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GeneralCompGE;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GeneralCompGT;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GeneralCompLE;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GeneralCompLT;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GeneralCompNE;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Join;
-import static org.brackit.xquery.compiler.parser.XQueryParser.LetBind;
-import static org.brackit.xquery.compiler.parser.XQueryParser.NodeCompFollows;
-import static org.brackit.xquery.compiler.parser.XQueryParser.NodeCompIs;
-import static org.brackit.xquery.compiler.parser.XQueryParser.NodeCompPrecedes;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Selection;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Start;
-import static org.brackit.xquery.compiler.parser.XQueryParser.TypedVariableBinding;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ValueCompGE;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ValueCompGT;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ValueCompLE;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ValueCompLT;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ValueCompNE;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Variable;
+import static org.brackit.xquery.compiler.XQ.ComparisonExpr;
+import static org.brackit.xquery.compiler.XQ.Count;
+import static org.brackit.xquery.compiler.XQ.ForBind;
+import static org.brackit.xquery.compiler.XQ.GeneralCompGE;
+import static org.brackit.xquery.compiler.XQ.GeneralCompGT;
+import static org.brackit.xquery.compiler.XQ.GeneralCompLE;
+import static org.brackit.xquery.compiler.XQ.GeneralCompLT;
+import static org.brackit.xquery.compiler.XQ.GeneralCompNE;
+import static org.brackit.xquery.compiler.XQ.Join;
+import static org.brackit.xquery.compiler.XQ.LetBind;
+import static org.brackit.xquery.compiler.XQ.NodeCompFollows;
+import static org.brackit.xquery.compiler.XQ.NodeCompIs;
+import static org.brackit.xquery.compiler.XQ.NodeCompPrecedes;
+import static org.brackit.xquery.compiler.XQ.Selection;
+import static org.brackit.xquery.compiler.XQ.Start;
+import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
+import static org.brackit.xquery.compiler.XQ.ValueCompGE;
+import static org.brackit.xquery.compiler.XQ.ValueCompGT;
+import static org.brackit.xquery.compiler.XQ.ValueCompLE;
+import static org.brackit.xquery.compiler.XQ.ValueCompLT;
+import static org.brackit.xquery.compiler.XQ.ValueCompNE;
+import static org.brackit.xquery.compiler.XQ.Variable;
 
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 
 /**
@@ -65,7 +66,7 @@ import org.brackit.xquery.compiler.AST;
 public class JoinRewriter extends PipelineVarTracker {
 
 	private int artificialGroupCountVarCount;
-	
+
 	@Override
 	protected AST prepare(AST root) {
 		collectVars(root);
@@ -144,7 +145,7 @@ public class JoinRewriter extends PipelineVarTracker {
 			// TODO window clause
 			if ((op.getType() == ForBind) || (op.getType() == LetBind)) {
 				// TODO move check to super class
-				int no = bindNo(op.getChild(pos++).getChild(0).getValue());
+				int no = bindNo((QNm) op.getChild(pos++).getChild(0).getValue());
 				if (no <= s2.var.no) {
 					atS2 = true;
 				}
@@ -190,8 +191,8 @@ public class JoinRewriter extends PipelineVarTracker {
 		}
 		AST leftIn = tmp.getChild(0);
 		// cut off left part from right
-		tmp.replaceChild(0, new AST(Start, "Start"));
-		
+		tmp.replaceChild(0, new AST(Start));
+
 		// upstream selects which access S2 but not S1
 		// can be included in the right input
 		AST parent = select.getParent();
@@ -206,8 +207,8 @@ public class JoinRewriter extends PipelineVarTracker {
 		}
 
 		// build join
-		AST join = new AST(Join, "Join");
-		AST condition = new AST(ComparisonExpr, "ComparisonExpr");
+		AST join = new AST(Join);
+		AST condition = new AST(ComparisonExpr);
 		condition.addChild(comparison.copy());
 		condition.addChild(s1Expr.copyTree());
 		condition.addChild(s2Expr.copyTree());
@@ -215,21 +216,22 @@ public class JoinRewriter extends PipelineVarTracker {
 		join.addChild(condition);
 		join.addChild(rightIn);
 
-		String check = select.getProperty("check");
+		QNm check = (QNm) select.getProperty("check");
 		if (check != null) {
-			// convert to left join 
+			// convert to left join
 			// when we are in a lifted part
 			join.setProperty("check", check);
-			join.setProperty("leftJoin", "true");
+			join.setProperty("leftJoin", Boolean.TRUE);
 			// remove checks in right branch
-			for (AST tmp2 = rightIn; tmp2.getType() != Start; tmp2 = tmp2.getChild(0)) {
-				String check2 = tmp2.getProperty("check");
+			for (AST tmp2 = rightIn; tmp2.getType() != Start; tmp2 = tmp2
+					.getChild(0)) {
+				QNm check2 = (QNm) tmp2.getProperty("check");
 				if (check.equals(check2)) {
 					op.delProperty("check");
 				}
 			}
 		}
-		
+
 		// check grouping condition i.e. binding
 		// of max max in S0
 		if (s0 != null) {
@@ -238,7 +240,7 @@ public class JoinRewriter extends PipelineVarTracker {
 
 		parent.replaceChild(child.getChildIndex(), join);
 
-		return parent;
+		return join;
 	}
 
 	private boolean filtersS2(AST select, VarRef s2, VarRef s1) {
@@ -258,28 +260,28 @@ public class JoinRewriter extends PipelineVarTracker {
 	private AST swapCmp(AST comparison) {
 		switch (comparison.getType()) {
 		case GeneralCompGE:
-			comparison = new AST(GeneralCompLE, "GeneralCompLE");
+			comparison = new AST(GeneralCompLE);
 			break;
 		case GeneralCompGT:
-			comparison = new AST(GeneralCompLT, "GeneralCompLT");
+			comparison = new AST(GeneralCompLT);
 			break;
 		case GeneralCompLE:
-			comparison = new AST(GeneralCompGE, "GeneralCompGE");
+			comparison = new AST(GeneralCompGE);
 			break;
 		case GeneralCompLT:
-			comparison = new AST(GeneralCompGT, "GeneralCompGT");
+			comparison = new AST(GeneralCompGT);
 			break;
 		case ValueCompGE:
-			comparison = new AST(ValueCompLE, "ValueCompLE");
+			comparison = new AST(ValueCompLE);
 			break;
 		case ValueCompGT:
-			comparison = new AST(ValueCompLT, "ValueCompLT");
+			comparison = new AST(ValueCompLT);
 			break;
 		case ValueCompLE:
-			comparison = new AST(ValueCompGE, "ValueCompGE");
+			comparison = new AST(ValueCompGE);
 			break;
 		case ValueCompLT:
-			comparison = new AST(ValueCompGT, "ValueCompGT");
+			comparison = new AST(ValueCompGT);
 			break;
 		}
 		return comparison;
@@ -292,7 +294,7 @@ public class JoinRewriter extends PipelineVarTracker {
 			tmp = tmp.getChild(0);
 			// TODO window clause
 			if ((tmp.getType() == ForBind) || (tmp.getType() == LetBind)) {
-				int bindingNo = bindNo(tmp.getChild(1).getChild(0)
+				int bindingNo = bindNo((QNm) tmp.getChild(1).getChild(0)
 						.getValue());
 				if (bindingNo <= s0.var.bndNo) {
 					while (tmp.getType() == LetBind) {
@@ -309,12 +311,11 @@ public class JoinRewriter extends PipelineVarTracker {
 		// -> everything is fine
 	}
 
-	private String introduceCount(AST in) {
+	private QNm introduceCount(AST in) {
 		// introduce an artificial enumeration node for the grouping
-		AST count = new AST(Count, "Count");
-		String grpVarName = createGroupCountVarName();
-		AST runVarBinding = new AST(TypedVariableBinding,
-				"TypedVariableBinding");
+		AST count = new AST(Count);
+		QNm grpVarName = createGroupCountVarName();
+		AST runVarBinding = new AST(TypedVariableBinding);
 		runVarBinding.addChild(new AST(Variable, grpVarName));
 		count.addChild(in.copyTree());
 		count.addChild(runVarBinding);
@@ -322,12 +323,12 @@ public class JoinRewriter extends PipelineVarTracker {
 		return grpVarName;
 	}
 
-	protected int bindNo(String text) {
-		Var var = findVar(text);
+	protected int bindNo(QNm name) {
+		Var var = findVar(name);
 		return (var != null) ? var.bndNo : -1;
 	}
 
-	private String createGroupCountVarName() {
-		return "_group;" + (artificialGroupCountVarCount++);
+	private QNm createGroupCountVarName() {
+		return new QNm("_group;" + (artificialGroupCountVarCount++));
 	}
 }

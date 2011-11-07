@@ -27,12 +27,18 @@
  */
 package org.brackit.xquery.node.d2linked;
 
-import org.brackit.xquery.node.parser.SubtreeParser;
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.stream.EmptyStream;
+import org.brackit.xquery.node.stream.IteratorStream;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
+import org.brackit.xquery.xdm.Scope;
 import org.brackit.xquery.xdm.Stream;
 
 /**
@@ -40,23 +46,59 @@ import org.brackit.xquery.xdm.Stream;
  * @author Sebastian Baechle
  * 
  */
-public final class ElementD2Node extends ParentD2Node {
-	protected String name;
+public final class ElementD2Node extends ParentD2Node implements Scope {
+	Map<String, String> nsMappings;
+	QNm name;
+	D2Node firstAttribute;
 
-	protected D2Node firstAttribute;
-
-	public ElementD2Node(String name) {
+	public ElementD2Node(QNm name) throws DocumentException {
 		super(null, FIRST);
-		this.name = name;
+		this.name = checkName(name);
 	}
 
-	ElementD2Node(ParentD2Node parent, int[] division, String name) {
+	ElementD2Node(ParentD2Node parent, int[] division, QNm name)
+			throws DocumentException {
 		super(parent, division);
-		this.name = name;
+		this.name = checkName(name);
+	}
+
+	QNm checkName(QNm name) throws DocumentException {
+		if (name.getPrefix() == null) {
+			return name;
+		}
+		String mappedUri = resolvePrefix(name.getPrefix());
+		String uri = name.getNamespaceURI();
+		if (mappedUri == null) {
+			addPrefix(name.getPrefix(), uri);
+			return name;
+		}
+		if (mappedUri.equals(uri)) {
+			return name;
+		}
+		// create a subsitute prefix name
+		if (nsMappings == null) {
+			name = new QNm(uri, name.getPrefix() + "_1", name.getLocalName());
+			addPrefix(name.getPrefix(), uri);
+			return name;
+		}
+		int i = 1;
+		while (true) {
+			String newPrefix = name.getPrefix() + "_" + i++;
+			mappedUri = nsMappings.get(newPrefix);
+			if (mappedUri == null) {
+				name = new QNm(uri, newPrefix, name.getLocalName());
+				addPrefix(name.getPrefix(), uri);
+				return name;
+			} else if (mappedUri.equals(uri)) {
+				// re-use prefix
+				name = new QNm(uri, newPrefix, name.getLocalName());
+				return name;
+			}
+		}
 	}
 
 	@Override
-	public String getName() throws DocumentException {
+	public QNm getName() throws DocumentException {
 		return name;
 	}
 
@@ -65,7 +107,7 @@ public final class ElementD2Node extends ParentD2Node {
 	}
 
 	@Override
-	public D2Node getAttribute(String name) throws DocumentException {
+	public D2Node getAttribute(QNm name) throws DocumentException {
 		for (D2Node attribute = firstAttribute; attribute != null; attribute = attribute.sibling) {
 			if (attribute.getName().equals(name)) {
 				return attribute;
@@ -86,12 +128,6 @@ public final class ElementD2Node extends ParentD2Node {
 	}
 
 	@Override
-	public String getAttributeValue(String name) throws DocumentException {
-		D2Node attribute = getAttribute(name);
-		return (attribute != null) ? attribute.getValue() : null;
-	}
-
-	@Override
 	public Stream<D2Node> getAttributes()
 			throws OperationNotSupportedException, DocumentException {
 		if (firstAttribute == null) {
@@ -107,6 +143,12 @@ public final class ElementD2Node extends ParentD2Node {
 		}
 
 		return parent.nextSiblingOf(this);
+	}
+	
+	@Override
+	public Stream<? extends D2Node> getDescendantOrSelf()
+			throws DocumentException {
+		return new DescendantScanner(this);
 	}
 
 	@Override
@@ -124,7 +166,7 @@ public final class ElementD2Node extends ParentD2Node {
 	}
 
 	@Override
-	public boolean deleteAttribute(String name)
+	public boolean deleteAttribute(QNm name)
 			throws OperationNotSupportedException, DocumentException {
 		D2Node prev = null;
 		for (D2Node attribute = firstAttribute; attribute != null; attribute = attribute.sibling) {
@@ -154,16 +196,17 @@ public final class ElementD2Node extends ParentD2Node {
 	}
 
 	@Override
-	public D2Node setAttribute(String name, String value)
+	public D2Node setAttribute(QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException {
+		checkName(name);
 		if (firstAttribute == null) {
 			return (firstAttribute = new AttributeD2Node(this, name, value));
 		} else {
 			D2Node prev = null;
 			for (D2Node attribute = firstAttribute; attribute != null; attribute = attribute.sibling) {
 				if (attribute.getName().equals(name)) {
-					attribute.setValue(value);
-					return attribute;
+					throw new DocumentException(
+							"Attribute '%s' already exists", name);
 				}
 				prev = attribute;
 			}
@@ -173,108 +216,76 @@ public final class ElementD2Node extends ParentD2Node {
 	}
 
 	@Override
-	public void setName(String name) throws OperationNotSupportedException,
+	public void setName(QNm name) throws OperationNotSupportedException,
 			DocumentException {
-		this.name = name;
+		this.name = checkName(name);
 	}
 
 	@Override
-	public D2Node insertAfter(SubtreeParser parser)
-			throws OperationNotSupportedException, DocumentException {
-		if (parent == null) {
-			throw new DocumentException("%s has no parent", this);
-		}
-		return parent.insertAfter(this, parser);
+	public void setValue(Atomic value) throws OperationNotSupportedException,
+			DocumentException {
+		firstChild = null;
+		append(Kind.TEXT, null, value);
 	}
 
 	@Override
-	public D2Node insertBefore(Kind kind, String value)
-			throws OperationNotSupportedException, DocumentException {
-		if (parent == null) {
-			throw new DocumentException("%s has no parent", this);
-		}
-		return parent.insertBefore(kind, value);
+	public Scope getScope() {
+		return this;
 	}
 
 	@Override
-	public D2Node insertBefore(Node<?> child)
-			throws OperationNotSupportedException, DocumentException {
-		if (parent == null) {
-			throw new DocumentException("%s has no parent", this);
+	public Stream<String> localPrefixes() throws DocumentException {
+		if (nsMappings == null) {
+			return new EmptyStream<String>();
 		}
-		return parent.insertBefore(this, child);
+		return new IteratorStream<String>(nsMappings.keySet());
 	}
 
 	@Override
-	public D2Node insertBefore(SubtreeParser parser)
-			throws OperationNotSupportedException, DocumentException {
-		if (parent == null) {
-			throw new DocumentException("%s has no parent", this);
+	public void addPrefix(String prefix, String uri) throws DocumentException {
+		// TODO checks
+		if (nsMappings == null) {
+			// use tree map because we expect only a few
+			// entries and a tree map is much more space efficient
+			nsMappings = new TreeMap<String, String>();
 		}
-		return parent.insertBefore(this, parser);
+		nsMappings.put(prefix, uri);
 	}
 
 	@Override
-	public D2Node replaceWith(Kind kind, String value)
-			throws OperationNotSupportedException, DocumentException {
-		if ((isRoot()) && (kind != Kind.ELEMENT)) {
-			throw new DocumentException(
-					"Cannot replace root node with node of type: %s", kind);
-		}
-
-		if ((kind != Kind.ELEMENT) || (kind != Kind.TEXT)) {
-			throw new DocumentException(
-					"Cannot replace element with node of type: %s.", kind);
-		}
-
-		if (parent == null) {
-			throw new DocumentException("Cannot replace node without parent");
-		}
-
-		return parent.replace(this, kind, value);
+	public String defaultNS() throws DocumentException {
+		return resolvePrefix("");
 	}
 
 	@Override
-	public D2Node replaceWith(Node<?> node)
-			throws OperationNotSupportedException, DocumentException {
-		Kind kind = node.getKind();
-		if ((isRoot()) && (kind != Kind.ELEMENT)) {
-			throw new DocumentException(
-					"Cannot replace root node with node of type: %s", kind);
-		}
-
-		if ((kind != Kind.ELEMENT) || (kind != Kind.TEXT)) {
-			throw new DocumentException(
-					"Cannot replace element with node of type: %s.", kind);
-		}
-
-		if (parent == null) {
-			throw new DocumentException("Cannot replace node without parent");
-		}
-
-		return parent.replace(this, node);
+	public void setDefaultNS(String uri) throws DocumentException {
+		addPrefix("", uri);
 	}
 
 	@Override
-	public D2Node replaceWith(SubtreeParser parser)
-			throws OperationNotSupportedException, DocumentException {
-		D2Node node = builder.build(parser);
-		Kind kind = node.getKind();
-		if ((isRoot()) && (kind != Kind.ELEMENT)) {
-			throw new DocumentException(
-					"Cannot replace root node with node of type: %s", kind);
+	public String resolvePrefix(String prefix) throws DocumentException {
+		if (prefix == null) {
+			// search for the default namespace
+			prefix = "";
 		}
-
-		if ((kind != Kind.ELEMENT) || (kind != Kind.TEXT)) {
-			throw new DocumentException(
-					"Cannot replace element with node of type: %s.", kind);
+		ElementD2Node n = this;
+		while (true) {
+			if (n.nsMappings != null) {
+				String uri = n.nsMappings.get(prefix);
+				if (uri != null) {
+					return uri;
+				}
+			}
+			ParentD2Node p = n.parent;
+			if ((p == null) || (!(p instanceof ElementD2Node))) {
+				break;
+			}
+			n = (ElementD2Node) p;
 		}
-
-		if (parent == null) {
-			throw new DocumentException("Cannot replace node without parent");
+		if (prefix.equals("xml")) {
+			return "http://www.w3.org/XML/1998/namespace";
 		}
-
-		return parent.replace(this, node);
+		return ((prefix == null) || (prefix.isEmpty())) ? "" : null;
 	}
 
 	@Override

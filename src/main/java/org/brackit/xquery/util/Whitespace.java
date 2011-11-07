@@ -199,18 +199,7 @@ public class Whitespace {
 		int start = 0;
 		int end = str.length();
 		int trimTo = str.length();
-		char c = 0;
-
-		while ((start < end)
-				&& ((((c = str.charAt(start))) == ' ') || (c == '\r')
-						|| (c == '\t') || (c == '\n')))
-			start++;
-
-		if (start != end) {
-			return str;
-		}
-
-		start = 0;
+		char c;
 		if (fromHead) {
 			while ((start < trimTo)
 					&& (((c = str.charAt(start)) == ' ') || (c == '\n')
@@ -299,5 +288,16 @@ public class Whitespace {
 			}
 		}
 		return buf.toString();
+	}
+
+	public static boolean isWS(String str) {
+		int len = str.length();
+		for (int i = 0; i < len; i++) {
+			char c = str.charAt(i);
+			if ((c != ' ') && (c != '\n') && (c != '\t') && (c != '\r')) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

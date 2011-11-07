@@ -45,21 +45,21 @@ public class IfExprTest {
 	@Test
 	public void emptyCondition() throws Exception {
 		IfExpr expr = new IfExpr(new EmptyExpr(), Bool.TRUE, Bool.FALSE);
-		ResultChecker.dCheck(ctx, Bool.FALSE, expr.evaluate(ctx,
+		ResultChecker.dCheck(Bool.FALSE, expr.evaluate(ctx,
 				new TupleImpl()));
 	}
 
 	@Test
 	public void literalTrueCondition() throws Exception {
 		IfExpr expr = new IfExpr(new Int32(1), Bool.TRUE, Bool.FALSE);
-		ResultChecker.dCheck(ctx, Bool.TRUE, expr
+		ResultChecker.dCheck(Bool.TRUE, expr
 				.evaluate(ctx, new TupleImpl()));
 	}
 
 	@Test
 	public void literalFalseCondition() throws Exception {
 		IfExpr expr = new IfExpr(new Int32(0), Bool.TRUE, Bool.FALSE);
-		ResultChecker.dCheck(ctx, Bool.FALSE, expr.evaluate(ctx,
+		ResultChecker.dCheck(Bool.FALSE, expr.evaluate(ctx,
 				new TupleImpl()));
 	}
 }

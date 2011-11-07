@@ -34,9 +34,10 @@ import org.brackit.xquery.atomic.Dbl;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Type;
 
 /**
@@ -53,7 +54,7 @@ public class Number extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException {
 		if (args[0] == null) {
 			return Dbl.NaN;
@@ -62,7 +63,7 @@ public class Number extends AbstractFunction {
 		Atomic atomic = ((Item) args[0]).atomize();
 
 		try {
-			return Cast.cast(atomic, Type.DBL, false);
+			return Cast.cast(null, atomic, Type.DBL, false);
 		} catch (QueryException e) {
 			return Dbl.NaN;
 		}

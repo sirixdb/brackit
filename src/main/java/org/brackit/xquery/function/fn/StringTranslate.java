@@ -32,8 +32,9 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 
 /**
  * Implementation of predefined function fn:translate($arg1, $arg2, $arg3) as
@@ -49,7 +50,7 @@ public class StringTranslate extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException {
 		if (args[0] == null) {
 			return Str.EMPTY;

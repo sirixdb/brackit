@@ -32,8 +32,11 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.util.Whitespace;
+import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 
 /**
  * Implementation of predefined functions fn:normalize-space() and
@@ -44,45 +47,19 @@ import org.brackit.xquery.xdm.Sequence;
  * 
  */
 public class StringNormalize extends AbstractFunction {
-	private final String WS_CHARS = " \t\r\n";
 
 	public StringNormalize(QNm name, Signature signature) {
 		super(name, signature, true);
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException {
 		if (args[0] == null) {
 			return Str.EMPTY;
 		}
-
-		StringBuilder sb = new StringBuilder();
-		boolean omitSpaces = false;
-		int copy = 0;
-		String str = ((Str) args[0]).str.trim();
-
-		for (int i = 0; i < str.length(); i++) {
-			char c = str.charAt(i);
-			if (WS_CHARS.indexOf(c) == -1) {
-				omitSpaces = false;
-			} else {
-				if (!omitSpaces) {
-					if (copy < i) {
-						sb.append(str.substring(copy, i));
-					}
-					sb.append(' ');
-					omitSpaces = true;
-				}
-				copy = i + 1;
-			}
-		}
-
-		if (copy < str.length()) {
-			sb.append(str.substring(copy));
-		}
-
-		return new Str(sb.toString());
+		String str = ((Item) args[0]).atomize().stringValue();
+		return new Str(Whitespace.collapse(str));
 	}
 
 }

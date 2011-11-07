@@ -34,18 +34,18 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.operator.Cursor;
 import org.brackit.xquery.operator.TupleImpl;
+import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
+import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.OperationNotSupportedException;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Stream;
 
 /**
  * 
@@ -96,19 +96,34 @@ public class ResultChecker {
 		for (int i = 0; i < eSize; i++) {
 			Sequence eSequence = expected.get(i);
 			Sequence rSequence = result.get(i);
-			check(ctx, eSequence, rSequence);
+			check(eSequence, rSequence);
 		}
 	}
 
-	public static void dCheck(QueryContext ctx, Sequence expected,
-			Sequence result) throws QueryException {
+	public static void dCheck(Sequence expected, Sequence result) throws QueryException {
 		// double check result to verify that result can be evaluated repeatedly
-		check(ctx, expected, result);
-		check(ctx, expected, result);
+		check(expected, result, true);
+		check(expected, result, true);
 	}
 
-	public static void check(QueryContext ctx, Sequence expected,
-			Sequence result) throws QueryException {
+	public static void dCheck(Sequence expected, Sequence result,
+			boolean nodeIdentity) throws QueryException {
+		// double check result to verify that result can be evaluated repeatedly
+		check(expected, result, nodeIdentity);
+		check(expected, result, nodeIdentity);
+	}
+
+	public static void check(Sequence expected, Sequence result) throws QueryException {
+		compare(expected, result, true);
+	}
+
+	public static void check(Sequence expected, Sequence result,
+			boolean nodeIdentity) throws QueryException {
+		compare(expected, result, nodeIdentity);
+	}
+
+	private static void compare(Sequence expected, Sequence result,
+			boolean nodeIdentity) throws QueryException, AssertionError {
 		if (expected == null) {
 			if (result != null) // verify that result sequence has no results
 			{
@@ -136,20 +151,12 @@ public class ResultChecker {
 								rItem = rs.next());
 						try {
 							assertEquals("Result item has same type", eItem
-									.type(), rItem.type());
+									.itemType(), rItem.itemType());
 
 							if (eItem instanceof Node<?>) {
-								assertTrue("Result item is node",
-										rItem instanceof Node<?>);
-								assertTrue("Result node is equal to expected",
-										((Node<?>) eItem)
-												.isSelfOf((Node<?>) rItem));
+								compareNode(eItem, rItem, nodeIdentity);
 							} else {
-								assertTrue("Result item is atomic",
-										rItem instanceof Atomic);
-								assertTrue(
-										"Result atomic is equal to expected",
-										((Atomic) eItem).eq((Atomic) rItem));
+								compareAtomic(eItem, rItem);
 							}
 						} catch (AssertionError e) {
 							System.err.println(String.format(
@@ -200,6 +207,92 @@ public class ResultChecker {
 							ErrorCode.ERR_INVALID_ARGUMENT_TYPE, e1.getCode());
 				}
 			}
+		}
+	}
+
+	private static void compareAtomic(Item eItem, Item rItem)
+			throws QueryException {
+		assertTrue("Result item is atomic", rItem instanceof Atomic);
+		assertTrue("Result atomic is equal to expected", ((Atomic) eItem)
+				.eq((Atomic) rItem));
+	}
+
+	private static void compareNode(Item eItem, Item rItem, boolean nodeIdentity)
+			throws DocumentException {
+		assertTrue("Result item is node", rItem instanceof Node<?>);
+		Node<?> eNode = (Node<?>) eItem;
+		Node<?> rNode = (Node<?>) rItem;
+		if (nodeIdentity) {
+			assertTrue("Result node is equal to expected", eNode
+					.isSelfOf(rNode));
+		} else {
+			compareNode(eNode, rNode);
+		}
+	}
+
+	private static void compareNode(Node<?> eNode, Node<?> rNode)
+			throws DocumentException, OperationNotSupportedException {
+		assertEquals("Node kind is correct", eNode.getKind(), rNode.getKind());
+		if (eNode.getKind() == Kind.DOCUMENT) {
+			compareChildren(eNode, rNode);
+		} else {
+			assertEquals("Node name is correct", eNode.getName(), rNode
+					.getName());			
+			if (eNode.getKind() == Kind.ELEMENT) {
+				compareAttributes(eNode, rNode);
+				compareChildren(eNode, rNode);
+			} else {
+				assertEquals("Node value correct", eNode.getValue(), rNode
+						.getValue());
+			}
+		}
+	}
+
+	private static void compareChildren(Node<?> eNode, Node<?> rNode)
+			throws DocumentException {
+		Stream<? extends Node<?>> eChildren = eNode.getChildren();
+		try {
+			Stream<? extends Node<?>> rChildren = rNode.getChildren();
+			try {
+				Node<?> eChild;
+				Node<?> rChild;
+				while ((eChild = eChildren.next()) != null) {
+					assertNotNull("Child is in result", rChild = rChildren
+							.next());
+					compareNode(eChild, rChild);
+				}
+				assertNull("Result has no further children", rChildren.next());
+			} finally {
+				rChildren.close();
+			}
+		} finally {
+			eChildren.close();
+		}
+	}
+
+	private static void compareAttributes(Node<?> eNode, Node<?> rNode)
+			throws OperationNotSupportedException, DocumentException {
+		Stream<? extends Node<?>> eAtts = eNode.getAttributes();
+		try {
+			Stream<? extends Node<?>> rAtts = rNode.getAttributes();
+			try {
+				Node<?> eAtt;
+				Node<?> rAtt;
+				while ((eAtt = eAtts.next()) != null) {
+					assertNotNull("Attribute is in result", rAtt = rAtts.next());
+					assertEquals("Node kind is correct", Kind.ATTRIBUTE, rAtt
+							.getKind());
+					assertEquals("Node name is correct", eAtt.getName(), rAtt
+							.getName());
+					assertEquals("Node name value correct", eAtt.getValue(),
+							rAtt.getValue());
+				}
+				assertNull("Result has no further attributes", rAtts.next());
+			} finally {
+				rAtts.close();
+			}
+		} finally {
+			eAtts.close();
 		}
 	}
 }

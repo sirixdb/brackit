@@ -27,8 +27,10 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.parser.XQueryParser;
+import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.module.Functions;
 
 /**
  * Eliminates sorting in left joins when re-grouped items of the right branch,
@@ -47,57 +49,54 @@ public class JoinSortElimination extends Walker {
 
 	@Override
 	protected AST visit(AST node) {
-		if (node.getType() != XQueryParser.Join) {
+		if (node.getType() != XQ.Join) {
 			return node;
 		}
 
-		if (!Boolean.parseBoolean(node.getProperty("leftJoin"))) {
+		if (!node.checkProperty("leftJoin")) {
 			return node;
 		}
-		
+
 		AST letBind = node.getParent();
-		if ((letBind.getType() != XQueryParser.LetBind)) {
+		if ((letBind.getType() != XQ.LetBind)) {
 			return node;
 		}
 		AST groupBy = letBind.getParent();
-		if ((groupBy.getType() != XQueryParser.GroupBy) 
-			|| (!Boolean.parseBoolean(groupBy.getProperty("onlyLast")))) {
+		if ((groupBy.getType() != XQ.GroupBy)
+				|| (!groupBy.checkProperty("onlyLast"))) {
 			return node;
 		}
 
 		// check if grouped let bind variable is only used in uncritical
 		// aggregation functions (e.g., count):
 		// collect all references to grouped variable and check them
-		String grpVarName = letBind.getChild(1).getChild(0).getValue();
+		QNm grpVarName = (QNm) letBind.getChild(1).getChild(0).getValue();
 		AST parent = groupBy;
 		while ((parent = parent.getParent()) != null) {
 			for (int i = 1; i < parent.getChildCount(); i++) {
-				if (checkForCriticalReference(parent.getChild(i),
-						grpVarName)) {
+				if (checkForCriticalReference(parent.getChild(i), grpVarName)) {
 					return node;
 				}
 			}
-			if (parent.getType() == XQueryParser.ReturnExpr) {
+			if (parent.getType() == XQ.PipeExpr) {
 				break;
 			}
 		}
 
 		// no critical references found -> no need to sort
-		node.setProperty("skipSort", "true");
+		node.setProperty("skipSort", Boolean.TRUE);
 		return node;
 	}
 
 	private boolean checkForCriticalReference(AST node,
-			String groupingSequenceVarName) {
-		if ((node.getType() == XQueryParser.VariableRef)
+			QNm groupingSequenceVarName) {
+		if ((node.getType() == XQ.VariableRef)
 				&& (node.getValue().equals(groupingSequenceVarName))) {
 			AST parentExpr = node.getParent();
-			// TODO resolve function properly
-			String fn = parentExpr.getValue();
-			if ((parentExpr.getType() != XQueryParser.FunctionCall)
-					|| ((!fn.equals("count")) && (!fn.equals("fn:count"))
-							&& (!fn.equals("distinct")) && (!fn
-							.equals("fn:distinct")))) {
+			if ((parentExpr.getType() != XQ.FunctionCall)
+					|| ((!((QNm) parentExpr.getValue())
+							.equals(Functions.FN_COUNT) && (!((QNm) parentExpr
+							.getValue()).equals(Functions.FN_DISTINCT))))) {
 				return true;
 			}
 		}
@@ -110,12 +109,12 @@ public class JoinSortElimination extends Walker {
 		return false;
 	}
 
-	private String innerLoopVarName(AST node) {
+	private QNm innerLoopVarName(AST node) {
 		AST rightIn = node.getChild(node.getChildCount() - 1);
-		while (rightIn.getChild(0).getType() != XQueryParser.Start) {
+		while (rightIn.getChild(0).getType() != XQ.Start) {
 			rightIn = rightIn.getChild(0);
 		}
 		// right in is now let-bind or for-bind
-		return rightIn.getChild(1).getChild(0).getValue();
+		return (QNm) rightIn.getChild(1).getChild(0).getValue();
 	}
 }

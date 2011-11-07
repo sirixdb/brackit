@@ -138,17 +138,17 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements
 		if ((a.getTimezone() != null)
 				&& ((a.getTimezone().getHours() != 0) || (a.getTimezone()
 						.getMinutes() != 0))) {
-			a = new DateTime(a.getYear(), a.getMonth(), a.getDay(), a
-					.getHours(), a.getMinutes(), a.getMicros(), a.getTimezone())
-					.canonicalize();
+			a = new DateTime(a.getYear(), a.getMonth(), a.getDay(),
+					a.getHours(), a.getMinutes(), a.getMicros(),
+					a.getTimezone()).canonicalize();
 			aHasTZ = true;
 		}
 		if ((b.getTimezone() != null)
 				&& ((b.getTimezone().getHours() != 0) || (b.getTimezone()
 						.getMinutes() != 0))) {
-			b = new DateTime(b.getYear(), b.getMonth(), b.getDay(), b
-					.getHours(), b.getMinutes(), b.getMicros(), b.getTimezone())
-					.canonicalize();
+			b = new DateTime(b.getYear(), b.getMonth(), b.getDay(),
+					b.getHours(), b.getMinutes(), b.getMicros(),
+					b.getTimezone()).canonicalize();
 			bHasTZ = true;
 		}
 
@@ -243,8 +243,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements
 
 		byte maxDayInMonth = maxDayInMonth(newYear, newMonth);
 		int newDays = ((getDay() > maxDayInMonth) ? maxDayInMonth
-				: (getDay() < 1) ? 1 : getDay())
-				+ durationDays + carry;
+				: (getDay() < 1) ? 1 : getDay()) + durationDays + carry;
 
 		while (true) {
 			if (newDays < 0) {
@@ -263,6 +262,102 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements
 
 		return create((short) newYear, (byte) newMonth, (byte) newDays,
 				(byte) newHours, (byte) newMinutes, newMicros, newTimezone);
+	}
+
+	protected DTD subtract(AbstractTimeInstant b) {		
+		boolean negative = false;
+		AbstractTimeInstant a = this;
+		
+		if (a.getTimezone() == null) {
+			a = a.canonicalize();
+		}
+		if (b.getTimezone() == null) {
+			b.canonicalize();
+		}
+		
+		if (a.cmp(b) <= 0) {
+			a = b;
+			b = this;
+			negative = true;
+		}
+		
+		int carry = 0;
+		int micros = a.getMicros() - b.getMicros();
+		if (micros < 0) {
+			micros *= -1;
+			carry = 1;
+		}
+		int minutes = a.getMinutes() - b.getMinutes() + carry;
+		if (minutes < 0) {
+			minutes *= -1;
+			carry = 1;
+		} else {
+			carry = 0;
+		}
+
+		short days = 0;
+		int hours = 0;
+		int ehour = b.getHours() + carry;
+		int eyear = b.getYear();
+		int emonth = b.getMonth();
+		int eday = b.getDay();
+
+		if (ehour < a.getHours()) {
+			hours = a.getHours() - ehour;
+		} else {
+			hours = (24 - ehour) + a.getHours();
+			if (eday == maxDayInMonth(eyear, emonth)) {
+				if (emonth == 12) {
+					eyear++;
+					emonth = 1;
+				} else {
+					emonth++;
+				}
+				eday = 1;
+			} else {
+				eday++;
+			}
+		}
+		
+		if (eyear < a.getYear()) {
+			// advance days to 1st. of next month
+			byte maxDayInMonth = maxDayInMonth(eyear, emonth);
+			days += (maxDayInMonth - eday + 1);
+			eday = 1;
+
+			// advance months to next year
+			while (++emonth <= 12) {
+				byte maxDayInMonth2 = maxDayInMonth(eyear, emonth);
+				days += maxDayInMonth2;
+			}
+			emonth = 1;
+
+			// advance years
+			while (++eyear < a.getYear()) {
+				boolean isLeap = ((eyear % 400 == 0) || ((eyear % 100 != 0) && (eyear % 4 == 0)));
+				days += (isLeap) ? 366 : 365;
+			}
+		}
+
+		if (emonth < a.getMonth()) {
+			// advance days to 1st. of next month
+			byte maxDayInMonth = maxDayInMonth(eyear, emonth);
+			days += (maxDayInMonth - eday + 1);
+			eday = 1;
+
+			// advance months
+			while (++emonth < a.getMonth()) {
+				byte maxDayInMonth2 = maxDayInMonth(eyear, emonth);
+				days += maxDayInMonth2;
+			}
+		}
+
+		if (eday < a.getDay()) {
+			// advance days
+			days += (a.getDay() - eday);
+		}
+
+		return new DTD(negative, days, (byte) hours, (byte) minutes, micros);
 	}
 
 	private static int fQuotient(int a, int low, int high) {
@@ -340,8 +435,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements
 			byte tzMinutes = timezone.getMinutes();
 			String tzMinTmp = ((tzMinutes < 10) ? "0" : "") + tzMinutes;
 			tzTmp = ((tzHours == 0) && (tzMinutes == 0)) ? "Z" : ((timezone
-					.isNegative()) ? "-" : "+")
-					+ tzHTmp + ":" + tzMinTmp;
+					.isNegative()) ? "-" : "+") + tzHTmp + ":" + tzMinTmp;
 		}
 		return tzTmp;
 	}

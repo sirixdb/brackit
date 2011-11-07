@@ -117,8 +117,8 @@ public class DocumentParser implements SubtreeParser {
 			}
 			xmlReader.setFeature("http://xml.org/sax/features/validation",
 					false);
-			xmlReader.setFeature(
-					"http://xml.org/sax/features/namespace-prefixes", true);
+//			xmlReader.setFeature(
+//					"http://xml.org/sax/features/namespace-prefixes", true);
 			if (!Cfg.asBool(IGNORE_COMMENTS, false))
 				xmlReader.setProperty(
 						"http://xml.org/sax/properties/lexical-handler",

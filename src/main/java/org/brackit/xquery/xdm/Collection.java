@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.xdm;
 
+import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.node.parser.SubtreeParser;
 
 /**
@@ -35,7 +36,10 @@ import org.brackit.xquery.node.parser.SubtreeParser;
  * 
  * @param <E>
  */
-public interface Collection<E extends Node<E>> {
+public interface Collection<E extends Node<E>> extends Sequence {
+	
+	public AnyURI getDocumentURI();
+	
 	public String getName();
 
 	public void delete() throws DocumentException;

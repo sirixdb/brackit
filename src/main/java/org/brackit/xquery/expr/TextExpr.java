@@ -30,6 +30,8 @@ package org.brackit.xquery.expr;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -93,12 +95,12 @@ public class TextExpr extends ConstructedNodeBuilder implements Expr {
 		String content = buf.toString();
 
 		if (appendOnly) {
-			((Node<?>) tuple.get(tuple.getSize() - 1)).append(Kind.TEXT,
-					content);
+			((Node<?>) tuple.get(tuple.getSize() - 1)).append(Kind.TEXT, null,
+					new Str(content));
 			return null;
 		}
 
-		Node<?> node = ctx.getNodeFactory().text(content);
+		Node<?> node = ctx.getNodeFactory().text(new Una(content));
 		return node;
 	}
 

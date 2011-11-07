@@ -33,9 +33,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.brackit.xquery.compiler.parser.XQueryParser;
 import org.brackit.xquery.compiler.profiler.DotContext;
 import org.brackit.xquery.compiler.profiler.DotNode;
+import org.brackit.xquery.module.StaticContext;
 
 /**
  * 
@@ -44,22 +44,25 @@ import org.brackit.xquery.compiler.profiler.DotNode;
  */
 public class AST {
 	private AST parent;
-
 	private int type;
-
-	private String value;
-
-	private Map<String, String> properties;
-
+	private Object value;
+	private Map<String, Object> properties;
+	private StaticContext sctx;
 	private AST[] children;
 
-	public AST(int type, String value, Map<String, String> properties) {
+	public AST(int type) {
+		this(type, XQ.NAMES[type]);
+	}
+
+	private AST(int type, Object value, StaticContext sctx,
+			Map<String, Object> properties) {
 		this.type = type;
 		this.value = value;
+		this.sctx = sctx;
 		this.properties = properties;
 	}
 
-	public AST(int type, String value) {
+	public AST(int type, Object value) {
 		this.type = type;
 		this.value = value;
 	}
@@ -72,29 +75,41 @@ public class AST {
 		this.type = type;
 	}
 
-	public String getValue() {
+	public Object getValue() {
 		return value;
 	}
 
-	public void setValue(String value) {
+	public String getStringValue() {
+		return (value != null) ? value.toString() : "";
+	}
+
+	public void setValue(Object value) {
 		this.value = value;
 	}
 
-	public void setProperty(String name, String value) {
+	public void setProperty(String name, Object value) {
 		if (properties == null) {
-			properties = new HashMap<String, String>();
+			properties = new HashMap<String, Object>();
 		}
 		properties.put(name, value);
 	}
 
-	public String getProperty(String name) {
+	public Object getProperty(String name) {
 		return (properties != null) ? properties.get(name) : null;
 	}
-	
+
+	public boolean checkProperty(String name) {
+		Object p = (properties != null) ? properties.get(name) : null;
+		if (p == null) {
+			return false;
+		}
+		return (Boolean) p;
+	}
+
 	public void delProperty(String name) {
 		if (properties != null) {
 			properties.remove(name);
-		}		
+		}
 	}
 
 	public AST getParent() {
@@ -117,6 +132,12 @@ public class AST {
 			i++;
 		}
 		throw new IllegalStateException();
+	}
+
+	public void addChildren(AST[] children) {
+		for (AST child : children) {
+			addChild(child);
+		}
 	}
 
 	public void addChild(AST child) {
@@ -209,8 +230,8 @@ public class AST {
 	}
 
 	public AST copy() {
-		return new AST(type, value, (properties == null) ? null
-				: new HashMap<String, String>(properties));
+		return new AST(type, value, sctx, (properties == null) ? null
+				: new HashMap<String, Object>(properties));
 	}
 
 	public AST copyTree() {
@@ -239,15 +260,16 @@ public class AST {
 
 	private int toDot(int no, DotContext dt) {
 		final int myNo = no++;
-		String label = ((type > 0) && (type < XQueryParser.tokenNames.length)) ? (XQueryParser.tokenNames[type]
-				.equals(value)) ? value : XQueryParser.tokenNames[type] + "["
-				+ value + "]"
-				: value;
+		String label = ((type > 0) && (type < XQ.NAMES.length)) ? (XQ.NAMES[type]
+				.equals(value.toString())) ? value.toString() : XQ.NAMES[type]
+				+ "[" + value.toString() + "]" : value.toString();
 		DotNode node = dt.addNode(String.valueOf(myNo));
 		node.addRow(label, null);
 		if (properties != null) {
-			for (Entry<String, String> prop : properties.entrySet()) {
-				node.addRow(prop.getKey(), prop.getValue());
+			for (Entry<String, Object> prop : properties.entrySet()) {
+				Object value = prop.getValue();
+				node.addRow(prop.getKey(), value != null ? value.toString()
+						: "");
 			}
 		}
 		if (children != null) {
@@ -271,14 +293,29 @@ public class AST {
 		return null;
 	}
 
+	public void setStaticContext(StaticContext sctx) {
+		this.sctx = sctx;
+	}
+
+	public StaticContext getStaticContext() {
+		AST n = this;
+		while (n != null) {
+			if (n.sctx != null) {
+				return n.sctx;
+			}
+			n = n.parent;
+		}
+		return null;
+	}
+
 	public void display() {
 		try {
 			File file = File.createTempFile("ast", ".dot");
 			file.deleteOnExit();
 			dot(file);
-			Runtime.getRuntime().exec(
-					new String[] { "/usr/bin/dotty", file.getAbsolutePath() })
-					.waitFor();
+			Runtime.getRuntime()
+					.exec(new String[] { "/usr/bin/dotty",
+							file.getAbsolutePath() }).waitFor();
 			file.delete();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -286,9 +323,10 @@ public class AST {
 	}
 
 	public String toString() {
-		return ((type > 0) && (type < XQueryParser.tokenNames.length)) ? (XQueryParser.tokenNames[type]
-				.equals(value)) ? value : XQueryParser.tokenNames[type] + "["
-				+ value + "]"
+		int type = getType();
+		String value = getStringValue();
+		return ((type > 0) && (type < XQ.NAMES.length)) ? (XQ.NAMES[type]
+				.equals(value)) ? value : XQ.NAMES[type] + "[" + value + "]"
 				: value;
 	}
 }

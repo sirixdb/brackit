@@ -27,6 +27,9 @@
  */
 package org.brackit.xquery.node.d2linked;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.parser.NavigationalSubtreeParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.xdm.DocumentException;
@@ -35,32 +38,33 @@ import org.brackit.xquery.xdm.NodeFactory;
 
 public class D2NodeFactory implements NodeFactory<D2Node> {
 	@Override
-	public D2Node attribute(String name, String value) throws DocumentException {
+	public D2Node attribute(QNm name, Atomic value) throws DocumentException {
 		return new AttributeD2Node(name, value);
 	}
 
 	@Override
-	public D2Node comment(String value) throws DocumentException {
+	public D2Node comment(Str value) throws DocumentException {
 		return new CommentD2Node(value);
 	}
 
 	@Override
-	public D2Node document(String name) throws DocumentException {
-		return new DocumentD2Node(name);
+	public D2Node document(Str name) throws DocumentException {
+		String s = (name != null) ? name.stringValue() : null;
+		return new DocumentD2Node(s);
 	}
 
 	@Override
-	public D2Node element(String name) throws DocumentException {
+	public D2Node element(QNm name) throws DocumentException {
 		return new ElementD2Node(name);
 	}
 
 	@Override
-	public D2Node pi(String target, String value) throws DocumentException {
+	public D2Node pi(QNm target, Str value) throws DocumentException {
 		return new PID2Node(target, value);
 	}
 
 	@Override
-	public D2Node text(String value) throws DocumentException {
+	public D2Node text(Atomic value) throws DocumentException {
 		return new TextD2Node(value);
 	}
 

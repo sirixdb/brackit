@@ -104,10 +104,14 @@ public class Hex extends AbstractAtomic {
 	public int atomicCode() {
 		return Type.HEX_CODE;
 	}
+	
+	public byte[] getBytes() {
+		return bytes;
+	}
 
 	@Override
 	public int hashCode() {
-		throw new RuntimeException("Not implemented yet");
+		return Arrays.hashCode(bytes);
 	}
 
 	@Override

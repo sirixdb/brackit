@@ -32,10 +32,11 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 
 /**
  * 
@@ -48,11 +49,10 @@ public class NodeName extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException {
 		try {
-			return (args[0] == null) ? null : new QNm(((Node<?>) args[0])
-					.getName());
+			return (args[0] == null) ? null : ((Node<?>) args[0]).getName();
 		} catch (DocumentException e) {
 			throw new QueryException(ErrorCode.BIT_DYN_DOCUMENT_ACCESS_ERROR);
 		}

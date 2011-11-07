@@ -36,10 +36,11 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Type;
 
 /**
@@ -56,7 +57,7 @@ public class MinMax extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException {
 		if (args.length == 2) {
 			Str collation = (Str) args[1];
@@ -84,7 +85,7 @@ public class MinMax extends AbstractFunction {
 				minmaxType = minmax.type();
 
 				if (minmaxType == Type.UNA) {
-					minmax = Cast.cast(minmax, Type.DBL, false);
+					minmax = Cast.cast(null, minmax, Type.DBL, false);
 					minmaxType = Type.DBL;
 				}
 
@@ -149,7 +150,7 @@ public class MinMax extends AbstractFunction {
 			Type type = s.type();
 
 			if (type == Type.AURI) {
-				s = Cast.cast(s, Type.STR, false);
+				s = Cast.cast(null, s, Type.STR, false);
 				type = Type.STR;
 			} else if (!type.instanceOf(Type.STR)) {
 				throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
@@ -177,7 +178,7 @@ public class MinMax extends AbstractFunction {
 			Type type = s.type();
 
 			if (type == Type.UNA) {
-				s = Cast.cast(s, Type.DBL, false);
+				s = Cast.cast(null, s, Type.DBL, false);
 				type = Type.DBL;
 			}
 

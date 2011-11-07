@@ -100,12 +100,12 @@ public final class SubtreeListener2HandlerAdapter implements
 
 	@Override
 	public <T extends Node<?>> void comment(T node) throws DocumentException {
-		handler.comment(node.getValue());
+		handler.comment(node.getValue().asStr());
 	}
 
 	@Override
 	public <T extends Node<?>> void processingInstruction(T node)
 			throws DocumentException {
-		handler.processingInstruction(node.getValue());
+		handler.processingInstruction(node.getName(), node.getValue().asStr());
 	}
 }

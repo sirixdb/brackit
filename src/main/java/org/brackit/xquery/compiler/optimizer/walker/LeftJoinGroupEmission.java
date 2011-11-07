@@ -27,8 +27,9 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.parser.XQueryParser;
+import org.brackit.xquery.compiler.XQ;
 
 /**
  * Inspects for the (common?) pattern of a left join
@@ -43,41 +44,41 @@ import org.brackit.xquery.compiler.parser.XQueryParser;
 public class LeftJoinGroupEmission extends Walker {
 	@Override
 	protected AST visit(AST node) {
-		if (node.getType() != XQueryParser.Join) {
+		if (node.getType() != XQ.Join) {
 			return node;
 		}
 
-		if (!Boolean.parseBoolean(node.getProperty("leftJoin"))) {
+		if (!node.checkProperty("leftJoin")) {
 			return node;
 		}
 		
 		AST letBind = node.getParent();
-		if ((letBind.getType() != XQueryParser.LetBind)) {
+		if ((letBind.getType() != XQ.LetBind)) {
 			return node;
 		}
 		AST groupBy = letBind.getParent();
-		if ((groupBy.getType() != XQueryParser.GroupBy) 
-			|| (!Boolean.parseBoolean(groupBy.getProperty("onlyLast")))) {
+		if ((groupBy.getType() != XQ.GroupBy) 
+			|| (!groupBy.checkProperty("onlyLast"))) {
 			return node;
 		}
 		
 		// join and bind/group combo must not be
 		// part of the same check level, i.e., be 
 		// part of different liftings
-		String joinCheck = node.getProperty("check");
-		String letCheck = letBind.getProperty("check");
+		QNm joinCheck = (QNm) node.getProperty("check");
+		QNm letCheck = (QNm) letBind.getProperty("check");
 		if ((joinCheck != null) && (joinCheck.equals(letCheck))) {
 			return node;
 		}
 		
 		AST groupinJoin = node.copyTree();
 		AST letCopy = letBind.copy();
-		letCopy.addChild(new AST(XQueryParser.Start, "Start"));
+		letCopy.addChild(new AST(XQ.Start));
 		letCopy.addChild(letBind.getChild(1));
 		letCopy.addChild(letBind.getChild(2));
 		groupinJoin.addChild(letCopy);
 		AST parent = groupBy.getParent();
 		parent.replaceChild(groupBy.getChildIndex(), groupinJoin);
-		return parent;
+		return groupinJoin;
 	}
 }

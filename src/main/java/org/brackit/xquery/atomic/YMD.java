@@ -29,6 +29,7 @@ package org.brackit.xquery.atomic;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Type;
 
 /**
@@ -68,6 +69,7 @@ public class YMD extends AbstractDuration {
 		byte months = 0; // 0..11 -> year wrap on overflow, highest bit used to
 		// indicate negative duration
 
+		str = Whitespace.collapseTrimOnly(str);
 		char[] charArray = str.toCharArray();
 		int pos = 0;
 		int length = charArray.length;
@@ -202,10 +204,10 @@ public class YMD extends AbstractDuration {
 	public YMD multiply(Dbl dbl) throws QueryException {
 		double v = dbl.doubleValue();
 
-		if (v == Double.NaN) {
+		if (Double.isNaN(v)) {
 			throw new QueryException(ErrorCode.ERR_PARAMETER_NAN);
 		}
-		if ((v == Double.NEGATIVE_INFINITY) || (v == Double.POSITIVE_INFINITY)) {
+		if (Double.isInfinite(v)) {
 			throw new QueryException(
 					ErrorCode.ERR_OVERFLOW_UNDERFLOW_IN_DURATION);
 		}
@@ -233,10 +235,10 @@ public class YMD extends AbstractDuration {
 	public YMD divide(Dbl dbl) throws QueryException {
 		double v = dbl.doubleValue();
 
-		if (v == Double.NaN) {
+		if (Double.isNaN(v)) {
 			throw new QueryException(ErrorCode.ERR_PARAMETER_NAN);
 		}
-		if ((v == Double.NEGATIVE_INFINITY) || (v == Double.POSITIVE_INFINITY)) {
+		if (Double.isInfinite(v)) {
 			return new YMD(false, (short) 0, (byte) 0);
 		}
 

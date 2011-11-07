@@ -41,32 +41,43 @@ import org.brackit.xquery.xdm.Type;
  * 
  */
 public class Types {
-	protected final Map<QNm, Type> types = new HashMap<QNm, Type>();
+	protected final Map<QNm, Type> atomicTypes = new HashMap<QNm, Type>();
+
+	public Type resolveSchemaType(QNm name) throws QueryException {
+		// of course there's no import - we don't support imports yet ;-)
+		throw new QueryException(ErrorCode.ERR_UNDEFINED_REFERENCE,
+				"No schema import found for namespace '%s'", name
+						.getNamespaceURI());
+	}
 
 	public Type resolveType(QNm name) throws QueryException {
+		Type type = resolveInternal(name);
+		if (type != null) {
+			return type;
+		}
+		throw new QueryException(ErrorCode.ERR_UNDEFINED_REFERENCE,
+				"Unknown type: '%s'", name);
+	}
+
+	public Type resolveAtomicType(QNm name) throws QueryException {
+		Type type = resolveInternal(name);
+		if (type != null) {
+			return type;
+		}
+		throw new QueryException(ErrorCode.ERR_UNKNOWN_ATOMIC_SCHEMA_TYPE,
+				"Unknown atomic schema type: '%s'", name);
+	}
+
+	private Type resolveInternal(QNm name) {
 		if (Namespaces.XS_NSURI.equals(name.getNamespaceURI())) {
 			for (Type type : Type.builtInTypes) {
 				if (type.getName().getLocalName().equals(name.getLocalName())) {
 					return type;
 				}
 			}
-			throw new QueryException(ErrorCode.ERR_UNKNOWN_ATOMIC_SCHEMA_TYPE,
-					"Unknown atomic schema type: '%s'", name);
+			return null;
 		}
 
-		Type type = types.get(name);
-
-		if (type != null) {
-			return type;
-		}
-
-		throw new QueryException(ErrorCode.ERR_UNKNOWN_ATOMIC_SCHEMA_TYPE,
-				"Unknown atomic schema type: '%s'", name);
-	}
-
-	public void declare(Type type) throws QueryException {
-		throw new QueryException(
-				ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-				"Type definition not implemented yet");
+		return atomicTypes.get(name);
 	}
 }

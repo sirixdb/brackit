@@ -29,11 +29,11 @@ package org.brackit.xquery.compiler;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
+import org.brackit.xquery.atomic.AnyURI;
+import org.brackit.xquery.compiler.analyzer.Analyzer;
 import org.brackit.xquery.compiler.optimizer.DefaultOptimizer;
 import org.brackit.xquery.compiler.optimizer.Optimizer;
-import org.brackit.xquery.compiler.parser.ANTLRParser;
 import org.brackit.xquery.compiler.parser.DotUtil;
-import org.brackit.xquery.compiler.parser.Parser;
 import org.brackit.xquery.compiler.translator.PipelineCompiler;
 import org.brackit.xquery.compiler.translator.Translator;
 import org.brackit.xquery.module.Module;
@@ -45,12 +45,15 @@ import org.brackit.xquery.module.Module;
  * 
  */
 public class CompileChain {
+
+	final AnyURI baseURI;
 	
 	public CompileChain() {
+		baseURI = null;
 	}
-
-	protected Parser getParser() {
-		return new ANTLRParser();
+	
+	public CompileChain(AnyURI baseURI) {
+		this.baseURI = baseURI;
 	}
 
 	protected Optimizer getOptimizer() {
@@ -58,7 +61,7 @@ public class CompileChain {
 	}
 
 	protected Translator getTranslator() {
-		return new PipelineCompiler(getModuleResolver());
+		return new PipelineCompiler();
 	}
 
 	protected ModuleResolver getModuleResolver() {
@@ -67,16 +70,31 @@ public class CompileChain {
 
 	public Module compile(String query) throws QueryException {
 		if (XQuery.DEBUG) {
-			System.out.println(String.format("Compiling query:\n%s", query));
+			System.out.println(String.format("Compiling:\n%s", query));
 		}
-
-		AST ast = getParser().parse(query);
-		ast = getOptimizer().optimize(ast);
-		Module module = getTranslator().translate(ast);
-
+		ModuleResolver resolver = getModuleResolver();
+		Analyzer analyzer = new Analyzer(resolver, baseURI, query);
+		AST xquery = analyzer.getAST();
 		if (XQuery.DEBUG) {
-			DotUtil.drawDotToFile(ast.dot(), XQuery.DEBUG_DIR, "xquery");
+			DotUtil.drawDotToFile(xquery.dot(), XQuery.DEBUG_DIR, "parsed");
 		}
-		return module;
+		// optimize all targets of all modules
+		for (Target t : analyzer.getTargets()) {
+			t.optimize(getOptimizer());
+		}
+		// translate all targets of all modules
+		for (Target t : analyzer.getTargets()) {
+			t.translate(getTranslator());
+		}
+		// everything went fine - add compiled modules to library
+		for (Module module : analyzer.getModules()) {
+			if (module.getTargetNS() != null) {
+				resolver.register(module.getTargetNS(), module);
+			}
+		}
+		if (XQuery.DEBUG) {
+			DotUtil.drawDotToFile(xquery.dot(), XQuery.DEBUG_DIR, "xquery");
+		}
+		return analyzer.getModules().get(0);
 	}
 }

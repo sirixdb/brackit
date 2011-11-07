@@ -34,8 +34,9 @@ import org.brackit.xquery.atomic.Dbl;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Type;
 
 /**
@@ -62,7 +63,7 @@ public class ExtractFromDuration extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException {
 
 		if (args.length == 0 || args[0] == null) {

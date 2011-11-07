@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.node.parser;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.DocumentException;
 
 /**
@@ -40,17 +42,21 @@ public interface SubtreeHandler {
 
 	public void endDocument() throws DocumentException;
 
-	public void text(String content) throws DocumentException;
+	public void text(Atomic content) throws DocumentException;
 
-	public void comment(String content) throws DocumentException;
+	public void comment(Atomic content) throws DocumentException;
 
-	public void processingInstruction(String content) throws DocumentException;
+	public void processingInstruction(QNm target, Atomic content) throws DocumentException;
 
-	public void startElement(String name) throws DocumentException;
+	public void startMapping(String prefix, String uri) throws DocumentException;
 
-	public void endElement(String name) throws DocumentException;
+	public void endMapping(String prefix) throws DocumentException;
 
-	public void attribute(String name, String value) throws DocumentException;
+	public void startElement(QNm name) throws DocumentException;
+
+	public void endElement(QNm name) throws DocumentException;
+
+	public void attribute(QNm name, Atomic value) throws DocumentException;
 
 	public void begin() throws DocumentException;
 

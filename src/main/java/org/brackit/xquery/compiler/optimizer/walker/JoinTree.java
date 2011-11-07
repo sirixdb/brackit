@@ -27,8 +27,8 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
-import static org.brackit.xquery.compiler.parser.XQueryParser.Join;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Start;
+import static org.brackit.xquery.compiler.XQ.Join;
+import static org.brackit.xquery.compiler.XQ.Start;
 
 import java.util.HashSet;
 
@@ -36,12 +36,12 @@ import org.brackit.xquery.compiler.AST;
 
 /**
  * @author Sebastian Baechle
- *
+ * 
  */
 public class JoinTree extends PipelineVarTracker {
 
 	HashSet<AST> dontTouch = new HashSet<AST>();
-	
+
 	@Override
 	protected AST prepare(AST root) {
 		collectVars(root);
@@ -61,13 +61,14 @@ public class JoinTree extends PipelineVarTracker {
 			return node;
 		}
 		if (node.getProperty("group") != null) {
-			System.err.println("Look at me I'am a sample query for JoinTree rewriting with non-empty S0");			
+			System.err
+					.println("Look at me I'am a sample query for JoinTree rewriting with non-empty S0");
 			// TODO S0 is not empty
 			return node;
-		}		
+		}
 		AST lJoinExpr = node.getChild(1).getChild(1);
 		VarRef refs = varRefs(lJoinExpr, null);
-		
+
 		AST minBind = in.getChild(2);
 		while (minBind.getType() != Start) {
 			minBind = minBind.getChild(0);
@@ -77,15 +78,15 @@ public class JoinTree extends PipelineVarTracker {
 		if (refs.first().var.bndNo < bindingNo(minBind)) {
 			return node;
 		}
-		
-		AST join = new AST(Join, "Join");
+
+		AST join = new AST(Join);
 		join.addChild(in.getChild(2).copyTree());
 		join.addChild(node.getChild(1).copyTree());
 		join.addChild(node.getChild(2).copyTree());
 		in.replaceChild(2, join);
-		
+
 		node.getParent().replaceChild(node.getChildIndex(), in);
 		dontTouch.add(in);
-		return node.getParent();
+		return in;
 	}
 }

@@ -27,14 +27,21 @@
  */
 package org.brackit.xquery.compiler;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.CharBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.module.Module;
+import org.brackit.xquery.util.URIHandler;
 
 /**
  * 
@@ -45,8 +52,7 @@ public class BaseResolver implements ModuleResolver {
 
 	private Map<String, List<Module>> modules;
 
-	public void register(String targetNSUri, Module module)
-			throws QueryException {
+	public void register(String targetNSUri, Module module) {
 		List<Module> list = null;
 		if (modules == null) {
 			modules = new HashMap<String, List<Module>>();
@@ -59,14 +65,28 @@ public class BaseResolver implements ModuleResolver {
 		list.add(module);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public List<Module> resolve(String uri, String... locUris)
-			throws QueryException {
+	public List<Module> resolve(String uri, String... locUris) {
 		List<Module> list = (modules != null) ? modules.get(uri) : null;
-		if (list == null) {
-			throw new QueryException(ErrorCode.ERR_SCHEMA_OR_MODULE_NOT_FOUND,
-					"Module '%s' not found", uri);
+		return (list == null) ? Collections.EMPTY_LIST : list;
+	}
+
+	@Override
+	public List<String> load(String uri, String[] locations) throws IOException {
+		List<String> loaded = new LinkedList<String>();
+		for (String loc : locations) {
+			try {
+				InputStreamReader in = new InputStreamReader(
+						URIHandler.getInputStream(new URI(loc)));
+				CharBuffer buf = CharBuffer.allocate(1024 * 521);
+				int read = in.read(buf);
+				in.close();
+				loaded.add(buf.rewind().toString());
+			} catch (URISyntaxException e) {
+				// location URI's must not be valid -> ignore
+			}
 		}
-		return list;
+		return loaded;
 	}
 }

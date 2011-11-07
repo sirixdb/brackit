@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.node.d2linked;
 
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.junit.Assert;
@@ -98,12 +100,12 @@ public class D2NodeDivisionTest extends D2Node {
 	}
 
 	@Override
-	public String getName() throws DocumentException {
+	public QNm getName() throws DocumentException {
 		return null;
 	}
 
 	@Override
-	public String getValue() throws DocumentException {
+	public Atomic getValue() throws DocumentException {
 		return null;
 	}
 

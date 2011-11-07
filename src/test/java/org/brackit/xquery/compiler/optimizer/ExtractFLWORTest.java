@@ -51,7 +51,7 @@ public class ExtractFLWORTest extends XQueryBaseTest {
 				"where $a > (for $b in (2,3,4) " +
 				"			return $b) " +
 				"return $a").execute(ctx);
-		ResultChecker.dCheck(ctx, new Int32(3), res);
+		ResultChecker.dCheck(new Int32(3), res);
 	}
 	
 	private Sequence intSequence(int... v) {

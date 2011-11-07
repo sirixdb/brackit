@@ -44,6 +44,11 @@ import org.brackit.xquery.xdm.Type;
  * 
  */
 public abstract class AbstractNumeric extends AbstractAtomic implements Numeric {
+	/**
+	 * 
+	 */
+	private static final int INTEGER_DIV_SCALE = 18;
+
 	private static final DecimalFormatSymbols DF_SYMBOL = new DecimalFormatSymbols(
 			Locale.US);
 
@@ -125,7 +130,8 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 			// overflow escalate to long
 			return new Int64((long) a + (long) b);
 		}
-		return ((0 <= r) && (r <= 20)) ? Int32.ZERO_TWO_TWENTY[r] : new Int32(r);
+		return ((0 <= r) && (r <= 20)) ? Int32.ZERO_TWO_TWENTY[r]
+				: new Int32(r);
 	}
 
 	protected final Numeric addLong(long a, long b) {
@@ -143,11 +149,11 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 	}
 
 	protected final Numeric subtractDouble(double a, double b) {
-		return new Dbl(a + b);
+		return new Dbl(a - b);
 	}
 
 	protected final Numeric subtractFloat(float a, float b) {
-		return new Flt(a + b);
+		return new Flt(a - b);
 	}
 
 	protected final Numeric subtractInt(int a, int b) {
@@ -237,7 +243,7 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 			return new Int32(a / b);
 		}
 		return new Dec(new BigDecimal(a).divide(new BigDecimal(b),
-				RoundingMode.HALF_EVEN));
+				INTEGER_DIV_SCALE, RoundingMode.HALF_EVEN));
 	}
 
 	protected final Numeric divideLong(long a, long b) throws QueryException {
@@ -249,7 +255,7 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 			return new Int64(a / b);
 		}
 		return new Dec(new BigDecimal(a).divide(new BigDecimal(b),
-				RoundingMode.HALF_EVEN));
+				INTEGER_DIV_SCALE, RoundingMode.HALF_EVEN));
 	}
 
 	protected final Numeric divideBigDecimal(BigDecimal a, BigDecimal b,
@@ -258,7 +264,8 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 			throw new QueryException(ErrorCode.ERR_DIVISION_BY_ZERO);
 		}
 
-		return new Dec(a.divide(b, RoundingMode.HALF_EVEN));
+		int scale = (isDecimal) ? a.scale() - b.scale() : INTEGER_DIV_SCALE;
+		return new Dec(a.divide(b, scale, RoundingMode.HALF_EVEN));
 	}
 
 	protected final Numeric idivideDouble(double a, double b) {
@@ -343,11 +350,15 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 		return new Int(a.remainder(b));
 	}
 
-	protected final String killTrailingZeros(String string) {
-		int length = string.length() - 1;
-		int pos = length;
-		while ((pos >= 0) && (string.charAt(pos) == '0'))
+	protected final String killTrailingZeros(String s) {
+		int len = s.length() - 1;
+		int pos = len;
+		while ((pos >= 0) && (s.charAt(pos) == '0')) {
 			pos--;
-		return (pos == length) ? string : string.substring(0, pos + 1);
+		}
+		if (s.charAt(pos) == '.') {
+			pos--;
+		}
+		return (pos == len) ? s : s.substring(0, pos + 1);
 	}
 }

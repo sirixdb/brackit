@@ -38,7 +38,7 @@ import org.brackit.xquery.xdm.Type;
 /**
  * 
  * @author Sebastian Baechle
- *
+ * 
  */
 public class Dec extends AbstractNumeric implements DecNumeric {
 	private final BigDecimal v;
@@ -104,8 +104,8 @@ public class Dec extends AbstractNumeric implements DecNumeric {
 		if (other instanceof DecNumeric) {
 			return v.compareTo(((Numeric) other).decimalValue());
 		} else if (other instanceof DblNumeric) {
-			return Double.compare(v.doubleValue(), ((Numeric) other)
-					.doubleValue());
+			return Double.compare(v.doubleValue(),
+					((Numeric) other).doubleValue());
 		} else if (other instanceof FltNumeric) {
 			return Float
 					.compare(v.floatValue(), ((Numeric) other).floatValue());
@@ -119,8 +119,8 @@ public class Dec extends AbstractNumeric implements DecNumeric {
 		if (other instanceof DecNumeric) {
 			return v.compareTo(((Numeric) other).decimalValue());
 		} else if (other instanceof DblNumeric) {
-			return Double.compare(v.doubleValue(), ((Numeric) other)
-					.doubleValue());
+			return Double.compare(v.doubleValue(),
+					((Numeric) other).doubleValue());
 		} else {
 			return Float
 					.compare(v.floatValue(), ((Numeric) other).floatValue());
@@ -129,8 +129,20 @@ public class Dec extends AbstractNumeric implements DecNumeric {
 
 	@Override
 	public String stringValue() {
-		String killTrailingZeros = killTrailingZeros(v.toString());
-		return killTrailingZeros;
+		String s = v.toPlainString();
+		return (v.scale() <= 0) ? s : killTrailingZeros(s);
+	}
+
+	public static void main(String[] args) throws Exception {
+		System.out
+				.println(new Dec(
+						"0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001")
+						.toString());
+
+		System.out.println(new Dec(new BigDecimal(-0.0d)).toString());
+		System.out.println(new Dec("-2300.44004000"));
+		System.out.println(new Dec("40"));
+		System.out.println(new Dec("40.0"));
 	}
 
 	public BigDecimal decimalValue() {

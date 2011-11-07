@@ -35,8 +35,9 @@ import org.brackit.xquery.atomic.Date;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Time;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.Signature;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 
 /**
  * 
@@ -49,7 +50,7 @@ public class DateTime extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException {
 		Date date = (Date) args[0];
 		Time time = (Time) args[1];

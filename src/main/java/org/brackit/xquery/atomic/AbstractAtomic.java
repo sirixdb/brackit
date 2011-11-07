@@ -33,6 +33,8 @@ import org.brackit.xquery.Tuple;
 import org.brackit.xquery.xdm.AbstractItem;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.type.AtomicType;
+import org.brackit.xquery.xdm.type.ItemType;
 
 /**
  * Base class for atomic items.
@@ -69,6 +71,19 @@ public abstract class AbstractAtomic extends AbstractItem implements Atomic {
 
 	public abstract int hashCode();
 
+	@Override
+	public int compareTo(Atomic atomic) {
+		if (this == atomic) {
+			return 0;
+		}
+		int myCode = atomicCode();
+		int oCode = atomic.atomicCode();
+		if (myCode != oCode) {
+			return myCode < oCode ? -1 : 1;
+		}
+		return atomicCmpInternal(atomic);
+	}
+
 	protected abstract int atomicCmpInternal(Atomic atomic);
 
 	@Override
@@ -98,5 +113,22 @@ public abstract class AbstractAtomic extends AbstractItem implements Atomic {
 	@Override
 	public String toString() {
 		return stringValue();
+	}
+
+	@Override
+	public Str asStr() {
+		return new Str(stringValue());
+	}
+	
+	@Override
+	public Una asUna() {
+		return new Una(stringValue());
+	}
+
+	@Override
+	public ItemType itemType() throws QueryException {
+		// TODO we should override this in built-in classes
+		// to save object construction and memory overhead
+		return new AtomicType(type());
 	}
 }

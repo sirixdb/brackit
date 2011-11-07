@@ -27,16 +27,19 @@
  */
 package org.brackit.xquery.expr;
 
+import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.Unit;
 import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.sequence.TypedSequence;
-import org.brackit.xquery.sequence.type.SequenceType;
+import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * Resolves references to declared variables.
@@ -44,44 +47,55 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  * 
  */
-public class DeclVariable extends Variable {
-	private final Expr expr;
+public class DeclVariable extends Variable implements Unit {
+	private Expr expr;
 
-	public DeclVariable(QNm name, SequenceType type, Expr expr) {
+	public DeclVariable(QNm name, SequenceType type) {
 		super(name, type);
-		this.expr = expr;
 	}
 
 	@Override
 	public Sequence evaluate(QueryContext ctx, Tuple tuple)
 			throws QueryException {
+		Sequence s;
 		if (ctx.isBound(name)) {
-			return ctx.resolve(name);
-		}		
-		Sequence res = expr.evaluate(ctx, TupleImpl.EMPTY_TUPLE);
-		if (type != null) {
-			res = TypedSequence.toTypedSequence(ctx, type, res);
+			s = ctx.resolve(name);
+		} else if (expr != null) {
+			s = expr.evaluate(ctx, TupleImpl.EMPTY_TUPLE);
+			// bind sequence to preserve sequence identity
+			// for future references
+			ctx.bind(name, s);
+		} else {
+			throw new QueryException(
+					ErrorCode.ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED,
+					"Variable %s has not been bound", name);
 		}
-		ctx.bind(name, res);
-		return res;
+		if (type != null) {
+			s = TypedSequence.toTypedSequence(ctx, type, s);
+		}
+		return s;
 	}
 
 	@Override
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		if (ctx.isBound(name)) {
-			return (Item) ctx.resolve(name);
+		Sequence res = ctx.resolve(name);
+		if (res == null) {
+			if (expr == null) {
+				throw new QueryException(
+						ErrorCode.ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED,
+						"Variable %s has not been bound", name);
+			}
+			res = expr.evaluate(ctx, TupleImpl.EMPTY_TUPLE);
 		}
-		Item res = expr.evaluateToItem(ctx, TupleImpl.EMPTY_TUPLE);
 		if (type != null) {
-			res = TypedSequence.toTypedItem(ctx, type, res);
+			return TypedSequence.toTypedItem(ctx, type, res);
 		}
-		ctx.bind(name, res);
-		return res;
+		return ExprUtil.asItem(res);
 	}
 
 	@Override
-	public boolean isUpdating() {
-		return expr.isUpdating();
+	public void setExpr(Expr expr) {
+		this.expr = expr;
 	}
 }

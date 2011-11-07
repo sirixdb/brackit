@@ -95,11 +95,10 @@ public class OrderBy implements Operator {
 				}
 				return 0;
 			} catch (QueryException e) {
-				if (e.getCode() == ErrorCode.BIT_DYN_RT_ILLEGAL_COMPARISON_ERROR) {
+				if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
 					throw new ClassCastException(e.getMessage());
 				} else {
-					e.printStackTrace();
-					throw new RuntimeException(e.getMessage());
+					throw new RuntimeException(e);
 				}
 			}
 		}
@@ -160,8 +159,9 @@ public class OrderBy implements Operator {
 					break;
 				}
 				if (check >= 0) {
+					// check if next tuple belongs to different iteration
 					Atomic ngk = (Atomic) next.get(check);
-					if (gk.atomicCmp(ngk) != 0) {
+					if ((ngk == null) || (gk.atomicCmp(ngk) != 0)) {
 						break;
 					}
 				}
@@ -180,7 +180,7 @@ public class OrderBy implements Operator {
 				Item item = orderByExprs[i].evaluateToItem(ctx, t);
 				Atomic atomic = (item != null) ? item.atomize() : null;
 				if ((atomic != null) && (atomic.type().instanceOf(Type.UNA))) {
-					atomic = Cast.cast(atomic, Type.STR);
+					atomic = Cast.cast(null, atomic, Type.STR);
 				}
 				concat[i] = atomic;
 			}

@@ -27,17 +27,17 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
-import static org.brackit.xquery.compiler.parser.XQueryParser.Count;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GroupBy;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Selection;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Start;
+import static org.brackit.xquery.compiler.XQ.Count;
+import static org.brackit.xquery.compiler.XQ.GroupBy;
+import static org.brackit.xquery.compiler.XQ.Selection;
+import static org.brackit.xquery.compiler.XQ.Start;
 
 import java.util.HashSet;
 
 import org.brackit.xquery.compiler.AST;
 
 /**
- * Push variable bindings downstream in a pipeline to reduce
+ * Push select operators downstream in a pipeline to reduce
  * number of tuples in a pipeline.
  * 
  * @author Sebastian Baechle
@@ -83,6 +83,6 @@ public class SelectPushdown extends PipelineVarTracker {
 		node.replaceChild(0, tmp);
 		parent.replaceChild(0, in);
 		pushed.add(node);
-		return parent;
+		return in;
 	}
 }

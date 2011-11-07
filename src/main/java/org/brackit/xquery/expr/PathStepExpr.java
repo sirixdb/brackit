@@ -38,6 +38,7 @@ import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
+import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.util.sort.TupleSort;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
@@ -52,116 +53,63 @@ import org.brackit.xquery.xdm.Stream;
  * 
  */
 public class PathStepExpr implements Expr {
-	// private static final Logger log = Logger.getLogger(PathStepExpr.class);
-
 	final Expr nextStep;
-
 	final Expr step;
-
 	final boolean sortResult;
-
 	final boolean bindItem;
-
 	final boolean bindPos;
-
 	final boolean bindSize;
-
 	final int bindCount;
+	final boolean lastStep;
 
 	public PathStepExpr(Expr step, Expr nextStep, boolean sortResult,
-			boolean bindItem, boolean bindPos, boolean bindSize) {
+			boolean bindItem, boolean bindPos, boolean bindSize,
+			boolean lastStep) {
 		this.step = step;
 		this.nextStep = nextStep;
 		this.sortResult = sortResult;
 		this.bindItem = bindItem;
 		this.bindPos = bindPos;
 		this.bindSize = bindSize;
+		this.lastStep = lastStep;
 		bindCount = (bindItem ? 1 : 0) + (bindPos ? 1 : 0) + (bindSize ? 1 : 0);
 	}
 
 	@Override
-	public Sequence evaluate(final QueryContext ctx, final Tuple tuple)
+	public Sequence evaluate(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		// System.out.println("Performing step " + step + " with tuple " +
-		// tuple);
-		Sequence nodes = step.evaluate(ctx, tuple);
-
-		if (nodes == null) {
+		Sequence in = step.evaluate(ctx, tuple);
+		if (in == null) {
 			return null;
 		}
-
-		if (nodes instanceof Atomic) {
-			throw new QueryException(
-					ErrorCode.ERR_PATH_STEP_RETURNED_ATOMIC_VALUE,
-					"Input for axis step is not a node: %s", ((Atomic) nodes)
-							.type());
+		IntNumeric size = (bindSize) ? in.size() : null;
+		Sequence out = new PathStepSequence(ctx, tuple, in, size);
+		if ((sortResult) && ((lastStep) || ((!(in instanceof Node<?>))))) {
+			out = new DdoOrAtomicSequence(out);
 		}
-
-		Sequence result = new PathStepSequence(ctx, tuple, nodes,
-				(bindSize) ? nodes.size() : null);
-
-		// if (log.isTraceEnabled())
-		// {
-		// log.trace(String.format("Result of initial step %s is:\n%s", step,
-		// print(ctx, nodes)));
-		// }
-
-		if ((sortResult) && ((!(nodes instanceof Node<?>)))) {
-			result = new StepOutSequence(result, true);
-			// if (log.isTraceEnabled())
-			// {
-			// log.trace(String.format("Sorted result of initial step %s is:\n%s",
-			// step, print(ctx, result)));
-			// }
-		}
-
-		return result;
-	}
-
-	protected String print(QueryContext ctx, Sequence sequence)
-			throws QueryException {
-		StringBuilder out = new StringBuilder();
-		out.append("-----------");
-		out.append('\n');
-		if (sequence == null) {
-			out.append("-----------");
-			out.append('\n');
-			return out.toString();
-		}
-		Iter it = sequence.iterate();
-		Item item;
-		try {
-			while ((item = it.next()) != null) {
-				out.append(item);
-				out.append('\n');
-			}
-		} finally {
-			it.close();
-			out.append("-----------");
-			out.append('\n');
-		}
-		return out.toString();
+		return out;
 	}
 
 	private class PathStepSequence extends LazySequence {
 		final QueryContext ctx;
-		final Sequence n; // result of unfiltered step expression
-		final Tuple tuple;
+		final Sequence in; // result of unfiltered step expression
+		final Tuple t;
 		final IntNumeric s;
 
-		PathStepSequence(QueryContext ctx, Tuple tuple, Sequence nodes,
-				IntNumeric s) {
+		PathStepSequence(QueryContext ctx, Tuple t, Sequence in, IntNumeric s) {
 			this.ctx = ctx;
-			this.tuple = tuple;
-			this.n = nodes;
+			this.t = t;
+			this.in = in;
 			this.s = s;
 		}
 
 		@Override
 		public Iter iterate() {
-			return (n instanceof Node<?>) ? new SinglePathStepSequenceIter(ctx,
-					tuple, (Node<?>) n) : new PathStepSequenceIter(ctx, tuple,
-					s, n.iterate());
+			if (in instanceof Item) {
+				return new ItemContextPathStepIter(ctx, t, (Item) in);
+			} else {
+				return new SequenceContextPathStepIter(ctx, t, s, in.iterate());
+			}
 		}
 
 		public String toString() {
@@ -169,63 +117,96 @@ public class PathStepExpr implements Expr {
 		}
 	}
 
-	private class SinglePathStepSequenceIter extends BaseIter {
+	private class ItemContextPathStepIter extends BaseIter {
 		final QueryContext ctx;
-		final Tuple tuple;
-		Node<?> currentNode;
-		Iter nextS;
+		final Tuple t;
+		final Item item;
+		Boolean nodeOnly;
+		Iter out;
 
-		SinglePathStepSequenceIter(QueryContext ctx, Tuple tuple, Node<?> node) {
+		ItemContextPathStepIter(QueryContext ctx, Tuple t, Item item) {
 			this.ctx = ctx;
-			this.tuple = tuple;
-			this.currentNode = node;
+			this.t = t;
+			this.item = item;
 		}
 
 		@Override
 		public Item next() throws QueryException {
-			if (nextS == null) {
-				Tuple current = tuple;
-				if (bindCount > 0) {
-					Sequence[] tmp = new Sequence[bindCount];
-					int p = 0;
-					if (bindItem) {
-						tmp[p++] = currentNode;
-					}
-					if (bindPos) {
-						tmp[p++] = Int32.ONE;
-					}
-					if (bindSize) {
-						tmp[p++] = Int32.ONE;
-					}
-					current = current.concat(tmp);
+			if (out == null) {
+				if (nodeOnly != null) {
+					// step was already performed
+					return null;
 				}
-
-				Sequence sequence = nextStep.evaluate(ctx, current);
-				nextS = (sequence != null) ? sequence.iterate() : null;
+				Sequence s = performStep();
+				if (s == null) {
+					// just set it to some value
+					// to avoid multiple evaluation of
+					// next step
+					nodeOnly = Boolean.TRUE;
+					return null;
+				}
+				out = s.iterate();
 			}
 
-			return nextS.next();
+			Item next = out.next();
+			if (next != null) {
+				// check if step returns mixed output
+				if (nodeOnly == null) {
+					nodeOnly = (next instanceof Node);
+				} else if ((lastStep) && ((nodeOnly) ^ (next instanceof Node))) {
+					throw new QueryException(
+							ErrorCode.ERR_PATH_STEP_RETURNED_NODE_AND_NON_NODE_VALUES,
+							"Path step returned both nodes and non-node values");
+				}
+			}
+			return next;
+		}
+
+		private Sequence performStep() throws QueryException {
+			if (!(item instanceof Node<?>)) {
+				throw new QueryException(
+						ErrorCode.ERR_PATH_STEP_RETURNED_NON_NODE_VALUE,
+						"Intermediate step in path expression returned a non-node: %s",
+						item.itemType());
+			}
+			Tuple current = t;
+			if (bindCount > 0) {
+				Sequence[] tmp = new Sequence[bindCount];
+				int p = 0;
+				if (bindItem) {
+					tmp[p++] = item;
+				}
+				if (bindPos) {
+					tmp[p++] = Int32.ONE;
+				}
+				if (bindSize) {
+					tmp[p++] = Int32.ONE;
+				}
+				current = current.concat(tmp);
+			}
+
+			Sequence s = nextStep.evaluate(ctx, current);
+			return s;
 		}
 
 		@Override
 		public void close() {
-			if (nextS != null) {
-				nextS.close();
+			if (out != null) {
+				out.close();
 			}
 		}
 	}
 
-	private class PathStepSequenceIter extends BaseIter {
+	private class SequenceContextPathStepIter extends BaseIter {
 		final QueryContext ctx;
 		final Tuple tuple;
 		final IntNumeric inSeqSize;
 		final Iter in;
-
+		Boolean nodeOnly;
 		IntNumeric pos = Int32.ZERO;
-		Node<?> currentNode;
-		Iter nextS;
+		Iter out;
 
-		PathStepSequenceIter(QueryContext ctx, Tuple tuple,
+		SequenceContextPathStepIter(QueryContext ctx, Tuple tuple,
 				IntNumeric inSeqSize, Iter in) {
 			this.ctx = ctx;
 			this.tuple = tuple;
@@ -236,36 +217,42 @@ public class PathStepExpr implements Expr {
 		@Override
 		public Item next() throws QueryException {
 			while (true) {
-				if (nextS != null) {
-					Item next = nextS.next();
+				if (out != null) {
+					Item next = out.next();
 					if (next != null) {
+						// check if step returns mixed output
+						if (nodeOnly == null) {
+							nodeOnly = (next instanceof Node);
+						} else if ((lastStep)
+								&& ((nodeOnly) ^ (next instanceof Node))) {
+							throw new QueryException(
+									ErrorCode.ERR_PATH_STEP_RETURNED_NODE_AND_NON_NODE_VALUES,
+									"Path step returned both nodes and non-node values");
+						}
 						return next;
 					}
-					nextS.close();
-					nextS = null;
+					out.close();
+					out = null;
 				}
 
-				Item runVar = null;
 				Tuple current = tuple;
+				Item item = in.next();
 
-				runVar = in.next();
-
-				if (runVar == null) {
+				if (item == null) {
 					return null;
 				}
-				if (!(runVar instanceof Node<?>)) {
+				if (!(item instanceof Node<?>)) {
 					throw new QueryException(
-							ErrorCode.ERR_PATH_STEP_RETURNED_ATOMIC_VALUE,
-							"Input for axis step is not a node: %s", runVar
-									.type());
+							ErrorCode.ERR_PATH_STEP_RETURNED_NON_NODE_VALUE,
+							"Intermediate step in path expression returned a non-node: %s",
+							item.itemType());
 				}
-				currentNode = (Node<?>) runVar;
 
 				if (bindCount > 0) {
 					Sequence[] tmp = new Sequence[bindCount];
 					int p = 0;
 					if (bindItem) {
-						tmp[p++] = runVar;
+						tmp[p++] = item;
 					}
 					if (bindPos) {
 						tmp[p++] = (pos = pos.inc());
@@ -276,19 +263,16 @@ public class PathStepExpr implements Expr {
 					current = current.concat(tmp);
 				}
 
-				// System.out.println("Performing nextStep " + nextStep +
-				// " with tuple " + tuple + " bindItem=" + bindItem +
-				// " bindPos="+ bindPos + " bindSize=" + bindSize);
-				Sequence sequence = nextStep.evaluate(ctx, current);
-				nextS = (sequence != null) ? sequence.iterate() : null;
+				Sequence s = nextStep.evaluate(ctx, current);
+				out = (s != null) ? s.iterate() : null;
 			}
 		}
 
 		@Override
 		public void close() {
 			in.close();
-			if (nextS != null) {
-				nextS.close();
+			if (out != null) {
+				out.close();
 			}
 		}
 	}
@@ -296,26 +280,10 @@ public class PathStepExpr implements Expr {
 	@Override
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		Sequence res = evaluate(ctx, tuple);
-		if ((res == null) || (res instanceof Item)) {
-			return (Item) res;
-		}
-		Iter s = res.iterate();
-		try {
-			Item item = s.next();
-			if (item == null) {
-				return null;
-			}
-			if (s.next() != null) {
-				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
-			}
-			return item;
-		} finally {
-			s.close();
-		}
+		return ExprUtil.asItem(evaluate(ctx, tuple));
 	}
 
-	private static class StepOutSequence extends LazySequence {
+	private static class DdoOrAtomicSequence extends LazySequence {
 		static final Comparator<Tuple> cmp = new Comparator<Tuple>() {
 			@Override
 			public int compare(Tuple o1, Tuple o2) {
@@ -325,15 +293,13 @@ public class PathStepExpr implements Expr {
 		};
 
 		final Sequence s;
-		final boolean lastStep;
 		// volatile fields because they are
 		// computed on demand
 		volatile TupleSort tupleSort;
 		volatile boolean atomicOnly;
 
-		public StepOutSequence(Sequence s, boolean lastStep) {
+		public DdoOrAtomicSequence(Sequence s) {
 			this.s = s;
-			this.lastStep = lastStep;
 		}
 
 		@Override
@@ -365,14 +331,6 @@ public class PathStepExpr implements Expr {
 						}
 
 						if (next instanceof Atomic) {
-							if (!lastStep) {
-								it.close();
-								it = null;
-								throw new QueryException(
-										ErrorCode.ERR_INTERMEDIARY_STEP_RETURNED_ATOMIC,
-										"Intermediary step in path expression returned atomic values");
-							}
-
 							atomicOnly = true;
 							return next;
 						}
@@ -381,13 +339,6 @@ public class PathStepExpr implements Expr {
 							// TODO -1 means no external sort
 							sort = new TupleSort(cmp, -1);
 							do {
-								if (!(next instanceof Node<?>)) {
-									throw new QueryException(
-											ErrorCode.ERR_LAST_STEP_RETURNED_MIXED_NODE_AND_ATOMIC,
-											"Last step in path expression returned both "
-													+ "nodes and atomic values: %s (first) %s (current)",
-											first, next);
-								}
 								sort.add(next);
 							} while ((next = it.next()) != null);
 							sort.sort();

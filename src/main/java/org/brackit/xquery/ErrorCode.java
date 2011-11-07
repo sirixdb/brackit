@@ -45,6 +45,12 @@ public class ErrorCode {
 			ERR_PREFIX, "FOER0000");
 
 	/**
+	 * err:FONS0004
+	 */
+	public static final QNm ERR_NO_NAMESPACE_FOR_PREFIX = new QNm(ERR_NSURI,
+			ERR_PREFIX, "FONS0004");
+
+	/**
 	 * err:XPDY0002
 	 */
 	public static final QNm ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED = new QNm(
@@ -63,34 +69,34 @@ public class ErrorCode {
 			"XPST0003");
 
 	/**
-	 * err:XPTY0018
-	 */
-	public static final QNm ERR_LAST_STEP_RETURNED_MIXED_NODE_AND_ATOMIC = new QNm(
-			ERR_NSURI, ERR_PREFIX, "XPTY0018");
-
-	/**
-	 * err:XPTY0019
-	 */
-	public static final QNm ERR_INTERMEDIARY_STEP_RETURNED_ATOMIC = new QNm(
-			ERR_NSURI, ERR_PREFIX, "XPTY0019");
-
-	/**
-	 * err:XPTY0020
-	 */
-	public static final QNm ERR_TYPE_NOT_A_NODE = new QNm(ERR_NSURI,
-			ERR_PREFIX, "XPTY0020");
-
-	/**
 	 * err:XPTY0004
 	 */
 	public static final QNm ERR_TYPE_INAPPROPRIATE_TYPE = new QNm(ERR_NSURI,
 			ERR_PREFIX, "XPTY0004");
 
 	/**
+	 * err:XPTY0018
+	 */
+	public static final QNm ERR_PATH_STEP_RETURNED_NODE_AND_NON_NODE_VALUES = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XPTY0018");
+
+	/**
 	 * err:XPTY0019
 	 */
-	public static final QNm ERR_PATH_STEP_RETURNED_ATOMIC_VALUE = new QNm(
+	public static final QNm ERR_PATH_STEP_RETURNED_NON_NODE_VALUE = new QNm(
 			ERR_NSURI, ERR_PREFIX, "XPTY0019");
+
+	/**
+	 * err:XPTY0020
+	 */
+	public static final QNm ERR_PATH_STEP_CONTEXT_ITEM_IS_NOT_A_NODE = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XPTY0020");
+	
+	/**
+	 * err:XPTY0117
+	 */
+	public static final QNm ERR_TYPE_CAST_TO_NAMESPACE_SENSITIVE_TYPE = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XPTY0117");
 
 	/**
 	 * err:XQTY0024
@@ -141,7 +147,13 @@ public class ErrorCode {
 			ERR_NSURI, ERR_PREFIX, "XQST0016");
 
 	/**
-	 *  err:XQST0032
+	 * err:XQST0040
+	 */
+	public static final QNm ERR_ENCLOSED_EXPR_IN_NS_ATTRIBUTE = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0040");
+
+	/**
+	 * err:XQST0032
 	 */
 	public static final QNm ERR_BASE_URI_ALREADY_DECLARED = new QNm(ERR_NSURI,
 			ERR_PREFIX, "XQST0032");
@@ -159,10 +171,22 @@ public class ErrorCode {
 			ERR_NSURI, ERR_PREFIX, "XQST0034");
 
 	/**
+	 * err:XQST0039
+	 */
+	public static final QNm ERR_DUPLICATE_FUN_PARAMETER = new QNm(ERR_NSURI,
+			ERR_PREFIX, "XQST0039");
+
+	/**
 	 * err:XQST0045
 	 */
 	public static final QNm ERR_FUNCTION_DECL_IN_ILLEGAL_NAMESPACE = new QNm(
 			ERR_NSURI, ERR_PREFIX, "XQST0045");
+
+	/**
+	 * err:XQST0046
+	 */
+	public static final QNm ERR_INVALID_URI_LITERAL = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0046");
 	
 	/**
 	 * err:XQST0047
@@ -173,9 +197,9 @@ public class ErrorCode {
 	/**
 	 * err:XQST0048
 	 */
-	public static final QNm ERR_FUN_OR_VAR_NOT_IN_TARGET_NS = new QNm(ERR_NSURI,
-			ERR_PREFIX, "XQST0048");
-	
+	public static final QNm ERR_FUN_OR_VAR_NOT_IN_TARGET_NS = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0048");
+
 	/**
 	 * err:XQST0049
 	 */
@@ -183,7 +207,13 @@ public class ErrorCode {
 			ERR_PREFIX, "XQST0049");
 
 	/**
-	 *  err:XQST0055
+	 * err:XQST0054
+	 */
+	public static final QNm ERR_CIRCULAR_VARIABLE_DEPENDENCY = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0054");
+
+	/**
+	 * err:XQST0055
 	 */
 	public static final QNm ERR_COPY_NAMESPACES_ALREADY_DECLARED = new QNm(
 			ERR_NSURI, ERR_PREFIX, "XQST0055");
@@ -237,22 +267,76 @@ public class ErrorCode {
 			ERR_PREFIX, "XQST0070");
 
 	/**
+	 * err:XQDY0074
+	 */
+	public static final QNm ERR_UNKNOWN_NS_PREFIX_IN_COMP_CONSTR = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQDY0074");
+
+	/**
 	 * err:XQST0075
 	 */
 	public static final QNm ERR_SCHEMA_VALIDATION_FEATURE_NOT_SUPPORTED = new QNm(
 			ERR_NSURI, ERR_PREFIX, "XQST0075");
 
 	/**
+	 * err:XQST0076
+	 */
+	public static final QNm ERR_UNKNOWN_COLLATION_IN_FLWOR_CLAUSE = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0076");
+
+	/**
 	 * err:XQST0088
 	 */
-	public static final QNm ERR_TARGET_NS_EMPTY = new QNm(ERR_NSURI, ERR_PREFIX,
-			"XQST0088");
+	public static final QNm ERR_TARGET_NS_EMPTY = new QNm(ERR_NSURI,
+			ERR_PREFIX, "XQST0088");
+
+	/**
+	 * err:XQST0089
+	 */
+	public static final QNm ERR_FOR_VAR_AND_POS_VAR_EQUAL = new QNm(ERR_NSURI,
+			ERR_PREFIX, "XQST0089");
 
 	/**
 	 * err:XQST0090
 	 */
 	public static final QNm ERR_UNDEFINED_CHARACTER_REFERENCE = new QNm(
 			ERR_NSURI, ERR_PREFIX, "XQST0090");
+
+	/**
+	 * err:XQST0099
+	 */
+	public static final QNm ERR_CONTEXT_ITEM_ALREADY_DECLARED = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0099");
+
+	/**
+	 * err:XQST0106
+	 */
+	public static QNm ERR_FUN_PRIVATE_OR_PUBLIC_ALREADY_DECLARED = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0106");
+
+	/**
+	 * err:XQST0107
+	 */
+	public static final QNm ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0107");
+
+	/**
+	 * err:XQST0113
+	 */
+	public static QNm ERR_CONTEXT_ITEM_VALUE_SPEC_IN_LIBRARY = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0113");
+
+	/**
+	 * err:XQST0114
+	 */
+	public static QNm ERR_DECIMAL_FORMAT_ALREADY_DECLARED = new QNm(ERR_NSURI,
+			ERR_PREFIX, "XQST0114");
+
+	/**
+	 * err:XQST0116
+	 */
+	public static QNm ERR_VAR_PRIVATE_OR_PUBLIC_ALREADY_DECLARED = new QNm(
+			ERR_NSURI, ERR_PREFIX, "XQST0116");
 
 	/**
 	 * err:FOAR0001
@@ -325,12 +409,24 @@ public class ErrorCode {
 	 */
 	public static final QNm ERR_DOCUMENT_NOT_FOUND = new QNm(ERR_NSURI,
 			ERR_PREFIX, "FODC0005");
+	
+	/**
+	 * err:FONS0005
+	 */
+	public static final QNm ERR_UNDEFINED_STATIC_BASE_URI = new QNm(ERR_NSURI,
+			ERR_PREFIX, "FONS0005");
 
 	/**
 	 * err:FORG0001
 	 */
 	public static final QNm ERR_INVALID_VALUE_FOR_CAST = new QNm(ERR_NSURI,
 			ERR_PREFIX, "FORG0001");
+
+	/**
+	 * err:FORG0002
+	 */
+	public static final QNm ERR_INVALID_URI = new QNm(ERR_NSURI, ERR_PREFIX,
+			"FORG0002");
 
 	/**
 	 * err:FORG0003
@@ -361,6 +457,12 @@ public class ErrorCode {
 	 */
 	public static final QNm ERR_DATETIME_FUNCTION_DIFFERENT_TZ = new QNm(
 			ERR_NSURI, ERR_PREFIX, "FORG0008");
+	
+	/**
+	 * err:FORG0009
+	 */
+	public static final QNm ERR_FN_RESOLVE_URI = new QNm(
+			ERR_NSURI, ERR_PREFIX, "FORG0009");
 
 	/**
 	 * err:FORX0001
@@ -385,6 +487,12 @@ public class ErrorCode {
 	 */
 	public static final QNm ERR_INVALID_REPLACEMENT_STRING = new QNm(ERR_NSURI,
 			ERR_PREFIX, "FORX0004");
+
+	/**
+	 * err:FOTY0012
+	 */
+	public static final QNm ERR_ITEM_HAS_NO_TYPED_VALUE = new QNm(ERR_NSURI,
+			ERR_PREFIX, "FOTY0012");
 
 	/**
 	 * err:SENR0001
@@ -516,6 +624,12 @@ public class ErrorCode {
 	 */
 	public static final QNm ERR_PI_TARGET_CAST_TO_NCNAME = new QNm(ERR_NSURI,
 			ERR_PREFIX, "XQDY0041");
+
+	/**
+	 * err:XQDY0044
+	 */
+	public static final QNm ERR_ILLEGAL_NAME_OF_CONSTRUCTED_ATTRIBUTE = new QNm(
+			ERR_NSURI, ERR_PREFIX, "err:XQDY0044");
 
 	/**
 	 * err:XQDY0064

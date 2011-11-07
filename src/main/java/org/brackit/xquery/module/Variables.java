@@ -27,49 +27,83 @@
  */
 package org.brackit.xquery.module;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.TreeMap;
 
-import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.expr.ExtVariable;
+import org.brackit.xquery.expr.DeclVariable;
+import org.brackit.xquery.expr.DefaultCtxItem;
+import org.brackit.xquery.expr.DefaultCtxPos;
+import org.brackit.xquery.expr.DefaultCtxSize;
+import org.brackit.xquery.expr.Variable;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * @author Sebastian Baechle
  * 
  */
 public class Variables {
-	protected final List<ExtVariable> variables = new ArrayList<ExtVariable>(0);
 
-	protected final List<Variables> imported = new ArrayList<Variables>(0);
-	
-	public void declare(ExtVariable variable) throws QueryException {
-		QNm name = variable.getName();
-		for (ExtVariable v : variables) {
-			if (v.getName().eq(name)) {
-				throw new QueryException(ErrorCode.ERR_DUPLICATE_VARIABLE_DECL,
-						"Variable $%s has already been declared", v.getName());
+	protected final Map<QNm, Variable> vars = new TreeMap<QNm, Variable>();
+	protected final DefaultCtxItem dftItem = new DefaultCtxItem();
+	protected final DefaultCtxPos dftPos = new DefaultCtxPos(dftItem);
+	protected final DefaultCtxSize dftSize = new DefaultCtxSize(dftItem);
+	protected LinkedList<Variables> imports = new LinkedList<Variables>();
+
+	public Variables() {
+	}
+
+	public boolean isDeclared(QNm name) {
+		return vars.containsKey(name);
+	}
+
+	public DefaultCtxItem getDftCtxItem() {
+		return dftItem;
+	}
+
+	public DefaultCtxPos getDftCtxPos() {
+		return dftPos;
+	}
+
+	public DefaultCtxSize getDftCtxSize() {
+		return dftSize;
+	}
+
+	public Variable resolve(QNm name) {
+		Variable var = vars.get(name);
+		if (var != null) {
+			return var;
+		} else if (name.equals(Namespaces.FS_DOT)) {
+			return dftItem;
+		} else if (name.equals(Namespaces.FS_POSITION)) {
+			return dftPos;
+		} else if (name.equals(Namespaces.FS_LAST)) {
+			return var;
+		}
+		for (Variables v : imports) {
+			// TODO check only public vars!
+			var = v.resolve(name);
+			if (v != null) {
+				return var;
 			}
 		}
-		variables.add(variable);
+		return null;		
 	}
 	
-	public void importVariables(Variables variables) throws QueryException {
-		for (ExtVariable imported : variables.variables) {
-			QNm name = imported.getName();
-			for (ExtVariable v : this.variables) {
-				if (v.getName().eq(name)) {
-					throw new QueryException(ErrorCode.ERR_DUPLICATE_VARIABLE_DECL,
-							"Variable $%s has already been declared", v.getName());
-				}
-			}
-		}
-		imported.add(variables);
+	public void importVariables(Variables variables) {
+		imports.add(variables);
 	}
-	
-	public List<ExtVariable> getDeclaredVariables() {
-		return Collections.unmodifiableList(variables);
+
+	public DeclVariable declare(QNm name, SequenceType type, boolean external) {
+		DeclVariable var = new DeclVariable(name, type);
+		vars.put(name, var);
+		return var;
+	}
+
+	public Collection<Variable> getDeclaredVariables() {
+		return Collections.unmodifiableCollection(vars.values());
 	}
 }

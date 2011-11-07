@@ -32,11 +32,12 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.Signature;
-import org.brackit.xquery.sequence.type.Cardinality;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.xdm.type.Cardinality;
 
 /**
  * 
@@ -53,7 +54,7 @@ public class CardinalityTest extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(QueryContext ctx, Sequence[] args)
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException {
 		if (cardinality == Cardinality.One) {
 			return exactlyOnce(args);
@@ -87,13 +88,13 @@ public class CardinalityTest extends AbstractFunction {
 		Sequence s = args[0];
 		if (s == null) {
 			throw new QueryException(ErrorCode.ERR_ONE_OR_MORE_FAILED,
-					"fn:one-or-more called with a sequence containing no items");
+					"fn:one-or-more called with an empty sequence");
 		} else if (!(s instanceof Item)) {
 			Iter it = s.iterate();
 			try {
 				if (it.next() == null) {
 					throw new QueryException(ErrorCode.ERR_ONE_OR_MORE_FAILED,
-							"fn:one-or-more called with a sequence containing no items");
+							"fn:one-or-more called with an empty sequence");
 				}
 			} finally {
 				it.close();
@@ -106,11 +107,15 @@ public class CardinalityTest extends AbstractFunction {
 		Sequence s = args[0];
 		if (s == null) {
 			throw new QueryException(ErrorCode.ERR_EXACTLY_ONCE_FAILED,
-					"fn:exactly-one called with a sequence containing no items");
+					"fn:exactly-one called with an empty sequence");
 		} else if (!(s instanceof Item)) {
 			Iter it = s.iterate();
 			try {
-				if (((s = it.next()) == null) || (it.next() != null)) {
+				if ((s = it.next()) == null) {
+					throw new QueryException(ErrorCode.ERR_EXACTLY_ONCE_FAILED,
+							"fn:exactly-one called with an empty sequence");
+				}
+				if (it.next() != null) {
 					throw new QueryException(ErrorCode.ERR_EXACTLY_ONCE_FAILED,
 							"fn:exactly-one called with a sequence containing more than one item");
 				}

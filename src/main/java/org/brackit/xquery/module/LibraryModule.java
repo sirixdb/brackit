@@ -36,14 +36,14 @@ import org.brackit.xquery.xdm.Expr;
  */
 public class LibraryModule extends AbstractModule {
 
-	private NamespaceDecl targetNS;
+	private String nsURI;
 
-	public NamespaceDecl getTargetNS() {
-		return targetNS;
+	public String getTargetNS() {
+		return nsURI;
 	}
 
-	public void setTargetNS(NamespaceDecl nsDecl) {
-		this.targetNS = nsDecl;
+	public void setTargetNS(String nsURI) {
+		this.nsURI = nsURI;
 	}
 
 	@Override

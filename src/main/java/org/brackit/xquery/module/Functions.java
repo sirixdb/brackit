@@ -31,16 +31,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedList;
 import java.util.Map;
-import java.util.Map.Entry;
 
-import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.ConstructorFunction;
-import org.brackit.xquery.function.Function;
-import org.brackit.xquery.function.Signature;
 import org.brackit.xquery.function.fn.Abs;
 import org.brackit.xquery.function.fn.AdjustToTimezone;
 import org.brackit.xquery.function.fn.BaseURI;
@@ -78,6 +73,7 @@ import org.brackit.xquery.function.fn.Number;
 import org.brackit.xquery.function.fn.QName;
 import org.brackit.xquery.function.fn.RegEx;
 import org.brackit.xquery.function.fn.Remove;
+import org.brackit.xquery.function.fn.ResolveURI;
 import org.brackit.xquery.function.fn.Reverse;
 import org.brackit.xquery.function.fn.Root;
 import org.brackit.xquery.function.fn.Round;
@@ -96,14 +92,16 @@ import org.brackit.xquery.function.fn.SubstringRelative;
 import org.brackit.xquery.function.fn.SumAvg;
 import org.brackit.xquery.function.fn.Trace;
 import org.brackit.xquery.function.fn.Unordered;
-import org.brackit.xquery.sequence.type.AnyItemType;
-import org.brackit.xquery.sequence.type.AnyKindType;
-import org.brackit.xquery.sequence.type.AtomicType;
-import org.brackit.xquery.sequence.type.Cardinality;
-import org.brackit.xquery.sequence.type.DocumentType;
-import org.brackit.xquery.sequence.type.NumericType;
-import org.brackit.xquery.sequence.type.SequenceType;
+import org.brackit.xquery.xdm.Function;
+import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.xdm.type.AnyItemType;
+import org.brackit.xquery.xdm.type.AnyNodeType;
+import org.brackit.xquery.xdm.type.AtomicType;
+import org.brackit.xquery.xdm.type.Cardinality;
+import org.brackit.xquery.xdm.type.DocumentType;
+import org.brackit.xquery.xdm.type.NumericType;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * 
@@ -111,44 +109,54 @@ import org.brackit.xquery.xdm.Type;
  * 
  */
 public class Functions {
+
 	private static final Map<QNm, Function[]> predefined = new HashMap<QNm, Function[]>();
 
 	public static final QNm FN_POSITION = new QNm(Namespaces.FN_NSURI,
-			Namespaces.FS_PREFIX, "position");
+			Namespaces.FN_PREFIX, "position");
 
 	public static final QNm FN_LAST = new QNm(Namespaces.FN_NSURI,
-			Namespaces.FS_PREFIX, "last");
+			Namespaces.FN_PREFIX, "last");
 
 	public static final QNm FN_TRUE = new QNm(Namespaces.FN_NSURI,
-			Namespaces.FS_PREFIX, "true");
+			Namespaces.FN_PREFIX, "true");
 
 	public static final QNm FN_FALSE = new QNm(Namespaces.FN_NSURI,
-			Namespaces.FS_PREFIX, "false");
+			Namespaces.FN_PREFIX, "false");
 
 	public static final QNm FN_DEFAULT_COLLATION = new QNm(Namespaces.FN_NSURI,
-			Namespaces.FS_PREFIX, "default-collation");
+			Namespaces.FN_PREFIX, "default-collation");
 
 	public static final QNm FN_STATIC_BASE_URI = new QNm(Namespaces.FN_NSURI,
-			Namespaces.FS_PREFIX, "static-base-uri");
+			Namespaces.FN_PREFIX, "static-base-uri");
+
+	public static final QNm FN_COUNT = new QNm(Namespaces.FN_NSURI,
+			Namespaces.FN_PREFIX, "count");
+
+	public static final QNm FN_DISTINCT = new QNm(Namespaces.FN_NSURI,
+			Namespaces.FN_PREFIX, "distinct-values");
+
+	public static final QNm FN_ROOT = new QNm(Namespaces.FN_NSURI,
+			Namespaces.FN_PREFIX, "root");
 
 	protected final Map<QNm, Function[]> functions = new HashMap<QNm, Function[]>();
 
-	protected final List<Functions> imports = new ArrayList<Functions>(0);
+	protected final LinkedList<Functions> imports = new LinkedList<Functions>();
 
 	static {
 		// See XQuery Functions and Operators 2 Accessors
 		predefine(new NodeName(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "node-name"), new Signature(
 				new SequenceType(AtomicType.QNM, Cardinality.ZeroOrOne),
-				new SequenceType(AnyKindType.ANY_NODE, Cardinality.ZeroOrOne))));
+				new SequenceType(AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne))));
 		predefine(new Nilled(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"nilled"), new Signature(new SequenceType(AtomicType.QNM,
-				Cardinality.ZeroOrOne), new SequenceType(AnyKindType.ANY_NODE,
+				Cardinality.ZeroOrOne), new SequenceType(AnyNodeType.ANY_NODE,
 				Cardinality.ZeroOrOne))));
 		predefine(new BaseURI(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "base-uri"), new Signature(
 				new SequenceType(AtomicType.AURI, Cardinality.ZeroOrOne),
-				new SequenceType(AnyKindType.ANY_NODE, Cardinality.ZeroOrOne))));
+				new SequenceType(AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne))));
 		predefine(new BaseURI(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "base-uri"), new Signature(
 				new SequenceType(AtomicType.AURI, Cardinality.ZeroOrOne),
@@ -167,7 +175,7 @@ public class Functions {
 		predefine(new DocumentURI(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "document-uri"), new Signature(
 				new SequenceType(AtomicType.AURI, Cardinality.ZeroOrOne),
-				new SequenceType(AnyKindType.ANY_NODE, Cardinality.ZeroOrOne))));
+				new SequenceType(AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne))));
 
 		// See XQuery Functions and Operators 3 The Error Function
 		predefine(new org.brackit.xquery.function.fn.Error(new QNm(
@@ -316,13 +324,6 @@ public class Functions {
 		predefine(new StringNormalize(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "normalize-space"), new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.One), false, true)));
-		predefine(new StringNormalize(new QNm(Namespaces.FN_NSURI,
-				Namespaces.FN_PREFIX, "normalize-space"), new Signature(
-				new SequenceType(AtomicType.STR, Cardinality.One),
-				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne))));
-		predefine(new StringNormalize(new QNm(Namespaces.FN_NSURI,
-				Namespaces.FN_PREFIX, "normalize-space"), new Signature(
-				new SequenceType(AtomicType.STR, Cardinality.One), false, true)));
 		predefine(new StringCase(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "upper-case"), true, new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.One),
@@ -336,6 +337,15 @@ public class Functions {
 				new SequenceType(AtomicType.STR, Cardinality.One),
 				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
 				new SequenceType(AtomicType.STR, Cardinality.One),
+				new SequenceType(AtomicType.STR, Cardinality.One))));
+		predefine(new ResolveURI(new QNm(Namespaces.FN_NSURI,
+				Namespaces.FN_PREFIX, "resolve-uri"), new Signature(
+				new SequenceType(AtomicType.AURI, Cardinality.ZeroOrOne),
+				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne))));
+		predefine(new ResolveURI(new QNm(Namespaces.FN_NSURI,
+				Namespaces.FN_PREFIX, "resolve-uri"), new Signature(
+				new SequenceType(AtomicType.AURI, Cardinality.ZeroOrOne),
+				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
 				new SequenceType(AtomicType.STR, Cardinality.One))));
 		predefine(new Encode(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"encode-for-uri"), Encode.Mode.ENCODE_FOR_URI, new Signature(
@@ -674,28 +684,26 @@ public class Functions {
 		predefine(new Name(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"name"), Name.Mode.NAME, new Signature(new SequenceType(
 				AtomicType.STR, Cardinality.One), new SequenceType(
-				AnyKindType.ANY_NODE, Cardinality.ZeroOrOne))));
+				AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne))));
 		predefine(new Name(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"local-name"), Name.Mode.LOCAL_NAME, new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.One), false, true)));
 		predefine(new Name(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"local-name"), Name.Mode.LOCAL_NAME, new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.One),
-				new SequenceType(AnyKindType.ANY_NODE, Cardinality.ZeroOrOne))));
+				new SequenceType(AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne))));
 		predefine(new Number(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"number"), new Signature(new SequenceType(AtomicType.DBL,
 				Cardinality.One), false, true)));
 		predefine(new Number(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"number"), new Signature(new SequenceType(AnyKindType.ANY_NODE,
-				Cardinality.ZeroOrOne), new SequenceType(AnyKindType.ANY_NODE,
+				"number"), new Signature(new SequenceType(AtomicType.DBL,
+				Cardinality.One), new SequenceType(AtomicType.ANA,
 				Cardinality.ZeroOrOne))));
-		predefine(new Root(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"root"), new Signature(new SequenceType(AnyKindType.ANY_NODE,
-				Cardinality.ZeroOrOne), false, true)));
-		predefine(new Root(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"root"), new Signature(new SequenceType(AnyKindType.ANY_NODE,
-				Cardinality.ZeroOrOne), new SequenceType(AnyKindType.ANY_NODE,
-				Cardinality.ZeroOrOne))));
+		predefine(new Root(FN_ROOT, new Signature(new SequenceType(
+				AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne), false, true)));
+		predefine(new Root(FN_ROOT, new Signature(new SequenceType(
+				AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne), new SequenceType(
+				AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne))));
 
 		// See XQuery Functions and Operators 15.1 General Functions and
 		// Operators on Sequences
@@ -707,12 +715,12 @@ public class Functions {
 				Namespaces.FN_PREFIX, "index-of"), new Signature(
 				new SequenceType(AtomicType.INR, Cardinality.ZeroOrOne),
 				new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-				new SequenceType(AnyItemType.ANY, Cardinality.One))));
+				new SequenceType(AtomicType.ANA, Cardinality.One))));
 		predefine(new IndexOf(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "index-of"), new Signature(
 				new SequenceType(AtomicType.INR, Cardinality.ZeroOrOne),
 				new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-				new SequenceType(AnyItemType.ANY, Cardinality.One),
+				new SequenceType(AtomicType.ANA, Cardinality.One),
 				new SequenceType(AtomicType.STR, Cardinality.One))));
 		predefine(new EmptySequence(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "empty"), true, new Signature(
@@ -722,15 +730,13 @@ public class Functions {
 				Namespaces.FN_PREFIX, "exists"), false, new Signature(
 				new SequenceType(AtomicType.BOOL, Cardinality.One),
 				new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany))));
-		predefine(new Distinct(new QNm(Namespaces.FN_NSURI,
-				Namespaces.FN_PREFIX, "distinct-values"), new Signature(
-				new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-				new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-				new SequenceType(AtomicType.STR, Cardinality.One))));
-		predefine(new Distinct(new QNm(Namespaces.FN_NSURI,
-				Namespaces.FN_PREFIX, "distinct-values"), new Signature(
-				new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-				new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany))));
+		predefine(new Distinct(FN_DISTINCT, new Signature(new SequenceType(
+				AtomicType.ANA, Cardinality.ZeroOrMany), new SequenceType(
+				AtomicType.ANA, Cardinality.ZeroOrMany), new SequenceType(
+				AtomicType.STR, Cardinality.One))));
+		predefine(new Distinct(FN_DISTINCT, new Signature(new SequenceType(
+				AtomicType.ANA, Cardinality.ZeroOrMany), new SequenceType(
+				AtomicType.ANA, Cardinality.ZeroOrMany))));
 		predefine(new InsertBefore(new QNm(Namespaces.FN_NSURI,
 				Namespaces.FN_PREFIX, "insert-before"), new Signature(
 				new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
@@ -831,10 +837,9 @@ public class Functions {
 				new SequenceType(AtomicType.STR, Cardinality.One))));
 
 		// See XQuery Functions and Operators 15.4 Aggregate Functions
-		predefine(new Count(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"count"), new Signature(new SequenceType(AtomicType.INR,
-				Cardinality.One), new SequenceType(AnyItemType.ANY,
-				Cardinality.ZeroOrMany))));
+		predefine(new Count(FN_COUNT, new Signature(new SequenceType(
+				AtomicType.INR, Cardinality.One), new SequenceType(
+				AnyItemType.ANY, Cardinality.ZeroOrMany))));
 
 		predefine(new MinMax(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"min"), new Signature(new SequenceType(AtomicType.ANA,
@@ -862,7 +867,11 @@ public class Functions {
 				"sum"), new Signature(new SequenceType(AtomicType.ANA,
 				Cardinality.ZeroOrOne), new SequenceType(AtomicType.ANA,
 				Cardinality.ZeroOrMany)), false));
-
+		predefine(new SumAvg(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
+				"sum"), new Signature(new SequenceType(AtomicType.ANA,
+				Cardinality.ZeroOrOne), new SequenceType(AtomicType.ANA,
+				Cardinality.ZeroOrMany), new SequenceType(AtomicType.ANA,
+				Cardinality.ZeroOrOne)), false));
 		// See XQuery Functions and Operators 15.5 Functions and Operators that
 		// Generate Sequences
 		predefine(new Doc(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
@@ -908,7 +917,7 @@ public class Functions {
 		}
 	}
 
-	public Function resolve(QNm name, int argCount) throws QueryException {
+	public Function resolve(QNm name, int argCount) {
 		// collect all available functions for the given name
 		ArrayList<Function> available = new ArrayList<Function>();
 		Function[] declaredFuns = functions.get(name);
@@ -924,6 +933,7 @@ public class Functions {
 			}
 		}
 		for (Functions imported : imports) {
+			// TODO check only public funs!
 			Function[] importedFuns = imported.functions.get(name);
 			if (importedFuns != null) {
 				for (Function f : importedFuns) {
@@ -933,8 +943,7 @@ public class Functions {
 		}
 
 		if (available.isEmpty()) {
-			throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-					"Unknown function: '%s'", name);
+			return null;
 		}
 
 		// find function with matching arity
@@ -948,71 +957,27 @@ public class Functions {
 				return f;
 			}
 		}
-
-		throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-				"Illegal number of parameters for function %s : %s'", name,
-				argCount);
+		return null;
 	}
 
-	public void declare(Function function) throws QueryException {
+	public void declare(Function function) {
 		Function[] funs = functions.get(function.getName());
 
 		if (funs == null) {
 			funs = new Function[] { function };
 			functions.put(function.getName(), funs);
 		} else {
-			for (int i = 0; i < funs.length; i++) {
-				if (funs[i].getSignature().getParams().length == function
-						.getSignature().getParams().length) {
-					throw new QueryException(
-							ErrorCode.ERR_MULTIPLE_FUNCTION_DECLARATIONS,
-							"Found multiple declarations of function %s",
-							function);
-				}
-			}
 			funs = Arrays.copyOf(funs, funs.length + 1);
 			funs[funs.length - 1] = function;
 		}
 	}
 
-	public void importFunctions(Functions functions) throws QueryException {
-		for (Entry<QNm, Function[]> extFuncs : functions.functions.entrySet()) {
-			Function[] extFuns = extFuncs.getValue();
-			QNm name = extFuncs.getKey();
-
-			Function[] localFuns = this.functions.get(name);
-			if (localFuns != null) {
-				checkDuplicateDecl(localFuns, extFuns);
-			}
-
-			for (Functions imported : imports) {
-				Function[] importedFuns = imported.functions.get(name);
-				if (importedFuns != null) {
-					checkDuplicateDecl(importedFuns, extFuns);
-				}
-			}
-		}
+	public void importFunctions(Functions functions) {
 		imports.add(functions);
 	}
 
-	public List<Function[]> getDeclaredFunctions() {
-		return Collections.unmodifiableList(new ArrayList<Function[]>(functions
-				.values()));
-	}
-
-	private void checkDuplicateDecl(Function[] localFuns, Function[] extFuns)
-			throws QueryException {
-		for (int i = 0; i < localFuns.length; i++) {
-			for (int j = 0; j < extFuns.length; j++) {
-				if (localFuns[i].getSignature().getParams().length == extFuns[j]
-						.getSignature().getParams().length) {
-					throw new QueryException(
-							ErrorCode.ERR_MULTIPLE_FUNCTION_DECLARATIONS,
-							"Found multiple declarations of function %s",
-							extFuns[j].getName());
-				}
-			}
-		}
+	public Map<QNm, Function[]> getDeclaredFunctions() {
+		return Collections.unmodifiableMap(functions);
 	}
 
 	public static void predefine(Function function) {

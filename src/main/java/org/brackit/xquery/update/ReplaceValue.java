@@ -33,6 +33,7 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.expr.ConstructedNodeBuilder;
 import org.brackit.xquery.update.op.ReplaceElementContentOp;
 import org.brackit.xquery.update.op.ReplaceNodeOp;
@@ -118,7 +119,7 @@ public class ReplaceValue extends ConstructedNodeBuilder implements Expr {
 		ReplaceNodeOp op = null;
 
 		if (node.getKind() == Kind.ELEMENT) {
-			ctx.addPendingUpdate(new ReplaceElementContentOp(node, text));
+			ctx.addPendingUpdate(new ReplaceElementContentOp(node, new Una(text)));
 		} else {
 			if ((text != null) && (!text.isEmpty())) {
 				if (node.getKind() == Kind.COMMENT) {
@@ -133,7 +134,7 @@ public class ReplaceValue extends ConstructedNodeBuilder implements Expr {
 					}
 				}
 			}
-			ctx.addPendingUpdate(new ReplaceValueOp(node, text));
+			ctx.addPendingUpdate(new ReplaceValueOp(node, new Una(text)));
 		}
 
 		return null;

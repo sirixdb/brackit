@@ -27,11 +27,11 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
-import static org.brackit.xquery.compiler.parser.XQueryParser.Count;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ForBind;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GroupBy;
-import static org.brackit.xquery.compiler.parser.XQueryParser.LetBind;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ReturnExpr;
+import static org.brackit.xquery.compiler.XQ.Count;
+import static org.brackit.xquery.compiler.XQ.ForBind;
+import static org.brackit.xquery.compiler.XQ.GroupBy;
+import static org.brackit.xquery.compiler.XQ.LetBind;
+import static org.brackit.xquery.compiler.XQ.PipeExpr;
 
 import java.util.HashSet;
 
@@ -66,10 +66,15 @@ public class BindingPushup extends PipelineVarTracker {
 		final AST parent = node.getParent();
 		final AST in = parent;
 		AST tmp = in;
-		while (tmp.getType() != ReturnExpr) {
+		while (tmp.getType() != PipeExpr) {
 			if (tmp.getType() == GroupBy) {
 				break;
 			} else if ((tmp.getType() == Count) && (!pushableAfterCount(node, tmp))) {
+				break;
+			} else if ((tmp.getType() == ForBind) && (tmp.getType() == ForBind)) {
+				// TODO switching ForBinds is legal if order does not matter
+				// e.g., because of a following order by or because 
+				// the static context is unordered
 				break;
 			} else if (dependsOn(tmp, node)){
 				break;

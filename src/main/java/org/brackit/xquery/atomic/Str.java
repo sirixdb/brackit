@@ -72,6 +72,11 @@ public class Str extends AbstractAtomic {
 	}
 
 	@Override
+	public Str asStr() {
+		return this;
+	}
+
+	@Override
 	public boolean booleanValue() throws QueryException {
 		return (!str.isEmpty());
 	}
@@ -91,7 +96,7 @@ public class Str extends AbstractAtomic {
 		}
 		throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 				"Cannot compare '%s' with '%s'", type(), other.type());
-	}
+	}	
 
 	@Override
 	protected int atomicCmpInternal(Atomic atomic) {
@@ -106,6 +111,10 @@ public class Str extends AbstractAtomic {
 	@Override
 	public String stringValue() {
 		return str;
+	}
+	
+	public Str concat(Str s) {
+		return new Str(str + s.str);
 	}
 
 	@Override

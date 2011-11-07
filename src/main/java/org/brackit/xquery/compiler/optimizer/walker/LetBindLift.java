@@ -27,23 +27,24 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
-import static org.brackit.xquery.compiler.parser.XQueryParser.Count;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GroupBy;
-import static org.brackit.xquery.compiler.parser.XQueryParser.GroupBySpec;
-import static org.brackit.xquery.compiler.parser.XQueryParser.LetBind;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ReturnExpr;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Start;
-import static org.brackit.xquery.compiler.parser.XQueryParser.TypedVariableBinding;
-import static org.brackit.xquery.compiler.parser.XQueryParser.Variable;
-import static org.brackit.xquery.compiler.parser.XQueryParser.VariableRef;
+import static org.brackit.xquery.compiler.XQ.Count;
+import static org.brackit.xquery.compiler.XQ.GroupBy;
+import static org.brackit.xquery.compiler.XQ.GroupBySpec;
+import static org.brackit.xquery.compiler.XQ.LetBind;
+import static org.brackit.xquery.compiler.XQ.PipeExpr;
+import static org.brackit.xquery.compiler.XQ.Start;
+import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
+import static org.brackit.xquery.compiler.XQ.Variable;
+import static org.brackit.xquery.compiler.XQ.VariableRef;
 
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 
 /**
  * Lift a nested operator pipline, i.e., a ReturnExpr child of a LetBind. The
- * lifted pipeline is embraced by a count operator at the bottom and
- * an group by at the top to preserve the semantics of binding a whole sequence
- * to the let-bound variable instead instead of single items.
+ * lifted pipeline is embraced by a count operator at the bottom and an group by
+ * at the top to preserve the semantics of binding a whole sequence to the
+ * let-bound variable instead instead of single items.
  * 
  * @author Sebastian Baechle
  * 
@@ -59,14 +60,14 @@ public class LetBindLift extends Walker {
 
 		AST opEx = node.getChild(2);
 
-		if (opEx.getType() != ReturnExpr) {
+		if (opEx.getType() != PipeExpr) {
 			return node;
 		}
 
-		AST liftet = liftInput(node);
-		node.getParent().replaceChild(node.getChildIndex(), liftet);
+		AST lifted = liftInput(node);
+		node.getParent().replaceChild(node.getChildIndex(), lifted);
 
-		return node.getParent();
+		return lifted;
 	}
 
 	/*
@@ -79,8 +80,8 @@ public class LetBindLift extends Walker {
 		AST lifted = null;
 
 		// create variable name for new group
-		String grpVarName = createEnumerateVarName();
-		
+		QNm grpVarName = createEnumerateVarName();
+
 		// create lifted copy
 		AST nested = opEx.getChild(0);
 		for (AST tmp = nested; tmp.getType() != Start; tmp = tmp.getChild(0)) {
@@ -99,38 +100,37 @@ public class LetBindLift extends Walker {
 
 		// copy old input and add count operator for the grouping
 		AST oldIn = node.getChild(0).copyTree();
-		AST count = new AST(Count, "Count");		
-		AST runVarBinding = new AST(TypedVariableBinding,
-				"TypedVariableBinding");
-		runVarBinding.addChild(new AST(Variable, grpVarName));		
+		AST count = new AST(Count);
+		AST runVarBinding = new AST(TypedVariableBinding);
+		runVarBinding.addChild(new AST(Variable, grpVarName));
 		count.addChild(oldIn);
 		count.addChild(runVarBinding);
 		if (oldIn.getProperty("check") != null) {
 			count.setProperty("check", oldIn.getProperty("check"));
 		}
-		
+
 		// lifted part consumes old input
 		lifted.insertChild(0, count);
 
 		// let bind the return expression
-		AST letBind = new AST(LetBind, "LetBind");
+		AST letBind = new AST(LetBind);
 		letBind.addChild(in);
 		letBind.addChild(node.getChild(1).copyTree());
 		letBind.addChild(opEx.getChild(1).copyTree());
 		letBind.setProperty("check", grpVarName);
 
 		// group the let bind
-		AST groupBy = new AST(GroupBy, "GroupBy");
+		AST groupBy = new AST(GroupBy);
 		groupBy.addChild(letBind);
-		AST groupBySpec = new AST(GroupBySpec, "GroupBySpec");
+		AST groupBySpec = new AST(GroupBySpec);
 		groupBySpec.addChild(new AST(VariableRef, grpVarName));
 		groupBy.addChild(groupBySpec);
 		groupBy.setProperty("check", grpVarName);
-		groupBy.setProperty("onlyLast", "true");
+		groupBy.setProperty("onlyLast", Boolean.TRUE);
 		return groupBy;
 	}
 
-	private String createEnumerateVarName() {
-		return "_check;" + (artificialEnumerateVarCount++);
+	private QNm createEnumerateVarName() {
+		return new QNm("_check;" + (artificialEnumerateVarCount++));
 	}
 }

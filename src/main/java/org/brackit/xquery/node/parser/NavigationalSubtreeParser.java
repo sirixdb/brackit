@@ -44,10 +44,10 @@ public class NavigationalSubtreeParser implements SubtreeParser {
 
 	@Override
 	public void parse(SubtreeHandler handler) throws DocumentException {
-		SubtreeListener<Node<?>>[] listener = new SubtreeListener[] { new SubtreeListener2HandlerAdapter(
-				handler) };
-		NavigationalSubtreeProcessor<?> processor = new NavigationalSubtreeProcessor(
-				root, listener);
+		SubtreeListener<Node<?>>[] listener = new SubtreeListener[] { 
+				new SubtreeListener2HandlerAdapter(handler) };
+		NavigationalSubtreeProcessor<?> processor = 
+				new NavigationalSubtreeProcessor(root, listener);
 		processor.process();
 	}
 

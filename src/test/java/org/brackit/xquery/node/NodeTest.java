@@ -35,22 +35,21 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Random;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.ResultChecker;
+import org.brackit.xquery.XQueryBaseTest;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.node.parser.StreamSubtreeProcessor;
-import org.brackit.xquery.node.parser.SubtreeListener;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Stream;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -60,48 +59,18 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 import org.xml.sax.InputSource;
 
-public abstract class NodeTest<E extends Node<E>> {
-
-	protected static final String DOCUMENT = "<?xml version = '1.0' encoding = 'UTF-8'?>"
-			+ "<Organization>"
-			+ "<Department>"
-			+ "<Member key=\"12\" employee=\"true\">"
-			+ "<Firstname>Kurt</Firstname>"
-			+ "<Lastname>Mayer</Lastname>"
-			+ "<DateOfBirth>1.4.1963</DateOfBirth>"
-			+ "<Title>Dr.-Ing.</Title>"
-			+ "</Member>"
-			+ "<Member key=\"40\"  employe=\"false\">"
-			+ "<Firstname>Hans</Firstname>"
-			+ "<Lastname>Mettmann</Lastname>"
-			+ "<DateOfBirth>12.9.1974</DateOfBirth>"
-			+ "<Title>Dipl.-Inf</Title>"
-			+ "</Member>"
-			+ "<Member>"
-			+ "</Member>"
-			+ "<Member>"
-			+ "</Member>"
-			+ "</Department>"
-			+ "<Project id=\"4711\" priority=\"high\">"
-			+ "<Title>XML-DB</Title>"
-			+ "<Budget>10000</Budget>"
-			+ "</Project>"
-			+ "<Project id=\"666\" priority=\"evenhigher\">"
-			+ "<Title>DISS</Title>"
-			+ "<Budget>7000</Budget>"
-			+ "<Abstract>Native<b>XML</b>-Databases</Abstract>"
-			+ "</Project>"
-			+ "</Organization>";
+/**
+ * 
+ * @author Sebastian Baechle
+ * 
+ */
+public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
 	protected static final String ROOT_ONLY_DOCUMENT = "<?xml version = '1.0' encoding = 'UTF-8'?><root/>";
 
-	protected QueryContext ctx;
-
-	protected Random rand;
-
 	@Test
 	public void testStoreDocument() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
+		createDocument(new DocumentParser(readFile("/docs/", "orga.xml")));
 	}
 
 	@Test
@@ -204,18 +173,19 @@ public abstract class NodeTest<E extends Node<E>> {
 
 	@Test
 	public void traverseDocumentInPreorder() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
+		Collection<E> coll = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
 		E root = coll.getDocument().getFirstChild();
 		org.w3c.dom.Node domRoot = null;
 
-		domRoot = createDomTree(ctx,
-				new InputSource(new StringReader(DOCUMENT)));
+		domRoot = createDomTree(new InputSource(new StringReader(readFile(
+				"/docs/", "orga.xml"))));
 
-		checkSubtreePreOrder(ctx, root, domRoot); // check document index
+		checkSubtreePreOrder(root, domRoot); // check document index
 	}
 
-	protected org.w3c.dom.Node createDomTree(QueryContext ctx,
-			InputSource source) throws Exception {
+	protected org.w3c.dom.Node createDomTree(InputSource source)
+			throws Exception {
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory
 					.newInstance();
@@ -229,8 +199,8 @@ public abstract class NodeTest<E extends Node<E>> {
 		}
 	}
 
-	protected void checkSubtreePreOrder(QueryContext ctx, final E node,
-			org.w3c.dom.Node domNode) throws Exception {
+	protected void checkSubtreePreOrder(final E node, org.w3c.dom.Node domNode)
+			throws Exception {
 		E child = null;
 
 		if (domNode instanceof Element) {
@@ -243,8 +213,8 @@ public abstract class NodeTest<E extends Node<E>> {
 			// " is " + element.getNodeName());
 
 			assertEquals(String.format("Name of node %s", node), element
-					.getNodeName(), node.getName());
-			compareAttributes(ctx, node, element);
+					.getNodeName(), node.getName().toString());
+			compareAttributes(node, element);
 
 			NodeList domChildNodes = element.getChildNodes();
 			ArrayList<E> children = new ArrayList<E>();
@@ -326,7 +296,7 @@ public abstract class NodeTest<E extends Node<E>> {
 				assertNotNull(String
 						.format("child node %s of node %s", i, node), child);
 
-				checkSubtreePreOrder(ctx, child, domChild);
+				checkSubtreePreOrder(child, domChild);
 			}
 
 			assertEquals(String.format("child count of element %s", node),
@@ -338,7 +308,7 @@ public abstract class NodeTest<E extends Node<E>> {
 			assertEquals(node + " is of type text : \"" + text.getNodeValue()
 					+ "\"", Kind.TEXT, node.getKind());
 			assertEquals(String.format("Text of node %s", node), text
-					.getNodeValue().trim(), node.getValue());
+					.getNodeValue().trim(), node.getValue().stringValue());
 		} else {
 			throw new DocumentException("Unexpected dom node: %s", domNode
 					.getClass());
@@ -347,7 +317,8 @@ public abstract class NodeTest<E extends Node<E>> {
 
 	@Test
 	public void traverseDocumentInPostorder() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
+		Collection<E> coll = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
 		E root = coll.getDocument().getFirstChild();
 		org.w3c.dom.Node domRoot = null;
 
@@ -356,7 +327,7 @@ public abstract class NodeTest<E extends Node<E>> {
 					.newInstance();
 			DocumentBuilder builder = factory.newDocumentBuilder();
 			Document document = builder.parse(new InputSource(new StringReader(
-					DOCUMENT)));
+					readFile("/docs/", "orga.xml"))));
 			domRoot = document.getDocumentElement();
 		} catch (Exception e) {
 			throw new DocumentException(
@@ -364,11 +335,11 @@ public abstract class NodeTest<E extends Node<E>> {
 							.getMessage());
 		}
 
-		checkSubtreePostOrder(ctx, root, domRoot); // check document index
+		checkSubtreePostOrder(root, domRoot); // check document index
 	}
 
-	protected void checkSubtreePostOrder(QueryContext ctx, E node,
-			org.w3c.dom.Node domNode) throws Exception {
+	protected void checkSubtreePostOrder(E node, org.w3c.dom.Node domNode)
+			throws Exception {
 		E child = null;
 
 		if (domNode instanceof Element) {
@@ -380,8 +351,8 @@ public abstract class NodeTest<E extends Node<E>> {
 			// " level " + node.getLevel() + " is " + element.getNodeName());
 
 			assertEquals(String.format("Name of node %s", node), element
-					.getNodeName(), node.getName());
-			compareAttributes(ctx, node, element);
+					.getNodeName(), node.getName().stringValue());
+			compareAttributes(node, element);
 
 			NodeList domChildNodes = element.getChildNodes();
 			ArrayList<E> children = new ArrayList<E>();
@@ -414,7 +385,7 @@ public abstract class NodeTest<E extends Node<E>> {
 				assertNotNull(String
 						.format("child node %s of node %s", i, node), child);
 
-				checkSubtreePostOrder(ctx, child, domChild);
+				checkSubtreePostOrder(child, domChild);
 			}
 
 			assertEquals(String.format("child count of element %s", node),
@@ -425,15 +396,14 @@ public abstract class NodeTest<E extends Node<E>> {
 
 			assertEquals(node + " is of type text", Kind.TEXT, node.getKind());
 			assertEquals(String.format("Text of node %s", node), text
-					.getNodeValue().trim(), node.getValue());
+					.getNodeValue().trim(), node.getValue().stringValue());
 		} else {
 			throw new DocumentException("Unexpected dom node: %s", domNode
 					.getClass());
 		}
 	}
 
-	protected void compareAttributes(QueryContext ctx, E node, Element element)
-			throws Exception {
+	protected void compareAttributes(E node, Element element) throws Exception {
 		NamedNodeMap domAttributes = element.getAttributes();
 		Stream<? extends E> attributes = node.getAttributes();
 
@@ -469,7 +439,7 @@ public abstract class NodeTest<E extends Node<E>> {
 		// check if all stored attributes really exist
 		for (int i = 0; i < domAttributes.getLength(); i++) {
 			Attr domAttribute = (Attr) domAttributes.item(i);
-			E attribute = node.getAttribute(domAttribute.getName());
+			E attribute = node.getAttribute(new QNm(domAttribute.getName()));
 			assertNotNull(String.format("Attribute \"%s\" of node %s",
 					domAttribute.getName(), node), attribute);
 			assertEquals(attribute + " is of type attribute", Kind.ATTRIBUTE,
@@ -477,62 +447,53 @@ public abstract class NodeTest<E extends Node<E>> {
 			assertEquals(String.format(
 					"Value of attribute \"%s\" (%s) of node %s", domAttribute
 							.getName(), attribute, node), domAttribute
-					.getValue(), attribute.getValue());
+					.getValue(), attribute.getValue().stringValue());
 		}
 	}
 
 	@Test
-	public void testScanDocument() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
+	public void testAppendSubtree() throws Exception {
+		Collection<E> orig = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
+		Collection<E> doc = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
 
-		Stream<? extends E> stream = coll.getDocument().getFirstChild()
-				.getSubtree();
-		E next;
-		while ((next = stream.next()) != null) {
-			System.out.println(next);
-		}
-		stream.close();
-	}
+		E onode = orig.getDocument().getFirstChild().getLastChild();
+		E test = onode.append(Kind.ELEMENT, new QNm("test"), null);
+		test.append(Kind.ELEMENT, new QNm("a"), null);
+		test.append(Kind.ELEMENT, new QNm("b"), null);
 
-	@Test
-	public void testProcessSubtree() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
-
-		System.err.println("-------------------");
-		Stream<? extends E> stream = coll.getDocument().getFirstChild()
-				.getSubtree();
-		StreamSubtreeProcessor<? extends E> processor = new StreamSubtreeProcessor(
-				stream, new SubtreeListener[] { new SubtreePrinter(System.out,
-						true) });
-		processor.process();
-	}
-
-	@Test
-	public void testInsertSubtree() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
-
-		E root = coll.getDocument().getFirstChild();
-		E node = root.getFirstChild();
-		node = node.getFirstChild();
-		node = node.getNextSibling();
-		node = node.getNextSibling();
+		E cnode = doc.getDocument().getFirstChild().getLastChild();
 		DocumentParser docParser = new DocumentParser("<test><a/><b/></test>");
 		docParser.setParseAsFragment(true);
-		node.append(docParser);
+		cnode.append(docParser);
+		ResultChecker.check(orig.getDocument(), doc.getDocument(), false);
 	}
 
 	@Test
-	public void testInsertRecord() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
+	public void testReplaceSubtree() throws Exception {
+		Collection<E> orig = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
+		Collection<E> doc = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
 
-		E root = coll.getDocument().getFirstChild();
-		E lastChild = root.getLastChild();
-		E newLastChild = root.append(Kind.ELEMENT, "Project");
+		E onode = orig.getDocument().getFirstChild().getLastChild();
+		E test = onode.replaceWith(Kind.ELEMENT, new QNm("test"), null);
+		test.append(Kind.ELEMENT, new QNm("a"), null);
+		test.append(Kind.ELEMENT, new QNm("b"), null);
+
+		E cnode = doc.getDocument().getFirstChild().getLastChild();
+		DocumentParser docParser = new DocumentParser("<test><a/><b/></test>");
+		docParser.setParseAsFragment(true);
+		cnode.replaceWith(docParser);
+
+		ResultChecker.check(orig.getDocument(), doc.getDocument(), false);
 	}
 
 	@Test
 	public void testSetAttribute() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
+		Collection<E> coll = createDocument(new DocumentParser(readFile(
+				"/docs/", "orga.xml")));
 
 		E root = coll.getDocument().getFirstChild();
 		E node = root.getFirstChild();
@@ -540,30 +501,13 @@ public abstract class NodeTest<E extends Node<E>> {
 		node = root.getFirstChild();
 		node = node.getNextSibling();
 		node = node.getNextSibling();
-		node.setAttribute("new", "4711");
-		E attribute = node.getAttribute("new");
-	}
-
-	@Test
-	public void testGetText() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(DOCUMENT));
-		E root = coll.getDocument().getFirstChild();
-		System.out.println(root.getValue());
-		E node = root.getFirstChild();
-		System.out.println(node.getValue());
+		node.setAttribute(new QNm("new"), new Una("CHECKME"));
+		assertEquals("updated attribute value", new Una("CHECKME"), node
+				.getAttribute(new QNm("new")).getValue());
 	}
 
 	@After
 	public void tearDown() throws Exception {
-	}
-
-	@Before
-	public void setUp() throws Exception {
-		ctx = new QueryContext(null);
-
-		// use same random source to get reproducible results in case of an
-		// error
-		rand = new Random(12345678);
 	}
 
 	protected abstract Collection<E> createDocument(

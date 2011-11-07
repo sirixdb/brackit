@@ -27,10 +27,11 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
-import static org.brackit.xquery.compiler.parser.XQueryParser.GroupBy;
-import static org.brackit.xquery.compiler.parser.XQueryParser.LetBind;
-import static org.brackit.xquery.compiler.parser.XQueryParser.ReturnExpr;
+import static org.brackit.xquery.compiler.XQ.GroupBy;
+import static org.brackit.xquery.compiler.XQ.LetBind;
+import static org.brackit.xquery.compiler.XQ.PipeExpr;
 
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 
 /**
@@ -64,15 +65,15 @@ public class BindingPushupAfterLifting extends BindingPushup {
 		// check case b)
 		// check if the let-bound variable is used after grouping
 		// with count variable
-		String countVar = count.getChild(1).getChild(0).getValue();
+		QNm countVar = (QNm) count.getChild(1).getChild(0).getValue();
 		while (true) {
 			while ((parent = parent.getParent()).getType() != GroupBy);
-			if ((Boolean.parseBoolean(parent.getProperty("onlyLast")))
+			if ((parent.checkProperty("onlyLast"))
 				&& (parent.getProperty("check").equals(countVar))) {
 				break;
 			}
 		}
-		while ((parent = parent.getParent()).getType() != ReturnExpr) {
+		while ((parent = parent.getParent()).getType() != PipeExpr) {
 			if (dependsOn(parent, binding)) {
 				return false;
 			}
@@ -83,8 +84,8 @@ public class BindingPushupAfterLifting extends BindingPushup {
 	@Override
 	protected void push(AST node, AST newParent) {
 		super.push(node, newParent);
-		String check = node.getProperty("check");
-		String pCheck = newParent.getProperty("check");
+		QNm check = (QNm) node.getProperty("check");
+		QNm pCheck = (QNm) newParent.getProperty("check");
 		if ((check == null) && (pCheck != null)) {
 			node.setProperty("check", pCheck);
 		}

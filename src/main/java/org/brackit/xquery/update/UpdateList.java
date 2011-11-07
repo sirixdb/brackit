@@ -34,7 +34,6 @@ import java.util.EnumSet;
 import java.util.List;
 
 import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.update.op.OpType;
 import org.brackit.xquery.update.op.UpdateOp;
@@ -58,7 +57,7 @@ public class UpdateList {
 		ops.add(op);
 	}
 
-	public void apply(QueryContext ctx) throws QueryException {
+	public void apply() throws QueryException {
 		// See XQuery Update Facility 1.0: 3.2.2 upd:applyUpdates
 		// First all ops are sorted according to the order of their
 		// application which is determined by their type.
@@ -91,7 +90,7 @@ public class UpdateList {
 			if (log.isDebugEnabled()) {
 				log.debug(String.format("Applying pending update %s", op));
 			}
-			op.apply(ctx);
+			op.apply();
 		}
 	}
 

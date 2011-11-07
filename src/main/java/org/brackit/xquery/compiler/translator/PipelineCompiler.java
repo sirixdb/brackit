@@ -32,9 +32,8 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.ModuleResolver;
-import org.brackit.xquery.compiler.parser.XQueryParser;
-import org.brackit.xquery.expr.ReturnExpr;
+import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.expr.PipeExpr;
 import org.brackit.xquery.expr.VCmpExpr.Cmp;
 import org.brackit.xquery.operator.Count;
 import org.brackit.xquery.operator.ForBind;
@@ -47,13 +46,13 @@ import org.brackit.xquery.operator.Select;
 import org.brackit.xquery.operator.Start;
 import org.brackit.xquery.operator.TableJoin;
 import org.brackit.xquery.operator.OrderBy.OrderModifier;
-import org.brackit.xquery.sequence.type.SequenceType;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * Extended compiler for bottom-up compilation of unnested flwor expressions
@@ -63,20 +62,20 @@ import org.brackit.xquery.xdm.Sequence;
  */
 public class PipelineCompiler extends Compiler {
 
-	public PipelineCompiler(ModuleResolver resolver) {
-		super(resolver);
+	public PipelineCompiler() {
+		super();
 	}
 
 	@Override
 	protected Expr anyExpr(AST node) throws QueryException {
-		if (node.getType() == XQueryParser.ReturnExpr) {
+		if (node.getType() == XQ.PipeExpr) {
 			// switch to bottom up compilation
-			return returnExpr(node);
+			return pipeExpr(node);
 		}
 		return super.anyExpr(node);
 	}
 
-	protected Expr returnExpr(AST node) throws QueryException {
+	protected Expr pipeExpr(AST node) throws QueryException {
 		int initialBindSize = table.bound().length;
 		Operator root = anyOp(node.getChild(0));
 		Expr expr = anyExpr(node.getChild(1));
@@ -87,7 +86,7 @@ public class PipelineCompiler extends Compiler {
 			table.unbind();
 		}
 
-		return new ReturnExpr(root, expr);
+		return new PipeExpr(root, expr);
 	}
 
 	protected Operator anyOp(AST node) throws QueryException {
@@ -97,21 +96,21 @@ public class PipelineCompiler extends Compiler {
 
 	protected Operator _anyOp(AST node) throws QueryException {
 		switch (node.getType()) {
-		case XQueryParser.Start:
+		case XQ.Start:
 			return new Start();
-		case XQueryParser.ForBind:
+		case XQ.ForBind:
 			return forBind(node);
-		case XQueryParser.LetBind:
+		case XQ.LetBind:
 			return letBind(node);
-		case XQueryParser.Selection:
+		case XQ.Selection:
 			return select(node);
-		case XQueryParser.OrderBy:
+		case XQ.OrderBy:
 			return orderBy(node);
-		case XQueryParser.Join:
+		case XQ.Join:
 			return join(node);
-		case XQueryParser.GroupBy:
+		case XQ.GroupBy:
 			return groupBy(node);
-		case XQueryParser.Count:
+		case XQ.Count:
 			return count(node);
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
@@ -123,16 +122,15 @@ public class PipelineCompiler extends Compiler {
 	private Operator groupBy(AST node) throws QueryException {
 		Operator in = anyOp(node.getChild(0));
 		int groupSpecCount = node.getChildCount() - 1;
-		boolean onlyLast = Boolean.parseBoolean(node.getProperty("onlyLast"));
+		boolean onlyLast = node.checkProperty("onlyLast");
 		GroupBy groupBy = new GroupBy(in, groupSpecCount, onlyLast);
 		for (int i = 0; i < groupSpecCount; i++) {
-			String grpVarName = node.getChild(1 + i).getChild(0).getValue();
-			table.resolve(module.getNamespaces().qname(grpVarName), groupBy
-					.group(i));
+			QNm grpVarName = (QNm) node.getChild(1 + i).getChild(0).getValue();
+			table.resolve(grpVarName, groupBy.group(i));
 		}
-		String prop = node.getProperty("check");
+		QNm prop = (QNm) node.getProperty("check");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), groupBy.check());
+			table.resolve(prop, groupBy.check());
 		}
 		return groupBy;
 	}
@@ -148,12 +146,12 @@ public class PipelineCompiler extends Compiler {
 
 		boolean isGcmp = false;
 		switch (comparison.getChild(0).getType()) {
-		case XQueryParser.GeneralCompEQ:
-		case XQueryParser.GeneralCompGE:
-		case XQueryParser.GeneralCompLE:
-		case XQueryParser.GeneralCompLT:
-		case XQueryParser.GeneralCompGT:
-		case XQueryParser.GeneralCompNE:
+		case XQ.GeneralCompEQ:
+		case XQ.GeneralCompGE:
+		case XQ.GeneralCompLE:
+		case XQ.GeneralCompLT:
+		case XQ.GeneralCompGT:
+		case XQ.GeneralCompNE:
 			isGcmp = true;
 		}
 
@@ -163,18 +161,18 @@ public class PipelineCompiler extends Compiler {
 		Operator rightIn = anyOp(node.getChild(pos++));
 		Expr rightExpr = anyExpr(comparison.getChild(2));
 
-		boolean leftJoin = Boolean.parseBoolean(node.getProperty("leftJoin"));
-		boolean skipSort = Boolean.parseBoolean(node.getProperty("skipSort"));
+		boolean leftJoin = node.checkProperty("leftJoin");
+		boolean skipSort = node.checkProperty("skipSort");
 		TableJoin join = new TableJoin(cmp, isGcmp, leftJoin, skipSort, leftIn,
 				leftExpr, rightIn, rightExpr);
 
-		String prop = node.getProperty("group");
+		QNm prop = (QNm) node.getProperty("group");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), join.group());
+			table.resolve(prop, join.group());
 		}
-		prop = node.getProperty("check");
+		prop = (QNm) node.getProperty("check");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), join.check());
+			table.resolve(prop, join.check());
 		}
 
 		return join;
@@ -182,29 +180,29 @@ public class PipelineCompiler extends Compiler {
 
 	private Cmp cmp(AST cmpNode) throws QueryException {
 		switch (cmpNode.getType()) {
-		case XQueryParser.ValueCompEQ:
+		case XQ.ValueCompEQ:
 			return Cmp.eq;
-		case XQueryParser.ValueCompGE:
+		case XQ.ValueCompGE:
 			return Cmp.ge;
-		case XQueryParser.ValueCompLE:
+		case XQ.ValueCompLE:
 			return Cmp.le;
-		case XQueryParser.ValueCompLT:
+		case XQ.ValueCompLT:
 			return Cmp.lt;
-		case XQueryParser.ValueCompGT:
+		case XQ.ValueCompGT:
 			return Cmp.gt;
-		case XQueryParser.ValueCompNE:
+		case XQ.ValueCompNE:
 			return Cmp.ne;
-		case XQueryParser.GeneralCompEQ:
+		case XQ.GeneralCompEQ:
 			return Cmp.eq;
-		case XQueryParser.GeneralCompGE:
+		case XQ.GeneralCompGE:
 			return Cmp.ge;
-		case XQueryParser.GeneralCompLE:
+		case XQ.GeneralCompLE:
 			return Cmp.le;
-		case XQueryParser.GeneralCompLT:
+		case XQ.GeneralCompLT:
 			return Cmp.lt;
-		case XQueryParser.GeneralCompGT:
+		case XQ.GeneralCompGT:
 			return Cmp.gt;
-		case XQueryParser.GeneralCompNE:
+		case XQ.GeneralCompNE:
 			return Cmp.ne;
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
@@ -220,17 +218,15 @@ public class PipelineCompiler extends Compiler {
 		int forClausePos = 1; // child zero is the input
 		AST forClause = node;
 		AST runVarDecl = forClause.getChild(forClausePos++);
-		QNm runVarName = module.getNamespaces().qname(
-				runVarDecl.getChild(0).getValue());
+		QNm runVarName = (QNm) runVarDecl.getChild(0).getValue();
 		SequenceType runVarType = SequenceType.ITEM_SEQUENCE;
 		if (runVarDecl.getChildCount() == 2) {
 			runVarType = sequenceType(runVarDecl.getChild(1));
 		}
 		AST posBindingOrSourceExpr = forClause.getChild(forClausePos++);
 
-		if (posBindingOrSourceExpr.getType() == XQueryParser.TypedVariableBinding) {
-			posVarName = module.getNamespaces().qname(
-					posBindingOrSourceExpr.getChild(0).getValue());
+		if (posBindingOrSourceExpr.getType() == XQ.TypedVariableBinding) {
+			posVarName = (QNm) posBindingOrSourceExpr.getChild(0).getValue();
 			posBindingOrSourceExpr = forClause.getChild(forClausePos);
 		}
 		Expr sourceExpr = expr(posBindingOrSourceExpr, true);
@@ -251,9 +247,9 @@ public class PipelineCompiler extends Compiler {
 		if (posBinding != null) {
 			forBind.bindPosition(posBinding.isReferenced());
 		}
-		String prop = node.getProperty("check");
+		QNm prop = (QNm) node.getProperty("check");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), forBind.check());
+			table.resolve(prop, forBind.check());
 		}
 		return forBind;
 	}
@@ -263,8 +259,7 @@ public class PipelineCompiler extends Compiler {
 		int letClausePos = 1; // child zero is the input
 		AST letClause = node;
 		AST letVarDecl = letClause.getChild(letClausePos++);
-		QNm letVarName = module.getNamespaces().qname(
-				letVarDecl.getChild(0).getValue());
+		QNm letVarName = (QNm) letVarDecl.getChild(0).getValue();
 		SequenceType letVarType = SequenceType.ITEM_SEQUENCE;
 		if (letVarDecl.getChildCount() == 2) {
 			letVarType = sequenceType(letVarDecl.getChild(1));
@@ -276,9 +271,9 @@ public class PipelineCompiler extends Compiler {
 		// the variable anyway
 		table.resolve(letVarName);
 		LetBind letBind = new LetBind(in, sourceExpr);
-		String prop = node.getProperty("check");
+		QNm prop = (QNm) node.getProperty("check");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), letBind.check());
+			table.resolve(prop, letBind.check());
 		}
 		return letBind;
 	}
@@ -286,8 +281,7 @@ public class PipelineCompiler extends Compiler {
 	protected Operator count(AST node) throws QueryException {
 		Operator in = anyOp(node.getChild(0));
 		AST posVarDecl = node.getChild(1);
-		QNm posVarName = module.getNamespaces().qname(
-				posVarDecl.getChild(0).getValue());
+		QNm posVarName = (QNm) posVarDecl.getChild(0).getValue();
 		SequenceType posVarType = SequenceType.ITEM_SEQUENCE;
 		if (posVarDecl.getChildCount() == 2) {
 			posVarType = sequenceType(posVarDecl.getChild(1));
@@ -298,9 +292,9 @@ public class PipelineCompiler extends Compiler {
 		// the variable anyway
 		table.resolve(posVarName);
 		Count count = new Count(in);
-		String prop = node.getProperty("check");
+		QNm prop = (QNm) node.getProperty("check");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), count.check());
+			table.resolve(prop, count.check());
 		}
 		return count;
 	}
@@ -309,9 +303,9 @@ public class PipelineCompiler extends Compiler {
 		Operator in = anyOp(node.getChild(0));
 		Expr expr = anyExpr(node.getChild(1));
 		Select select = new Select(in, expr);
-		String prop = node.getProperty("check");
+		QNm prop = (QNm) node.getProperty("check");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), select.check());
+			table.resolve(prop, select.check());
 		}
 		return select;
 	}
@@ -328,9 +322,9 @@ public class PipelineCompiler extends Compiler {
 			orderBySpec[i] = orderModifier(orderBy);
 		}
 		OrderBy orderBy = new OrderBy(in, orderByExprs, orderBySpec);
-		String prop = node.getProperty("check");
+		QNm prop = (QNm) node.getProperty("check");
 		if (prop != null) {
-			table.resolve(module.getNamespaces().qname(prop), orderBy.check());
+			table.resolve(prop, orderBy.check());
 		}
 		return orderBy;
 	}
@@ -372,7 +366,7 @@ public class PipelineCompiler extends Compiler {
 					case DOCUMENT:
 						return "doc(" + node.getCollection().getName() + ")";
 					default:
-						return node.getValue();
+						return node.getValue().stringValue();
 					}
 				} catch (DocumentException e) {
 					e.printStackTrace();

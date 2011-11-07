@@ -100,6 +100,9 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
 		int length = str.length();
 
 		try {
+			if ((length > 0) && (str.charAt(0) == '+')) {
+				str = str.substring(1, length--);
+			}
 			if (length < 9) {
 				return new Int32(Integer.parseInt(str));
 			} else if (length < 18) {

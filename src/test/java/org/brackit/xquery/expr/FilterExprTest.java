@@ -45,14 +45,14 @@ public class FilterExprTest {
 	public void positionLiteralForEmptySequence() throws Exception {
 		FilterExpr expr = new FilterExpr(new EmptyExpr(), new Int32(1), true,
 				true, true);
-		ResultChecker.dCheck(ctx, null, expr.evaluate(ctx, new TupleImpl()));
+		ResultChecker.dCheck(null, expr.evaluate(ctx, new TupleImpl()));
 	}
 
 	@Test
 	public void validPositionLiteralForItem() throws Exception {
 		FilterExpr expr = new FilterExpr(new Int32(5), new Int32(1), true,
 				true, true);
-		ResultChecker.dCheck(ctx, new Int32(5), expr.evaluate(ctx,
+		ResultChecker.dCheck(new Int32(5), expr.evaluate(ctx,
 				new TupleImpl()));
 	}
 
@@ -60,14 +60,14 @@ public class FilterExprTest {
 	public void invalidPositionLiteralForItem() throws Exception {
 		FilterExpr expr = new FilterExpr(new Int32(5), new Int32(2), true,
 				true, true);
-		ResultChecker.dCheck(ctx, null, expr.evaluate(ctx, new TupleImpl()));
+		ResultChecker.dCheck(null, expr.evaluate(ctx, new TupleImpl()));
 	}
 
 	@Test
 	public void validPositionLiteralForSequence() throws Exception {
 		FilterExpr expr = new FilterExpr(new RangeExpr(new Int32(1), new Int32(
 				10)), new Int32(5), true, true, true);
-		ResultChecker.dCheck(ctx, new Int32(5), expr.evaluate(ctx,
+		ResultChecker.dCheck(new Int32(5), expr.evaluate(ctx,
 				new TupleImpl()));
 	}
 
@@ -75,6 +75,6 @@ public class FilterExprTest {
 	public void invalidPositionLiteralForSequence() throws Exception {
 		FilterExpr expr = new FilterExpr(new RangeExpr(new Int32(1), new Int32(
 				10)), new Int32(11), true, true, true);
-		ResultChecker.dCheck(ctx, null, expr.evaluate(ctx, new TupleImpl()));
+		ResultChecker.dCheck(null, expr.evaluate(ctx, new TupleImpl()));
 	}
 }

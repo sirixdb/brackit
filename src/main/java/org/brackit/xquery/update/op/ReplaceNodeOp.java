@@ -29,7 +29,6 @@ package org.brackit.xquery.update.op;
 
 import java.util.Arrays;
 
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
@@ -53,7 +52,7 @@ public class ReplaceNodeOp implements UpdateOp {
 	}
 
 	@Override
-	public void apply(QueryContext ctx) throws QueryException {
+	public void apply() throws QueryException {
 		if (target.getKind() == Kind.ATTRIBUTE) {
 			Node<?> parentElement = target.getParent();
 			parentElement.deleteAttribute(target.getName());

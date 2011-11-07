@@ -27,12 +27,18 @@
  */
 package org.brackit.xquery.node;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
 import java.util.HashMap;
 
-import org.brackit.xquery.node.linked.LNodeFactory;
+import org.brackit.xquery.node.d2linked.D2NodeFactory;
+import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.util.URIHandler;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.NodeFactory;
 import org.brackit.xquery.xdm.Store;
 
@@ -68,13 +74,22 @@ public class SimpleStore implements Store {
 	@Override
 	public Collection<?> lookup(String name) throws DocumentException {
 		Collection<?> coll = docs.get(name);
-		if (coll == null) {
-			throw new DocumentException("Collection %s not found", name);
+		if (coll != null) {
+			return coll;
 		}
-		return coll;
+		try {
+			InputStream in = URIHandler.getInputStream(URI.create(name));
+			DocumentParser p = new DocumentParser(in);
+			Node<?> doc = getNodeFactory().build(p);
+			coll = doc.getCollection();
+			docs.put(name, coll);
+			return coll;
+		} catch (IOException e) {
+			throw new DocumentException(e, "Collection %s not found", name);
+		}
 	}
 
 	protected NodeFactory<?> getNodeFactory() {
-		return new LNodeFactory();
+		return new D2NodeFactory();
 	}
 }

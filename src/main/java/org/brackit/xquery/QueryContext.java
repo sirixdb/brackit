@@ -28,7 +28,6 @@
 package org.brackit.xquery;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.brackit.xquery.atomic.AbstractTimeInstant;
@@ -36,8 +35,6 @@ import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.DTD;
 import org.brackit.xquery.atomic.Date;
 import org.brackit.xquery.atomic.DateTime;
-import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Time;
 import org.brackit.xquery.node.SimpleStore;
@@ -50,6 +47,7 @@ import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.NodeFactory;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Store;
+import org.brackit.xquery.xdm.type.ItemType;
 
 /**
  * 
@@ -67,11 +65,9 @@ public class QueryContext {
 
 	private UpdateList updates;
 
-	private Item defaultItem;
+	private Item extCtxItem;
 
-	private IntNumeric defaultSize;
-
-	private IntNumeric defaultPos;
+	private ItemType extCtxItemType;
 
 	private Map<QNm, Sequence> externalVars;
 
@@ -97,11 +93,7 @@ public class QueryContext {
 		this.store = store;
 	}
 
-	public List<UpdateOp> getPendingUpdates() {
-		return (updates == null) ? null : updates.list();
-	}
-
-	public synchronized void addPendingUpdate(UpdateOp op) {
+	public void addPendingUpdate(UpdateOp op) {
 		if (updates == null) {
 			updates = new UpdateList();
 		}
@@ -110,8 +102,16 @@ public class QueryContext {
 
 	public void applyUpdates() throws QueryException {
 		if (updates != null) {
-			updates.apply(this);
+			updates.apply();
 		}
+	}
+	
+	public UpdateList getUpdateList() {
+		return updates;
+	}
+	
+	public void setUpdateList(UpdateList updates) {
+		this.updates = updates;
 	}
 
 	public void bind(QNm name, Sequence sequence) {
@@ -129,38 +129,19 @@ public class QueryContext {
 		return ((externalVars != null) && (externalVars.containsKey(name)));
 	}
 
-	public void setDefaultContext(Item item, IntNumeric position,
-			IntNumeric size) throws QueryException {
-		if (item == null) {
-			if ((position != null) || (size != null)) {
-				throw new QueryException(
-						ErrorCode.BIT_DYN_INT_ERROR,
-						"Illegal default context: $fs:dot=%s $fs:position=%s $fs:last=%s",
-						item, position, size);
-			}
-		} else if ((position == null) || (size == null)
-				|| (position.cmp(Int32.ONE) < 0) || (size.cmp(Int32.ONE) < 0)
-				|| (position.cmp(size) > 0)) {
-			throw new QueryException(
-					ErrorCode.BIT_DYN_INT_ERROR,
-					"Illegal default context: $fs:dot=%s $fs:position=%s $fs:last=%s",
-					item, position, size);
+	public void setContextItem(Item item) throws QueryException {
+		extCtxItem = item;
+		if (item != null) {
+			extCtxItemType = item.itemType();
 		}
-		defaultItem = item;
-		defaultPos = position;
-		defaultSize = size;
 	}
 
-	public Item getItem() {
-		return defaultItem;
+	public Item getContextItem() {
+		return extCtxItem;
 	}
-
-	public IntNumeric getPosition() {
-		return defaultPos;
-	}
-
-	public IntNumeric getSize() {
-		return defaultSize;
+	
+	public ItemType getItemType() {
+		return extCtxItemType;
 	}
 
 	public Node<?> getDefaultDocument() {

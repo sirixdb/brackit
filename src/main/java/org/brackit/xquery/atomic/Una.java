@@ -70,6 +70,11 @@ public class Una extends AbstractAtomic {
 	public Atomic asType(Type type) throws QueryException {
 		return new DUna(str, type);
 	}
+	
+	@Override
+	public Una asUna() {
+		return this;
+	}
 
 	@Override
 	public boolean booleanValue() throws QueryException {
@@ -86,10 +91,8 @@ public class Una extends AbstractAtomic {
 		{
 			return (str.compareTo(other.stringValue()));
 		}
-		throw new QueryException(
-				ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-				"Items of type xs:untypedAtomic must not be compared to %s without conversion",
-				other.type());
+		throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+				"Cannot compare '%s' with '%s'", type(), other.type());
 	}
 
 	@Override

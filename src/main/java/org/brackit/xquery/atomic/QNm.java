@@ -37,10 +37,8 @@ import org.brackit.xquery.xdm.Type;
  * 
  */
 public class QNm extends AbstractAtomic {
-	public final String nsURI;
-
-	public final String prefix;
-
+	public final String nsURI; // must be "" if not set
+	public final String prefix; // must null if not set
 	public final String localName;
 
 	private class DQnm extends QNm {
@@ -57,13 +55,13 @@ public class QNm extends AbstractAtomic {
 		}
 	}
 
-	public QNm(String namespaceURI, String prefix, String localName) {
-		this.nsURI = namespaceURI;
-		this.prefix = prefix;
+	public QNm(String nsURI, String prefix, String localName) {
+		this.nsURI = (nsURI == null) ? "" : nsURI;
+		this.prefix = ((prefix == null) || (prefix.isEmpty())) ? null : prefix;
 		this.localName = localName;
 	}
 
-	public QNm(String namespaceURI, String string) throws QueryException {
+	public QNm(String nsURI, String string) throws QueryException {
 		int prefixLength = string.indexOf(":");
 		if (prefixLength > -1) {
 			if ((prefixLength == 0) || (prefixLength == string.length() - 1)
@@ -75,15 +73,15 @@ public class QNm extends AbstractAtomic {
 			this.prefix = string.substring(0, prefixLength);
 			string = string.substring(prefixLength + 1);
 		} else {
-			prefix = "";
+			prefix = null;
 		}
-		this.nsURI = namespaceURI;
+		this.nsURI = (nsURI == null) ? "" : nsURI;
 		this.localName = string;
 	}
 
 	public QNm(String string) {
 		this.prefix = null;
-		this.nsURI = null;
+		this.nsURI = "";
 		this.localName = string;
 	}
 
@@ -97,14 +95,28 @@ public class QNm extends AbstractAtomic {
 		return new DQnm(nsURI, prefix, localName, type);
 	}
 
+	/**
+	 * Returns the prefix of this QName or <code>null</code> if
+	 * this QName does not have a prefix. 
+	 * @return the prefix of this QName or <code>null</code>
+	 */
 	public String getPrefix() {
 		return prefix;
 	}
 
+	/**
+	 * Returns the local name of this QName.
+	 * @return the local name
+	 */
 	public String getLocalName() {
 		return localName;
 	}
 
+	/**
+	 * Returns the namespace URI of this QName or the empty <code>""</code> if
+	 * this QName is in the empty default namespace. 
+	 * @return the namespace URI of this QName or the empty string <code>""</code>
+	 */
 	public String getNamespaceURI() {
 		return nsURI;
 	}
@@ -118,20 +130,10 @@ public class QNm extends AbstractAtomic {
 	public int cmp(Atomic other) throws QueryException {
 		if (other instanceof QNm) {
 			QNm qName = (QNm) other;
-
-			if (nsURI == null) {
-				if (qName.nsURI != null) {
-					return -1;
-				}
-			} else if (qName.nsURI != null) {
-				int res = nsURI.compareTo(qName.nsURI);
-				if (res != 0) {
-					return res;
-				}
-			} else {
-				return 1;
+			int res = nsURI.compareTo(qName.nsURI);
+			if (res != 0) {
+				return res;
 			}
-
 			return localName.compareTo(qName.localName);
 		}
 		throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
@@ -141,20 +143,10 @@ public class QNm extends AbstractAtomic {
 	@Override
 	protected int atomicCmpInternal(Atomic other) {
 		QNm qName = (QNm) other;
-
-		if (nsURI == null) {
-			if (qName.nsURI != null) {
-				return -1;
-			}
-		} else if (qName.nsURI != null) {
-			int res = nsURI.compareTo(qName.nsURI);
-			if (res != 0) {
-				return res;
-			}
-		} else {
-			return 1;
+		int res = nsURI.compareTo(qName.nsURI);
+		if (res != 0) {
+			return res;
 		}
-
 		return localName.compareTo(qName.localName);
 	}
 
@@ -175,6 +167,12 @@ public class QNm extends AbstractAtomic {
 
 	@Override
 	public String toString() {
-		return (prefix == null) ? localName : prefix + ":" + localName;
+		String pre = null;
+		if (prefix != null) {
+			pre = prefix;
+		} else if (nsURI != null && !nsURI.isEmpty()) {
+			pre = nsURI;
+		}
+		return (pre == null) ? localName : pre + ":" + localName;
 	}
 }

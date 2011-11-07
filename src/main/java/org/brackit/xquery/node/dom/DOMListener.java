@@ -71,7 +71,7 @@ public class DOMListener extends
 			throws DocumentException {
 		Node current = stack.peekLast();
 		((Element) current).setAttributeNode(new AttrImpl(document, current,
-				node.getName(), node.getValue()));
+				node.getName().stringValue(), node.getValue().stringValue()));
 	}
 
 	@Override
@@ -80,7 +80,7 @@ public class DOMListener extends
 		NodeImpl current = stack.peekLast();
 
 		ElementImpl newChild = new ElementImpl(document, current, node
-				.getName(), null);
+				.getName().stringValue(), null);
 
 		if (current != null) {
 			((Element) current).appendChild(newChild);
@@ -100,19 +100,19 @@ public class DOMListener extends
 	@Override
 	public <T extends org.brackit.xquery.xdm.Node<?>> void text(T node)
 			throws DocumentException {
-		insertText(node.getValue());
+		insertText(node.getValue().stringValue());
 	}
 
 	@Override
 	public <T extends org.brackit.xquery.xdm.Node<?>> void comment(T node)
 			throws DocumentException {
-		insertComment(node.getValue());
+		insertComment(node.getValue().stringValue());
 	}
 
 	@Override
 	public <T extends org.brackit.xquery.xdm.Node<?>> void processingInstruction(
 			T node) throws DocumentException {
-		insertProcessingInstruction(node.getValue());
+		insertProcessingInstruction(node.getValue().stringValue());
 	}
 
 	private void insertText(String text) throws DocumentException {

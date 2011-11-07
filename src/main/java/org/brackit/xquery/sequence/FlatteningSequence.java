@@ -100,6 +100,9 @@ public abstract class FlatteningSequence implements Sequence {
 					it = s.iterate();
 					if (cmp != 0) {
 						it.skip((IntNumeric) remaining);
+					} else {
+						it.close();
+						it = null;
 					}
 					break;
 				}
