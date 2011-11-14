@@ -123,7 +123,7 @@ public class XQuery {
 					Node<?> node = (Node<?>) item;
 					Kind kind = node.getKind();
 
-					if (kind == Kind.ATTRIBUTE) {
+					if ((kind == Kind.ATTRIBUTE) || (kind == Kind.NAMESPACE)) {
 						throw new QueryException(
 								ErrorCode.ERR_SERIALIZE_ATTRIBUTE_OR_NAMESPACE_NODE);
 					}

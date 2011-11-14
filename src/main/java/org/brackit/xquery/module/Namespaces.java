@@ -70,7 +70,7 @@ public class Namespaces {
 	public static final String XQFILE_NSURI = "http://brackit.org/ns/xqfile";
 
 	public static final String RESOURCE_NSURI = "http://brackit.org/ns/resource";	
-
+	
 	public static final String LOCAL_PREFIX = "local";
 
 	public static final String FN_PREFIX = "fn";
@@ -88,7 +88,7 @@ public class Namespaces {
 	public static final String XMLNS_PREFIX = "xmlns";
 
 	public static final String ERR_PREFIX = "err";
-	
+
 	public static final String UTIL_PREFIX = "util";
 
 	public static final String SESSION_PREFIX = "session";
@@ -99,8 +99,8 @@ public class Namespaces {
 
 	public static final String XQFILE_PREFIX = "xqfile";
 
-	public static final String RESOURCE_PREFIX = "rsc";	
-
+	public static final String RESOURCE_PREFIX = "rsc";		
+	
 	/* BEGIN TODO */
 	public static final String FS_NSURI = "FormalSemanticsOnly";
 	
@@ -140,7 +140,7 @@ public class Namespaces {
 		predefine(REQUEST_PREFIX, REQUEST_NSURI);
 		predefine(APP_PREFIX, APP_NSURI);
 		predefine(XQFILE_PREFIX, XQFILE_NSURI);
-		predefine(RESOURCE_PREFIX, RESOURCE_NSURI);		
+		predefine(RESOURCE_PREFIX, RESOURCE_NSURI);			
 	}
 
 	public Namespaces() {

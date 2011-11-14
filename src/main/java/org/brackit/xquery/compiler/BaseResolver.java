@@ -49,7 +49,7 @@ import org.brackit.xquery.util.URIHandler;
  */
 public class BaseResolver implements ModuleResolver {
 
-	private Map<String, List<Module>> modules;
+	protected Map<String, List<Module>> modules;
 
 	public void register(String targetNSUri, Module module) {
 		List<Module> list = null;
@@ -62,12 +62,6 @@ public class BaseResolver implements ModuleResolver {
 			modules.put(targetNSUri, list);
 		}
 		list.add(module);
-	}
-
-	public void unregister(String targetNSUri) {
-		if (modules != null) {
-			modules.remove(targetNSUri);
-		}
 	}
 
 	@SuppressWarnings("unchecked")
