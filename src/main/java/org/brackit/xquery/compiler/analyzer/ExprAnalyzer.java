@@ -1108,7 +1108,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 		// TODO checks?
 		// TODO concat?
 		for (int i = 0; i < content.getChildCount(); i++) {
-			AST c = content.getChild(0);
+			AST c = content.getChild(i);
 			if (c.getType() != XQ.Str) {
 				enclosedExpr(c);
 			}
