@@ -1520,7 +1520,7 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS("}");
 		AST clause = tryClause();
 		if (clause == null) {
-			throw new TokenizerException("Excpected try clause: %s",
+			throw new TokenizerException("Expected try clause: %s",
 					paraphrase());
 		}
 		tcExpr.addChild(clause);
@@ -1536,7 +1536,6 @@ public class XQParser extends Tokenizer {
 		}
 		AST clause = new AST(XQ.CatchClause);
 		clause.addChild(catchErrorList());
-		clause.addChild(catchVars());
 		consumeSkipWS("{");
 		clause.addChild(expr());
 		consumeSkipWS("}");
@@ -1549,23 +1548,6 @@ public class XQParser extends Tokenizer {
 			list.addChild(nameTest(false));
 		} while (attemptSkipWS("|"));
 		return list;
-	}
-
-	private AST catchVars() throws TokenizerException {
-		consumeSkipWS("(");
-		AST vars = new AST(XQ.CatchVar);
-		consumeSkipWS("$");
-		vars.addChild(eqnameLiteral(false, true));
-		if (attemptSkipWS(",")) {
-			consumeSkipWS("$");
-			vars.addChild(eqnameLiteral(false, true));
-			if (attemptSkipWS(",")) {
-				consumeSkipWS("$");
-				vars.addChild(eqnameLiteral(false, true));
-			}
-		}
-		consumeSkipWS(")");
-		return vars;
 	}
 
 	private AST orExpr() throws TokenizerException {

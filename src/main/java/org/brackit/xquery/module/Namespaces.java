@@ -116,6 +116,21 @@ public class Namespaces {
 	public static final QNm FS_PARENT = new QNm(FS_NSURI, FS_PREFIX, "parent");
 	/* END TODO */
 
+	/* BEGIN try-catch */
+	public static final QNm ERR_CODE = new QNm(Namespaces.ERR_NSURI,
+			Namespaces.ERR_PREFIX, "code");
+	public static final QNm ERR_DESCRIPTION = new QNm(Namespaces.ERR_NSURI,
+			Namespaces.ERR_PREFIX, "description");
+	public static final QNm ERR_VALUE = new QNm(Namespaces.ERR_NSURI,
+			Namespaces.ERR_PREFIX, "value");
+	public static final QNm ERR_MODULE = new QNm(Namespaces.ERR_NSURI,
+			Namespaces.ERR_PREFIX, "module");
+	public static final QNm ERR_LINE_NUMBER = new QNm(Namespaces.ERR_NSURI,
+			Namespaces.ERR_PREFIX, "line-number");
+	public static final QNm ERR_COLUMN_NUMBER = new QNm(Namespaces.ERR_NSURI,
+			Namespaces.ERR_PREFIX, "column-number");
+	/* END try-catch */
+
 	protected static final Map<String, NamespaceDecl> predefined = new HashMap<String, NamespaceDecl>();
 
 	protected final Map<String, NamespaceDecl> namespaces = new TreeMap<String, NamespaceDecl>();

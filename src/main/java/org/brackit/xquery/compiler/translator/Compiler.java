@@ -66,6 +66,7 @@ import org.brackit.xquery.expr.StepExpr;
 import org.brackit.xquery.expr.SwitchExpr;
 import org.brackit.xquery.expr.TextExpr;
 import org.brackit.xquery.expr.Treat;
+import org.brackit.xquery.expr.TryCatchExpr;
 import org.brackit.xquery.expr.TypeswitchExpr;
 import org.brackit.xquery.expr.UnionExpr;
 import org.brackit.xquery.expr.VCmpExpr;
@@ -186,16 +187,15 @@ public class Compiler implements Translator {
 		return e;
 	}
 
-	public Expr function(Module module, StaticContext ctx, UDF udf, QNm[] params, AST expr,
-			boolean allowUpdate)
-			throws QueryException {
+	public Expr function(Module module, StaticContext ctx, UDF udf,
+			QNm[] params, AST expr, boolean allowUpdate) throws QueryException {
 		this.table = new VariableTable(module);
 		this.ctx = ctx;
 		// bind parameter
 		SequenceType[] types = udf.getSignature().getParams();
 		for (int i = 0; i < params.length; i++) {
 			table.bind(params[i], types[i]);
-		}		
+		}
 		// compile body
 		Expr body = expr(expr, !allowUpdate);
 		// unbind parameters
@@ -311,6 +311,8 @@ public class Compiler implements Translator {
 			return exceptExpr(node);
 		case XQ.IntersectExpr:
 			return intersectExpr(node);
+		case XQ.TryCatchExpr:
+			return tryCatchExpr(node);
 		case XQ.ExtensionExpr:
 			return extensionExpr(node);
 		case XQ.ValidateExpr:
@@ -321,6 +323,70 @@ public class Compiler implements Translator {
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
 					"Unexpected AST expr node '%s' of type: %s", node,
 					node.getType());
+		}
+	}
+
+	protected Expr tryCatchExpr(AST node) throws QueryException {
+		Expr expr = expr(node.getChild(0), true);
+
+		Binding code = table.bind(
+				(QNm) node.getChild(1).getChild(0).getValue(),
+				new SequenceType(AtomicType.QNM, Cardinality.One));
+		Binding desc = table.bind(
+				(QNm) node.getChild(2).getChild(0).getValue(),
+				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne));
+		Binding value = table.bind((QNm) node.getChild(3).getChild(0)
+				.getValue(), new SequenceType(AnyItemType.ANY,
+				Cardinality.ZeroOrMany));
+		Binding module = table.bind((QNm) node.getChild(4).getChild(0)
+				.getValue(), new SequenceType(AtomicType.STR,
+				Cardinality.ZeroOrOne));
+		Binding lineNo = table.bind((QNm) node.getChild(5).getChild(0)
+				.getValue(), new SequenceType(AtomicType.INR,
+				Cardinality.ZeroOrOne));
+		Binding colNo = table.bind((QNm) node.getChild(6).getChild(0)
+				.getValue(), new SequenceType(AtomicType.INR,
+				Cardinality.ZeroOrOne));
+
+		int catchCount = node.getChildCount() - 7;
+		TryCatchExpr.ErrorCatch[][] catches = new TryCatchExpr.ErrorCatch[catchCount][];
+		Expr[] handler = new Expr[catchCount];
+		for (int i = 0; i < catchCount; i++) {
+			AST clause = node.getChild(i + 7);
+			AST catchErrorList = clause.getChild(0);
+			int errorCount = catchErrorList.getChildCount();
+			catches[i] = new TryCatchExpr.ErrorCatch[errorCount];
+			for (int j = 0; j < errorCount; j++) {
+				AST nametest = catchErrorList.getChild(j);
+				catches[i][j] = tryCatchNameTest(nametest);
+			}
+			handler[i] = expr(clause.getChild(1), true);
+		}
+
+		for (int i = 0; i < 6; i++) {
+			table.unbind();
+		}
+
+		return new TryCatchExpr(expr, catches, handler, code.isReferenced(),
+				desc.isReferenced(), value.isReferenced(),
+				module.isReferenced(), lineNo.isReferenced(),
+				colNo.isReferenced());
+	}
+
+	protected TryCatchExpr.ErrorCatch tryCatchNameTest(AST child)
+			throws QueryException {
+		AST name = child.getChild(0);
+		switch (name.getType()) {
+		case XQ.Wildcard:
+			return new TryCatchExpr.Wildcard();
+		case XQ.NSWildcardNameTest:
+			return new TryCatchExpr.NSWildcard(name.getStringValue());
+		case XQ.NSNameWildcardTest:
+			return new TryCatchExpr.NameWildcard(name.getStringValue());
+		default:
+			QNm qnm = (QNm) name.getValue();
+			return new TryCatchExpr.Name(qnm.getLocalName(),
+					qnm.getNamespaceURI());
 		}
 	}
 
@@ -1055,6 +1121,8 @@ public class Compiler implements Translator {
 			case XQ.CardinalityZeroOrOne:
 				cardinality = Cardinality.ZeroOrOne;
 				break;
+			default:
+				cardinality = Cardinality.One;
 			}
 		}
 

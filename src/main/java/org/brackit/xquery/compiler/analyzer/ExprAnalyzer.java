@@ -504,19 +504,54 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 			return false;
 		}
 		expr(expr.getChild(0));
-		for (int i = 0; i < expr.getChildCount(); i++) {
+		openScope();
+		QNm error = bind(Namespaces.ERR_CODE);
+		AST errorBinding = errorInfoBinding(error, "xs:QName",
+				XQ.CardinalityOne);
+		expr.insertChild(1, errorBinding);
+		QNm desc = bind(Namespaces.ERR_DESCRIPTION);
+		AST descBinding = errorInfoBinding(desc, "xs:string",
+				XQ.CardinalityZeroOrOne);
+		expr.insertChild(2, descBinding);
+		QNm value = bind(Namespaces.ERR_VALUE);
+		AST valueBinding = errorInfoBinding(value, "xs:item",
+				XQ.CardinalityZeroOrMany);
+		expr.insertChild(3, valueBinding);
+		QNm module = bind(Namespaces.ERR_MODULE);
+		AST moduleBinding = errorInfoBinding(module, "xs:string",
+				XQ.CardinalityZeroOrOne);
+		expr.insertChild(4, moduleBinding);
+		QNm lineNo = bind(Namespaces.ERR_LINE_NUMBER);
+		AST lineNoBinding = errorInfoBinding(lineNo, "xs:integer",
+				XQ.CardinalityZeroOrOne);
+		expr.insertChild(5, lineNoBinding);
+		QNm colNo = bind(Namespaces.ERR_COLUMN_NUMBER);
+		AST colNoBinding = errorInfoBinding(colNo, "xs:integer",
+				XQ.CardinalityZeroOrOne);
+		expr.insertChild(6, colNoBinding);
+		offerScope();
+		for (int i = 7; i < expr.getChildCount(); i++) {
 			tryClause(expr.getChild(i));
 		}
+		closeScope();
 		return true;
 	}
 
+	private AST errorInfoBinding(QNm error, String type, int card) {
+		AST errorBinding = new AST(XQ.TypedVariableBinding);
+		errorBinding.addChild(new AST(XQ.QNm, error));
+		AST sType = new AST(XQ.SequenceType);
+		AST aType = new AST(XQ.AtomicOrUnionType);
+		aType.addChild(new AST(XQ.QNm, type));
+		sType.addChild(aType);
+		sType.addChild(new AST(card));
+		errorBinding.addChild(sType);
+		return errorBinding;
+	}
+
 	protected boolean tryClause(AST clause) throws QueryException {
-		openScope();
 		catchErrorList(clause.getChild(0));
-		catchVars(clause.getChild(1));
-		offerScope();
-		expr(clause.getChild(2));
-		closeScope();
+		expr(clause.getChild(1));
 		return true;
 	}
 
@@ -675,8 +710,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 	protected boolean pathExpr(AST expr) throws QueryException {
 		if (expr.getType() != XQ.PathExpr) {
 			return stepExpr(expr);
-		}		
-		for (int i = 0; i < expr.getChildCount(); i++) {			
+		}
+		for (int i = 0; i < expr.getChildCount(); i++) {
 			stepExpr(expr.getChild(i));
 			openContextItemScope();
 		}
@@ -851,8 +886,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 		if (fun == null) {
 			unknownFunction(name, noOfParams);
 		}
-		if ((noOfParams == 0)
-				&& (fun.getSignature().defaultIsContextItem())) {
+		if ((noOfParams == 0) && (fun.getSignature().defaultIsContextItem())) {
 			referContextItem();
 		}
 		if (fun == null) {
@@ -920,8 +954,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 			}
 			AnyURI baseURI = sctx.getBaseURI();
 			if (baseURI != null) {
-				// change expr to uri literal			
-				expr.setType(XQ.AnyURI);				
+				// change expr to uri literal
+				expr.setType(XQ.AnyURI);
 				expr.setValue(baseURI);
 			} else {
 				// change expr to empty sequence
@@ -1108,7 +1142,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 		// TODO checks?
 		// TODO concat?
 		for (int i = 0; i < content.getChildCount(); i++) {
-			AST c = content.getChild(0);
+			AST c = content.getChild(i);
 			if (c.getType() != XQ.Str) {
 				enclosedExpr(c);
 			}
