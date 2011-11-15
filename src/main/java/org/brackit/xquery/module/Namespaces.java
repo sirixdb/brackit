@@ -79,7 +79,7 @@ public class Namespaces {
 
 	/* BEGIN TODO */
 	public static final String FS_NSURI = "FormalSemanticsOnly";
-	
+
 	public static final String FS_PREFIX = "fs";
 
 	public static final QNm FS_DOT = new QNm(FS_NSURI, FS_PREFIX, "dot");
@@ -91,6 +91,21 @@ public class Namespaces {
 
 	public static final QNm FS_PARENT = new QNm(FS_NSURI, FS_PREFIX, "parent");
 	/* END TODO */
+
+	/* BEGIN try-catch */
+	public static final QNm ERR_CODE = new QNm(Namespaces.ERR_NSURI,
+			Namespaces.ERR_PREFIX, "code");
+	public static final QNm ERR_DESCRIPTION = new QNm(Namespaces.ERR_NSURI,
+			Namespaces.ERR_PREFIX, "description");
+	public static final QNm ERR_VALUE = new QNm(Namespaces.ERR_NSURI,
+			Namespaces.ERR_PREFIX, "value");
+	public static final QNm ERR_MODULE = new QNm(Namespaces.ERR_NSURI,
+			Namespaces.ERR_PREFIX, "module");
+	public static final QNm ERR_LINE_NUMBER = new QNm(Namespaces.ERR_NSURI,
+			Namespaces.ERR_PREFIX, "line-number");
+	public static final QNm ERR_COLUMN_NUMBER = new QNm(Namespaces.ERR_NSURI,
+			Namespaces.ERR_PREFIX, "column-number");
+	/* END try-catch */
 
 	protected static final Map<String, NamespaceDecl> predefined = new HashMap<String, NamespaceDecl>();
 
@@ -145,7 +160,7 @@ public class Namespaces {
 
 	public void declare(String prefix, String nsURI) {
 		namespaces.put(prefix, new NamespaceDecl(prefix, nsURI));
-	}	
+	}
 
 	public String resolve(String prefix) {
 		if ((prefix == null) || (prefix.isEmpty())) {
@@ -165,8 +180,7 @@ public class Namespaces {
 		}
 		return null;
 	}
-	
-	
+
 	public boolean isPredefined(String prefix) {
 		return predefined.containsKey(prefix);
 	}

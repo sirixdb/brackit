@@ -38,8 +38,7 @@ import java.lang.reflect.Field;
  * 
  */
 /*
- * Update number assignment with awk '/= [0-9]+/{sub(/= [0-9]+/, sprintf("= %i",
- * cnt++));} 1' XQ.java > XQ.tmp && mv XQ.tmp XQ.java
+ * Update number assignment with awk '/= [0-9]+/{sub(/= [0-9]+/, sprintf("= %i", cnt++));} 1' XQ.java > XQ.tmp && mv XQ.tmp XQ.java
  */
 public final class XQ {
 
@@ -105,71 +104,71 @@ public final class XQ {
 	public static final int EmptySequenceType = 59;
 	public static final int ItemType = 60;
 	public static final int AtomicOrUnionType = 61;
-	public static final int CardinalityZeroOrOne = 62;
-	public static final int CardinalityZeroOrMany = 63;
-	public static final int CardinalityOneOrMany = 64;
-	public static final int TreatExpr = 65;
-	public static final int CastableExpr = 66;
-	public static final int CastExpr = 67;
-	public static final int FunctionCall = 68;
-	public static final int PathExpr = 69;
-	public static final int StepExpr = 70;
-	public static final int AxisSpec = 71;
-	public static final int SELF = 72;
-	public static final int CHILD = 73;
-	public static final int DESCENDANT = 74;
-	public static final int DESCENDANT_OR_SELF = 75;
-	public static final int ATTRIBUTE = 76;
-	public static final int FOLLOWING_SIBLING = 77;
-	public static final int FOLLOWING = 78;
-	public static final int PARENT = 79;
-	public static final int ANCESTOR = 80;
-	public static final int PRECEDING_SIBLING = 81;
-	public static final int PRECEDING = 82;
-	public static final int ANCESTOR_OR_SELF = 83;
-	public static final int KindTestAnyKind = 84;
-	public static final int KindTestDocument = 85;
-	public static final int NameTest = 86;
-	public static final int Wildcard = 87;
-	public static final int Nilled = 88;
-	public static final int KindTestElement = 89;
-	public static final int KindTestAttribute = 90;
-	public static final int KindTestSchemaElement = 91;
-	public static final int KindTestSchemaAttribute = 92;
-	public static final int KindTestPi = 93;
-	public static final int KindTestComment = 94;
-	public static final int KindTestText = 95;
-	public static final int KindTestNamespaceNode = 96;
-	public static final int NSWildcardNameTest = 97;
-	public static final int NSNameWildcardTest = 98;
-	public static final int ParenthesizedExpr = 99;
-	public static final int ContextItemExpr = 100;
-	public static final int ArgumentPlaceHolder = 101;
-	public static final int OrderedExpr = 102;
-	public static final int UnorderedExpr = 103;
-	public static final int Int = 104;
-	public static final int Str = 105;
-	public static final int QNm = 106;
-	public static final int Dbl = 107;
-	public static final int Dec = 108;
-	public static final int AnyURI = 109;
-	public static final int Bool = 110;
-	public static final int Annotation = 111;
-	public static final int FunctionTest = 112;
-	public static final int AnyFunctionType = 113;
-	public static final int TypedFunctionType = 114;
-	public static final int SomeQuantifier = 115;
-	public static final int EveryQuantifier = 116;
-	public static final int QuantifiedExpr = 117;
-	public static final int SwitchExpr = 118;
-	public static final int SwitchClause = 119;
-	public static final int TypeSwitch = 120;
-	public static final int TypeSwitchCase = 121;
-	public static final int IfExpr = 122;
-	public static final int TryCatchExpr = 123;
-	public static final int CatchClause = 124;
-	public static final int CatchErrorList = 125;
-	public static final int CatchVar = 126;
+	public static final int CardinalityOne = 62;
+	public static final int CardinalityZeroOrOne = 63;
+	public static final int CardinalityZeroOrMany = 64;
+	public static final int CardinalityOneOrMany = 65;
+	public static final int TreatExpr = 66;
+	public static final int CastableExpr = 67;
+	public static final int CastExpr = 68;
+	public static final int FunctionCall = 69;
+	public static final int PathExpr = 70;
+	public static final int StepExpr = 71;
+	public static final int AxisSpec = 72;
+	public static final int SELF = 73;
+	public static final int CHILD = 74;
+	public static final int DESCENDANT = 75;
+	public static final int DESCENDANT_OR_SELF = 76;
+	public static final int ATTRIBUTE = 77;
+	public static final int FOLLOWING_SIBLING = 78;
+	public static final int FOLLOWING = 79;
+	public static final int PARENT = 80;
+	public static final int ANCESTOR = 81;
+	public static final int PRECEDING_SIBLING = 82;
+	public static final int PRECEDING = 83;
+	public static final int ANCESTOR_OR_SELF = 84;
+	public static final int KindTestAnyKind = 85;
+	public static final int KindTestDocument = 86;
+	public static final int NameTest = 87;
+	public static final int Wildcard = 88;
+	public static final int Nilled = 89;
+	public static final int KindTestElement = 90;
+	public static final int KindTestAttribute = 91;
+	public static final int KindTestSchemaElement = 92;
+	public static final int KindTestSchemaAttribute = 93;
+	public static final int KindTestPi = 94;
+	public static final int KindTestComment = 95;
+	public static final int KindTestText = 96;
+	public static final int KindTestNamespaceNode = 97;
+	public static final int NSWildcardNameTest = 98;
+	public static final int NSNameWildcardTest = 99;
+	public static final int ParenthesizedExpr = 100;
+	public static final int ContextItemExpr = 101;
+	public static final int ArgumentPlaceHolder = 102;
+	public static final int OrderedExpr = 103;
+	public static final int UnorderedExpr = 104;
+	public static final int Int = 105;
+	public static final int Str = 106;
+	public static final int QNm = 107;
+	public static final int Dbl = 108;
+	public static final int Dec = 109;
+	public static final int AnyURI = 110;
+	public static final int Bool = 111;
+	public static final int Annotation = 112;
+	public static final int FunctionTest = 113;
+	public static final int AnyFunctionType = 114;
+	public static final int TypedFunctionType = 115;
+	public static final int SomeQuantifier = 116;
+	public static final int EveryQuantifier = 117;
+	public static final int QuantifiedExpr = 118;
+	public static final int SwitchExpr = 119;
+	public static final int SwitchClause = 120;
+	public static final int TypeSwitch = 121;
+	public static final int TypeSwitchCase = 122;
+	public static final int IfExpr = 123;
+	public static final int TryCatchExpr = 124;
+	public static final int CatchClause = 125;
+	public static final int CatchErrorList = 126;
 	public static final int ExtensionExpr = 127;
 	public static final int Pragma = 128;
 	public static final int PragmaContent = 129;
@@ -292,7 +291,7 @@ public final class XQ {
 			"ArithmeticExpr", "MultiplyOp", "DivideOp", "IDivideOp",
 			"ModulusOp", "UnionExpr", "IntersectExpr", "ExceptExpr",
 			"InstanceofExpr", "SequenceType", "EmptySequenceType", "ItemType",
-			"AtomicOrUnionType", "CardinalityZeroOrOne",
+			"AtomicOrUnionType", "CardinalityOne", "CardinalityZeroOrOne",
 			"CardinalityZeroOrMany", "CardinalityOneOrMany", "TreatExpr",
 			"CastableExpr", "CastExpr", "FunctionCall", "PathExpr", "StepExpr",
 			"AxisSpec", "SELF", "CHILD", "DESCENDANT", "DESCENDANT_OR_SELF",
@@ -309,7 +308,7 @@ public final class XQ {
 			"TypedFunctionType", "SomeQuantifier", "EveryQuantifier",
 			"QuantifiedExpr", "SwitchExpr", "SwitchClause", "TypeSwitch",
 			"TypeSwitchCase", "IfExpr", "TryCatchExpr", "CatchClause",
-			"CatchErrorList", "CatchVar", "ExtensionExpr", "Pragma",
+			"CatchErrorList", "ExtensionExpr", "Pragma",
 			"PragmaContent", "ValidateExpr", "ValidateLax", "ValidateStrict",
 			"LiteralFuncItem", "InlineFuncItem", "TypedVariableDeclaration",
 			"CompElementConstructor", "CompAttributeConstructor",
