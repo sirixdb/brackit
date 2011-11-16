@@ -980,6 +980,10 @@ public class Functions {
 		return Collections.unmodifiableMap(functions);
 	}
 
+	public Map<QNm, Function[]> getPredefinedFunctions() {
+		return Collections.unmodifiableMap(predefined);
+	}
+
 	public static void predefine(Function function) {
 		Function[] funs = predefined.get(function.getName());
 
