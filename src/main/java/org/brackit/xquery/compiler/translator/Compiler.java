@@ -36,6 +36,7 @@ import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.CompileChain;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.expr.Accessor;
 import org.brackit.xquery.expr.AndExpr;
@@ -73,13 +74,6 @@ import org.brackit.xquery.expr.VCmpExpr;
 import org.brackit.xquery.expr.VCmpExpr.Cmp;
 import org.brackit.xquery.function.FunctionExpr;
 import org.brackit.xquery.function.UDF;
-import org.brackit.xquery.function.bit.Every;
-import org.brackit.xquery.function.bit.Put;
-import org.brackit.xquery.function.bit.Silent;
-import org.brackit.xquery.function.bit.Some;
-import org.brackit.xquery.function.io.Readline;
-import org.brackit.xquery.function.io.Writeline;
-import org.brackit.xquery.module.Functions;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
@@ -104,7 +98,6 @@ import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Function;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Type;
 import org.brackit.xquery.xdm.type.AnyItemType;
 import org.brackit.xquery.xdm.type.AnyNodeType;
@@ -144,31 +137,6 @@ public class Compiler implements Translator {
 				in.unbind();
 			}
 		}
-	}
-
-	private static final Every BIT_EVERY_FUNC = new Every(new QNm(
-			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "every"),
-			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
-					new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)));
-
-	private static final Some BIT_SOME_FUNC = new Some(new QNm(
-			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "some"),
-			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
-					new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)));
-
-	static {
-		Functions.predefine(BIT_SOME_FUNC);
-		Functions.predefine(BIT_EVERY_FUNC);
-		Functions.predefine(new Put(Put.PUT, new Signature(new SequenceType(
-				AtomicType.STR, Cardinality.One), new SequenceType(
-				AtomicType.STR, Cardinality.One))));
-		Functions.predefine(new Put(Put.PUT, new Signature(new SequenceType(
-				AtomicType.STR, Cardinality.One), new SequenceType(
-				AtomicType.STR, Cardinality.One), new SequenceType(
-				AtomicType.STR, Cardinality.ZeroOrOne))));
-		Functions.predefine(new Readline());
-		Functions.predefine(new Writeline());
-		Functions.predefine(new Silent());
 	}
 
 	protected VariableTable table;
@@ -659,9 +627,9 @@ public class Compiler implements Translator {
 		Function function;
 
 		if (someQuantified) {
-			function = BIT_SOME_FUNC;
+			function = CompileChain.BIT_SOME_FUNC;
 		} else {
-			function = BIT_EVERY_FUNC;
+			function = CompileChain.BIT_EVERY_FUNC;
 		}
 
 		return new IfExpr(new FunctionExpr(node.getStaticContext(), function,

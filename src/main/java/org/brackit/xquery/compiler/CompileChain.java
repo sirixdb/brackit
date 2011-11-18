@@ -30,13 +30,28 @@ package org.brackit.xquery.compiler;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.AnyURI;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.analyzer.Analyzer;
 import org.brackit.xquery.compiler.optimizer.DefaultOptimizer;
 import org.brackit.xquery.compiler.optimizer.Optimizer;
 import org.brackit.xquery.compiler.parser.DotUtil;
 import org.brackit.xquery.compiler.translator.PipelineCompiler;
 import org.brackit.xquery.compiler.translator.Translator;
+import org.brackit.xquery.function.bit.Every;
+import org.brackit.xquery.function.bit.Parse;
+import org.brackit.xquery.function.bit.Put;
+import org.brackit.xquery.function.bit.Silent;
+import org.brackit.xquery.function.bit.Some;
+import org.brackit.xquery.function.io.Readline;
+import org.brackit.xquery.function.io.Writeline;
+import org.brackit.xquery.module.Functions;
 import org.brackit.xquery.module.Module;
+import org.brackit.xquery.module.Namespaces;
+import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.xdm.type.AnyItemType;
+import org.brackit.xquery.xdm.type.AtomicType;
+import org.brackit.xquery.xdm.type.Cardinality;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * Compiles an {@link Module XQuery module}.
@@ -46,6 +61,32 @@ import org.brackit.xquery.module.Module;
  */
 public class CompileChain {
 
+	public static final Every BIT_EVERY_FUNC = new Every(new QNm(
+			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "every"),
+			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
+					new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)));
+
+	public static final Some BIT_SOME_FUNC = new Some(new QNm(
+			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "some"),
+			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
+					new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)));
+
+	static {
+		Functions.predefine(BIT_SOME_FUNC);
+		Functions.predefine(BIT_EVERY_FUNC);
+		Functions.predefine(new Put(Put.PUT, new Signature(new SequenceType(
+				AtomicType.STR, Cardinality.One), new SequenceType(
+				AtomicType.STR, Cardinality.One))));
+		Functions.predefine(new Put(Put.PUT, new Signature(new SequenceType(
+				AtomicType.STR, Cardinality.One), new SequenceType(
+				AtomicType.STR, Cardinality.One), new SequenceType(
+				AtomicType.STR, Cardinality.ZeroOrOne))));
+		Functions.predefine(new Readline());
+		Functions.predefine(new Writeline());
+		Functions.predefine(new Silent());
+		Functions.predefine(new Parse());
+	}
+	
 	final AnyURI baseURI;
 	
 	public CompileChain() {
