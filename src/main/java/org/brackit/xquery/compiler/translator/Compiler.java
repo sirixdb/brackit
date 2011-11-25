@@ -164,6 +164,10 @@ public class Compiler implements Translator {
 		for (int i = 0; i < params.length; i++) {
 			table.bind(params[i], types[i]);
 		}
+		// ensure fixed parameter positions
+		for (int i = 0; i < params.length; i++) {
+			table.resolve(params[i]);
+		}
 		// compile body
 		Expr body = expr(expr, !allowUpdate);
 		// unbind parameters
