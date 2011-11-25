@@ -168,7 +168,7 @@ public class SubtreePrinter extends DefaultHandler {
 		out.print("<");
 		out.print(name);
 		for (NS n = ns; n != null; n = n.next) {			
-			if (n.prefix != null) {
+			if ((n.prefix != null) && (!n.prefix.isEmpty())) {
 				out.print(" xmlns:");
 				out.print(n.prefix);
 			} else {
