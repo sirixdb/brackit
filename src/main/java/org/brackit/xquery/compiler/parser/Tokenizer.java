@@ -1124,6 +1124,9 @@ public class Tokenizer {
 	private String scanPredefEntityRef(int pos, boolean cond)
 			throws TokenizerException {
 		int e = pos;
+		if (e + 1 >= end) {
+			return null;
+		}
 		if ((input[e++] != '&') || (input[e] == '#')) {
 			return null;
 		}
@@ -1169,6 +1172,9 @@ public class Tokenizer {
 
 	private String scanCharRef(int pos, boolean cond) throws TokenizerException {
 		int e = pos;
+		if (e + 1 >= end) {
+			return null;
+		}
 		if ((input[e++] != '&') || (input[e++] != '#')) {
 			return null;
 		}
