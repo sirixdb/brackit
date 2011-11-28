@@ -57,6 +57,8 @@ public class SubtreePrinter extends DefaultHandler {
 
 	private boolean autoFlush = true;
 	
+	private boolean printEmptyElementTag = true;
+	
 	private NS ns;
 	
 	/**
@@ -134,7 +136,7 @@ public class SubtreePrinter extends DefaultHandler {
 
 	@Override
 	public void endElement(QNm name) throws DocumentException {
-		if (level == levelWithoutContent) {
+		if ((level == levelWithoutContent) && (!printEmptyElementTag)) {
 			out.print("/>");
 			openElement = false;
 			level--;
@@ -168,7 +170,7 @@ public class SubtreePrinter extends DefaultHandler {
 		out.print("<");
 		out.print(name);
 		for (NS n = ns; n != null; n = n.next) {			
-			if (n.prefix != null) {
+			if ((n.prefix != null) && (!n.prefix.isEmpty())) {
 				out.print(" xmlns:");
 				out.print(n.prefix);
 			} else {
@@ -269,6 +271,14 @@ public class SubtreePrinter extends DefaultHandler {
 
 	public void flush() {
 		out.flush();
+	}
+
+	public boolean isPrintEmptyElementTag() {
+		return printEmptyElementTag;
+	}
+
+	public void setPrintEmptyElementTag(boolean print) {
+		this.printEmptyElementTag = print;
 	}
 
 	public void print(Node<?> node) throws DocumentException {

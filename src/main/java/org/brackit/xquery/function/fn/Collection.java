@@ -66,7 +66,7 @@ public class Collection extends AbstractFunction {
 
 				return collection;
 			} else {
-				AnyURI uri = ResolveURI.resolve(sctx, name);
+				AnyURI uri = Doc.resolve(sctx, name);
 				return ctx.getStore().lookup(uri.stringValue());
 			}
 		} catch (DocumentException e) {

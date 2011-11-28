@@ -565,17 +565,23 @@ public class PrologAnalyzer extends AbstractAnalyzer {
 		int pos = 0;
 		AST child = decl.getChild(pos++);
 		while (child.getType() == XQ.Annotation) {
+			boolean ignored = true;
 			String annotation = child.getStringValue();
-			if ((annotation == "%public") || (annotation == "%private")) {
+			if (("public".equals(annotation)) || ("private".equals(annotation))) {
 				if (declaredPrivateOrPublic) {
 					throw new QueryException(
 							ErrorCode.ERR_FUN_PRIVATE_OR_PUBLIC_ALREADY_DECLARED,
 							"Function has already been declared private or public");
 				}
 				declaredPrivateOrPublic = true;
+			} else if ("updating".equals(annotation)) {
+				updating = true;
+				ignored = false;
 			}
 			// TODO process annotations
-			log.warn("Ingoring function annotation " + annotation);
+			if (ignored) {
+				log.warn("Ignoring function annotation " + annotation);
+			}
 			child = decl.getChild(pos++);
 		}
 

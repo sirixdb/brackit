@@ -132,7 +132,7 @@ public class Doc extends AbstractFunction {
 		}
 	}
 	
-	public AnyURI resolve(StaticContext sctx, AnyURI base,
+	static AnyURI resolve(StaticContext sctx, AnyURI base,
 			AnyURI relative) throws QueryException {
 		if (relative.isAbsolute()) {
 			return relative;
@@ -151,7 +151,7 @@ public class Doc extends AbstractFunction {
 		}
 	}
 
-	public AnyURI resolve(StaticContext sctx, String relStr)
+	static AnyURI resolve(StaticContext sctx, String relStr)
 			throws QueryException {
 		try {
 			AnyURI relative = new AnyURI(relStr);

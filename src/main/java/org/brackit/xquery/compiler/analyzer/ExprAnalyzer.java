@@ -1021,7 +1021,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 			QNm attName = (QNm) att.getChild(0).getValue();
 			if ("xmlns".equals(attName.getPrefix())) {
 				String prefix = attName.getLocalName();
-				String uri = extractURIFromDirNSAttContent(att.getChild(0));
+				String uri = extractURIFromDirNSAttContent(att.getChild(1));
 				checkDirNSAttBinding(prefix, uri);
 				sctx.getNamespaces().declare(prefix, uri);
 				// delete from context sequence
@@ -1033,7 +1033,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 				nsDecl.addChild(new AST(XQ.AnyURI, uri));
 				expr.insertChild(0, nsDecl);
 			} else if ("xmlns".equals(attName.getLocalName())) {
-				String uri = extractURIFromDirNSAttContent(att.getChild(0));
+				String uri = extractURIFromDirNSAttContent(att.getChild(1));
 				sctx.getNamespaces().setDefaultElementNamespace(uri);
 				// delete from context sequence
 				// and prepend prefixed namespace declaration
@@ -1110,7 +1110,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 			uri.append(c.getStringValue());
 		}
 		String eolNormalized = Whitespace.normalizeXML11(uri.toString());
-		String wsNormalized = Whitespace.replace(eolNormalized);
+		String wsNormalized = Whitespace.collapse(eolNormalized);
 		return wsNormalized;
 	}
 
