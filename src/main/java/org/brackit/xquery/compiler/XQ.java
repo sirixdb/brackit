@@ -365,6 +365,14 @@ public final class XQ {
 	private XQ() {
 	}
 
+	private static int base = 228;
+	
+	public static synchronized int allocate(int noOfTokens) {
+		int r = base;
+		base += noOfTokens;
+		return r;
+	}
+
 	public static void main(String[] args) throws Exception {
 		XQ xq = new XQ();
 		for (Field f : XQ.class.getFields()) {

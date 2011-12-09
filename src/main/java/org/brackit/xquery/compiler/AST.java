@@ -43,18 +43,18 @@ import org.brackit.xquery.module.StaticContext;
  * 
  */
 public class AST {
-	private AST parent;
-	private int type;
-	private Object value;
-	private Map<String, Object> properties;
-	private StaticContext sctx;
-	private AST[] children;
+	protected AST parent;
+	protected int type;
+	protected Object value;
+	protected Map<String, Object> properties;
+	protected StaticContext sctx;
+	protected AST[] children;
 
 	public AST(int type) {
 		this(type, XQ.NAMES[type]);
 	}
 
-	private AST(int type, Object value, StaticContext sctx,
+	protected AST(int type, Object value, StaticContext sctx,
 			Map<String, Object> properties) {
 		this.type = type;
 		this.value = value;
@@ -260,9 +260,7 @@ public class AST {
 
 	private int toDot(int no, DotContext dt) {
 		final int myNo = no++;
-		String label = ((type > 0) && (type < XQ.NAMES.length)) ? (XQ.NAMES[type]
-				.equals(value.toString())) ? value.toString() : XQ.NAMES[type]
-				+ "[" + value.toString() + "]" : value.toString();
+		String label = getLabel(getStringValue());
 		DotNode node = dt.addNode(String.valueOf(myNo));
 		node.addRow(label, null);
 		if (properties != null) {
@@ -279,6 +277,12 @@ public class AST {
 			}
 		}
 		return no++;
+	}
+
+	protected String getLabel(String value) {
+		return ((type > 0) && (type < XQ.NAMES.length)) ? (XQ.NAMES[type]
+				.equals(value.toString())) ? value.toString() : XQ.NAMES[type]
+				+ "[" + value.toString() + "]" : value.toString();
 	}
 
 	public AST getFirstChildWithType(int type) {
@@ -323,10 +327,7 @@ public class AST {
 	}
 
 	public String toString() {
-		int type = getType();
 		String value = getStringValue();
-		return ((type > 0) && (type < XQ.NAMES.length)) ? (XQ.NAMES[type]
-				.equals(value)) ? value : XQ.NAMES[type] + "[" + value + "]"
-				: value;
+		return getLabel(value);
 	}
 }
