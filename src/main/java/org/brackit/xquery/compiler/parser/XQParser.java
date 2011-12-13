@@ -40,7 +40,9 @@ import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.module.Functions;
+import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.util.log.Logger;
+import org.brackit.xquery.xdm.Type;
 
 /**
  * Straight-forward, recursive descent parser.
@@ -1286,6 +1288,7 @@ public class XQParser extends Tokenizer {
 				collation.addChild(uriLiteral);
 				gs.addChild(collation);
 			}
+			groupByClause.addChild(gs);
 		} while (attemptSkipWS(","));
 		return groupByClause;
 	}
@@ -1345,7 +1348,15 @@ public class XQParser extends Tokenizer {
 		consume(la2);
 		QNm varName = eqname(false, true);
 		AST countClause = new AST(XQ.CountClause);
-		countClause.addChild(new AST(XQ.Variable, varName));
+		AST binding = new AST(XQ.TypedVariableBinding);
+		AST var = new AST(XQ.Variable, varName);
+		binding.addChild(var);
+		AST type = new AST(XQ.SequenceType);
+		AST aouType = new AST(XQ.AtomicOrUnionType);
+		type.addChild(aouType);
+		aouType.addChild(new AST(XQ.QNm, Type.INR.getName()));
+		binding.addChild(type);
+		countClause.addChild(binding);
 		return countClause;
 	}
 

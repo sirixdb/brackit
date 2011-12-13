@@ -407,11 +407,11 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 		if (clause.getType() != XQ.CountClause) {
 			return false;
 		}
-		QNm name = (QNm) clause.getChild(0).getValue();
+		QNm name = (QNm) clause.getChild(0).getChild(0).getValue();
 		// expand, bind and update AST
 		name = expand(name, DefaultNS.EMPTY);
 		name = bind(name);
-		clause.getChild(0).setValue(name);
+		clause.getChild(0).getChild(0).setValue(name);
 		return true;
 	}
 
