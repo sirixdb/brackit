@@ -35,6 +35,7 @@ import org.brackit.xquery.compiler.analyzer.Analyzer;
 import org.brackit.xquery.compiler.optimizer.DefaultOptimizer;
 import org.brackit.xquery.compiler.optimizer.Optimizer;
 import org.brackit.xquery.compiler.parser.DotUtil;
+import org.brackit.xquery.compiler.parser.XQParser;
 import org.brackit.xquery.compiler.translator.PipelineCompiler;
 import org.brackit.xquery.compiler.translator.Translator;
 import org.brackit.xquery.function.bit.Every;
@@ -108,13 +109,17 @@ public class CompileChain {
 	protected ModuleResolver getModuleResolver() {
 		return new BaseResolver();
 	}
+	
+	protected AST parse(String query) throws QueryException {
+		return new XQParser(query).parse();
+	}
 
 	public Module compile(String query) throws QueryException {
 		if (XQuery.DEBUG) {
 			System.out.println(String.format("Compiling:\n%s", query));
 		}
 		ModuleResolver resolver = getModuleResolver();
-		Analyzer analyzer = new Analyzer(resolver, baseURI, query);
+		Analyzer analyzer = new Analyzer(resolver, baseURI, parse(query));
 		AST xquery = analyzer.getAST();
 		if (XQuery.DEBUG) {
 			DotUtil.drawDotToFile(xquery.dot(), XQuery.DEBUG_DIR, "parsed");

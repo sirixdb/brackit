@@ -69,14 +69,14 @@ public class Analyzer {
 	private final List<Module> modules;
 	private final AST ast;
 
-	public Analyzer(ModuleResolver resolver, AnyURI baseURI, String query)
+	public Analyzer(ModuleResolver resolver, AnyURI baseURI, AST ast)
 			throws QueryException {
 		this.resolver = resolver;
 		this.baseURI = baseURI;
 		this.decls = new LinkedList<ForwardDeclaration>();
 		this.modules = new LinkedList<Module>();
 		this.targets = new LinkedList<Target>();
-		this.ast = new XQParser(query).parse();
+		this.ast = ast;
 		analyze(ast);
 	}
 
