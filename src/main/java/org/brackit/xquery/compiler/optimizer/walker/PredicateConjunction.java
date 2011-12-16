@@ -22,11 +22,11 @@ public class PredicateConjunction extends Walker {
 		if (input.getType() != Selection) {
 			return select;
 		}
-		AST predicate = select.getChild(1);
 		while (input.getType() == Selection) {
-			AST tmp = new AST(AndExpr);
-			tmp.addChild(predicate);
+			AST predicate = select.getChild(1);
+			AST tmp = new AST(AndExpr);			
 			tmp.addChild(input.getChild(1));
+			tmp.addChild(predicate);
 			input = input.getChild(0);
 			select.replaceChild(1, tmp);
 			select.replaceChild(0, input);
