@@ -353,10 +353,13 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 	protected final String killTrailingZeros(String s) {
 		int len = s.length() - 1;
 		int pos = len;
+		if (len <= 1) {
+			return s;
+		}
 		while ((pos >= 0) && (s.charAt(pos) == '0')) {
 			pos--;
 		}
-		if (s.charAt(pos) == '.') {
+		if ((pos > 0) && (s.charAt(pos) == '.')) {
 			pos--;
 		}
 		return (pos == len) ? s : s.substring(0, pos + 1);
