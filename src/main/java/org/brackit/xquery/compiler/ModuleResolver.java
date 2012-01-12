@@ -41,6 +41,8 @@ public interface ModuleResolver {
 
 	public void register(String targetNSUri, Module module);
 	
+	public void unregister(String targetNSUri);
+	
 	/**
 	 * Resolve the set of modules identified by the target namespace
 	 * <code>targetNSUri</code>

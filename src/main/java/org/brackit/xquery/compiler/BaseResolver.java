@@ -64,6 +64,12 @@ public class BaseResolver implements ModuleResolver {
 		}
 		list.add(module);
 	}
+	
+	public void unregister(String targetNSUri) {
+		if (modules != null) {
+			modules.remove(targetNSUri);
+		}
+	}
 
 	@SuppressWarnings("unchecked")
 	@Override
