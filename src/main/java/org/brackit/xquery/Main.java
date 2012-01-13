@@ -28,35 +28,132 @@
 package org.brackit.xquery;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import org.brackit.xquery.node.parser.DocumentParser;
+import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.util.URIHandler;
+import org.brackit.xquery.xdm.Node;
 
 /**
  * @author Sebastian Baechle
- *
+ * 
  */
 public class Main {
 
+	private static class Config {
+		HashMap<String, String> options = new HashMap<String, String>();
+
+		boolean isSet(String option) {
+			return options.containsKey(option);
+		}
+
+		String getValue(String option) {
+			return options.get(option);
+		}
+
+		void setOption(String option, String value) {
+			options.put(option, value);
+		}
+	}
+
+	private static class Option {
+		final String key;
+		final String desc;
+		final boolean hasValue;
+
+		Option(String key, String desc, boolean hasValue) {
+			this.key = key;
+			this.desc = desc;
+			this.hasValue = hasValue;
+		}
+	}
+
+	private static List<Option> options = new ArrayList<Option>();
+
+	static {
+		options.add(new Option("-q",
+				"query file [use '-' for stdin (default)]", true));
+		options.add(new Option("-f", "default document", true));
+		options.add(new Option("-p", "pretty print", false));
+	}
+
 	public static void main(String[] args) {
-		try {			
-			if (args.length == 0) {
-				printUsage();	
+		try {
+			Config config = parseParams(args);
+			QueryContext ctx = new QueryContext();
+
+			String file = config.getValue("-f");
+			if (file != null) {
+				InputStream in = URIHandler.getInputStream(new URI(file));
+				try {
+					SubtreeParser parser = new DocumentParser(in);
+					Node<?> doc = ctx.getNodeFactory().build(parser);
+					ctx.setContextItem(doc);
+				} finally {
+					in.close();
+				}
 			}
-			String query = args[args.length - 1];
-			if (query.equals("-")) {
+
+			String query;
+			if (((config.isSet("-q")) && (!"-".equals(config.getValue("-q"))))) {
+				query = readFile(config.getValue("-q"));
+			} else {
 				query = readString(System.in);
 			}
 
-			new XQuery(query).serialize(new QueryContext(), System.out);
+			XQuery xq = new XQuery(query);
+			xq.setPrettyPrint(config.isSet("-p"));
+
+			xq.serialize(ctx, System.out);
 		} catch (QueryException e) {
 			System.out.println("Error: " + e.getMessage());
 			System.exit(-2);
 		} catch (IOException e) {
 			System.out.println("I/O Error: " + e.getMessage());
 			System.exit(-3);
+		} catch (Throwable e) {
+			System.out.println("Error: " + e.getMessage());
+			System.exit(-4);
 		}
 	}
-	
+
+	private static Config parseParams(String[] args) throws Exception {
+		Config config = new Config();
+		for (int i = 0; i < args.length; i++) {
+			boolean valid = false;
+			String s = args[i];
+			for (Option o : options) {
+				if (o.key.equals(s)) {
+					String val = (o.hasValue) ? args[++i] : null;
+					config.setOption(o.key, val);
+					valid = true;
+					break;
+				}
+			}
+			if (!valid) {
+				printUsage();
+				throw new Exception("Invalid parameter: " + s);
+			}
+		}
+		return config;
+	}
+
+	private static String readFile(String file) throws IOException {
+		FileInputStream fin = new FileInputStream(file);
+		try {
+			return readString(fin);
+		} finally {
+			fin.close();
+		}
+	}
+
 	private static String readString(InputStream in) throws IOException {
 		int r;
 		ByteArrayOutputStream payload = new ByteArrayOutputStream();
@@ -66,11 +163,23 @@ public class Main {
 		String string = payload.toString("UTF-8");
 		return string;
 	}
-	
+
 	private static void printUsage() {
 		System.out.println("No query provided");
-		System.out.println("Usage: java " + Main.class.getName() + " [options] query");
-		System.out.println("Options: [options not supported yet]");
+		System.out.println(String.format("Usage: java %s [options]",
+				Main.class.getName()));
+		System.out.println("Options:");
+		for (Option o : options) {
+			System.out.print(" ");
+			System.out.print(o.key);
+			if (o.hasValue) {
+				System.out.print(" <param>\t");
+			} else {
+				System.out.print("\t\t");
+			}
+			System.out.print("- ");
+			System.out.println(o.desc);
+		}
 		System.exit(-1);
 	}
 }
