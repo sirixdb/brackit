@@ -79,7 +79,8 @@ public abstract class Accessor {
 				throws QueryException {
 			final Stream<? extends Node<?>> subtree = node
 					.getDescendantOrSelf();
-			if (node.getKind() == Kind.ELEMENT) {
+			Kind kind = node.getKind();
+			if ((node.getKind() == Kind.ELEMENT) || (kind == Kind.DOCUMENT)) {
 				subtree.next(); // consume self
 			}
 			return subtree;
