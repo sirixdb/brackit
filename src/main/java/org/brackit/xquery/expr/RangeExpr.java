@@ -162,7 +162,7 @@ public class RangeExpr implements Expr {
 							if (i.cmp(Int32.ZERO) <= 0) {
 								return;
 							}
-							current.add(i);
+							current = (IntNumeric) current.add(i);
 						}
 					};
 				}
