@@ -239,7 +239,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
 				}
 				return subtractLong(v, other.longValue());
 			}
-			return other.add(this);
+			return other.negate().add(this);
 		} else if (other instanceof DecNumeric) {
 			return subtractBigDecimal(new BigDecimal(v), other.decimalValue(),
 					false);
