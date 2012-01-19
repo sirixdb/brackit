@@ -2856,8 +2856,7 @@ public class XQParser extends Tokenizer {
 					|| (laSkipWS("<!") != null) || (!attemptSkipWS("<"))) {
 				return null;
 			}
-		}
-		skipS();
+		}		
 		// name is expanded after (possible) declaration of in-scope namespaces
 		AST stag = qnameLiteral(false, false);
 		QNm name = (QNm) stag.getValue();
