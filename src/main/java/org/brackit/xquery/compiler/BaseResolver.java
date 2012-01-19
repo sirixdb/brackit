@@ -39,7 +39,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.util.URIHandler;
 
@@ -82,17 +81,26 @@ public class BaseResolver implements ModuleResolver {
 	public List<String> load(String uri, String[] locations) throws IOException {
 		List<String> loaded = new LinkedList<String>();
 		for (String loc : locations) {
-			try {
-				InputStreamReader in = new InputStreamReader(
-						URIHandler.getInputStream(new URI(loc)));
-				CharBuffer buf = CharBuffer.allocate(1024 * 521);
-				int read = in.read(buf);
-				in.close();
-				loaded.add(buf.rewind().toString());
-			} catch (URISyntaxException e) {
-				// location URI's must not be valid -> ignore
+			String s = load(loc);
+			if (s != null) {
+				loaded.add(s);
 			}
 		}
 		return loaded;
+	}
+
+	protected String load(String loc) throws IOException {
+		String s = null;
+		try {
+			InputStreamReader in = new InputStreamReader(
+					URIHandler.getInputStream(new URI(loc)));
+			CharBuffer buf = CharBuffer.allocate(1024 * 521);
+			int read = in.read(buf);
+			in.close();
+			s = buf.rewind().toString();
+		} catch (URISyntaxException e) {
+			// location URI's must not be valid -> ignore
+		}
+		return s;
 	}
 }
