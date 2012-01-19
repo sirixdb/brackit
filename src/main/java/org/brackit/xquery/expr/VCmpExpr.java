@@ -101,8 +101,7 @@ public class VCmpExpr implements Expr {
 		Item right = rightExpr.evaluateToItem(ctx, tuple);
 
 		if ((left == null) || (right == null)) {
-			// TODO Standard says here return empty sequence
-			return Bool.FALSE;
+			return null;
 		}
 
 		left = left.atomize();
