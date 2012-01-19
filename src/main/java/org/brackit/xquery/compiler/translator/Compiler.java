@@ -518,22 +518,26 @@ public class Compiler implements Translator {
 		Expr expr = expr(node.getChild(0), true);
 		int noOfPredicates = node.getChildCount() - 1;
 		Expr[] predicates = new Expr[noOfPredicates];
-		Binding itemBinding = table.bind(Namespaces.FS_DOT, SequenceType.ITEM);
-		Binding posBinding = table.bind(Namespaces.FS_POSITION,
-				SequenceType.INTEGER);
-		Binding sizeBinding = table.bind(Namespaces.FS_LAST,
-				SequenceType.INTEGER);
-
+		boolean[] bindItem = new boolean[noOfPredicates];
+		boolean[] bindPos = new boolean[noOfPredicates];
+		boolean[] bindSize = new boolean[noOfPredicates];
+		
 		for (int i = 0; i < noOfPredicates; i++) {
+			Binding itemBinding = table.bind(Namespaces.FS_DOT, SequenceType.ITEM);
+			Binding posBinding = table.bind(Namespaces.FS_POSITION,
+					SequenceType.INTEGER);
+			Binding sizeBinding = table.bind(Namespaces.FS_LAST,
+					SequenceType.INTEGER);
 			predicates[i] = expr(node.getChild(1 + i).getChild(0), true);
+			table.unbind();
+			table.unbind();
+			table.unbind();
+			bindItem[i] = itemBinding.isReferenced();
+			bindPos[i] = posBinding.isReferenced();
+			bindSize[i] = sizeBinding.isReferenced();
 		}
 
-		table.unbind();
-		table.unbind();
-		table.unbind();
-
-		return new FilterExpr(expr, predicates[0], itemBinding.isReferenced(),
-				posBinding.isReferenced(), sizeBinding.isReferenced());
+		return new FilterExpr(expr, predicates, bindItem, bindPos, bindSize);
 	}
 
 	protected Expr insertExpr(AST node) throws QueryException {

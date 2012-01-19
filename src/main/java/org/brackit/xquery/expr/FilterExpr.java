@@ -52,14 +52,16 @@ public class FilterExpr implements Expr {
 		private final QueryContext ctx;
 		private final Tuple tuple;
 		private final Sequence s;
+		private final int i;
 		private final IntNumeric inSeqSize;
 
-		public DependentFilterSeq(QueryContext ctx, Tuple tuple, Sequence s)
-				throws QueryException {
+		public DependentFilterSeq(QueryContext ctx, Tuple tuple, Sequence s,
+				int i) throws QueryException {
 			this.ctx = ctx;
 			this.tuple = tuple;
 			this.s = s;
-			this.inSeqSize = (bindSize ? (s != null) ? s.size() : Int32.ZERO
+			this.i = i;
+			this.inSeqSize = (bindSize[i] ? (s != null) ? s.size() : Int32.ZERO
 					: Int32.ONE);
 		}
 
@@ -105,22 +107,22 @@ public class FilterExpr implements Expr {
 				private boolean predicate(Item item) throws QueryException {
 					Tuple current = tuple;
 
-					if (bindCount > 0) {
-						Sequence[] tmp = new Sequence[bindCount];
+					if (bindCount[i] > 0) {
+						Sequence[] tmp = new Sequence[bindCount[i]];
 						int p = 0;
-						if (bindItem) {
+						if (bindItem[i]) {
 							tmp[p++] = item;
 						}
-						if (bindPos) {
+						if (bindPos[i]) {
 							tmp[p++] = pos;
 						}
-						if (bindSize) {
+						if (bindSize[i]) {
 							tmp[p++] = inSeqSize;
 						}
 						current = current.concat(tmp);
 					}
 
-					Sequence res = filter.evaluate(ctx, current);
+					Sequence res = filter[i].evaluate(ctx, current);
 
 					if (res == null) {
 						return false;
@@ -160,21 +162,25 @@ public class FilterExpr implements Expr {
 		}
 	}
 
-	final Expr filter;
 	final Expr expr;
-	final boolean bindItem;
-	final boolean bindPos;
-	final boolean bindSize;
-	final int bindCount;
+	final Expr[] filter;
+	final boolean[] bindItem;
+	final boolean[] bindPos;
+	final boolean[] bindSize;
+	final int[] bindCount;
 
-	public FilterExpr(Expr expr, Expr filter, boolean bindItem,
-			boolean bindPos, boolean bindSize) {
+	public FilterExpr(Expr expr, Expr[] filter, boolean[] bindItem,
+			boolean[] bindPos, boolean[] bindSize) {
 		this.filter = filter;
 		this.expr = expr;
 		this.bindItem = bindItem;
 		this.bindPos = bindPos;
 		this.bindSize = bindSize;
-		bindCount = (bindItem ? 1 : 0) + (bindPos ? 1 : 0) + (bindSize ? 1 : 0);
+		this.bindCount = new int[filter.length];
+		for (int i = 0; i < filter.length; i++) {
+			bindCount[i] = (bindItem[i] ? 1 : 0) + (bindPos[i] ? 1 : 0)
+					+ (bindSize[i] ? 1 : 0);
+		}
 	}
 
 	@Override
@@ -182,83 +188,90 @@ public class FilterExpr implements Expr {
 			throws QueryException {
 		Sequence s = expr.evaluate(ctx, tuple);
 
-		// nothing to filter
-		if (s == null) {
-			return null;
-		}
-
-		// check if the filter predicate is independent
-		// of the context item
-		if (bindCount == 0) {
-			Sequence fs = filter.evaluate(ctx, tuple);
-			if (fs == null) {
+		for (int i = 0; i < filter.length; i++) {
+			// nothing to filter
+			if (s == null) {
 				return null;
-			} else if (fs instanceof Numeric) {
-				IntNumeric pos = ((Numeric) fs).asIntNumeric();
-				return (pos != null) ? s.get(pos) : null;
-			} else {
-				Iter it = fs.iterate();
-				try {
-					Item first = it.next();
-					if ((first != null) && (it.next() == null)
-							&& (first instanceof Numeric)) {
-						IntNumeric pos = ((Numeric) first).asIntNumeric();
-						return (pos != null) ? s.get(pos) : null;
+			}
+
+			// check if the filter predicate is independent
+			// of the context item
+			if (bindCount[i] == 0) {
+				Sequence fs = filter[i].evaluate(ctx, tuple);
+				if (fs == null) {
+					return null;
+				} else if (fs instanceof Numeric) {
+					IntNumeric pos = ((Numeric) fs).asIntNumeric();
+					s = (pos != null) ? s.get(pos) : null;
+				} else {
+					Iter it = fs.iterate();
+					try {
+						Item first = it.next();
+						if ((first != null) && (it.next() == null)
+								&& (first instanceof Numeric)) {
+							IntNumeric pos = ((Numeric) first).asIntNumeric();
+							return (pos != null) ? s.get(pos) : null;
+						}
+					} finally {
+						it.close();
 					}
-				} finally {
-					it.close();
+					if (!fs.booleanValue()) {
+						return null;
+					}
 				}
-				return fs.booleanValue() ? s : null;
+			} else {
+				// the filter predicate is dependent on the context item
+				s = new DependentFilterSeq(ctx, tuple, s, i);
 			}
 		}
-
-		// the filter predicate is dependent on the context item
-		return new DependentFilterSeq(ctx, tuple, s);
+		return s;
 	}
 
 	@Override
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		Sequence res = expr.evaluate(ctx, tuple);
+		Sequence s = expr.evaluate(ctx, tuple);
 
-		if (res == null) {
-			return null;
-		} else if (res instanceof Item) {
-			Tuple current = tuple;
-
-			if (bindCount > 0) {
-				Sequence[] tmp = new Sequence[bindCount];
-				int p = 0;
-				if (bindItem) {
-					tmp[p++] = res;
-				}
-				if (bindPos) {
-					tmp[p++] = Int32.ONE;
-				}
-				if (bindSize) {
-					tmp[p++] = Int32.ONE;
-				}
-				current = current.concat(tmp);
-			}
-
-			Sequence fRes = filter.evaluate(ctx, current);
-
-			if (fRes == null) {
+		for (int i = 0; i < filter.length; i++) {
+			if (s == null) {
 				return null;
-			}
+			} else if (s instanceof Item) {
+				Tuple current = tuple;
 
-			if ((fRes instanceof Numeric) && (((Numeric) fRes).intValue() != 1)) {
-				return null;
-			}
+				if (bindCount[i] > 0) {
+					Sequence[] tmp = new Sequence[bindCount[i]];
+					int p = 0;
+					if (bindItem[i]) {
+						tmp[p++] = s;
+					}
+					if (bindPos[i]) {
+						tmp[p++] = Int32.ONE;
+					}
+					if (bindSize[i]) {
+						tmp[p++] = Int32.ONE;
+					}
+					current = current.concat(tmp);
+				}
 
-			if (!fRes.booleanValue()) {
-				return null;
-			}
+				Sequence fRes = filter[i].evaluate(ctx, current);
 
-			return (Item) res;
-		} else {
-			return ExprUtil.asItem(evaluate(ctx, tuple));
+				if (fRes == null) {
+					return null;
+				}
+
+				if ((fRes instanceof Numeric)
+						&& (((Numeric) fRes).intValue() != 1)) {
+					return null;
+				}
+
+				if (!fRes.booleanValue()) {
+					return null;
+				}
+			} else {
+				s = ExprUtil.asItem(evaluate(ctx, tuple));
+			}
 		}
+		return (Item) s;
 	}
 
 	@Override
@@ -266,8 +279,10 @@ public class FilterExpr implements Expr {
 		if (expr.isUpdating()) {
 			return true;
 		}
-		if (filter.isUpdating()) {
-			return true;
+		for (int i = 0; i < filter.length; i++) {
+			if (filter[i].isUpdating()) {
+				return true;
+			}
 		}
 		return false;
 	}
