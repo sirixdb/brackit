@@ -2337,14 +2337,11 @@ public class XQParser extends Tokenizer {
 		consume(la);
 		consume(la2);
 		AST elTest = elementTest();
-		AST schemaElTest = (elTest != null) ? elTest : schemaElementTest();
+		elTest = (elTest != null) ? elTest : schemaElementTest();
 		consumeSkipWS(")");
 		AST docTest = new AST(XQ.KindTestDocument);
 		if (elTest != null) {
 			docTest.addChild(elTest);
-		}
-		if (schemaElTest != null) {
-			docTest.addChild(schemaElTest);
 		}
 		return docTest;
 	}
@@ -2989,7 +2986,7 @@ public class XQParser extends Tokenizer {
 			throws TokenizerException {
 		Token la;
 		if ((checkBoundaryWS)
-				&& ((((la = laSkipS("<")) != null) && ((la(la, "!") == null))) || (((la = laSkipS("{")) != null) && ((la(
+				&& (((la = laSkipS("<")) != null) || (((la = laSkipS("{")) != null) && ((la(
 						la, "{") == null)))) && ((la = laS()) != null)) {
 			consume(la);
 			AST boundaryWS = new AST(XQ.Str, la.string());
