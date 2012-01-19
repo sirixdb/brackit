@@ -692,6 +692,13 @@ public class Functions {
 				"local-name"), Name.Mode.LOCAL_NAME, new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.One),
 				new SequenceType(AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne))));
+		predefine(new Name(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
+				"namespace-uri"), Name.Mode.NAMESPACE_URI, new Signature(
+				new SequenceType(AtomicType.AURI, Cardinality.One), false, true)));
+		predefine(new Name(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
+				"namespace-uri"), Name.Mode.NAMESPACE_URI, new Signature(
+				new SequenceType(AtomicType.AURI, Cardinality.One),
+				new SequenceType(AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne))));
 		predefine(new Number(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"number"), new Signature(new SequenceType(AtomicType.DBL,
 				Cardinality.One), false, true)));

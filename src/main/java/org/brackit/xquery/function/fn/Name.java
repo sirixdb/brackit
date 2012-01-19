@@ -27,7 +27,6 @@
  */
 package org.brackit.xquery.function.fn;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.AnyURI;
@@ -35,7 +34,6 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
@@ -66,27 +64,18 @@ public class Name extends AbstractFunction {
 	@Override
 	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
 			throws QueryException {
-		if (args[0] == null) {
+		QNm name;
+		if ((args[0] == null) || (name = ((Node<?>) args[0]).getName()) == null)  {
 			return (mode == Mode.NAMESPACE_URI ? AnyURI.EMPTY : Str.EMPTY);
 		}
 
-		if (!(args[0] instanceof Node<?>)) {
-			throw (new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-					"Context item is not a node."));
-		}
-
-		QNm name;
-		try {
-			name = ((Node<?>) args[0]).getName();
-		} catch (DocumentException e) {
-			throw new QueryException(ErrorCode.BIT_DYN_DOCUMENT_ACCESS_ERROR);
-		}
-
-		// TODO Handle namespaces, when implemented, and fn:namespace-uri
-		if (name == null) {
-			return Str.EMPTY;
-		} else {
-			return new Str(name.stringValue());
+		switch (mode) {
+		case LOCAL_NAME:
+			return new Str(name.getLocalName());
+		case NAME:
+			return new Str(name.toString());
+		default:
+			return new AnyURI(name.getNamespaceURI());
 		}
 	}
 }
