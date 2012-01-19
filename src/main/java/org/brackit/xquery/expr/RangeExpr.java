@@ -69,11 +69,11 @@ public class RangeExpr implements Expr {
 		Atomic right = rItem.atomize();
 
 		if (!(left instanceof IntNumeric)) {
-			left = Cast.cast(null, left, Type.INT, false);
+			left = convert(left);
 		}
 
 		if (!(right instanceof IntNumeric)) {
-			right = Cast.cast(null, right, Type.INT, false);
+			right = convert(right);
 		}
 
 		int comparison = left.cmp(right);
@@ -84,6 +84,17 @@ public class RangeExpr implements Expr {
 		} else {
 			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
 		}
+	}
+
+	protected Atomic convert(Atomic val) throws QueryException {
+		if (val.type() == Type.UNA) {
+			val = Cast.cast(null, val, Type.INR, false);
+		} else {
+			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+					"Illegal operand type '%s' where '%s' is expected",
+					val.type(), Type.INR);
+		}
+		return val;
 	}
 
 	@Override
@@ -100,11 +111,11 @@ public class RangeExpr implements Expr {
 		Atomic right = rItem.atomize();
 
 		if (!(left instanceof IntNumeric)) {
-			left = Cast.cast(null, left, Type.INT, false);
+			left = convert(left);
 		}
 
 		if (!(right instanceof IntNumeric)) {
-			right = Cast.cast(null, right, Type.INT, false);
+			right = convert(right);
 		}
 
 		int comparison = left.cmp(right);
@@ -121,20 +132,19 @@ public class RangeExpr implements Expr {
 				private final IntNumeric end = e;
 
 				@Override
-				public boolean booleanValue()
-						throws QueryException {
+				public boolean booleanValue() throws QueryException {
 					if (!size().eq(Int32.ONE)) {
-						throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+						throw new QueryException(
+								ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
 								"Effective boolean value is undefined "
-								+ "for sequences with two or more items "
-								+ "not starting with a node");
+										+ "for sequences with two or more items "
+										+ "not starting with a node");
 					}
 					return start.booleanValue();
 				}
 
 				@Override
-				public IntNumeric size()
-						throws QueryException {
+				public IntNumeric size() throws QueryException {
 					return (IntNumeric) end.subtract(start).add(Int32.ONE);
 				}
 
@@ -171,7 +181,7 @@ public class RangeExpr implements Expr {
 				public Item get(IntNumeric pos) throws QueryException {
 					if (Int32.ZERO.cmp(pos) >= 0) {
 						return null;
-					}					
+					}
 					if (size().cmp(pos) < 0) {
 						return null;
 					}
