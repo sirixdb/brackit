@@ -114,7 +114,7 @@ public final class Type {
 	/**
 	 * xs:untyped
 	 */
-	public static final Type UN = new Type("untyped", null, true, -1, false,
+	public static final Type UN = new Type("untyped", ANY, true, -1, false,
 			false, false, false);
 
 	/**
