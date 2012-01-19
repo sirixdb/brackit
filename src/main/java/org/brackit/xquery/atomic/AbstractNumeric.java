@@ -58,6 +58,13 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 	protected static final DecimalFormat DD = new DecimalFormat(
 			"#####0.0################", DF_SYMBOL);
 
+	protected static final DecimalFormat SF = new DecimalFormat(
+			"0.0######E0##", DF_SYMBOL);
+
+	protected static final DecimalFormat DF = new DecimalFormat(
+			"#####0.0######", DF_SYMBOL);
+
+	
 	@Override
 	public final int atomicCode() {
 		return Type.NUMERIC_CODE;

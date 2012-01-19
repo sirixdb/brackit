@@ -158,7 +158,7 @@ public class Flt extends AbstractNumeric implements FltNumeric {
 		if (v == 0)
 			return (1/v == 1/0.0f) ? "0" : "-0";
 		return killTrailingZeros(((v > 0) && (v >= 1e-6) && (v < 1e6) || (-v >= 1e-6)
-				&& (-v < 1e6)) ? DD.format(v) : SD.format(v));
+				&& (-v < 1e6)) ? DF.format(v) : SF.format(v));
 	}
 
 	public BigDecimal decimalValue() {
