@@ -113,6 +113,14 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
 				element.getScope().addPrefix(prefix, uri);
 			}
 		}
+		
+		String nsURI = name.getNamespaceURI();
+		String prefix = name.getPrefix();
+		if ((prefix != null) && (element.getScope().resolvePrefix(prefix) == null)) {
+			element.getScope().addPrefix(prefix, nsURI);
+		} else if ((!nsURI.isEmpty()) && (!nsURI.equals(element.getScope().defaultNS()))) {
+			element.getScope().setDefaultNS(nsURI);
+		}
 
 		ContentSink sink = new ContentSink() {
 			@Override
