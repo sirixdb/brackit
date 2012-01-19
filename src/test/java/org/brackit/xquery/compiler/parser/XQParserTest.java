@@ -56,18 +56,8 @@ public class XQParserTest extends XQueryBaseTest {
 	}
 
 	@Test
-	public void emptyElementWithWS() throws Exception {
-		new XQParser(" < a /> ").parse();
-	}
-
-	@Test
 	public void nestedElements() throws Exception {
 		new XQParser("<a><b></b></a>").parse();
-	}
-
-	@Test
-	public void nestedElementsWithWS() throws Exception {
-		new XQParser(" < a> <  b> </b  \n></ \n\na>").parse();
 	}
 
 	@Test
@@ -79,24 +69,26 @@ public class XQParserTest extends XQueryBaseTest {
 	public void elementWithAttribute() throws Exception {
 		new XQParser("<a b='a'></a>").parse();
 	}
-	
+
 	@Test
 	public void elementsWithComplexContent() throws Exception {
 		new XQParser("<a>1&amp;<b/>12 {'aha'}soso<c/></a>").parse();
 	}
-	
+
 	@Test
 	public void elementWithComplexContent2() throws Exception {
-		new XQParser("string(<elem>{'a'} a {1,2,3} b <![CDATA[ b ]]> c {'a', 'b'}</elem>)").parse();
-	}	
+		new XQParser(
+				"string(<elem>{'a'} a {1,2,3} b <![CDATA[ b ]]> c {'a', 'b'}</elem>)")
+				.parse();
+	}
 
 	@Test
 	public void illegallyNestedElements() throws Exception {
 		try {
 			new XQParser("<a><b></a>").parse();
 		} catch (QueryException e) {
-			assertEquals("illegal error code", ErrorCode.ERR_PARSING_ERROR, e
-					.getCode());
+			assertEquals("illegal error code", ErrorCode.ERR_PARSING_ERROR,
+					e.getCode());
 		}
 	}
 
@@ -123,29 +115,29 @@ public class XQParserTest extends XQueryBaseTest {
 	public void weird() throws Exception {
 		new XQParser(readQuery("/parser/", "weird.xq")).parse();
 	}
-	
+
 	@Test
 	public void constructedAttributeWithEmptyContentSequence() throws Exception {
 		new XQParser("attribute {'foo'} {}").parse();
 	}
-	
+
 	@Test
 	public void constructedPI() throws Exception {
 		new XQParser("processing-instruction XmL {'pi'}").parse();
-	}	
-	
+	}
+
 	@Test
 	public void onlyWSbetweenToken() throws Exception {
 		new XQParser("for\n$\na in 1 return $a").parse();
 	}
-	
+
 	@Test
 	public void parentAxis() throws Exception {
 		new XQParser("a/../b").parse();
 	}
-	
+
 	@Test
 	public void stringLiteralWithEntityReference() throws Exception {
 		new XQParser("\"a string &amp;\"").parse();
-	}	
+	}
 }
