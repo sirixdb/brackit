@@ -54,11 +54,17 @@ public class ExtractFLWOR extends Walker {
 		final AST parent = node.getParent();
 		if (isFLWORClause(parent)) {
 			return node;
-		} 
+		}
 		AST anc = parent;
 		while (anc != null) {
 			if (isFLWORClause(anc)) {
 				break;
+			}
+			if ((anc.getType() == XQ.PathExpr)
+					|| (anc.getType() == XQ.StepExpr)
+					|| (anc.getType() == XQ.FilterExpr)
+					|| (anc.getType() == XQ.MapExpr)) {
+				return node;
 			}
 			anc = anc.getParent();
 		}
@@ -70,10 +76,10 @@ public class ExtractFLWOR extends Walker {
 		QNm varName = createVarName();
 		AST binding = new AST(TypedVariableBinding);
 		binding.addChild(new AST(XQ.Variable, varName));
-		AST letClause = new AST(LetClause);		
+		AST letClause = new AST(LetClause);
 		letClause.addChild(binding);
 		letClause.addChild(node.copyTree());
-		
+
 		AST varRef = new AST(VariableRef, varName);
 		parent.replaceChild(node.getChildIndex(), varRef);
 		anc.getParent().insertChild(anc.getChildIndex(), letClause);
