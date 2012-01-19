@@ -190,10 +190,11 @@ public class SAX2SubtreeHandlerAdapter extends DefaultHandler2 {
 	@Override
 	public void endDocument() throws SAXException {
 		try {
+			handleText();
 			if (!parseAsFragment) {
 				handler.endDocument();
 			}
-			handler.beginFragment();
+			handler.endFragment();
 			handler.end();
 		} catch (DocumentException e) {
 			throw new SAXException(e);
