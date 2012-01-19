@@ -514,7 +514,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	@Override
 	public Stream<? extends D2Node> getDescendantOrSelf()
 			throws DocumentException {
-		return new EmptyStream<D2Node>();
+		return new AtomStream<D2Node>(this);
 	}
 
 	
