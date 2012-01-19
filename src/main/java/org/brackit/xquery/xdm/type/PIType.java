@@ -27,7 +27,6 @@
  */
 package org.brackit.xquery.xdm.type;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Kind;
@@ -55,12 +54,10 @@ public final class PIType extends NodeType {
 	}
 
 	@Override
-	public boolean matches(Node<?> node)
-			throws QueryException {
+	public boolean matches(Node<?> node) throws QueryException {
 		if (piTarget != null) {
-			throw new QueryException(
-					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-					"Processing instruction test with piTarget support not implemented yet.");
+			return ((node.getKind() == Kind.PROCESSING_INSTRUCTION) && (node
+					.getName().stringValue().equals(piTarget)));
 		}
 		return (node.getKind() == Kind.PROCESSING_INSTRUCTION);
 	}
@@ -68,9 +65,10 @@ public final class PIType extends NodeType {
 	@Override
 	public boolean matches(Item item) throws QueryException {
 		if (piTarget != null) {
-			throw new QueryException(
-					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-					"Processing instruction test with piTarget support not implemented yet.");
+			return ((item instanceof Node<?>)
+					&& (((Node<?>) item).getKind() == Kind.PROCESSING_INSTRUCTION) && (((Node<?>) item)
+					.getName().stringValue().equals(piTarget)));
+
 		}
 		return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.PROCESSING_INSTRUCTION));
 	}
@@ -81,7 +79,7 @@ public final class PIType extends NodeType {
 				"processing-instruction(\"%s\")", piTarget)
 				: "processing-instruction()";
 	}
-	
+
 	public boolean equals(Object obj) {
 		if (obj == this) {
 			return true;
@@ -98,7 +96,7 @@ public final class PIType extends NodeType {
 			if ((t.piTarget == null) || (!piTarget.equals(t.piTarget))) {
 				return false;
 			}
-		}		
+		}
 		return true;
 	}
 }

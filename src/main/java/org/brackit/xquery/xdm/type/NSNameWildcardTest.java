@@ -28,10 +28,8 @@
 package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.Type;
 
 /**
  * @author Sebastian Baechle
@@ -43,7 +41,6 @@ public class NSNameWildcardTest extends NodeType {
 	private final String nsURI;
 
 	public NSNameWildcardTest(Kind kind, String nsURI) {
-		super();
 		this.kind = kind;
 		this.nsURI = nsURI;
 	}

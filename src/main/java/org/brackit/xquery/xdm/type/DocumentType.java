@@ -32,6 +32,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.Stream;
 
 /**
  * 
@@ -63,9 +64,22 @@ public final class DocumentType extends NodeType {
 	@Override
 	public boolean matches(Node<?> node) throws QueryException {
 		if (elementType != null) {
-			throw new QueryException(
-					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-					"Document type test with element or schema element test support not implemented yet");
+			if (node.getKind() != Kind.DOCUMENT) {
+				return false;
+			}
+			Stream<? extends Node<?>> children = node.getChildren();
+			try {
+				Node<?> rootElem;
+				while ((rootElem = children.next()) != null) {
+					if (rootElem.getKind() == Kind.ELEMENT) {
+						return elementType.matches(rootElem);
+					}
+				}
+			} finally {
+				children.close();
+			}
+			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+					"Document node does not have a root element");
 		}
 		return (node.getKind() == Kind.DOCUMENT);
 	}
@@ -73,9 +87,22 @@ public final class DocumentType extends NodeType {
 	@Override
 	public boolean matches(Item item) throws QueryException {
 		if (elementType != null) {
-			throw new QueryException(
-					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-					"Document type test with element or schema element test support not implemented yet");
+			if (((Node<?>) item).getKind() != Kind.DOCUMENT) {
+				return false;
+			}
+			Stream<? extends Node<?>> children = ((Node<?>) item).getChildren();
+			try {
+				Node<?> rootElem;
+				while ((rootElem = children.next()) != null) {
+					if (rootElem.getKind() == Kind.ELEMENT) {
+						return elementType.matches(rootElem);
+					}
+				}
+			} finally {
+				children.close();
+			}
+			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+					"Document node does not have a root element");
 		}
 		return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.DOCUMENT));
 	}
