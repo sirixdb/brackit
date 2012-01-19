@@ -33,7 +33,6 @@ import java.util.List;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.optimizer.walker.BindingPushup;
-import org.brackit.xquery.compiler.optimizer.walker.BindingPushupAfterLifting;
 import org.brackit.xquery.compiler.optimizer.walker.ConjunctionSplitting;
 import org.brackit.xquery.compiler.optimizer.walker.DoSNStepMerger;
 import org.brackit.xquery.compiler.optimizer.walker.ExtractFLWOR;
@@ -42,9 +41,11 @@ import org.brackit.xquery.compiler.optimizer.walker.JoinSortElimination;
 import org.brackit.xquery.compiler.optimizer.walker.LetBindLift;
 import org.brackit.xquery.compiler.optimizer.walker.LetVariableRefPullup;
 import org.brackit.xquery.compiler.optimizer.walker.OrderForGroupBy;
+import org.brackit.xquery.compiler.optimizer.walker.PathDDOElimination;
 import org.brackit.xquery.compiler.optimizer.walker.PredicateConjunction;
 import org.brackit.xquery.compiler.optimizer.walker.SelectPushdown;
 import org.brackit.xquery.compiler.optimizer.walker.UnnestRewriter;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.Cfg;
 
 /**
@@ -88,15 +89,15 @@ public class DefaultOptimizer implements Optimizer {
 	}
 
 	@Override
-	public AST optimize(AST ast) throws QueryException {
+	public AST optimize(StaticContext sctx, AST ast) throws QueryException {
 		for (Stage stage : stages) {
-			ast = stage.rewrite(ast);
+			ast = stage.rewrite(sctx, ast);
 		}
 		return ast;
 	}
 
 	private static class Simplification implements Stage {
-		public AST rewrite(AST ast) {
+		public AST rewrite(StaticContext sctx, AST ast) {
 			ast = new DoSNStepMerger().walk(ast);
 			ast = new OrderForGroupBy().walk(ast);
 			if (VARIABLE_PULLUP) {
@@ -108,14 +109,14 @@ public class DefaultOptimizer implements Optimizer {
 	}
 
 	private static class Pipelining implements Stage {
-		public AST rewrite(AST ast) throws QueryException {
+		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new UnnestRewriter().walk(ast);
 			return ast;
 		}
 	}
 	
 	private static class Reordering implements Stage {
-		public AST rewrite(AST ast) throws QueryException {
+		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new ConjunctionSplitting().walk(ast);
 			ast = new SelectPushdown().walk(ast);
 			ast = new BindingPushup().walk(ast);
@@ -124,7 +125,7 @@ public class DefaultOptimizer implements Optimizer {
 	}
 
 	private static class JoinRecognition implements Stage {
-		public AST rewrite(AST ast) throws QueryException {
+		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new JoinRewriter().walk(ast);
 //			ast = new JoinTree().walk(ast);
 //			ast = new JoinTree().walk(ast);
@@ -135,7 +136,7 @@ public class DefaultOptimizer implements Optimizer {
 	}
 	
 	private static class Unnest implements Stage {
-		public AST rewrite(AST ast) throws QueryException {
+		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new LetBindLift().walk(ast);
 //			ast = new BindingPushupAfterLifting().walk(ast); // 2nd chance for pushing
 			return ast;
@@ -143,8 +144,9 @@ public class DefaultOptimizer implements Optimizer {
 	}
 	
 	private static class Finalize implements Stage {
-		public AST rewrite(AST ast) throws QueryException {
+		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new PredicateConjunction().walk(ast);
+			ast = new PathDDOElimination(sctx).walk(ast);
 			return ast;
 		}
 	}

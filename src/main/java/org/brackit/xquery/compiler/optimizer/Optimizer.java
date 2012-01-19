@@ -31,13 +31,14 @@ import java.util.List;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.module.StaticContext;
 
 /**
  * @author Sebastian Baechle
  *
  */
 public interface Optimizer {
-	public AST optimize(AST ast) throws QueryException;
+	public AST optimize(StaticContext sctx, AST ast) throws QueryException;
 	
 	public List<Stage> getStages();
 }

@@ -27,11 +27,10 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker;
 
-import java.io.File;
-
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.parser.DotUtil;
+import org.brackit.xquery.module.StaticContext;
 
 /**
  * 
@@ -40,9 +39,18 @@ import org.brackit.xquery.compiler.parser.DotUtil;
  */
 public class Walker {
 
+	protected final StaticContext sctx;
 	private AST root;	
 	private int snapshot;
 	private boolean restart;
+
+	public Walker() {
+		this.sctx = null;
+	}
+	
+	public Walker(StaticContext sctx) {
+		this.sctx = sctx;
+	}
 
 	public final AST walk(AST node) {
 		snapshot = 0;

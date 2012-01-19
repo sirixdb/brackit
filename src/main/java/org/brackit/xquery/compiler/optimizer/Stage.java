@@ -29,11 +29,12 @@ package org.brackit.xquery.compiler.optimizer;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.module.StaticContext;
 
 /**
  * @author Sebastian Baechle
  *
  */
 public interface Stage {
-	public AST rewrite(AST ast) throws QueryException;
+	public AST rewrite(StaticContext sctx, AST ast) throws QueryException;
 }

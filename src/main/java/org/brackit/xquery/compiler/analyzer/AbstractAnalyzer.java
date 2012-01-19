@@ -198,7 +198,7 @@ public abstract class AbstractAnalyzer {
 		}
 		AST child = kindTest.getChild(0);
 		ElementType test = elementTest(child);
-		test = (test != null) ? test : schemaElementTest(kindTest);
+		test = (test != null) ? test : schemaElementTest(child);
 		return new DocumentType(test);
 	}
 
@@ -303,6 +303,7 @@ public abstract class AbstractAnalyzer {
 				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 						"PI target name is not a valid NCName: %s", target);
 			}
+			test.getChild(0).setValue(target);
 		}
 		return new PIType(target);
 	}
@@ -373,4 +374,12 @@ public abstract class AbstractAnalyzer {
 				"Undefined namespace prefix: '%s'", prefix);
 	}
 
+	protected String resolvePrefix(String prefix) throws QueryException {
+		String nsURI = sctx.getNamespaces().resolve(prefix);
+		if (nsURI == null) {
+			throw new QueryException(ErrorCode.ERR_UNDEFINED_NAMESPACE_PREFIX,
+					"Undefined namespace prefix: '%s'", prefix);
+		}
+		return nsURI;
+	}
 }

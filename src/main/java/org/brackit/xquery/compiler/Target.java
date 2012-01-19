@@ -58,7 +58,7 @@ public class Target {
 	}
 	
 	public void optimize(Optimizer optimizer) throws QueryException {
-		ast = optimizer.optimize(ast);
+		ast = optimizer.optimize(sctx, ast);
 	}
 	
 	public void translate(Translator translator) throws QueryException {

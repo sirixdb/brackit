@@ -730,7 +730,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 			return false;
 		}
 		// child 0 is the axis
-		nodeTest(expr.getChild(1), expr.getChild(0).getType() == XQ.ATTRIBUTE);
+		nodeTest(expr.getChild(1), expr.getChild(0).getChild(0).getType() == XQ.ATTRIBUTE);
 		referContextItem();
 		openContextItemScope();
 		for (int i = 2; i < expr.getChildCount(); i++) {
@@ -780,7 +780,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 			return new NSWildcardNameTest(kind, test.getStringValue());
 		} else if (test.getType() == XQ.NSNameWildcardTest) {
 			Kind kind = (element) ? Kind.ELEMENT : Kind.ATTRIBUTE;
-			return new NSNameWildcardTest(kind, test.getStringValue());
+			return new NSNameWildcardTest(kind, resolvePrefix(test.getStringValue()));
 		} else {
 			return null;
 		}
@@ -1330,7 +1330,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 
 	protected QNm resolve(QNm name) throws QueryException {
 		if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
-			log.debug("Declare variable " + name);
+			log.debug("Resolve variable " + name);
 		}
 		QNm resolved = variables.resolve(name);
 		if (resolved == null) {
