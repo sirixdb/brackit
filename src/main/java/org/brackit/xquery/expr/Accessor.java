@@ -79,10 +79,7 @@ public abstract class Accessor {
 				throws QueryException {
 			final Stream<? extends Node<?>> subtree = node
 					.getDescendantOrSelf();
-			Kind kind = node.getKind();
-			if ((node.getKind() == Kind.ELEMENT) || (kind == Kind.DOCUMENT)) {
-				subtree.next(); // consume self
-			}
+			subtree.next(); // consume self
 			return subtree;
 		}
 	};
@@ -342,6 +339,10 @@ public abstract class Accessor {
 
 	public Axis getAxis() {
 		return axis;
+	}
+
+	public String toString() {
+		return axis.toString();
 	}
 
 	public abstract Stream<? extends Node<?>> performStep(Node<?> node)
