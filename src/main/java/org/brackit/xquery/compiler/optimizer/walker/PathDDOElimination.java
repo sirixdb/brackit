@@ -65,7 +65,6 @@ public class PathDDOElimination extends Walker {
 			return node;
 		}
 
-		boolean initialIsDescOrDescOS = false;
 		int stepCount = node.getChildCount();		
 		AST step = node.getChild(1);
 		
@@ -81,7 +80,11 @@ public class PathDDOElimination extends Walker {
 					step.setProperty("checkInput", Boolean.TRUE);
 				}
 			}
-			initialIsDescOrDescOS = isDescOrDescOSStep;
+			if (isDescOrDescOSStep) {
+				// be conservative:
+				// stop trying to skip DDO after a '//'
+				return node;
+			}
 		} else if (isBackwardStep(step)) {
 
 		} else {
@@ -93,12 +96,8 @@ public class PathDDOElimination extends Walker {
 			if (isForwardStep(step)) {
 				boolean isDescOrDescOSStep = isDescOrDescOSStep(step);
 				boolean isLastStep = (i + 1 == stepCount);
-				if (!isDescOrDescOSStep) {
+				if ((!isDescOrDescOSStep) || (isLastStep)) {
 					step.setProperty("skipDDO", Boolean.TRUE);
-				} else {
-					if (isLastStep && !initialIsDescOrDescOS) {
-						step.setProperty("skipDDO", Boolean.TRUE);
-					}
 					// be conservative:
 					// stop trying to skip DDO after a '//'
 					break;
