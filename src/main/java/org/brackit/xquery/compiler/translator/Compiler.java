@@ -109,6 +109,7 @@ import org.brackit.xquery.xdm.type.DocumentType;
 import org.brackit.xquery.xdm.type.ElementType;
 import org.brackit.xquery.xdm.type.ItemType;
 import org.brackit.xquery.xdm.type.NSNameWildcardTest;
+import org.brackit.xquery.xdm.type.NSWildcardNameTest;
 import org.brackit.xquery.xdm.type.NodeType;
 import org.brackit.xquery.xdm.type.PIType;
 import org.brackit.xquery.xdm.type.SequenceType;
@@ -1140,7 +1141,11 @@ public class Compiler implements Translator {
 		case XQ.KindTestDocument:
 			return documentTest(node);
 		case XQ.KindTestPi:
-			return new PIType();
+			if (node.getChildCount() == 0) {
+				return new PIType();
+			} else {
+				return new PIType(node.getChild(0).getStringValue());
+			}
 		case XQ.KindTestSchemaElement:
 			return schemaElementTest(node);
 		case XQ.KindTestSchemaAttribute:
@@ -1205,13 +1210,13 @@ public class Compiler implements Translator {
 				return new AttributeType(null);
 			}
 		case XQ.NSWildcardNameTest:
-			return new NSNameWildcardTest(
+			return new NSWildcardNameTest(
 					(axis == Axis.ATTRIBUTE) ? Kind.ATTRIBUTE : Kind.ELEMENT,
 					name.getStringValue());
 		case XQ.NSNameWildcardTest:
 			return new NSNameWildcardTest(
 					(axis == Axis.ATTRIBUTE) ? Kind.ATTRIBUTE : Kind.ELEMENT,
-					name.getStringValue());
+					ctx.getNamespaces().resolve(name.getStringValue()));
 		default:
 			if (axis != Axis.ATTRIBUTE) {
 				return new ElementType((QNm) name.getValue());
