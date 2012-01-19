@@ -27,8 +27,11 @@
  */
 package org.brackit.xquery.util;
 
+import java.util.ArrayList;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -59,6 +62,35 @@ public abstract class ExprUtil implements Expr {
 			return item;
 		} finally {
 			s.close();
+		}
+	}
+
+	public static Sequence materialize(Sequence res) throws QueryException {
+		// TODO
+		// how to decide cleverly if we should materialize or not???
+		if ((res == null) || (res instanceof Item)) {
+			return res;
+		}
+		Iter it = res.iterate();
+		try {
+			Item first = it.next();
+			if (first == null) {
+				return null;
+			}
+			Item second = it.next();
+			if (second == null) {
+				return first;
+			}
+			ArrayList<Item> buffer = new ArrayList<Item>();
+			buffer.add(first);
+			buffer.add(second);
+			Item item;
+			while ((item = it.next()) != null) {
+				buffer.add(item);
+			}
+			return new ItemSequence(buffer.toArray(new Item[buffer.size()]));
+		} finally {
+			it.close();
 		}
 	}
 }

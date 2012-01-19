@@ -36,6 +36,7 @@ import org.brackit.xquery.Tuple;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.sequence.FunctionConversionSequence;
 import org.brackit.xquery.sequence.ItemSequence;
+import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Function;
 import org.brackit.xquery.xdm.Item;
@@ -111,23 +112,7 @@ public class FunctionExpr implements Expr {
 		res = FunctionConversionSequence.asTypedSequence(function
 				.getSignature().getResultType(), res, builtin);
 
-		// TODO
-		// how to decide cleverly if we should materialize or not???
-		if ((res == null) || (res instanceof Item)) {
-			return res;
-		}
-		ArrayList<Item> buffer = new ArrayList<Item>();
-		Iter it = res.iterate();
-		try {
-			Item item;
-			while ((item = it.next()) != null) {
-				buffer.add(item);
-			}
-		} finally {
-			it.close();
-		}
-		res = new ItemSequence(buffer.toArray(new Item[buffer.size()]));
-		return res;
+		return ExprUtil.materialize(res);
 	}
 
 	@Override
