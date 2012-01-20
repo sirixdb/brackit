@@ -27,9 +27,13 @@
  */
 package org.brackit.xquery.expr;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.node.stream.AtomStream;
 import org.brackit.xquery.node.stream.EmptyStream;
+import org.brackit.xquery.node.stream.IteratorStream;
 import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
@@ -65,12 +69,25 @@ public abstract class Accessor {
 		}
 	};
 	public static final Accessor ANCESTOR = new Accessor(Axis.ANCESTOR) {
+		@SuppressWarnings("unchecked")
 		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
 			Node<?> parent = node.getParent();
-			return (parent != null) ? parent.getPath()
-					: new EmptyStream<Node<?>>();
+			if (parent == null) {
+				return new EmptyStream<Node<?>>();
+			}
+			Deque<Node<?>> deque = new ArrayDeque<Node<?>>();
+			Stream<? extends Node<?>> path = parent.getPath();			
+			try {
+				Node<?> a;
+				while ((a = path.next()) != null) {
+					deque.push(a);
+				}
+			} finally {
+				path.close();
+			}			
+			return new IteratorStream(deque.iterator());
 		}
 	};
 	public static final Accessor DESCENDANT = new Accessor(Axis.DESCENDANT) {
@@ -88,12 +105,17 @@ public abstract class Accessor {
 		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
-			if (node.getKind() == Kind.ELEMENT) {
-				return node.getPath();
-			}
-			Node<?> parent = node.getParent();
-			return (parent != null) ? parent.getPath()
-					: new EmptyStream<Node<?>>();
+			Deque<Node<?>> deque = new ArrayDeque<Node<?>>();
+			Stream<? extends Node<?>> path = node.getPath();			
+			try {
+				Node<?> a;
+				while ((a = path.next()) != null) {
+					deque.push(a);
+				}
+			} finally {
+				path.close();
+			}			
+			return new IteratorStream(deque.iterator());
 		}
 	};
 	public static final Accessor DESCENDANT_OR_SELF = new Accessor(

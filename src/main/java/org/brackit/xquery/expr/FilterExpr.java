@@ -33,8 +33,6 @@ import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.Numeric;
-import org.brackit.xquery.sequence.BaseIter;
-import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
@@ -46,141 +44,14 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  * 
  */
-public class FilterExpr implements Expr {
-
-	private class DependentFilterSeq extends LazySequence {
-		private final QueryContext ctx;
-		private final Tuple tuple;
-		private final Sequence s;
-		private final int i;
-		private final IntNumeric inSeqSize;
-
-		public DependentFilterSeq(QueryContext ctx, Tuple tuple, Sequence s,
-				int i) throws QueryException {
-			this.ctx = ctx;
-			this.tuple = tuple;
-			this.s = s;
-			this.i = i;
-			this.inSeqSize = (bindSize[i] ? (s != null) ? s.size() : Int32.ZERO
-					: Int32.ONE);
-		}
-
-		@Override
-		public Iter iterate() {
-			return new BaseIter() {
-				IntNumeric pos;
-				Iter it;
-
-				@Override
-				public Item next() throws QueryException {
-					if (pos == null) {
-						if (s instanceof Item) {
-							pos = Int32.ONE;
-							if (predicate((Item) s)) {
-								// include single item in result
-								return (Item) s;
-							}
-							return null;
-						} else if (s != null) {
-							pos = Int32.ZERO;
-							it = s.iterate();
-						}
-					}
-
-					if (it == null) {
-						return null;
-					}
-
-					Item n;
-					while ((n = it.next()) != null) {
-						pos = pos.inc();
-
-						if (predicate((Item) n)) {
-							// include single item in result
-							return (Item) n;
-						}
-					}
-					it.close();
-					return null;
-				}
-
-				private boolean predicate(Item item) throws QueryException {
-					Tuple current = tuple;
-
-					if (bindCount[i] > 0) {
-						Sequence[] tmp = new Sequence[bindCount[i]];
-						int p = 0;
-						if (bindItem[i]) {
-							tmp[p++] = item;
-						}
-						if (bindPos[i]) {
-							tmp[p++] = pos;
-						}
-						if (bindSize[i]) {
-							tmp[p++] = inSeqSize;
-						}
-						current = current.concat(tmp);
-					}
-
-					Sequence res = filter[i].evaluate(ctx, current);
-
-					if (res == null) {
-						return false;
-					}
-
-					if (res instanceof Numeric) {
-						if (((Numeric) res).cmp(pos) != 0) {
-							return false;
-						}
-					} else {
-						Iter it = res.iterate();
-						try {
-							Item first = it.next();
-							if ((first != null) && (it.next() == null)
-									&& (first instanceof Numeric)
-									&& (((Numeric) first).cmp(pos) != 0)) {
-								return false;
-							}
-						} finally {
-							it.close();
-						}
-
-						if (!res.booleanValue()) {
-							return false;
-						}
-					}
-					return true;
-				}
-
-				@Override
-				public void close() {
-					if (it != null) {
-						it.close();
-					}
-				}
-			};
-		}
-	}
+public class FilterExpr extends PredicateExpr {
 
 	final Expr expr;
-	final Expr[] filter;
-	final boolean[] bindItem;
-	final boolean[] bindPos;
-	final boolean[] bindSize;
-	final int[] bindCount;
 
 	public FilterExpr(Expr expr, Expr[] filter, boolean[] bindItem,
 			boolean[] bindPos, boolean[] bindSize) {
-		this.filter = filter;
+		super(filter, bindItem, bindPos, bindSize);
 		this.expr = expr;
-		this.bindItem = bindItem;
-		this.bindPos = bindPos;
-		this.bindSize = bindSize;
-		this.bindCount = new int[filter.length];
-		for (int i = 0; i < filter.length; i++) {
-			bindCount[i] = (bindItem[i] ? 1 : 0) + (bindPos[i] ? 1 : 0)
-					+ (bindSize[i] ? 1 : 0);
-		}
 	}
 
 	@Override
@@ -193,7 +64,6 @@ public class FilterExpr implements Expr {
 			if (s == null) {
 				return null;
 			}
-
 			// check if the filter predicate is independent
 			// of the context item
 			if (bindCount[i] == 0) {
@@ -279,12 +149,7 @@ public class FilterExpr implements Expr {
 		if (expr.isUpdating()) {
 			return true;
 		}
-		for (int i = 0; i < filter.length; i++) {
-			if (filter[i].isUpdating()) {
-				return true;
-			}
-		}
-		return false;
+		return super.isUpdating();
 	}
 
 	@Override

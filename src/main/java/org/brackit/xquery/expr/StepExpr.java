@@ -31,10 +31,10 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.Numeric;
 import org.brackit.xquery.sequence.BaseIter;
+import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
@@ -50,30 +50,17 @@ import org.brackit.xquery.xdm.type.NodeType;
  * @author Sebastian Baechle
  * 
  */
-public class StepExpr implements Expr {
-	final Accessor axis;
+public class StepExpr extends PredicateExpr {
+	final Accessor accessor;
 	final Expr input;
 	final NodeType test;
-	final Expr[] filter;
-	final boolean[] bindItem;
-	final boolean[] bindPos;
-	final boolean[] bindSize;
-	final int[] bindCount;
 
-	public StepExpr(Accessor axis, NodeType test, Expr input, Expr[] filter,
+	public StepExpr(Accessor accessor, NodeType test, Expr input, Expr[] filter,
 			boolean[] bindItem, boolean[] bindPos, boolean[] bindSize) {
-		this.axis = axis;
+		super(filter, bindItem, bindPos, bindSize);
+		this.accessor = accessor;
 		this.test = test;
 		this.input = input;
-		this.filter = filter;
-		this.bindItem = bindItem;
-		this.bindPos = bindPos;
-		this.bindSize = bindSize;
-		this.bindCount = new int[filter.length];
-		for (int i = 0; i < filter.length; i++) {
-			bindCount[i] = (bindItem[i] ? 1 : 0) + (bindPos[i] ? 1 : 0)
-					+ (bindSize[i] ? 1 : 0);
-		}
 	}
 
 	@Override
@@ -96,6 +83,8 @@ public class StepExpr implements Expr {
 					((Item) node).itemType());
 		}
 		Sequence s = new AxisStepSequence((Node<?>) node);
+		boolean backwardAxis = !accessor.getAxis().isForward();
+		boolean reversed = false;
 
 		for (int i = 0; i < filter.length; i++) {
 			// nothing to filter
@@ -130,10 +119,32 @@ public class StepExpr implements Expr {
 				}
 			} else {
 				// the filter predicate is dependent on the context item
+				if ((backwardAxis) && (!reversed) && (bindPos[i])) {
+					s = reverse(s);
+					reversed = true;
+				}
 				s = new DependentFilterSeq(ctx, tuple, s, i);
 			}
 		}
+		
+		if (reversed) {
+			s = reverse(s);
+		}
+		
 		return s;
+	}
+
+	private Sequence reverse(Sequence s) throws QueryException {
+		Item[] items = new Item[s.size().intValue()];
+		Item item = null;
+		Iter iter = s.iterate();
+
+		int i = items.length - 1;
+		while ((item = iter.next()) != null) {
+			items[i--] = item;
+		}
+
+		return new ItemSequence(items);
 	}
 
 	private class AxisStepSequence extends LazySequence {
@@ -160,7 +171,7 @@ public class StepExpr implements Expr {
 		@Override
 		public Item next() throws QueryException {
 			if (nextS == null) {
-				nextS = axis.performStep(node, test);
+				nextS = accessor.performStep(node, test);
 			}
 			return nextS.next();
 		}
@@ -170,120 +181,6 @@ public class StepExpr implements Expr {
 			if (nextS != null) {
 				nextS.close();
 			}
-		}
-	}
-
-	private class DependentFilterSeq extends LazySequence {
-		private final QueryContext ctx;
-		private final Tuple tuple;
-		private final Sequence s;
-		private final int i;
-		private final IntNumeric inSeqSize;
-
-		public DependentFilterSeq(QueryContext ctx, Tuple tuple, Sequence s,
-				int i) throws QueryException {
-			this.ctx = ctx;
-			this.tuple = tuple;
-			this.s = s;
-			this.i = i;
-			this.inSeqSize = (bindSize[i] ? (s != null) ? s.size() : Int32.ZERO
-					: Int32.ONE);
-		}
-
-		@Override
-		public Iter iterate() {
-			return new BaseIter() {
-				IntNumeric pos;
-				Iter it;
-
-				@Override
-				public Item next() throws QueryException {
-					if (pos == null) {
-						if (s instanceof Item) {
-							pos = Int32.ONE;
-							if (predicate((Item) s)) {
-								// include single item in result
-								return (Item) s;
-							}
-							return null;
-						} else if (s != null) {
-							pos = Int32.ZERO;
-							it = s.iterate();
-						}
-					}
-
-					if (it == null) {
-						return null;
-					}
-
-					Item n;
-					while ((n = it.next()) != null) {
-						pos = pos.inc();
-
-						if (predicate((Item) n)) {
-							// include single item in result
-							return (Item) n;
-						}
-					}
-					it.close();
-					return null;
-				}
-
-				private boolean predicate(Item item) throws QueryException {
-					Tuple current = tuple;
-
-					if (bindCount[i] > 0) {
-						Sequence[] tmp = new Sequence[bindCount[i]];
-						int p = 0;
-						if (bindItem[i]) {
-							tmp[p++] = item;
-						}
-						if (bindPos[i]) {
-							tmp[p++] = pos;
-						}
-						if (bindSize[i]) {
-							tmp[p++] = inSeqSize;
-						}
-						current = current.concat(tmp);
-					}
-
-					Sequence res = filter[i].evaluate(ctx, current);
-
-					if (res == null) {
-						return false;
-					}
-
-					if (res instanceof Numeric) {
-						if (((Numeric) res).cmp(pos) != 0) {
-							return false;
-						}
-					} else {
-						Iter it = res.iterate();
-						try {
-							Item first = it.next();
-							if ((first != null) && (it.next() == null)
-									&& (first instanceof Numeric)
-									&& (((Numeric) first).cmp(pos) != 0)) {
-								return false;
-							}
-						} finally {
-							it.close();
-						}
-
-						if (!res.booleanValue()) {
-							return false;
-						}
-					}
-					return true;
-				}
-
-				@Override
-				public void close() {
-					if (it != null) {
-						it.close();
-					}
-				}
-			};
 		}
 	}
 
@@ -298,12 +195,7 @@ public class StepExpr implements Expr {
 		if (input.isUpdating()) {
 			return true;
 		}
-		for (Expr e : filter) {
-			if (e.isUpdating()) {
-				return true;
-			}
-		}
-		return false;
+		return super.isUpdating();
 	}
 
 	@Override
@@ -312,7 +204,7 @@ public class StepExpr implements Expr {
 	}
 
 	public String toString() {
-		StringBuilder s = new StringBuilder(axis.toString());
+		StringBuilder s = new StringBuilder(accessor.toString());
 		s.append("::");
 		s.append(test.toString());
 		for (int i = 0; i < filter.length; i++) {
