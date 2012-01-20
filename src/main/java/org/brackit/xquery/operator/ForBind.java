@@ -107,10 +107,15 @@ public class ForBind implements Operator {
 					}
 					it.close();
 					it = null;
-					Tuple tmp = (allowingEmpty) ? emit(t, null)
-							: (check >= 0) ? passthroughUncheck(t, check) : null;
-					t = null;
-					return tmp;
+					if (allowingEmpty) {
+						Tuple tmp = emit(i, null);
+						t = null;
+						return tmp;
+					} else if (check >= 0) {
+						Tuple tmp = passthroughUncheck(t, check);
+						t = null;
+						return tmp;
+					}
 				}
 			}
 		}
