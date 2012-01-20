@@ -982,49 +982,6 @@ public class Compiler implements Translator {
 		return e1;
 	}
 
-	// /*
-	// * The compilation of path expressions is a bit tricky.
-	// * A path of the form E1/E2/../EN must be evaluated with
-	// * "left-deep semantics", i.e., (..(E1/E2)/..)/EN and
-	// * each step EI needs to have the current context item
-	// * (focus, $fs:dot) bound, from the preceding step EI-1.
-	// *
-	// * We compile this with a nested forward-recursion, i.e., from
-	// * left to right. This way, we can easily bind and unbind
-	// * the context item before and after the recursion respectively.
-	// */
-	// protected Expr pathExpr(AST node, int pos, Expr e1) throws QueryException
-	// {
-	// AST child = node.getChild(pos);
-	// int childCount = node.getChildCount();
-	//
-	// if (pos + 1 == childCount) {
-	// return e1;
-	// } else {
-	// Binding itemBinding = table.bind(Namespaces.FS_DOT,
-	// SequenceType.NODE);
-	// Binding posBinding = table.bind(Namespaces.FS_POSITION,
-	// SequenceType.INTEGER);
-	// Binding sizeBinding = table.bind(Namespaces.FS_LAST,
-	// SequenceType.INTEGER);
-	// Expr e2 = expr(node.getChild(pos), true);
-	//
-	// table.unbind();
-	// table.unbind();
-	// table.unbind();
-	//
-	// boolean bindItem = itemBinding.isReferenced();
-	// boolean bindPos = posBinding.isReferenced();
-	// boolean bindSize = sizeBinding.isReferenced();
-	// AST e2Step = node.getChild(pos + 1);
-	// boolean lastStep = (pos + 2 == childCount);
-	// boolean skipDDO = e2Step.checkProperty("skipDDO");
-	// boolean checkInput = e2Step.checkProperty("checkInput");
-	// Expr expr = new PathStepExpr(e1, e2, bindItem, bindPos,
-	// bindSize, lastStep, skipDDO, checkInput);
-	// }
-	// }
-
 	protected Expr stepExpr(AST node) throws QueryException {
 		AST child = node.getChild(0);
 		Accessor axis;
