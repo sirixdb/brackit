@@ -54,23 +54,26 @@ public class StepExpr implements Expr {
 	final Accessor axis;
 	final Expr input;
 	final NodeType test;
-	final Expr[] predicates;
-	final boolean bindItem;
-	final boolean bindPos;
-	final boolean bindSize;
-	final int bindCount;
+	final Expr[] filter;
+	final boolean[] bindItem;
+	final boolean[] bindPos;
+	final boolean[] bindSize;
+	final int[] bindCount;
 
-	public StepExpr(Accessor axis, NodeType test, Expr input,
-			Expr[] predicates, boolean bindItem, boolean bindPos,
-			boolean bindSize) {
+	public StepExpr(Accessor axis, NodeType test, Expr input, Expr[] filter,
+			boolean[] bindItem, boolean[] bindPos, boolean[] bindSize) {
 		this.axis = axis;
 		this.test = test;
 		this.input = input;
-		this.predicates = predicates;
+		this.filter = filter;
 		this.bindItem = bindItem;
 		this.bindPos = bindPos;
 		this.bindSize = bindSize;
-		bindCount = (bindItem ? 1 : 0) + (bindPos ? 1 : 0) + (bindSize ? 1 : 0);
+		this.bindCount = new int[filter.length];
+		for (int i = 0; i < filter.length; i++) {
+			bindCount[i] = (bindItem[i] ? 1 : 0) + (bindPos[i] ? 1 : 0)
+					+ (bindSize[i] ? 1 : 0);
+		}
 	}
 
 	@Override
@@ -89,114 +92,77 @@ public class StepExpr implements Expr {
 		if (!(node instanceof Node<?>)) {
 			throw new QueryException(
 					ErrorCode.ERR_PATH_STEP_CONTEXT_ITEM_IS_NOT_A_NODE,
-					"Context item in axis step is not a node: %s", ((Item) node).itemType());
+					"Context item in axis step is not a node: %s",
+					((Item) node).itemType());
 		}
-		return new AxisStepSequence(ctx, tuple, (Node<?>) node);
+		Sequence s = new AxisStepSequence((Node<?>) node);
+
+		for (int i = 0; i < filter.length; i++) {
+			// nothing to filter
+			if (s == null) {
+				return null;
+			}
+
+			// check if the filter predicate is independent
+			// of the context item
+			if (bindCount[i] == 0) {
+				Sequence fs = filter[i].evaluate(ctx, tuple);
+				if (fs == null) {
+					return null;
+				} else if (fs instanceof Numeric) {
+					IntNumeric pos = ((Numeric) fs).asIntNumeric();
+					s = (pos != null) ? s.get(pos) : null;
+				} else {
+					Iter it = fs.iterate();
+					try {
+						Item first = it.next();
+						if ((first != null) && (it.next() == null)
+								&& (first instanceof Numeric)) {
+							IntNumeric pos = ((Numeric) first).asIntNumeric();
+							return (pos != null) ? s.get(pos) : null;
+						}
+					} finally {
+						it.close();
+					}
+					if (!fs.booleanValue()) {
+						return null;
+					}
+				}
+			} else {
+				// the filter predicate is dependent on the context item
+				s = new DependentFilterSeq(ctx, tuple, s, i);
+			}
+		}
+		return s;
 	}
 
 	private class AxisStepSequence extends LazySequence {
 		final Node<?> n;
-		final QueryContext ctx;
-		final Tuple tuple;
 
-		AxisStepSequence(QueryContext ctx, Tuple tuple, Node<?> n) {
+		AxisStepSequence(Node<?> n) {
 			this.n = n;
-			this.ctx = ctx;
-			this.tuple = tuple;
 		}
 
 		@Override
 		public Iter iterate() {
-			return new AxisStepSequenceIter(ctx, tuple, n);
+			return new AxisStepSequenceIter(n);
 		}
 	}
 
 	private class AxisStepSequenceIter extends BaseIter {
-		final QueryContext ctx;
-		final Tuple tuple;
-		final Node<?> currentNode;
-
-		IntNumeric inSeqSize = Int32.ZERO;
-		IntNumeric pos = Int32.ZERO;
-
+		final Node<?> node;
 		Stream<? extends Node<?>> nextS;
 
-		AxisStepSequenceIter(QueryContext ctx, Tuple tuple, Node<?> n) {
-			this.ctx = ctx;
-			this.tuple = tuple;
-			this.currentNode = n;
+		AxisStepSequenceIter(Node<?> node) {
+			this.node = node;
 		}
 
 		@Override
 		public Item next() throws QueryException {
 			if (nextS == null) {
-				nextS = axis.performStep(currentNode, test);
-				pos = Int32.ZERO;
-				inSeqSize = Int32.ZERO;
-
-				if (bindSize) {
-					try {
-						while (nextS.next() != null) {
-							inSeqSize = inSeqSize.inc();
-						}
-					} finally {
-						nextS.close();
-					}
-					nextS = axis.performStep(currentNode, test);
-				}
+				nextS = axis.performStep(node, test);
 			}
-			Node<?> res;
-			while ((res = nextS.next()) != null) {
-				if ((predicates.length == 0) || (predicate(res))) {
-					return res;
-				}
-			}
-			return null;
-		}
-
-		private boolean predicate(Item item) throws QueryException {
-			Tuple current = tuple;
-
-			if (bindCount > 0) {
-				Sequence[] tmp = new Sequence[bindCount];
-				int p = 0;
-				if (bindItem) {
-					tmp[p++] = item;
-				}
-				if (bindPos) {
-					tmp[p++] = (pos = pos.inc());
-				}
-				if (bindSize) {
-					tmp[p++] = inSeqSize;
-				}
-				current = current.concat(tmp);
-			}
-
-			for (int i = 0; i < predicates.length; i++) {
-				pos = (bindPos) ? pos : pos.inc();
-				Sequence res = predicates[i].evaluate(ctx, current);
-				if (res == null) {
-					return false;
-				}
-				if (res instanceof Numeric) {
-					return (((Numeric) res).cmp(pos) == 0);
-				}
-				Iter it = res.iterate();
-				try {
-					Item first = it.next();
-					if ((first != null) && (it.next() == null)
-							&& (first instanceof Numeric)
-							&& (((Numeric) first).cmp(pos) == 0)) {
-						return false;
-					}
-				} finally {
-					it.close();
-				}
-				if (!res.booleanValue()) {
-					return false;
-				}
-			}
-			return true;
+			return nextS.next();
 		}
 
 		@Override
@@ -204,6 +170,120 @@ public class StepExpr implements Expr {
 			if (nextS != null) {
 				nextS.close();
 			}
+		}
+	}
+
+	private class DependentFilterSeq extends LazySequence {
+		private final QueryContext ctx;
+		private final Tuple tuple;
+		private final Sequence s;
+		private final int i;
+		private final IntNumeric inSeqSize;
+
+		public DependentFilterSeq(QueryContext ctx, Tuple tuple, Sequence s,
+				int i) throws QueryException {
+			this.ctx = ctx;
+			this.tuple = tuple;
+			this.s = s;
+			this.i = i;
+			this.inSeqSize = (bindSize[i] ? (s != null) ? s.size() : Int32.ZERO
+					: Int32.ONE);
+		}
+
+		@Override
+		public Iter iterate() {
+			return new BaseIter() {
+				IntNumeric pos;
+				Iter it;
+
+				@Override
+				public Item next() throws QueryException {
+					if (pos == null) {
+						if (s instanceof Item) {
+							pos = Int32.ONE;
+							if (predicate((Item) s)) {
+								// include single item in result
+								return (Item) s;
+							}
+							return null;
+						} else if (s != null) {
+							pos = Int32.ZERO;
+							it = s.iterate();
+						}
+					}
+
+					if (it == null) {
+						return null;
+					}
+
+					Item n;
+					while ((n = it.next()) != null) {
+						pos = pos.inc();
+
+						if (predicate((Item) n)) {
+							// include single item in result
+							return (Item) n;
+						}
+					}
+					it.close();
+					return null;
+				}
+
+				private boolean predicate(Item item) throws QueryException {
+					Tuple current = tuple;
+
+					if (bindCount[i] > 0) {
+						Sequence[] tmp = new Sequence[bindCount[i]];
+						int p = 0;
+						if (bindItem[i]) {
+							tmp[p++] = item;
+						}
+						if (bindPos[i]) {
+							tmp[p++] = pos;
+						}
+						if (bindSize[i]) {
+							tmp[p++] = inSeqSize;
+						}
+						current = current.concat(tmp);
+					}
+
+					Sequence res = filter[i].evaluate(ctx, current);
+
+					if (res == null) {
+						return false;
+					}
+
+					if (res instanceof Numeric) {
+						if (((Numeric) res).cmp(pos) != 0) {
+							return false;
+						}
+					} else {
+						Iter it = res.iterate();
+						try {
+							Item first = it.next();
+							if ((first != null) && (it.next() == null)
+									&& (first instanceof Numeric)
+									&& (((Numeric) first).cmp(pos) != 0)) {
+								return false;
+							}
+						} finally {
+							it.close();
+						}
+
+						if (!res.booleanValue()) {
+							return false;
+						}
+					}
+					return true;
+				}
+
+				@Override
+				public void close() {
+					if (it != null) {
+						it.close();
+					}
+				}
+			};
 		}
 	}
 
@@ -218,7 +298,7 @@ public class StepExpr implements Expr {
 		if (input.isUpdating()) {
 			return true;
 		}
-		for (Expr e : predicates) {
+		for (Expr e : filter) {
 			if (e.isUpdating()) {
 				return true;
 			}
@@ -235,9 +315,9 @@ public class StepExpr implements Expr {
 		StringBuilder s = new StringBuilder(axis.toString());
 		s.append("::");
 		s.append(test.toString());
-		for (int i = 0; i < predicates.length; i++) {
+		for (int i = 0; i < filter.length; i++) {
 			s.append('[');
-			s.append(predicates[i]);
+			s.append(filter[i]);
 			s.append(']');
 		}
 		return s.toString();
