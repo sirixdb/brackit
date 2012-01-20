@@ -30,7 +30,7 @@ package org.brackit.xquery.function.fn;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.Int32;
+import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
@@ -70,7 +70,7 @@ public class CodepointsToString extends AbstractFunction {
 		StringBuilder sb = new StringBuilder();
 
 		while (item != null) {
-			int codePoint = ((Int32) item).intValue();
+			int codePoint = ((IntNumeric) item).intValue();
 
 			if ((codePoint < 0x20 || codePoint > 0xD7FF) && codePoint != 0x9
 					&& codePoint != 0xA && codePoint != 0xD
