@@ -179,8 +179,8 @@ public class TypedSequence extends LazySequence {
 			if (!itemType.matches((Item) s)) {
 				throw new QueryException(
 						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-						"Item of invalid type in typed sequence (expected %s): %s",
-						itemType, s);
+						"Item of invalid type %s in typed sequence (expected %s): %s",
+						((Item) s).itemType(), itemType, s);
 			}
 
 			return s;
@@ -204,8 +204,8 @@ public class TypedSequence extends LazySequence {
 			if (!itemType.matches(item)) {
 				throw new QueryException(
 						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-						"Item of invalid type in typed sequence (expected %s): %s",
-						itemType, item);
+						"Item of invalid type %s in typed sequence (expected %s): %s",
+						item.itemType(), itemType, item);
 			}
 
 			return item;
@@ -228,8 +228,8 @@ public class TypedSequence extends LazySequence {
 			if (!itemType.matches(item)) {
 				throw new QueryException(
 						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-						"Item of invalid type in typed sequence (expected %s): %s",
-						itemType, item);
+						"Item of invalid type %s in typed sequence (expected %s): %s",
+						item.itemType(), itemType, item);
 			}
 
 			return item;

@@ -180,8 +180,8 @@ public class FunctionConversionSequence extends LazySequence {
 			if (!iType.matches(item)) {
 				throw new QueryException(
 						ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-						"Item of invalid type in typed sequence (expected %s): %s",
-						iType, item);
+						"Item of invalid type %s in typed sequence (expected %s): %s",
+						item.itemType(), iType, item);
 			}
 
 			return item;
