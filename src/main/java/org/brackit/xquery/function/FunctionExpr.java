@@ -118,24 +118,7 @@ public class FunctionExpr implements Expr {
 	@Override
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		Sequence res = evaluate(ctx, tuple);
-		if ((res == null) || (res instanceof Item)) {
-			return (Item) res;
-		}
-		Iter s = res.iterate();
-		try {
-			Item item = s.next();
-			if (item == null) {
-				return null;
-			}
-
-			if (s.next() != null) {
-				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
-			}
-			return item;
-		} finally {
-			s.close();
-		}
+		return ExprUtil.asItem(evaluate(ctx, tuple));
 	}
 
 	@Override
