@@ -60,10 +60,12 @@ public class ExtractFLWOR extends Walker {
 			if (isFLWORClause(anc)) {
 				break;
 			}
-			if ((anc.getType() == XQ.PathExpr)
-					|| (anc.getType() == XQ.StepExpr)
-					|| (anc.getType() == XQ.FilterExpr)
-					|| (anc.getType() == XQ.MapExpr)) {
+			int aType = anc.getType();
+			if ((aType == XQ.PathExpr)
+					|| (aType == XQ.StepExpr)
+					|| (aType == XQ.FilterExpr)
+					|| (aType == XQ.MapExpr)
+					|| (aType == XQ.IfExpr)) {
 				return node;
 			}
 			anc = anc.getParent();
