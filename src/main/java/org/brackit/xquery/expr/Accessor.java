@@ -1,6 +1,6 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -10,15 +10,15 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -27,9 +27,13 @@
  */
 package org.brackit.xquery.expr;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.node.stream.AtomStream;
 import org.brackit.xquery.node.stream.EmptyStream;
+import org.brackit.xquery.node.stream.IteratorStream;
 import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
@@ -65,12 +69,25 @@ public abstract class Accessor {
 		}
 	};
 	public static final Accessor ANCESTOR = new Accessor(Axis.ANCESTOR) {
+		@SuppressWarnings("unchecked")
 		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
 			Node<?> parent = node.getParent();
-			return (parent != null) ? parent.getPath()
-					: new EmptyStream<Node<?>>();
+			if (parent == null) {
+				return new EmptyStream<Node<?>>();
+			}
+			Deque<Node<?>> deque = new ArrayDeque<Node<?>>();
+			Stream<? extends Node<?>> path = parent.getPath();			
+			try {
+				Node<?> a;
+				while ((a = path.next()) != null) {
+					deque.push(a);
+				}
+			} finally {
+				path.close();
+			}			
+			return new IteratorStream(deque.iterator());
 		}
 	};
 	public static final Accessor DESCENDANT = new Accessor(Axis.DESCENDANT) {
@@ -79,9 +96,7 @@ public abstract class Accessor {
 				throws QueryException {
 			final Stream<? extends Node<?>> subtree = node
 					.getDescendantOrSelf();
-			if (node.getKind() == Kind.ELEMENT) {
-				subtree.next(); // consume self
-			}
+			subtree.next(); // consume self
 			return subtree;
 		}
 	};
@@ -90,12 +105,17 @@ public abstract class Accessor {
 		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
-			if (node.getKind() == Kind.ELEMENT) {
-				return node.getPath();
-			}
-			Node<?> parent = node.getParent();
-			return (parent != null) ? parent.getPath()
-					: new EmptyStream<Node<?>>();
+			Deque<Node<?>> deque = new ArrayDeque<Node<?>>();
+			Stream<? extends Node<?>> path = node.getPath();			
+			try {
+				Node<?> a;
+				while ((a = path.next()) != null) {
+					deque.push(a);
+				}
+			} finally {
+				path.close();
+			}			
+			return new IteratorStream(deque.iterator());
 		}
 	};
 	public static final Accessor DESCENDANT_OR_SELF = new Accessor(
@@ -341,6 +361,10 @@ public abstract class Accessor {
 
 	public Axis getAxis() {
 		return axis;
+	}
+
+	public String toString() {
+		return axis.toString();
 	}
 
 	public abstract Stream<? extends Node<?>> performStep(Node<?> node)

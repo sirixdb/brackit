@@ -1,6 +1,6 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -10,15 +10,15 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -63,6 +63,12 @@ public class BaseResolver implements ModuleResolver {
 		}
 		list.add(module);
 	}
+	
+	public void unregister(String targetNSUri) {
+		if (modules != null) {
+			modules.remove(targetNSUri);
+		}
+	}
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -75,17 +81,26 @@ public class BaseResolver implements ModuleResolver {
 	public List<String> load(String uri, String[] locations) throws IOException {
 		List<String> loaded = new LinkedList<String>();
 		for (String loc : locations) {
-			try {
-				InputStreamReader in = new InputStreamReader(URIHandler
-						.getInputStream(new URI(loc)));
-				CharBuffer buf = CharBuffer.allocate(1024 * 521);
-				int read = in.read(buf);
-				in.close();
-				loaded.add(buf.rewind().toString());
-			} catch (URISyntaxException e) {
-				// location URI's must not be valid -> ignore
+			String s = load(loc);
+			if (s != null) {
+				loaded.add(s);
 			}
 		}
 		return loaded;
+	}
+
+	protected String load(String loc) throws IOException {
+		String s = null;
+		try {
+			InputStreamReader in = new InputStreamReader(
+					URIHandler.getInputStream(new URI(loc)));
+			CharBuffer buf = CharBuffer.allocate(1024 * 521);
+			int read = in.read(buf);
+			in.close();
+			s = buf.rewind().toString();
+		} catch (URISyntaxException e) {
+			// location URI's must not be valid -> ignore
+		}
+		return s;
 	}
 }

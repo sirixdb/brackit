@@ -1,6 +1,6 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -10,15 +10,15 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -31,10 +31,10 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.Numeric;
 import org.brackit.xquery.sequence.BaseIter;
+import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
@@ -50,27 +50,17 @@ import org.brackit.xquery.xdm.type.NodeType;
  * @author Sebastian Baechle
  * 
  */
-public class StepExpr implements Expr {
-	final Accessor axis;
+public class StepExpr extends PredicateExpr {
+	final Accessor accessor;
 	final Expr input;
 	final NodeType test;
-	final Expr[] predicates;
-	final boolean bindItem;
-	final boolean bindPos;
-	final boolean bindSize;
-	final int bindCount;
 
-	public StepExpr(Accessor axis, NodeType test, Expr input,
-			Expr[] predicates, boolean bindItem, boolean bindPos,
-			boolean bindSize) {
-		this.axis = axis;
+	public StepExpr(Accessor accessor, NodeType test, Expr input, Expr[] filter,
+			boolean[] bindItem, boolean[] bindPos, boolean[] bindSize) {
+		super(filter, bindItem, bindPos, bindSize);
+		this.accessor = accessor;
 		this.test = test;
 		this.input = input;
-		this.predicates = predicates;
-		this.bindItem = bindItem;
-		this.bindPos = bindPos;
-		this.bindSize = bindSize;
-		bindCount = (bindItem ? 1 : 0) + (bindPos ? 1 : 0) + (bindSize ? 1 : 0);
 	}
 
 	@Override
@@ -89,114 +79,101 @@ public class StepExpr implements Expr {
 		if (!(node instanceof Node<?>)) {
 			throw new QueryException(
 					ErrorCode.ERR_PATH_STEP_CONTEXT_ITEM_IS_NOT_A_NODE,
-					"Context item in axis step is not a node: %s", ((Item) node).itemType());
+					"Context item in axis step is not a node: %s",
+					((Item) node).itemType());
 		}
-		return new AxisStepSequence(ctx, tuple, (Node<?>) node);
+		Sequence s = new AxisStepSequence((Node<?>) node);
+		boolean backwardAxis = !accessor.getAxis().isForward();
+		boolean reversed = false;
+
+		for (int i = 0; i < filter.length; i++) {
+			// nothing to filter
+			if (s == null) {
+				return null;
+			}
+
+			// check if the filter predicate is independent
+			// of the context item
+			if (bindCount[i] == 0) {
+				Sequence fs = filter[i].evaluate(ctx, tuple);
+				if (fs == null) {
+					return null;
+				} else if (fs instanceof Numeric) {
+					IntNumeric pos = ((Numeric) fs).asIntNumeric();
+					s = (pos != null) ? s.get(pos) : null;
+				} else {
+					Iter it = fs.iterate();
+					try {
+						Item first = it.next();
+						if ((first != null) && (it.next() == null)
+								&& (first instanceof Numeric)) {
+							IntNumeric pos = ((Numeric) first).asIntNumeric();
+							return (pos != null) ? s.get(pos) : null;
+						}
+					} finally {
+						it.close();
+					}
+					if (!fs.booleanValue()) {
+						return null;
+					}
+				}
+			} else {
+				// the filter predicate is dependent on the context item
+				if ((backwardAxis) && (!reversed) && (bindPos[i])) {
+					s = reverse(s);
+					reversed = true;
+				}
+				s = new DependentFilterSeq(ctx, tuple, s, i);
+			}
+		}
+		
+		if (reversed) {
+			s = reverse(s);
+		}
+		
+		return s;
+	}
+
+	private Sequence reverse(Sequence s) throws QueryException {
+		Item[] items = new Item[s.size().intValue()];
+		Item item = null;
+		Iter iter = s.iterate();
+
+		int i = items.length - 1;
+		while ((item = iter.next()) != null) {
+			items[i--] = item;
+		}
+
+		return new ItemSequence(items);
 	}
 
 	private class AxisStepSequence extends LazySequence {
 		final Node<?> n;
-		final QueryContext ctx;
-		final Tuple tuple;
 
-		AxisStepSequence(QueryContext ctx, Tuple tuple, Node<?> n) {
+		AxisStepSequence(Node<?> n) {
 			this.n = n;
-			this.ctx = ctx;
-			this.tuple = tuple;
 		}
 
 		@Override
 		public Iter iterate() {
-			return new AxisStepSequenceIter(ctx, tuple, n);
+			return new AxisStepSequenceIter(n);
 		}
 	}
 
 	private class AxisStepSequenceIter extends BaseIter {
-		final QueryContext ctx;
-		final Tuple tuple;
-		final Node<?> currentNode;
-
-		IntNumeric inSeqSize = Int32.ZERO;
-		IntNumeric pos = Int32.ZERO;
-
+		final Node<?> node;
 		Stream<? extends Node<?>> nextS;
 
-		AxisStepSequenceIter(QueryContext ctx, Tuple tuple, Node<?> n) {
-			this.ctx = ctx;
-			this.tuple = tuple;
-			this.currentNode = n;
+		AxisStepSequenceIter(Node<?> node) {
+			this.node = node;
 		}
 
 		@Override
 		public Item next() throws QueryException {
 			if (nextS == null) {
-				nextS = axis.performStep(currentNode, test);
-				pos = Int32.ZERO;
-				inSeqSize = Int32.ZERO;
-
-				if (bindSize) {
-					try {
-						while (nextS.next() != null) {
-							inSeqSize = inSeqSize.inc();
-						}
-					} finally {
-						nextS.close();
-					}
-					nextS = axis.performStep(currentNode, test);
-				}
+				nextS = accessor.performStep(node, test);
 			}
-			Node<?> res;
-			while ((res = nextS.next()) != null) {
-				if ((predicates.length == 0) || (predicate(res))) {
-					return res;
-				}
-			}
-			return null;
-		}
-
-		private boolean predicate(Item item) throws QueryException {
-			Tuple current = tuple;
-
-			if (bindCount > 0) {
-				Sequence[] tmp = new Sequence[bindCount];
-				int p = 0;
-				if (bindItem) {
-					tmp[p++] = item;
-				}
-				if (bindPos) {
-					tmp[p++] = (pos = pos.inc());
-				}
-				if (bindSize) {
-					tmp[p++] = inSeqSize;
-				}
-				current = current.concat(tmp);
-			}
-
-			for (int i = 0; i < predicates.length; i++) {
-				pos = (bindPos) ? pos : pos.inc();
-				Sequence res = predicates[i].evaluate(ctx, current);
-				if (res == null) {
-					return false;
-				}
-				if (res instanceof Numeric) {
-					return (((Numeric) res).cmp(pos) == 0);
-				}
-				Iter it = res.iterate();
-				try {
-					Item first = it.next();
-					if ((first != null) && (it.next() == null)
-							&& (first instanceof Numeric)
-							&& (((Numeric) first).cmp(pos) == 0)) {
-						return false;
-					}
-				} finally {
-					it.close();
-				}
-				if (!res.booleanValue()) {
-					return false;
-				}
-			}
-			return true;
+			return nextS.next();
 		}
 
 		@Override
@@ -218,12 +195,7 @@ public class StepExpr implements Expr {
 		if (input.isUpdating()) {
 			return true;
 		}
-		for (Expr e : predicates) {
-			if (e.isUpdating()) {
-				return true;
-			}
-		}
-		return false;
+		return super.isUpdating();
 	}
 
 	@Override
@@ -232,12 +204,12 @@ public class StepExpr implements Expr {
 	}
 
 	public String toString() {
-		StringBuilder s = new StringBuilder(axis.toString());
+		StringBuilder s = new StringBuilder(accessor.toString());
 		s.append("::");
 		s.append(test.toString());
-		for (int i = 0; i < predicates.length; i++) {
+		for (int i = 0; i < filter.length; i++) {
 			s.append('[');
-			s.append(predicates[i]);
+			s.append(filter[i]);
 			s.append(']');
 		}
 		return s.toString();

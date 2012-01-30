@@ -1,6 +1,6 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -10,15 +10,15 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -36,6 +36,7 @@ import org.brackit.xquery.Tuple;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.sequence.FunctionConversionSequence;
 import org.brackit.xquery.sequence.ItemSequence;
+import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Function;
 import org.brackit.xquery.xdm.Item;
@@ -111,46 +112,13 @@ public class FunctionExpr implements Expr {
 		res = FunctionConversionSequence.asTypedSequence(function
 				.getSignature().getResultType(), res, builtin);
 
-		// TODO
-		// how to decide cleverly if we should materialize or not???
-		if ((res == null) || (res instanceof Item)) {
-			return res;
-		}
-		ArrayList<Item> buffer = new ArrayList<Item>();
-		Iter it = res.iterate();
-		try {
-			Item item;
-			while ((item = it.next()) != null) {
-				buffer.add(item);
-			}
-		} finally {
-			it.close();
-		}
-		res = new ItemSequence(buffer.toArray(new Item[buffer.size()]));
-		return res;
+		return ExprUtil.materialize(res);
 	}
 
 	@Override
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		Sequence res = evaluate(ctx, tuple);
-		if ((res == null) || (res instanceof Item)) {
-			return (Item) res;
-		}
-		Iter s = res.iterate();
-		try {
-			Item item = s.next();
-			if (item == null) {
-				return null;
-			}
-
-			if (s.next() != null) {
-				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
-			}
-			return item;
-		} finally {
-			s.close();
-		}
+		return ExprUtil.asItem(evaluate(ctx, tuple));
 	}
 
 	@Override

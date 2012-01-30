@@ -1,6 +1,6 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -10,15 +10,15 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -56,18 +56,8 @@ public class XQParserTest extends XQueryBaseTest {
 	}
 
 	@Test
-	public void emptyElementWithWS() throws Exception {
-		new XQParser(" < a /> ").parse();
-	}
-
-	@Test
 	public void nestedElements() throws Exception {
 		new XQParser("<a><b></b></a>").parse();
-	}
-
-	@Test
-	public void nestedElementsWithWS() throws Exception {
-		new XQParser(" < a> <  b> </b  \n></ \n\na>").parse();
 	}
 
 	@Test
@@ -79,24 +69,26 @@ public class XQParserTest extends XQueryBaseTest {
 	public void elementWithAttribute() throws Exception {
 		new XQParser("<a b='a'></a>").parse();
 	}
-	
+
 	@Test
 	public void elementsWithComplexContent() throws Exception {
 		new XQParser("<a>1&amp;<b/>12 {'aha'}soso<c/></a>").parse();
 	}
-	
+
 	@Test
 	public void elementWithComplexContent2() throws Exception {
-		new XQParser("string(<elem>{'a'} a {1,2,3} b <![CDATA[ b ]]> c {'a', 'b'}</elem>)").parse();
-	}	
+		new XQParser(
+				"string(<elem>{'a'} a {1,2,3} b <![CDATA[ b ]]> c {'a', 'b'}</elem>)")
+				.parse();
+	}
 
 	@Test
 	public void illegallyNestedElements() throws Exception {
 		try {
 			new XQParser("<a><b></a>").parse();
 		} catch (QueryException e) {
-			assertEquals("illegal error code", ErrorCode.ERR_PARSING_ERROR, e
-					.getCode());
+			assertEquals("illegal error code", ErrorCode.ERR_PARSING_ERROR,
+					e.getCode());
 		}
 	}
 
@@ -123,29 +115,29 @@ public class XQParserTest extends XQueryBaseTest {
 	public void weird() throws Exception {
 		new XQParser(readQuery("/parser/", "weird.xq")).parse();
 	}
-	
+
 	@Test
 	public void constructedAttributeWithEmptyContentSequence() throws Exception {
 		new XQParser("attribute {'foo'} {}").parse();
 	}
-	
+
 	@Test
 	public void constructedPI() throws Exception {
 		new XQParser("processing-instruction XmL {'pi'}").parse();
-	}	
-	
+	}
+
 	@Test
 	public void onlyWSbetweenToken() throws Exception {
 		new XQParser("for\n$\na in 1 return $a").parse();
 	}
-	
+
 	@Test
 	public void parentAxis() throws Exception {
 		new XQParser("a/../b").parse();
 	}
-	
+
 	@Test
 	public void stringLiteralWithEntityReference() throws Exception {
 		new XQParser("\"a string &amp;\"").parse();
-	}	
+	}
 }

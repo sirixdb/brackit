@@ -1,6 +1,6 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -10,15 +10,15 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -40,7 +40,9 @@ import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.module.Functions;
+import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.util.log.Logger;
+import org.brackit.xquery.xdm.Type;
 
 /**
  * Straight-forward, recursive descent parser.
@@ -1286,6 +1288,7 @@ public class XQParser extends Tokenizer {
 				collation.addChild(uriLiteral);
 				gs.addChild(collation);
 			}
+			groupByClause.addChild(gs);
 		} while (attemptSkipWS(","));
 		return groupByClause;
 	}
@@ -1345,7 +1348,15 @@ public class XQParser extends Tokenizer {
 		consume(la2);
 		QNm varName = eqname(false, true);
 		AST countClause = new AST(XQ.CountClause);
-		countClause.addChild(new AST(XQ.Variable, varName));
+		AST binding = new AST(XQ.TypedVariableBinding);
+		AST var = new AST(XQ.Variable, varName);
+		binding.addChild(var);
+		AST type = new AST(XQ.SequenceType);
+		AST aouType = new AST(XQ.AtomicOrUnionType);
+		type.addChild(aouType);
+		aouType.addChild(new AST(XQ.QNm, Type.INR.getName()));
+		binding.addChild(type);
+		countClause.addChild(binding);
 		return countClause;
 	}
 
@@ -2326,14 +2337,11 @@ public class XQParser extends Tokenizer {
 		consume(la);
 		consume(la2);
 		AST elTest = elementTest();
-		AST schemaElTest = (elTest != null) ? elTest : schemaElementTest();
+		elTest = (elTest != null) ? elTest : schemaElementTest();
 		consumeSkipWS(")");
 		AST docTest = new AST(XQ.KindTestDocument);
 		if (elTest != null) {
 			docTest.addChild(elTest);
-		}
-		if (schemaElTest != null) {
-			docTest.addChild(schemaElTest);
 		}
 		return docTest;
 	}
@@ -2848,8 +2856,7 @@ public class XQParser extends Tokenizer {
 					|| (laSkipWS("<!") != null) || (!attemptSkipWS("<"))) {
 				return null;
 			}
-		}
-		skipS();
+		}		
 		// name is expanded after (possible) declaration of in-scope namespaces
 		AST stag = qnameLiteral(false, false);
 		QNm name = (QNm) stag.getValue();
@@ -2978,7 +2985,7 @@ public class XQParser extends Tokenizer {
 			throws TokenizerException {
 		Token la;
 		if ((checkBoundaryWS)
-				&& ((((la = laSkipS("<")) != null) && ((la(la, "!") == null))) || (((la = laSkipS("{")) != null) && ((la(
+				&& (((la = laSkipS("<")) != null) || (((la = laSkipS("{")) != null) && ((la(
 						la, "{") == null)))) && ((la = laS()) != null)) {
 			consume(la);
 			AST boundaryWS = new AST(XQ.Str, la.string());

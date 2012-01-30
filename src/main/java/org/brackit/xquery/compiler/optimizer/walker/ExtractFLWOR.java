@@ -1,6 +1,6 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -10,15 +10,15 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -54,11 +54,19 @@ public class ExtractFLWOR extends Walker {
 		final AST parent = node.getParent();
 		if (isFLWORClause(parent)) {
 			return node;
-		} 
+		}
 		AST anc = parent;
 		while (anc != null) {
 			if (isFLWORClause(anc)) {
 				break;
+			}
+			int aType = anc.getType();
+			if ((aType == XQ.PathExpr)
+					|| (aType == XQ.StepExpr)
+					|| (aType == XQ.FilterExpr)
+					|| (aType == XQ.MapExpr)
+					|| (aType == XQ.IfExpr)) {
+				return node;
 			}
 			anc = anc.getParent();
 		}
@@ -70,10 +78,10 @@ public class ExtractFLWOR extends Walker {
 		QNm varName = createVarName();
 		AST binding = new AST(TypedVariableBinding);
 		binding.addChild(new AST(XQ.Variable, varName));
-		AST letClause = new AST(LetClause);		
+		AST letClause = new AST(LetClause);
 		letClause.addChild(binding);
 		letClause.addChild(node.copyTree());
-		
+
 		AST varRef = new AST(VariableRef, varName);
 		parent.replaceChild(node.getChildIndex(), varRef);
 		anc.getParent().insertChild(anc.getChildIndex(), letClause);

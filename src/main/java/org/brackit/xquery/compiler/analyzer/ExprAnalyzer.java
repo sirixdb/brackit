@@ -1,6 +1,6 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -10,15 +10,15 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -407,11 +407,11 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 		if (clause.getType() != XQ.CountClause) {
 			return false;
 		}
-		QNm name = (QNm) clause.getChild(0).getValue();
+		QNm name = (QNm) clause.getChild(0).getChild(0).getValue();
 		// expand, bind and update AST
 		name = expand(name, DefaultNS.EMPTY);
 		name = bind(name);
-		clause.getChild(0).setValue(name);
+		clause.getChild(0).getChild(0).setValue(name);
 		return true;
 	}
 
@@ -730,7 +730,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 			return false;
 		}
 		// child 0 is the axis
-		nodeTest(expr.getChild(1), expr.getChild(0).getType() == XQ.ATTRIBUTE);
+		nodeTest(expr.getChild(1), expr.getChild(0).getChild(0).getType() == XQ.ATTRIBUTE);
 		referContextItem();
 		openContextItemScope();
 		for (int i = 2; i < expr.getChildCount(); i++) {
@@ -780,7 +780,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 			return new NSWildcardNameTest(kind, test.getStringValue());
 		} else if (test.getType() == XQ.NSNameWildcardTest) {
 			Kind kind = (element) ? Kind.ELEMENT : Kind.ATTRIBUTE;
-			return new NSNameWildcardTest(kind, test.getStringValue());
+			return new NSNameWildcardTest(kind, resolvePrefix(test.getStringValue()));
 		} else {
 			return null;
 		}
@@ -1330,7 +1330,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 
 	protected QNm resolve(QNm name) throws QueryException {
 		if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
-			log.debug("Declare variable " + name);
+			log.debug("Resolve variable " + name);
 		}
 		QNm resolved = variables.resolve(name);
 		if (resolved == null) {

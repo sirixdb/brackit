@@ -1,6 +1,6 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -10,15 +10,15 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -27,7 +27,6 @@
  */
 package org.brackit.xquery.xdm.type;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Kind;
@@ -55,12 +54,10 @@ public final class PIType extends NodeType {
 	}
 
 	@Override
-	public boolean matches(Node<?> node)
-			throws QueryException {
+	public boolean matches(Node<?> node) throws QueryException {
 		if (piTarget != null) {
-			throw new QueryException(
-					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-					"Processing instruction test with piTarget support not implemented yet.");
+			return ((node.getKind() == Kind.PROCESSING_INSTRUCTION) && (node
+					.getName().stringValue().equals(piTarget)));
 		}
 		return (node.getKind() == Kind.PROCESSING_INSTRUCTION);
 	}
@@ -68,9 +65,10 @@ public final class PIType extends NodeType {
 	@Override
 	public boolean matches(Item item) throws QueryException {
 		if (piTarget != null) {
-			throw new QueryException(
-					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-					"Processing instruction test with piTarget support not implemented yet.");
+			return ((item instanceof Node<?>)
+					&& (((Node<?>) item).getKind() == Kind.PROCESSING_INSTRUCTION) && (((Node<?>) item)
+					.getName().stringValue().equals(piTarget)));
+
 		}
 		return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.PROCESSING_INSTRUCTION));
 	}
@@ -81,7 +79,7 @@ public final class PIType extends NodeType {
 				"processing-instruction(\"%s\")", piTarget)
 				: "processing-instruction()";
 	}
-	
+
 	public boolean equals(Object obj) {
 		if (obj == this) {
 			return true;
@@ -98,7 +96,7 @@ public final class PIType extends NodeType {
 			if ((t.piTarget == null) || (!piTarget.equals(t.piTarget))) {
 				return false;
 			}
-		}		
+		}
 		return true;
 	}
 }

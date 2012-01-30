@@ -1,6 +1,6 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -10,15 +10,15 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -48,43 +48,77 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Stream;
 
 /**
+ * <p>
+ * This class implements a path step of the form E1/E2 with the enforcement of
+ * de-duplication and sorting according to the XQuery/XPath semantics:
+ * </p>
+ * 
+ * <pre>
+ * E1/E2 
+ * => 
+ * fs:ddo(
+ *     for $fs:dot in E1
+ *     return E2	
+ * )
+ * </pre>
+ * 
+ * </p>
+ * <p>
+ * Longer paths of the form E1/E2/../EN are realized through multiple path step
+ * expressions with a left-precedence:
+ * </p>
+ * <p>
+ * 
+ * <pre>
+ * E1/E2/../EN = ((E1/E2)/..)/EN
+ * </pre>
+ * 
+ * </p>
+ * <p>
+ * As optimization, path steps can sometimes omit duplicate removal and/or
+ * sorting, but the inference of this property is outside the scope of this
+ * class.
+ * </p>
  * 
  * @author Sebastian Baechle
  * 
  */
 public class PathStepExpr implements Expr {
-	final Expr nextStep;
-	final Expr step;
-	final boolean sortResult;
+	final Expr e2;
+	final Expr e1;
 	final boolean bindItem;
 	final boolean bindPos;
 	final boolean bindSize;
 	final int bindCount;
 	final boolean lastStep;
+	final boolean skipDDO;
+	final boolean checkInput;
 
-	public PathStepExpr(Expr step, Expr nextStep, boolean sortResult,
-			boolean bindItem, boolean bindPos, boolean bindSize,
-			boolean lastStep) {
-		this.step = step;
-		this.nextStep = nextStep;
-		this.sortResult = sortResult;
+	public PathStepExpr(Expr e1, Expr e2, boolean bindItem, boolean bindPos,
+			boolean bindSize, boolean lastStep, boolean skipDDO, boolean checkInput) {
+		this.e1 = e1;
+		this.e2 = e2;
 		this.bindItem = bindItem;
 		this.bindPos = bindPos;
 		this.bindSize = bindSize;
 		this.lastStep = lastStep;
+		this.skipDDO = skipDDO;
+		this.checkInput = checkInput;
 		bindCount = (bindItem ? 1 : 0) + (bindPos ? 1 : 0) + (bindSize ? 1 : 0);
 	}
 
 	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		Sequence in = step.evaluate(ctx, tuple);
+	public Sequence evaluate(QueryContext ctx, Tuple t) throws QueryException {
+		Sequence in = e1.evaluate(ctx, t);
+		if ((!skipDDO) && (checkInput)) {
+			in = ExprUtil.materialize(in);
+		}
 		if (in == null) {
 			return null;
 		}
 		IntNumeric size = (bindSize) ? in.size() : null;
-		Sequence out = new PathStepSequence(ctx, tuple, in, size);
-		if ((sortResult) && ((lastStep) || ((!(in instanceof Node<?>))))) {
+		Sequence out = new PathStepSequence(ctx, t, in, size);
+		if ((!skipDDO) && ((!checkInput) || (!(in instanceof Node<?>)))) {
 			out = new DdoOrAtomicSequence(out);
 		}
 		return out;
@@ -92,7 +126,7 @@ public class PathStepExpr implements Expr {
 
 	private class PathStepSequence extends LazySequence {
 		final QueryContext ctx;
-		final Sequence in; // result of unfiltered step expression
+		final Sequence in;
 		final Tuple t;
 		final IntNumeric s;
 
@@ -113,7 +147,7 @@ public class PathStepExpr implements Expr {
 		}
 
 		public String toString() {
-			return step + "/" + nextStep;
+			return e1 + "/" + e2;
 		}
 	}
 
@@ -185,7 +219,7 @@ public class PathStepExpr implements Expr {
 				current = current.concat(tmp);
 			}
 
-			Sequence s = nextStep.evaluate(ctx, current);
+			Sequence s = e2.evaluate(ctx, current);
 			return s;
 		}
 
@@ -263,7 +297,7 @@ public class PathStepExpr implements Expr {
 					current = current.concat(tmp);
 				}
 
-				Sequence s = nextStep.evaluate(ctx, current);
+				Sequence s = e2.evaluate(ctx, current);
 				out = (s != null) ? s.iterate() : null;
 			}
 		}
@@ -376,7 +410,7 @@ public class PathStepExpr implements Expr {
 
 	@Override
 	public boolean isUpdating() {
-		return ((step.isUpdating()) || (nextStep.isUpdating()));
+		return ((e1.isUpdating()) || (e2.isUpdating()));
 	}
 
 	@Override
@@ -385,6 +419,6 @@ public class PathStepExpr implements Expr {
 	}
 
 	public String toString() {
-		return step + "/" + nextStep;
+		return e1 + "/" + e2;
 	}
 }

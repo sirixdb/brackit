@@ -1,6 +1,6 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -10,15 +10,15 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -109,6 +109,7 @@ import org.brackit.xquery.xdm.type.DocumentType;
 import org.brackit.xquery.xdm.type.ElementType;
 import org.brackit.xquery.xdm.type.ItemType;
 import org.brackit.xquery.xdm.type.NSNameWildcardTest;
+import org.brackit.xquery.xdm.type.NSWildcardNameTest;
 import org.brackit.xquery.xdm.type.NodeType;
 import org.brackit.xquery.xdm.type.PIType;
 import org.brackit.xquery.xdm.type.SequenceType;
@@ -517,22 +518,27 @@ public class Compiler implements Translator {
 		Expr expr = expr(node.getChild(0), true);
 		int noOfPredicates = node.getChildCount() - 1;
 		Expr[] predicates = new Expr[noOfPredicates];
-		Binding itemBinding = table.bind(Namespaces.FS_DOT, SequenceType.ITEM);
-		Binding posBinding = table.bind(Namespaces.FS_POSITION,
-				SequenceType.INTEGER);
-		Binding sizeBinding = table.bind(Namespaces.FS_LAST,
-				SequenceType.INTEGER);
+		boolean[] bindItem = new boolean[noOfPredicates];
+		boolean[] bindPos = new boolean[noOfPredicates];
+		boolean[] bindSize = new boolean[noOfPredicates];
 
 		for (int i = 0; i < noOfPredicates; i++) {
+			Binding itemBinding = table.bind(Namespaces.FS_DOT,
+					SequenceType.ITEM);
+			Binding posBinding = table.bind(Namespaces.FS_POSITION,
+					SequenceType.INTEGER);
+			Binding sizeBinding = table.bind(Namespaces.FS_LAST,
+					SequenceType.INTEGER);
 			predicates[i] = expr(node.getChild(1 + i).getChild(0), true);
+			table.unbind();
+			table.unbind();
+			table.unbind();
+			bindItem[i] = itemBinding.isReferenced();
+			bindPos[i] = posBinding.isReferenced();
+			bindSize[i] = sizeBinding.isReferenced();
 		}
 
-		table.unbind();
-		table.unbind();
-		table.unbind();
-
-		return new FilterExpr(expr, predicates[0], itemBinding.isReferenced(),
-				posBinding.isReferenced(), sizeBinding.isReferenced());
+		return new FilterExpr(expr, predicates, bindItem, bindPos, bindSize);
 	}
 
 	protected Expr insertExpr(AST node) throws QueryException {
@@ -942,38 +948,23 @@ public class Compiler implements Translator {
 		return new ArithmeticExpr(op, firstArg, secondArg);
 	}
 
+	/*
+	 * The compilation of path expressions is a bit tricky. A path of the form
+	 * E1/E2/../EN must be evaluated with "left-deep semantics", i.e.,
+	 * ((E1/E2)/..)/EN and each step EI needs to have the current context item
+	 * (focus, $fs:dot) bound, from the preceding step EI-1.
+	 */
 	protected Expr pathExpr(AST node) throws QueryException {
-		if (node.getChildCount() == 1) {
-			return expr(node.getChild(0), true); // TODO Is this possible?
-		} else {
-			return pathExpr(node, 0);
-		}
-	}
-
-	protected Expr pathExpr(AST node, int position) throws QueryException {
-		AST child = node.getChild(position);
-		int childCount = node.getChildCount();
-
-		if (position + 1 == childCount) {
-			return expr(child, true);
-		} else {
-			Expr step = expr(child, true);
-
-			// System.out.println("-----------------");
-			// System.out.println("Step " + (position+1) + "/" + childCount +
-			// " step " + step);
-			boolean sortResult = sortAfterStep(node, position);
-			// System.out.println("Sort after next step : " + sortResult);
-			// System.out.println("-----------------");
-
+		Expr e1 = expr(node.getChild(0), true);
+		for (int i = 1; i < node.getChildCount(); i++) {
 			Binding itemBinding = table.bind(Namespaces.FS_DOT,
 					SequenceType.NODE);
 			Binding posBinding = table.bind(Namespaces.FS_POSITION,
 					SequenceType.INTEGER);
 			Binding sizeBinding = table.bind(Namespaces.FS_LAST,
 					SequenceType.INTEGER);
-
-			Expr nextStep = pathExpr(node, position + 1);
+			AST step = node.getChild(i);
+			Expr e2 = expr(step, true);
 
 			table.unbind();
 			table.unbind();
@@ -982,27 +973,13 @@ public class Compiler implements Translator {
 			boolean bindItem = itemBinding.isReferenced();
 			boolean bindPos = posBinding.isReferenced();
 			boolean bindSize = sizeBinding.isReferenced();
-			boolean lastStep = (position + 2 == childCount);
-			return new PathStepExpr(step, nextStep, sortResult, bindItem,
-					bindPos, bindSize, lastStep);
+			boolean lastStep = (i + 1 == node.getChildCount());
+			boolean skipDDO = step.checkProperty("skipDDO");
+			boolean checkInput = step.checkProperty("checkInput");
+			e1 = new PathStepExpr(e1, e2, bindItem, bindPos, bindSize,
+					lastStep, skipDDO, checkInput);
 		}
-	}
-
-	/*
-	 * Sorting after a step is not required if it is a) is a filter expression
-	 * (e.g. function call fn:root()), or b) the axis is child, self or
-	 * attribute
-	 */
-	protected boolean sortAfterStep(AST node, int position)
-			throws QueryException {
-		AST child = node.getChild(position);
-
-		if (child.getType() != XQ.StepExpr) {
-			return true;
-		}
-
-		Axis axis = axis(child.getChild(0).getChild(0)).getAxis();
-		return ((axis != Axis.CHILD) && (axis != Axis.ATTRIBUTE) && (axis != Axis.SELF));
+		return e1;
 	}
 
 	protected Expr stepExpr(AST node) throws QueryException {
@@ -1017,27 +994,32 @@ public class Compiler implements Translator {
 		}
 
 		Expr in = table.resolve(Namespaces.FS_DOT);
+		NodeType test = nodeTest(child, axis.getAxis());
 
 		int noOfPredicates = Math.max(node.getChildCount() - 2, 0);
-		Expr[] predicates = new Expr[noOfPredicates];
-		NodeType test = nodeTest(child, axis.getAxis());
-		Binding itemBinding = table.bind(Namespaces.FS_DOT, SequenceType.NODE);
-		Binding posBinding = table.bind(Namespaces.FS_POSITION,
-				SequenceType.INTEGER);
-		Binding sizeBinding = table.bind(Namespaces.FS_LAST,
-				SequenceType.INTEGER);
+		Expr[] filter = new Expr[noOfPredicates];
+		boolean[] bindItem = new boolean[noOfPredicates];
+		boolean[] bindPos = new boolean[noOfPredicates];
+		boolean[] bindSize = new boolean[noOfPredicates];
 
 		for (int i = 0; i < noOfPredicates; i++) {
-			predicates[i] = expr(node.getChild(2 + i).getChild(0), true);
+			Binding itemBinding = table.bind(Namespaces.FS_DOT,
+					SequenceType.ITEM);
+			Binding posBinding = table.bind(Namespaces.FS_POSITION,
+					SequenceType.INTEGER);
+			Binding sizeBinding = table.bind(Namespaces.FS_LAST,
+					SequenceType.INTEGER);
+			filter[i] = expr(node.getChild(2 + i).getChild(0), true);
+			table.unbind();
+			table.unbind();
+			table.unbind();
+			bindItem[i] = itemBinding.isReferenced();
+			bindPos[i] = posBinding.isReferenced();
+			bindSize[i] = sizeBinding.isReferenced();
 		}
 
-		table.unbind();
-		table.unbind();
-		table.unbind();
-
-		return new StepExpr(axis, test, in, predicates,
-				itemBinding.isReferenced(), posBinding.isReferenced(),
-				sizeBinding.isReferenced());
+		return new StepExpr(axis, test, in, filter, bindItem, bindPos,
+				bindSize);
 	}
 
 	protected Accessor axis(AST node) throws QueryException {
@@ -1140,7 +1122,11 @@ public class Compiler implements Translator {
 		case XQ.KindTestDocument:
 			return documentTest(node);
 		case XQ.KindTestPi:
-			return new PIType();
+			if (node.getChildCount() == 0) {
+				return new PIType();
+			} else {
+				return new PIType(node.getChild(0).getStringValue());
+			}
 		case XQ.KindTestSchemaElement:
 			return schemaElementTest(node);
 		case XQ.KindTestSchemaAttribute:
@@ -1205,13 +1191,13 @@ public class Compiler implements Translator {
 				return new AttributeType(null);
 			}
 		case XQ.NSWildcardNameTest:
-			return new NSNameWildcardTest(
+			return new NSWildcardNameTest(
 					(axis == Axis.ATTRIBUTE) ? Kind.ATTRIBUTE : Kind.ELEMENT,
 					name.getStringValue());
 		case XQ.NSNameWildcardTest:
 			return new NSNameWildcardTest(
 					(axis == Axis.ATTRIBUTE) ? Kind.ATTRIBUTE : Kind.ELEMENT,
-					name.getStringValue());
+					ctx.getNamespaces().resolve(name.getStringValue()));
 		default:
 			if (axis != Axis.ATTRIBUTE) {
 				return new ElementType((QNm) name.getValue());
