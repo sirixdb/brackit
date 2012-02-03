@@ -293,9 +293,4 @@ public class Flt extends AbstractNumeric implements FltNumeric {
 		scaled = Math.rint(scaled);
 		return new Flt((float) (scaled / factor));
 	}
-
-	@Override
-	public int hashCode() {
-		return new Float(v).hashCode();
-	}
 }

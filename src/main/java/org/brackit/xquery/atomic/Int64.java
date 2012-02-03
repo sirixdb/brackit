@@ -301,9 +301,4 @@ public class Int64 extends AbstractNumeric implements LonNumeric {
 	public Numeric roundHalfToEven(int precision) throws QueryException {
 		return this;
 	}
-
-	@Override
-	public int hashCode() {
-		return new Long(v).hashCode();
-	}
 }
