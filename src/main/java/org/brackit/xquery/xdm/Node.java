@@ -95,6 +95,21 @@ import org.brackit.xquery.node.parser.SubtreeParser;
  * identity. Implementations must ensure that updates are visible and consistent
  * in all objects representing the same logical XML node.
  * </p>
+ * <p>
+ * At runtime the system must be able to distinguish different implementations
+ * of this interface, e.g., to establish a global ordering among nodes. 
+ * For that, each implementation must be identified by a system-wide
+ * unique node class ID. ID collisions will result in unexpected behavior 
+ * in many places. The node class ID of a node instance can be obtained
+ * by the method {@link #getNodeClassID()}. 
+ * </p>
+ * <p> 
+ * Users are responsible to ensure uniqueness of all node class IDs of the
+ * used node implementations, but implementors are advised to cross-check existing
+ * implementations when implementing a new node type to avoid collisions.
+ * Note that uniqueness must also be ensured across JVM boundaries for 
+ * distributed computations. 
+ * </p>
  * 
  * @see http://www.w3.org/TR/xpath-datamodel-30/
  * @see http://www.w3.org/TR/2009/CR-xquery-update-10-20090609/
@@ -252,10 +267,14 @@ public interface Node<E extends Node<E>> extends Item {
 	public boolean isRoot();
 
 	/**
-	 * Returns a system-wide unique identifying the fragment of a node to use
-	 * for global ordering.
+	 * Identifier for a particular implementation of the
+	 * {@link Node} interface. Identifiers must be ensure to
+	 * be system-wide unique, e.g., for global ordering. Note that
+	 * uniqueness must also be ensured across JVM boundaries for 
+	 * distributed computations. ID collisions
+	 * will result in unexpected behavior in many places.
 	 */
-	public long getFragmentID();
+	public int getNodeClassID();
 
 	/**
 	 * Compares this node to another w.r.t. to a global document order as

@@ -50,6 +50,7 @@ import org.brackit.xquery.xdm.type.ItemType;
  */
 public abstract class AbstractNode<E extends Node<E>> extends AbstractItem
 		implements Node<E> {
+
 	protected static final Kind[] mapping = new Kind[] { Kind.ELEMENT,
 			Kind.ATTRIBUTE, Kind.TEXT, Kind.DOCUMENT, Kind.COMMENT,
 			Kind.PROCESSING_INSTRUCTION };
@@ -83,8 +84,8 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem
 		if (((Object) other) == this) {
 			return 0;
 		}
-		long fragmentIDA = getFragmentID();
-		long fragmentIDB = other.getFragmentID();
+		int fragmentIDA = getNodeClassID();
+		int fragmentIDB = other.getNodeClassID();
 		if (fragmentIDA == fragmentIDB) {
 			return cmpInternal((E) other);
 		} else {

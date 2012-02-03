@@ -30,6 +30,7 @@ package org.brackit.xquery.compiler.profiler;
 import java.io.File;
 
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.XQuery;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.translator.PipelineCompiler;
 import org.brackit.xquery.module.MainModule;
@@ -43,46 +44,13 @@ import org.brackit.xquery.xdm.Expr;
  */
 public class ProfilingCompiler extends PipelineCompiler {
 
+	public static final String PLOT_TYPE = "svg";
+	
 	private ProfilingNode parent; // used to chain expressions
 
 	private ProfilingNode child; // used to chain operators
 
 	private ProfileOperator pending; // "upcoming" parent operator to
-
-	public class ProfilingMainModule extends MainModule {
-		public static final String PLOT_TYPE = "svg";
-
-		private ProfileExpr expr;
-
-		public void setExpr(Expr rootExpr) {
-			this.expr = (ProfileExpr) rootExpr;
-			super.setExpr(rootExpr);
-		}
-
-		public void visualize(String outputDir) {
-			DotContext dotCtx = new DotContext();
-			expr.toDot(dotCtx);
-			createDot(outputDir, "expr", dotCtx);
-		}
-
-		private void createDot(String outputDir, String name, DotContext dotCtx) {
-			try {
-				File f = File.createTempFile(name, "dot");
-				dotCtx.write(f);
-
-				f.deleteOnExit();
-
-				String outfile = outputDir + "/" + name + "s." + PLOT_TYPE;
-				String command = "dot -T" + PLOT_TYPE + " -o" + outfile + " "
-						+ f;
-				Process proc = Runtime.getRuntime().exec(command);
-				proc.waitFor();
-				f.delete();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
 	
 	public ProfilingCompiler() {
 		super();
@@ -114,5 +82,29 @@ public class ProfilingCompiler extends PipelineCompiler {
 			parent.addChild(profileOp);
 		}
 		return profileOp;
+	}
+	
+	public static void visualize(XQuery xq, String outputDir) {
+		DotContext dotCtx = new DotContext();
+		((ProfileExpr)((MainModule) xq.getModule()).getBody()).toDot(dotCtx);
+		createDot(outputDir, "expr", dotCtx);
+	}
+
+	private static void createDot(String outputDir, String name, DotContext dotCtx) {
+		try {
+			File f = File.createTempFile(name, "dot");
+			dotCtx.write(f);
+
+			f.deleteOnExit();
+
+			String outfile = outputDir + "/" + name + "s." + PLOT_TYPE;
+			String command = "dot -T" + PLOT_TYPE + " -o" + outfile + " "
+					+ f;
+			Process proc = Runtime.getRuntime().exec(command);
+			proc.waitFor();
+			f.delete();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }

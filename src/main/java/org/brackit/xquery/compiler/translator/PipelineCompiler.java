@@ -119,7 +119,7 @@ public class PipelineCompiler extends Compiler {
 		}
 	}
 
-	private Operator groupBy(AST node) throws QueryException {
+	protected Operator groupBy(AST node) throws QueryException {
 		Operator in = anyOp(node.getChild(0));
 		int groupSpecCount = node.getChildCount() - 1;
 		boolean onlyLast = node.checkProperty("onlyLast");
@@ -135,7 +135,7 @@ public class PipelineCompiler extends Compiler {
 		return groupBy;
 	}
 
-	private Operator join(AST node) throws QueryException {
+	protected Operator join(AST node) throws QueryException {
 		// compile left (outer) join branch
 		int pos = 0;
 		Operator leftIn = anyOp(node.getChild(pos++));
@@ -310,7 +310,7 @@ public class PipelineCompiler extends Compiler {
 		return select;
 	}
 
-	private Operator orderBy(AST node) throws QueryException {
+	protected Operator orderBy(AST node) throws QueryException {
 		Operator in = anyOp(node.getChild(0));
 
 		int orderBySpecCount = node.getChildCount() - 1;

@@ -40,9 +40,9 @@ import org.brackit.xquery.node.stream.EmptyStream;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Scope;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
+import org.brackit.xquery.xdm.Scope;
 import org.brackit.xquery.xdm.Stream;
 
 /**
@@ -68,6 +68,11 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 			STATIC_DIVISIONS[i + 1] = new int[] { (i + 2) * 2 + 1 };
 		}
 	}
+	
+	/**
+	 * Basic 
+	 */
+	public static final int NODE_CLASS_ID = 1;
 
 	protected final ParentD2Node parent;
 
@@ -103,8 +108,8 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	}
 
 	@Override
-	public long getFragmentID() {
-		return localFragmentID;
+	public final int getNodeClassID() {
+		return NODE_CLASS_ID;
 	}
 
 	private int localFragmentID() {
@@ -120,8 +125,12 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	}
 
 	protected final int cmpInternal(final D2Node node) {
-		if (node == this)
+		if (node == this) {
 			return 0;
+		}
+		if (localFragmentID != node.localFragmentID) {
+			return localFragmentID < node.localFragmentID ? -1 : 1;
+		}
 		D2Node c = null;
 		D2Node cp = this;
 		while (cp != null) {
@@ -351,7 +360,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	@Override
 	public boolean isFollowingOf(Node<?> node) {
 		if ((node == null) || ((Object) node == this)
-				|| (node.getFragmentID() != localFragmentID)
+				|| (!(node instanceof D2Node))
 				|| (getKind() == Kind.ATTRIBUTE)) {
 			return false;
 		}
@@ -373,7 +382,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	@Override
 	public boolean isFollowingSiblingOf(Node<?> node) {
 		if ((node == null) || (parent == null) || ((Object) node == this)
-				|| (node.getFragmentID() != localFragmentID)
+				|| (!(node instanceof D2Node))
 				|| (node.getKind() == Kind.ATTRIBUTE)) {
 			return false;
 		}
@@ -387,7 +396,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	@Override
 	public boolean isPrecedingOf(Node<?> node) {
 		if ((node == null) || ((Object) node == this)
-				|| (node.getFragmentID() != localFragmentID)
+				|| (!(node instanceof D2Node))
 				|| (getKind() == Kind.ATTRIBUTE)) {
 			return false;
 		}
@@ -409,7 +418,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	@Override
 	public boolean isPrecedingSiblingOf(Node<?> node) {
 		if ((node == null) || (parent == null) || ((Object) node == this)
-				|| (node.getFragmentID() != localFragmentID)
+				|| (!(node instanceof D2Node))
 				|| (node.getKind() == Kind.ATTRIBUTE)) {
 			return false;
 		}
