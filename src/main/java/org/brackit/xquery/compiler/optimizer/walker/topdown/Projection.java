@@ -57,7 +57,7 @@ public class Projection extends Walker {
 	@Override
 	protected AST visit(AST node) {
 		if (node.getType() == XQ.PipeExpr) {
-			walkPipelineDown(node);
+			walkPipelineDown(node.getChild(0));
 			// don't visit this subtree
 			return null;
 		} else if (node.getType() == XQ.VariableRef) {
@@ -102,7 +102,7 @@ public class Projection extends Walker {
 	 */
 	protected void walkPipelineDown(AST node) {
 		switch (node.getType()) {
-		case XQ.PipeExpr:
+		case XQ.Start:
 			break;
 		case XQ.ForBind:
 			forBind(node);
@@ -117,6 +117,7 @@ public class Projection extends Walker {
 			orderBy(node);
 			break;
 		case XQ.Join:
+			join(node);
 			break;
 		case XQ.GroupBy:
 			groupBy(node);
@@ -131,10 +132,12 @@ public class Projection extends Walker {
 		table.openScope();
 		AST out = node.getLastChild();
 		if (out.getType() == XQ.End) {
-			// solely visit return expression
-			walkInternal(out.getChild(0));
+			if (out.getChildCount() != 0) {
+				// solely visit return expression
+				walkInternal(out.getChild(0));
+			}
 		} else {
-			// visit parent to check if it references
+			// visit output to check if it references
 			// any variables of this operator
 			walkPipelineDown(out);
 		}
@@ -342,6 +345,17 @@ public class Projection extends Walker {
 		if (prop != null) {
 			table.resolve(prop);
 		}
+	}
+
+	private void join(AST node) {
+		// visit left input
+		walkPipelineDown(node.getChild(0));
+		// visit left join expression
+		walkInternal(node.getChild(1).getChild(1));
+		// visit right input
+		walkPipelineDown(node.getChild(2));
+		// visit right join expression
+		walkInternal(node.getChild(1).getChild(2));
 	}
 
 	protected void typeswitchExpr(AST expr) {

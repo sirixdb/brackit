@@ -43,14 +43,17 @@ public class TopDownPipeline extends Walker {
 		}
 
 		AST pipeExpr = new AST(XQ.PipeExpr);
-		pipeExpr.addChild(pipeline(node, 0));
+		AST start = new AST(XQ.Start);
+		start.addChild(pipeline(node, 0));
+		pipeExpr.addChild(start);
 		node.getParent().replaceChild(node.getChildIndex(), pipeExpr);
 
 		return pipeExpr;
 	}
 
 	private AST pipeline(AST node, int pos) {
-		switch (node.getChild(pos).getType()) {
+		AST clause = node.getChild(pos);
+		switch (clause.getType()) {
 		case XQ.ForClause:
 			return pipelineClause(node, pos, XQ.ForBind);
 		case XQ.LetClause:
@@ -64,9 +67,13 @@ public class TopDownPipeline extends Walker {
 		case XQ.GroupByClause:
 			return pipelineClause(node, pos, XQ.GroupBy);
 		case XQ.ReturnClause:
-			AST end = new AST(XQ.End);
-			end.addChild(node.getChild(pos).getChild(0).copyTree());
-			return end;
+			if (clause.getChild(0).getType() == XQ.FlowrExpr) {
+				return pipeline(clause.getChild(0), 0);
+			} else {
+				AST end = new AST(XQ.End);
+				end.addChild(clause.getChild(0).copyTree());
+				return end;
+			}
 		default:
 			throw new IllegalStateException();
 		}

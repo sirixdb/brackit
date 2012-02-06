@@ -35,6 +35,8 @@ import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.optimizer.walker.DoSNStepMerger;
 import org.brackit.xquery.compiler.optimizer.walker.OrderForGroupBy;
 import org.brackit.xquery.compiler.optimizer.walker.PathDDOElimination;
+import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinRewriter;
+import org.brackit.xquery.compiler.optimizer.walker.topdown.LetBindToLeftJoin;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.Projection;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.TopDownPipeline;
 import org.brackit.xquery.module.StaticContext;
@@ -54,11 +56,10 @@ public class TopDownOptimizer implements Optimizer {
 
 	public static boolean UNNEST = Cfg.asBool(UNNEST_CFG, true);
 
-	public static boolean VARIABLE_PULLUP = Cfg.asBool(
-			VARIABLE_PULLUP_CFG, false);
+	public static boolean VARIABLE_PULLUP = Cfg.asBool(VARIABLE_PULLUP_CFG,
+			false);
 
-	public static boolean JOIN_DETECTION = Cfg.asBool(JOIN_DETECTION_CFG,
-			true);
+	public static boolean JOIN_DETECTION = Cfg.asBool(JOIN_DETECTION_CFG, true);
 
 	private List<Stage> stages = new ArrayList<Stage>();
 
@@ -69,9 +70,9 @@ public class TopDownOptimizer implements Optimizer {
 		if (UNNEST) {
 			stages.add(new Unnest());
 		}
-		if (JOIN_DETECTION) {
+//		if (JOIN_DETECTION) {
 			stages.add(new JoinRecognition());
-		}
+//		}
 		stages.add(new Finalize());
 	}
 
@@ -92,10 +93,10 @@ public class TopDownOptimizer implements Optimizer {
 		public AST rewrite(StaticContext sctx, AST ast) {
 			ast = new DoSNStepMerger().walk(ast);
 			ast = new OrderForGroupBy().walk(ast);
-//			if (VARIABLE_PULLUP) {
-//				ast = new LetVariableRefPullup().walk(ast);
-//			}
-//			ast = new ExtractFLWOR().walk(ast);
+			// if (VARIABLE_PULLUP) {
+			// ast = new LetVariableRefPullup().walk(ast);
+			// }
+			// ast = new ExtractFLWOR().walk(ast);
 			return ast;
 		}
 	}
@@ -106,38 +107,39 @@ public class TopDownOptimizer implements Optimizer {
 			return ast;
 		}
 	}
-	
+
 	private static class Reordering implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
-//			ast = new ConjunctionSplitting().walk(ast);
-//			ast = new SelectPushdown().walk(ast);
-//			ast = new BindingPushup().walk(ast);
+			// ast = new ConjunctionSplitting().walk(ast);
+			// ast = new SelectPushdown().walk(ast);
+			// ast = new BindingPushup().walk(ast);
 			return ast;
 		}
 	}
 
 	private static class JoinRecognition implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
-//			ast = new JoinRewriter().walk(ast);
-//			ast = new JoinTree().walk(ast);
-//			ast = new JoinTree().walk(ast);
-//			ast = new JoinSortElimination().walk(ast);
-//			ast = new LeftJoinGroupEmission().walk(ast);
+			ast = new JoinRewriter().walk(ast);
+			// ast = new JoinTree().walk(ast);
+			// ast = new JoinTree().walk(ast);
+			// ast = new JoinSortElimination().walk(ast);
+			// ast = new LeftJoinGroupEmission().walk(ast);
 			return ast;
 		}
 	}
-	
+
 	private static class Unnest implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
-//			ast = new LetBindLift().walk(ast);
-//			ast = new BindingPushupAfterLifting().walk(ast); // 2nd chance for pushing
+			ast = new LetBindToLeftJoin().walk(ast);
+			// ast = new BindingPushupAfterLifting().walk(ast); // 2nd chance
+			// for pushing
 			return ast;
 		}
 	}
-	
+
 	private static class Finalize implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
-//			ast = new PredicateConjunction().walk(ast);
+			// ast = new PredicateConjunction().walk(ast);
 			ast = new PathDDOElimination(sctx).walk(ast);
 			ast = new Projection().walk(ast);
 			return ast;

@@ -77,7 +77,7 @@ public class TopDownTranslator extends Compiler {
 
 	protected Expr pipeExpr(AST node) throws QueryException {
 		int initialBindSize = table.bound().length;
-		Operator root = anyOp(new Start(), node.getChild(0));
+		Operator root = anyOp(null, node.getChild(0));
 
 		// for simpler scoping, the return expression is
 		// at the right-most leaf
@@ -103,6 +103,12 @@ public class TopDownTranslator extends Compiler {
 
 	protected Operator _anyOp(Operator in, AST node) throws QueryException {
 		switch (node.getType()) {
+		case XQ.Start:
+			if (node.getChildCount() == 0) {
+				return new Start();
+			} else {
+				return anyOp(new Start(), node.getLastChild());
+			}
 		case XQ.End:
 			return in;
 		case XQ.ForBind:
@@ -127,7 +133,7 @@ public class TopDownTranslator extends Compiler {
 	}
 
 	protected Operator groupBy(Operator in, AST node) throws QueryException {
-		int groupSpecCount = node.getChildCount() - 1;
+		int groupSpecCount = Math.max(node.getChildCount() - 1, 0);
 		boolean onlyLast = node.checkProperty("onlyLast");
 		QNm[] grpVars = new QNm[groupSpecCount];
 		GroupBy groupBy = new GroupBy(in, groupSpecCount, onlyLast);
@@ -143,9 +149,9 @@ public class TopDownTranslator extends Compiler {
 	}
 
 	protected Operator join(Operator in, AST node) throws QueryException {
-		// compile left (outer) join branch
+		// compile left (outer) join branch (skip initial start)
 		int pos = 0;
-		Operator leftIn = anyOp(in, node.getChild(pos++));
+		Operator leftIn = anyOp(in, node.getChild(pos++).getChild(0));
 
 		// get join type
 		AST comparison = node.getChild(pos++);

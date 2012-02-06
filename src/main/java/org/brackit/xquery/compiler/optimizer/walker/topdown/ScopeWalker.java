@@ -27,77 +27,79 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.BaseResolver;
-import org.brackit.xquery.compiler.Target;
 import org.brackit.xquery.compiler.XQ;
-import org.brackit.xquery.compiler.analyzer.Analyzer;
-import org.brackit.xquery.compiler.optimizer.DefaultOptimizer;
 import org.brackit.xquery.compiler.optimizer.walker.Walker;
-import org.brackit.xquery.compiler.parser.DotUtil;
-import org.brackit.xquery.compiler.parser.XQParser;
 import org.brackit.xquery.module.Namespaces;
 
 /**
  * @author Sebastian Baechle
  * 
  */
-public class ScopeWalker extends Walker {
+public abstract class ScopeWalker extends Walker {
 
-	BindingTable table;
+	private BindingTable table;
 
 	@Override
 	protected AST prepare(AST root) {
-		table = new BindingTable();
+		table = new BindingTable(root);
+		walkInspect(root);
 		return super.prepare(root);
 	}
 
-	@Override
-	protected AST visit(AST node) {
-		if (node.getType() == XQ.PipeExpr) {
-			AST start = node.getChild(0);
-			while (start.getType() != XQ.Start) {
-				start = start.getChild(0);
+	protected final void refreshScopes(AST node) {
+		Scope s = findScope(node);
+		table.resetTo(s);
+		walkInspect(s.node);
+	}
+
+	protected final void walkInspect(AST node) {
+		if (inspect(node)) {
+			for (int i = 0; i < node.getChildCount(); i++) {
+				AST child = node.getChild(i);
+				walkInspect(child);
 			}
-			walkPipelineUp(start);
+		}
+	}
+
+	private boolean inspect(AST node) {
+		if (node.getType() == XQ.PipeExpr) {
+			inspectPipeline(node.getChild(0));
 			// don't visit this subtree
-			return null;
-		} else if (node.getType() == XQ.VariableRef) {
-			table.resolve((QNm) node.getValue());
-			return null;
+			return false;
 		} else if (node.getType() == XQ.TypeSwitch) {
 			typeswitchExpr(node);
-			return null;
+			return false;
 		} else if (node.getType() == XQ.QuantifiedExpr) {
 			quantifiedExpr(node);
-			return null;
+			return false;
 		} else if (node.getType() == XQ.TransformExpr) {
 			transformExpr(node);
-			return null;
+			return false;
 		} else if (node.getType() == XQ.TryCatchExpr) {
 			tryCatchExpr(node);
-			return null;
+			return false;
 		} else if (node.getType() == XQ.FilterExpr) {
 			filterExpr(node);
-			return null;
+			return false;
 		} else if (node.getType() == XQ.PathExpr) {
 			pathExpr(node);
-			return null;
+			return false;
 		} else if (node.getType() == XQ.CompDocumentConstructor) {
 			documentExpr(node);
-			return null;
+			return false;
 		} else if ((node.getType() == XQ.DirElementConstructor)
 				|| (node.getType() == XQ.CompElementConstructor)) {
 			elementExpr(node);
-			return null;
+			return false;
 		} else {
-			return node;
+			return true;
 		}
 	}
 
@@ -108,7 +110,7 @@ public class ScopeWalker extends Walker {
 	 * a binding which is not used. Nevertheless, this mechanism still admits
 	 * that later at compilation an operator creates superfluous bindings.
 	 */
-	protected void walkPipelineUp(AST node) {
+	private void inspectPipeline(AST node) {
 		switch (node.getType()) {
 		case XQ.Start:
 			break;
@@ -125,6 +127,7 @@ public class ScopeWalker extends Walker {
 			orderBy(node);
 			break;
 		case XQ.Join:
+			join(node);
 			break;
 		case XQ.GroupBy:
 			groupBy(node);
@@ -136,112 +139,233 @@ public class ScopeWalker extends Walker {
 			throw new RuntimeException();
 		}
 
-		table.openScope();
-		AST parent = node.getParent();
-		if (parent.getType() == XQ.PipeExpr) {
-			// solely visit return expression
-			walkInternal(parent.getChild(1));
+		table.openScope(node);
+		AST out = node.getLastChild();
+		if (out.getType() == XQ.End) {
+			if (out.getChildCount() != 0) {
+				// solely visit return expression
+				walkInspect(out.getChild(0));
+			}
 		} else {
-			// visit parent to check if it references
+			// visit output to check if it references
 			// any variables of this operator
-			walkPipelineUp(parent);
+			inspectPipeline(out);
 		}
-		List<QNm> project = table.closeScope();
-		node.setProperty("project", project);
+		table.closeScope();
 	}
 
-	private static class BindingTable {
-		static class Scope {
-			static class Node {
-				final QNm var;
-				boolean resolved;
-				Node next;
+	protected final Scope findScope(AST node) {
+		do {
+			Scope s = table.scopemap.get(node);
+			if (s != null) {
+				return s;
+			}
+		} while ((node = node.getParent()) != null);
+		return table.rootScope;
+	}
 
-				Node(QNm var, Node next) {
-					this.var = var;
-					this.next = next;
-				}
-
-				public String toString() {
-					return var + (resolved ? "!" : "?");
+	protected final VarRef findVarRefs(AST node) {
+		if (node.getType() == XQ.VariableRef) {
+			QNm var = (QNm) node.getValue();
+			Scope s = findScope(node);
+			Scope rs = s.resolve(var);
+			if (rs == null) {
+				System.out.println("Did not find " + var + " in any scope");
+				return null;
+			}
+			return new VarRef(var, node, s, rs);
+		}
+		VarRef varRefs = null;
+		for (int i = 0; i < node.getChildCount(); i++) {
+			AST child = node.getChild(i);
+			VarRef tmp = findVarRefs(child);
+			if (tmp != null) {
+				if (varRefs == null) {
+					varRefs = tmp;
+				} else {
+					VarRef p = varRefs;
+					while (p.next != null) {
+						p = p.next;
+					}
+					p.next = tmp;
 				}
 			}
+		}
+		return varRefs;
+	}
 
-			final Scope parent;
-			Node lvars; // local bound and referenced vars
-			Node evars; // referenced vars from ancestor scope
+	protected static class VarRef {
+		final QNm var;
+		final AST ref;
+		final Scope refScope;
+		final Scope referredScope;
+		VarRef next;
 
-			Scope(Scope parent) {
-				this.parent = parent;
+		public VarRef(QNm var, AST ref, Scope refScope, Scope referredScope) {
+			this.var = var;
+			this.ref = ref;
+			this.refScope = refScope;
+			this.referredScope = referredScope;
+		}
+
+		public String toString() {
+			return var.toString();
+		}
+	}
+
+	protected static class Scope implements Comparable<Scope> {
+		private static class Node {
+			final QNm var;
+			Node next;
+
+			Node(QNm var, Node next) {
+				this.var = var;
+				this.next = next;
 			}
 
 			public String toString() {
-				StringBuilder s = new StringBuilder();
-				s.append("[");
-				for (Node n = lvars; n != null; n = n.next) {
-					s.append(n);
-					if (n.next != null) {
-						s.append(" ; ");
-					}
-				}
-				s.append("]");
-				return s.toString();
-			}
-
-			public void bind(QNm var) {
-				Scope.Node p = null;
-				Scope.Node n = lvars;
-				while (n != null) {
-					p = n;
-					n = n.next;
-				}
-				if (p == null) {
-					lvars = new Scope.Node(var, null);
-				} else {
-					p.next = new Scope.Node(var, null);
-				}
-			}
-
-			void resolve(QNm var) {
-				for (Scope.Node n = lvars; n != null; n = n.next) {
-					if (n.var.atomicCmp(var) == 0) {
-						n.resolved = true;
-						return;
-					}
-				}
-				for (Scope.Node n = evars; n != null; n = n.next) {
-					if (n.var.atomicCmp(var) == 0) {
-						n.resolved = true;
-						return;
-					}
-				}
-				evars = new Node(var, evars);
+				return var.toString();
 			}
 		}
 
+		final AST node;
+		final Scope parent;
+		final int division;
+		Scope firstChild;
+		Scope next;
+		Node lvars;
+
+		private Scope(AST node, Scope parent, int division) {
+			this.node = node;
+			this.parent = parent;
+			this.division = division;
+		}
+
+		public String toString() {
+			StringBuilder s = new StringBuilder();
+			s.append(numberString());
+			s.append("[");
+			for (Node n = lvars; n != null; n = n.next) {
+				s.append(n);
+				if (n.next != null) {
+					s.append(" ; ");
+				}
+			}
+			s.append("]");
+			return s.toString();
+		}
+
+		private void bind(QNm var) {
+			Scope.Node p = null;
+			Scope.Node n = lvars;
+			while (n != null) {
+				p = n;
+				n = n.next;
+			}
+			if (p == null) {
+				lvars = new Scope.Node(var, null);
+			} else {
+				p.next = new Scope.Node(var, null);
+			}
+		}
+
+		private Scope resolve(QNm var) {
+			for (Scope.Node n = lvars; n != null; n = n.next) {
+				if (n.var.atomicCmp(var) == 0) {
+					return this;
+				}
+			}
+			return (parent != null) ? (parent.resolve(var)) : null;
+		}
+
+		private Scope open(AST node) {
+			Scope s;
+			if (firstChild == null) {
+				firstChild = (s = new Scope(node, this, 1));
+			} else {
+				Scope p = firstChild;
+				while (p.next != null) {
+					p = p.next;
+				}
+				p.next = (s = new Scope(node, this, p.division + 1));
+			}
+			return s;
+		}
+
+		@Override
+		public int compareTo(Scope other) {
+			if (other == this) {
+				return 0;
+			}
+			Scope cp = this;
+			while (cp != null) {
+				Scope lca = other;
+				while (lca != null) {
+					if (lca == cp) {
+						// found least common ancestor
+						// case 0: node == this is not allowed
+						// case 1: lca is this
+						if (lca == this)
+							return -1;
+						// case 2: lca is node
+						if (lca == other)
+							return 1;
+						// case 3: c and lcap have the same parent
+						// nodes must be in the same chain -> search
+						// scan from context node to n
+						if (division != other.division) {
+							return division < other.division ? -1 : 1;
+						}
+					}
+					lca = lca.parent;
+				}
+				cp = cp.parent;
+			}
+			return -1;
+		}
+
+		public String numberString() {
+			String s = String.valueOf(division);
+			Scope scope = this;
+			while (scope.parent != null) {
+				scope = scope.parent;
+				s = scope.division + "." + s;
+			}
+			return s;
+		}
+	}
+
+	protected static class BindingTable {
+		final Map<AST, Scope> scopemap = new HashMap<AST, Scope>();
+		final Scope rootScope;
 		Scope scope;
+
+		BindingTable(AST root) {
+			rootScope = new Scope(root, null, 1);
+			scope = rootScope;
+		}
+
+		public void resetTo(Scope s) {
+			for (Scope cs = s.firstChild; cs != null; cs = cs.next) {
+				scopemap.remove(cs.node);
+				resetTo(cs);
+			}
+			s.lvars = null;
+			s.firstChild = null;
+			scope = s;
+		}
 
 		void bind(QNm var) {
 			scope.bind(var);
 		}
 
-		void openScope() {
-			scope = new Scope(scope);
+		void openScope(AST node) {
+			scope = scope.open(node);
+			scopemap.put(node, scope);
 		}
 
-		List<QNm> closeScope() {
-			// all variables that we're accessed by
-			// the nested scope must be projected
-			List<QNm> proj = null;
-			for (Scope.Node n = scope.evars; n != null; n = n.next) {
-				scope.parent.resolve(n.var);
-				if (proj == null) {
-					proj = new ArrayList<QNm>();
-				}
-				proj.add(n.var);
-			}
+		void closeScope() {
 			scope = scope.parent;
-			return (proj != null) ? proj : Collections.EMPTY_LIST;
 		}
 
 		void resolve(QNm var) {
@@ -249,101 +373,77 @@ public class ScopeWalker extends Walker {
 		}
 	}
 
-	protected void forBind(AST node) {
+	private void forBind(AST node) {
 		// get names of binding variable and optional position variable
-		QNm forVar = (QNm) node.getChild(1).getChild(0).getValue();
+		QNm forVar = (QNm) node.getChild(0).getChild(0).getValue();
 		QNm posVar = null;
-		AST posBindingOrSourceExpr = node.getChild(2);
+		AST posBindingOrSourceExpr = node.getChild(1);
 		if (posBindingOrSourceExpr.getType() == XQ.TypedVariableBinding) {
 			posVar = (QNm) posBindingOrSourceExpr.getChild(0).getValue();
-			posBindingOrSourceExpr = node.getChild(3);
+			posBindingOrSourceExpr = node.getChild(2);
 		}
 
 		// visit binding expression
-		walkInternal(posBindingOrSourceExpr);
+		walkInspect(posBindingOrSourceExpr);
 
 		// bind variables
 		table.bind(forVar);
 		if (posVar != null) {
 			table.bind(posVar);
 		}
-
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop);
-		}
 	}
 
-	protected void letBind(AST node) {
+	private void letBind(AST node) {
 		// get name of binding variable
-		QNm letVar = (QNm) node.getChild(1).getChild(0).getValue();
+		QNm letVar = (QNm) node.getChild(0).getChild(0).getValue();
 
 		// visit binding expression
-		walkInternal(node.getChild(2));
+		walkInspect(node.getChild(1));
 
 		// bind variable
 		table.bind(letVar);
-
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop);
-		}
 	}
 
-	protected void select(AST node) {
+	private void select(AST node) {
 		// visit predicate expression
-		walkInternal(node.getChild(1));
-
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop);
-		}
+		walkInspect(node.getChild(0));
 	}
 
-	protected void groupBy(AST node) {
-		// resolve grouping variables
-		int groupSpecCount = node.getChildCount() - 1;
-		for (int i = 0; i < groupSpecCount; i++) {
-			QNm grpVar = (QNm) node.getChild(1 + i).getChild(0).getValue();
-			table.resolve(grpVar);
-		}
-
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop);
-		}
+	private void groupBy(AST node) {
+		// group by does not declare variables
 	}
 
-	protected void orderBy(AST node) {
+	private void orderBy(AST node) {
 		// visit order by expressions
 		int orderBySpecCount = node.getChildCount() - 1;
 		for (int i = 0; i < orderBySpecCount; i++) {
-			AST orderBy = node.getChild(i + 1);
-			walkInternal(orderBy.getChild(0));
-		}
-
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop);
+			AST orderBy = node.getChild(i);
+			walkInspect(orderBy.getChild(0));
 		}
 	}
 
-	protected void count(AST node) {
+	private void count(AST node) {
 		// get name of binding variable
-		QNm countVar = (QNm) node.getChild(1).getChild(0).getValue();
+		QNm countVar = (QNm) node.getChild(0).getChild(0).getValue();
 
 		// bind variable
 		table.bind(countVar);
-
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop);
-		}
 	}
 
-	protected void typeswitchExpr(AST expr) {
-		walkInternal(expr.getChild(0));
-		table.openScope();
+	private void join(AST node) {
+		// visit left input
+		inspectPipeline(node.getChild(0));
+		// visit left join expression
+		walkInspect(node.getChild(1).getChild(1));
+		// visit right input
+		inspectPipeline(node.getChild(2));
+		// visit right join expression
+		walkInspect(node.getChild(1).getChild(2));
+	}
+
+	private void typeswitchExpr(AST expr) {
+		walkInspect(expr.getChild(0));
+		table.openScope(expr);
 		for (int i = 1; i < expr.getChildCount(); i++) {
 			// handle default case as case clause
 			caseClause(expr.getChild(i));
@@ -351,52 +451,52 @@ public class ScopeWalker extends Walker {
 		table.closeScope();
 	}
 
-	protected void caseClause(AST clause) {
-		table.openScope();
+	private void caseClause(AST clause) {
+		table.openScope(clause);
 		AST varOrType = clause.getChild(0);
 		if (varOrType.getType() == XQ.Variable) {
 			QNm name = (QNm) varOrType.getValue();
 			table.bind(name);
 		}
 		// skip intermediate nodes reflecting sequence types....
-		walkInternal(clause.getChild(clause.getChildCount() - 1));
+		walkInspect(clause.getChild(clause.getChildCount() - 1));
 		table.closeScope();
 	}
 
-	protected void quantifiedExpr(AST expr) {
+	private void quantifiedExpr(AST expr) {
 		int scopeCount = 0;
 		// child 0 is quantifier type
 		for (int i = 1; i < expr.getChildCount() - 1; i += 2) {
-			table.openScope();
+			table.openScope(expr.getChild(i));
 			QNm name = (QNm) expr.getChild(i).getChild(0).getValue();
 			table.bind(name);
-			walkInternal(expr.getChild(i + 1));
+			walkInspect(expr.getChild(i + 1));
 			scopeCount++;
 		}
-		walkInternal(expr.getChild(expr.getChildCount() - 1));
+		walkInspect(expr.getChild(expr.getChildCount() - 1));
 		for (int i = 0; i <= scopeCount; i++) {
 			table.closeScope();
 		}
 	}
 
-	protected void transformExpr(AST expr) {
-		table.openScope();
+	private void transformExpr(AST expr) {
+		table.openScope(expr);
 		int pos = 0;
 		while (pos < expr.getChildCount() - 2) {
 			AST binding = expr.getChild(pos++);
 			QNm name = (QNm) binding.getChild(0).getValue();
 			table.bind(name);
-			walkInternal(binding.getChild(1));
+			walkInspect(binding.getChild(1));
 		}
 		AST modify = expr.getChild(pos++);
-		walkInternal(modify);
-		walkInternal(expr.getChild(pos));
+		walkInspect(modify);
+		walkInspect(expr.getChild(pos));
 		table.closeScope();
 	}
 
-	protected void tryCatchExpr(AST expr) {
-		walkInternal(expr.getChild(0));
-		table.openScope();
+	private void tryCatchExpr(AST expr) {
+		walkInspect(expr.getChild(0));
+		table.openScope(expr);
 		table.bind(Namespaces.ERR_CODE);
 		table.bind(Namespaces.ERR_DESCRIPTION);
 		table.bind(Namespaces.ERR_VALUE);
@@ -405,67 +505,60 @@ public class ScopeWalker extends Walker {
 		table.bind(Namespaces.ERR_COLUMN_NUMBER);
 		for (int i = 7; i < expr.getChildCount(); i++) {
 			// child i,0 is catch error list
-			walkInternal(expr.getChild(i).getChild(0));
+			walkInspect(expr.getChild(i).getChild(0));
 		}
 		table.closeScope();
 	}
 
-	protected void filterExpr(AST expr) {
-		walkInternal(expr.getChild(0));
+	private void filterExpr(AST expr) {
+		walkInspect(expr.getChild(0));
 		for (int i = 1; i < expr.getChildCount(); i++) {
-			table.openScope();
+			table.openScope(expr.getChild(i));
 			table.bind(Namespaces.FS_DOT);
 			table.bind(Namespaces.FS_POSITION);
 			table.bind(Namespaces.FS_LAST);
-			walkInternal(expr.getChild(i));
+			walkInspect(expr.getChild(i));
 			table.closeScope();
 		}
 	}
 
-	protected void pathExpr(AST expr) {
+	private void pathExpr(AST expr) {
 		for (int i = 0; i < expr.getChildCount(); i++) {
-			walkInternal(expr.getChild(i));
-			table.openScope();
+			walkInspect(expr.getChild(i));
+			table.openScope(expr.getChild(i));
 		}
 		for (int i = 0; i < expr.getChildCount(); i++) {
 			table.closeScope();
 		}
 	}
 
-	protected void documentExpr(AST node) {
-		table.openScope();
+	private void documentExpr(AST node) {
+		table.openScope(node);
 		table.bind(Namespaces.FS_PARENT);
-		walkInternal(node.getChild(0));
+		walkInspect(node.getChild(0));
 		table.closeScope();
 	}
 
-	protected void elementExpr(AST node) {
+	private void elementExpr(AST node) {
 		int pos = 0;
 		while (node.getChild(pos).getType() == XQ.NamespaceDeclaration) {
 			pos++;
 		}
-		walkInternal(node.getChild(pos++));
-		table.openScope();
+		walkInspect(node.getChild(pos++));
+		table.openScope(node);
 		table.bind(Namespaces.FS_PARENT);
 		// visit content sequence
-		walkInternal(node.getChild(pos++));
+		walkInspect(node.getChild(pos++));
 		table.closeScope();
 	}
 
 	public static void main(String[] args) throws Exception {
-		String query = "for $X in 'foo' for $a in (1,2,3) " + "let $b := $a "
-				+ "let $c := $a " + "let $d := $b "
+		String query = "for $X in 'foo' for $a in (1,2,3) "
+				+ "let $b := $a "
+				+ "let $c := $a "
+				+ "let $d := $b "
 				+ "let $e := if ($c) then (for $x in position() return $x[position()]) else () "
 				+ "let $f := ($b,$c,$d,$e) " + "return $f";
-		AST ast = new XQParser(query).parse();
-		Analyzer analyzer = new Analyzer(new BaseResolver(), null, ast);
-		// optimize all targets of all modules
-		for (Target t : analyzer.getTargets()) {
-			t.optimize(new DefaultOptimizer());
-			AST before = t.getAst();
-			DotUtil.drawDotToFile(before.dot(), XQuery.DEBUG_DIR, "before");
-			AST after = new ScopeWalker().walk(before);
-			DotUtil.drawDotToFile(after.dot(), XQuery.DEBUG_DIR, "after");
-		}
+		new XQuery(query).serialize(new QueryContext(), System.out);
 	}
 }
