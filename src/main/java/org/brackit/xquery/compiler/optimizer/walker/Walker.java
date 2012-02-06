@@ -66,8 +66,11 @@ public class Walker {
 		return root;
 	}
 
-	private AST walkInternal(AST node) {
+	protected AST walkInternal(AST node) {
 		AST replacement = visit(node);
+		if (replacement == null) {
+			return node;
+		}
 		if (replacement != node) {
 			restart = true;
 			return replacement;

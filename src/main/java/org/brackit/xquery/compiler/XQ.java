@@ -276,6 +276,7 @@ public final class XQ {
 	public static final int ForBind = 227;
 	public static final int LetBind = 228;
 	public static final int Count = 229;
+	public static final int End = 230;
 	// End brackit's set-oriented extensions
 
 	public static final String NAMES[] = new String[] { "XQuery",
@@ -362,7 +363,7 @@ public final class XQ {
 			// End XQuery Update Facility 1.0
 			// Begin brackit's set-oriented extensions
 			"PipeExpr", "Selection", "GroupBy", "OrderBy", "Join",
-			"JoinClause", "Start", "ForBind", "LetBind", "Count"
+			"JoinClause", "Start", "ForBind", "LetBind", "Count", "End"
 	// End brackit's set-oriented extensions
 	};
 
