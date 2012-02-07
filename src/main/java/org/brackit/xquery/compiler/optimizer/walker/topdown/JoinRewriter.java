@@ -132,6 +132,11 @@ public class JoinRewriter extends ScopeWalker {
 				break;
 			}
 		}
+		
+		AST condition = new AST(ComparisonExpr);
+		condition.addChild(comparison.copy());
+		condition.addChild(s1Expr.copyTree());
+		condition.addChild(s2Expr.copyTree());
 
 		// we found join semantics:
 		// walk upstairs until we eitherfind
@@ -142,7 +147,7 @@ public class JoinRewriter extends ScopeWalker {
 			if (anc.getType() == XQ.Start) {
 				return select;
 			} else if (anc == s2Begin.node) {
-				return convertToJoin(anc.getParent(), s2Begin.node, select, predicate);
+				return convertToJoin(anc.getParent(), s2Begin.node, select, condition);
 			} 
 			anc = anc.getParent();
 		}
@@ -193,8 +198,8 @@ public class JoinRewriter extends ScopeWalker {
 		join.addChild(rightIn);
 		join.addChild(select.getChild(1));
 
-		leftInRoot.getParent().replaceChild(leftIn.getChildIndex(), join);
-		return join;
+		leftInRoot.getParent().replaceChild(leftInRoot.getChildIndex(), join);
+		return leftInRoot.getParent();
 	}
 
 	/*
