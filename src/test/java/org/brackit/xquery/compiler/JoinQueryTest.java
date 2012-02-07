@@ -62,7 +62,7 @@ public class JoinQueryTest extends XQueryBaseTest {
 		String query = readQuery("/join/", "forNestedForWithOutsideRef.xq");
 		XQuery xq = new XQuery(query);
 		Sequence res = xq.execute(createContext());
-		ResultChecker.dCheck(intSequence(2,2,3,3,5,5), res);
+		ResultChecker.dCheck(intSequence(3,3,4,4,6,6), res);
 	}
 	
 	private Sequence intSequence(int... values) {
