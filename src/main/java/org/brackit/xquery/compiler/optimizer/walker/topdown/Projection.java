@@ -401,7 +401,12 @@ public class Projection extends Walker {
 
 		// fake visit output
 		table.openFakeScope();
-		walkPipelineDown(node.getChild(3));
+		AST output = node.getChild(3);
+		if (output.getType() != XQ.End) {
+			walkPipelineDown(output);
+		} else {
+			walkInternal(output);
+		}
 		List<QNm> outProject = table.closeFakeScope();
 
 		// fake visit left join expression
@@ -463,7 +468,11 @@ public class Projection extends Walker {
 		
 		// finally visit output
 		table.openScope();
-		walkPipelineDown(node.getChild(3));		
+		if (output.getType() != XQ.End) {
+			walkPipelineDown(output);
+		} else {
+			walkInternal(output);
+		}
 		node.setProperty("project", table.closeScopeAndProject());		
 	}
 
