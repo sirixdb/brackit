@@ -166,6 +166,7 @@ public class LetBindToLeftJoin extends Walker {
 			for (int i = 0; i < oorig.getChildCount() - 1; i++) {
 				toAdd.addChild(oorig.getChild(i).copyTree());
 			}
+			copy.addChild(toAdd);
 			copy = toAdd;
 			oorig = oorig.getLastChild();
 		}
