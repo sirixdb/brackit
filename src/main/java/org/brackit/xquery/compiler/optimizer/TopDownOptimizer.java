@@ -35,8 +35,10 @@ import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.optimizer.walker.DoSNStepMerger;
 import org.brackit.xquery.compiler.optimizer.walker.OrderForGroupBy;
 import org.brackit.xquery.compiler.optimizer.walker.PathDDOElimination;
+import org.brackit.xquery.compiler.optimizer.walker.topdown.SplitWherePredicate;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinRewriter;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.LetBindToLeftJoin;
+import org.brackit.xquery.compiler.optimizer.walker.topdown.MergeWherePredicates;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.Projection;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.TopDownPipeline;
 import org.brackit.xquery.module.StaticContext;
@@ -67,9 +69,9 @@ public class TopDownOptimizer implements Optimizer {
 		stages.add(new Simplification());
 		stages.add(new Pipelining());
 		stages.add(new Reordering());
-//		if (JOIN_DETECTION) {
-			stages.add(new JoinRecognition());
-//		}
+		// if (JOIN_DETECTION) {
+		stages.add(new JoinRecognition());
+		// }
 		if (UNNEST) {
 			stages.add(new Unnest());
 		}
@@ -110,7 +112,7 @@ public class TopDownOptimizer implements Optimizer {
 
 	private static class Reordering implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
-			// ast = new ConjunctionSplitting().walk(ast);
+			ast = new SplitWherePredicate().walk(ast);
 			// ast = new SelectPushdown().walk(ast);
 			// ast = new BindingPushup().walk(ast);
 			return ast;
@@ -139,7 +141,7 @@ public class TopDownOptimizer implements Optimizer {
 
 	private static class Finalize implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
-			// ast = new PredicateConjunction().walk(ast);
+			ast = new MergeWherePredicates().walk(ast);
 			ast = new PathDDOElimination(sctx).walk(ast);
 			ast = new Projection().walk(ast);
 			return ast;
