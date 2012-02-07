@@ -46,6 +46,7 @@ import static org.brackit.xquery.compiler.XQ.ValueCompNE;
 import java.util.Arrays;
 
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.XQ;
 
 /**
  * @author Sebastian Baechle
@@ -132,7 +133,68 @@ public class JoinRewriter extends ScopeWalker {
 			}
 		}
 
-		return select;
+		// we found join semantics:
+		// walk upstairs until we eitherfind
+		// a) the beginning of this pipeline or
+		// b) the node defining the beginning of S2
+		AST anc = select.getParent();
+		while (true) {
+			if (anc.getType() == XQ.Start) {
+				return select;
+			} else if (anc == s2Begin.node) {
+				return convertToJoin(anc.getParent(), s2Begin.node, select, predicate);
+			} 
+			anc = anc.getParent();
+		}
+	}
+	
+	private AST convertToJoin(AST leftInRoot, AST rightInRoot, AST select, AST cmp) {
+		// copy left input pipeline
+		AST lorig = leftInRoot;		
+		AST leftIn = new AST(XQ.Start);
+		AST copy = leftIn;
+
+		// skip start if necessary
+		if (lorig.getType() == XQ.Start) {
+			lorig = lorig.getLastChild();
+			leftInRoot = lorig;
+		}
+		
+		while (lorig != rightInRoot) {
+			AST toAdd = lorig.copy();
+			for (int i = 0; i < lorig.getChildCount() - 1; i++) {
+				toAdd.addChild(lorig.getChild(i).copyTree());
+			}
+			copy.addChild(toAdd);
+			copy = toAdd;
+			lorig = lorig.getLastChild();
+		}
+		copy.addChild(new AST(XQ.End));
+		
+		// copy start of right (nested) input pipeline
+		AST rorig = lorig;
+		AST rightIn = new AST(XQ.Start);
+		copy = rightIn;
+
+		while (rorig != select) {
+			AST toAdd = rorig.copy();
+			for (int i = 0; i < rorig.getChildCount() - 1; i++) {
+				toAdd.addChild(rorig.getChild(i).copyTree());
+			}
+			copy.addChild(toAdd);
+			copy = toAdd;
+			rorig = rorig.getLastChild();
+		}
+		copy.addChild(new AST(XQ.End));
+
+		AST join = new AST(XQ.Join);
+		join.addChild(leftIn);
+		join.addChild(cmp);
+		join.addChild(rightIn);
+		join.addChild(select.getChild(1));
+
+		leftInRoot.getParent().replaceChild(leftIn.getChildIndex(), join);
+		return join;
 	}
 
 	/*

@@ -27,14 +27,9 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
-import static org.brackit.xquery.compiler.XQ.Count;
 import static org.brackit.xquery.compiler.XQ.GroupBy;
-import static org.brackit.xquery.compiler.XQ.GroupBySpec;
 import static org.brackit.xquery.compiler.XQ.LetBind;
 import static org.brackit.xquery.compiler.XQ.PipeExpr;
-import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
-import static org.brackit.xquery.compiler.XQ.Variable;
-import static org.brackit.xquery.compiler.XQ.VariableRef;
 
 import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.QNm;
@@ -47,6 +42,7 @@ import org.brackit.xquery.compiler.optimizer.walker.Walker;
  * 
  */
 public class LetBindToLeftJoin extends Walker {
+
 	private int artificialGroupVarCount;
 
 	@Override
@@ -55,74 +51,147 @@ public class LetBindToLeftJoin extends Walker {
 			return node;
 		}
 
-		AST opEx = node.getChild(1);
+		AST bindingExpr = node.getChild(1);
 
-		if (opEx.getType() != PipeExpr) {
+		if (bindingExpr.getType() != PipeExpr) {
 			return node;
 		}
 
-		AST leftJoin = convertToLeftJoin(node);
-		node.getParent().replaceChild(node.getChildIndex(), leftJoin);
+		AST join = bindingExpr.getChild(0).getChild(0);
+		if (join.getType() != XQ.Join) {
+			join = convertJoin(join);
+		}
+		AST leftJoin = convertToLeftJoin(node, join);
+
+		AST start = node.getParent();
+		while (start.getType() != XQ.Start) {
+			start = start.getParent();
+		}
+		start.replaceChild(0, leftJoin);
 
 		return leftJoin;
 	}
 
-	private AST convertToLeftJoin(AST node) {
-		// create variable name for new group
-		QNm grpVarName = createGroupVarName();
+	private AST convertJoin(AST node) {
+		AST leftIn = new AST(XQ.Start);
+		leftIn.addChild(new AST(XQ.End));
 
-		// copy start of nested pipeline
-		AST orig = node.getChild(1).getChild(0);
-		AST copyRoot = orig.copy();
-		AST copy = copyRoot;
+		// copy start of right (nested) input pipeline
+		AST rorig = node;
+		AST rightIn = new AST(XQ.Start);
+		AST copy = rightIn;
 
-		orig = orig.getLastChild();
-		while (orig.getType() != XQ.End) {
-			AST toAdd = orig.copy();
-			for (int i = 0; i < orig.getChildCount() - 1; i++) {
-				toAdd.addChild(orig.getChild(i).copyTree());
+		while (rorig.getType() != XQ.End) {
+			AST toAdd = rorig.copy();
+			for (int i = 0; i < rorig.getChildCount() - 1; i++) {
+				toAdd.addChild(rorig.getChild(i).copyTree());
 			}
 			copy.addChild(toAdd);
 			copy = toAdd;
-			orig = orig.getLastChild();
+			rorig = rorig.getLastChild();
 		}
-
-		// let bind the return expression
-		AST letBind = new AST(LetBind);
-		letBind.addChild(node.getChild(0).copyTree());
-		letBind.addChild(orig.getChild(0).copyTree());
-		// group all (only the binding of the final let will be used)
-		AST groupBy = new AST(GroupBy);
-		AST groupBySpec = new AST(GroupBySpec);
-		groupBySpec.addChild(new AST(VariableRef, grpVarName));
-		groupBy.addChild(groupBySpec);
-		groupBy.addChild(new AST(XQ.End));
-		letBind.addChild(groupBy);
-		// append let bind to copied pipeline
-		copy.addChild(letBind);
+		copy.addChild(new AST(XQ.End));
 
 		AST join = new AST(XQ.Join);
-		join.setProperty("leftJoin", Boolean.TRUE);
-		join.setProperty("group", grpVarName);
-		AST start = new AST(XQ.Start);
-		start.addChild(new AST(XQ.End));
-		join.addChild(start);
+		join.addChild(leftIn);
 		AST cmp = new AST(XQ.ComparisonExpr);
 		cmp.addChild(new AST(XQ.ValueCompEQ));
 		cmp.addChild(new AST(XQ.Bool, Bool.TRUE));
 		cmp.addChild(new AST(XQ.Bool, Bool.TRUE));
 		join.addChild(cmp);
-		join.addChild(copyRoot);
-		join.addChild(node.getChild(2));
+		join.addChild(rightIn);
+		join.addChild(rorig.copyTree());
 
-		AST count = new AST(Count);
-		AST runVarBinding = new AST(TypedVariableBinding);
-		runVarBinding.addChild(new AST(Variable, grpVarName));
-		count.addChild(runVarBinding);
-		count.addChild(join);
-		return count;
+		return join;
 	}
-	
+
+	private AST convertToLeftJoin(AST node, AST join) {
+		// copy upper-level input as left input
+		AST lorig = node.getParent();
+		while (lorig.getType() != XQ.Start) {
+			lorig = lorig.getParent();
+		}
+
+		AST leftIn = lorig.copy();
+		AST copy = leftIn;
+		lorig = lorig.getLastChild();
+		while (lorig != node) {
+			AST toAdd = lorig.copy();
+			for (int i = 0; i < lorig.getChildCount() - 1; i++) {
+				toAdd.addChild(lorig.getChild(i).copyTree());
+			}
+			copy.addChild(toAdd);
+			copy = toAdd;
+			lorig = lorig.getLastChild();
+		}
+
+		// introduce a count for the grouping
+		QNm grpVarName = createGroupVarName();
+		AST count = new AST(XQ.Count);
+		AST runVarBinding = new AST(XQ.TypedVariableBinding);
+		runVarBinding.addChild(new AST(XQ.Variable, grpVarName));
+		count.addChild(runVarBinding);
+		count.addChild(new AST(XQ.End));
+		copy.addChild(count);
+
+		// copy right input of nested join as right input
+		AST rorig = join.getChild(2).getChild(0);
+		AST rightIn = new AST(XQ.Start);
+		copy = rightIn;
+
+		while (rorig.getType() != XQ.End) {
+			AST toAdd = rorig.copy();
+			for (int i = 0; i < rorig.getChildCount() - 1; i++) {
+				toAdd.addChild(rorig.getChild(i).copyTree());
+			}
+			copy.addChild(toAdd);
+			copy = toAdd;
+			rorig = rorig.getLastChild();
+		}
+		copy.addChild(new AST(XQ.End));
+
+		// assemble left join
+		AST ljoin = new AST(XQ.Join);
+		ljoin.setProperty("leftJoin", Boolean.TRUE);
+		ljoin.addChild(leftIn);
+		ljoin.addChild(join.getChild(1).copyTree());
+		ljoin.addChild(rightIn);
+
+		// copy output of join
+		AST oorig = join.getChild(3);
+		copy = ljoin;
+
+		while (oorig.getType() != XQ.End) {
+			AST toAdd = oorig.copy();
+			for (int i = 0; i < oorig.getChildCount() - 1; i++) {
+				toAdd.addChild(oorig.getChild(i).copyTree());
+			}
+			copy = toAdd;
+			oorig = oorig.getLastChild();
+		}
+
+		// append let to bind the return expression
+		AST letBind = new AST(LetBind);
+		letBind.addChild(node.getChild(0).copyTree());
+		letBind.addChild(oorig.getChild(0).copyTree());
+
+		// group all let-bound return values 
+		// (only the binding of the final let will be used)
+		AST groupBy = new AST(GroupBy);
+		AST groupBySpec = new AST(XQ.GroupBySpec);
+		groupBySpec.addChild(new AST(XQ.VariableRef, grpVarName));
+		groupBy.addChild(groupBySpec);
+		letBind.addChild(groupBy);
+
+		// continue with the normal after the grouping
+		groupBy.addChild(node.getChild(2).copyTree());
+
+		// concatenate let bind and trailing to join output
+		copy.addChild(letBind);
+
+		return ljoin;
+	}
+
 	private QNm createGroupVarName() {
 		return new QNm("_check;" + (artificialGroupVarCount++));
 	}

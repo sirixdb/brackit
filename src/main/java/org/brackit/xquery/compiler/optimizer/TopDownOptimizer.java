@@ -67,12 +67,12 @@ public class TopDownOptimizer implements Optimizer {
 		stages.add(new Simplification());
 		stages.add(new Pipelining());
 		stages.add(new Reordering());
-		if (UNNEST) {
-			stages.add(new Unnest());
-		}
 //		if (JOIN_DETECTION) {
 			stages.add(new JoinRecognition());
 //		}
+		if (UNNEST) {
+			stages.add(new Unnest());
+		}
 		stages.add(new Finalize());
 	}
 

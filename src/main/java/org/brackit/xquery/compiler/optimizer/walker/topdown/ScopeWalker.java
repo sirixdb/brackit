@@ -111,6 +111,7 @@ public abstract class ScopeWalker extends Walker {
 	 * that later at compilation an operator creates superfluous bindings.
 	 */
 	private void inspectPipeline(AST node) {
+		table.openScope(node);
 		switch (node.getType()) {
 		case XQ.Start:
 			break;
@@ -139,7 +140,6 @@ public abstract class ScopeWalker extends Walker {
 			throw new RuntimeException();
 		}
 
-		table.openScope(node);
 		AST out = node.getLastChild();
 		if (out.getType() == XQ.End) {
 			if (out.getChildCount() != 0) {
