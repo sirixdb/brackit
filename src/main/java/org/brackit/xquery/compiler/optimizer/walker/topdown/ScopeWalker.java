@@ -29,6 +29,7 @@ package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -75,7 +76,10 @@ public abstract class ScopeWalker extends Walker {
 							+ "reset");
 		}
 		if (pipeline) {
-			inspectPipeline(node.getLastChild());
+			AST out = node.getLastChild();
+			if (out.getType() != XQ.End) {
+				inspectPipeline(out);
+			}
 		} else {
 			walkInspect(s.node);
 		}
@@ -141,7 +145,7 @@ public abstract class ScopeWalker extends Walker {
 	 * that later at compilation an operator creates superfluous bindings.
 	 */
 	private void inspectPipeline(AST node, AST useAsReturn) {
-		table.openScope(node);
+		table.openScope(node, true);
 		switch (node.getType()) {
 		case XQ.Start:
 			break;
@@ -162,7 +166,7 @@ public abstract class ScopeWalker extends Walker {
 			// and must be handled as
 			// special cases
 			join(node);
-			return;
+			break;
 		case XQ.GroupBy:
 			groupBy(node);
 			break;
@@ -177,7 +181,7 @@ public abstract class ScopeWalker extends Walker {
 		AST out = node.getLastChild();
 		if (out.getType() == XQ.End) {
 			// visit local or provided return expression
-			if (useAsReturn == null) {
+			if ((useAsReturn == null) && (out.getChildCount() != 0)) {
 				walkInspect(out.getChild(0));
 			} else {
 				walkInspect(useAsReturn);
@@ -264,6 +268,7 @@ public abstract class ScopeWalker extends Walker {
 			}
 		}
 
+		final boolean inPipeline;
 		final AST node;
 		final Scope parent;
 		final int division;
@@ -271,10 +276,15 @@ public abstract class ScopeWalker extends Walker {
 		Scope next;
 		Node lvars;
 
-		private Scope(AST node, Scope parent, int division) {
+		private Scope(AST node, Scope parent, boolean inPipeline, int division) {
 			this.node = node;
 			this.parent = parent;
+			this.inPipeline = inPipeline;
 			this.division = division;
+		}
+		
+		protected boolean isInPipeline() {
+			return inPipeline;
 		}
 
 		public String toString() {
@@ -297,6 +307,10 @@ public abstract class ScopeWalker extends Walker {
 			Scope.Node p = null;
 			Scope.Node n = lvars;
 			while (n != null) {
+				if (n.var.atomicCmp(var) == 0) {
+					System.out.println("Var " + var + "bound twice. OK?");
+					return;
+				}
 				p = n;
 				n = n.next;
 			}
@@ -316,16 +330,16 @@ public abstract class ScopeWalker extends Walker {
 			return (parent != null) ? (parent.resolve(var)) : null;
 		}
 
-		private Scope open(AST node) {
+		private Scope open(AST node, boolean inPipeline) {
 			Scope s;
 			if (firstChild == null) {
-				firstChild = (s = new Scope(node, this, 1));
+				firstChild = (s = new Scope(node, this, inPipeline, 1));
 			} else {
 				Scope p = firstChild;
 				while (p.next != null) {
 					p = p.next;
 				}
-				p.next = (s = new Scope(node, this, p.division + 1));
+				p.next = (s = new Scope(node, this, inPipeline, p.division + 1));
 			}
 			return s;
 		}
@@ -451,7 +465,7 @@ public abstract class ScopeWalker extends Walker {
 		Scope scope;
 
 		BindingTable(AST root) {
-			rootScope = new Scope(root, null, 1);
+			rootScope = new Scope(root, null, false, 1);
 			scope = rootScope;
 		}
 
@@ -469,8 +483,8 @@ public abstract class ScopeWalker extends Walker {
 			scope.bind(var);
 		}
 
-		void openScope(AST node) {
-			scope = scope.open(node);
+		void openScope(AST node, boolean inPipeline) {
+			scope = scope.open(node, inPipeline);
 			scopemap.put(node, scope);
 		}
 
@@ -555,27 +569,26 @@ public abstract class ScopeWalker extends Walker {
 		inspectPipeline(node.getChild(0), node.getChild(1).getChild(1));
 		// visit right input and use right join expression as "return"
 		inspectPipeline(node.getChild(2), node.getChild(1).getChild(2));
+
+		// collect all bindings provided by left and right join branch
 		List<QNm> leftInBinding = inspectJoinPipeline(node.getChild(0));
 		List<QNm> rightInBinding = inspectJoinPipeline(node.getChild(2));
 		
+		// "pretend" to bind variables from both left and right input
 		for (QNm var : leftInBinding) {
 			table.bind(var);
 		}
 
+		// Note: A name collision will not 
+		// bind a variable twice
+		// in this joined scope twice! 
 		for (QNm var : rightInBinding) {
 			table.bind(var);
-		}
-
-		AST out = node.getChild(3);
-		if (out.getType() != XQ.End) {
-			inspectPipeline(out);
-		} else if (out.getChildCount() != 0) {
-			walkInternal(out);
 		}
 	}
 
 	private List<QNm> inspectJoinPipeline(AST input) {
-		table.openScope(input);
+		table.openScope(input, true);
 
 		for (AST node = input; node.getType() != XQ.End; node = node
 				.getLastChild()) {
@@ -615,7 +628,7 @@ public abstract class ScopeWalker extends Walker {
 
 	private void typeswitchExpr(AST expr) {
 		walkInspect(expr.getChild(0));
-		table.openScope(expr);
+		table.openScope(expr, false);
 		for (int i = 1; i < expr.getChildCount(); i++) {
 			// handle default case as case clause
 			caseClause(expr.getChild(i));
@@ -624,7 +637,7 @@ public abstract class ScopeWalker extends Walker {
 	}
 
 	private void caseClause(AST clause) {
-		table.openScope(clause);
+		table.openScope(clause, false);
 		AST varOrType = clause.getChild(0);
 		if (varOrType.getType() == XQ.Variable) {
 			QNm name = (QNm) varOrType.getValue();
@@ -639,7 +652,7 @@ public abstract class ScopeWalker extends Walker {
 		int scopeCount = 0;
 		// child 0 is quantifier type
 		for (int i = 1; i < expr.getChildCount() - 1; i += 2) {
-			table.openScope(expr.getChild(i));
+			table.openScope(expr.getChild(i), false);
 			QNm name = (QNm) expr.getChild(i).getChild(0).getValue();
 			table.bind(name);
 			walkInspect(expr.getChild(i + 1));
@@ -652,7 +665,7 @@ public abstract class ScopeWalker extends Walker {
 	}
 
 	private void transformExpr(AST expr) {
-		table.openScope(expr);
+		table.openScope(expr, false);
 		int pos = 0;
 		while (pos < expr.getChildCount() - 2) {
 			AST binding = expr.getChild(pos++);
@@ -668,7 +681,7 @@ public abstract class ScopeWalker extends Walker {
 
 	private void tryCatchExpr(AST expr) {
 		walkInspect(expr.getChild(0));
-		table.openScope(expr);
+		table.openScope(expr, false);
 		table.bind(Namespaces.ERR_CODE);
 		table.bind(Namespaces.ERR_DESCRIPTION);
 		table.bind(Namespaces.ERR_VALUE);
@@ -685,7 +698,7 @@ public abstract class ScopeWalker extends Walker {
 	private void filterExpr(AST expr) {
 		walkInspect(expr.getChild(0));
 		for (int i = 1; i < expr.getChildCount(); i++) {
-			table.openScope(expr.getChild(i));
+			table.openScope(expr.getChild(i), false);
 			table.bind(Namespaces.FS_DOT);
 			table.bind(Namespaces.FS_POSITION);
 			table.bind(Namespaces.FS_LAST);
@@ -697,7 +710,7 @@ public abstract class ScopeWalker extends Walker {
 	private void pathExpr(AST expr) {
 		for (int i = 0; i < expr.getChildCount(); i++) {
 			walkInspect(expr.getChild(i));
-			table.openScope(expr.getChild(i));
+			table.openScope(expr.getChild(i), false);
 		}
 		for (int i = 0; i < expr.getChildCount(); i++) {
 			table.closeScope();
@@ -705,7 +718,7 @@ public abstract class ScopeWalker extends Walker {
 	}
 
 	private void documentExpr(AST node) {
-		table.openScope(node);
+		table.openScope(node, false);
 		table.bind(Namespaces.FS_PARENT);
 		walkInspect(node.getChild(0));
 		table.closeScope();
@@ -717,11 +730,35 @@ public abstract class ScopeWalker extends Walker {
 			pos++;
 		}
 		walkInspect(node.getChild(pos++));
-		table.openScope(node);
+		table.openScope(node, false);
 		table.bind(Namespaces.FS_PARENT);
 		// visit content sequence
 		walkInspect(node.getChild(pos++));
 		table.closeScope();
+	}
+	
+	/*
+	 * create a sorted and duplicate-free array of accessed scopes
+	 */
+	protected Scope[] sortScopes(VarRef varRefs) {
+		int cnt = 0;
+		for (VarRef ref = varRefs; ref != null; ref = ref.next) {
+			cnt++;
+		}
+		int pos = 0;
+		Scope[] tmp = new Scope[cnt];
+		for (VarRef ref = varRefs; ref != null; ref = ref.next) {
+			tmp[pos++] = ref.referredScope;
+		}
+		pos = 0;
+		Scope p = tmp[pos++];
+		for (int i = 1; i < cnt; i++) {
+			Scope s = tmp[i];
+			if (p.compareTo(s) != 0) {
+				tmp[pos++] = s;
+			}
+		}
+		return Arrays.copyOfRange(tmp, 0, pos);
 	}
 
 	public static void main(String[] args) throws Exception {

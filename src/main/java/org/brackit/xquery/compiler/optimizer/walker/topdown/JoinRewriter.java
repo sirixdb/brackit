@@ -43,8 +43,6 @@ import static org.brackit.xquery.compiler.XQ.ValueCompLE;
 import static org.brackit.xquery.compiler.XQ.ValueCompLT;
 import static org.brackit.xquery.compiler.XQ.ValueCompNE;
 
-import java.util.Arrays;
-
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 
@@ -88,8 +86,8 @@ public class JoinRewriter extends ScopeWalker {
 			return select;
 		}
 		// extract scopes of referenced variables
-		Scope[] s1Scopes = sortedScopes(s1VarRefs);
-		Scope[] s2Scopes = sortedScopes(s2VarRefs);
+		Scope[] s1Scopes = sortScopes(s1VarRefs);
+		Scope[] s2Scopes = sortScopes(s2VarRefs);
 
 		if (s2Scopes[s2Scopes.length - 1]
 				.compareTo(s1Scopes[s1Scopes.length - 1]) < 0) {
@@ -203,30 +201,6 @@ public class JoinRewriter extends ScopeWalker {
 		snapshot();
 		refreshScopes(parent, true);
 		return parent;
-	}
-
-	/*
-	 * create a sorted and duplicate-free array of accessed scopes
-	 */
-	private Scope[] sortedScopes(VarRef varRefs) {
-		int cnt = 0;
-		for (VarRef ref = varRefs; ref != null; ref = ref.next) {
-			cnt++;
-		}
-		int pos = 0;
-		Scope[] tmp = new Scope[cnt];
-		for (VarRef ref = varRefs; ref != null; ref = ref.next) {
-			tmp[pos++] = ref.referredScope;
-		}
-		pos = 0;
-		Scope p = tmp[pos++];
-		for (int i = 1; i < cnt; i++) {
-			Scope s = tmp[i];
-			if (p.compareTo(s) != 0) {
-				tmp[pos++] = s;
-			}
-		}
-		return Arrays.copyOfRange(tmp, 0, pos);
 	}
 	
 	private AST swapCmp(AST comparison) {

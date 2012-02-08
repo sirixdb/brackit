@@ -35,6 +35,7 @@ import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.optimizer.walker.DoSNStepMerger;
 import org.brackit.xquery.compiler.optimizer.walker.OrderForGroupBy;
 import org.brackit.xquery.compiler.optimizer.walker.PathDDOElimination;
+import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinInnerLoopCache;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.SplitWherePredicate;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinRewriter;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.LetBindToLeftJoin;
@@ -122,6 +123,7 @@ public class TopDownOptimizer implements Optimizer {
 	private static class JoinRecognition implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new JoinRewriter().walk(ast);
+			ast = new JoinInnerLoopCache().walk(ast);
 			// ast = new JoinTree().walk(ast);
 			// ast = new JoinTree().walk(ast);
 			// ast = new JoinSortElimination().walk(ast);

@@ -150,8 +150,8 @@ public class LetBindToLeftJoin extends Walker {
 		}
 		copy.addChild(new AST(XQ.End));
 
-		// assemble left join
-		AST ljoin = new AST(XQ.Join);
+		// assemble left join (preserve properties)
+		AST ljoin = join.copy();
 		ljoin.setProperty("leftJoin", Boolean.TRUE);
 		ljoin.addChild(leftIn);
 		ljoin.addChild(join.getChild(1).copyTree());
