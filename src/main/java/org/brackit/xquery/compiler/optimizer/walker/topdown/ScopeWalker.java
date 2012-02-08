@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.XQuery;
@@ -88,8 +89,12 @@ public abstract class ScopeWalker extends Walker {
 					getClass().getSimpleName() + "_scopes_" + (dotCount++));
 		}
 	}
+	
+	protected Set<AST> getScopes() {
+		return table.getScopes();
+	}
 
-	protected final void walkInspect(AST node) {
+	private final void walkInspect(AST node) {
 		if (inspect(node)) {
 			for (int i = 0; i < node.getChildCount(); i++) {
 				AST child = node.getChild(i);
@@ -320,8 +325,17 @@ public abstract class ScopeWalker extends Walker {
 				p.next = new Scope.Node(var, null);
 			}
 		}
+		
+		protected boolean resolveLocal(QNm var) {
+			for (Scope.Node n = lvars; n != null; n = n.next) {
+				if (n.var.atomicCmp(var) == 0) {
+					return true;
+				}
+			}
+			return false;
+		}
 
-		private Scope resolve(QNm var) {
+		protected Scope resolve(QNm var) {
 			for (Scope.Node n = lvars; n != null; n = n.next) {
 				if (n.var.atomicCmp(var) == 0) {
 					return this;
@@ -502,8 +516,12 @@ public abstract class ScopeWalker extends Walker {
 			scope.resolve(var);
 		}
 
-		public List<QNm> inScopeBindings() {
+		List<QNm> inScopeBindings() {
 			return scope.localBindings();
+		}
+		
+		Set<AST> getScopes() {
+			return scopemap.keySet();
 		}
 	}
 
