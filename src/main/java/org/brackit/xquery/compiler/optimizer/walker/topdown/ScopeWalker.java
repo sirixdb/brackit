@@ -27,7 +27,11 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.brackit.xquery.QueryContext;
@@ -36,6 +40,9 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.compiler.optimizer.walker.Walker;
+import org.brackit.xquery.compiler.parser.DotUtil;
+import org.brackit.xquery.compiler.profiler.DotContext;
+import org.brackit.xquery.compiler.profiler.DotNode;
 import org.brackit.xquery.module.Namespaces;
 
 /**
@@ -46,17 +53,36 @@ public abstract class ScopeWalker extends Walker {
 
 	private BindingTable table;
 
+	private int dotCount;
+
 	@Override
 	protected AST prepare(AST root) {
 		table = new BindingTable(root);
 		walkInspect(root);
+		if (XQuery.DEBUG) {
+			DotUtil.drawDotToFile(table.rootScope.dot(), XQuery.DEBUG_DIR,
+					getClass().getSimpleName() + "_scopes_" + (dotCount++));
+		}
 		return super.prepare(root);
 	}
 
-	protected final void refreshScopes(AST node) {
+	protected final void refreshScopes(AST node, boolean pipeline) {
 		Scope s = findScope(node);
 		table.resetTo(s);
-		walkInspect(s.node);
+		if (XQuery.DEBUG) {
+			DotUtil.drawDotToFile(table.rootScope.dot(), XQuery.DEBUG_DIR,
+					getClass().getSimpleName() + "_scopes_" + (dotCount)
+							+ "reset");
+		}
+		if (pipeline) {
+			inspectPipeline(node.getLastChild());
+		} else {
+			walkInspect(s.node);
+		}
+		if (XQuery.DEBUG) {
+			DotUtil.drawDotToFile(table.rootScope.dot(), XQuery.DEBUG_DIR,
+					getClass().getSimpleName() + "_scopes_" + (dotCount++));
+		}
 	}
 
 	protected final void walkInspect(AST node) {
@@ -103,6 +129,10 @@ public abstract class ScopeWalker extends Walker {
 		}
 	}
 
+	private void inspectPipeline(AST node) {
+		inspectPipeline(node, null);
+	}
+
 	/*
 	 * Walk pipeline up and check for each operator, which bindings of its
 	 * output will be used by upstream operators. All unused output bindings can
@@ -110,7 +140,7 @@ public abstract class ScopeWalker extends Walker {
 	 * a binding which is not used. Nevertheless, this mechanism still admits
 	 * that later at compilation an operator creates superfluous bindings.
 	 */
-	private void inspectPipeline(AST node) {
+	private void inspectPipeline(AST node, AST useAsReturn) {
 		table.openScope(node);
 		switch (node.getType()) {
 		case XQ.Start:
@@ -128,8 +158,11 @@ public abstract class ScopeWalker extends Walker {
 			orderBy(node);
 			break;
 		case XQ.Join:
+			// joins are non-linear
+			// and must be handled as
+			// special cases
 			join(node);
-			break;
+			return;
 		case XQ.GroupBy:
 			groupBy(node);
 			break;
@@ -137,19 +170,22 @@ public abstract class ScopeWalker extends Walker {
 			count(node);
 			break;
 		default:
-			throw new RuntimeException();
+			throw new RuntimeException("Illegal pipeline node "
+					+ node.getStringValue());
 		}
 
 		AST out = node.getLastChild();
 		if (out.getType() == XQ.End) {
-			if (out.getChildCount() != 0) {
-				// solely visit return expression
+			// visit local or provided return expression
+			if (useAsReturn == null) {
 				walkInspect(out.getChild(0));
+			} else {
+				walkInspect(useAsReturn);
 			}
 		} else {
 			// visit output to check if it references
 			// any variables of this operator
-			inspectPipeline(out);
+			inspectPipeline(out, useAsReturn);
 		}
 		table.closeScope();
 	}
@@ -244,6 +280,8 @@ public abstract class ScopeWalker extends Walker {
 		public String toString() {
 			StringBuilder s = new StringBuilder();
 			s.append(numberString());
+			s.append(":");
+			s.append((node != null) ? node.toString() : "");
 			s.append("[");
 			for (Node n = lvars; n != null; n = n.next) {
 				s.append(n);
@@ -292,6 +330,17 @@ public abstract class ScopeWalker extends Walker {
 			return s;
 		}
 
+		public List<QNm> localBindings() {
+			if (lvars == null) {
+				return Collections.EMPTY_LIST;
+			}
+			ArrayList<QNm> bindings = new ArrayList<QNm>();
+			for (Scope.Node n = lvars; n != null; n = n.next) {
+				bindings.add(n.var);
+			}
+			return bindings;
+		}
+
 		@Override
 		public int compareTo(Scope other) {
 			if (other == this) {
@@ -333,6 +382,67 @@ public abstract class ScopeWalker extends Walker {
 			}
 			return s;
 		}
+
+		public String dot() {
+			DotContext dt = new DotContext();
+			toDot(0, dt);
+			return dt.toDotString();
+		}
+
+		public void dot(File file) {
+			DotContext dt = new DotContext();
+			toDot(0, dt);
+			dt.write(file);
+		}
+
+		private int toDot(int no, DotContext dt) {
+			final int myNo = no++;
+			String label = (node != null) ? node.toString() : "";
+			DotNode node = dt.addNode(String.valueOf(myNo));
+			node.addRow(label, null);
+			node.addRow(numberString(), null);
+			int i = 0;
+			for (Scope.Node var = lvars; var != null; var = var.next) {
+				node.addRow(String.valueOf(i++), var.var.toString());
+			}
+			for (Scope child = firstChild; child != null; child = child.next) {
+				dt.addEdge(String.valueOf(myNo), String.valueOf(no));
+				no = child.toDot(no, dt);
+			}
+			return no++;
+		}
+
+		public void display() {
+			try {
+				File file = File.createTempFile("scope", ".dot");
+				file.deleteOnExit();
+				dot(file);
+				Runtime.getRuntime()
+						.exec(new String[] { "/usr/bin/dotty",
+								file.getAbsolutePath() }).waitFor();
+				file.delete();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		void dropLastChild() {
+			if (firstChild == null) {
+				return;
+			}
+			Scope p = null;
+			Scope n = firstChild;
+			while (n.next != null) {
+				p = n;
+				n = n.next;
+			}
+			if (p == null) {
+				firstChild = null;
+			} else {
+				p.next = null;
+			}
+			
+		}
 	}
 
 	protected static class BindingTable {
@@ -367,9 +477,19 @@ public abstract class ScopeWalker extends Walker {
 		void closeScope() {
 			scope = scope.parent;
 		}
+		
+		void dropScope() {
+			scope.parent.dropLastChild();
+			scopemap.remove(scope.node);
+			scope = scope.parent;
+		}
 
 		void resolve(QNm var) {
 			scope.resolve(var);
+		}
+
+		public List<QNm> inScopeBindings() {
+			return scope.localBindings();
 		}
 	}
 
@@ -431,14 +551,66 @@ public abstract class ScopeWalker extends Walker {
 	}
 
 	private void join(AST node) {
-		// visit left input
-		inspectPipeline(node.getChild(0));
-		// visit left join expression
-		walkInspect(node.getChild(1).getChild(1));
-		// visit right input
-		inspectPipeline(node.getChild(2));
-		// visit right join expression
-		walkInspect(node.getChild(1).getChild(2));
+		// visit left input and use left join expression as "return"
+		inspectPipeline(node.getChild(0), node.getChild(1).getChild(1));
+		// visit right input and use right join expression as "return"
+		inspectPipeline(node.getChild(2), node.getChild(1).getChild(2));
+		List<QNm> leftInBinding = inspectJoinPipeline(node.getChild(0));
+		List<QNm> rightInBinding = inspectJoinPipeline(node.getChild(2));
+		
+		for (QNm var : leftInBinding) {
+			table.bind(var);
+		}
+
+		for (QNm var : rightInBinding) {
+			table.bind(var);
+		}
+
+		AST out = node.getChild(3);
+		if (out.getType() != XQ.End) {
+			inspectPipeline(out);
+		} else if (out.getChildCount() != 0) {
+			walkInternal(out);
+		}
+	}
+
+	private List<QNm> inspectJoinPipeline(AST input) {
+		table.openScope(input);
+
+		for (AST node = input; node.getType() != XQ.End; node = node
+				.getLastChild()) {
+			switch (node.getType()) {
+			case XQ.Start:
+				break;
+			case XQ.ForBind:
+				forBind(node);
+				break;
+			case XQ.LetBind:
+				letBind(node);
+				break;
+			case XQ.Selection:
+				select(node);
+				break;
+			case XQ.OrderBy:
+				orderBy(node);
+				break;
+			case XQ.Join:
+				join(node);
+				break;
+			case XQ.GroupBy:
+				groupBy(node);
+				break;
+			case XQ.Count:
+				count(node);
+				break;
+			default:
+				throw new RuntimeException();
+			}
+		}
+
+		List<QNm> bindings = table.inScopeBindings();
+		table.dropScope();
+		return bindings;
 	}
 
 	private void typeswitchExpr(AST expr) {

@@ -198,8 +198,11 @@ public class JoinRewriter extends ScopeWalker {
 		join.addChild(rightIn);
 		join.addChild(select.getChild(1));
 
-		leftInRoot.getParent().replaceChild(leftInRoot.getChildIndex(), join);
-		return leftInRoot.getParent();
+		AST parent = leftInRoot.getParent();
+		parent.replaceChild(leftInRoot.getChildIndex(), join);
+		snapshot();
+		refreshScopes(parent, true);
+		return parent;
 	}
 
 	/*
