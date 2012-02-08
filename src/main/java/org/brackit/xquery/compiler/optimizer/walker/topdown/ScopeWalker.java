@@ -89,7 +89,7 @@ public abstract class ScopeWalker extends Walker {
 					getClass().getSimpleName() + "_scopes_" + (dotCount++));
 		}
 	}
-	
+
 	protected Set<AST> getScopes() {
 		return table.getScopes();
 	}
@@ -150,7 +150,7 @@ public abstract class ScopeWalker extends Walker {
 	 * that later at compilation an operator creates superfluous bindings.
 	 */
 	private void inspectPipeline(AST node, AST useAsReturn) {
-		table.openScope(node, true);
+		table.openScope(node, true, true);
 		switch (node.getType()) {
 		case XQ.Start:
 			break;
@@ -200,12 +200,42 @@ public abstract class ScopeWalker extends Walker {
 	}
 
 	protected final Scope findScope(AST node) {
-		do {
-			Scope s = table.scopemap.get(node);
+		AST tmpc = null;
+		AST tmp = node;
+		while (true) {
+			Scope s = table.scopemap.get(tmp);
 			if (s != null) {
 				return s;
 			}
-		} while ((node = node.getParent()) != null);
+			AST tmpp = tmp.getParent();
+			if (tmpp == null) {
+				break;
+			}
+			// check if we are in the comparision
+			// expression of a join and choose
+			// the tail of the corresponding input
+			// pipeline as scope
+			if (tmpp.getType() == XQ.Join) {
+				AST p;
+				if (tmpc.getChildIndex() == 1) {
+					p = tmpp.getChild(0);
+				} else {
+					p = tmpp.getChild(2);
+				}
+				// walk down the pipeline and
+				// return the last scope
+				while (p.getLastChild().getType() != XQ.End) {
+					p = p.getLastChild();
+				}
+				s = table.scopemap.get(p);
+				if (s == null) {
+					throw new IllegalStateException();
+				}
+				return s;
+			}
+			tmpc = tmp;
+			tmp = tmpp;
+		}
 		return table.rootScope;
 	}
 
@@ -287,7 +317,7 @@ public abstract class ScopeWalker extends Walker {
 			this.inPipeline = inPipeline;
 			this.division = division;
 		}
-		
+
 		protected boolean isInPipeline() {
 			return inPipeline;
 		}
@@ -325,7 +355,7 @@ public abstract class ScopeWalker extends Walker {
 				p.next = new Scope.Node(var, null);
 			}
 		}
-		
+
 		protected boolean resolveLocal(QNm var) {
 			for (Scope.Node n = lvars; n != null; n = n.next) {
 				if (n.var.atomicCmp(var) == 0) {
@@ -469,7 +499,7 @@ public abstract class ScopeWalker extends Walker {
 			} else {
 				p.next = null;
 			}
-			
+
 		}
 	}
 
@@ -497,18 +527,19 @@ public abstract class ScopeWalker extends Walker {
 			scope.bind(var);
 		}
 
-		void openScope(AST node, boolean inPipeline) {
+		void openScope(AST node, boolean addToScopeMap, boolean inPipeline) {
 			scope = scope.open(node, inPipeline);
-			scopemap.put(node, scope);
+			if (addToScopeMap) {
+				scopemap.put(node, scope);
+			}
 		}
 
 		void closeScope() {
 			scope = scope.parent;
 		}
-		
+
 		void dropScope() {
 			scope.parent.dropLastChild();
-			scopemap.remove(scope.node);
 			scope = scope.parent;
 		}
 
@@ -519,7 +550,7 @@ public abstract class ScopeWalker extends Walker {
 		List<QNm> inScopeBindings() {
 			return scope.localBindings();
 		}
-		
+
 		Set<AST> getScopes() {
 			return scopemap.keySet();
 		}
@@ -591,22 +622,22 @@ public abstract class ScopeWalker extends Walker {
 		// collect all bindings provided by left and right join branch
 		List<QNm> leftInBinding = inspectJoinPipeline(node.getChild(0));
 		List<QNm> rightInBinding = inspectJoinPipeline(node.getChild(2));
-		
+
 		// "pretend" to bind variables from both left and right input
 		for (QNm var : leftInBinding) {
 			table.bind(var);
 		}
 
-		// Note: A name collision will not 
+		// Note: A name collision will not
 		// bind a variable twice
-		// in this joined scope twice! 
+		// in this joined scope twice!
 		for (QNm var : rightInBinding) {
 			table.bind(var);
 		}
 	}
 
 	private List<QNm> inspectJoinPipeline(AST input) {
-		table.openScope(input, true);
+		table.openScope(input, false, true);
 
 		for (AST node = input; node.getType() != XQ.End; node = node
 				.getLastChild()) {
@@ -646,7 +677,7 @@ public abstract class ScopeWalker extends Walker {
 
 	private void typeswitchExpr(AST expr) {
 		walkInspect(expr.getChild(0));
-		table.openScope(expr, false);
+		table.openScope(expr, true, false);
 		for (int i = 1; i < expr.getChildCount(); i++) {
 			// handle default case as case clause
 			caseClause(expr.getChild(i));
@@ -655,7 +686,7 @@ public abstract class ScopeWalker extends Walker {
 	}
 
 	private void caseClause(AST clause) {
-		table.openScope(clause, false);
+		table.openScope(clause, true, false);
 		AST varOrType = clause.getChild(0);
 		if (varOrType.getType() == XQ.Variable) {
 			QNm name = (QNm) varOrType.getValue();
@@ -670,7 +701,7 @@ public abstract class ScopeWalker extends Walker {
 		int scopeCount = 0;
 		// child 0 is quantifier type
 		for (int i = 1; i < expr.getChildCount() - 1; i += 2) {
-			table.openScope(expr.getChild(i), false);
+			table.openScope(expr.getChild(i), true, false);
 			QNm name = (QNm) expr.getChild(i).getChild(0).getValue();
 			table.bind(name);
 			walkInspect(expr.getChild(i + 1));
@@ -683,7 +714,7 @@ public abstract class ScopeWalker extends Walker {
 	}
 
 	private void transformExpr(AST expr) {
-		table.openScope(expr, false);
+		table.openScope(expr, true, false);
 		int pos = 0;
 		while (pos < expr.getChildCount() - 2) {
 			AST binding = expr.getChild(pos++);
@@ -699,7 +730,7 @@ public abstract class ScopeWalker extends Walker {
 
 	private void tryCatchExpr(AST expr) {
 		walkInspect(expr.getChild(0));
-		table.openScope(expr, false);
+		table.openScope(expr, true, false);
 		table.bind(Namespaces.ERR_CODE);
 		table.bind(Namespaces.ERR_DESCRIPTION);
 		table.bind(Namespaces.ERR_VALUE);
@@ -716,7 +747,7 @@ public abstract class ScopeWalker extends Walker {
 	private void filterExpr(AST expr) {
 		walkInspect(expr.getChild(0));
 		for (int i = 1; i < expr.getChildCount(); i++) {
-			table.openScope(expr.getChild(i), false);
+			table.openScope(expr.getChild(i), true, false);
 			table.bind(Namespaces.FS_DOT);
 			table.bind(Namespaces.FS_POSITION);
 			table.bind(Namespaces.FS_LAST);
@@ -728,7 +759,7 @@ public abstract class ScopeWalker extends Walker {
 	private void pathExpr(AST expr) {
 		for (int i = 0; i < expr.getChildCount(); i++) {
 			walkInspect(expr.getChild(i));
-			table.openScope(expr.getChild(i), false);
+			table.openScope(expr.getChild(i), true, false);
 		}
 		for (int i = 0; i < expr.getChildCount(); i++) {
 			table.closeScope();
@@ -736,7 +767,7 @@ public abstract class ScopeWalker extends Walker {
 	}
 
 	private void documentExpr(AST node) {
-		table.openScope(node, false);
+		table.openScope(node, true, false);
 		table.bind(Namespaces.FS_PARENT);
 		walkInspect(node.getChild(0));
 		table.closeScope();
@@ -748,13 +779,13 @@ public abstract class ScopeWalker extends Walker {
 			pos++;
 		}
 		walkInspect(node.getChild(pos++));
-		table.openScope(node, false);
+		table.openScope(node, true, false);
 		table.bind(Namespaces.FS_PARENT);
 		// visit content sequence
 		walkInspect(node.getChild(pos++));
 		table.closeScope();
 	}
-	
+
 	/*
 	 * create a sorted and duplicate-free array of accessed scopes
 	 */
