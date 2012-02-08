@@ -35,6 +35,7 @@ import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.translator.PipelineCompiler;
 import org.brackit.xquery.module.MainModule;
 import org.brackit.xquery.operator.Operator;
+import org.brackit.xquery.util.dot.DotContext;
 import org.brackit.xquery.xdm.Expr;
 
 /**

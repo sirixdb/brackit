@@ -30,6 +30,9 @@ package org.brackit.xquery.compiler.profiler;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.brackit.xquery.util.dot.DotContext;
+import org.brackit.xquery.util.dot.DotNode;
+
 /**
  * 
  * @author Sebastian Baechle

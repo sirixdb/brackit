@@ -34,6 +34,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.operator.Cursor;
 import org.brackit.xquery.operator.Operator;
+import org.brackit.xquery.util.dot.DotNode;
 
 /**
  * 
