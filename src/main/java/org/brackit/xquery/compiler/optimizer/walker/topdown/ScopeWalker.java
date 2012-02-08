@@ -40,10 +40,10 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.compiler.optimizer.walker.Walker;
-import org.brackit.xquery.compiler.parser.DotUtil;
-import org.brackit.xquery.compiler.profiler.DotContext;
-import org.brackit.xquery.compiler.profiler.DotNode;
 import org.brackit.xquery.module.Namespaces;
+import org.brackit.xquery.util.dot.DotContext;
+import org.brackit.xquery.util.dot.DotNode;
+import org.brackit.xquery.util.dot.DotUtil;
 
 /**
  * @author Sebastian Baechle
