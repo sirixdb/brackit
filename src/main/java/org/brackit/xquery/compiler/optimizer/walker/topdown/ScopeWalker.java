@@ -470,11 +470,20 @@ public abstract class ScopeWalker extends Walker {
 			scope = rootScope;
 		}
 
-		public void reset(Scope s) {
+		void reset(Scope s) {
 			for (Scope cs = s.firstChild; cs != null; cs = cs.next) {
-				scopemap.remove(cs.node);
-				reset(cs);
+				remove(cs);
 			}
+			scope = s;
+		}
+
+		protected void remove(Scope s) {
+			scopemap.remove(s.node);
+			for (Scope cs = s.firstChild; cs != null; cs = cs.next) {
+				remove(cs);
+			}
+			s.lvars = null;
+			s.firstChild = null;
 			Scope ps = s.parent.firstChild;
 			if (ps == s) {
 				s.parent.firstChild = s.next;
@@ -484,9 +493,6 @@ public abstract class ScopeWalker extends Walker {
 				}
 				ps.next = s.next;
 			}
-			s.lvars = null;
-			s.firstChild = null;
-			scope = s;
 		}
 
 		void bind(QNm var) {
@@ -765,6 +771,7 @@ public abstract class ScopeWalker extends Walker {
 		for (VarRef ref = varRefs; ref != null; ref = ref.next) {
 			tmp[pos++] = ref.referredScope;
 		}
+		Arrays.sort(tmp);
 		pos = 0;
 		Scope p = tmp[pos++];
 		for (int i = 1; i < cnt; i++) {
