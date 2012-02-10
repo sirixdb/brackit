@@ -92,26 +92,26 @@ public class LetBindToLeftJoin extends ScopeWalker {
 		join.addChild(new AST(XQ.ValueCompEQ));
 		join.addChild(rightIn);
 		join.addChild(rorig.copyTree());
-		
+
 		node.getParent().replaceChild(node.getChildIndex(), join);
 		refreshScopes(node.getParent(), true);
 
 		return join;
 	}
 
-	private AST convertToLeftJoin(AST node, AST join) {
-		AST insertJoinAfter = node.getParent();
+	private AST convertToLeftJoin(AST let, AST top) {
+		AST insertJoinAfter = let.getParent();
 		while (insertJoinAfter.getType() != XQ.Start) {
 			insertJoinAfter = insertJoinAfter.getParent();
 		}
 
-		VarRef varRefs = findVarRefs(join);
+		VarRef varRefs = findVarRefs(top);
 		if (varRefs != null) {
 			// nested join input is not completely independent:
 			// find out which is the latest-bound
 			// variable that the right input branch depends on
 			Scope[] sortScopes = sortScopes(varRefs);
-			Scope rightInScope = findScope(node);
+			Scope rightInScope = findScope(let);
 			for (int i = sortScopes.length - 1; i >= 0; i--) {
 				Scope scope = sortScopes[i];
 				if (scope.compareTo(rightInScope) < 0) {
@@ -121,7 +121,7 @@ public class LetBindToLeftJoin extends ScopeWalker {
 			}
 		}
 
-		AST lorig = node;
+		AST lorig = let;
 		AST lorigp;
 		while ((lorigp = lorig.getParent()) != insertJoinAfter) {
 			// ensure that we do not leave the current pipeline
@@ -134,19 +134,7 @@ public class LetBindToLeftJoin extends ScopeWalker {
 
 		AST leftIn = new AST(XQ.Start);
 		AST copy = leftIn;
-		while (lorig != node) {
-			AST toAdd = lorig.copy();
-			for (int i = 0; i < lorig.getChildCount() - 1; i++) {
-				toAdd.addChild(lorig.getChild(i).copyTree());
-			}
-			copy.addChild(toAdd);
-			copy = toAdd;
-			lorig = lorig.getLastChild();
-		}
-
-		// append left input of the nested join
-		lorig = join.getChild(0).getChild(0);
-		while (lorig.getType() != XQ.End) {
+		while (lorig != let) {
 			AST toAdd = lorig.copy();
 			for (int i = 0; i < lorig.getChildCount() - 1; i++) {
 				toAdd.addChild(lorig.getChild(i).copyTree());
@@ -165,24 +153,16 @@ public class LetBindToLeftJoin extends ScopeWalker {
 		copy.addChild(count);
 		copy = count;
 
-		// now append the final end with the join key expression
+		// now append the final end with the
+		// count variable as join key expression
 		AST lend = new AST(XQ.End);
-		lend.addChild(lorig.getChild(0).copyTree());
+		lend.addChild(new AST(XQ.VariableRef, grpVarName));
 		copy.addChild(lend);
 
-		// simply copy right input of the nested join as right input
-		AST rightIn = join.getChild(2).copyTree();
-
-		// assemble left join (preserve properties)
-		AST ljoin = join.copy();
-		ljoin.setProperty("leftJoin", Boolean.TRUE);
-		ljoin.addChild(leftIn);
-		ljoin.addChild(join.getChild(1).copyTree());
-		ljoin.addChild(rightIn);
-
-		// copy output of nested join
-		AST oorig = join.getChild(3);
-		copy = ljoin;
+		// copy the nested pipeline as right input
+		AST oorig = top;
+		AST rightIn = new AST(XQ.Start);
+		copy = rightIn;
 
 		while (oorig.getType() != XQ.End) {
 			AST toAdd = oorig.copy();
@@ -195,25 +175,38 @@ public class LetBindToLeftJoin extends ScopeWalker {
 		}
 
 		// convert the the nested return expression to a let bind
-		AST letBind = new AST(LetBind);
-		letBind.addChild(node.getChild(0).copyTree());
-		letBind.addChild(oorig.getChild(0).copyTree());
+		// and concatenate it to the right input
+		AST letVarBinding = let.getChild(0).copyTree();
+		// TODO fix cardinality of binding if necessary
+		AST rlet = new AST(LetBind);
+		rlet.addChild(letVarBinding);
+		rlet.addChild(oorig.getChild(0).copyTree());
+		copy.addChild(rlet);
 
-		// group all let-bound return values
+		// group the let-bound return values
 		// (only the binding of the final let will be used)
 		AST groupBy = new AST(GroupBy);
 		AST groupBySpec = new AST(XQ.GroupBySpec);
 		groupBySpec.addChild(new AST(XQ.VariableRef, grpVarName));
 		groupBy.addChild(groupBySpec);
-		letBind.addChild(groupBy);
+		rlet.addChild(groupBy);
 
-		// continue with the normal after the grouping
-		groupBy.addChild(node.getChild(2).copyTree());
+		// use the grouped count variable as right join key
+		AST end = new AST(XQ.End);
+		end.addChild(new AST(XQ.VariableRef, grpVarName));
+		groupBy.addChild(end);
 
-		// concatenate let bind and trailing to join output
-		copy.addChild(letBind);
+		// finally assemble left join
+		AST ljoin = new AST(XQ.Join);
+		ljoin.setProperty("leftJoin", Boolean.TRUE);
+		ljoin.addChild(leftIn);
+		ljoin.addChild(new AST(XQ.ValueCompEQ));
+		ljoin.addChild(rightIn);
+		ljoin.addChild(let.getLastChild().copyTree());
 
-		insertJoinAfter.replaceChild(insertJoinAfter.getChildCount() - 1, ljoin);
+		int replaceAt = insertJoinAfter.getChildCount() - 1;
+		insertJoinAfter.replaceChild(replaceAt, ljoin);
+		snapshot();
 		refreshScopes(insertJoinAfter, true);
 		return insertJoinAfter;
 	}

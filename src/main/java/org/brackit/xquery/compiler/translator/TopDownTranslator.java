@@ -52,6 +52,8 @@ import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.type.AtomicType;
+import org.brackit.xquery.xdm.type.Cardinality;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
@@ -61,6 +63,8 @@ import org.brackit.xquery.xdm.type.SequenceType;
  * 
  */
 public class TopDownTranslator extends Compiler {
+
+	private int tableJoinGroupVar;
 
 	public TopDownTranslator() {
 		super();
@@ -149,6 +153,13 @@ public class TopDownTranslator extends Compiler {
 	}
 
 	protected Operator join(Operator in, AST node) throws QueryException {
+		// prepend an artificial count for
+		// marking the join group boundaries
+		QNm joingroupVar = createGroupVarName();
+		Binding binding = table.bind(joingroupVar, new SequenceType(
+				AtomicType.INR, Cardinality.One));
+		in = new Count(in);
+
 		// compile left (outer) join branch (skip initial start)
 		Operator leftIn = anyOp(in, node.getChild(0).getChild(0));
 
@@ -185,16 +196,19 @@ public class TopDownTranslator extends Compiler {
 		TableJoin join = new TableJoin(cmp, isGcmp, leftJoin, skipSort, leftIn,
 				leftExpr, rightIn, rightExpr);
 
-		QNm prop = (QNm) node.getProperty("group");
-		if (prop != null) {
-			table.resolve(prop, join.group());
-		}
-		prop = (QNm) node.getProperty("check");
+		table.resolve(joingroupVar, join.group());
+
+		QNm prop = (QNm) node.getProperty("check");
 		if (prop != null) {
 			table.resolve(prop, join.check());
 		}
 
-		return anyOp(join, node.getLastChild());
+		Operator op = join;
+		if (node.getParent().getParent().getType() == XQ.Join) {
+			op = new Print(join, System.out);
+		}
+		
+		return anyOp(op, node.getLastChild());
 	}
 
 	private Cmp cmp(AST cmpNode) throws QueryException {
@@ -385,5 +399,9 @@ public class TopDownTranslator extends Compiler {
 				}
 			}
 		};
+	}
+
+	private QNm createGroupVarName() {
+		return new QNm("_joingroup;" + (tableJoinGroupVar++));
 	}
 }
