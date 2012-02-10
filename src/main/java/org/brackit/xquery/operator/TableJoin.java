@@ -34,7 +34,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.compiler.translator.Reference;
-import org.brackit.xquery.expr.VCmpExpr.Cmp;
+import org.brackit.xquery.util.Cmp;
 import org.brackit.xquery.util.join.FastList;
 import org.brackit.xquery.util.join.MultiTypeJoinTable;
 import org.brackit.xquery.xdm.Expr;

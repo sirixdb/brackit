@@ -30,10 +30,7 @@ package org.brackit.xquery.expr;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.atomic.Bool;
-import org.brackit.xquery.atomic.Str;
-import org.brackit.xquery.atomic.Una;
+import org.brackit.xquery.util.Cmp;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
@@ -44,37 +41,6 @@ import org.brackit.xquery.xdm.Sequence;
  * 
  */
 public class VCmpExpr implements Expr {
-	public enum Cmp {
-		eq, ne, lt, le, gt, ge;
-
-		/**
-		 * Compares two atomic values. This method performs type promotion if
-		 * necessary. We assume, however, that none of the types is of type
-		 * xs:untypedAtomic.
-		 */
-		public Bool compare(QueryContext ctx, Atomic left, Atomic right)
-				throws QueryException {
-			if (this == Cmp.eq) {
-				return left.eq(right) ? Bool.TRUE : Bool.FALSE;
-			} else if (this == Cmp.ne) {
-				return left.eq(right) ? Bool.FALSE : Bool.TRUE;
-			}
-
-			int compare = left.cmp(right);
-			boolean res;
-
-			if (compare == 0) {
-				res = ((this == Cmp.ge) || (this == Cmp.le));
-			} else if (compare < 0) {
-				res = ((this == Cmp.le) || (this == Cmp.lt));
-			} else {
-				res = ((this == Cmp.ge) || (this == Cmp.gt));
-			}
-
-			return (res ? Bool.TRUE : Bool.FALSE);
-		}
-	}
-
 	protected final Cmp cmp;
 	protected final Expr leftExpr;
 	protected final Expr rightExpr;
@@ -99,23 +65,7 @@ public class VCmpExpr implements Expr {
 		// err:XPTY0004 before atomization which may cause an err:FOTY0012?
 		Item left = leftExpr.evaluateToItem(ctx, tuple);
 		Item right = rightExpr.evaluateToItem(ctx, tuple);
-
-		if ((left == null) || (right == null)) {
-			return null;
-		}
-
-		left = left.atomize();
-		right = right.atomize();
-
-		if (left instanceof Una) {
-			left = new Str(((Una) left).str);
-		}
-
-		if (right instanceof Una) {
-			right = new Str(((Una) right).str);
-		}
-
-		return cmp.compare(ctx, (Atomic) left, (Atomic) right);
+		return cmp.vCmpAsBool(ctx, left, right);
 	}
 
 	@Override
