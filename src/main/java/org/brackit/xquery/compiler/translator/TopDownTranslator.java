@@ -150,15 +150,13 @@ public class TopDownTranslator extends Compiler {
 
 	protected Operator join(Operator in, AST node) throws QueryException {
 		// compile left (outer) join branch (skip initial start)
-		int pos = 0;
-		Operator leftIn = anyOp(in, node.getChild(pos++).getChild(0));
+		Operator leftIn = anyOp(in, node.getChild(0).getChild(0));
 
 		// get join type
-		AST comparison = node.getChild(pos++);
-		Cmp cmp = cmp(comparison.getChild(0));
+		Cmp cmp = cmp(node.getChild(1));
 
 		boolean isGcmp = false;
-		switch (comparison.getChild(0).getType()) {
+		switch (node.getChild(1).getType()) {
 		case XQ.GeneralCompEQ:
 		case XQ.GeneralCompGE:
 		case XQ.GeneralCompLE:
@@ -168,11 +166,19 @@ public class TopDownTranslator extends Compiler {
 			isGcmp = true;
 		}
 
-		Expr leftExpr = anyExpr(comparison.getChild(1));
+		AST tmp = node.getChild(0);
+		while (tmp.getType() != XQ.End) {
+			tmp = tmp.getLastChild();
+		}
+		Expr leftExpr = anyExpr(tmp.getChild(0));
 
 		// compile right (inner) join branch
-		Operator rightIn = anyOp(new Start(), node.getChild(pos++));
-		Expr rightExpr = anyExpr(comparison.getChild(2));
+		Operator rightIn = anyOp(new Start(), node.getChild(2));
+		tmp = node.getChild(2);
+		while (tmp.getType() != XQ.End) {
+			tmp = tmp.getLastChild();
+		}
+		Expr rightExpr = anyExpr(tmp.getChild(0));
 
 		boolean leftJoin = node.checkProperty("leftJoin");
 		boolean skipSort = node.checkProperty("skipSort");

@@ -130,14 +130,9 @@ public class JoinRewriter extends ScopeWalker {
 				break;
 			}
 		}
-		
-		AST condition = new AST(ComparisonExpr);
-		condition.addChild(comparison.copy());
-		condition.addChild(s1Expr.copyTree());
-		condition.addChild(s2Expr.copyTree());
 
 		// we found join semantics:
-		// walk upstairs until we eitherfind
+		// walk upstairs until we either find
 		// a) the beginning of this pipeline or
 		// b) the node defining the beginning of S2
 		AST anc = select.getParent();
@@ -145,15 +140,17 @@ public class JoinRewriter extends ScopeWalker {
 			if (anc.getType() == XQ.Start) {
 				return select;
 			} else if (anc == s2Begin.node) {
-				return convertToJoin(anc.getParent(), s2Begin.node, select, condition);
-			} 
+				return convertToJoin(anc.getParent(), s2Begin.node, select,
+						s1Expr, s2Expr, comparison);
+			}
 			anc = anc.getParent();
 		}
 	}
-	
-	private AST convertToJoin(AST leftInRoot, AST rightInRoot, AST select, AST cmp) {
+
+	private AST convertToJoin(AST leftInRoot, AST rightInRoot, AST select,
+			AST s1Expr, AST s2Expr, AST cmp) {
 		// copy left input pipeline
-		AST lorig = leftInRoot;		
+		AST lorig = leftInRoot;
 		AST leftIn = new AST(XQ.Start);
 		AST copy = leftIn;
 
@@ -162,7 +159,7 @@ public class JoinRewriter extends ScopeWalker {
 			lorig = lorig.getLastChild();
 			leftInRoot = lorig;
 		}
-		
+
 		while (lorig != rightInRoot) {
 			AST toAdd = lorig.copy();
 			for (int i = 0; i < lorig.getChildCount() - 1; i++) {
@@ -172,8 +169,10 @@ public class JoinRewriter extends ScopeWalker {
 			copy = toAdd;
 			lorig = lorig.getLastChild();
 		}
-		copy.addChild(new AST(XQ.End));
-		
+		AST s1End = new AST(XQ.End);
+		s1End.addChild(s1Expr.copyTree());
+		copy.addChild(s1End);
+
 		// copy start of right (nested) input pipeline
 		AST rorig = lorig;
 		AST rightIn = new AST(XQ.Start);
@@ -188,7 +187,9 @@ public class JoinRewriter extends ScopeWalker {
 			copy = toAdd;
 			rorig = rorig.getLastChild();
 		}
-		copy.addChild(new AST(XQ.End));
+		AST s2End = new AST(XQ.End);
+		s2End.addChild(s2Expr.copyTree());
+		copy.addChild(s2End);
 
 		AST join = new AST(XQ.Join);
 		join.addChild(leftIn);
@@ -202,7 +203,7 @@ public class JoinRewriter extends ScopeWalker {
 		refreshScopes(parent, true);
 		return parent;
 	}
-	
+
 	private AST swapCmp(AST comparison) {
 		switch (comparison.getType()) {
 		case GeneralCompGE:

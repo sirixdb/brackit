@@ -70,17 +70,14 @@ public abstract class ScopeWalker extends Walker {
 
 	protected final void refreshScopes(AST node, boolean pipeline) {
 		Scope s = findScope(node);
-		table.resetTo(s);
+		table.reset(s);
 		if (XQuery.DEBUG) {
 			DotUtil.drawDotToFile(table.rootScope.dot(), XQuery.DEBUG_DIR,
 					getClass().getSimpleName() + "_scopes_" + (dotCount)
 							+ "reset");
 		}
 		if (pipeline) {
-			AST out = node.getLastChild();
-			if (out.getType() != XQ.End) {
-				inspectPipeline(out);
-			}
+			inspectPipeline(node);
 		} else {
 			walkInspect(s.node);
 		}
@@ -138,10 +135,6 @@ public abstract class ScopeWalker extends Walker {
 		}
 	}
 
-	private void inspectPipeline(AST node) {
-		inspectPipeline(node, null);
-	}
-
 	/*
 	 * Walk pipeline up and check for each operator, which bindings of its
 	 * output will be used by upstream operators. All unused output bindings can
@@ -149,7 +142,7 @@ public abstract class ScopeWalker extends Walker {
 	 * a binding which is not used. Nevertheless, this mechanism still admits
 	 * that later at compilation an operator creates superfluous bindings.
 	 */
-	private void inspectPipeline(AST node, AST useAsReturn) {
+	private void inspectPipeline(AST node) {
 		table.openScope(node, true, true);
 		switch (node.getType()) {
 		case XQ.Start:
@@ -167,9 +160,6 @@ public abstract class ScopeWalker extends Walker {
 			orderBy(node);
 			break;
 		case XQ.Join:
-			// joins are non-linear
-			// and must be handled as
-			// special cases
 			join(node);
 			break;
 		case XQ.GroupBy:
@@ -178,64 +168,31 @@ public abstract class ScopeWalker extends Walker {
 		case XQ.Count:
 			count(node);
 			break;
+		case XQ.End:
+			// visit return or join expression
+			walkInspect(node.getChild(0));
+			table.closeScope();
+			return;
 		default:
 			throw new RuntimeException("Illegal pipeline node "
 					+ node.getStringValue());
 		}
 
-		AST out = node.getLastChild();
-		if (out.getType() == XQ.End) {
-			// visit local or provided return expression
-			if ((useAsReturn == null) && (out.getChildCount() != 0)) {
-				walkInspect(out.getChild(0));
-			} else {
-				walkInspect(useAsReturn);
-			}
-		} else {
-			// visit output to check if it references
-			// any variables of this operator
-			inspectPipeline(out, useAsReturn);
-		}
+		// visit output to check if it references
+		// any variables of this operator
+		inspectPipeline(node.getLastChild());
+
 		table.closeScope();
 	}
 
 	protected final Scope findScope(AST node) {
-		AST tmpc = null;
 		AST tmp = node;
-		while (true) {
+		do {
 			Scope s = table.scopemap.get(tmp);
 			if (s != null) {
 				return s;
 			}
-			AST tmpp = tmp.getParent();
-			if (tmpp == null) {
-				break;
-			}
-			// check if we are in the comparision
-			// expression of a join and choose
-			// the tail of the corresponding input
-			// pipeline as scope
-			if (tmpp.getType() == XQ.Join) {
-				AST p;
-				if (tmpc.getChildIndex() == 1) {
-					p = tmpp.getChild(0);
-				} else {
-					p = tmpp.getChild(2);
-				}
-				// walk down the pipeline and
-				// return the last scope
-				while (p.getLastChild().getType() != XQ.End) {
-					p = p.getLastChild();
-				}
-				s = table.scopemap.get(p);
-				if (s == null) {
-					throw new IllegalStateException();
-				}
-				return s;
-			}
-			tmpc = tmp;
-			tmp = tmpp;
-		}
+		} while ((tmp = tmp.getParent()) != null);
 		return table.rootScope;
 	}
 
@@ -513,10 +470,19 @@ public abstract class ScopeWalker extends Walker {
 			scope = rootScope;
 		}
 
-		public void resetTo(Scope s) {
+		public void reset(Scope s) {
 			for (Scope cs = s.firstChild; cs != null; cs = cs.next) {
 				scopemap.remove(cs.node);
-				resetTo(cs);
+				reset(cs);
+			}
+			Scope ps = s.parent.firstChild;
+			if (ps == s) {
+				s.parent.firstChild = s.next;
+			} else {
+				while (ps.next != s) {
+					ps = ps.next;
+				}
+				ps.next = s.next;
 			}
 			s.lvars = null;
 			s.firstChild = null;
@@ -614,14 +580,14 @@ public abstract class ScopeWalker extends Walker {
 	}
 
 	private void join(AST node) {
-		// visit left input and use left join expression as "return"
-		inspectPipeline(node.getChild(0), node.getChild(1).getChild(1));
-		// visit right input and use right join expression as "return"
-		inspectPipeline(node.getChild(2), node.getChild(1).getChild(2));
+		// visit left input
+		inspectPipeline(node.getChild(0));
+		// visit right input
+		inspectPipeline(node.getChild(2));
 
 		// collect all bindings provided by left and right join branch
-		List<QNm> leftInBinding = inspectJoinPipeline(node.getChild(0));
-		List<QNm> rightInBinding = inspectJoinPipeline(node.getChild(2));
+		List<QNm> leftInBinding = getPipelineBindings(node.getChild(0));
+		List<QNm> rightInBinding = getPipelineBindings(node.getChild(2));
 
 		// "pretend" to bind variables from both left and right input
 		for (QNm var : leftInBinding) {
@@ -636,7 +602,7 @@ public abstract class ScopeWalker extends Walker {
 		}
 	}
 
-	private List<QNm> inspectJoinPipeline(AST input) {
+	private List<QNm> getPipelineBindings(AST input) {
 		table.openScope(input, false, true);
 
 		for (AST node = input; node.getType() != XQ.End; node = node

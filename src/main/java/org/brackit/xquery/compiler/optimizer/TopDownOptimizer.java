@@ -123,7 +123,7 @@ public class TopDownOptimizer implements Optimizer {
 	private static class JoinRecognition implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new JoinRewriter().walk(ast);
-			ast = new JoinInnerLoopCache().walk(ast);
+//			ast = new JoinInnerLoopCache().walk(ast);
 			// ast = new JoinTree().walk(ast);
 			// ast = new JoinTree().walk(ast);
 			// ast = new JoinSortElimination().walk(ast);
@@ -145,7 +145,7 @@ public class TopDownOptimizer implements Optimizer {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new MergeWherePredicates().walk(ast);
 			ast = new PathDDOElimination(sctx).walk(ast);
-			ast = new Projection().walk(ast);
+//			ast = new Projection().walk(ast);
 			return ast;
 		}
 	}
