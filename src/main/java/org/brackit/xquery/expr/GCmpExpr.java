@@ -30,15 +30,10 @@ package org.brackit.xquery.expr;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.atomic.Bool;
-import org.brackit.xquery.atomic.Dbl;
-import org.brackit.xquery.atomic.Una;
+import org.brackit.xquery.util.Cmp;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Type;
 
 /**
  * 
@@ -56,84 +51,7 @@ public class GCmpExpr extends VCmpExpr {
 		// Begin evaluate operands 3.5.2
 		Sequence left = leftExpr.evaluate(ctx, tuple);
 		Sequence right = rightExpr.evaluate(ctx, tuple);
-
-		if ((left == null) || (right == null)) {
-			return null;
-		}
-
-		// assume simple case and perform cheaper direct evaluation
-		if ((left instanceof Item) && (right instanceof Item)) {
-			return compareLeftAndRightAtomic(ctx, ((Item) left).atomize(),
-					((Item) right).atomize());
-		}
-
-		Iter ls = left.iterate();
-		Iter rs = null;
-		Item lItem;
-		Item rItem;
-		Atomic lAtomic;
-		Atomic rAtomic;
-
-		try {
-			while ((lItem = ls.next()) != null) {
-				lAtomic = lItem.atomize();
-
-				rs = right.iterate();
-				while ((rItem = rs.next()) != null) {
-					rAtomic = rItem.atomize();
-
-					Bool res = compareLeftAndRightAtomic(ctx, lAtomic, rAtomic);
-
-					if (res == Bool.TRUE) {
-						return res;
-					}
-				}
-				rs.close();
-				rs = null;
-			}
-		} finally {
-			ls.close();
-			if (rs != null) {
-				rs.close();
-			}
-		}
-
-		return Bool.FALSE;
-	}
-
-	private Bool compareLeftAndRightAtomic(QueryContext ctx, Atomic lAtomic,
-			Atomic rAtomic) throws QueryException {
-		Type lType = lAtomic.type();
-		Type rType = rAtomic.type();
-
-		if (lType.instanceOf(Type.UNA)) {
-			if (rType.isNumeric()) {
-				lAtomic = Dbl.parse(((Una) lAtomic).str);
-			} else if (rType.instanceOf(Type.UNA)
-					|| (rType.instanceOf(Type.STR))) {
-				// Optimized: Avoid explicit cast
-				/*
-				 * rAtomic = Cast.cast(ctx, rAtomic, Type.STR, false); lAtomic =
-				 * Cast.cast(ctx, lAtomic, Type.STR, false);
-				 */
-			} else {
-				lAtomic = Cast.cast(null, lAtomic, rAtomic.type(), false);
-			}
-		} else if (rType.instanceOf(Type.UNA)) {
-			if (lType.isNumeric()) {
-				rAtomic = Dbl.parse(((Una) rAtomic).str);
-			} else if (lType.instanceOf(Type.STR)) {
-				// Optimized: Avoid explicit cast
-				/*
-				 * lAtomic = Cast.cast(ctx, lAtomic, Type.STR, false); rAtomic =
-				 * Cast.cast(ctx, rAtomic, Type.STR, false);
-				 */
-			} else {
-				rAtomic = Cast.cast(null, rAtomic, lAtomic.type(), false);
-			}
-		}
-
-		return cmp.compare(ctx, lAtomic, rAtomic);
+		return cmp.gCmpAsBool(ctx, left, right);
 	}
 
 	public String toString() {

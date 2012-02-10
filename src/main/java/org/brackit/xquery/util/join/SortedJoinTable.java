@@ -33,7 +33,7 @@ import java.util.List;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.expr.VCmpExpr.Cmp;
+import org.brackit.xquery.util.Cmp;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
