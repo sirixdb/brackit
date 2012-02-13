@@ -31,7 +31,6 @@ import static org.brackit.xquery.compiler.XQ.GroupBy;
 import static org.brackit.xquery.compiler.XQ.LetBind;
 import static org.brackit.xquery.compiler.XQ.PipeExpr;
 
-import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
