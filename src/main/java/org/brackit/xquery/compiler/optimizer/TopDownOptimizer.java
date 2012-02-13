@@ -35,15 +35,13 @@ import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.optimizer.walker.DoSNStepMerger;
 import org.brackit.xquery.compiler.optimizer.walker.OrderForGroupBy;
 import org.brackit.xquery.compiler.optimizer.walker.PathDDOElimination;
-import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinInnerLoopCache;
-import org.brackit.xquery.compiler.optimizer.walker.topdown.SplitWherePredicate;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinRewriter;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.LetBindToLeftJoin;
-import org.brackit.xquery.compiler.optimizer.walker.topdown.MergeWherePredicates;
-import org.brackit.xquery.compiler.optimizer.walker.topdown.Projection;
+import org.brackit.xquery.compiler.optimizer.walker.topdown.PredicateMerge;
+import org.brackit.xquery.compiler.optimizer.walker.topdown.PredicateSplit;
+import org.brackit.xquery.compiler.optimizer.walker.topdown.SelectPullup;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.TopDownPipeline;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.util.Cfg;
 
 /**
  * @author Sebastian Baechle
@@ -51,31 +49,14 @@ import org.brackit.xquery.util.Cfg;
  */
 public class TopDownOptimizer implements Optimizer {
 
-	public static final String VARIABLE_PULLUP_CFG = "org.brackit.xquery.variablePullup";
-
-	public static final String JOIN_DETECTION_CFG = "org.brackit.xquery.joinDetection";
-
-	public static final String UNNEST_CFG = "org.brackit.xquery.unnest";
-
-	public static boolean UNNEST = Cfg.asBool(UNNEST_CFG, true);
-
-	public static boolean VARIABLE_PULLUP = Cfg.asBool(VARIABLE_PULLUP_CFG,
-			false);
-
-	public static boolean JOIN_DETECTION = Cfg.asBool(JOIN_DETECTION_CFG, true);
-
 	private List<Stage> stages = new ArrayList<Stage>();
 
 	public TopDownOptimizer() {
 		stages.add(new Simplification());
 		stages.add(new Pipelining());
 		stages.add(new Reordering());
-		// if (JOIN_DETECTION) {
 		stages.add(new JoinRecognition());
-		// }
-		if (UNNEST) {
-			stages.add(new Unnest());
-		}
+		stages.add(new Unnest());
 		stages.add(new Finalize());
 	}
 
@@ -113,8 +94,8 @@ public class TopDownOptimizer implements Optimizer {
 
 	private static class Reordering implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
-			ast = new SplitWherePredicate().walk(ast);
-			// ast = new SelectPushdown().walk(ast);
+			ast = new PredicateSplit().walk(ast);
+			ast = new SelectPullup().walk(ast);
 			// ast = new BindingPushup().walk(ast);
 			return ast;
 		}
@@ -123,7 +104,6 @@ public class TopDownOptimizer implements Optimizer {
 	private static class JoinRecognition implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new JoinRewriter().walk(ast);
-//			ast = new JoinInnerLoopCache().walk(ast);
 			// ast = new JoinTree().walk(ast);
 			// ast = new JoinTree().walk(ast);
 			// ast = new JoinSortElimination().walk(ast);
@@ -135,17 +115,15 @@ public class TopDownOptimizer implements Optimizer {
 	private static class Unnest implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new LetBindToLeftJoin().walk(ast);
-			// ast = new BindingPushupAfterLifting().walk(ast); // 2nd chance
-			// for pushing
 			return ast;
 		}
 	}
 
 	private static class Finalize implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
-			ast = new MergeWherePredicates().walk(ast);
+			ast = new PredicateMerge().walk(ast);
 			ast = new PathDDOElimination(sctx).walk(ast);
-//			ast = new Projection().walk(ast);
+			// ast = new Projection().walk(ast);
 			return ast;
 		}
 	}
