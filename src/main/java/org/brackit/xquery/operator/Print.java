@@ -41,7 +41,6 @@ import org.brackit.xquery.xdm.Sequence;
  */
 public class Print implements Operator {
 	private final Operator in;
-
 	private final PrintStream out;
 
 	public Print(Operator in, PrintStream out) {
@@ -51,15 +50,16 @@ public class Print implements Operator {
 
 	protected class PrintCursor implements Cursor {
 		private final Cursor c;
-
+		private final Tuple t;
 		private final PrintStream out;
 
 		private int maxSize = 20;
 
 		private int count;
 
-		public PrintCursor(Cursor c, PrintStream out) {
+		public PrintCursor(Cursor c, Tuple t, PrintStream out) {
 			this.c = c;
+			this.t = t;
 			this.out = out;
 		}
 
@@ -82,7 +82,7 @@ public class Print implements Operator {
 				for (int i = 0; i < size; i++) {
 					out.print(' ');
 					Sequence sequence = next.get(i);
-					String s = asString(ctx, sequence);
+					String s = (sequence != null) ? asString(ctx, sequence) : "()";
 					s = shrinkOrPad(s);
 					out.print(s);
 					out.print(" |");
@@ -122,12 +122,14 @@ public class Print implements Operator {
 		public void open(QueryContext ctx) throws QueryException {
 			c.open(ctx);
 			count = 0;
+			out.print("--- ");
+			out.println(t);
 		}
 	}
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return new PrintCursor(in.create(ctx, tuple), out);
+		return new PrintCursor(in.create(ctx, tuple), tuple, out);
 	}	
 	
 	@Override
