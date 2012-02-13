@@ -25,46 +25,72 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.function.fn;
+package org.brackit.xquery.util.dot;
 
-import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.util.aggregator.SumAvgAggregator;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Signature;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public class SumAvg extends AbstractFunction {
-	private final boolean avg;
+public class DotNode {
+	private static class Row {
+		final String port;
+		final String name;
+		final String value;
 
-	public SumAvg(QNm name, Signature signature, boolean avg) {
-		super(name, signature, true);
-		this.avg = avg;
+		Row(String port, String name, String value) {
+			this.port = port;
+			this.name = name;
+			this.value = value;
+		}
 	}
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx,
-			Sequence[] args) throws QueryException {
-		Sequence seq = args[0];
+	final String name;
+	final List<DotNode.Row> rows = new ArrayList<DotNode.Row>();
 
-		Sequence defaultValue = (args.length == 2) ? args[1] : Int32.ZERO;
-		if (seq == null) {
-			if (avg) {
-				return null;
+	DotNode(String name) {
+		this.name = name;
+	}
+
+	public void addRow(String port, String name, String value) {
+		rows.add(new Row(port, name, value));
+	}
+
+	public void addRow(String name, String value) {
+		rows.add(new Row(null, name, value));
+	}
+
+	public void addRow(String name, int value) {
+		rows.add(new Row(null, name, String.valueOf(value)));
+	}
+
+	public void addRow(String name, long value) {
+		rows.add(new Row(null, name, String.valueOf(value)));
+	}
+
+	public void addRow(String name, double value) {
+		rows.add(new Row(null, name, String.format("%.3f", value)));
+	}
+
+	public String toDotString() {
+		String head = String
+				.format(
+						"%s [ label=<<TABLE PORT=\"port\" BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" ALIGN=\"CENTER\">",
+						DotContext.maskHTML(name));
+		for (DotNode.Row r : rows) {
+			if (r.value != null) {
+				head += String.format("<TR><TD>%s</TD><TD>%s</TD></TR>",
+						DotContext.maskHTML(r.name), DotContext
+								.maskHTML(r.value));
+			} else {
+				head += String.format("<TR><TD COLSPAN=\"2\">%s</TD></TR>",
+						DotContext.maskHTML(r.name));
 			}
-			return defaultValue;
 		}
-
-		SumAvgAggregator agg = new SumAvgAggregator(avg, defaultValue);
-		agg.add(seq);
-		return agg.getAggregate();
+		head += "</TABLE>>];";
+		return head;
 	}
 }

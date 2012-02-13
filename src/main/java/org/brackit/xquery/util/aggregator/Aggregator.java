@@ -17,57 +17,26 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.parser;
+package org.brackit.xquery.util.aggregator;
 
-import java.io.File;
-import java.io.FileWriter;
-
-import org.brackit.xquery.util.log.Logger;
+import org.brackit.xquery.QueryException;
+import org.brackit.xquery.xdm.Sequence;
 
 /**
- * 
  * @author Sebastian Baechle
  * 
  */
-public class DotUtil {
-	public static final String PLOT_TYPE = "svg";
+public interface Aggregator {
+	public Sequence getAggregate() throws QueryException;
 
-	private static final Logger log = Logger.getLogger(DotUtil.class);
+	public void add(Sequence seq) throws QueryException;
 
-	public static void drawDotToFile(String dotString, String dir, String name) {
-		String svgFile = dir + name + "." + PLOT_TYPE;
-
-		try {
-			File f = File.createTempFile("ast", "dot");
-			f.deleteOnExit();
-
-			// Create the output file and write the dot spec to it
-			FileWriter outputStream = new FileWriter(f);
-			outputStream.write(dotString);
-			outputStream.close();
-
-			// Invoke dot to generate a .png file
-			if (log.isDebugEnabled()) {
-				log
-						.debug(String.format(
-								"Drawing AST '%s' with dot to SVG '%s'", name,
-								svgFile));
-			}
-			Process proc = Runtime.getRuntime().exec(
-					"dot -T" + PLOT_TYPE + " -o" + svgFile + " " + f);
-			proc.waitFor();
-			f.delete();
-		} catch (Exception e) {
-			log.error(String.format("Creating dot plan '%s' failed.", svgFile),
-					e);
-		}
-	}
 }

@@ -34,10 +34,12 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.compiler.translator.Reference;
+import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.sequence.NestedSequence;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Type;
 
 /**
  * @author Sebastian Baechle
@@ -161,7 +163,10 @@ public class GroupBy implements Operator {
 				Sequence seq = t.get(groupSpecs[i]);
 				if (seq != null) {
 					Item item = ExprUtil.asItem(seq);
-					gk[i] = (item).atomize();
+					gk[i] = item.atomize();
+					if (gk[i].type().instanceOf(Type.UNA)) {
+						gk[i] = Cast.cast(null, gk[i], Type.STR);
+					}
 				}
 			}
 			return gk;

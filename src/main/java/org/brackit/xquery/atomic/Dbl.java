@@ -275,9 +275,4 @@ public class Dbl extends AbstractNumeric implements DblNumeric {
 		scaled = Math.rint(scaled);
 		return new Dbl(scaled / factor);
 	}
-
-	@Override
-	public int hashCode() {
-		return new Double(v).hashCode();
-	}
 }

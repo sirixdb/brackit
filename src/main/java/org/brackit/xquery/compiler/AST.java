@@ -33,9 +33,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.brackit.xquery.compiler.profiler.DotContext;
-import org.brackit.xquery.compiler.profiler.DotNode;
 import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.util.dot.DotContext;
+import org.brackit.xquery.util.dot.DotNode;
 
 /**
  * 

@@ -270,9 +270,4 @@ public class Dec extends AbstractNumeric implements DecNumeric {
 		bd = bd.setScale(0, BigDecimal.ROUND_HALF_EVEN);
 		return new Dec(bd.scaleByPowerOfTen(-precision));
 	}
-
-	@Override
-	public int hashCode() {
-		return new Double(v.doubleValue()).hashCode();
-	}
 }

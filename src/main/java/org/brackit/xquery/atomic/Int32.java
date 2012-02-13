@@ -357,9 +357,4 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
 	public Numeric roundHalfToEven(int precision) throws QueryException {
 		return this;
 	}
-
-	@Override
-	public int hashCode() {
-		return new Integer(v).hashCode();
-	}
 }

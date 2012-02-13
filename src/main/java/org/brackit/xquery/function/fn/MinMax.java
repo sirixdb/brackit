@@ -30,18 +30,13 @@ package org.brackit.xquery.function.fn;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.atomic.Numeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
-import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
+import org.brackit.xquery.util.aggregator.MinMaxAggregator;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.Type;
 
 /**
  * 
@@ -57,8 +52,8 @@ public class MinMax extends AbstractFunction {
 	}
 
 	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
+	public Sequence execute(StaticContext sctx, QueryContext ctx,
+			Sequence[] args) throws QueryException {
 		if (args.length == 2) {
 			Str collation = (Str) args[1];
 
@@ -70,131 +65,13 @@ public class MinMax extends AbstractFunction {
 		}
 
 		Sequence seq = args[0];
-		Item item;
-		Atomic minmax = null;
-		Type minmaxType = null;
-		
+
 		if (seq == null) {
 			return null;
 		}
 
-		Iter in = seq.iterate();
-		try {
-			if ((item = in.next()) != null) {
-				minmax = item.atomize();
-				minmaxType = minmax.type();
-
-				if (minmaxType == Type.UNA) {
-					minmax = Cast.cast(null, minmax, Type.DBL, false);
-					minmaxType = Type.DBL;
-				}
-
-				if (minmaxType.isNumeric()) {
-					minmax = numericMinmax(ctx, in, minmax);
-				} else if (minmaxType.instanceOf(Type.STR)) {
-					minmax = stringMinmax(ctx, in, minmax);
-				} else if (minmaxType.instanceOf(Type.YMD)
-						|| minmaxType.instanceOf(Type.DTD)
-						|| minmaxType.instanceOf(Type.DATE)
-						|| minmaxType.instanceOf(Type.AURI)
-						|| minmaxType.instanceOf(Type.BOOL)
-						|| minmaxType.instanceOf(Type.DATE)
-						|| minmaxType.instanceOf(Type.TIME)) {
-					minmax = genericMinmax(ctx, in, minmax);
-				} else {
-					throw new QueryException(
-							ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-							"Cannot compute min/max for items of type: %s",
-							minmaxType);
-				}
-			}
-		} finally {
-			in.close();
-		}
-
-		return minmax;
-	}
-
-	private Atomic genericMinmax(QueryContext ctx, Iter in, Atomic minmax)
-			throws QueryException {
-		Item item;
-		final Type minmaxType = minmax.type().getPrimitiveBase();
-
-		while ((item = in.next()) != null) {
-			Atomic s = item.atomize();
-			Type type = s.type();
-
-			if (!type.instanceOf(minmaxType)) {
-				throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-						"Incomparable types in aggregate function: %s and %s.",
-						minmaxType, type);
-			}
-
-			int res = minmax.cmp(s);
-
-			if ((min) ? (res > 0) : (res < 0)) {
-				minmax = s;
-			}
-		}
-
-		return minmax;
-	}
-
-	private Atomic stringMinmax(QueryContext ctx, Iter in, Atomic minmax)
-			throws QueryException {
-		Item item;
-		final Type minmaxType = minmax.type().getPrimitiveBase();
-
-		while ((item = in.next()) != null) {
-			Atomic s = item.atomize();
-			Type type = s.type();
-
-			if (type == Type.AURI) {
-				s = Cast.cast(null, s, Type.STR, false);
-				type = Type.STR;
-			} else if (!type.instanceOf(Type.STR)) {
-				throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-						"Incomparable types in aggregate function: %s and %s.",
-						minmaxType, type);
-			}
-
-			int res = minmax.cmp(s);
-
-			if ((min) ? (res > 0) : (res < 0)) {
-				minmax = s;
-			}
-		}
-
-		return minmax;
-	}
-
-	private Atomic numericMinmax(QueryContext ctx, Iter in, Atomic minmax)
-			throws QueryException {
-		Item item;
-		final Type minmaxType = minmax.type();
-
-		while ((item = in.next()) != null) {
-			Atomic s = item.atomize();
-			Type type = s.type();
-
-			if (type == Type.UNA) {
-				s = Cast.cast(null, s, Type.DBL, false);
-				type = Type.DBL;
-			}
-
-			if (!(s instanceof Numeric)) {
-				throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-						"Incomparable types in aggregate function: %s and %s.",
-						minmaxType, type);
-			}
-
-			int res = minmax.cmp(s);
-
-			if ((min) ? (res > 0) : (res < 0)) {
-				minmax = s;
-			}
-		}
-
-		return minmax;
+		MinMaxAggregator agg = new MinMaxAggregator(min);
+		agg.add(seq);
+		return agg.getAggregate();
 	}
 }

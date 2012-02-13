@@ -370,5 +370,12 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 			pos--;
 		}
 		return (pos == len) ? s : s.substring(0, pos + 1);
+	}	
+	
+	@Override
+	public final int hashCode() {
+		// Use same hash code as in OpenJDK's java.lang.Double
+		long bits = Double.doubleToLongBits(doubleValue());
+        return (int)(bits ^ (bits >>> 32));
 	}
 }

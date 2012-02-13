@@ -25,72 +25,49 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.profiler;
+package org.brackit.xquery.util.dot;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.File;
+import java.io.FileWriter;
+
+import org.brackit.xquery.util.log.Logger;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public class DotNode {
-	private static class Row {
-		final String port;
-		final String name;
-		final String value;
+public class DotUtil {
+	public static final String PLOT_TYPE = "svg";
 
-		Row(String port, String name, String value) {
-			this.port = port;
-			this.name = name;
-			this.value = value;
-		}
-	}
+	private static final Logger log = Logger.getLogger(DotUtil.class);
 
-	final String name;
-	final List<DotNode.Row> rows = new ArrayList<DotNode.Row>();
+	public static void drawDotToFile(String dotString, String dir, String name) {
+		String svgFile = dir + name + "." + PLOT_TYPE;
 
-	DotNode(String name) {
-		this.name = name;
-	}
+		try {
+			File f = File.createTempFile("ast", "dot");
+			f.deleteOnExit();
 
-	public void addRow(String port, String name, String value) {
-		rows.add(new Row(port, name, value));
-	}
+			// Create the output file and write the dot spec to it
+			FileWriter outputStream = new FileWriter(f);
+			outputStream.write(dotString);
+			outputStream.close();
 
-	public void addRow(String name, String value) {
-		rows.add(new Row(null, name, value));
-	}
-
-	public void addRow(String name, int value) {
-		rows.add(new Row(null, name, String.valueOf(value)));
-	}
-
-	public void addRow(String name, long value) {
-		rows.add(new Row(null, name, String.valueOf(value)));
-	}
-
-	public void addRow(String name, double value) {
-		rows.add(new Row(null, name, String.format("%.3f", value)));
-	}
-
-	public String toDotString() {
-		String head = String
-				.format(
-						"%s [ label=<<TABLE PORT=\"port\" BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" ALIGN=\"CENTER\">",
-						DotContext.maskHTML(name));
-		for (DotNode.Row r : rows) {
-			if (r.value != null) {
-				head += String.format("<TR><TD>%s</TD><TD>%s</TD></TR>",
-						DotContext.maskHTML(r.name), DotContext
-								.maskHTML(r.value));
-			} else {
-				head += String.format("<TR><TD COLSPAN=\"2\">%s</TD></TR>",
-						DotContext.maskHTML(r.name));
+			// Invoke dot to generate a .png file
+			if (log.isDebugEnabled()) {
+				log
+						.debug(String.format(
+								"Drawing AST '%s' with dot to SVG '%s'", name,
+								svgFile));
 			}
+			Process proc = Runtime.getRuntime().exec(
+					"dot -T" + PLOT_TYPE + " -o" + svgFile + " " + f);
+			proc.waitFor();
+			f.delete();
+		} catch (Exception e) {
+			log.error(String.format("Creating dot plan '%s' failed.", svgFile),
+					e);
 		}
-		head += "</TABLE>>];";
-		return head;
 	}
 }
