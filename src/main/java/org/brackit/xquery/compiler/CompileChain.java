@@ -88,26 +88,31 @@ public class CompileChain {
 		Functions.predefine(new Writeline());
 		Functions.predefine(new Silent());
 		Functions.predefine(new Parse());
-		
-		Functions.predefine(new AddDocToCollection(new QNm(
-				Namespaces.BIT_NSURI, Namespaces.BIT_PREFIX,
-				"add-doc-to-collection"), new Signature(new SequenceType(
-				AtomicType.STR, Cardinality.ZeroOrOne), new SequenceType(
-				AtomicType.STR, Cardinality.One), new SequenceType(
-				AnyItemType.ANY, Cardinality.One))));
 
-		Functions.predefine(new CreateCollection(new QNm(Namespaces.BIT_NSURI,
-				Namespaces.BIT_PREFIX, "create-collection"), new Signature(
-				new SequenceType(AtomicType.BOOL, Cardinality.One),
-				new SequenceType(AtomicType.STR, Cardinality.One))));
+		Functions.predefine(new AddDocToCollection(AddDocToCollection.NAME,
+				new Signature(new SequenceType(AtomicType.STR,
+						Cardinality.ZeroOrOne), new SequenceType(
+						AtomicType.STR, Cardinality.One), new SequenceType(
+						AnyItemType.ANY, Cardinality.One))));
+
+		Functions.predefine(new CreateCollection(CreateCollection.NAME,
+				new Signature(
+						new SequenceType(AtomicType.BOOL, Cardinality.One),
+						new SequenceType(AtomicType.STR, Cardinality.One))));
+		Functions.predefine(new CreateCollection(CreateCollection.NAME,
+				new Signature(
+						new SequenceType(AtomicType.BOOL, Cardinality.One),
+						new SequenceType(AtomicType.STR, Cardinality.One),
+						new SequenceType(new AnyItemType(),
+								Cardinality.ZeroOrMany))));
 	}
-	
+
 	final AnyURI baseURI;
-	
+
 	public CompileChain() {
 		baseURI = null;
 	}
-	
+
 	public CompileChain(AnyURI baseURI) {
 		this.baseURI = baseURI;
 	}
@@ -123,7 +128,7 @@ public class CompileChain {
 	protected ModuleResolver getModuleResolver() {
 		return new BaseResolver();
 	}
-	
+
 	protected AST parse(String query) throws QueryException {
 		return new XQParser(query).parse();
 	}

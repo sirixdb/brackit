@@ -27,10 +27,6 @@
  */
 package org.brackit.xquery.function.bit;
 
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
-
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -38,13 +34,16 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.node.SubtreePrinter;
 import org.brackit.xquery.node.parser.DocumentParser;
+import org.brackit.xquery.node.parser.StreamSubtreeParser;
+import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.xdm.Collection;
+import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Store;
 
 /**
@@ -54,17 +53,9 @@ import org.brackit.xquery.xdm.Store;
  */
 public class AddDocToCollection extends AbstractFunction {
 
-	public static PrintStream createBuffer() {
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		return new PrintStream(out) {
-			final OutputStream baos = out;
+	public static final QNm NAME = new QNm(Namespaces.BIT_NSURI,
+			Namespaces.BIT_PREFIX, "add-doc-to-collection");
 
-			public String toString() {
-				return baos.toString();
-			}
-		};
-	}
-	
 	public AddDocToCollection(QNm name, Signature signature) {
 		super(name, signature, true);
 	}
@@ -74,26 +65,26 @@ public class AddDocToCollection extends AbstractFunction {
 			Sequence[] args) throws QueryException {
 		try {
 			String collName = ((Atomic) args[0]).stringValue();
-			String vContent = null;
+			SubtreeParser parser = null;
 			if (args[1] instanceof Atomic) {
-				vContent = ((Atomic) args[1]).stringValue();
+				parser = new DocumentParser(((Atomic) args[1]).stringValue());
 			} else {
-				PrintStream buf = AddDocToCollection.createBuffer();
-				SubtreePrinter.print((Node<?>) args[1], buf);
-				vContent = buf.toString();
+				Node<?> node = (Node<?>) args[1];
+				parser = new StreamSubtreeParser(node.getSubtree());
 			}
 			Store s = ctx.getStore();
 			Collection<?> coll = null;
 			try {
 				coll = s.lookup(collName);
-			} catch (Exception e) {
-				coll = s.create(collName);
+				coll.add(parser);
+			} catch (DocumentException e) {
+				// collection does not exist
+				coll = s.create(collName, parser);
 			}
-			coll.add(new DocumentParser(vContent));
 			return Bool.TRUE;
 		} catch (Exception e) {
-			throw new QueryException(e,
-					ErrorCode.BIT_DYN_INT_ERROR, e.getMessage());
+			throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR,
+					e.getMessage());
 		}
 	}
 }

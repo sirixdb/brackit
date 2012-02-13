@@ -37,9 +37,7 @@ import org.brackit.xquery.node.parser.SubtreeParser;
 public interface Store {
 	public Collection<?> lookup(String name) throws DocumentException;
 
-	public Collection<?> create(String name) throws DocumentException;
-
-	public Collection<?> create(String name, SubtreeParser parser)
+	public Collection<?> create(String name, SubtreeParser... parser)
 			throws DocumentException;
 
 	public void drop(String name) throws DocumentException;
