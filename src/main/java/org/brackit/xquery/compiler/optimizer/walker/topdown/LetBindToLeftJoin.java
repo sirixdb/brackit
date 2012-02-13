@@ -56,47 +56,8 @@ public class LetBindToLeftJoin extends ScopeWalker {
 			return node;
 		}
 
-		AST join = bindingExpr.getChild(0).getChild(0);
-		if (join.getType() != XQ.Join) {
-			join = convertJoin(join);
-		}
-		return convertToLeftJoin(node, join);
-	}
-
-	private AST convertJoin(AST node) {
-		AST leftIn = new AST(XQ.Start);
-		AST lend = new AST(XQ.End);
-		lend.addChild(new AST(XQ.Bool, Bool.TRUE));
-		leftIn.addChild(lend);
-
-		// copy start of right (nested) input pipeline
-		AST rorig = node;
-		AST rightIn = new AST(XQ.Start);
-		AST copy = rightIn;
-
-		while (rorig.getType() != XQ.End) {
-			AST toAdd = rorig.copy();
-			for (int i = 0; i < rorig.getChildCount() - 1; i++) {
-				toAdd.addChild(rorig.getChild(i).copyTree());
-			}
-			copy.addChild(toAdd);
-			copy = toAdd;
-			rorig = rorig.getLastChild();
-		}
-		AST rend = new AST(XQ.End);
-		rend.addChild(new AST(XQ.Bool, Bool.TRUE));
-		copy.addChild(rend);
-
-		AST join = new AST(XQ.Join);
-		join.addChild(leftIn);
-		join.addChild(new AST(XQ.ValueCompEQ));
-		join.addChild(rightIn);
-		join.addChild(rorig.copyTree());
-
-		node.getParent().replaceChild(node.getChildIndex(), join);
-		refreshScopes(node.getParent(), true);
-
-		return join;
+		AST top = bindingExpr.getChild(0).getChild(0);
+		return convertToLeftJoin(node, top);
 	}
 
 	private AST convertToLeftJoin(AST let, AST top) {
@@ -132,8 +93,16 @@ public class LetBindToLeftJoin extends ScopeWalker {
 			lorig = lorigp;
 		}
 
+		// start the left input with a count for the grouping
 		AST leftIn = new AST(XQ.Start);
-		AST copy = leftIn;
+		QNm grpVarName = createGroupVarName();
+		AST count = new AST(XQ.Count);
+		AST runVarBinding = new AST(XQ.TypedVariableBinding);
+		runVarBinding.addChild(new AST(XQ.Variable, grpVarName));
+		count.addChild(runVarBinding);
+		leftIn.addChild(count);
+		AST copy = count;
+
 		while (lorig != let) {
 			AST toAdd = lorig.copy();
 			for (int i = 0; i < lorig.getChildCount() - 1; i++) {
@@ -143,15 +112,6 @@ public class LetBindToLeftJoin extends ScopeWalker {
 			copy = toAdd;
 			lorig = lorig.getLastChild();
 		}
-
-		// introduce a count for the grouping
-		QNm grpVarName = createGroupVarName();
-		AST count = new AST(XQ.Count);
-		AST runVarBinding = new AST(XQ.TypedVariableBinding);
-		runVarBinding.addChild(new AST(XQ.Variable, grpVarName));
-		count.addChild(runVarBinding);
-		copy.addChild(count);
-		copy = count;
 
 		// now append the final end with the
 		// count variable as join key expression
