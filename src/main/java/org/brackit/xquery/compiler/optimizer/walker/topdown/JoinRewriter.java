@@ -133,7 +133,9 @@ public class JoinRewriter extends ScopeWalker {
 		// b) the node defining the beginning of S2
 		AST anc = select.getParent();
 		while (true) {
-			if (anc.getType() == XQ.Start) {
+			if ((anc.getType() == XQ.Start) || (anc.getType() == XQ.Count)
+					|| (anc.getType() == XQ.GroupBy)
+					|| (anc.getType() == XQ.OrderBy)) {
 				return select;
 			} else if (anc == s2Begin.node) {
 				return convertToJoin(s2Begin.node, select, s1Expr, s2Expr, cmp,
