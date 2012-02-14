@@ -28,23 +28,16 @@
 package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
 import static org.brackit.xquery.compiler.XQ.ComparisonExpr;
-import static org.brackit.xquery.compiler.XQ.GeneralCompGE;
-import static org.brackit.xquery.compiler.XQ.GeneralCompGT;
-import static org.brackit.xquery.compiler.XQ.GeneralCompLE;
-import static org.brackit.xquery.compiler.XQ.GeneralCompLT;
 import static org.brackit.xquery.compiler.XQ.GeneralCompNE;
 import static org.brackit.xquery.compiler.XQ.NodeCompFollows;
 import static org.brackit.xquery.compiler.XQ.NodeCompIs;
 import static org.brackit.xquery.compiler.XQ.NodeCompPrecedes;
 import static org.brackit.xquery.compiler.XQ.Selection;
-import static org.brackit.xquery.compiler.XQ.ValueCompGE;
-import static org.brackit.xquery.compiler.XQ.ValueCompGT;
-import static org.brackit.xquery.compiler.XQ.ValueCompLE;
-import static org.brackit.xquery.compiler.XQ.ValueCompLT;
 import static org.brackit.xquery.compiler.XQ.ValueCompNE;
 
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.util.Cmp;
 
 /**
  * @author Sebastian Baechle
@@ -72,6 +65,9 @@ public class JoinRewriter extends ScopeWalker {
 		case ValueCompNE:
 			return select;
 		}
+
+		Cmp cmp = CmpUtil.cmp(comparison);
+		boolean isGCmp = CmpUtil.isGCmp(comparison);
 
 		// left side must not be static
 		AST s1Expr = predicate.getChild(1);
@@ -101,7 +97,7 @@ public class JoinRewriter extends ScopeWalker {
 			Scope[] tmpScopes = s1Scopes;
 			s1Scopes = s2Scopes;
 			s2Scopes = tmpScopes;
-			comparison = swapCmp(comparison);
+			cmp = cmp.swap();
 		}
 
 		// S1 and S2 may overlap
@@ -141,14 +137,14 @@ public class JoinRewriter extends ScopeWalker {
 				return select;
 			} else if (anc == s2Begin.node) {
 				return convertToJoin(anc.getParent(), s2Begin.node, select,
-						s1Expr, s2Expr, comparison);
+						s1Expr, s2Expr, cmp, isGCmp);
 			}
 			anc = anc.getParent();
 		}
 	}
 
 	private AST convertToJoin(AST leftInRoot, AST rightInRoot, AST select,
-			AST s1Expr, AST s2Expr, AST cmp) {
+			AST s1Expr, AST s2Expr, Cmp cmp, boolean isGCmp) {
 		// copy left input pipeline
 		AST lorig = leftInRoot;
 		AST leftIn = new AST(XQ.Start);
@@ -193,7 +189,8 @@ public class JoinRewriter extends ScopeWalker {
 
 		AST join = new AST(XQ.Join);
 		join.addChild(leftIn);
-		join.addChild(cmp);
+		join.setProperty("cmp", cmp);
+		join.setProperty("GCmp", isGCmp);
 		join.addChild(rightIn);
 		join.addChild(select.getChild(1));
 
@@ -202,35 +199,5 @@ public class JoinRewriter extends ScopeWalker {
 		snapshot();
 		refreshScopes(parent, true);
 		return parent;
-	}
-
-	private AST swapCmp(AST comparison) {
-		switch (comparison.getType()) {
-		case GeneralCompGE:
-			comparison = new AST(GeneralCompLE);
-			break;
-		case GeneralCompGT:
-			comparison = new AST(GeneralCompLT);
-			break;
-		case GeneralCompLE:
-			comparison = new AST(GeneralCompGE);
-			break;
-		case GeneralCompLT:
-			comparison = new AST(GeneralCompGT);
-			break;
-		case ValueCompGE:
-			comparison = new AST(ValueCompLE);
-			break;
-		case ValueCompGT:
-			comparison = new AST(ValueCompLT);
-			break;
-		case ValueCompLE:
-			comparison = new AST(ValueCompGE);
-			break;
-		case ValueCompLT:
-			comparison = new AST(ValueCompGT);
-			break;
-		}
-		return comparison;
 	}
 }

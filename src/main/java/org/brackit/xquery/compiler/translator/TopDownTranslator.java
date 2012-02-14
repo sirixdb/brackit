@@ -38,6 +38,7 @@ import org.brackit.xquery.operator.Count;
 import org.brackit.xquery.operator.ForBind;
 import org.brackit.xquery.operator.GroupBy;
 import org.brackit.xquery.operator.LetBind;
+import org.brackit.xquery.operator.NLJoin;
 import org.brackit.xquery.operator.Operator;
 import org.brackit.xquery.operator.OrderBy;
 import org.brackit.xquery.operator.OrderBy.OrderModifier;
@@ -164,18 +165,8 @@ public class TopDownTranslator extends Compiler {
 		Operator leftIn = anyOp(in, node.getChild(0).getChild(0));
 
 		// get join type
-		Cmp cmp = cmp(node.getChild(1));
-
-		boolean isGcmp = false;
-		switch (node.getChild(1).getType()) {
-		case XQ.GeneralCompEQ:
-		case XQ.GeneralCompGE:
-		case XQ.GeneralCompLE:
-		case XQ.GeneralCompLT:
-		case XQ.GeneralCompGT:
-		case XQ.GeneralCompNE:
-			isGcmp = true;
-		}
+		Cmp cmp = (Cmp) node.getProperty("cmp");
+		boolean isGcmp = node.checkProperty("GCmp");
 
 		AST tmp = node.getChild(0);
 		while (tmp.getType() != XQ.End) {
@@ -184,8 +175,8 @@ public class TopDownTranslator extends Compiler {
 		Expr leftExpr = anyExpr(tmp.getChild(0));
 
 		// compile right (inner) join branch
-		Operator rightIn = anyOp(new Start(), node.getChild(2));
-		tmp = node.getChild(2);
+		Operator rightIn = anyOp(new Start(), node.getChild(1));
+		tmp = node.getChild(1);
 		while (tmp.getType() != XQ.End) {
 			tmp = tmp.getLastChild();
 		}
@@ -204,10 +195,44 @@ public class TopDownTranslator extends Compiler {
 		}
 
 		Operator op = join;
-		if (node.getParent().getParent().getType() == XQ.Join) {
-			op = new Print(join, System.out);
+//		if (node.getParent().getParent().getType() == XQ.Join) {
+//			return new Print(anyOp(op, node.getLastChild()), System.out);
+//		}
+//		
+		return anyOp(op, node.getLastChild());
+	}
+	
+	protected Operator nljoin(Operator in, AST node) throws QueryException {
+		// compile left (outer) join branch (skip initial start)
+		Operator leftIn = anyOp(in, node.getChild(0).getChild(0));
+
+		// get join type
+		Cmp cmp = (Cmp) node.getProperty("cmp");
+		boolean isGcmp = node.checkProperty("GCmp");
+
+		AST tmp = node.getChild(0);
+		while (tmp.getType() != XQ.End) {
+			tmp = tmp.getLastChild();
 		}
-		
+		Expr leftExpr = anyExpr(tmp.getChild(0));
+
+		// compile right (inner) join branch
+		Operator rightIn = anyOp(new Start(), node.getChild(1));
+		tmp = node.getChild(1);
+		while (tmp.getType() != XQ.End) {
+			tmp = tmp.getLastChild();
+		}
+		Expr rightExpr = anyExpr(tmp.getChild(0));
+
+		boolean leftJoin = node.checkProperty("leftJoin");
+		boolean skipSort = node.checkProperty("skipSort");
+		Operator join = new NLJoin(leftIn, rightIn, leftExpr, rightExpr, cmp, isGcmp, leftJoin);
+
+		Operator op = join;
+//		if (node.getParent().getParent().getType() == XQ.Join) {
+//			return new Print(anyOp(op, node.getLastChild()), System.out);
+//		}
+//		
 		return anyOp(op, node.getLastChild());
 	}
 

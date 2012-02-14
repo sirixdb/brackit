@@ -598,12 +598,12 @@ public abstract class ScopeWalker extends Walker {
 	private void join(AST node) {
 		// collect all bindings provided by left and right join branch
 		List<QNm> leftInBinding = getPipelineBindings(node.getChild(0));
-		List<QNm> rightInBinding = getPipelineBindings(node.getChild(2));
-		
+		List<QNm> rightInBinding = getPipelineBindings(node.getChild(1));
+
 		// visit left input
 		inspectPipeline(node.getChild(0));
 		// visit right input
-		inspectPipeline(node.getChild(2));
+		inspectPipeline(node.getChild(1));
 
 		// "pretend" to bind variables from both left and right input
 		for (QNm var : leftInBinding) {
@@ -683,10 +683,10 @@ public abstract class ScopeWalker extends Walker {
 		int scopeCount = 0;
 		// child 0 is quantifier type
 		for (int i = 1; i < expr.getChildCount() - 1; i += 2) {
+			walkInspect(expr.getChild(i + 1));
 			table.openScope(expr.getChild(i), false);
 			QNm name = (QNm) expr.getChild(i).getChild(0).getValue();
 			table.bind(name);
-			walkInspect(expr.getChild(i + 1));
 			scopeCount++;
 		}
 		walkInspect(expr.getChild(expr.getChildCount() - 1));
@@ -737,7 +737,7 @@ public abstract class ScopeWalker extends Walker {
 			table.closeScope();
 		}
 	}
-	
+
 	private void stepExpr(AST expr) {
 		walkInspect(expr.getChild(0));
 		for (int i = 1; i < expr.getChildCount(); i++) {

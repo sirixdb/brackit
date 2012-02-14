@@ -34,6 +34,7 @@ import static org.brackit.xquery.compiler.XQ.PipeExpr;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.util.Cmp;
 
 /**
  * @author Sebastian Baechle
@@ -159,7 +160,8 @@ public class LetBindToLeftJoin extends ScopeWalker {
 		AST ljoin = new AST(XQ.Join);
 		ljoin.setProperty("leftJoin", Boolean.TRUE);
 		ljoin.addChild(leftIn);
-		ljoin.addChild(new AST(XQ.ValueCompEQ));
+		ljoin.setProperty("cmp", Cmp.eq);
+		ljoin.setProperty("GCmp", false);
 		ljoin.addChild(rightIn);
 		ljoin.addChild(let.getLastChild().copyTree());
 
