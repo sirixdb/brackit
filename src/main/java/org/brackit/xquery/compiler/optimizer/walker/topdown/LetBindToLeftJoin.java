@@ -163,7 +163,9 @@ public class LetBindToLeftJoin extends ScopeWalker {
 		ljoin.setProperty("cmp", Cmp.eq);
 		ljoin.setProperty("GCmp", false);
 		ljoin.addChild(rightIn);
-		ljoin.addChild(let.getLastChild().copyTree());
+		AST outStart = new AST(XQ.Start);
+		outStart.addChild(let.getLastChild().copyTree());
+		ljoin.addChild(outStart);
 
 		int replaceAt = insertJoinAfter.getChildCount() - 1;
 		insertJoinAfter.replaceChild(replaceAt, ljoin);

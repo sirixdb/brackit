@@ -121,7 +121,7 @@ public class JoinRewriter extends ScopeWalker {
 					return select;
 				}
 				s0End = s2Begin;
-				s2Begin = s1Scopes[s1Pos];
+				s2Begin = s2Scopes[s2Pos];
 			} else {
 				break;
 			}
@@ -136,43 +136,25 @@ public class JoinRewriter extends ScopeWalker {
 			if (anc.getType() == XQ.Start) {
 				return select;
 			} else if (anc == s2Begin.node) {
-				return convertToJoin(anc.getParent(), s2Begin.node, select,
-						s1Expr, s2Expr, cmp, isGCmp);
+				return convertToJoin(s2Begin.node, select, s1Expr, s2Expr, cmp,
+						isGCmp);
 			}
 			anc = anc.getParent();
 		}
 	}
 
-	private AST convertToJoin(AST leftInRoot, AST rightInRoot, AST select,
-			AST s1Expr, AST s2Expr, Cmp cmp, boolean isGCmp) {
-		// copy left input pipeline
-		AST lorig = leftInRoot;
+	private AST convertToJoin(AST rightInRoot, AST select, AST s1Expr,
+			AST s2Expr, Cmp cmp, boolean isGCmp) {
+		// assemble left input pipeline
 		AST leftIn = new AST(XQ.Start);
-		AST copy = leftIn;
-
-		// skip start if necessary
-		if (lorig.getType() == XQ.Start) {
-			lorig = lorig.getLastChild();
-			leftInRoot = lorig;
-		}
-
-		while (lorig != rightInRoot) {
-			AST toAdd = lorig.copy();
-			for (int i = 0; i < lorig.getChildCount() - 1; i++) {
-				toAdd.addChild(lorig.getChild(i).copyTree());
-			}
-			copy.addChild(toAdd);
-			copy = toAdd;
-			lorig = lorig.getLastChild();
-		}
 		AST s1End = new AST(XQ.End);
 		s1End.addChild(s1Expr.copyTree());
-		copy.addChild(s1End);
+		leftIn.addChild(s1End);
 
 		// copy start of right (nested) input pipeline
-		AST rorig = lorig;
+		AST rorig = rightInRoot;
 		AST rightIn = new AST(XQ.Start);
-		copy = rightIn;
+		AST copy = rightIn;
 
 		while (rorig != select) {
 			AST toAdd = rorig.copy();
@@ -192,10 +174,12 @@ public class JoinRewriter extends ScopeWalker {
 		join.setProperty("cmp", cmp);
 		join.setProperty("GCmp", isGCmp);
 		join.addChild(rightIn);
-		join.addChild(select.getChild(1));
+		AST outStart = new AST(XQ.Start);
+		outStart.addChild(select.getChild(1).copyTree());
+		join.addChild(outStart);
 
-		AST parent = leftInRoot.getParent();
-		parent.replaceChild(leftInRoot.getChildIndex(), join);
+		AST parent = rightInRoot.getParent();
+		parent.replaceChild(rightInRoot.getChildIndex(), join);
 		snapshot();
 		refreshScopes(parent, true);
 		return parent;

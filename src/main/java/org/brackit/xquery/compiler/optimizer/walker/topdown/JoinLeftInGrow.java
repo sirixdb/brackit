@@ -27,66 +27,72 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
-import org.brackit.xquery.atomic.QNm;
+import static org.brackit.xquery.compiler.XQ.Join;
+import static org.brackit.xquery.compiler.XQ.PipeExpr;
+import static org.brackit.xquery.compiler.XQ.Start;
+
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.XQ;
 
 /**
  * @author Sebastian Baechle
  * 
  */
-public class JoinInnerLoopCache extends ScopeWalker {
-
-	private int artificialGroupVarCount;
+public class JoinLeftInGrow extends ScopeWalker {
 
 	@Override
-	protected AST visit(AST join) {
-		if (join.getType() != XQ.Join) {
-			return join;
+	protected AST visit(AST node) {
+		if (node.getType() != Join) {
+			return node;
 		}
 
-		if (join.getProperty("group") != null) {
-			return join;
-		}
+		// find closest scope from which
+		// right input is independent of
+		VarRef refs = findVarRefs(node.getChild(1));
+		Scope[] scopes = sortScopes(refs);
+		Scope local = findScope(node);
 
-		VarRef varRefs = findVarRefs(join.getChild(2));
-		if (varRefs == null) {
-			// right join input is completely independent
-			// -> great!
-			return join;
-		}
-
-		// find out which is the latest-bound
-		// variable that the right input branch depends on
-		Scope[] sortScopes = sortScopes(varRefs);
-		Scope rightInScope = findScope(join);
-		for (int i = sortScopes.length - 1; i >= 0; i--) {
-			if (sortScopes[i].compareTo(rightInScope) < 0) {
-				// introduce count as join group marker
-				QNm grpVarName = createGroupVarName();
-				AST count = new AST(XQ.Count);
-				AST runVarBinding = new AST(XQ.TypedVariableBinding);
-				runVarBinding.addChild(new AST(XQ.Variable, grpVarName));
-				count.addChild(runVarBinding);
-
-				// add marker before copying the subtree
-				join.setProperty("group", grpVarName);
-
-				AST defScope = sortScopes[i].node;
-				AST defScopeOut = defScope.getLastChild();
-				count.addChild(defScopeOut.copyTree());
-
-				defScope.replaceChild(defScope.getChildCount() - 1, count);
-				snapshot();
-				refreshScopes(defScope, true);
-				break;
+		AST stopAt = null;
+		for (int i = scopes.length - 1; i >= 0; i--) {
+			Scope scope = scopes[i];
+			if (scope.compareTo(local) < 0) {
+				stopAt = scope.node;
 			}
 		}
 
-		return join;
-	}
+		// locate closest pipeline node in AST from which
+		// right input is independent, but stop if
+		// this pipeline part is already the left input of
+		// another join
+		AST parent = node.getParent();
+		AST anc = parent;
+		while ((anc != stopAt)
+				&& (anc.getParent().getType() != PipeExpr)
+				&& ((anc.getParent().getType() != Join) || (anc.getChildIndex() != 0))) {
+			anc = anc.getParent();
+		}
 
-	private QNm createGroupVarName() {
-		return new QNm("_group;" + (artificialGroupVarCount++));
+		if (anc == parent) {
+			return node;
+		}
+
+		AST lorig = anc.getLastChild();
+		AST leftIn = new AST(Start);
+		AST copy = leftIn;
+		while (lorig != node) {
+			AST toAdd = lorig.copy();
+			for (int i = 0; i < lorig.getChildCount() - 1; i++) {
+				toAdd.addChild(lorig.getChild(i).copyTree());
+			}
+			copy.addChild(toAdd);
+			copy = toAdd;
+			lorig = lorig.getLastChild();
+		}
+		copy.addChild(node.getChild(0).getChild(0));
+
+		node.replaceChild(0, leftIn);
+		anc.replaceChild(anc.getChildCount() - 1, node);
+		refreshScopes(anc, true);
+		return anc;
+
 	}
 }

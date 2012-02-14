@@ -60,7 +60,7 @@ public abstract class ScopeWalker extends Walker {
 	@Override
 	protected AST prepare(AST root) {
 		table = new BindingTable(root);
-		walkInspect(root);
+		walkInspect(root, true, false);
 		if (XQuery.DEBUG) {
 			DotUtil.drawDotToFile(table.rootScope.dot(), XQuery.DEBUG_DIR,
 					getClass().getSimpleName() + "_scopes_" + (dotCount++));
@@ -76,11 +76,7 @@ public abstract class ScopeWalker extends Walker {
 					getClass().getSimpleName() + "_scopes_" + (dotCount)
 							+ "reset");
 		}
-		if (pipeline) {
-			walkPipeline(node);
-		} else {
-			walkInspect(s.node);
-		}
+		walkInspect(s.node, false, false);
 		if (XQuery.DEBUG) {
 			DotUtil.drawDotToFile(table.rootScope.dot(), XQuery.DEBUG_DIR,
 					getClass().getSimpleName() + "_scopes_" + (dotCount++));
@@ -91,104 +87,74 @@ public abstract class ScopeWalker extends Walker {
 		return table.getScopes();
 	}
 
-	private final void walkInspect(AST node) {
-		if (inspect(node)) {
+	private final void walkInspect(AST node, boolean newScope, boolean bindOnly) {
+		if (inspect(node, newScope, bindOnly)) {
 			for (int i = 0; i < node.getChildCount(); i++) {
 				AST child = node.getChild(i);
-				walkInspect(child);
+				walkInspect(child, newScope, bindOnly);
 			}
 		}
 	}
 
-	private boolean inspect(AST node) {
-		if (node.getType() == XQ.PipeExpr) {
-			inspectPipeline(node.getChild(0));
-			// don't visit this subtree
-			return false;
-		} else if (node.getType() == XQ.TypeSwitch) {
+	private boolean inspect(AST node, boolean newScope, boolean bindOnly) {
+		switch (node.getType()) {
+		case XQ.TypeSwitch:
 			typeswitchExpr(node);
 			return false;
-		} else if (node.getType() == XQ.QuantifiedExpr) {
+		case XQ.QuantifiedExpr:
 			quantifiedExpr(node);
 			return false;
-		} else if (node.getType() == XQ.TransformExpr) {
+		case XQ.TransformExpr:
 			transformExpr(node);
 			return false;
-		} else if (node.getType() == XQ.TryCatchExpr) {
+		case XQ.TryCatchExpr:
 			tryCatchExpr(node);
 			return false;
-		} else if (node.getType() == XQ.FilterExpr) {
+		case XQ.FilterExpr:
 			filterExpr(node);
 			return false;
-		} else if (node.getType() == XQ.PathExpr) {
+		case XQ.PathExpr:
 			pathExpr(node);
 			return false;
-		} else if (node.getType() == XQ.StepExpr) {
+		case XQ.StepExpr:
 			stepExpr(node);
 			return false;
-		} else if (node.getType() == XQ.CompDocumentConstructor) {
+		case XQ.CompDocumentConstructor:
 			documentExpr(node);
 			return false;
-		} else if ((node.getType() == XQ.DirElementConstructor)
-				|| (node.getType() == XQ.CompElementConstructor)) {
+		case XQ.DirElementConstructor:
+		case XQ.CompElementConstructor:
 			elementExpr(node);
 			return false;
-		} else {
-			return true;
-		}
-	}
-
-	/*
-	 * Walk pipeline up and check for each operator, which bindings of its
-	 * output will be used by upstream operators. All unused output bindings can
-	 * be projected. Note, we assume in general that operators do never produce
-	 * a binding which is not used. Nevertheless, this mechanism still admits
-	 * that later at compilation an operator creates superfluous bindings.
-	 */
-	private void inspectPipeline(AST node) {
-		table.openScope(node, true);
-		walkPipeline(node);
-		table.closeScope();
-	}
-
-	private void walkPipeline(AST node) {
-		switch (node.getType()) {
 		case XQ.Start:
-			break;
+			start(node, newScope, bindOnly);
+			return false;
 		case XQ.ForBind:
-			forBind(node);
-			break;
+			forBind(node, newScope, bindOnly);
+			return false;
 		case XQ.LetBind:
-			letBind(node);
-			break;
+			letBind(node, newScope, bindOnly);
+			return false;
 		case XQ.Selection:
-			select(node);
-			break;
+			select(node, newScope, bindOnly);
+			return false;
 		case XQ.OrderBy:
-			orderBy(node);
-			break;
+			orderBy(node, newScope, bindOnly);
+			return false;
 		case XQ.Join:
-			join(node);
-			break;
+			join(node, newScope, bindOnly);
+			return false;
 		case XQ.GroupBy:
-			groupBy(node);
-			break;
+			groupBy(node, newScope, bindOnly);
+			return false;
 		case XQ.Count:
-			count(node);
-			break;
+			count(node, newScope, bindOnly);
+			return false;
 		case XQ.End:
-			// visit return or join expression
-			walkInspect(node.getChild(0));
-			break;
+			end(node, newScope, bindOnly);
+			return false;
 		default:
-			throw new RuntimeException("Illegal pipeline node "
-					+ node.getStringValue());
-		}
-
-		if (node.getType() != XQ.End) {
-			// visit output to check if it references
-			// any variables of this operator
-			inspectPipeline(node.getLastChild());
+			return true;
 		}
 	}
 
@@ -538,7 +504,11 @@ public abstract class ScopeWalker extends Walker {
 		}
 	}
 
-	private void forBind(AST node) {
+	private void forBind(AST node, boolean newScope, boolean bindOnly) {
+		if (newScope) {
+			table.openScope(node, true);
+		}
+
 		// get names of binding variable and optional position variable
 		QNm forVar = (QNm) node.getChild(0).getChild(0).getValue();
 		QNm posVar = null;
@@ -548,73 +518,187 @@ public abstract class ScopeWalker extends Walker {
 			posBindingOrSourceExpr = node.getChild(2);
 		}
 
-		// visit binding expression
-		walkInspect(posBindingOrSourceExpr);
+		if (!bindOnly) {
+			// visit binding expression
+			walkInspect(posBindingOrSourceExpr, true, false);
+		}
 
 		// bind variables
 		table.bind(forVar);
 		if (posVar != null) {
 			table.bind(posVar);
 		}
+
+		if (!bindOnly) {
+			walkInspect(node.getLastChild(), true, bindOnly);
+		}
+		if (newScope) {
+			table.closeScope();
+		}
 	}
 
-	private void letBind(AST node) {
+	private void letBind(AST node, boolean newScope, boolean bindOnly) {
+		if (newScope) {
+			table.openScope(node, true);
+		}
+
 		// get name of binding variable
 		QNm letVar = (QNm) node.getChild(0).getChild(0).getValue();
 
-		// visit binding expression
-		walkInspect(node.getChild(1));
+		if (!bindOnly) {
+			// visit binding expression
+			walkInspect(node.getChild(1), true, false);
+		}
 
 		// bind variable
 		table.bind(letVar);
+
+		if (!bindOnly) {
+			walkInspect(node.getLastChild(), true, bindOnly);
+		}
+		if (newScope) {
+			table.closeScope();
+		}
 	}
 
-	private void select(AST node) {
-		// visit predicate expression
-		walkInspect(node.getChild(0));
+	private void select(AST node, boolean newScope, boolean bindOnly) {
+		if (newScope) {
+			table.openScope(node, true);
+		}
+
+		if (!bindOnly) {
+			// visit predicate expression
+			walkInspect(node.getChild(0), true, false);
+		}
+
+		if (!bindOnly) {
+			walkInspect(node.getLastChild(), true, bindOnly);
+		}
+		if (newScope) {
+			table.closeScope();
+		}
 	}
 
-	private void groupBy(AST node) {
+	private void groupBy(AST node, boolean newScope, boolean bindOnly) {
+		if (newScope) {
+			table.openScope(node, true);
+		}
+
 		// group by does not declare variables
+
+		if (!bindOnly) {
+			walkInspect(node.getLastChild(), true, bindOnly);
+			table.closeScope();
+		}
 	}
 
-	private void orderBy(AST node) {
+	private void orderBy(AST node, boolean newScope, boolean bindOnly) {
+		if (newScope) {
+			table.openScope(node, true);
+		}
+
 		// visit order by expressions
 		int orderBySpecCount = node.getChildCount() - 1;
 		for (int i = 0; i < orderBySpecCount; i++) {
 			AST orderBy = node.getChild(i);
-			walkInspect(orderBy.getChild(0));
+			walkInspect(orderBy.getChild(0), true, false);
+		}
+
+		if (!bindOnly) {
+			walkInspect(node.getLastChild(), true, bindOnly);
+		}
+		if (newScope) {
+			table.closeScope();
 		}
 	}
 
-	private void count(AST node) {
+	private void count(AST node, boolean newScope, boolean bindOnly) {
+		if (newScope) {
+			table.openScope(node, true);
+		}
+
 		// get name of binding variable
 		QNm countVar = (QNm) node.getChild(0).getChild(0).getValue();
 
 		// bind variable
 		table.bind(countVar);
+
+		if (!bindOnly) {
+			walkInspect(node.getLastChild(), true, bindOnly);
+		}
+		if (newScope) {
+			table.closeScope();
+		}
 	}
 
-	private void join(AST node) {
+	private void start(AST node, boolean newScope, boolean bindOnly) {
+		if (newScope) {
+			table.openScope(node, true);
+		}
+
+		if (!bindOnly) {
+			walkInspect(node.getLastChild(), true, bindOnly);
+		}
+		if (newScope) {
+			table.closeScope();
+		}
+	}
+
+	private void end(AST node, boolean newScope, boolean bindOnly) {
+		if (newScope) {
+			table.openScope(node, true);
+		}
+
+		if (!bindOnly) {
+			walkInspect(node.getLastChild(), true, bindOnly);
+		}
+		if (newScope) {
+			table.closeScope();
+		}
+	}
+
+	private void join(AST node, boolean newScope, boolean bindOnly) {
+		if (newScope) {
+			table.openScope(node, true);
+		}
+
 		// collect all bindings provided by left and right join branch
 		List<QNm> leftInBinding = getPipelineBindings(node.getChild(0));
 		List<QNm> rightInBinding = getPipelineBindings(node.getChild(1));
 
-		// visit left input
-		inspectPipeline(node.getChild(0));
-		// visit right input
-		inspectPipeline(node.getChild(1));
-
-		// "pretend" to bind variables from both left and right input
-		for (QNm var : leftInBinding) {
-			table.bind(var);
+		if (!bindOnly) {
+			// visit left input
+			walkInspect(node.getChild(0), true, false);
+			// visit right input
+			walkInspect(node.getChild(1), true, false);
 		}
 
-		// Note: A name collision will not
-		// bind a variable twice
-		// in this joined scope twice!
-		for (QNm var : rightInBinding) {
-			table.bind(var);
+		if (!bindOnly) {
+			// start nested scope for output
+			// and "bind" variables of join outputs
+			AST outStart = node.getChild(2);
+			table.openScope(outStart, true);
+			for (QNm var : leftInBinding) {
+				table.bind(var);
+			}
+			for (QNm var : rightInBinding) {
+				table.bind(var);
+			}
+			walkInspect(outStart.getChild(0), true, bindOnly);
+			table.closeScope();
+			table.closeScope();
+		} else {
+			// "pretend" to bind variables from both left and right input
+			for (QNm var : leftInBinding) {
+				table.bind(var);
+			}
+
+			// Note: A name collision will not
+			// bind a variable twice
+			// in this joined scope twice!
+			for (QNm var : rightInBinding) {
+				table.bind(var);
+			}
 		}
 	}
 
@@ -627,25 +711,25 @@ public abstract class ScopeWalker extends Walker {
 			case XQ.Start:
 				break;
 			case XQ.ForBind:
-				forBind(node);
+				forBind(node, false, true);
 				break;
 			case XQ.LetBind:
-				letBind(node);
+				letBind(node, false, true);
 				break;
 			case XQ.Selection:
-				select(node);
+				select(node, false, true);
 				break;
 			case XQ.OrderBy:
-				orderBy(node);
+				orderBy(node, false, true);
 				break;
 			case XQ.Join:
-				join(node);
+				join(node, false, true);
 				break;
 			case XQ.GroupBy:
-				groupBy(node);
+				groupBy(node, false, true);
 				break;
 			case XQ.Count:
-				count(node);
+				count(node, false, true);
 				break;
 			default:
 				throw new RuntimeException();
@@ -658,7 +742,7 @@ public abstract class ScopeWalker extends Walker {
 	}
 
 	private void typeswitchExpr(AST expr) {
-		walkInspect(expr.getChild(0));
+		walkInspect(expr.getChild(0), true, false);
 		table.openScope(expr, false);
 		for (int i = 1; i < expr.getChildCount(); i++) {
 			// handle default case as case clause
@@ -675,7 +759,7 @@ public abstract class ScopeWalker extends Walker {
 			table.bind(name);
 		}
 		// skip intermediate nodes reflecting sequence types....
-		walkInspect(clause.getChild(clause.getChildCount() - 1));
+		walkInspect(clause.getChild(clause.getChildCount() - 1), true, false);
 		table.closeScope();
 	}
 
@@ -683,13 +767,13 @@ public abstract class ScopeWalker extends Walker {
 		int scopeCount = 0;
 		// child 0 is quantifier type
 		for (int i = 1; i < expr.getChildCount() - 1; i += 2) {
-			walkInspect(expr.getChild(i + 1));
+			walkInspect(expr.getChild(i + 1), true, false);
 			table.openScope(expr.getChild(i), false);
 			QNm name = (QNm) expr.getChild(i).getChild(0).getValue();
 			table.bind(name);
 			scopeCount++;
 		}
-		walkInspect(expr.getChild(expr.getChildCount() - 1));
+		walkInspect(expr.getChild(expr.getChildCount() - 1), true, false);
 		for (int i = 0; i <= scopeCount; i++) {
 			table.closeScope();
 		}
@@ -702,16 +786,16 @@ public abstract class ScopeWalker extends Walker {
 			AST binding = expr.getChild(pos++);
 			QNm name = (QNm) binding.getChild(0).getValue();
 			table.bind(name);
-			walkInspect(binding.getChild(1));
+			walkInspect(binding.getChild(1), true, false);
 		}
 		AST modify = expr.getChild(pos++);
-		walkInspect(modify);
-		walkInspect(expr.getChild(pos));
+		walkInspect(modify, true, false);
+		walkInspect(expr.getChild(pos), true, false);
 		table.closeScope();
 	}
 
 	private void tryCatchExpr(AST expr) {
-		walkInspect(expr.getChild(0));
+		walkInspect(expr.getChild(0), true, false);
 		table.openScope(expr, false);
 		table.bind(Namespaces.ERR_CODE);
 		table.bind(Namespaces.ERR_DESCRIPTION);
@@ -721,38 +805,38 @@ public abstract class ScopeWalker extends Walker {
 		table.bind(Namespaces.ERR_COLUMN_NUMBER);
 		for (int i = 7; i < expr.getChildCount(); i++) {
 			// child i,0 is catch error list
-			walkInspect(expr.getChild(i).getChild(0));
+			walkInspect(expr.getChild(i).getChild(0), true, false);
 		}
 		table.closeScope();
 	}
 
 	private void filterExpr(AST expr) {
-		walkInspect(expr.getChild(0));
+		walkInspect(expr.getChild(0), true, false);
 		for (int i = 1; i < expr.getChildCount(); i++) {
 			table.openScope(expr.getChild(i), false);
 			table.bind(Namespaces.FS_DOT);
 			table.bind(Namespaces.FS_POSITION);
 			table.bind(Namespaces.FS_LAST);
-			walkInspect(expr.getChild(i));
+			walkInspect(expr.getChild(i), true, false);
 			table.closeScope();
 		}
 	}
 
 	private void stepExpr(AST expr) {
-		walkInspect(expr.getChild(0));
+		walkInspect(expr.getChild(0), true, false);
 		for (int i = 1; i < expr.getChildCount(); i++) {
 			table.openScope(expr.getChild(i), false);
 			table.bind(Namespaces.FS_DOT);
 			table.bind(Namespaces.FS_POSITION);
 			table.bind(Namespaces.FS_LAST);
-			walkInspect(expr.getChild(i));
+			walkInspect(expr.getChild(i), true, false);
 			table.closeScope();
 		}
 	}
 
 	private void pathExpr(AST expr) {
 		for (int i = 0; i < expr.getChildCount(); i++) {
-			walkInspect(expr.getChild(i));
+			walkInspect(expr.getChild(i), true, false);
 			table.openScope(expr.getChild(i), false);
 			table.bind(Namespaces.FS_DOT);
 			table.bind(Namespaces.FS_POSITION);
@@ -766,7 +850,7 @@ public abstract class ScopeWalker extends Walker {
 	private void documentExpr(AST node) {
 		table.openScope(node, false);
 		table.bind(Namespaces.FS_PARENT);
-		walkInspect(node.getChild(0));
+		walkInspect(node.getChild(0), true, false);
 		table.closeScope();
 	}
 
@@ -775,11 +859,11 @@ public abstract class ScopeWalker extends Walker {
 		while (node.getChild(pos).getType() == XQ.NamespaceDeclaration) {
 			pos++;
 		}
-		walkInspect(node.getChild(pos++));
+		walkInspect(node.getChild(pos++), true, false);
 		table.openScope(node, false);
 		table.bind(Namespaces.FS_PARENT);
 		// visit content sequence
-		walkInspect(node.getChild(pos++));
+		walkInspect(node.getChild(pos++), true, false);
 		table.closeScope();
 	}
 

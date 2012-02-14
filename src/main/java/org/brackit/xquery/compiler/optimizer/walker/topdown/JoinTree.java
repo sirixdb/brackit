@@ -27,37 +27,55 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
-import static org.brackit.xquery.compiler.XQ.AndExpr;
-import static org.brackit.xquery.compiler.XQ.Selection;
+import static org.brackit.xquery.compiler.XQ.Join;
+import static org.brackit.xquery.compiler.XQ.Start;
+import static org.brackit.xquery.compiler.XQ.End;
 
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.optimizer.walker.Walker;
 
 /**
- * Merges sequences of select predicates into a single conjunctions.
- * 
  * @author Sebastian Baechle
  * 
  */
-public class MergeWherePredicates extends Walker {
+public class JoinTree extends ScopeWalker {
 
 	@Override
-	protected AST visit(AST select) {
-		if (select.getType() != Selection) {
-			return select;
-		}		
-		AST out = select.getChild(1);
-		while (out.getType() == Selection) {
-			AST predicate = select.getChild(0);
-			AST tmp = new AST(AndExpr);			
-			tmp.addChild(out.getChild(0));
-			tmp.addChild(predicate);
-			out = out.getChild(1);
-			select.replaceChild(0, tmp);
-			select.replaceChild(1, out);
+	protected AST visit(AST node) {
+		if (node.getType() != Join) {
+			return node;
 		}
-
-		return select;
+		return joinTree(node);
 	}
 
+	private AST joinTree(AST node) {
+		int cnt = 0;
+		AST tmp = node;
+		while ((tmp.getType() == Join) && (!tmp.checkProperty("leftJoin"))) {
+			tmp = tmp.getChild(0).getChild(0);
+			cnt++;
+		}
+		int len = (cnt / 2);
+		if (len < 1) {
+			return node;
+		}
+		
+		// copy first half of join path
+		AST orig = node;
+		AST right = new AST(Start); 
+		AST copy = right;
+		for (int i = 0; i < len; i++) {
+			tmp = orig.copy();
+			tmp.addChild(node.getChild(1));
+			tmp.addChild(node.getChild(2));
+			tmp.addChild(node.getChild(3));
+			copy.insertChild(0, tmp);
+			copy = tmp;
+			orig = orig.getChild(0);
+		}		
+		right.insertChild(0, orig.getChild(2).getChild(0).copyTree());
+		
+		AST left = orig.getChild(0).copyTree(); 
+		
+		return node;
+	}
 }

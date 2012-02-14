@@ -35,7 +35,6 @@ import static org.brackit.xquery.compiler.XQ.Start;
 import java.util.HashSet;
 
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.optimizer.walker.topdown.ScopeWalker.Scope;
 
 /**
  * Move select's upstream in a pipeline to reduce number of tuples in a
@@ -46,6 +45,9 @@ import org.brackit.xquery.compiler.optimizer.walker.topdown.ScopeWalker.Scope;
  */
 public class SelectPullup extends ScopeWalker {
 
+	// used to avoid repeated pull of several selects
+	// NOTE: This relies on the fact the we do not
+	// copy nodes while reorganizing the AST
 	private HashSet<AST> moved = new HashSet<AST>();
 
 	@Override
@@ -92,17 +94,15 @@ public class SelectPullup extends ScopeWalker {
 			return node;
 		}
 		
-		// remove select from current position 
+		// swap the position in the pipeline:
+		// 1. remove it from current position 
+		// 3. place it on top the current downstream pipeline
+		// 2. append the downstream pipeline
 		node.getParent().replaceChild(node.getChildIndex(), node.getLastChild());
+		parent.replaceChild(tmp.getChildIndex(), node);
+		node.replaceChild(1, tmp);				
 		
-		// create a copy and append the pipeline
-		AST select = node.copy();
-		select.addChild(node.getChild(0).copyTree());
-		select.addChild(tmp.copyTree());
-		
-		// insert the modified pipeline 
-		parent.replaceChild(tmp.getChildIndex(), select);
-		moved.add(select);
+		moved.add(node);
 		refreshScopes(parent, true);
 		return parent;
 	}

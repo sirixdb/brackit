@@ -199,7 +199,7 @@ public class TopDownTranslator extends Compiler {
 //			return new Print(anyOp(op, node.getLastChild()), System.out);
 //		}
 //		
-		return anyOp(op, node.getLastChild());
+		return anyOp(op, node.getLastChild().getLastChild());
 	}
 	
 	protected Operator nljoin(Operator in, AST node) throws QueryException {
@@ -233,7 +233,7 @@ public class TopDownTranslator extends Compiler {
 //			return new Print(anyOp(op, node.getLastChild()), System.out);
 //		}
 //		
-		return anyOp(op, node.getLastChild());
+		return anyOp(op, node.getLastChild().getLastChild());
 	}
 
 	private Cmp cmp(AST cmpNode) throws QueryException {
