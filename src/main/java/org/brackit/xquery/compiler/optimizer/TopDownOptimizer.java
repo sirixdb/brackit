@@ -78,7 +78,7 @@ public class TopDownOptimizer implements Optimizer {
 	private static class Simplification implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) {
 			ast = new DoSNStepMerger().walk(ast);
-			ast = new OrderForGroupBy().walk(ast);
+//			ast = new OrderForGroupBy().walk(ast);
 			// if (VARIABLE_PULLUP) {
 			// ast = new LetVariableRefPullup().walk(ast);
 			// }
@@ -106,6 +106,7 @@ public class TopDownOptimizer implements Optimizer {
 	private static class JoinRecognition implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new JoinRewriter().walk(ast);
+			ast = new LetBindToLeftJoin().walk(ast);
 			ast = new JoinLeftInGrow().walk(ast);
 //			ast = new JoinTree().walk(ast);
 			// ast = new JoinTree().walk(ast);
@@ -118,7 +119,6 @@ public class TopDownOptimizer implements Optimizer {
 
 	private static class Unnest implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
-			ast = new LetBindToLeftJoin().walk(ast);
 			return ast;
 		}
 	}

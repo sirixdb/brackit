@@ -31,7 +31,7 @@ import static org.brackit.xquery.compiler.XQ.GroupBy;
 import static org.brackit.xquery.compiler.XQ.LetBind;
 import static org.brackit.xquery.compiler.XQ.PipeExpr;
 
-import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.util.Cmp;
@@ -41,8 +41,6 @@ import org.brackit.xquery.util.Cmp;
  * 
  */
 public class LetBindToLeftJoin extends ScopeWalker {
-
-	private int artificialGroupVarCount;
 
 	@Override
 	protected AST visit(AST node) {
@@ -93,16 +91,8 @@ public class LetBindToLeftJoin extends ScopeWalker {
 			lorig = lorigp;
 		}
 
-		// start the left input with a count for the grouping
 		AST leftIn = new AST(XQ.Start);
-		QNm grpVarName = createGroupVarName();
-		AST count = new AST(XQ.Count);
-		AST runVarBinding = new AST(XQ.TypedVariableBinding);
-		runVarBinding.addChild(new AST(XQ.Variable, grpVarName));
-		count.addChild(runVarBinding);
-		leftIn.addChild(count);
-		AST copy = count;
-
+		AST copy = leftIn;
 		while (lorig != let) {
 			AST toAdd = lorig.copy();
 			for (int i = 0; i < lorig.getChildCount() - 1; i++) {
@@ -114,9 +104,10 @@ public class LetBindToLeftJoin extends ScopeWalker {
 		}
 
 		// now append the final end with the
-		// count variable as join key expression
+		// a constant boolean value "true" as
+		// left join key expression
 		AST lend = new AST(XQ.End);
-		lend.addChild(new AST(XQ.VariableRef, grpVarName));
+		lend.addChild(new AST(XQ.Bool, Bool.TRUE));
 		copy.addChild(lend);
 
 		// copy the nested pipeline as right input
@@ -134,7 +125,7 @@ public class LetBindToLeftJoin extends ScopeWalker {
 			oorig = oorig.getLastChild();
 		}
 
-		// convert the the nested return expression to a let bind
+		// convert the nested return expression to a let bind
 		// and concatenate it to the right input
 		AST letVarBinding = let.getChild(0).copyTree();
 		// TODO fix cardinality of binding if necessary
@@ -146,14 +137,12 @@ public class LetBindToLeftJoin extends ScopeWalker {
 		// group the let-bound return values
 		// (only the binding of the final let will be used)
 		AST groupBy = new AST(GroupBy);
-		AST groupBySpec = new AST(XQ.GroupBySpec);
-		groupBySpec.addChild(new AST(XQ.VariableRef, grpVarName));
-		groupBy.addChild(groupBySpec);
 		rlet.addChild(groupBy);
 
-		// use the grouped count variable as right join key
+		// use a constant boolean value "true"
+		// also as right join key expression
 		AST end = new AST(XQ.End);
-		end.addChild(new AST(XQ.VariableRef, grpVarName));
+		end.addChild(new AST(XQ.Bool, Bool.TRUE));
 		groupBy.addChild(end);
 
 		// finally assemble left join
@@ -172,9 +161,5 @@ public class LetBindToLeftJoin extends ScopeWalker {
 		snapshot();
 		refreshScopes(insertJoinAfter, true);
 		return insertJoinAfter;
-	}
-
-	private QNm createGroupVarName() {
-		return new QNm("_check;" + (artificialGroupVarCount++));
 	}
 }

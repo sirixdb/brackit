@@ -56,18 +56,18 @@ public class JoinLeftInGrow extends ScopeWalker {
 			Scope scope = scopes[i];
 			if (scope.compareTo(local) < 0) {
 				stopAt = scope.node;
+				break;
 			}
 		}
 
 		// locate closest pipeline node in AST from which
 		// right input is independent, but stop if
-		// this pipeline part is already the left input of
-		// another join
+		// this pipeline part is input of another join
 		AST parent = node.getParent();
 		AST anc = parent;
 		while ((anc != stopAt)
 				&& (anc.getParent().getType() != PipeExpr)
-				&& ((anc.getParent().getType() != Join) || (anc.getChildIndex() != 0))) {
+				&& ((anc.getParent().getType() != Join) || (anc.getChildIndex() == 2))) {
 			anc = anc.getParent();
 		}
 
