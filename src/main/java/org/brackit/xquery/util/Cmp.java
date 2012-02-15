@@ -48,6 +48,20 @@ import org.brackit.xquery.xdm.Type;
 public enum Cmp {
 	eq, ne, lt, le, gt, ge;
 
+	public Cmp swap() {
+		switch (this) {
+		case ge:
+			return Cmp.le;
+		case gt:
+			return lt;
+		case le:
+			return ge;
+		case lt:
+			return gt;
+		}
+		return this;
+	}
+
 	/**
 	 * Compares two atomic values. This method performs type promotion if
 	 * necessary. We assume, however, that none of the types is of type
