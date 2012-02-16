@@ -86,7 +86,8 @@ public class TableJoin implements Operator {
 			while (((tuple = next) != null) || ((tuple = lc.next(ctx)) != null)) {
 				next = null;
 				if ((check >= 0) && (tuple.get(check) == null)) {
-					return tuple.concat(padding);
+					prev = tuple.concat(padding);
+					return prev;
 				}
 				if (groupVar >= 0) {
 					Atomic gk = (Atomic) tuple.get(groupVar);

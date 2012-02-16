@@ -97,7 +97,6 @@ public class LetBindToLeftJoin extends ScopeWalker {
 		AST groupBy = new AST(GroupBy);
 		groupBy.setProperty("onlyLast", Boolean.TRUE);
 		AST end = new AST(XQ.End);
-		end.addChild(letReturn);
 		groupBy.addChild(end);
 		rlet.addChild(groupBy);
 

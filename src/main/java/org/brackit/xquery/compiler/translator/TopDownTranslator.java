@@ -27,9 +27,6 @@
  */
 package org.brackit.xquery.compiler.translator;
 
-import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
-import static org.brackit.xquery.compiler.XQ.Variable;
-
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -56,8 +53,6 @@ import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.type.AtomicType;
-import org.brackit.xquery.xdm.type.Cardinality;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
@@ -67,9 +62,6 @@ import org.brackit.xquery.xdm.type.SequenceType;
  * 
  */
 public class TopDownTranslator extends Compiler {
-
-	private int tableJoinGroupVar;
-	private int postJoinGroupVar;
 
 	public TopDownTranslator() {
 		super();
@@ -133,7 +125,7 @@ public class TopDownTranslator extends Compiler {
 		case XQ.Count:
 			return count(in, node);
 		case XQ.Join:
-			return join(prepareJoin(in, node), node);
+			return join(in, node);
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
 					"Unexpected AST operator node '%s' of type: %s", node,
@@ -155,47 +147,6 @@ public class TopDownTranslator extends Compiler {
 			table.resolve(prop, groupBy.check());
 		}
 		return anyOp(groupBy, node.getLastChild());
-	}
-
-	protected Operator prepareJoin(Operator in, AST join) throws QueryException {
-		AST post = join.getChild(2).getChild(0);
-		boolean hasPost = (post.getType() != XQ.End);
-
-		if ((hasPost) && (join.checkProperty("leftJoin"))) {
-			QNm postJoinVar = createPostJoinGroupVarName();
-			AST count = new AST(XQ.Count);
-			AST runVarBinding = new AST(TypedVariableBinding);
-			runVarBinding.addChild(new AST(Variable, postJoinVar));
-			count.addChild(runVarBinding);
-			QNm check = (QNm) join.getProperty("check");
-			if (check != null) {
-				count.setProperty("check", check);
-			}
-
-			AST tmp = join.getChild(0);
-			while (tmp.getType() != XQ.End) {
-				tmp = tmp.getLastChild();
-			}
-			tmp.getParent().replaceChild(tmp.getChildIndex(), count);
-			count.addChild(tmp);
-
-			tmp = post;
-			while (tmp.getType() != XQ.End) {
-				tmp.setProperty("check", postJoinVar);
-				tmp = tmp.getLastChild();
-			}
-			join.setProperty("check", postJoinVar);
-		}
-
-		// prepend an artificial count for
-		// marking the join group boundaries
-		QNm joingroupVar = createGroupVarName();
-		join.setProperty("group", joingroupVar);
-		Binding binding = table.bind(joingroupVar, new SequenceType(
-				AtomicType.INR, Cardinality.One));
-		in = new Count(in);
-
-		return in;
 	}
 
 	protected Operator join(Operator in, AST node) throws QueryException {
@@ -432,13 +383,5 @@ public class TopDownTranslator extends Compiler {
 				}
 			}
 		};
-	}
-
-	private QNm createGroupVarName() {
-		return new QNm("_joingroup;" + (tableJoinGroupVar++));
-	}
-
-	private QNm createPostJoinGroupVarName() {
-		return new QNm("_postjoingroup;" + (postJoinGroupVar++));
 	}
 }

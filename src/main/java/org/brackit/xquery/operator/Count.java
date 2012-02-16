@@ -73,6 +73,9 @@ public class Count implements Operator {
 				Atomic pgk = gk;
 				gk = (Atomic) t.get(check);
 				if ((gk == null) || ((pgk != null) && (gk.atomicCmp(pgk) != 0))) {
+					pos = Int32.ZERO;					
+				}
+				if (gk == null) {
 					return t.concat((Sequence) null);
 				}
 			}

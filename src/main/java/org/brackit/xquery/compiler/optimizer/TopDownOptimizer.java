@@ -38,9 +38,11 @@ import org.brackit.xquery.compiler.optimizer.walker.PathDDOElimination;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinLeftInGrow;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinRewriter;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinTree;
+import org.brackit.xquery.compiler.optimizer.walker.topdown.LeftJoinLifting;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.LetBindToLeftJoin;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.PredicateMerge;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.PredicateSplit;
+import org.brackit.xquery.compiler.optimizer.walker.topdown.PullEvaluation;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.SelectPullup;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.TopDownPipeline;
 import org.brackit.xquery.module.StaticContext;
@@ -78,7 +80,7 @@ public class TopDownOptimizer implements Optimizer {
 	private static class Simplification implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) {
 			ast = new DoSNStepMerger().walk(ast);
-//			ast = new OrderForGroupBy().walk(ast);
+			// ast = new OrderForGroupBy().walk(ast);
 			// if (VARIABLE_PULLUP) {
 			// ast = new LetVariableRefPullup().walk(ast);
 			// }
@@ -107,8 +109,10 @@ public class TopDownOptimizer implements Optimizer {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new JoinRewriter().walk(ast);
 			ast = new LetBindToLeftJoin().walk(ast);
-			ast = new JoinLeftInGrow().walk(ast);
-//			ast = new JoinTree().walk(ast);
+			ast = new LeftJoinLifting().walk(ast);
+			ast = new PullEvaluation().walk(ast);
+			// ast = new JoinLeftInGrow().walk(ast);
+			// ast = new JoinTree().walk(ast);
 			// ast = new JoinTree().walk(ast);
 			// ast = new JoinTree().walk(ast);
 			// ast = new JoinSortElimination().walk(ast);
