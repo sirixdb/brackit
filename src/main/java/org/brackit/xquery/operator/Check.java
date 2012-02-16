@@ -17,8 +17,8 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -27,82 +27,69 @@
  */
 package org.brackit.xquery.operator;
 
-import org.brackit.xquery.QueryContext;
+import java.util.Arrays;
+
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntNumeric;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.compiler.translator.Reference;
 
 /**
+ * Encapsulation of iteration nesting checks.
  * 
  * @author Sebastian Baechle
  * 
  */
-public class Count extends Check implements Operator {
-	private final Operator in;
-	private boolean bind = true;
+public class Check {
+	protected boolean check;
+	private int len;
+	private int[] iterations;
 
-	private class CountCursor implements Cursor {
-		private final Cursor c;
-		private IntNumeric pos;
-		private Tuple t;
+	public Check() {
+		this.iterations = new int[2];
+		this.len = 0;
+	}
 
-		public CountCursor(Cursor c) {
-			this.c = c;
-		}
+	public final boolean alive(Tuple t) throws QueryException {
+		return t.get(iterations[len - 1]) != null;
+	}
 
-		@Override
-		public void close(QueryContext ctx) {
-			c.close(ctx);
-		}
+	public final boolean dead(Tuple t) throws QueryException {
+		return t.get(iterations[len - 1]) == null;
+	}
 
-		@Override
-		public Tuple next(QueryContext ctx) throws QueryException {
-			Tuple prev = t;
-			t = c.next(ctx);
-
-			if (t == null) {
-				return null;
+	public final boolean separate(Tuple t1, Tuple t2) throws QueryException {
+		for (int i = len - 1; i >= 0; i--) {
+			Atomic gk1 = (Atomic) t1.get(iterations[i]);			
+			if (gk1 == null) {
+				return true;
 			}
-
-			if (check) {
-				if (dead(t)) {
-					pos = Int32.ZERO;
-					return t.concat((Sequence) null);
-				}
-				if ((prev == null) || (separate(prev, t))) {
-					pos = Int32.ZERO;
-				}
+			Atomic gk2 = (Atomic) t2.get(iterations[i]);
+			if (gk2 == null) {
+				return true;
 			}
-
-			return t.concat(pos = pos.inc());
+			if (gk1.atomicCmp(gk2) != 0) {
+				return true;
+			}
 		}
+		return false;
+	}
 
-		@Override
-		public void open(QueryContext ctx) throws QueryException {
-			c.open(ctx);
-			t = null;
-			pos = Int32.ZERO;
+	public final int local() {
+		return iterations[len - 1];
+	}
+
+	public final Reference check() {
+		check = true;
+		final int i = len++;
+		if (len == iterations.length) {
+			iterations = Arrays.copyOf(iterations, len + 2);
 		}
-	}
-
-	public Count(Operator in) {
-		this.in = in;
-	}
-
-	@Override
-	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return (bind) ? new CountCursor(in.create(ctx, tuple)) : in.create(ctx,
-				tuple);
-	}
-
-	@Override
-	public int tupleWidth(int initSize) {
-		return in.tupleWidth(initSize) + 1;
-	}
-
-	public void bind(boolean bind) {
-		this.bind = bind;
+		return new Reference() {
+			@Override
+			public void setPos(int pos) {
+				iterations[i] = pos;
+			}
+		};
 	}
 }

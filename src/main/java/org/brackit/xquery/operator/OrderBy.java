@@ -34,7 +34,6 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.compiler.translator.Reference;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.util.sort.TupleSort;
 import org.brackit.xquery.xdm.Expr;
@@ -48,7 +47,7 @@ import org.brackit.xquery.xdm.Type;
  * @author Sebastian Baechle
  * 
  */
-public class OrderBy implements Operator {
+public class OrderBy extends Check implements Operator {
 
 	public static class OrderModifier {
 		public OrderModifier(boolean asc, boolean emptyLeast, String collation) {
@@ -107,7 +106,6 @@ public class OrderBy implements Operator {
 	private final Operator in;
 	final Expr[] orderByExprs;
 	final OrderModifier[] modifier;
-	int check = -1;
 
 	private class OrderByCursor implements Cursor {
 		private final Cursor c;
@@ -146,8 +144,7 @@ public class OrderBy implements Operator {
 			tupleSize = t.getSize();
 
 			// pass through
-			Atomic gk = null;
-			if ((check >= 0) && ((gk = (Atomic) t.get(check)) == null)) {
+			if ((check) && (dead(t))) {
 				return t;
 			}
 
@@ -155,12 +152,8 @@ public class OrderBy implements Operator {
 			sort = new TupleSort(new OrderBySpec(tupleSize, modifier), -1);
 			sort.add(addSortFields(ctx, t));
 			while ((next = c.next(ctx)) != null) {
-				if (check >= 0) {
-					// check if next tuple belongs to different iteration
-					Atomic ngk = (Atomic) next.get(check);
-					if ((ngk == null) || (gk.atomicCmp(ngk) != 0)) {
-						break;
-					}
+				if ((check) && (separate(t, next))) {
+					break;
 				}
 				sort.add(addSortFields(ctx, next));
 			}
@@ -205,13 +198,5 @@ public class OrderBy implements Operator {
 	@Override
 	public int tupleWidth(int initSize) {
 		return in.tupleWidth(initSize);
-	}
-	
-	public Reference check() {
-		return new Reference() {
-			public void setPos(int pos) {
-				check = pos;
-			}
-		};
 	}
 }

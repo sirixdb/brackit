@@ -45,11 +45,10 @@ import org.brackit.xquery.xdm.Type;
  * @author Sebastian Baechle
  * 
  */
-public class GroupBy implements Operator {
+public class GroupBy extends Check implements Operator {
 	final Operator in;
 	final int[] groupSpecs; // positions of grouping variables
 	final boolean onlyLast;
-	int check = -1;
 
 	public GroupBy(Operator in, int groupSpecCount, boolean onlyLast) {
 		this.in = in;
@@ -96,8 +95,7 @@ public class GroupBy implements Operator {
 			next = null;
 
 			// pass through
-			Atomic gk = null;
-			if ((check >= 0) && ((gk = (Atomic) t.get(check)) == null)) {
+			if ((check) && (dead(t))) {
 				return t;
 			}
 
@@ -105,12 +103,8 @@ public class GroupBy implements Operator {
 			int[] size = new int[buffer.length];
 			addGroupFields(ctx, t, size, true);
 			while ((next = c.next(ctx)) != null) {
-				if (check >= 0) {
-					// check if next tuple belongs to different iteration
-					Atomic ngk = (Atomic) next.get(check);
-					if ((ngk == null) || (gk.atomicCmp(ngk) != 0)) {
-						break;
-					}
+				if ((check) && (separate(t, next))) {
+					break;
 				}
 				Atomic[] ngks = extractGroupingKeys(ctx, next);
 				if (!cmp(gks, ngks)) {
@@ -188,14 +182,6 @@ public class GroupBy implements Operator {
 	@Override
 	public int tupleWidth(int initSize) {
 		return in.tupleWidth(initSize);
-	}
-
-	public Reference check() {
-		return new Reference() {
-			public void setPos(int pos) {
-				check = pos;
-			}
-		};
 	}
 
 	public Reference group(final int groupSpecNo) {

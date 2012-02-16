@@ -30,8 +30,6 @@ package org.brackit.xquery.operator;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.compiler.translator.Reference;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Sequence;
 
@@ -40,10 +38,9 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  * 
  */
-public class Select implements Operator {
+public class Select extends Check implements Operator {
 	private final Operator in;
 	final Expr predicate;
-	int check = -1;
 
 	public class SelectCursor implements Cursor {
 		private final Cursor c;
@@ -63,33 +60,30 @@ public class Select implements Operator {
 			Tuple t;
 			while (((t = next) != null) || (t = c.next(ctx)) != null) {
 				next = null;
-				if ((check >= 0) && (t.get(check) == null)) {
+				if ((check) && (dead(t))) {
 					break;
 				}
 				Sequence p = predicate.evaluate(ctx, t);
 				if ((p != null) && (p.booleanValue())) {
 					break;
 				}
-				if (check < 0) {
+				if (!check) {
 					continue;
 				}
 				// predicate is not fulfilled but we must keep
 				// lifted iteration group alive for "left-join" semantics.
-				Atomic gk = (Atomic) t.get(check);
 				// skip if previously returned tuple was in same iteration group
-				Atomic pgk = (prev != null) ? (Atomic) prev.get(check) : null;
-				if ((pgk != null) && (gk.cmp(pgk) == 0)) {
+				if ((prev != null) && (!separate(prev, t))) {
 					continue;
 				}
 				next = c.next(ctx);
 				// skip if next tuple is in same iteration group
-				Atomic ngk = (next != null) ? (Atomic) next.get(check) : null;
-				if ((ngk != null) && (gk.cmp(ngk) == 0)) {
+				if ((next != null) && (!separate(t, next))) {
 					continue;
 				}
 				// emit "dead" tuple where "check" field is switched-off
 				// for pass-through in upstream operators
-				t = t.replace(check, null); // switch-off check var
+				t = t.replace(local(), null); // switch-off check var
 				break;
 			}
 			prev = t;
@@ -115,13 +109,5 @@ public class Select implements Operator {
 	@Override
 	public int tupleWidth(int initSize) {
 		return in.tupleWidth(initSize);
-	}
-
-	public Reference check() {
-		return new Reference() {
-			public void setPos(int pos) {
-				check = pos;
-			}
-		};
 	}
 }
