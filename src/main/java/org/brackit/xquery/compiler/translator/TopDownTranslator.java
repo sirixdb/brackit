@@ -27,6 +27,9 @@
  */
 package org.brackit.xquery.compiler.translator;
 
+import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
+import static org.brackit.xquery.compiler.XQ.Variable;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -66,6 +69,7 @@ import org.brackit.xquery.xdm.type.SequenceType;
 public class TopDownTranslator extends Compiler {
 
 	private int tableJoinGroupVar;
+	private int postJoinGroupVar;
 
 	public TopDownTranslator() {
 		super();
@@ -129,7 +133,7 @@ public class TopDownTranslator extends Compiler {
 		case XQ.Count:
 			return count(in, node);
 		case XQ.Join:
-			return join(in, node);
+			return join(prepareJoin(in, node), node);
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
 					"Unexpected AST operator node '%s' of type: %s", node,
@@ -153,21 +157,54 @@ public class TopDownTranslator extends Compiler {
 		return anyOp(groupBy, node.getLastChild());
 	}
 
-	protected Operator join(Operator in, AST node) throws QueryException {
+	protected Operator prepareJoin(Operator in, AST join) throws QueryException {
+		AST post = join.getChild(2).getChild(0);
+		boolean hasPost = (post.getType() != XQ.End);
+
+		if ((hasPost) && (join.checkProperty("leftJoin"))) {
+			QNm postJoinVar = createPostJoinGroupVarName();
+			AST count = new AST(XQ.Count);
+			AST runVarBinding = new AST(TypedVariableBinding);
+			runVarBinding.addChild(new AST(Variable, postJoinVar));
+			count.addChild(runVarBinding);
+			QNm check = (QNm) join.getProperty("check");
+			if (check != null) {
+				count.setProperty("check", check);
+			}
+
+			AST tmp = join.getChild(0);
+			while (tmp.getType() != XQ.End) {
+				tmp = tmp.getLastChild();
+			}
+			tmp.getParent().replaceChild(tmp.getChildIndex(), count);
+			count.addChild(tmp);
+
+			tmp = post;
+			while (tmp.getType() != XQ.End) {
+				tmp.setProperty("check", postJoinVar);
+				tmp = tmp.getLastChild();
+			}
+			join.setProperty("check", postJoinVar);
+		}
+
 		// prepend an artificial count for
 		// marking the join group boundaries
 		QNm joingroupVar = createGroupVarName();
+		join.setProperty("group", joingroupVar);
 		Binding binding = table.bind(joingroupVar, new SequenceType(
 				AtomicType.INR, Cardinality.One));
 		in = new Count(in);
 
-		// compile left (outer) join branch (skip initial start)
-		Operator leftIn = anyOp(in, node.getChild(0).getChild(0));
+		return in;
+	}
 
+	protected Operator join(Operator in, AST node) throws QueryException {
 		// get join type
 		Cmp cmp = (Cmp) node.getProperty("cmp");
 		boolean isGcmp = node.checkProperty("GCmp");
 
+		// compile left (outer) join branch (skip initial start)
+		Operator leftIn = anyOp(in, node.getChild(0).getChild(0));
 		AST tmp = node.getChild(0);
 		while (tmp.getType() != XQ.End) {
 			tmp = tmp.getLastChild();
@@ -187,21 +224,24 @@ public class TopDownTranslator extends Compiler {
 		TableJoin join = new TableJoin(cmp, isGcmp, leftJoin, skipSort, leftIn,
 				leftExpr, rightIn, rightExpr);
 
-		table.resolve(joingroupVar, join.group());
-
-		QNm prop = (QNm) node.getProperty("check");
+		QNm prop = (QNm) node.getProperty("group");
+		if (prop != null) {
+			table.resolve(prop, join.group());
+		}
+		prop = (QNm) node.getProperty("check");
 		if (prop != null) {
 			table.resolve(prop, join.check());
 		}
 
 		Operator op = join;
-//		if (node.getParent().getParent().getType() == XQ.Join) {
-//			return new Print(anyOp(op, node.getLastChild()), System.out);
-//		}
-//		
-		return anyOp(op, node.getLastChild().getLastChild());
+		AST post = node.getChild(2).getChild(0);
+		if ((post.getType() != XQ.End)) {
+			op = anyOp(join, post);
+		}
+
+		return anyOp(op, node.getChild(3).getChild(0));
 	}
-	
+
 	protected Operator nljoin(Operator in, AST node) throws QueryException {
 		// compile left (outer) join branch (skip initial start)
 		Operator leftIn = anyOp(in, node.getChild(0).getChild(0));
@@ -226,47 +266,15 @@ public class TopDownTranslator extends Compiler {
 
 		boolean leftJoin = node.checkProperty("leftJoin");
 		boolean skipSort = node.checkProperty("skipSort");
-		Operator join = new NLJoin(leftIn, rightIn, leftExpr, rightExpr, cmp, isGcmp, leftJoin);
+		Operator join = new NLJoin(leftIn, rightIn, leftExpr, rightExpr, cmp,
+				isGcmp, leftJoin);
 
 		Operator op = join;
-//		if (node.getParent().getParent().getType() == XQ.Join) {
-//			return new Print(anyOp(op, node.getLastChild()), System.out);
-//		}
-//		
+		// if (node.getParent().getParent().getType() == XQ.Join) {
+		// return new Print(anyOp(op, node.getLastChild()), System.out);
+		// }
+		//
 		return anyOp(op, node.getLastChild().getLastChild());
-	}
-
-	private Cmp cmp(AST cmpNode) throws QueryException {
-		switch (cmpNode.getType()) {
-		case XQ.ValueCompEQ:
-			return Cmp.eq;
-		case XQ.ValueCompGE:
-			return Cmp.ge;
-		case XQ.ValueCompLE:
-			return Cmp.le;
-		case XQ.ValueCompLT:
-			return Cmp.lt;
-		case XQ.ValueCompGT:
-			return Cmp.gt;
-		case XQ.ValueCompNE:
-			return Cmp.ne;
-		case XQ.GeneralCompEQ:
-			return Cmp.eq;
-		case XQ.GeneralCompGE:
-			return Cmp.ge;
-		case XQ.GeneralCompLE:
-			return Cmp.le;
-		case XQ.GeneralCompLT:
-			return Cmp.lt;
-		case XQ.GeneralCompGT:
-			return Cmp.gt;
-		case XQ.GeneralCompNE:
-			return Cmp.ne;
-		default:
-			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-					"Unexpected AST comparison node '%s' of type: %s", cmpNode,
-					cmpNode.getType());
-		}
 	}
 
 	protected Operator forBind(Operator in, AST node) throws QueryException {
@@ -428,5 +436,9 @@ public class TopDownTranslator extends Compiler {
 
 	private QNm createGroupVarName() {
 		return new QNm("_joingroup;" + (tableJoinGroupVar++));
+	}
+
+	private QNm createPostJoinGroupVarName() {
+		return new QNm("_postjoingroup;" + (postJoinGroupVar++));
 	}
 }

@@ -176,6 +176,9 @@ public class JoinRewriter extends ScopeWalker {
 		join.setProperty("cmp", cmp);
 		join.setProperty("GCmp", isGCmp);
 		join.addChild(rightIn);
+		AST postStart = new AST(XQ.Start);
+		postStart.addChild(new AST(XQ.End));
+		join.addChild(postStart);
 		AST outStart = new AST(XQ.Start);
 		outStart.addChild(select.getChild(1).copyTree());
 		join.addChild(outStart);

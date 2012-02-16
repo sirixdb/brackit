@@ -95,7 +95,9 @@ public class GroupBy implements Operator {
 			}
 			next = null;
 
-			if ((check >= 0) && (t.get(check) == null)) {
+			// pass through
+			Atomic gk = null;
+			if ((check >= 0) && ((gk = (Atomic) t.get(check)) == null)) {
 				return t;
 			}
 
@@ -103,8 +105,12 @@ public class GroupBy implements Operator {
 			int[] size = new int[buffer.length];
 			addGroupFields(ctx, t, size, true);
 			while ((next = c.next(ctx)) != null) {
-				if ((check >= 0) && (t.get(check) == null)) {
-					break;
+				if (check >= 0) {
+					// check if next tuple belongs to different iteration
+					Atomic ngk = (Atomic) next.get(check);
+					if ((ngk == null) || (gk.atomicCmp(ngk) != 0)) {
+						break;
+					}
 				}
 				Atomic[] ngks = extractGroupingKeys(ctx, next);
 				if (!cmp(gks, ngks)) {

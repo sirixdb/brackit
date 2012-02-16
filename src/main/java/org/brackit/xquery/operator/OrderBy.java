@@ -146,18 +146,15 @@ public class OrderBy implements Operator {
 			tupleSize = t.getSize();
 
 			// pass through
-			if ((check >= 0) && (t.get(check) == null)) {
+			Atomic gk = null;
+			if ((check >= 0) && ((gk = (Atomic) t.get(check)) == null)) {
 				return t;
 			}
 
 			// sort current tuple and all following in same group
-			Atomic gk = (check >= 0) ? (Atomic) t.get(check) : null;
 			sort = new TupleSort(new OrderBySpec(tupleSize, modifier), -1);
 			sort.add(addSortFields(ctx, t));
 			while ((next = c.next(ctx)) != null) {
-				if ((check >= 0) && (t.get(check) == null)) {
-					break;
-				}
 				if (check >= 0) {
 					// check if next tuple belongs to different iteration
 					Atomic ngk = (Atomic) next.get(check);

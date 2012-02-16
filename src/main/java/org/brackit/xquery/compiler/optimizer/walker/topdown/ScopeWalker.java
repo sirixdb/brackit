@@ -650,7 +650,9 @@ public abstract class ScopeWalker extends Walker {
 		}
 
 		if (!bindOnly) {
-			walkInspect(node.getLastChild(), true, bindOnly);
+			if (node.getChildCount() != 0) {
+				walkInspect(node.getLastChild(), true, bindOnly);
+			}
 		}
 		if (newScope) {
 			table.closeScope();
@@ -665,6 +667,7 @@ public abstract class ScopeWalker extends Walker {
 		// collect all bindings provided by left and right join branch
 		List<QNm> leftInBinding = getPipelineBindings(node.getChild(0));
 		List<QNm> rightInBinding = getPipelineBindings(node.getChild(1));
+		List<QNm> postBinding = getPipelineBindings(node.getChild(2));
 
 		if (!bindOnly) {
 			// visit left input
@@ -674,9 +677,22 @@ public abstract class ScopeWalker extends Walker {
 		}
 
 		if (!bindOnly) {
-			// start nested scope for output
+			// start nested scope for post join
 			// and "bind" variables of join outputs
-			AST outStart = node.getChild(2);
+			AST postStart = node.getChild(2);
+			table.openScope(postStart, true);
+			for (QNm var : leftInBinding) {
+				table.bind(var);
+			}
+			for (QNm var : rightInBinding) {
+				table.bind(var);
+			}
+			// visit post
+			walkInspect(postStart.getChild(0), true, bindOnly);
+			table.closeScope();
+
+			// start nested scope for output
+			AST outStart = node.getChild(3);
 			table.openScope(outStart, true);
 			for (QNm var : leftInBinding) {
 				table.bind(var);
@@ -684,19 +700,25 @@ public abstract class ScopeWalker extends Walker {
 			for (QNm var : rightInBinding) {
 				table.bind(var);
 			}
+			for (QNm var : postBinding) {
+				table.bind(var);
+			}
 			walkInspect(outStart.getChild(0), true, bindOnly);
 			table.closeScope();
 			table.closeScope();
 		} else {
-			// "pretend" to bind variables from both left and right input
-			for (QNm var : leftInBinding) {
-				table.bind(var);
-			}
-
+			// "pretend" to bind variables from both
+			// left and right input and output
 			// Note: A name collision will not
 			// bind a variable twice
 			// in this joined scope twice!
+			for (QNm var : leftInBinding) {
+				table.bind(var);
+			}
 			for (QNm var : rightInBinding) {
+				table.bind(var);
+			}
+			for (QNm var : postBinding) {
 				table.bind(var);
 			}
 		}

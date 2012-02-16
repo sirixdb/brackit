@@ -30,6 +30,7 @@ package org.brackit.xquery.operator;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.compiler.translator.Reference;
@@ -48,6 +49,7 @@ public class Count implements Operator {
 	private class CountCursor implements Cursor {
 		private final Cursor c;
 		private IntNumeric pos;
+		private Atomic gk;
 
 		public CountCursor(Cursor c) {
 			this.c = c;
@@ -65,8 +67,14 @@ public class Count implements Operator {
 			if (t == null) {
 				return null;
 			}
-			if ((check >= 0) && (t.get(check) == null)) {
-				return t.concat((Sequence) null);
+
+			if (check >= 0) {
+				// check if tuple belongs to different iteration
+				Atomic pgk = gk;
+				gk = (Atomic) t.get(check);
+				if ((gk == null) || ((pgk != null) && (gk.atomicCmp(pgk) != 0))) {
+					return t.concat((Sequence) null);
+				}
 			}
 
 			return t.concat(pos = pos.inc());
@@ -88,7 +96,7 @@ public class Count implements Operator {
 		return (bind) ? new CountCursor(in.create(ctx, tuple)) : in.create(ctx,
 				tuple);
 	}
-	
+
 	@Override
 	public int tupleWidth(int initSize) {
 		return in.tupleWidth(initSize) + 1;
