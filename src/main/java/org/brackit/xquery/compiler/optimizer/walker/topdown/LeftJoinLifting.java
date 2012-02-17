@@ -27,8 +27,6 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
-import java.awt.peer.LightweightPeer;
-
 import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;

@@ -30,17 +30,13 @@ package org.brackit.xquery.compiler.optimizer.walker.topdown;
 import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
 import static org.brackit.xquery.compiler.XQ.Variable;
 
-import org.brackit.xquery.QueryException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.compiler.optimizer.walker.Walker;
-import org.brackit.xquery.compiler.translator.Binding;
-import org.brackit.xquery.operator.Count;
-import org.brackit.xquery.operator.Operator;
-import org.brackit.xquery.xdm.type.AtomicType;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * @author Sebastian Baechle
@@ -55,7 +51,7 @@ public class PullEvaluation extends Walker {
 		}
 		AST post = join.getChild(2).getChild(0);
 		boolean hasPost = (post.getType() != XQ.End);
-		QNm check = (QNm) join.getProperty("check");
+		List<QNm> check = (List<QNm>) join.getProperty("check");
 
 		if ((hasPost) && (join.checkProperty("leftJoin"))) {
 			QNm postJoinVar = createCheckVarName();
@@ -74,12 +70,13 @@ public class PullEvaluation extends Walker {
 			tmp.getParent().replaceChild(tmp.getChildIndex(), count);
 			count.addChild(tmp);
 
+			List<QNm> check2 = appendCheck(check, postJoinVar);
 			tmp = post;
 			while (tmp.getType() != XQ.End) {
-				tmp.setProperty("check", postJoinVar);
+				tmp.setProperty("check", check2);
 				tmp = tmp.getLastChild();
 			}
-			join.setProperty("check", postJoinVar);
+			join.setProperty("check", check2);
 		}
 
 		// prepend an artificial count for
@@ -101,6 +98,13 @@ public class PullEvaluation extends Walker {
 
 	private int tableJoinGroupVar;
 	private int checkVar;
+
+	private List<QNm> appendCheck(List<QNm> checks, QNm var) {
+		ArrayList<QNm> l = (checks == null) ? new ArrayList<QNm>()
+				: new ArrayList<QNm>(checks);
+		l.add(var);
+		return l;
+	}
 
 	private QNm createGroupVarName() {
 		return new QNm("_joingroup;" + (tableJoinGroupVar++));

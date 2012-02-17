@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.compiler.translator;
 
+import java.util.List;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -34,6 +36,7 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.expr.PipeExpr;
+import org.brackit.xquery.operator.Check;
 import org.brackit.xquery.operator.Count;
 import org.brackit.xquery.operator.ForBind;
 import org.brackit.xquery.operator.GroupBy;
@@ -133,6 +136,7 @@ public class TopDownTranslator extends Compiler {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	protected Operator groupBy(Operator in, AST node) throws QueryException {
 		int groupSpecCount = Math.max(node.getChildCount() - 1, 0);
 		boolean onlyLast = node.checkProperty("onlyLast");
@@ -142,13 +146,11 @@ public class TopDownTranslator extends Compiler {
 			grpVars[i] = (QNm) node.getChild(i).getChild(0).getValue();
 			table.resolve(grpVars[i], groupBy.group(i));
 		}
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop, groupBy.check());
-		}
+		addChecks(groupBy, (List<QNm>) node.getProperty("check"));
 		return anyOp(groupBy, node.getLastChild());
 	}
 
+	@SuppressWarnings("unchecked")
 	protected Operator join(Operator in, AST node) throws QueryException {
 		// get join type
 		Cmp cmp = (Cmp) node.getProperty("cmp");
@@ -179,10 +181,7 @@ public class TopDownTranslator extends Compiler {
 		if (prop != null) {
 			table.resolve(prop, join.group());
 		}
-		prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop, join.check());
-		}
+		addChecks(join, (List<QNm>) node.getProperty("check"));
 
 		Operator op = join;
 		AST post = node.getChild(2).getChild(0);
@@ -228,6 +227,7 @@ public class TopDownTranslator extends Compiler {
 		return anyOp(op, node.getLastChild().getLastChild());
 	}
 
+	@SuppressWarnings("unchecked")
 	protected Operator forBind(Operator in, AST node) throws QueryException {
 		int pos = 0;
 		AST runVarDecl = node.getChild(pos++);
@@ -260,13 +260,11 @@ public class TopDownTranslator extends Compiler {
 		if (posBinding != null) {
 			forBind.bindPosition(posBinding.isReferenced());
 		}
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop, forBind.check());
-		}
+		addChecks(forBind, (List<QNm>) node.getProperty("check"));
 		return anyOp(forBind, node.getLastChild());
 	}
 
+	@SuppressWarnings("unchecked")
 	protected Operator letBind(Operator in, AST node) throws QueryException {
 		int pos = 0;
 		AST letVarDecl = node.getChild(pos++);
@@ -282,13 +280,11 @@ public class TopDownTranslator extends Compiler {
 		// the variable anyway
 		table.resolve(letVarName);
 		LetBind letBind = new LetBind(in, sourceExpr);
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop, letBind.check());
-		}
+		addChecks(letBind, (List<QNm>) node.getProperty("check"));
 		return anyOp(letBind, node.getLastChild());
 	}
 
+	@SuppressWarnings("unchecked")
 	protected Operator count(Operator in, AST node) throws QueryException {
 		int pos = 0;
 		AST posVarDecl = node.getChild(pos++);
@@ -303,24 +299,20 @@ public class TopDownTranslator extends Compiler {
 		// the variable anyway
 		table.resolve(posVarName);
 		Count count = new Count(in);
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop, count.check());
-		}
+		addChecks(count, (List<QNm>) node.getProperty("check"));
 		return anyOp(count, node.getLastChild());
 	}
 
+	@SuppressWarnings("unchecked")
 	protected Operator select(Operator in, AST node) throws QueryException {
 		int pos = 0;
 		Expr expr = anyExpr(node.getChild(pos++));
 		Select select = new Select(in, expr);
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop, select.check());
-		}
+		addChecks(select, (List<QNm>) node.getProperty("check"));
 		return anyOp(select, node.getLastChild());
 	}
 
+	@SuppressWarnings("unchecked")
 	protected Operator orderBy(Operator in, AST node) throws QueryException {
 		int orderBySpecCount = node.getChildCount() - 1;
 		Expr[] orderByExprs = new Expr[orderBySpecCount];
@@ -331,11 +323,16 @@ public class TopDownTranslator extends Compiler {
 			orderBySpec[i] = orderModifier(orderBy);
 		}
 		OrderBy orderBy = new OrderBy(in, orderByExprs, orderBySpec);
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop, orderBy.check());
-		}
+		addChecks(orderBy, (List<QNm>) node.getProperty("check"));
 		return anyOp(orderBy, node.getLastChild());
+	}
+
+	protected void addChecks(Check op, List<QNm> check) throws QueryException {
+		if (check != null) {
+			for (QNm checkVar : check) {
+				table.resolve(checkVar, op.check());
+			}
+		}
 	}
 
 	protected Operator wrapDebugOutput(Operator root) {
