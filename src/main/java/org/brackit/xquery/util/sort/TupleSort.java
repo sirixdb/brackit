@@ -274,6 +274,7 @@ public class TupleSort {
 			public void close() {
 				try {
 					sorted.close();
+					clear();
 				} catch (IOException e) {
 					log.error(e);
 				}

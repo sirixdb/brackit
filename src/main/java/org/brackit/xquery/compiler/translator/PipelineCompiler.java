@@ -44,8 +44,8 @@ import org.brackit.xquery.operator.Print;
 import org.brackit.xquery.operator.Select;
 import org.brackit.xquery.operator.Start;
 import org.brackit.xquery.operator.TableJoin;
-import org.brackit.xquery.operator.OrderBy.OrderModifier;
 import org.brackit.xquery.util.Cmp;
+import org.brackit.xquery.util.sort.Ordering.OrderModifier;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
@@ -114,8 +114,8 @@ public class PipelineCompiler extends Compiler {
 			return count(node);
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-					"Unexpected AST operator node '%s' of type: %s", node, node
-							.getType());
+					"Unexpected AST operator node '%s' of type: %s", node,
+					node.getType());
 		}
 	}
 
