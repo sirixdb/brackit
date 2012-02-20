@@ -32,6 +32,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.sequence.AbstractSequence;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.TypedSequence;
 import org.brackit.xquery.xdm.Expr;
@@ -62,7 +63,7 @@ public class Treat implements Expr {
 			Sequence sequence = expr.evaluate(ctx, tuple);
 			final Sequence typedSequence = TypedSequence.toTypedSequence(ctx,
 					expected, sequence);
-			return new Sequence() {
+			return new AbstractSequence() {
 				final Sequence s = typedSequence;
 
 				@Override

@@ -28,6 +28,7 @@
 package org.brackit.xquery.xdm;
 
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.IntNumeric;
 
 /**
@@ -55,7 +56,7 @@ import org.brackit.xquery.atomic.IntNumeric;
  * @author Sebastian Baechle
  * 
  */
-public interface Sequence {
+public interface Sequence extends Tuple {
 	/**
 	 * Checks the effective boolean value of this sequence as defined in
 	 * {@linkplain http://www.w3.org/TR/xquery/#id-ebv}.

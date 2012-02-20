@@ -42,7 +42,7 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  * 
  */
-public abstract class FlatteningSequence implements Sequence {
+public abstract class FlatteningSequence extends AbstractSequence {
 
 	private class FlatteningIter implements Iter {
 		private Sequence s;

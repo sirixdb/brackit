@@ -28,7 +28,6 @@
 package org.brackit.xquery.xdm;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.xdm.type.ItemType;
 
@@ -38,8 +37,8 @@ import org.brackit.xquery.xdm.type.ItemType;
  * @author Sebastian Baechle
  * 
  */
-public interface Item extends Tuple, Sequence {
-	
+public interface Item extends Sequence {
+
 	/**
 	 * Returns the {@link ItemType] of this item.
 	 */
