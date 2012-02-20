@@ -66,6 +66,11 @@ public class FastList<E> {
 		capacity(size + len);
 		System.arraycopy(v, off, values, size, len);
 	}
+	
+	public void addAllSafe(Object[] v, int off, int len) {
+		capacity(size + len);
+		System.arraycopy(v, off, values, size, len);
+	}
 
 	private void capacity(int capacity) {
 		if (values.length < capacity) {
