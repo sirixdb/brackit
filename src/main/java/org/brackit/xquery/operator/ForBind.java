@@ -185,6 +185,12 @@ public class ForBind extends Check implements Operator {
 	}
 
 	@Override
+	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
+			throws QueryException {
+		return new ForBindCursor(in.create(ctx, buf, len));
+	}
+
+	@Override
 	public int tupleWidth(int initSize) {
 		return in.tupleWidth(initSize) + (bindVar ? 1 : 0) + (bindPos ? 1 : 0);
 	}

@@ -194,6 +194,14 @@ public class TableJoin extends Check implements Operator {
 	}
 
 	@Override
+	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
+			throws QueryException {
+		int lSize = l.tupleWidth(buf[0].getSize());
+		int pad = r.tupleWidth(buf[0].getSize()) - buf[0].getSize();
+		return new TableJoinCursor(l.create(ctx, buf, len), lSize, pad);
+	}
+
+	@Override
 	public int tupleWidth(int initSize) {
 		return l.tupleWidth(initSize) + r.tupleWidth(initSize) - initSize;
 	}

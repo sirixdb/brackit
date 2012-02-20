@@ -196,6 +196,12 @@ public class OrderBy extends Check implements Operator {
 	}
 
 	@Override
+	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
+			throws QueryException {
+		return new OrderByCursor(in.create(ctx, buf, len));
+	}
+
+	@Override
 	public int tupleWidth(int initSize) {
 		return in.tupleWidth(initSize);
 	}

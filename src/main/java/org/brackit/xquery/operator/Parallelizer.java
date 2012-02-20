@@ -47,9 +47,9 @@ public class Parallelizer implements Operator {
 		private volatile QueryException error;
 
 		// private int takes;
-		//	
+		//
 		// private int enqueueRetries;
-		//	
+		//
 		// private int dequeueRetries;
 
 		private Tuple current;
@@ -197,7 +197,13 @@ public class Parallelizer implements Operator {
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
 		return new ParallelizerCursor(in.create(ctx, tuple), ctx);
-	}	
+	}
+
+	@Override
+	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
+			throws QueryException {
+		return new ParallelizerCursor(in.create(ctx, buf, len), ctx);
+	}
 
 	@Override
 	public int tupleWidth(int initSize) {

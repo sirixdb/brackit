@@ -92,6 +92,13 @@ public class LetBind extends Check implements Operator {
 	}
 
 	@Override
+	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
+			throws QueryException {
+		return (bind) ? new LetBindCursor(in.create(ctx, buf, len)) : in
+				.create(ctx, buf, len);
+	}
+
+	@Override
 	public int tupleWidth(int initSize) {
 		return in.tupleWidth(initSize) + (bind ? 1 : 0);
 	}

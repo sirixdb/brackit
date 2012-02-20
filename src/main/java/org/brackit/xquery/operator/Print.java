@@ -28,6 +28,7 @@
 package org.brackit.xquery.operator;
 
 import java.io.PrintStream;
+import java.util.Arrays;
 
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -50,14 +51,14 @@ public class Print implements Operator {
 
 	protected class PrintCursor implements Cursor {
 		private final Cursor c;
-		private final Tuple t;
+		private final Tuple[] t;
 		private final PrintStream out;
 
 		private int maxSize = 20;
 
 		private int count;
 
-		public PrintCursor(Cursor c, Tuple t, PrintStream out) {
+		public PrintCursor(Cursor c, Tuple[] t, PrintStream out) {
 			this.c = c;
 			this.t = t;
 			this.out = out;
@@ -82,7 +83,8 @@ public class Print implements Operator {
 				for (int i = 0; i < size; i++) {
 					out.print(' ');
 					Sequence sequence = next.get(i);
-					String s = (sequence != null) ? asString(ctx, sequence) : "()";
+					String s = (sequence != null) ? asString(ctx, sequence)
+							: "()";
 					s = shrinkOrPad(s);
 					out.print(s);
 					out.print(" |");
@@ -123,15 +125,22 @@ public class Print implements Operator {
 			c.open(ctx);
 			count = 0;
 			out.print("--- ");
-			out.println(t);
+			out.println(Arrays.toString(t));
 		}
 	}
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return new PrintCursor(in.create(ctx, tuple), tuple, out);
-	}	
-	
+		return new PrintCursor(in.create(ctx, tuple), new Tuple[] { tuple },
+				out);
+	}
+
+	@Override
+	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
+			throws QueryException {
+		return new PrintCursor(in.create(ctx, buf, len), buf, out);
+	}
+
 	@Override
 	public int tupleWidth(int initSize) {
 		return in.tupleWidth(initSize);

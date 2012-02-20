@@ -180,6 +180,13 @@ public class GroupBy extends Check implements Operator {
 	}
 
 	@Override
+	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
+			throws QueryException {
+		return new GroupByCursor(in.create(ctx, buf, len), in.tupleWidth(buf[0]
+				.getSize()));
+	}
+
+	@Override
 	public int tupleWidth(int initSize) {
 		return in.tupleWidth(initSize);
 	}
