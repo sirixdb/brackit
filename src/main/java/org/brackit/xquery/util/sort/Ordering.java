@@ -132,6 +132,9 @@ public class Ordering implements Comparator<Tuple> {
 	}
 
 	public void clear() {
-		sort.clear();
+		if (sort != null) {			
+			sort.clear();
+			sort = null;
+		}
 	}
 }
