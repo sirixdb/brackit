@@ -224,7 +224,7 @@ public class TupleSort {
 		// TODO
 	}
 
-	public Stream<? extends Tuple> stream() {
+	public Stream<Tuple> stream() {
 		return (runCount == 0) ? mainMemorySortOnly()
 				: mergeFinalRunAndBuffer();
 	}
@@ -254,7 +254,7 @@ public class TupleSort {
 		}
 	}
 
-	private Stream<? extends Tuple> mergeFinalRunAndBuffer() {
+	private Stream<Tuple> mergeFinalRunAndBuffer() {
 		final Tuple[] sBuffer = buffer;
 
 		return new Stream<Tuple>() {
@@ -405,7 +405,7 @@ public class TupleSort {
 		}
 	}
 
-	private Stream<? extends Tuple> mainMemorySortOnly() {
+	private Stream<Tuple> mainMemorySortOnly() {
 		final Tuple[] sorted = buffer;
 		final int sortedCount = count;
 		return new Stream<Tuple>() {

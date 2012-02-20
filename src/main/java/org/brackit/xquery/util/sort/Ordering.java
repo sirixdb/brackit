@@ -35,6 +35,8 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.expr.Cast;
+import org.brackit.xquery.node.stream.TransformerStream;
+import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
@@ -47,33 +49,49 @@ import org.brackit.xquery.xdm.Type;
  */
 public class Ordering implements Comparator<Tuple> {
 
-	final int offset;
 	final Expr[] orderByExprs;
 	final OrderModifier[] modifier;
+	int offset;
 	TupleSort sort;
 
-	public Ordering(int offset, Expr[] orderByExprs, OrderModifier[] modifier) {
-		this.offset = offset;
+	public Ordering(Expr[] orderByExprs, OrderModifier[] modifier) {
 		this.orderByExprs = orderByExprs;
 		this.modifier = modifier;
 	}
 
 	public void add(QueryContext ctx, Tuple t) throws QueryException {
 		if (sort == null) {
+			offset = t.getSize();
 			sort = new TupleSort(this, 1);
 		}
-		sort.add(addSortFields(ctx, t));
+		sort.add(t.concat(sortKeys(ctx, t)));
 	}
 
-	public Stream<? extends Tuple> sorted() throws QueryException {
+	public void add(Sequence[] keys, Tuple t) throws QueryException {
+		if (sort == null) {
+			offset = t.getSize();
+			sort = new TupleSort(this, 1);
+		}
+		sort.add(t.concat(keys));
+	}
+
+	public Stream<Tuple> sorted() throws QueryException {
 		sort.sort();
-		Stream<? extends Tuple> s = sort.stream();
+		Stream<Tuple> s = new TransformerStream<Tuple, Tuple>(sort.stream()) {
+			@Override
+			protected Tuple transform(Tuple next) throws DocumentException {
+				try {
+					return next.project(0, offset);
+				} catch (QueryException e) {
+					throw new DocumentException(e);
+				}
+			}
+		};
 		sort = null;
 		return s;
 	}
 
-	private Tuple addSortFields(QueryContext ctx, Tuple t)
-			throws QueryException {
+	public Sequence[] sortKeys(QueryContext ctx, Tuple t) throws QueryException {
 		Sequence[] concat = new Sequence[orderByExprs.length];
 		for (int i = 0; i < orderByExprs.length; i++) {
 			Item item = orderByExprs[i].evaluateToItem(ctx, t);
@@ -83,8 +101,7 @@ public class Ordering implements Comparator<Tuple> {
 			}
 			concat[i] = atomic;
 		}
-		Tuple toSort = t.concat(concat);
-		return toSort;
+		return concat;
 	}
 
 	public static class OrderModifier {
@@ -132,7 +149,7 @@ public class Ordering implements Comparator<Tuple> {
 	}
 
 	public void clear() {
-		if (sort != null) {			
+		if (sort != null) {
 			sort.clear();
 			sort = null;
 		}

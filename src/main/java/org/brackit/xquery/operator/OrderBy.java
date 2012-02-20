@@ -42,11 +42,8 @@ import org.brackit.xquery.xdm.Stream;
  */
 public class OrderBy extends Check implements Operator {
 
-	private final Operator in;
-
 	private class OrderByCursor implements Cursor {
 		private final Cursor c;
-		private int tupleSize = -1;
 		private Stream<? extends Tuple> sorted;
 		private Tuple next;
 
@@ -67,7 +64,7 @@ public class OrderBy extends Check implements Operator {
 			if (sorted != null) {
 				t = sorted.next();
 				if (t != null) {
-					return t.project(0, tupleSize);
+					return t;
 				}
 				sorted.close();
 			}
@@ -75,7 +72,6 @@ public class OrderBy extends Check implements Operator {
 				return null;
 			}
 			next = null;
-			tupleSize = t.getSize();
 
 			// pass through
 			if ((check) && (dead(t))) {
@@ -83,7 +79,7 @@ public class OrderBy extends Check implements Operator {
 			}
 
 			// sort current tuple and all following in same group
-			Ordering sort = new Ordering(tupleSize, orderByExprs, modifier);
+			Ordering sort = new Ordering(orderByExprs, modifier);
 			sort.add(ctx, t);
 			while ((next = c.next(ctx)) != null) {
 				if ((check) && (separate(t, next))) {
@@ -93,7 +89,7 @@ public class OrderBy extends Check implements Operator {
 			}
 			sorted = sort.sorted();
 			t = sorted.next();
-			return t.project(0, tupleSize);
+			return t;
 		}
 
 		@Override
@@ -102,6 +98,7 @@ public class OrderBy extends Check implements Operator {
 		}
 	}
 
+	final Operator in;
 	final Expr[] orderByExprs;
 	final OrderModifier[] modifier;
 
