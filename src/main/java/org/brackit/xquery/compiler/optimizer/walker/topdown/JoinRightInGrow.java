@@ -99,8 +99,8 @@ public class JoinRightInGrow extends ScopeWalker {
 
 	private boolean movable(AST anc, boolean leftJoin) {
 		int type = anc.getType();
-		return ((type == ForBind)
-				|| (type == LetBind)
+		return ((type == LetBind)
+				|| ((type == ForBind) && (!leftJoin))
 				|| ((type == Selection) && (!leftJoin))
 				|| ((type == Start) && (!leftJoin) && (anc.getChildIndex() == 3)) || (type == Join));
 	}
