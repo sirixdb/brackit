@@ -40,6 +40,7 @@ import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.NodeFactory;
+import org.brackit.xquery.xdm.OperationNotSupportedException;
 import org.brackit.xquery.xdm.Store;
 
 /**
@@ -91,5 +92,10 @@ public class SimpleStore implements Store {
 
 	protected NodeFactory<?> getNodeFactory() {
 		return new D2NodeFactory();
+	}
+
+	@Override
+	public void makeDir(String path) throws DocumentException {
+		throw new OperationNotSupportedException();
 	}
 }

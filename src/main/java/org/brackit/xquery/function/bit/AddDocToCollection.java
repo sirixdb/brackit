@@ -83,7 +83,7 @@ public class AddDocToCollection extends AbstractFunction {
 			}
 			return Bool.TRUE;
 		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR,
+			throw new QueryException(e, ErrorCode.BIT_ADDTOCOLLECTION_INT_ERROR,
 					e.getMessage());
 		}
 	}

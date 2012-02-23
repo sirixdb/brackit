@@ -31,6 +31,7 @@ import static org.brackit.xquery.module.Namespaces.ERR_NSURI;
 import static org.brackit.xquery.module.Namespaces.ERR_PREFIX;
 
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.module.Namespaces;
 
 /**
  * 
@@ -669,4 +670,22 @@ public class ErrorCode {
 
 	public static final QNm BIT_DYN_INT_ERROR = new QNm(ERR_NSURI, "bit",
 			"DY0300");
+	
+	public static final QNm BIT_ADDTOCOLLECTION_INT_ERROR = new QNm(
+			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0001");
+
+	public static final QNm BIT_CREATECOLLECTION_INT_ERROR = new QNm(
+			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0002");
+
+	public static final QNm BIT_DROPCOLLECTION_INT_ERROR = new QNm(
+			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0003");
+
+	public static final QNm BIT_EXISTCOLLECTION_INT_ERROR = new QNm(
+			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0005");
+
+	public static final QNm BIT_MAKEDIRECTORY_INT_ERROR = new QNm(
+			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0007");
+
+	public static final QNm BIT_STOREDOC_INT_ERROR = new QNm(
+			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0008");
 }

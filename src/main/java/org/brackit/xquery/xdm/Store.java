@@ -41,4 +41,6 @@ public interface Store {
 			throws DocumentException;
 
 	public void drop(String name) throws DocumentException;
+	
+	public void makeDir(String path) throws DocumentException;
 }

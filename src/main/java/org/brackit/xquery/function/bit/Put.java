@@ -56,7 +56,7 @@ import org.brackit.xquery.xdm.Signature;
  * 
  */
 public class Put extends AbstractFunction {
-	public static final QNm PUT = new QNm(Namespaces.BIT_NSURI,
+	public static final QNm NAME = new QNm(Namespaces.BIT_NSURI,
 			Namespaces.BIT_PREFIX, "put");
 
 	public Put(QNm name, Signature signature) {
