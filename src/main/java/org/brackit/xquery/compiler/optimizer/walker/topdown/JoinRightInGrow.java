@@ -27,8 +27,10 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
+import static org.brackit.xquery.compiler.XQ.ForBind;
 import static org.brackit.xquery.compiler.XQ.Join;
-import static org.brackit.xquery.compiler.XQ.PipeExpr;
+import static org.brackit.xquery.compiler.XQ.LetBind;
+import static org.brackit.xquery.compiler.XQ.Selection;
 import static org.brackit.xquery.compiler.XQ.Start;
 
 import org.brackit.xquery.compiler.AST;
@@ -37,7 +39,7 @@ import org.brackit.xquery.compiler.AST;
  * @author Sebastian Baechle
  * 
  */
-public class JoinLeftInGrow extends ScopeWalker {
+public class JoinRightInGrow extends ScopeWalker {
 
 	@Override
 	protected AST visit(AST node) {
@@ -46,8 +48,8 @@ public class JoinLeftInGrow extends ScopeWalker {
 		}
 
 		// find closest scope from which
-		// right input is independent of
-		VarRef refs = findVarRefs(node.getChild(1));
+		// left input is independent of
+		VarRef refs = findVarRefs(node.getChild(0));
 		Scope[] scopes = sortScopes(refs);
 		Scope local = findScope(node);
 
@@ -61,11 +63,12 @@ public class JoinLeftInGrow extends ScopeWalker {
 		}
 
 		// locate closest pipeline node from which
-		// right input is independent of and which
+		// left input is independent of and which
 		// can be safely pushed to the left input
+		boolean leftJoin = node.checkProperty("leftJoin");
 		AST parent = node.getParent();
 		AST anc = parent;
-		while ((anc != stopAt) && (movable(anc))) {
+		while ((anc != stopAt) && (movable(anc, leftJoin))) {
 			anc = anc.getParent();
 		}
 
@@ -73,29 +76,32 @@ public class JoinLeftInGrow extends ScopeWalker {
 			return node;
 		}
 
-		AST lorig = anc.getLastChild();
-		AST leftIn = new AST(Start);
-		AST copy = leftIn;
-		while (lorig != node) {
-			AST toAdd = lorig.copy();
-			for (int i = 0; i < lorig.getChildCount() - 1; i++) {
-				toAdd.addChild(lorig.getChild(i).copyTree());
+		AST rorig = anc.getLastChild();
+		AST rightIn = new AST(Start);
+		AST copy = rightIn;
+		while (rorig != node) {
+			AST toAdd = rorig.copy();
+			for (int i = 0; i < rorig.getChildCount() - 1; i++) {
+				toAdd.addChild(rorig.getChild(i).copyTree());
 			}
 			copy.addChild(toAdd);
 			copy = toAdd;
-			lorig = lorig.getLastChild();
+			rorig = rorig.getLastChild();
 		}
-		copy.addChild(node.getChild(0).getChild(0));
+		copy.addChild(node.getChild(1).getChild(0));
 
-		node.replaceChild(0, leftIn);
+		node.replaceChild(1, rightIn);
 		anc.replaceChild(anc.getChildCount() - 1, node);
 		refreshScopes(anc, true);
 		return anc;
 
 	}
 
-	private boolean movable(AST anc) {
-		int ptype = anc.getParent().getType();
-		return ((ptype != PipeExpr) && ((ptype != Join) || (anc.getChildIndex() == 3)));
+	private boolean movable(AST anc, boolean leftJoin) {
+		int type = anc.getType();
+		return ((type == ForBind)
+				|| (type == LetBind)
+				|| ((type == Selection) && (!leftJoin))
+				|| ((type == Start) && (!leftJoin) && (anc.getChildIndex() == 3)) || (type == Join));
 	}
 }

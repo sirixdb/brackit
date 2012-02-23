@@ -36,6 +36,7 @@ import org.brackit.xquery.compiler.optimizer.walker.DoSNStepMerger;
 import org.brackit.xquery.compiler.optimizer.walker.PathDDOElimination;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinLeftInGrow;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinRewriter;
+import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinRightInGrow;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.LeftJoinLifting;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.LetBindToLeftJoin;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.PredicateMerge;
@@ -108,6 +109,7 @@ public class TopDownOptimizer implements Optimizer {
 			ast = new JoinRewriter().walk(ast);
 			ast = new LetBindToLeftJoin().walk(ast);
 			ast = new LeftJoinLifting().walk(ast);
+			ast = new JoinRightInGrow().walk(ast);
 			ast = new JoinLeftInGrow().walk(ast);
 			ast = new PullEvaluation().walk(ast);			
 			// ast = new JoinTree().walk(ast);
