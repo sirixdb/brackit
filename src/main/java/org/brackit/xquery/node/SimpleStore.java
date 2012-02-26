@@ -52,15 +52,15 @@ public class SimpleStore implements Store {
 	private HashMap<String, Collection<?>> docs = new HashMap<String, Collection<?>>();
 
 	@Override
-	public Collection<?> create(String name, SubtreeParser... parsers)
+	public Collection<?> create(String name, SubtreeParser parser)
 			throws DocumentException {
 
-		if (parsers.length != 1) {
+		if (parser == null) {
 			throw new DocumentException(
 					"Multi-document collections are not supported");
 		}
 
-		Collection<?> coll = getNodeFactory().build(parsers[0]).getCollection();
+		Collection<?> coll = getNodeFactory().build(parser).getCollection();
 		docs.put(name, coll);
 		return coll;
 	}

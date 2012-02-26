@@ -27,8 +27,6 @@
  */
 package org.brackit.xquery.function.bit;
 
-import java.util.ArrayList;
-
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -38,14 +36,11 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.node.parser.StreamSubtreeParser;
+import org.brackit.xquery.node.parser.CollectionParser;
+import org.brackit.xquery.node.parser.SequenceParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 
 /**
  * 
@@ -66,38 +61,15 @@ public class CreateCollection extends AbstractFunction {
 			Sequence[] args) throws QueryException {
 		try {
 			String collection = ((Atomic) args[0]).stringValue();
+			SubtreeParser parser = null;
 			
-			if (args.length == 1) {
-				ctx.getStore().create(collection);
-			} else {
+			if (args.length > 1) {
 				
 				// initialize collection with documents
-				
-				ArrayList<SubtreeParser> parserList = new ArrayList<SubtreeParser>();
-				Item item = null;
-				Iter it = args[1].iterate();
-				try {
-					while ((item = it.next()) != null) {
-						
-						SubtreeParser parser = null;
-						if (item instanceof Atomic) {
-							// take string value as document location
-							parser = new DocumentParser(((Atomic) item).stringValue());
-						} else {
-							// take subtree as new document
-							Node<?> root = (Node<?>) item;
-							parser = new StreamSubtreeParser(root.getSubtree());
-						}
-						parserList.add(parser);
-					}
-				} finally {
-					it.close();
-				}
-				
-				// convert to array
-				SubtreeParser[] parsers = parserList.toArray(new SubtreeParser[parserList.size()]);
-				ctx.getStore().create(collection, parsers);				
+				parser = new CollectionParser(new SequenceParser(args[1]));
 			}
+			
+			ctx.getStore().create(collection, parser);
 			
 			return Bool.TRUE;
 		} catch (Exception e) {

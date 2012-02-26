@@ -25,22 +25,70 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm;
+package org.brackit.xquery.node.parser;
 
-import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.Iter;
+import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Stream;
 
 /**
+ * A Stream of SubtreeParsers that delivers one SubtreeParser for each item in
+ * the sequence.
  * 
- * @author Sebastian Baechle
+ * @author Martin Hiller
  * 
  */
-public interface Store {
-	public Collection<?> lookup(String name) throws DocumentException;
+public class SequenceParser implements Stream<SubtreeParser> {
 
-	public Collection<?> create(String name, SubtreeParser parser)
-			throws DocumentException;
-
-	public void drop(String name) throws DocumentException;
+	private Iter it;
 	
-	public void makeDir(String path) throws DocumentException;
+	public SequenceParser(Sequence seq) {
+		this.it = seq.iterate();
+	}
+	
+	@Override
+	public void close() {
+		if (it != null) {
+			it.close();
+			it = null;
+		}
+	}
+
+	@Override
+	public SubtreeParser next() throws DocumentException {
+		
+		if (it == null) {
+			throw new DocumentException("Stream already closed!");
+		}
+		
+		try {
+			
+			Item item = it.next();
+			if (item == null) {
+				close();
+				return null;
+			}
+			
+			SubtreeParser parser = null;
+			if (item instanceof Atomic) {
+				// take string value as document location
+				parser = new DocumentParser(((Atomic) item).stringValue());
+			} else {
+				// take subtree as new document
+				Node<?> root = (Node<?>) item;
+				parser = new StreamSubtreeParser(root.getSubtree());
+			}
+			
+			return parser;
+			
+		} catch (QueryException e) {
+			close();
+			throw new DocumentException(e);
+		}
+	}
 }

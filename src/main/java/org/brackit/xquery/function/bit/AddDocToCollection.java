@@ -36,12 +36,11 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.node.parser.StreamSubtreeParser;
+import org.brackit.xquery.node.parser.CollectionParser;
+import org.brackit.xquery.node.parser.SequenceParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Store;
@@ -65,13 +64,8 @@ public class AddDocToCollection extends AbstractFunction {
 			Sequence[] args) throws QueryException {
 		try {
 			String collName = ((Atomic) args[0]).stringValue();
-			SubtreeParser parser = null;
-			if (args[1] instanceof Atomic) {
-				parser = new DocumentParser(((Atomic) args[1]).stringValue());
-			} else {
-				Node<?> node = (Node<?>) args[1];
-				parser = new StreamSubtreeParser(node.getSubtree());
-			}
+			SubtreeParser parser = new CollectionParser(new SequenceParser(args[1]));
+
 			Store s = ctx.getStore();
 			Collection<?> coll = null;
 			try {
