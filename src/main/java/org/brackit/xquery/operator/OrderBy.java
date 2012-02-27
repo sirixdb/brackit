@@ -85,7 +85,7 @@ public class OrderBy extends Check implements Operator {
 				if ((check) && (separate(t, next))) {
 					break;
 				}
-				sort.add(ctx, t);
+				sort.add(ctx, next);
 			}
 			sorted = sort.sorted();
 			t = sorted.next();
