@@ -70,8 +70,9 @@ public abstract class ScopeWalker extends Walker {
 
 	protected final void refreshScopes(AST node, boolean pipeline) {
 		Scope s = findScope(node);
-		// A "start scope" of a join must not be refreshed alone  
-		if ((s.node.getType() == XQ.Start) && (s.node.getParent().getType() == XQ.Join)) {
+		// A "start scope" of a join must not be refreshed alone
+		if ((s.node.getType() == XQ.Start)
+				&& (s.node.getParent().getType() == XQ.Join)) {
 			s = s.parent;
 		}
 		table.reset(s);
@@ -333,6 +334,12 @@ public abstract class ScopeWalker extends Walker {
 			return bindings;
 		}
 
+		public void promoteToParent() {
+			for (Scope.Node n = lvars; n != null; n = n.next) {
+				parent.bind(n.var);
+			}
+		}
+
 		@Override
 		public int compareTo(Scope other) {
 			if (other == this) {
@@ -505,6 +512,10 @@ public abstract class ScopeWalker extends Walker {
 
 		Set<AST> getScopes() {
 			return scopemap.keySet();
+		}
+
+		void promoteBindings() {
+			scope.promoteToParent();
 		}
 	}
 
@@ -790,19 +801,19 @@ public abstract class ScopeWalker extends Walker {
 	}
 
 	private void quantifiedExpr(AST expr) {
-		int scopeCount = 0;
+		table.openScope(expr, false);
 		// child 0 is quantifier type
-		for (int i = 1; i < expr.getChildCount() - 1; i += 2) {
-			walkInspect(expr.getChild(i + 1), true, false);
+		for (int i = 1; i < expr.getChildCount() - 1; i++) {
 			table.openScope(expr.getChild(i), false);
-			QNm name = (QNm) expr.getChild(i).getChild(0).getValue();
+			walkInspect(expr.getChild(i).getChild(1), true, false);
+			QNm name = (QNm) expr.getChild(i).getChild(0).getChild(0)
+					.getValue();
 			table.bind(name);
-			scopeCount++;
-		}
-		walkInspect(expr.getChild(expr.getChildCount() - 1), true, false);
-		for (int i = 0; i <= scopeCount; i++) {
+			// trick: promote local bindings
+			table.promoteBindings();
 			table.closeScope();
 		}
+		table.closeScope();
 	}
 
 	private void transformExpr(AST expr) {
@@ -810,9 +821,13 @@ public abstract class ScopeWalker extends Walker {
 		int pos = 0;
 		while (pos < expr.getChildCount() - 2) {
 			AST binding = expr.getChild(pos++);
+			table.openScope(binding, false);
 			QNm name = (QNm) binding.getChild(0).getValue();
 			table.bind(name);
 			walkInspect(binding.getChild(1), true, false);
+			// trick: promote local bindings
+			table.promoteBindings();
+			table.closeScope();
 		}
 		AST modify = expr.getChild(pos++);
 		walkInspect(modify, true, false);
@@ -823,12 +838,9 @@ public abstract class ScopeWalker extends Walker {
 	private void tryCatchExpr(AST expr) {
 		walkInspect(expr.getChild(0), true, false);
 		table.openScope(expr, false);
-		table.bind(Namespaces.ERR_CODE);
-		table.bind(Namespaces.ERR_DESCRIPTION);
-		table.bind(Namespaces.ERR_VALUE);
-		table.bind(Namespaces.ERR_MODULE);
-		table.bind(Namespaces.ERR_LINE_NUMBER);
-		table.bind(Namespaces.ERR_COLUMN_NUMBER);
+		for (int i = 1; i < 7; i++) {
+			table.bind((QNm) expr.getChild(i).getChild(0).getValue());
+		}
 		for (int i = 7; i < expr.getChildCount(); i++) {
 			// child i,0 is catch error list
 			walkInspect(expr.getChild(i).getChild(0), true, false);
@@ -850,7 +862,8 @@ public abstract class ScopeWalker extends Walker {
 
 	private void stepExpr(AST expr) {
 		walkInspect(expr.getChild(0), true, false);
-		for (int i = 1; i < expr.getChildCount(); i++) {
+		walkInspect(expr.getChild(1), true, false);
+		for (int i = 2; i < expr.getChildCount(); i++) {
 			table.openScope(expr.getChild(i), false);
 			table.bind(Namespaces.FS_DOT);
 			table.bind(Namespaces.FS_POSITION);
@@ -861,16 +874,18 @@ public abstract class ScopeWalker extends Walker {
 	}
 
 	private void pathExpr(AST expr) {
+		table.openScope(expr, false);
 		for (int i = 0; i < expr.getChildCount(); i++) {
-			walkInspect(expr.getChild(i), true, false);
 			table.openScope(expr.getChild(i), false);
-			table.bind(Namespaces.FS_DOT);
-			table.bind(Namespaces.FS_POSITION);
-			table.bind(Namespaces.FS_LAST);
-		}
-		for (int i = 0; i < expr.getChildCount(); i++) {
+			if (i > 0) {
+				table.bind(Namespaces.FS_DOT);
+				table.bind(Namespaces.FS_POSITION);
+				table.bind(Namespaces.FS_LAST);
+			}
+			walkInspect(expr.getChild(i), true, false);
 			table.closeScope();
 		}
+		table.closeScope();
 	}
 
 	private void documentExpr(AST node) {
