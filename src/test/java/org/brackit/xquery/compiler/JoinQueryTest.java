@@ -38,7 +38,7 @@ import org.junit.Test;
 
 /**
  * @author Sebastian Baechle
- *
+ * 
  */
 public class JoinQueryTest extends XQueryBaseTest {
 	@Test
@@ -46,7 +46,7 @@ public class JoinQueryTest extends XQueryBaseTest {
 		String query = readQuery("/join/", "simpleForFor.xq");
 		XQuery xq = new XQuery(query);
 		Sequence res = xq.execute(createContext());
-		ResultChecker.dCheck(intSequence(2,3,5), res);
+		ResultChecker.dCheck(intSequence(2, 3, 5), res);
 	}
 
 	@Test
@@ -54,26 +54,25 @@ public class JoinQueryTest extends XQueryBaseTest {
 		String query = readQuery("/join/", "forNestedFor.xq");
 		XQuery xq = new XQuery(query);
 		Sequence res = xq.execute(createContext());
-		ResultChecker.dCheck(intSequence(2,3,5), res);
+		ResultChecker.dCheck(intSequence(2, 3, 5), res);
 	}
-	
+
 	@Test
 	public void forNestedFor2JoinPredicates() throws Exception {
 		String query = readQuery("/join/", "forNestedFor2JoinPredicates.xq");
 		XQuery xq = new XQuery(query);
 		Sequence res = xq.execute(createContext());
-		print(res);
-		ResultChecker.dCheck(intSequence(2,3,5), res);
+		ResultChecker.dCheck(intSequence(3, 4, 6), res);
 	}
-	
+
 	@Test
 	public void forNestedForWithOutsideRef() throws Exception {
 		String query = readQuery("/join/", "forNestedForWithOutsideRef.xq");
 		XQuery xq = new XQuery(query);
 		Sequence res = xq.execute(createContext());
-		ResultChecker.dCheck(intSequence(3,3,4,4,6,6), res);
-	}	
-	
+		ResultChecker.dCheck(intSequence(3, 3, 4, 4, 6, 6), res);
+	}
+
 	private Sequence intSequence(int... values) {
 		Item[] items = new Item[values.length];
 		for (int i = 0; i < values.length; i++) {
