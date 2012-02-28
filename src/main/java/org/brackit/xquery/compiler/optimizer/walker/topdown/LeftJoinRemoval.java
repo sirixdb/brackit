@@ -27,75 +27,52 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
-import static org.brackit.xquery.compiler.XQ.Join;
-import static org.brackit.xquery.compiler.XQ.PipeExpr;
-import static org.brackit.xquery.compiler.XQ.Start;
-
+import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.compiler.optimizer.walker.Walker;
 
 /**
  * @author Sebastian Baechle
  * 
  */
-public class JoinLeftInGrow extends ScopeWalker {
+public class LeftJoinRemoval extends Walker {
 
 	@Override
-	protected AST visit(AST node) {
-		if (node.getType() != Join) {
-			return node;
+	protected AST visit(AST join) {
+		if ((join.getType() != XQ.Join) || (!join.checkProperty("leftJoin"))) {
+			return join;
 		}
 
-		// find closest scope from which
-		// right input is independent of
-		VarRef refs = findVarRefs(node.getChild(1));
-		Scope[] scopes = sortScopes(refs);
-		Scope local = findScope(node);
-
-		AST stopAt = null;
-		for (int i = scopes.length - 1; i >= 0; i--) {
-			Scope scope = scopes[i];
-			if (scope.compareTo(local) < 0) {
-				stopAt = scope.node;
-				break;
-			}
+		AST leftIn = join.getChild(0).getChild(0);
+		AST rightIn = join.getChild(1).getChild(0);
+		if ((leftIn.getType() != XQ.Join)
+				|| (!leftIn.checkProperty("leftJoin"))
+				|| (!constTrueJoinKey(findEnd(leftIn).getChild(0)))
+				|| (!constTrueJoinKey(findEnd(rightIn).getChild(0)))
+				|| (join.getChild(2).getChild(0).getType() != XQ.End)) {
+			return join;
 		}
 
-		// locate closest pipeline node from which
-		// right input is independent of and which
-		// can be safely pushed to the left input
-		AST parent = node.getParent();
-		AST anc = parent;
-		while ((anc != stopAt) && (movable(anc))) {
-			anc = anc.getParent();
-		}
-
-		if (anc == parent) {
-			return node;
-		}
-
-		AST lorig = anc.getLastChild();
-		AST leftIn = new AST(Start);
-		AST copy = leftIn;
-		while (lorig != node) {
-			AST toAdd = lorig.copy();
-			for (int i = 0; i < lorig.getChildCount() - 1; i++) {
-				toAdd.addChild(lorig.getChild(i).copyTree());
-			}
-			copy.addChild(toAdd);
-			copy = toAdd;
-			lorig = lorig.getLastChild();
-		}
-		copy.addChild(node.getChild(0).getChild(0));
-
-		node.replaceChild(0, leftIn);
-		anc.replaceChild(anc.getChildCount() - 1, node);
-		refreshScopes(anc, true);
-		return anc;
-
+		AST liftedJoin = leftIn.copy();
+		liftedJoin.addChild(leftIn.getChild(0).copyTree());
+		liftedJoin.addChild(leftIn.getChild(1).copyTree());
+		liftedJoin.addChild(leftIn.getChild(2).copyTree());
+		liftedJoin.addChild(join.getChild(3).copyTree());
+		AST parent = join.getParent();
+		parent.replaceChild(join.getChildIndex(), liftedJoin);
+		return parent;
 	}
 
-	private boolean movable(AST anc) {
-		int ptype = anc.getParent().getType();
-		return ((ptype != PipeExpr) && ((ptype != Join) || (anc.getChildIndex() == 3)));
+	private AST findEnd(AST node) {
+		AST tmp = node;
+		while (tmp.getType() != XQ.End) {
+			tmp = tmp.getLastChild();
+		}
+		return tmp;
+	}
+
+	private boolean constTrueJoinKey(AST joinKey) {
+		return ((joinKey.getType() == XQ.Bool) && (((Bool) joinKey.getValue()).bool));
 	}
 }

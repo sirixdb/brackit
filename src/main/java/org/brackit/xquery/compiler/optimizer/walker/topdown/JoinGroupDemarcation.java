@@ -27,31 +27,36 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
-import static org.brackit.xquery.compiler.XQ.ForBind;
-import static org.brackit.xquery.compiler.XQ.Join;
-import static org.brackit.xquery.compiler.XQ.LetBind;
-import static org.brackit.xquery.compiler.XQ.Selection;
-import static org.brackit.xquery.compiler.XQ.Start;
+import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
+import static org.brackit.xquery.compiler.XQ.Variable;
 
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.XQ;
 
 /**
  * @author Sebastian Baechle
  * 
  */
-public class JoinRightInGrow extends ScopeWalker {
+public class JoinGroupDemarcation extends ScopeWalker {
+
+	private int tableJoinGroupVar;
+
+	private QNm createGroupVarName() {
+		return new QNm("_joingroup;" + (tableJoinGroupVar++));
+	}
 
 	@Override
-	protected AST visit(AST node) {
-		if (node.getType() != Join) {
-			return node;
+	protected AST visit(AST join) {
+		if ((join.getType() != XQ.Join) || (join.getProperty("group") != null)) {
+			return join;
 		}
 
 		// find closest scope from which
-		// left input is independent of
-		VarRef refs = findVarRefs(node.getChild(0));
+		// right input is independent of
+		VarRef refs = findVarRefs(join.getChild(1));
 		Scope[] scopes = sortScopes(refs);
-		Scope local = findScope(node);
+		Scope local = findScope(join);
 
 		AST stopAt = null;
 		for (int i = scopes.length - 1; i >= 0; i--) {
@@ -62,46 +67,41 @@ public class JoinRightInGrow extends ScopeWalker {
 			}
 		}
 
-		// locate closest pipeline node from which
-		// left input is independent of and which
-		// can be safely pushed to the left input
-		boolean leftJoin = node.checkProperty("leftJoin");
-		AST parent = node.getParent();
+		// locate farthest scope we can go to
+		AST parent = join.getParent();
 		AST anc = parent;
-		while ((anc != stopAt) && (movable(anc, leftJoin))) {
+		while ((anc != stopAt) && (independentOf(anc))) {
 			anc = anc.getParent();
 		}
 
-		if (anc == parent) {
-			return node;
+		// let-bindings are "static" within an iteration;
+		// we may safely increase the scope
+		while (anc.getType() == XQ.LetBind) {
+			anc = anc.getParent();
 		}
 
-		AST rorig = anc.getLastChild();
-		AST rightIn = new AST(Start);
-		AST copy = rightIn;
-		while (rorig != node) {
-			AST toAdd = rorig.copy();
-			for (int i = 0; i < rorig.getChildCount() - 1; i++) {
-				toAdd.addChild(rorig.getChild(i).copyTree());
-			}
-			copy.addChild(toAdd);
-			copy = toAdd;
-			rorig = rorig.getLastChild();
+		if ((anc.getType() == XQ.Start)
+				&& (anc.getParent().getType() != XQ.Join)) {
+			return join;
 		}
-		copy.addChild(node.getChild(1).getChild(0));
 
-		node.replaceChild(1, rightIn);
-		anc.replaceChild(anc.getChildCount() - 1, node);
+		// prepend an artificial count for
+		// marking the join group boundaries
+		QNm joingroupVar = createGroupVarName();
+		join.setProperty("group", joingroupVar);
+
+		AST count = new AST(XQ.Count);
+		AST runVarBinding = new AST(TypedVariableBinding);
+		runVarBinding.addChild(new AST(Variable, joingroupVar));
+		count.addChild(runVarBinding);
+		count.addChild(anc.getLastChild().copyTree());
+		anc.replaceChild(anc.getChildCount() - 1, count);
 		refreshScopes(anc, true);
 		return anc;
-
 	}
 
-	private boolean movable(AST anc, boolean leftJoin) {
+	private boolean independentOf(AST anc) {
 		int type = anc.getType();
-		return ((type == LetBind)
-				|| ((type == ForBind) && (!leftJoin))
-				|| ((type == Selection) && (!leftJoin))
-				|| ((type == Start) && (!leftJoin) && (anc.getChildIndex() == 3)) || (type == Join));
+		return ((type != XQ.Start) || (anc.getParent().getType() == XQ.Join));
 	}
 }

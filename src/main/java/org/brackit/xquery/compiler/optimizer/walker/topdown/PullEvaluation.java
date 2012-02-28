@@ -44,59 +44,6 @@ import org.brackit.xquery.compiler.optimizer.walker.Walker;
  */
 public class PullEvaluation extends Walker {
 
-	@Override
-	protected AST visit(AST join) {
-		if ((join.getType() != XQ.Join) || (join.getProperty("group") != null)) {
-			return join;
-		}
-		AST post = join.getChild(2).getChild(0);
-		boolean hasPost = (post.getType() != XQ.End);
-		List<QNm> check = (List<QNm>) join.getProperty("check");
-
-		if ((hasPost) && (join.checkProperty("leftJoin"))) {
-			QNm postJoinVar = createCheckVarName();
-			AST count = new AST(XQ.Count);
-			AST runVarBinding = new AST(TypedVariableBinding);
-			runVarBinding.addChild(new AST(Variable, postJoinVar));
-			count.addChild(runVarBinding);
-			if (check != null) {
-				count.setProperty("check", check);
-			}
-
-			AST tmp = join.getChild(0);
-			while (tmp.getType() != XQ.End) {
-				tmp = tmp.getLastChild();
-			}
-			tmp.getParent().replaceChild(tmp.getChildIndex(), count);
-			count.addChild(tmp);
-
-			List<QNm> check2 = appendCheck(check, postJoinVar);
-			tmp = post;
-			while (tmp.getType() != XQ.End) {
-				tmp.setProperty("check", check2);
-				tmp = tmp.getLastChild();
-			}
-			join.setProperty("check", check2);
-		}
-
-		// prepend an artificial count for
-		// marking the join group boundaries
-		QNm joingroupVar = createGroupVarName();
-		join.setProperty("group", joingroupVar);
-
-		AST count = new AST(XQ.Count);
-		AST runVarBinding = new AST(TypedVariableBinding);
-		runVarBinding.addChild(new AST(Variable, joingroupVar));
-		count.addChild(runVarBinding);
-		if (check != null) {
-			count.setProperty("check", check);
-		}
-		count.addChild(join.copyTree());
-		join.getParent().replaceChild(join.getChildIndex(), count);
-		return join.getParent();
-	}
-
-	private int tableJoinGroupVar;
 	private int checkVar;
 
 	private List<QNm> appendCheck(List<QNm> checks, QNm var) {
@@ -106,12 +53,51 @@ public class PullEvaluation extends Walker {
 		return l;
 	}
 
-	private QNm createGroupVarName() {
-		return new QNm("_joingroup;" + (tableJoinGroupVar++));
-	}
-
 	private QNm createCheckVarName() {
 		return new QNm("_check;" + (checkVar++));
 	}
 
+	@Override
+	protected AST visit(AST join) {
+		if ((join.getType() != XQ.Join) || (!join.checkProperty("leftJoin"))) {
+			return join;
+		}
+		AST post = join.getChild(2);
+		boolean hasPost = (post.getChild(0).getType() != XQ.End);
+		if (!hasPost) {
+			return join;
+		}
+
+		@SuppressWarnings("unchecked")
+		List<QNm> check = (List<QNm>) join.getProperty("check");
+
+		// append a check counter to the left input
+		QNm postJoinVar = createCheckVarName();
+		AST count = new AST(XQ.Count);
+		AST runVarBinding = new AST(TypedVariableBinding);
+		runVarBinding.addChild(new AST(Variable, postJoinVar));
+		count.addChild(runVarBinding);
+		if (check != null) {
+			count.setProperty("check", check);
+		}
+
+		AST tmp = join.getChild(0);
+		while (tmp.getType() != XQ.End) {
+			tmp = tmp.getLastChild();
+		}
+		tmp.getParent().replaceChild(tmp.getChildIndex(), count);
+		count.addChild(tmp);
+
+		// add check markers to the join and the post-join part with
+		List<QNm> check2 = appendCheck(check, postJoinVar);
+		tmp = post;
+		while (tmp.getType() != XQ.End) {
+			tmp.setProperty("check", check2);
+			tmp = tmp.getLastChild();
+		}
+		join.setProperty("check", check2);
+
+		snapshot();
+		return join;
+	}
 }
