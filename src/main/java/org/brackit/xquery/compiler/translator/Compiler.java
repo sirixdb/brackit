@@ -650,13 +650,14 @@ public class Compiler implements Translator {
 			throws QueryException {
 		AST child = node.getChild(pos++);
 
-		if (child.getType() == XQ.TypedVariableBinding) {
-			QNm runVarName = (QNm) child.getChild(0).getValue();
+		if (child.getType() == XQ.QuantifiedBinding) {
+			AST varBinding = child.getChild(0);
+			QNm runVarName = (QNm) varBinding.getChild(0).getValue();
 			SequenceType type = SequenceType.ITEM_SEQUENCE;
-			if (child.getChildCount() == 2) {
-				type = sequenceType(child.getChild(1));
+			if (varBinding.getChildCount() == 2) {
+				type = sequenceType(varBinding.getChild(1));
 			}
-			Expr sourceExpr = expr(node.getChild(pos++), true);
+			Expr sourceExpr = expr(child.getChild(1), true);
 			ForBind forBind = new ForBind(in, sourceExpr, false);
 
 			Binding runVarBinding = table.bind(runVarName, type);

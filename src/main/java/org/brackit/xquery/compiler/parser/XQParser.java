@@ -1380,20 +1380,24 @@ public class XQParser extends Tokenizer {
 		if (laSkipWS("$") == null) {
 			return null;
 		}
-		AST qExpr = new AST(XQ.QuantifiedExpr);
+		AST qExpr = new AST(XQ.QuantifiedExpr);		
 		qExpr.addChild(quantifier);
-		qExpr.addChild(typedVarBinding());
+		AST qBinding = new AST(XQ.QuantifiedBinding);
+		qBinding.addChild(typedVarBinding());
 		consumeSymSkipWS("in");
-		qExpr.addChild(exprSingle());
+		qBinding.addChild(exprSingle());
+		qExpr.addChild(qBinding);
 		while (attemptSkipWS(",")) {
 			AST binding = typedVarBinding();
 			if (binding == null) {
 				throw new TokenizerException("Expected variable binding: %s",
 						paraphrase());
 			}
-			qExpr.addChild(binding);
+			AST qBinding2 = new AST(XQ.QuantifiedBinding);
+			qBinding2.addChild(binding);
 			consumeSymSkipWS("in");
-			qExpr.addChild(exprSingle());
+			qBinding2.addChild(exprSingle());
+			qExpr.addChild(qBinding2);
 		}
 		consumeSymSkipWS("satisfies");
 		qExpr.addChild(exprSingle());
