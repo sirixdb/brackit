@@ -70,6 +70,10 @@ public abstract class ScopeWalker extends Walker {
 
 	protected final void refreshScopes(AST node, boolean pipeline) {
 		Scope s = findScope(node);
+		// A "start scope" of a join must not be refreshed alone  
+		if ((s.node.getType() == XQ.Start) && (s.node.getParent().getType() == XQ.Join)) {
+			s = s.parent;
+		}
 		table.reset(s);
 		if (XQuery.DEBUG) {
 			DotUtil.drawDotToFile(table.rootScope.dot(), XQuery.DEBUG_DIR,
@@ -893,6 +897,9 @@ public abstract class ScopeWalker extends Walker {
 	 * create a sorted and duplicate-free array of accessed scopes
 	 */
 	protected Scope[] sortScopes(VarRef varRefs) {
+		if (varRefs == null) {
+			return new Scope[0];
+		}
 		int cnt = 0;
 		for (VarRef ref = varRefs; ref != null; ref = ref.next) {
 			cnt++;
