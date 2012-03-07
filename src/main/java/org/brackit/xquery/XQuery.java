@@ -55,7 +55,7 @@ public class XQuery {
 
 	private final Module module;
 	private boolean prettyPrint;
-	
+
 	public XQuery(Module module) {
 		this.module = module;
 	}
@@ -63,7 +63,7 @@ public class XQuery {
 	public XQuery(String query) throws QueryException {
 		this.module = new CompileChain().compile(query);
 	}
-	
+
 	public XQuery(CompileChain chain, String query) throws QueryException {
 		this.module = chain.compile(query);
 	}
