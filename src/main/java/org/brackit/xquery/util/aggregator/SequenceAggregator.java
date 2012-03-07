@@ -17,54 +17,48 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.function.fn;
+package org.brackit.xquery.util.aggregator;
 
-import org.brackit.xquery.QueryContext;
+import java.util.Arrays;
+
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.util.aggregator.SumAvgAggregator;
+import org.brackit.xquery.sequence.NestedSequence;
 import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Signature;
 
 /**
+ * Aggregator for sequence concatenation
  * 
  * @author Sebastian Baechle
  * 
  */
-public class SumAvg extends AbstractFunction {
-	private final boolean avg;
+public class SequenceAggregator implements Aggregator {
+	private Sequence[] buf = new Sequence[5];
+	private int len;
 
-	public SumAvg(QNm name, Signature signature, boolean avg) {
-		super(name, signature, true);
-		this.avg = avg;
+	@Override
+	public void add(Sequence s) throws QueryException {
+		if (s == null) {
+			return;
+		}
+		if (len == buf.length) {
+			buf = Arrays.copyOf(buf, ((buf.length * 3) / 2 + 1));
+		}
+		buf[len++] = s;
 	}
 
 	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx,
-			Sequence[] args) throws QueryException {
-		Sequence seq = args[0];
-
-		Sequence defaultValue = (args.length == 2) ? args[1] : Int32.ZERO;
-		if (seq == null) {
-			if (avg) {
-				return null;
-			}
-			return defaultValue;
+	public Sequence getAggregate() {
+		if (buf.length != len) {
+			buf = Arrays.copyOf(buf, len);
 		}
-
-		SumAvgAggregator agg = new SumAvgAggregator(avg, defaultValue);
-		agg.add(seq);
-		return agg.getAggregate();
+		return new NestedSequence(buf);
 	}
 }

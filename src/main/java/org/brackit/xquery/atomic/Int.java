@@ -254,9 +254,4 @@ public class Int extends AbstractNumeric implements IntNumeric {
 	public Numeric roundHalfToEven(int precision) throws QueryException {
 		return this;
 	}
-
-	@Override
-	public int hashCode() {
-		return v.hashCode();
-	}
 }

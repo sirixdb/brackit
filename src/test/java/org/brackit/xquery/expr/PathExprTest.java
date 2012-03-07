@@ -37,10 +37,13 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.ResultChecker;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.XQueryBaseTest;
+import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Collection;
+import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.junit.Test;
@@ -48,7 +51,7 @@ import org.junit.Test;
 /**
  * 
  * @author Sebastian Baechle
- *
+ * 
  */
 public class PathExprTest extends XQueryBaseTest {
 	@Test
@@ -58,8 +61,9 @@ public class PathExprTest extends XQueryBaseTest {
 		Node<?> root = documentNode.getFirstChild();
 		ctx.setContextItem(root);
 		Sequence result = new XQuery("b").execute(ctx);
-		ResultChecker.dCheck(new ItemSequence(root.getFirstChild(), root
-				.getLastChild()), result);
+		ResultChecker.dCheck(
+				new ItemSequence(root.getFirstChild(), root.getLastChild()),
+				result);
 	}
 
 	@Test
@@ -70,6 +74,36 @@ public class PathExprTest extends XQueryBaseTest {
 		ctx.setContextItem(aNode);
 		Sequence result = new XQuery("/").execute(ctx);
 		ResultChecker.dCheck(documentNode, result);
+	}
+
+	@Test
+	public void oneDoubleSlashStepPathExpr() throws Exception {
+		Collection<?> locator = storeDocument("test.xml", "<a><b/></a>");
+		Node<?> documentNode = locator.getDocument();
+		ctx.setContextItem(documentNode);
+		Sequence result = new XQuery(".//b").execute(ctx);
+		ResultChecker.dCheck(documentNode.getFirstChild().getFirstChild(),
+				result);
+	}
+
+	// @Test
+	// public void checkSingleDesc() throws Exception {
+	// Sequence result = new XQuery("(<a><b/><b/><b/></a>)//b").execute(ctx);
+	// ResultChecker.dCheck(new Int32(1), result);
+	// }
+
+	@Test
+	public void positionAsStep() throws Exception {
+		Sequence result = new XQuery("<a><b1/><b2/><b3/></a>/last()")
+				.execute(ctx);
+		ResultChecker.dCheck(new Int32(1), result);
+	}
+
+	@Test
+	public void positionAndLastInPredicate() throws Exception {
+		Sequence result = new XQuery(
+				"<a><b1/><b2/></a>/*[position() = last()]/name()").execute(ctx);
+		ResultChecker.dCheck(new Str("b2"), result);
 	}
 
 	@Test
@@ -125,7 +159,7 @@ public class PathExprTest extends XQueryBaseTest {
 		new XQuery(
 				"let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c))//position()")
 				.serialize(ctx, buf);
-		assertEquals("1 2 3 1 2 3 4 5", buf.toString());
+		assertEquals("1 2 3 4 5 6 7 8", buf.toString());
 	}
 
 	@Test
@@ -188,7 +222,7 @@ public class PathExprTest extends XQueryBaseTest {
 		new XQuery(
 				"let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c, $doc/d))//position()")
 				.serialize(ctx, buf);
-		assertEquals("1 2 3 1 2 3 4 5 1 2 3", buf.toString());
+		assertEquals("1 2 3 4 5 6 7 8", buf.toString());
 	}
 
 	@Test
@@ -248,7 +282,7 @@ public class PathExprTest extends XQueryBaseTest {
 				new QNm("b")), ctx.getNodeFactory().element(new QNm("c")));
 		ResultChecker.check(exp, res, false);
 	}
-	
+
 	@Test
 	public void attributeTest1() throws Exception {
 		Sequence res = new XQuery("(<a b='' c=''/>)/attribute(b)").execute(ctx);
@@ -258,7 +292,8 @@ public class PathExprTest extends XQueryBaseTest {
 
 	@Test
 	public void attributeTest2() throws Exception {
-		Sequence res = new XQuery("(<a b='' c=''/>)/attribute(b, xs:untypedAtomic)").execute(ctx);
+		Sequence res = new XQuery(
+				"(<a b='' c=''/>)/attribute(b, xs:untypedAtomic)").execute(ctx);
 		Node<?> exp = ctx.getNodeFactory().attribute(new QNm("b"), new Una(""));
 		ResultChecker.check(exp, res, false);
 	}
@@ -299,6 +334,48 @@ public class PathExprTest extends XQueryBaseTest {
 		} catch (QueryException e) {
 			assertEquals("Correct error code",
 					ErrorCode.ERR_UNDEFINED_REFERENCE, e.getCode());
+		}
+	}
+
+	@Test
+	public void mixedOutputTest() throws Exception {
+		try {
+			Sequence s = new XQuery(
+					"(<a>1</a>,<b>2</b>)/(if(position() eq 1) then . else data(.))")
+					.execute(ctx);
+			Iter it = s.iterate();
+			try {
+				while (it.next() != null)
+					;
+			} finally {
+				it.close();
+			}
+			fail("mixed output sequence not detected");
+		} catch (QueryException e) {
+			assertEquals("Correct error code",
+					ErrorCode.ERR_PATH_STEP_RETURNED_NODE_AND_NON_NODE_VALUES,
+					e.getCode());
+		}
+	}
+
+	@Test
+	public void mixedOutputTest2() throws Exception {
+		try {
+			Sequence s = new XQuery(
+					"declare variable $myVar := <e>text</e>; $myVar/text()/(<e/>, (), 1, <e/>)")
+					.execute(ctx);
+			Iter it = s.iterate();
+			try {
+				while (it.next() != null)
+					;
+			} finally {
+				it.close();
+			}
+			fail("mixed output sequence not detected");
+		} catch (QueryException e) {
+			assertEquals("Correct error code",
+					ErrorCode.ERR_PATH_STEP_RETURNED_NODE_AND_NON_NODE_VALUES,
+					e.getCode());
 		}
 	}
 }

@@ -29,8 +29,8 @@ package org.brackit.xquery.compiler.optimizer.walker;
 
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.parser.DotUtil;
 import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.util.dot.DotUtil;
 
 /**
  * 
