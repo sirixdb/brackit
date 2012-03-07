@@ -671,6 +671,9 @@ public class ErrorCode {
 	public static final QNm BIT_DYN_INT_ERROR = new QNm(ERR_NSURI, "bit",
 			"DY0300");
 	
+	/**
+	 * Errors for the predefined bit functions
+	 */
 	public static final QNm BIT_ADDTOCOLLECTION_INT_ERROR = new QNm(
 			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0001");
 
@@ -680,12 +683,20 @@ public class ErrorCode {
 	public static final QNm BIT_DROPCOLLECTION_INT_ERROR = new QNm(
 			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0003");
 
+	public static final QNm BIT_EVAL_INT_ERROR = new QNm(Namespaces.BIT_NSURI,
+			Namespaces.BIT_PREFIX, "BIT0004");
+
 	public static final QNm BIT_EXISTCOLLECTION_INT_ERROR = new QNm(
 			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0005");
+
+	public static final QNm BIT_LOADFILE_INT_ERROR = new QNm(
+			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0006");
 
 	public static final QNm BIT_MAKEDIRECTORY_INT_ERROR = new QNm(
 			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0007");
 
 	public static final QNm BIT_STOREDOC_INT_ERROR = new QNm(
 			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0008");
+	
+	
 }

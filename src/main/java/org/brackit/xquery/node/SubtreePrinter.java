@@ -57,7 +57,7 @@ public class SubtreePrinter extends DefaultHandler {
 
 	private boolean autoFlush = true;
 	
-	private boolean printEmptyElementTag = false;
+	private boolean printEmptyElementTag = true;
 	
 	private NS ns;
 	

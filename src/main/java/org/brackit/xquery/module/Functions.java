@@ -34,6 +34,13 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
+import org.brackit.xquery.function.bit.AddDocToCollection;
+import org.brackit.xquery.function.bit.CreateCollection;
+import org.brackit.xquery.function.bit.DropCollection;
+import org.brackit.xquery.function.bit.Eval;
+import org.brackit.xquery.function.bit.ExistCollection;
+import org.brackit.xquery.function.bit.LoadFile;
+import org.brackit.xquery.function.bit.StoreDoc;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.ConstructorFunction;
 import org.brackit.xquery.function.fn.Abs;
@@ -693,8 +700,10 @@ public class Functions {
 				new SequenceType(AtomicType.STR, Cardinality.One),
 				new SequenceType(AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne))));
 		predefine(new Name(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"namespace-uri"), Name.Mode.NAMESPACE_URI, new Signature(
-				new SequenceType(AtomicType.AURI, Cardinality.One), false, true)));
+				"namespace-uri"), Name.Mode.NAMESPACE_URI,
+				new Signature(
+						new SequenceType(AtomicType.AURI, Cardinality.One),
+						false, true)));
 		predefine(new Name(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"namespace-uri"), Name.Mode.NAMESPACE_URI, new Signature(
 				new SequenceType(AtomicType.AURI, Cardinality.One),
@@ -914,6 +923,45 @@ public class Functions {
 				Namespaces.FN_PREFIX, "default-collation"), new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.One))));
 
+		// Bit
+		Functions.predefine(new DropCollection(new QNm(Namespaces.BIT_NSURI,
+				Namespaces.BIT_PREFIX, "drop-collection"), new Signature(
+				new SequenceType(AtomicType.BOOL, Cardinality.One),
+				new SequenceType(AtomicType.STR, Cardinality.One))));
+
+		Functions.predefine(new Eval(new QNm(Namespaces.BIT_NSURI,
+				Namespaces.BIT_PREFIX, "eval"), new Signature(new SequenceType(
+				AtomicType.STR, Cardinality.ZeroOrOne), new SequenceType(
+				AnyItemType.ANY, Cardinality.One))));
+
+		Functions.predefine(new LoadFile(new QNm(Namespaces.BIT_NSURI,
+				Namespaces.BIT_PREFIX, "load-file"), new Signature(
+				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+				new SequenceType(AtomicType.STR, Cardinality.One))));
+
+		Functions.predefine(new StoreDoc(new QNm(Namespaces.BIT_NSURI,
+				Namespaces.BIT_PREFIX, "store-doc"), new Signature(
+				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+				new SequenceType(AtomicType.STR, Cardinality.One),
+				new SequenceType(AnyItemType.ANY, Cardinality.One))));
+
+		Functions.predefine(new AddDocToCollection(new QNm(
+				Namespaces.BIT_NSURI, Namespaces.BIT_PREFIX,
+				"add-doc-to-collection"), new Signature(new SequenceType(
+				AtomicType.STR, Cardinality.ZeroOrOne), new SequenceType(
+				AtomicType.STR, Cardinality.One), new SequenceType(
+				AnyItemType.ANY, Cardinality.One))));
+
+		Functions.predefine(new CreateCollection(new QNm(Namespaces.BIT_NSURI,
+				Namespaces.BIT_PREFIX, "create-collection"), new Signature(
+				new SequenceType(AtomicType.BOOL, Cardinality.One),
+				new SequenceType(AtomicType.STR, Cardinality.One))));
+
+		Functions.predefine(new ExistCollection(new QNm(Namespaces.BIT_NSURI,
+				Namespaces.BIT_PREFIX, "exist-collection"), new Signature(
+				new SequenceType(AtomicType.BOOL, Cardinality.One),
+				new SequenceType(AtomicType.STR, Cardinality.One))));
+
 		for (Type type : Type.builtInTypes) {
 			if ((type != Type.ANA) && (type != Type.NOT)) {
 				predefine(new ConstructorFunction(type.getName(),
@@ -985,6 +1033,10 @@ public class Functions {
 
 	public Map<QNm, Function[]> getDeclaredFunctions() {
 		return Collections.unmodifiableMap(functions);
+	}
+
+	public Map<QNm, Function[]> getPredefinedFunctions() {
+		return Collections.unmodifiableMap(predefined);
 	}
 
 	public static void predefine(Function function) {
