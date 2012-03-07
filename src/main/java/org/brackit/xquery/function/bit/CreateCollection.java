@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.function.bit;
 
+import org.brackit.annotation.FunctionAnnotation;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -47,9 +48,10 @@ import org.brackit.xquery.xdm.Signature;
  * @author Henrique Valer
  * 
  */
+@FunctionAnnotation(description = "Creates a collection.", parameters = "$collectionName")
 public class CreateCollection extends AbstractFunction {
 
-	public static final QNm NAME = new QNm(Namespaces.BIT_NSURI,
+	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
 			Namespaces.BIT_PREFIX, "create-collection");
 
 	public CreateCollection(QNm name, Signature signature) {
@@ -62,19 +64,19 @@ public class CreateCollection extends AbstractFunction {
 		try {
 			String collection = ((Atomic) args[0]).stringValue();
 			SubtreeParser parser = null;
-			
+
 			if (args.length > 1) {
-				
+
 				// initialize collection with documents
 				parser = new CollectionParser(new SequenceParser(args[1]));
 			}
-			
+
 			ctx.getStore().create(collection, parser);
-			
+
 			return Bool.TRUE;
 		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.BIT_CREATECOLLECTION_INT_ERROR,
-					e.getMessage());
+			throw new QueryException(e,
+					ErrorCode.BIT_CREATECOLLECTION_INT_ERROR, e.getMessage());
 		}
 	}
 }

@@ -40,6 +40,7 @@ import org.brackit.xquery.function.bit.DropCollection;
 import org.brackit.xquery.function.bit.Eval;
 import org.brackit.xquery.function.bit.ExistCollection;
 import org.brackit.xquery.function.bit.LoadFile;
+import org.brackit.xquery.function.bit.MakeDirectory;
 import org.brackit.xquery.function.bit.StoreDoc;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.ConstructorFunction;
@@ -924,43 +925,61 @@ public class Functions {
 				new SequenceType(AtomicType.STR, Cardinality.One))));
 
 		// Bit
-		Functions.predefine(new DropCollection(new QNm(Namespaces.BIT_NSURI,
-				Namespaces.BIT_PREFIX, "drop-collection"), new Signature(
-				new SequenceType(AtomicType.BOOL, Cardinality.One),
-				new SequenceType(AtomicType.STR, Cardinality.One))));
+		
+		// AddDocToCollection
+		Functions.predefine(new AddDocToCollection(AddDocToCollection.DEFAULT_NAME,
+				new Signature(new SequenceType(AtomicType.STR,
+						Cardinality.ZeroOrOne), new SequenceType(
+						AtomicType.STR, Cardinality.One), new SequenceType(
+						AnyItemType.ANY, Cardinality.One))));
+		
+		// CreateCollection (w/o initialization)
+		Functions.predefine(new CreateCollection(CreateCollection.DEFAULT_NAME,
+				new Signature(
+						new SequenceType(AtomicType.BOOL, Cardinality.One),
+						new SequenceType(AtomicType.STR, Cardinality.One))));
 
-		Functions.predefine(new Eval(new QNm(Namespaces.BIT_NSURI,
-				Namespaces.BIT_PREFIX, "eval"), new Signature(new SequenceType(
+		// CreateCollection (with initialization)
+		Functions.predefine(new CreateCollection(CreateCollection.DEFAULT_NAME,
+				new Signature(
+						new SequenceType(AtomicType.BOOL, Cardinality.One),
+						new SequenceType(AtomicType.STR, Cardinality.One),
+						new SequenceType(new AnyItemType(),
+								Cardinality.ZeroOrMany))));
+
+		// DropCollection
+		Functions.predefine(new DropCollection(DropCollection.DEFAULT_NAME,
+				new Signature(
+						new SequenceType(AtomicType.BOOL, Cardinality.One),
+						new SequenceType(AtomicType.STR, Cardinality.One))));
+
+		// MakeDirectory
+		Functions.predefine(new MakeDirectory(MakeDirectory.DEFAULT_NAME,
+				new Signature(
+						new SequenceType(AtomicType.STR, Cardinality.One),
+						new SequenceType(AtomicType.STR, Cardinality.One))));
+
+		// ExistCollection
+		Functions.predefine(new ExistCollection(ExistCollection.DEFAULT_NAME,
+				new Signature(
+						new SequenceType(AtomicType.BOOL, Cardinality.One),
+						new SequenceType(AtomicType.STR, Cardinality.One))));
+		
+		// Eval
+		Functions.predefine(new Eval(Eval.DEFAULT_NAME, new Signature(new SequenceType(
 				AtomicType.STR, Cardinality.ZeroOrOne), new SequenceType(
 				AnyItemType.ANY, Cardinality.One))));
 
-		Functions.predefine(new LoadFile(new QNm(Namespaces.BIT_NSURI,
-				Namespaces.BIT_PREFIX, "load-file"), new Signature(
+		// LoadFile
+		Functions.predefine(new LoadFile(LoadFile.DEFAULT_NAME, new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
 				new SequenceType(AtomicType.STR, Cardinality.One))));
 
-		Functions.predefine(new StoreDoc(new QNm(Namespaces.BIT_NSURI,
-				Namespaces.BIT_PREFIX, "store-doc"), new Signature(
+		// StoreDoc
+		Functions.predefine(new StoreDoc(StoreDoc.DEFAULT_NAME, new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
 				new SequenceType(AtomicType.STR, Cardinality.One),
 				new SequenceType(AnyItemType.ANY, Cardinality.One))));
-
-		Functions.predefine(new AddDocToCollection(new QNm(
-				Namespaces.BIT_NSURI, Namespaces.BIT_PREFIX,
-				"add-doc-to-collection"), new Signature(new SequenceType(
-				AtomicType.STR, Cardinality.ZeroOrOne), new SequenceType(
-				AtomicType.STR, Cardinality.One), new SequenceType(
-				AnyItemType.ANY, Cardinality.One))));
-
-		Functions.predefine(new CreateCollection(new QNm(Namespaces.BIT_NSURI,
-				Namespaces.BIT_PREFIX, "create-collection"), new Signature(
-				new SequenceType(AtomicType.BOOL, Cardinality.One),
-				new SequenceType(AtomicType.STR, Cardinality.One))));
-
-		Functions.predefine(new ExistCollection(new QNm(Namespaces.BIT_NSURI,
-				Namespaces.BIT_PREFIX, "exist-collection"), new Signature(
-				new SequenceType(AtomicType.BOOL, Cardinality.One),
-				new SequenceType(AtomicType.STR, Cardinality.One))));
 
 		for (Type type : Type.builtInTypes) {
 			if ((type != Type.ANA) && (type != Type.NOT)) {

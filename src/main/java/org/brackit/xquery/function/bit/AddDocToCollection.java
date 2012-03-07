@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.function.bit;
 
+import org.brackit.annotation.FunctionAnnotation;
+import org.brackit.annotation.ModuleAnnotation;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -50,9 +52,14 @@ import org.brackit.xquery.xdm.Store;
  * @author Henrique Valer
  * 
  */
+@ModuleAnnotation(description = "A module for performing various operations "
+		+ "on the Brackit Database.")
+@FunctionAnnotation(description = "Adds a document into a collection. If the "
+		+ "specified collection does not exist, it will be automatically created. ", parameters = {
+		"$collectionName", "$documentName" })
 public class AddDocToCollection extends AbstractFunction {
 
-	public static final QNm NAME = new QNm(Namespaces.BIT_NSURI,
+	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
 			Namespaces.BIT_PREFIX, "add-doc-to-collection");
 
 	public AddDocToCollection(QNm name, Signature signature) {
@@ -64,7 +71,8 @@ public class AddDocToCollection extends AbstractFunction {
 			Sequence[] args) throws QueryException {
 		try {
 			String collName = ((Atomic) args[0]).stringValue();
-			SubtreeParser parser = new CollectionParser(new SequenceParser(args[1]));
+			SubtreeParser parser = new CollectionParser(new SequenceParser(
+					args[1]));
 
 			Store s = ctx.getStore();
 			Collection<?> coll = null;
@@ -77,8 +85,8 @@ public class AddDocToCollection extends AbstractFunction {
 			}
 			return Bool.TRUE;
 		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.BIT_ADDTOCOLLECTION_INT_ERROR,
-					e.getMessage());
+			throw new QueryException(e,
+					ErrorCode.BIT_ADDTOCOLLECTION_INT_ERROR, e.getMessage());
 		}
 	}
 }

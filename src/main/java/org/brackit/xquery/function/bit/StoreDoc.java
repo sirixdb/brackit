@@ -39,6 +39,7 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.util.FunctionUtils;
 import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.node.SubtreePrinter;
 import org.brackit.xquery.node.parser.DocumentParser;
@@ -54,6 +55,9 @@ import org.brackit.xquery.xdm.Sequence;
 		+ "is valid). The content is parsed in order to guaranty a valid XML "
 		+ "document.", parameters = { "$XMLFilePathName", "$content" })
 public class StoreDoc extends AbstractFunction {
+	
+	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
+			Namespaces.BIT_PREFIX, "store-doc");
 
 	public StoreDoc(QNm name, Signature signature) {
 		super(name, signature, true);

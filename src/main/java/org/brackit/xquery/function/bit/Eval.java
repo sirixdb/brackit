@@ -37,6 +37,7 @@ import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
+import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.node.SubtreePrinter;
 import org.brackit.xquery.util.FunctionUtils;
@@ -51,6 +52,9 @@ import org.brackit.xquery.xdm.Signature;
  */
 @FunctionAnnotation(description = "Executes the given query.", parameters = "$query")
 public class Eval extends AbstractFunction {
+
+	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
+			Namespaces.BIT_PREFIX, "eval");
 
 	public Eval(QNm name, Signature signature) {
 		super(name, signature, true);
@@ -71,8 +75,8 @@ public class Eval extends AbstractFunction {
 			XQuery x = new XQuery(vQuery);
 			return x.execute(ctx);
 		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.BIT_EVAL_INT_ERROR, e
-					.getMessage());
+			throw new QueryException(e, ErrorCode.BIT_EVAL_INT_ERROR,
+					e.getMessage());
 		}
 	}
 }

@@ -37,14 +37,8 @@ import org.brackit.xquery.compiler.optimizer.Optimizer;
 import org.brackit.xquery.compiler.parser.XQParser;
 import org.brackit.xquery.compiler.translator.PipelineCompiler;
 import org.brackit.xquery.compiler.translator.Translator;
-import org.brackit.xquery.function.bit.AddDocToCollection;
-import org.brackit.xquery.function.bit.CreateCollection;
-import org.brackit.xquery.function.bit.DropCollection;
 import org.brackit.xquery.function.bit.Every;
-import org.brackit.xquery.function.bit.ExistCollection;
-import org.brackit.xquery.function.bit.MakeDirectory;
 import org.brackit.xquery.function.bit.Parse;
-import org.brackit.xquery.function.bit.Put;
 import org.brackit.xquery.function.bit.Silent;
 import org.brackit.xquery.function.bit.Some;
 import org.brackit.xquery.function.io.Readline;
@@ -97,45 +91,6 @@ public class CompileChain {
 		
 		// Parse
 		Functions.predefine(new Parse());
-		
-		// AddDocToCollection
-		Functions.predefine(new AddDocToCollection(AddDocToCollection.NAME,
-				new Signature(new SequenceType(AtomicType.STR,
-						Cardinality.ZeroOrOne), new SequenceType(
-						AtomicType.STR, Cardinality.One), new SequenceType(
-						AnyItemType.ANY, Cardinality.One))));
-
-		// CreateCollection (w/o initialization)
-		Functions.predefine(new CreateCollection(CreateCollection.NAME,
-				new Signature(
-						new SequenceType(AtomicType.BOOL, Cardinality.One),
-						new SequenceType(AtomicType.STR, Cardinality.One))));
-
-		// CreateCollection (with initialization)
-		Functions.predefine(new CreateCollection(CreateCollection.NAME,
-				new Signature(
-						new SequenceType(AtomicType.BOOL, Cardinality.One),
-						new SequenceType(AtomicType.STR, Cardinality.One),
-						new SequenceType(new AnyItemType(),
-								Cardinality.ZeroOrMany))));
-
-		// DropCollection
-		Functions.predefine(new DropCollection(DropCollection.NAME,
-				new Signature(
-						new SequenceType(AtomicType.BOOL, Cardinality.One),
-						new SequenceType(AtomicType.STR, Cardinality.One))));
-
-		// MakeDirectory
-		Functions.predefine(new MakeDirectory(MakeDirectory.NAME,
-				new Signature(
-						new SequenceType(AtomicType.STR, Cardinality.One),
-						new SequenceType(AtomicType.STR, Cardinality.One))));
-
-		// ExistCollection
-		Functions.predefine(new ExistCollection(ExistCollection.NAME,
-				new Signature(
-						new SequenceType(AtomicType.BOOL, Cardinality.One),
-						new SequenceType(AtomicType.STR, Cardinality.One))));
 		
 		// Put (not needed anymore)
 		

@@ -39,6 +39,7 @@ import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.util.FunctionUtils;
 import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Sequence;
 
@@ -51,6 +52,9 @@ import org.brackit.xquery.xdm.Sequence;
 		+ "The file path ($filePathName) starts at the applications directory, by "
 		+ "default: src/main/resources/apps.", parameters = "$filePathName")
 public class LoadFile extends AbstractFunction {
+
+	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
+			Namespaces.BIT_PREFIX, "load-file");
 
 	public LoadFile(QNm name, Signature signature) {
 		super(name, signature, true);
@@ -66,8 +70,8 @@ public class LoadFile extends AbstractFunction {
 			return new Str(FunctionUtils.getStringFromFile(new File(String
 					.format("src/main/resources/apps/%s", fPathName))));
 		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.BIT_LOADFILE_INT_ERROR, e
-					.getMessage());
+			throw new QueryException(e, ErrorCode.BIT_LOADFILE_INT_ERROR,
+					e.getMessage());
 		}
 	}
 }

@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.function.bit;
 
+import org.brackit.annotation.FunctionAnnotation;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -44,9 +45,11 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Henrique Valer
  * 
  */
+@FunctionAnnotation(description = "Checks whether a collection "
+		+ "exists or not.", parameters = "$collectionName")
 public class ExistCollection extends AbstractFunction {
-	
-	public static final QNm NAME = new QNm(Namespaces.BIT_NSURI,
+
+	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
 			Namespaces.BIT_PREFIX, "exist-collection");
 
 	public ExistCollection(QNm name, Signature signature) {

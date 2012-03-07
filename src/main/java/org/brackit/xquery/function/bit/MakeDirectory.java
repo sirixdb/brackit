@@ -46,7 +46,7 @@ import org.brackit.xquery.xdm.Sequence;
  */
 public class MakeDirectory extends AbstractFunction {
 	
-	public static final QNm NAME = new QNm(Namespaces.BIT_NSURI,
+	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
 			Namespaces.BIT_PREFIX, "make-directory");
 
 	public MakeDirectory(QNm name, Signature signature) {

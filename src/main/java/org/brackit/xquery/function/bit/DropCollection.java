@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.function.bit;
 
+import org.brackit.annotation.FunctionAnnotation;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -44,9 +45,10 @@ import org.brackit.xquery.xdm.Signature;
  * @author Henrique Valer
  * 
  */
+@FunctionAnnotation(description = "Drops the specified collection.", parameters = "$collectionName")
 public class DropCollection extends AbstractFunction {
-	
-	public static final QNm NAME = new QNm(Namespaces.BIT_NSURI,
+
+	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
 			Namespaces.BIT_PREFIX, "drop-collection");
 
 	public DropCollection(QNm name, Signature signature) {
@@ -61,8 +63,8 @@ public class DropCollection extends AbstractFunction {
 			ctx.getStore().drop(doc);
 			return Bool.TRUE;
 		} catch (Exception e) {
-			throw new QueryException(e,
-					ErrorCode.BIT_DROPCOLLECTION_INT_ERROR, e.getMessage());
+			throw new QueryException(e, ErrorCode.BIT_DROPCOLLECTION_INT_ERROR,
+					e.getMessage());
 		}
 	}
 }

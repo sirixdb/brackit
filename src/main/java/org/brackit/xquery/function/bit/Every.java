@@ -44,6 +44,7 @@ import org.brackit.xquery.xdm.Signature;
  * 
  */
 public class Every extends AbstractFunction {
+	
 	public Every(QNm name, Signature signature) {
 		super(name, signature, false);
 	}
