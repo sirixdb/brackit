@@ -27,6 +27,11 @@
  */
 package org.brackit.xquery.node.parser;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.xdm.DocumentException;
@@ -76,8 +81,30 @@ public class SequenceParser implements Stream<SubtreeParser> {
 			
 			SubtreeParser parser = null;
 			if (item instanceof Atomic) {
-				// take string value as document location
-				parser = new DocumentParser(((Atomic) item).stringValue());
+				
+				String s = ((Atomic) item).stringValue();
+				
+				// string value is either a file URI or an XML fragment
+				try {
+					
+					URI uri = new URI(s);
+					if (uri.getScheme() == null || !uri.getScheme().equals("file")) {
+						close();
+						throw new DocumentException(String.format("URI %s does not specify a file.", uri));
+					}
+					File file = new File(uri);
+					try {
+						parser = new DocumentParser(file);
+					} catch (FileNotFoundException e) {
+						throw new DocumentException(e);
+					}
+					
+				} catch (URISyntaxException e) {
+					
+					// take string as XML fragment
+					parser = new DocumentParser(s);
+					
+				}
 			} else {
 				// take subtree as new document
 				Node<?> root = (Node<?>) item;
