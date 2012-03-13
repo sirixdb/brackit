@@ -39,9 +39,9 @@ import java.net.URL;
 import java.util.Random;
 
 import org.brackit.xquery.node.SimpleStore;
-import org.brackit.xquery.node.SubtreePrinter;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.util.serialize.SubtreePrinter;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;

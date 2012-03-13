@@ -32,14 +32,13 @@ import java.io.PrintWriter;
 
 import org.brackit.xquery.compiler.CompileChain;
 import org.brackit.xquery.module.Module;
-import org.brackit.xquery.node.SubtreePrinter;
 import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.util.Cfg;
+import org.brackit.xquery.util.serialize.Serializer;
+import org.brackit.xquery.util.serialize.StringSerializer;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
@@ -55,7 +54,7 @@ public class XQuery {
 
 	private final Module module;
 	private boolean prettyPrint;
-	
+
 	public XQuery(Module module) {
 		this.module = module;
 	}
@@ -63,7 +62,7 @@ public class XQuery {
 	public XQuery(String query) throws QueryException {
 		this.module = new CompileChain().compile(query);
 	}
-	
+
 	public XQuery(CompileChain chain, String query) throws QueryException {
 		this.module = chain.compile(query);
 	}
@@ -106,49 +105,20 @@ public class XQuery {
 	public void serialize(QueryContext ctx, PrintWriter out)
 			throws QueryException {
 		Sequence result = execute(ctx);
-
 		if (result == null) {
 			return;
 		}
-
-		boolean first = true;
-		SubtreePrinter printer = new SubtreePrinter(out);
-		printer.setPrettyPrint(prettyPrint);
-		printer.setAutoFlush(false);
-		Item item;
-		Iter it = result.iterate();
-		try {
-			while ((item = it.next()) != null) {
-				if (item instanceof Node<?>) {
-					Node<?> node = (Node<?>) item;
-					Kind kind = node.getKind();
-
-					if (kind == Kind.ATTRIBUTE) {
-						throw new QueryException(
-								ErrorCode.ERR_SERIALIZE_ATTRIBUTE_OR_NAMESPACE_NODE);
-					}
-					if (kind == Kind.DOCUMENT) {
-						node = node.getFirstChild();
-						while (node.getKind() != Kind.ELEMENT) {
-							node = node.getNextSibling();
-						}
-					}
-
-					printer.print(node);
-					first = true;
-				} else {
-					if (!first) {
-						out.write(" ");
-					}
-					out.write(item.toString());
-					first = false;
-				}
-			}
-		} finally {
-			printer.flush();
-			out.flush();
-			it.close();
+		StringSerializer serializer = new StringSerializer(out);
+		serializer.setFormat(prettyPrint);
+		serializer.serialize(result);
+	}
+	
+	public void serialize(QueryContext ctx, Serializer serializer) throws QueryException {
+		Sequence result = execute(ctx);
+		if (result == null) {
+			return;
 		}
+		serializer.serialize(result);
 	}
 
 	public boolean isPrettyPrint() {

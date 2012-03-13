@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.node;
+package org.brackit.xquery.util.serialize;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -45,30 +45,26 @@ public class SubtreePrinter extends DefaultHandler {
 
 	private final PrintWriter out;
 
-	private int level;
-
-	private int levelWithoutContent;
-
-	private boolean openElement;
-
 	private boolean printXmlHead = false;
-
 	private boolean prettyPrint = true;
-
 	private boolean autoFlush = true;
-	
-	private boolean printEmptyElementTag = false;
-	
+	private boolean printEmptyElementTag = true;
+	private String indent = "    ";
+
+	private int level;
+	private boolean emptyElement;
+	private boolean openElement;
 	private NS ns;
-	
+	private Atomic pendingText;
+
 	/**
-	 * Linked list of current namespace mappings	
+	 * Linked list of current namespace mappings
 	 */
 	private static class NS {
 		private final String prefix;
 		private final String uri;
 		private NS next;
-		
+
 		NS(String prefix, String uri) {
 			this.prefix = prefix;
 			this.uri = uri;
@@ -116,15 +112,15 @@ public class SubtreePrinter extends DefaultHandler {
 	@Override
 	public void startDocument() throws DocumentException {
 		this.level = 0;
-		this.levelWithoutContent = -1;
+		this.emptyElement = false;
 
-		if (printXmlHead)
+		if (printXmlHead) {
 			out.println("<?xml version=\"1.0\"?>");
+		}
 	}
 
 	@Override
 	public void endDocument() throws DocumentException {
-		checkOpenElement();
 	}
 
 	@Override
@@ -136,22 +132,34 @@ public class SubtreePrinter extends DefaultHandler {
 
 	@Override
 	public void endElement(QNm name) throws DocumentException {
-		if ((level == levelWithoutContent) && (!printEmptyElementTag)) {
-			out.print("/>");
-			openElement = false;
-			level--;
-			levelWithoutContent = -1;
+		level--;
+		if (emptyElement) {
+			if (pendingText != null) {
+				out.print(">");
+				out.print(pendingText);
+				out.print("</");
+				out.print(name);
+				out.print(">");
+				pendingText = null;
+			} else if (printEmptyElementTag) {
+				out.print("/>");
+			} else {
+				out.print(">");
+				out.print("</");
+				out.print(name);
+				out.print(">");
+			}
 		} else {
-			checkOpenElement();
-			level--;
+			if (prettyPrint) {
+				out.println();
+			}
 			indent();
 			out.print("</");
 			out.print(name);
 			out.print(">");
 		}
-		if (prettyPrint) {
-			out.println();
-		}
+		openElement = false;
+		emptyElement = false;
 	}
 
 	@Override
@@ -165,83 +173,81 @@ public class SubtreePrinter extends DefaultHandler {
 
 	@Override
 	public void startElement(QNm name) throws DocumentException {
-		checkOpenElement();
-		indent();
+		newChild();
 		out.print("<");
 		out.print(name);
-		for (NS n = ns; n != null; n = n.next) {			
+		for (NS n = ns; n != null; n = n.next) {
 			if ((n.prefix != null) && (!n.prefix.isEmpty())) {
 				out.print(" xmlns:");
 				out.print(n.prefix);
 			} else {
 				out.print(" xmlns");
-			}			
+			}
 			out.print("=\"");
 			out.print(n.uri);
 			out.print("\"");
 		}
 		ns = null;
-		openElement = true;
 		level++;
-		levelWithoutContent = level;
+		openElement = true;
+		emptyElement = true;
 	}
 
 	@Override
 	public void text(Atomic value) throws DocumentException {
-		checkOpenElement();
-		indent();
-		out.print(value);
-		levelWithoutContent = -1;
-		if (prettyPrint) {
-			out.println();
+		if (emptyElement) {
+			pendingText = value;
+		} else {
+			newChild();
+			out.print(value);
+			emptyElement = false;
 		}
 	}
 
 	@Override
 	public void comment(Atomic value) throws DocumentException {
-		checkOpenElement();
-		indent();
+		newChild();
 		out.print("<!-- ");
-		if (prettyPrint) {
-			out.println();
-		}
-		indent();
 		out.print(value);
-		if (prettyPrint) {
-			out.println();
-		}
-		indent();
 		out.print(" -->");
-		if (prettyPrint) {
-			out.println();
-		}
-		levelWithoutContent = -1;
+		emptyElement = false;
 	}
 
 	@Override
-	public void processingInstruction(QNm target, Atomic value) throws DocumentException {
-		checkOpenElement();
+	public void processingInstruction(QNm target, Atomic value)
+			throws DocumentException {
+		newChild();
+		out.print("<?");
+		out.print(target);
+		out.print(" ");
+		out.print(value);
+		out.print("?>");
+		emptyElement = false;
+	}
+
+	private void newChild() {
+		if (openElement) {
+			out.print(">");
+			openElement = false;
+		}
+		if (pendingText != null) {
+			if (prettyPrint) {
+				out.println();
+			}
+			indent();
+			out.print(pendingText);
+			pendingText = null;
+		}
+		if ((level > 0) && (prettyPrint)) {
+			out.println();
+		}
 		indent();
-		out.println("<? ");
-		out.println(value);
-		out.println(" ?>");
-		levelWithoutContent = -1;
 	}
 
 	private void indent() {
 		if (prettyPrint) {
 			for (int i = 0; i < level; i++)
-				out.print("\t");
-		}
-	}
-
-	private void checkOpenElement() {
-		if (openElement) {
-			out.print(">");
-			openElement = false;
-			if (prettyPrint) {
-				out.println();
-			}
+				out.print(indent);
 		}
 	}
 
@@ -281,6 +287,14 @@ public class SubtreePrinter extends DefaultHandler {
 		this.printEmptyElementTag = print;
 	}
 
+	public String getIndent() {
+		return indent;
+	}
+
+	public void setIndent(String indent) {
+		this.indent = indent;
+	}
+
 	public void print(Node<?> node) throws DocumentException {
 		node.parse(this);
 	}
@@ -297,23 +311,11 @@ public class SubtreePrinter extends DefaultHandler {
 
 	@Override
 	public void endMapping(String prefix) throws DocumentException {
-//		NS p = null;
-//		for (NS ns = this.ns; ns != null; ns = ns.next) {
-//			if (ns.prefix.atomicCmp(prefix) == 0) {
-//				if (p == null) {
-//					this.ns = ns.next;
-//				} else {
-//					p.next = ns.next;
-//				}
-//				return;
-//			}
-//			p = ns;
-//		}
-//		throw new DocumentException("Unknown namespace prefix: '%s'", prefix);
 	}
 
 	@Override
-	public void startMapping(String prefix, String uri) throws DocumentException {
+	public void startMapping(String prefix, String uri)
+			throws DocumentException {
 		NS tmp = ns;
 		ns = new NS(prefix, uri);
 		ns.next = tmp;
