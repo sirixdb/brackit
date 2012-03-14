@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Int32;
@@ -40,11 +39,7 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.util.serialize.SubtreePrinter;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.util.serialize.StringSerializer;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.type.AtomicType;
@@ -58,7 +53,7 @@ import org.brackit.xquery.xdm.type.SequenceType;
  */
 public class Silent extends AbstractFunction {
 
-	public static final QNm SILENT = new QNm(Namespaces.BIT_NSURI,
+	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
 			Namespaces.BIT_PREFIX, "silent");
 
 	private static class CountStream extends OutputStream {
@@ -71,66 +66,23 @@ public class Silent extends AbstractFunction {
 	}
 
 	public Silent() {
-		super(SILENT, new Signature(new SequenceType(AtomicType.INR,
+		this(DEFAULT_NAME);
+	}
+	
+	public Silent(QNm name) {
+		super(name, new Signature(new SequenceType(AtomicType.INR,
 				Cardinality.One), SequenceType.ITEM_SEQUENCE), true);
 	}
 
 	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
+	public Sequence execute(StaticContext sctx, QueryContext ctx,
+			Sequence[] args) throws QueryException {
 		Sequence sequence = args[0];
 		if (sequence == null) {
 			return Int32.ZERO;
 		}
 		CountStream out = new CountStream();
-		PrintWriter pw = new PrintWriter(out);
-		serialize(sequence, false, pw);
+		new StringSerializer(new PrintWriter(out)).serialize(sequence);
 		return new Int64(out.count);
-	}
-
-	private void serialize(Sequence result, boolean prettyPrint, PrintWriter out)
-			throws QueryException {
-		if (result == null) {
-			return;
-		}
-
-		boolean first = true;
-		SubtreePrinter printer = new SubtreePrinter(out);
-		printer.setPrettyPrint(prettyPrint);
-		printer.setAutoFlush(false);
-		Item item;
-		Iter it = result.iterate();
-		try {
-			while ((item = it.next()) != null) {
-				if (item instanceof Node<?>) {
-					Node<?> node = (Node<?>) item;
-					Kind kind = node.getKind();
-
-					if (kind == Kind.ATTRIBUTE) {
-						throw new QueryException(
-								ErrorCode.ERR_SERIALIZE_ATTRIBUTE_OR_NAMESPACE_NODE);
-					}
-					if (kind == Kind.DOCUMENT) {
-						node = node.getFirstChild();
-						while (node.getKind() != Kind.ELEMENT) {
-							node = node.getNextSibling();
-						}
-					}
-
-					printer.print(node);
-					first = true;
-				} else {
-					if (!first) {
-						out.write(" ");
-					}
-					out.write(item.toString());
-					first = false;
-				}
-			}
-		} finally {
-			printer.flush();
-			out.flush();
-			it.close();
-		}
 	}
 }

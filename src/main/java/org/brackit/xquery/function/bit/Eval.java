@@ -25,88 +25,67 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.function.io;
+package org.brackit.xquery.function.bit;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.PrintStream;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.sequence.BaseIter;
-import org.brackit.xquery.sequence.LazySequence;
-import org.brackit.xquery.util.io.URIHandler;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
+import org.brackit.xquery.util.annotation.FunctionAnnotation;
+import org.brackit.xquery.util.io.IOUtils;
+import org.brackit.xquery.util.serialize.StringSerializer;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.xdm.type.AnyItemType;
 import org.brackit.xquery.xdm.type.AtomicType;
 import org.brackit.xquery.xdm.type.Cardinality;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * 
- * @author Sebastian Baechle
+ * @author Henrique Valer
  * 
  */
-public class Readline extends AbstractFunction {
-	public static final QNm DEFAULT_NAME = new QNm(Namespaces.IO_NSURI,
-			Namespaces.IO_PREFIX, "readline");
+@FunctionAnnotation(description = "Executes the given query.", parameters = "$query")
+public class Eval extends AbstractFunction {
 
-	public Readline() {
+	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
+			Namespaces.BIT_PREFIX, "eval");
+
+	public Eval() {
 		this(DEFAULT_NAME);
 	}
 
-	public Readline(QNm name) {
+	public Eval(QNm name) {
 		super(name, new Signature(new SequenceType(AtomicType.STR,
-				Cardinality.ZeroOrMany), new SequenceType(AtomicType.STR,
+				Cardinality.ZeroOrOne), new SequenceType(AnyItemType.ANY,
 				Cardinality.One)), true);
 	}
 
 	@Override
 	public Sequence execute(StaticContext sctx, QueryContext ctx,
 			Sequence[] args) throws QueryException {
-		final String uri = ((Atomic) args[0]).stringValue();
-		return new LazySequence() {
-			@Override
-			public Iter iterate() {
-				return new BaseIter() {
-					BufferedReader in;
-
-					@Override
-					public Item next() throws QueryException {
-						try {
-							if (in == null) {
-								in = new BufferedReader(new InputStreamReader(
-										URIHandler.getInputStream(uri)));
-							}
-							String line = in.readLine();
-							return (line != null) ? new Str(line) : null;
-						} catch (Exception e) {
-							throw new QueryException(e,
-									ErrorCode.BIT_DYN_INT_ERROR);
-						}
-					}
-
-					@Override
-					public void close() {
-						if (in != null) {
-							try {
-								in.close();
-							} catch (IOException e) {
-								// ignore
-							}
-						}
-					}
-				};
+		try {
+			String vQuery = null;
+			if (args[0] instanceof Atomic) {
+				vQuery = ((Atomic) args[0]).stringValue();
+			} else {
+				PrintStream buf = IOUtils.createBuffer();
+				StringSerializer ser = new StringSerializer(buf);
+				ser.serialize(args[0]);
+				vQuery = buf.toString();
 			}
-		};
+			XQuery x = new XQuery(vQuery);
+			return x.execute(new QueryContext(ctx.getStore()));
+		} catch (Exception e) {
+			throw new QueryException(e, BitError.BIT_EVAL_INT_ERROR,
+					e.getMessage());
+		}
 	}
 }

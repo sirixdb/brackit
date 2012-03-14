@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.util;
+package org.brackit.xquery.util.io;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,7 +36,6 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLConnection;
 
 /**
  * 
@@ -47,6 +46,15 @@ import java.net.URLConnection;
 public class URIHandler {
 
 	public static final int TIMEOUT = 2000;
+
+	public static OutputStream getOutputStream(String uri, boolean overwrite)
+			throws IOException {
+		try {
+			return getOutputStream(new URI(uri), overwrite);
+		} catch (URISyntaxException e) {
+			throw new IOException("Invalid resource URI: " + uri, e);
+		}
+	}
 
 	public static OutputStream getOutputStream(URI uri, boolean overwrite)
 			throws IOException {
@@ -75,12 +83,18 @@ public class URIHandler {
 		} else if (scheme.equals("http") || scheme.equals("https")
 				|| scheme.equals("ftp") || scheme.equals("jar")) {
 			URL url = uri.toURL();
-			URLConnection conn = url.openConnection();
-			conn.setConnectTimeout(TIMEOUT);
-			return conn.getOutputStream();
+			return new URLOutputStream(url, TIMEOUT);
 		} else {
 			throw new IOException(String.format("Unsupported protocol: %s",
 					scheme));
+		}
+	}
+
+	public static InputStream getInputStream(String uri) throws IOException {
+		try {
+			return getInputStream(new URI(uri));
+		} catch (URISyntaxException e) {
+			throw new IOException("Invalid resource URI: " + uri, e);
 		}
 	}
 
@@ -99,10 +113,7 @@ public class URIHandler {
 			return new FileInputStream(new File(fullPath));
 		} else if (scheme.equals("http") || scheme.equals("https")
 				|| scheme.equals("ftp") || scheme.equals("jar")) {
-			URL url = uri.toURL();
-			URLConnection conn = url.openConnection();
-			conn.setConnectTimeout(TIMEOUT);
-			return conn.getInputStream();
+			return new URLInputStream(uri.toURL(), TIMEOUT);
 		} else {
 			throw new IOException(String.format("Unsupported protocol: %s",
 					scheme));

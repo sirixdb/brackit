@@ -29,7 +29,6 @@ package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Type;
@@ -40,6 +39,9 @@ import org.brackit.xquery.xdm.Type;
  * 
  */
 public final class ElementType extends NodeType {
+	
+	public static final ElementType ELEMENT = new ElementType();
+	
 	private final QNm name;
 	private final Type type;
 
@@ -62,7 +64,7 @@ public final class ElementType extends NodeType {
 	public QNm getQName() {
 		return name;
 	}
-	
+
 	@Override
 	public Type getType() {
 		return type;
@@ -89,7 +91,7 @@ public final class ElementType extends NodeType {
 				"element(\"%s\")", name) : String.format(
 				"element(\"%s\", \"%s\")", name, type) : "element()";
 	}
-	
+
 	public boolean equals(Object obj) {
 		if (obj == this) {
 			return true;

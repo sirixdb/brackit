@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.xdm;
 
+import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
@@ -53,4 +54,6 @@ public interface NodeFactory<E extends Node<E>> {
 	public E copy(Node<?> source) throws DocumentException;
 
 	public E build(SubtreeParser parser) throws DocumentException;
+	
+	public Collection<E> collection(String name) throws DocumentException;
 }

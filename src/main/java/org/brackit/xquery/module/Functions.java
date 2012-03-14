@@ -92,6 +92,7 @@ import org.brackit.xquery.function.fn.SubstringRelative;
 import org.brackit.xquery.function.fn.SumAvg;
 import org.brackit.xquery.function.fn.Trace;
 import org.brackit.xquery.function.fn.Unordered;
+import org.brackit.xquery.util.Regex;
 import org.brackit.xquery.xdm.Function;
 import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Type;
@@ -435,36 +436,36 @@ public class Functions {
 		// See XQuery Functions and Operators 7.6 String Functions that Use
 		// Pattern Matching
 		predefine(new RegEx(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"matches"), RegEx.Mode.MATCH, new Signature(new SequenceType(
+				"matches"), Regex.Mode.MATCH, new Signature(new SequenceType(
 				AtomicType.BOOL, Cardinality.One), new SequenceType(
 				AtomicType.STR, Cardinality.ZeroOrOne), new SequenceType(
 				AtomicType.STR, Cardinality.One))));
 		predefine(new RegEx(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"matches"), RegEx.Mode.MATCH, new Signature(new SequenceType(
+				"matches"), Regex.Mode.MATCH, new Signature(new SequenceType(
 				AtomicType.BOOL, Cardinality.One), new SequenceType(
 				AtomicType.STR, Cardinality.ZeroOrOne), new SequenceType(
 				AtomicType.STR, Cardinality.One), new SequenceType(
 				AtomicType.STR, Cardinality.One))));
 		predefine(new RegEx(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"replace"), RegEx.Mode.REPLACE, new Signature(new SequenceType(
+				"replace"), Regex.Mode.REPLACE, new Signature(new SequenceType(
 				AtomicType.STR, Cardinality.One), new SequenceType(
 				AtomicType.STR, Cardinality.ZeroOrOne), new SequenceType(
 				AtomicType.STR, Cardinality.One), new SequenceType(
 				AtomicType.STR, Cardinality.One))));
 		predefine(new RegEx(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"replace"), RegEx.Mode.REPLACE, new Signature(new SequenceType(
+				"replace"), Regex.Mode.REPLACE, new Signature(new SequenceType(
 				AtomicType.STR, Cardinality.One), new SequenceType(
 				AtomicType.STR, Cardinality.ZeroOrOne), new SequenceType(
 				AtomicType.STR, Cardinality.One), new SequenceType(
 				AtomicType.STR, Cardinality.One), new SequenceType(
 				AtomicType.STR, Cardinality.One))));
 		predefine(new RegEx(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"tokenize"), RegEx.Mode.TOKENIZE, new Signature(
+				"tokenize"), Regex.Mode.TOKENIZE, new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.ZeroOrMany),
 				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
 				new SequenceType(AtomicType.STR, Cardinality.One))));
 		predefine(new RegEx(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"tokenize"), RegEx.Mode.TOKENIZE, new Signature(
+				"tokenize"), Regex.Mode.TOKENIZE, new Signature(
 				new SequenceType(AtomicType.STR, Cardinality.ZeroOrMany),
 				new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
 				new SequenceType(AtomicType.STR, Cardinality.One),
@@ -693,8 +694,10 @@ public class Functions {
 				new SequenceType(AtomicType.STR, Cardinality.One),
 				new SequenceType(AnyNodeType.ANY_NODE, Cardinality.ZeroOrOne))));
 		predefine(new Name(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
-				"namespace-uri"), Name.Mode.NAMESPACE_URI, new Signature(
-				new SequenceType(AtomicType.AURI, Cardinality.One), false, true)));
+				"namespace-uri"), Name.Mode.NAMESPACE_URI,
+				new Signature(
+						new SequenceType(AtomicType.AURI, Cardinality.One),
+						false, true)));
 		predefine(new Name(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"namespace-uri"), Name.Mode.NAMESPACE_URI, new Signature(
 				new SequenceType(AtomicType.AURI, Cardinality.One),
@@ -985,6 +988,10 @@ public class Functions {
 
 	public Map<QNm, Function[]> getDeclaredFunctions() {
 		return Collections.unmodifiableMap(functions);
+	}
+
+	public Map<QNm, Function[]> getPredefinedFunctions() {
+		return Collections.unmodifiableMap(predefined);
 	}
 
 	public static void predefine(Function function) {

@@ -25,18 +25,21 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.util.aggregator;
+package org.brackit.xquery.util.annotation;
 
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Sequence;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * @author Sebastian Baechle
+ * @author Roxana Zapata
  * 
  */
-public interface Aggregator {
-	public Sequence getAggregate() throws QueryException;
-
-	public void add(Sequence seq) throws QueryException;
-
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target(value = { ElementType.TYPE })
+public @interface ModuleAnnotation {
+	String description();
 }

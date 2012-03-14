@@ -42,9 +42,13 @@ import org.brackit.xquery.xdm.Stream;
  */
 public class DocumentD2Node extends ParentD2Node {
 
-	private static class D2NodeCollection extends ArrayCollection<D2Node> {
+	public static class D2NodeCollection extends ArrayCollection<D2Node> {
 		public D2NodeCollection(String name, DocumentD2Node document) {
 			super(name, document);
+		}
+		
+		public D2NodeCollection(String name) {
+			super(name);
 		}
 	}
 

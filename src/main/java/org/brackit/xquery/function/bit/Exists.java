@@ -25,69 +25,54 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.node.d2linked;
+package org.brackit.xquery.function.bit;
 
+import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
-import org.brackit.xquery.node.parser.NavigationalSubtreeParser;
-import org.brackit.xquery.node.parser.SubtreeParser;
-import org.brackit.xquery.xdm.Collection;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.NodeFactory;
+import org.brackit.xquery.function.AbstractFunction;
+import org.brackit.xquery.module.Namespaces;
+import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.util.annotation.FunctionAnnotation;
+import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.xdm.type.AtomicType;
+import org.brackit.xquery.xdm.type.Cardinality;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * 
- * @author Sebastian Baechle
+ * @author Henrique Valer
  * 
  */
-public class D2NodeFactory implements NodeFactory<D2Node> {
-	@Override
-	public D2Node attribute(QNm name, Atomic value) throws DocumentException {
-		return new AttributeD2Node(name, value);
+@FunctionAnnotation(description = "Checks whether a collection exists or not.", parameters = "$name")
+public class Exists extends AbstractFunction {
+
+	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
+			Namespaces.BIT_PREFIX, "exists");
+
+	public Exists() {
+		this(DEFAULT_NAME);
+	}
+
+	public Exists(QNm name) {
+		super(name, new Signature(new SequenceType(AtomicType.BOOL,
+				Cardinality.One), new SequenceType(AtomicType.STR,
+				Cardinality.One)), true);
 	}
 
 	@Override
-	public D2Node comment(Str value) throws DocumentException {
-		return new CommentD2Node(value);
-	}
-
-	@Override
-	public D2Node document(Str name) throws DocumentException {
-		String s = (name != null) ? name.stringValue() : null;
-		return new DocumentD2Node(s);
-	}
-
-	@Override
-	public D2Node element(QNm name) throws DocumentException {
-		return new ElementD2Node(name);
-	}
-
-	@Override
-	public D2Node pi(QNm target, Str value) throws DocumentException {
-		return new PID2Node(target, value);
-	}
-
-	@Override
-	public D2Node text(Atomic value) throws DocumentException {
-		return new TextD2Node(value);
-	}
-
-	@Override
-	public D2Node copy(Node<?> source) throws DocumentException {
-		return build(new NavigationalSubtreeParser(source));
-	}
-
-	public D2Node build(SubtreeParser parser) throws DocumentException {
-		D2NodeBuilder handler = new D2NodeBuilder();
-		parser.parse(handler);
-		return handler.root();
-	}
-
-	@Override
-	public Collection<D2Node> collection(String name) throws DocumentException {
-		return new DocumentD2Node.D2NodeCollection(name);
+	public Sequence execute(StaticContext sctx, QueryContext ctx,
+			Sequence[] args) throws QueryException {
+		try {
+			String name = ((Atomic) args[0]).stringValue();
+			return (ctx.getStore().lookup(name) != null) ? Bool.TRUE
+					: Bool.FALSE;
+		} catch (Exception e) {
+			throw new QueryException(e, BitError.BIT_EXISTCOLLECTION_INT_ERROR,
+					e.getMessage());
+		}
 	}
 }

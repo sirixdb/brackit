@@ -38,7 +38,7 @@ import java.util.List;
 
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
-import org.brackit.xquery.util.URIHandler;
+import org.brackit.xquery.util.io.URIHandler;
 import org.brackit.xquery.xdm.Node;
 
 /**

@@ -28,26 +28,20 @@
 package org.brackit.xquery.function.io;
 
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.AnyURI;
+import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.node.parser.DocumentParser;
+import org.brackit.xquery.util.io.URIHandler;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
@@ -63,26 +57,31 @@ import org.brackit.xquery.xdm.type.SequenceType;
  * 
  */
 public class Writeline extends AbstractFunction {
-	public static final QNm WRITELINE = new QNm(Namespaces.IO_NSURI,
+	public static final QNm DEFAULT_NAME = new QNm(Namespaces.IO_NSURI,
 			Namespaces.IO_PREFIX, "writeline");
 
 	public Writeline() {
-		super(WRITELINE, new Signature(new SequenceType(AtomicType.INR,
-				Cardinality.One), new SequenceType(AtomicType.AURI,
+		this(DEFAULT_NAME);
+	}
+
+	public Writeline(QNm name) {
+		super(name, new Signature(new SequenceType(AtomicType.INR,
+				Cardinality.One), new SequenceType(AtomicType.STR,
 				Cardinality.One), new SequenceType(AnyItemType.ANY,
 				Cardinality.ZeroOrMany)), true);
 	}
 
 	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, final Sequence[] args)
-			throws QueryException {
+	public Sequence execute(StaticContext sctx, QueryContext ctx,
+			final Sequence[] args) throws QueryException {
 		if (args[1] == null) {
 			return Int32.ZERO;
 		}
-
 		try {
 			IntNumeric count = Int32.ZERO;
-			BufferedWriter out = createInput(args);
+			String uri = ((Atomic) args[0]).stringValue();
+			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
+					URIHandler.getOutputStream(uri, true)));
 			Iter it = args[1].iterate();
 			try {
 				Item item;
@@ -99,39 +98,6 @@ public class Writeline extends AbstractFunction {
 			return count;
 		} catch (IOException e) {
 			throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR);
-		} catch (URISyntaxException e) {
-			throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR);
-		}
-	}
-
-	private BufferedWriter createInput(final Sequence[] args)
-			throws QueryException, IOException, URISyntaxException {
-		URI uri = new URI(((AnyURI) args[0]).stringValue());
-		String scheme = uri.getScheme();
-
-		DocumentParser parser;
-
-		if ((scheme == null) || (scheme.equals("file"))) {
-			// handle files locally
-			String fullPath = uri.getSchemeSpecificPart();
-			if (fullPath == null) {
-				throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
-						"Illegal file name: %s", args[0]);
-			}
-			if (fullPath.startsWith("//")) {
-				fullPath = fullPath.substring(1);
-			}
-			File f = new File(fullPath);
-			return new BufferedWriter(new FileWriter(f));
-		} else if (scheme.equals("http") || scheme.equals("https")
-				|| scheme.equals("ftp") || scheme.equals("jar")) {
-			URL url = new URL(((AnyURI) args[0]).stringValue());
-			URLConnection conn = url.openConnection();
-			return new BufferedWriter(new OutputStreamWriter(conn
-					.getOutputStream()));
-		} else {
-			throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
-					"Unsupported protocol: %s", scheme);
 		}
 	}
 }

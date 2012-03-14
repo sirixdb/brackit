@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.brackit.xquery.module.Module;
-import org.brackit.xquery.util.URIHandler;
+import org.brackit.xquery.util.io.URIHandler;
 
 /**
  * 
@@ -49,7 +49,7 @@ import org.brackit.xquery.util.URIHandler;
  */
 public class BaseResolver implements ModuleResolver {
 
-	private Map<String, List<Module>> modules;
+	protected Map<String, List<Module>> modules;
 
 	public void register(String targetNSUri, Module module) {
 		List<Module> list = null;
