@@ -37,7 +37,6 @@ import org.brackit.xquery.node.parser.SubtreeHandler;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.node.stream.AtomStream;
 import org.brackit.xquery.node.stream.EmptyStream;
-import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
@@ -103,7 +102,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	}
 
 	@Override
-	public Collection<D2Node> getCollection() {
+	public D2NodeCollection getCollection() {
 		return (parent == null) ? null : getRoot().getCollection();
 	}
 

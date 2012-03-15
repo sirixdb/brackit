@@ -25,55 +25,16 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.function.bit;
+package org.brackit.xquery.node.d2linked;
 
-import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.module.Namespaces;
-import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.util.annotation.FunctionAnnotation;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.type.AtomicType;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.ElementType;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.node.ArrayCollection;
 
-/**
- * 
- * @author Henrique Valer
- * 
- */
-@FunctionAnnotation(description = "Creates a collection.", parameters = "$name")
-public class Create extends AbstractFunction {
-
-	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
-			Namespaces.BIT_PREFIX, "create");
-
-	public Create() {
-		this(DEFAULT_NAME);
+public class D2NodeCollection extends ArrayCollection<D2Node> {
+	public D2NodeCollection(String name, DocumentD2Node document) {
+		super(name, document);
 	}
 
-	public Create(QNm name) {
-		super(name, new Signature(new SequenceType(ElementType.ELEMENT,
-				Cardinality.ZeroOrOne), new SequenceType(AtomicType.STR,
-				Cardinality.One)), true);
-	}
-
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx,
-			Sequence[] args) throws QueryException {
-		try {
-			String collection = ((Atomic) args[0]).stringValue();
-			ctx.getStore().create(collection);
-			// TODO
-			return null;
-		} catch (Exception e) {
-			throw new QueryException(e,
-					BitError.BIT_CREATECOLLECTION_INT_ERROR, e.getMessage());
-		}
+	public D2NodeCollection(String name) {
+		super(name);
 	}
 }

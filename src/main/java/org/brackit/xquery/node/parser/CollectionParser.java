@@ -64,15 +64,11 @@ public class CollectionParser implements SubtreeParser {
 
 		// announce begin / begin fragment
 		handler.begin();
-		handler.beginFragment();
-
 		SubtreeParser current = null;
 		while ((current = parsers.next()) != null) {
 			current.parse(collHandler);
 		}
 		parsers.close();
-
-		handler.endFragment();
 		handler.end();
 	}
 
@@ -108,7 +104,7 @@ public class CollectionParser implements SubtreeParser {
 
 		@Override
 		public void beginFragment() throws DocumentException {
-			// do not propagate local fragments
+			handler.beginFragment();
 		}
 
 		@Override
@@ -129,7 +125,7 @@ public class CollectionParser implements SubtreeParser {
 
 		@Override
 		public void endDocument() throws DocumentException {
-			// do not propagate local document boundaries
+			handler.endDocument();
 		}
 
 		@Override
@@ -146,7 +142,7 @@ public class CollectionParser implements SubtreeParser {
 
 		@Override
 		public void endFragment() throws DocumentException {
-			// do not propagate local fragments
+			handler.endFragment();
 		}
 
 		@Override
@@ -175,6 +171,7 @@ public class CollectionParser implements SubtreeParser {
 		@Override
 		public void startDocument() throws DocumentException {
 			// do not propagate local document boundaries
+			handler.startDocument();
 		}
 
 		@Override

@@ -29,8 +29,6 @@ package org.brackit.xquery.node.d2linked;
 
 import java.util.Map.Entry;
 
-import org.brackit.xquery.atomic.AnyURI;
-import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.parser.SubtreeHandler;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.xdm.DocumentException;

@@ -28,8 +28,6 @@
 package org.brackit.xquery.node.d2linked;
 
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.node.ArrayCollection;
-import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
@@ -42,32 +40,28 @@ import org.brackit.xquery.xdm.Stream;
  */
 public class DocumentD2Node extends ParentD2Node {
 
-	public static class D2NodeCollection extends ArrayCollection<D2Node> {
-		public D2NodeCollection(String name, DocumentD2Node document) {
-			super(name, document);
-		}
-		
-		public D2NodeCollection(String name) {
-			super(name);
-		}
-	}
-
-	private final Collection<D2Node> collection;
+	private final D2NodeCollection collection;
 
 	public DocumentD2Node(String name) {
 		super(null, FIRST);
 		this.collection = new D2NodeCollection(name, this);
 	}
 
+	public DocumentD2Node(D2NodeCollection collection) {
+		super(null, FIRST);
+		this.collection = collection;
+		collection.add(this);
+	}
+
 	public DocumentD2Node() {
 		super(null, FIRST);
 		this.collection = new D2NodeCollection(String.format("%s_%s_%s.xml",
-				Thread.currentThread().getName(), "noname", Long
-						.toString(System.currentTimeMillis())), this);
+				Thread.currentThread().getName(), "noname",
+				Long.toString(System.currentTimeMillis())), this);
 	}
 
 	@Override
-	public Collection<D2Node> getCollection() {
+	public D2NodeCollection getCollection() {
 		return collection;
 	}
 
@@ -85,7 +79,7 @@ public class DocumentD2Node extends ParentD2Node {
 	public Kind getKind() {
 		return Kind.DOCUMENT;
 	}
-	
+
 	@Override
 	public Stream<? extends D2Node> getDescendantOrSelf()
 			throws DocumentException {

@@ -29,7 +29,6 @@ package org.brackit.xquery.node.d2linked;
 
 import java.util.Map;
 
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.AbstractBuilder;
@@ -45,15 +44,20 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
 
 	private final D2Node sibling;
 	private final boolean right;
+	private final D2NodeCollection coll;
 
-	public D2NodeBuilder(QueryContext ctx, String name)
-			throws DocumentException {
-		super(new DocumentD2Node(name));
+	public D2NodeBuilder(String name) throws DocumentException {
+		this(new D2NodeCollection(name));
+	}
+
+	public D2NodeBuilder(D2NodeCollection coll) throws DocumentException {
+		this.coll = coll;
 		sibling = null;
 		right = true;
 	}
 
 	public D2NodeBuilder() throws DocumentException {
+		coll = null;
 		sibling = null;
 		right = true;
 	}
@@ -61,13 +65,14 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
 	public D2NodeBuilder(D2Node parent, D2Node sibling, boolean right)
 			throws DocumentException {
 		super(parent);
+		this.coll = (parent != null) ? parent.getCollection() : null;
 		this.sibling = sibling;
 		this.right = right;
 	}
 
 	@Override
 	protected D2Node buildDocument() throws DocumentException {
-		return new DocumentD2Node();
+		return (coll == null) ? new DocumentD2Node() : new DocumentD2Node(coll);
 	}
 
 	@Override

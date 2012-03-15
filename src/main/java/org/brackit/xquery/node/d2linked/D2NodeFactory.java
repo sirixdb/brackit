@@ -27,7 +27,6 @@
  */
 package org.brackit.xquery.node.d2linked;
 
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
@@ -37,6 +36,7 @@ import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.NodeFactory;
+import org.brackit.xquery.xdm.Stream;
 
 /**
  * 
@@ -87,7 +87,32 @@ public class D2NodeFactory implements NodeFactory<D2Node> {
 	}
 
 	@Override
+	public Collection<D2Node> collection(String name, SubtreeParser parser)
+			throws DocumentException {
+		D2NodeCollection coll = new D2NodeCollection(name);
+		D2NodeBuilder builder = new D2NodeBuilder(coll);
+		parser.parse(builder);
+		return coll;
+	}
+
+	@Override
+	public Collection<D2Node> collection(String name,
+			Stream<SubtreeParser> parsers) throws DocumentException {
+		D2NodeCollection coll = new D2NodeCollection(name);
+		D2NodeBuilder builder = new D2NodeBuilder(coll);
+		try {
+			SubtreeParser parser;
+			while ((parser = parsers.next()) != null) {
+				parser.parse(builder);
+			}
+		} finally {
+			parsers.close();
+		}
+		return coll;
+	}
+
+	@Override
 	public Collection<D2Node> collection(String name) throws DocumentException {
-		return new DocumentD2Node.D2NodeCollection(name);
+		return new D2NodeCollection(name);
 	}
 }

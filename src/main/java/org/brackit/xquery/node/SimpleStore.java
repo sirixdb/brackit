@@ -42,6 +42,7 @@ import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.NodeFactory;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
 import org.brackit.xquery.xdm.Store;
+import org.brackit.xquery.xdm.Stream;
 
 /**
  * 
@@ -52,15 +53,24 @@ public class SimpleStore implements Store {
 	private HashMap<String, Collection<?>> docs = new HashMap<String, Collection<?>>();
 
 	@Override
+	public Collection<?> create(String name) throws DocumentException {
+		Collection<?> coll = getNodeFactory().collection(name);
+		docs.put(name, coll);
+		return coll;
+	}
+
+	@Override
 	public Collection<?> create(String name, SubtreeParser parser)
 			throws DocumentException {
+		Collection<?> coll = getNodeFactory().collection(name, parser);
+		docs.put(name, coll);
+		return coll;
+	}
 
-		Collection<?> coll;
-		if (parser == null) {
-			coll = getNodeFactory().collection(name);
-		} else {
-			coll = getNodeFactory().build(parser).getCollection();
-		}
+	@Override
+	public Collection<?> create(String name, Stream<SubtreeParser> parsers)
+			throws DocumentException {
+		Collection<?> coll = getNodeFactory().collection(name, parsers);
 		docs.put(name, coll);
 		return coll;
 	}

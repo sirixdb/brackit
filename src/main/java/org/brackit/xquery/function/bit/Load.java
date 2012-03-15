@@ -27,6 +27,9 @@
  */
 package org.brackit.xquery.function.bit;
 
+import java.io.IOException;
+
+import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
@@ -34,17 +37,17 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.node.parser.CollectionParser;
-import org.brackit.xquery.node.parser.ParserStream;
-import org.brackit.xquery.node.parser.StreamSubtreeParser;
+import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.util.annotation.FunctionAnnotation;
+import org.brackit.xquery.util.io.URIHandler;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.type.AnyNodeType;
+import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.type.AtomicType;
 import org.brackit.xquery.xdm.type.Cardinality;
 import org.brackit.xquery.xdm.type.ElementType;
@@ -53,12 +56,14 @@ import org.brackit.xquery.xdm.type.SequenceType;
 /**
  * 
  * @author Henrique Valer
+ * @author Martin Hiller
+ * @author Sebastian Baechle
  * 
  */
-@FunctionAnnotation(description = "Store the given fragments in a collection. "
+@FunctionAnnotation(description = "Load (external) documents into a collection. "
 		+ "If explicitly required or if the collection does not exist, "
 		+ "a new collection will be created. ", parameters = { "$name",
-		"$fragments", "$create-new" })
+		"$resources", "$create-new" })
 public class Load extends AbstractFunction {
 
 	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
@@ -72,10 +77,10 @@ public class Load extends AbstractFunction {
 		super(name, createNew ? new Signature(new SequenceType(
 				ElementType.ELEMENT, Cardinality.ZeroOrOne), new SequenceType(
 				AtomicType.STR, Cardinality.One), new SequenceType(
-				AnyNodeType.ANY_NODE, Cardinality.ZeroOrMany)) : new Signature(
+						AtomicType.STR, Cardinality.ZeroOrMany)) : new Signature(
 				new SequenceType(ElementType.ELEMENT, Cardinality.ZeroOrOne),
 				new SequenceType(AtomicType.STR, Cardinality.One),
-				new SequenceType(AnyNodeType.ANY_NODE, Cardinality.ZeroOrMany),
+				new SequenceType(AtomicType.STR, Cardinality.ZeroOrMany),
 				new SequenceType(AtomicType.BOOL, Cardinality.One)), true);
 	}
 
@@ -86,33 +91,90 @@ public class Load extends AbstractFunction {
 			boolean createNew = (args.length != 3) ? true
 					: ((Atomic) (args[2])).booleanValue();
 			String name = ((Atomic) args[0]).stringValue();
-			Sequence nodes = args[1];
-			SubtreeParser parser;
-
-			if (nodes instanceof Node<?>) {
-				Node<?> n = (Node<?>) nodes;
-				parser = new StreamSubtreeParser(n.getSubtree());
-			} else {
-				parser = new CollectionParser(new ParserStream(nodes));
-			}
+			Sequence resources = args[1];
 
 			org.brackit.xquery.xdm.Store s = ctx.getStore();
 			if (createNew) {
-				s.create(name, parser);
+				create(s, name, resources);
 			} else {
 				try {
 					Collection<?> coll = s.lookup(name);
-					coll.add(parser);
+					add(s, coll, resources);
 				} catch (DocumentException e) {
 					// collection does not exist
-					s.create(name, parser);
+					create(s, name, resources);
 				}
 			}
 			// TODO return statistics?
 			return null;
 		} catch (Exception e) {
-			throw new QueryException(e,
-					BitError.BIT_ADDTOCOLLECTION_INT_ERROR, e.getMessage());
+			throw new QueryException(e, BitError.BIT_ADDTOCOLLECTION_INT_ERROR,
+					e.getMessage());
+		}
+	}
+
+	private void add(org.brackit.xquery.xdm.Store store, Collection<?> coll,
+			Sequence resources) throws DocumentException, IOException {
+
+		if (resources instanceof Atomic) {
+			String r = ((Atomic) resources).stringValue();
+			coll.add(new DocumentParser(URIHandler.getInputStream(r)));
+		} else {
+			ParserStream parsers = new ParserStream(resources);
+			try {
+				SubtreeParser parser;
+				while ((parser = parsers.next()) != null) {
+					coll.add(parser);
+				}
+			} finally {
+				parsers.close();
+			}
+		}
+	}
+
+	private void create(org.brackit.xquery.xdm.Store store, String name,
+			Sequence resources) throws DocumentException, IOException {
+		if (resources instanceof Atomic) {
+			String r = ((Atomic) resources).stringValue();
+			store.create(name, new DocumentParser(URIHandler.getInputStream(r)));
+		} else {
+			store.create(name, new ParserStream(resources));
+		}
+	}
+
+	private static class ParserStream implements Stream<SubtreeParser> {
+		Iter it;
+
+		public ParserStream(Sequence locs) {
+			it = locs.iterate();
+		}
+
+		@Override
+		public SubtreeParser next() throws DocumentException {
+			try {
+				Item i = it.next();
+				if (i == null) {
+					return null;
+				}
+				if (i instanceof Atomic) {
+					String s = ((Atomic) i).stringValue();
+					return new DocumentParser(URIHandler.getInputStream(s));
+				} else {
+					throw new QueryException(
+							ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+							"Cannot create subtree parser for item of type: %s",
+							i.itemType());
+				}
+			} catch (IOException e) {
+				throw new DocumentException(e);
+			} catch (QueryException e) {
+				throw new DocumentException(e);
+			}
+		}
+
+		@Override
+		public void close() {
+			it.close();
 		}
 	}
 }

@@ -39,7 +39,9 @@ import java.util.List;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.util.io.URIHandler;
+import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.NodeFactory;
 
 /**
  * @author Sebastian Baechle
@@ -91,10 +93,14 @@ public class Main {
 
 			String file = config.getValue("-f");
 			if (file != null) {
-				InputStream in = URIHandler.getInputStream(new URI(file));
+				URI uri = new URI(file);
+				InputStream in = URIHandler.getInputStream(uri);
 				try {
 					SubtreeParser parser = new DocumentParser(in);
-					Node<?> doc = ctx.getNodeFactory().build(parser);
+					String name = uri.toURL().getFile();
+					NodeFactory<?> factory = ctx.getNodeFactory();
+					Collection<?> coll = factory.collection(name, parser);
+					Node<?> doc = coll.getDocument();
 					ctx.setContextItem(doc);
 				} finally {
 					in.close();
