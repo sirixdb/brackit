@@ -49,6 +49,7 @@ import org.brackit.xquery.function.bit.Serialize;
 import org.brackit.xquery.function.bit.Silent;
 import org.brackit.xquery.function.bit.Some;
 import org.brackit.xquery.function.bit.Store;
+import org.brackit.xquery.function.io.Ls;
 import org.brackit.xquery.function.io.Read;
 import org.brackit.xquery.function.io.Readline;
 import org.brackit.xquery.function.io.Write;
@@ -87,6 +88,8 @@ public class CompileChain {
 		Functions.predefine(new Writeline());
 		Functions.predefine(new Read());
 		Functions.predefine(new Write());
+		Functions.predefine(new Ls(true));
+		Functions.predefine(new Ls(false));
 		// Internal
 		Functions.predefine(BIT_SOME_FUNC);
 		Functions.predefine(BIT_EVERY_FUNC);
