@@ -72,6 +72,14 @@ public class XQuery {
 	}
 
 	public Sequence execute(QueryContext ctx) throws QueryException {
+		return run(ctx, true);
+	}
+	
+	public Sequence evaluate(QueryContext ctx) throws QueryException {
+		return run(ctx, false);
+	}
+
+	private Sequence run(QueryContext ctx, boolean lazy) throws QueryException {
 		Expr body = module.getBody();
 		if (body == null) {
 			throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
@@ -79,7 +87,7 @@ public class XQuery {
 		}
 		Sequence result = body.evaluate(ctx, new TupleImpl());
 
-		if (body.isUpdating()) {
+		if ((!lazy) || (body.isUpdating())) {
 			// iterate possibly lazy result sequence to "pull-in" all pending
 			// updates
 			if ((result != null) && (!(result instanceof Item))) {
@@ -104,7 +112,7 @@ public class XQuery {
 
 	public void serialize(QueryContext ctx, PrintWriter out)
 			throws QueryException {
-		Sequence result = execute(ctx);
+		Sequence result = run(ctx, false);
 		if (result == null) {
 			return;
 		}
@@ -114,7 +122,7 @@ public class XQuery {
 	}
 	
 	public void serialize(QueryContext ctx, Serializer serializer) throws QueryException {
-		Sequence result = execute(ctx);
+		Sequence result = run(ctx, false);
 		if (result == null) {
 			return;
 		}
