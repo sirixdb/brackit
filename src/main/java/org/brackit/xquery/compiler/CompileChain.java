@@ -110,12 +110,22 @@ public class CompileChain {
 	}
 
 	final AnyURI baseURI;
+	final ModuleResolver resolver;
 
 	public CompileChain() {
-		baseURI = null;
+		this(new BaseResolver(), null);
 	}
 
 	public CompileChain(AnyURI baseURI) {
+		this(new BaseResolver(), baseURI);
+	}
+	
+	public CompileChain(ModuleResolver resolver) {
+		this(resolver, null);
+	}
+	
+	public CompileChain(ModuleResolver resolver, AnyURI baseURI) {
+		this.resolver = resolver;
 		this.baseURI = baseURI;
 	}
 
@@ -128,7 +138,7 @@ public class CompileChain {
 	}
 
 	protected ModuleResolver getModuleResolver() {
-		return new BaseResolver();
+		return resolver;
 	}
 
 	protected AST parse(String query) throws QueryException {
