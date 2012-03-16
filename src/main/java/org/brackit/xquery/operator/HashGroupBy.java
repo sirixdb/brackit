@@ -32,7 +32,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
@@ -46,7 +45,6 @@ import org.brackit.xquery.expr.SequenceExpr;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.util.aggregator.Aggregator;
 import org.brackit.xquery.util.aggregator.SequenceAggregator;
-import org.brackit.xquery.util.aggregator.SumAvgAggregator;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Type;
@@ -234,6 +232,13 @@ public class HashGroupBy implements Operator {
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
 		return new GroupByCursor(in.create(ctx, tuple), in.tupleWidth(tuple
+				.getSize()));
+	}
+
+	@Override
+	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
+			throws QueryException {
+		return new GroupByCursor(in.create(ctx, buf, len), in.tupleWidth(buf[0]
 				.getSize()));
 	}
 

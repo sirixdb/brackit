@@ -25,69 +25,81 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.optimizer.walker;
+package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
-import static org.brackit.xquery.compiler.XQ.GroupBy;
-import static org.brackit.xquery.compiler.XQ.LetBind;
-import static org.brackit.xquery.compiler.XQ.PipeExpr;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.XQ;
 
 /**
- * Extended variant of binding pushup with support for lifted sections.
- * 
- * This additional round of binding pushup is especially useful for
- * join detection.
- * 
- * Pushing bindings _in_ a lifted section has to take care of the 
- * the grouping semantics into account, i.e., we have to check if 
- * we do not push a variable binding out-of-scope. 
- * 
  * @author Sebastian Baechle
  * 
  */
-public class BindingPushupAfterLifting extends BindingPushup {
+public class Projection extends ScopeWalker {
+
+	HashMap<AST, Set<QNm>> scopes = new HashMap<AST, Set<QNm>>();
 
 	@Override
-	protected boolean pushableAfterCount(AST binding, AST count) {
-		// A pushup is OK when binding is let and
-		// a) the count is not used for lifting checks, or		
-		// b) the let-bound variable is not used outside the lifted part
-		if (binding.getType() != LetBind) {
-			return false;
+	protected AST prepare(AST root) {
+		root = super.prepare(root);
+		for (AST scope : getScopes()) {
+			scopes.put(scope, null);
 		}
-		//check case a)
-		AST parent = count.getParent();
-		if (parent.getProperty("check") == null) {
-			return true;
-		}
-		// check case b)
-		// check if the let-bound variable is used after grouping
-		// with count variable
-		QNm countVar = (QNm) count.getChild(1).getChild(0).getValue();
-		while (true) {
-			while ((parent = parent.getParent()).getType() != GroupBy);
-			if ((parent.checkProperty("onlyLast"))
-				&& (parent.getProperty("check").equals(countVar))) {
-				break;
-			}
-		}
-		while ((parent = parent.getParent()).getType() != PipeExpr) {
-			if (dependsOn(parent, binding)) {
-				return false;
-			}
-		}		
-		return true;
+		return root;
 	}
 
 	@Override
-	protected void push(AST node, AST newParent) {
-		super.push(node, newParent);
-		QNm check = (QNm) node.getProperty("check");
-		QNm pCheck = (QNm) newParent.getProperty("check");
-		if ((check == null) && (pCheck != null)) {
-			node.setProperty("check", pCheck);
+	protected AST visit(AST node) {
+		if (node.getType() == XQ.VariableRef) {
+			QNm var = (QNm) node.getValue();
+			Scope scope = findScope(node);
+			Scope bindingScope = scope.resolve(var);
+			propagateVarRef(var, scope, bindingScope);
+		} else if (node.getType() == XQ.Join) {
+			QNm groupVar = (QNm) node.getProperty("group");
+			if (groupVar != null) {
+				System.out.println("FIXME");
+				Scope scope = findScope(node);
+				Scope bindingScope = scope.resolve(groupVar);
+				propagateVarRef(groupVar, scope, bindingScope);
+			}
 		}
-	}	
+		return node;
+	}
+
+	protected void propagateVarRef(QNm var, Scope scope, Scope bindingScope) {
+		Scope tmp = scope;
+		while (true) {
+			Set<QNm> proj = scopes.get(tmp.node);
+			if (proj == null) {
+				proj = new HashSet<QNm>();
+				scopes.put(tmp.node, proj);
+			}
+			proj.add(var);
+
+			if (tmp == bindingScope) {
+				break;
+			}
+			tmp = tmp.parent;
+		}
+	}
+
+	@Override
+	protected AST finish(AST root) {
+		for (Entry<AST, Set<QNm>> scope : scopes.entrySet()) {
+			Set<QNm> proj = scope.getValue();
+			List<QNm> l = (proj != null) ? new ArrayList<QNm>(proj)
+					: Collections.EMPTY_LIST;
+			scope.getKey().setProperty("XXX project", l);
+		}
+		return root;
+	}
 }

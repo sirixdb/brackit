@@ -27,92 +27,23 @@
  */
 package org.brackit.xquery.operator;
 
-import java.util.Comparator;
-
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.compiler.translator.Reference;
-import org.brackit.xquery.expr.Cast;
-import org.brackit.xquery.util.sort.TupleSort;
+import org.brackit.xquery.util.sort.Ordering;
+import org.brackit.xquery.util.sort.Ordering.OrderModifier;
 import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.Type;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public class OrderBy implements Operator {
-
-	public static class OrderModifier {
-		public OrderModifier(boolean asc, boolean emptyLeast, String collation) {
-			this.ASC = asc;
-			this.EMPTY_LEAST = emptyLeast;
-			this.collation = collation;
-		}
-
-		public final boolean ASC;
-		public final boolean EMPTY_LEAST;
-		public final String collation;
-	}
-
-	private static class OrderBySpec implements Comparator<Tuple> {
-		private final int offset;
-		private final OrderModifier[] modifier;
-
-		public OrderBySpec(int offset, OrderModifier[] modifier) {
-			this.offset = offset;
-			this.modifier = modifier;
-		}
-
-		@Override
-		public int compare(Tuple o1, Tuple o2) {
-			try {
-				for (int i = 0; i < modifier.length; i++) {
-					int pos = offset + i;
-					Atomic lAtomic = (Atomic) o1.get(pos);
-					Atomic rAtomic = (Atomic) o2.get(pos);
-
-					if (lAtomic == null) {
-						if (rAtomic != null) {
-							return (modifier[i].EMPTY_LEAST) ? -1 : 1;
-						}
-					}
-					if (rAtomic == null) {
-						return (modifier[i].EMPTY_LEAST) ? 1 : -1;
-					}
-
-					int res = lAtomic.cmp(rAtomic);
-					if (res != 0) {
-						return (modifier[i].ASC) ? res : -res;
-					}
-				}
-				return 0;
-			} catch (QueryException e) {
-				if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
-					throw new ClassCastException(e.getMessage());
-				} else {
-					throw new RuntimeException(e);
-				}
-			}
-		}
-	}
-
-	private final Operator in;
-	final Expr[] orderByExprs;
-	final OrderModifier[] modifier;
-	int check = -1;
+public class OrderBy extends Check implements Operator {
 
 	private class OrderByCursor implements Cursor {
 		private final Cursor c;
-		private TupleSort sort;
-		private int tupleSize = -1;
 		private Stream<? extends Tuple> sorted;
 		private Tuple next;
 
@@ -124,7 +55,6 @@ public class OrderBy implements Operator {
 		public void close(QueryContext ctx) {
 			if (sorted != null) {
 				sorted.close();
-				sort.clear();
 			}
 			c.close(ctx);
 		}
@@ -134,58 +64,32 @@ public class OrderBy implements Operator {
 			if (sorted != null) {
 				t = sorted.next();
 				if (t != null) {
-					return t.project(0, tupleSize);
+					return t;
 				}
 				sorted.close();
-				sort.clear();
 			}
 			if (((t = next) == null) && ((t = c.next(ctx)) == null)) {
 				return null;
 			}
 			next = null;
-			tupleSize = t.getSize();
 
 			// pass through
-			if ((check >= 0) && (t.get(check) == null)) {
+			if ((check) && (dead(t))) {
 				return t;
 			}
 
 			// sort current tuple and all following in same group
-			Atomic gk = (check >= 0) ? (Atomic) t.get(check) : null;
-			sort = new TupleSort(new OrderBySpec(tupleSize, modifier), -1);
-			sort.add(addSortFields(ctx, t));
+			Ordering sort = new Ordering(orderByExprs, modifier);
+			sort.add(ctx, t);
 			while ((next = c.next(ctx)) != null) {
-				if ((check >= 0) && (t.get(check) == null)) {
+				if ((check) && (separate(t, next))) {
 					break;
 				}
-				if (check >= 0) {
-					// check if next tuple belongs to different iteration
-					Atomic ngk = (Atomic) next.get(check);
-					if ((ngk == null) || (gk.atomicCmp(ngk) != 0)) {
-						break;
-					}
-				}
-				sort.add(addSortFields(ctx, next));
+				sort.add(ctx, next);
 			}
-			sort.sort();
-			sorted = sort.stream();
+			sorted = sort.sorted();
 			t = sorted.next();
-			return t.project(0, tupleSize);
-		}
-
-		private Tuple addSortFields(QueryContext ctx, Tuple t)
-				throws QueryException {
-			Sequence[] concat = new Sequence[orderByExprs.length];
-			for (int i = 0; i < orderByExprs.length; i++) {
-				Item item = orderByExprs[i].evaluateToItem(ctx, t);
-				Atomic atomic = (item != null) ? item.atomize() : null;
-				if ((atomic != null) && (atomic.type().instanceOf(Type.UNA))) {
-					atomic = Cast.cast(null, atomic, Type.STR);
-				}
-				concat[i] = atomic;
-			}
-			Tuple toSort = t.concat(concat);
-			return toSort;
+			return t;
 		}
 
 		@Override
@@ -193,6 +97,10 @@ public class OrderBy implements Operator {
 			c.open(ctx);
 		}
 	}
+
+	final Operator in;
+	final Expr[] orderByExprs;
+	final OrderModifier[] modifier;
 
 	public OrderBy(Operator in, Expr[] orderByExprs, OrderModifier[] orderBySpec) {
 		this.in = in;
@@ -206,15 +114,13 @@ public class OrderBy implements Operator {
 	}
 
 	@Override
+	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
+			throws QueryException {
+		return new OrderByCursor(in.create(ctx, buf, len));
+	}
+
+	@Override
 	public int tupleWidth(int initSize) {
 		return in.tupleWidth(initSize);
-	}
-	
-	public Reference check() {
-		return new Reference() {
-			public void setPos(int pos) {
-				check = pos;
-			}
-		};
 	}
 }

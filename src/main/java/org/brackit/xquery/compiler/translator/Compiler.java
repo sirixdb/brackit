@@ -82,7 +82,6 @@ import org.brackit.xquery.operator.GroupBy;
 import org.brackit.xquery.operator.LetBind;
 import org.brackit.xquery.operator.Operator;
 import org.brackit.xquery.operator.OrderBy;
-import org.brackit.xquery.operator.OrderBy.OrderModifier;
 import org.brackit.xquery.operator.Select;
 import org.brackit.xquery.operator.Start;
 import org.brackit.xquery.update.Delete;
@@ -94,6 +93,7 @@ import org.brackit.xquery.update.ReplaceValue;
 import org.brackit.xquery.update.Transform;
 import org.brackit.xquery.util.Cmp;
 import org.brackit.xquery.util.Whitespace;
+import org.brackit.xquery.util.sort.Ordering.OrderModifier;
 import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Function;
@@ -650,13 +650,14 @@ public class Compiler implements Translator {
 			throws QueryException {
 		AST child = node.getChild(pos++);
 
-		if (child.getType() == XQ.TypedVariableBinding) {
-			QNm runVarName = (QNm) child.getChild(0).getValue();
+		if (child.getType() == XQ.QuantifiedBinding) {
+			AST varBinding = child.getChild(0);
+			QNm runVarName = (QNm) varBinding.getChild(0).getValue();
 			SequenceType type = SequenceType.ITEM_SEQUENCE;
-			if (child.getChildCount() == 2) {
-				type = sequenceType(child.getChild(1));
+			if (varBinding.getChildCount() == 2) {
+				type = sequenceType(varBinding.getChild(1));
 			}
-			Expr sourceExpr = expr(node.getChild(pos++), true);
+			Expr sourceExpr = expr(child.getChild(1), true);
 			ForBind forBind = new ForBind(in, sourceExpr, false);
 
 			Binding runVarBinding = table.bind(runVarName, type);

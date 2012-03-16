@@ -25,12 +25,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.optimizer.walker;
+package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
 import static org.brackit.xquery.compiler.XQ.AndExpr;
 import static org.brackit.xquery.compiler.XQ.Selection;
 
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.optimizer.walker.Walker;
 
 /**
  * Merges sequences of select predicates into a single conjunctions.
@@ -38,25 +39,22 @@ import org.brackit.xquery.compiler.AST;
  * @author Sebastian Baechle
  * 
  */
-public class PredicateConjunction extends Walker {
+public class PredicateMerge extends Walker {
 
 	@Override
 	protected AST visit(AST select) {
 		if (select.getType() != Selection) {
 			return select;
 		}		
-		AST input = select.getChild(0);
-		if (input.getType() != Selection) {
-			return select;
-		}
-		while (input.getType() == Selection) {
-			AST predicate = select.getChild(1);
+		AST out = select.getChild(1);
+		while (out.getType() == Selection) {
+			AST predicate = select.getChild(0);
 			AST tmp = new AST(AndExpr);			
-			tmp.addChild(input.getChild(1));
+			tmp.addChild(out.getChild(0));
 			tmp.addChild(predicate);
-			input = input.getChild(0);
-			select.replaceChild(1, tmp);
-			select.replaceChild(0, input);
+			out = out.getChild(1);
+			select.replaceChild(0, tmp);
+			select.replaceChild(1, out);
 		}
 
 		return select;

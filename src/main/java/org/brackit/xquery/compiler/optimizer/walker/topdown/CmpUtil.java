@@ -25,60 +25,70 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.optimizer.walker;
+package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
-import org.brackit.xquery.atomic.QNm;
+import static org.brackit.xquery.compiler.XQ.GeneralCompEQ;
+import static org.brackit.xquery.compiler.XQ.GeneralCompGE;
+import static org.brackit.xquery.compiler.XQ.GeneralCompGT;
+import static org.brackit.xquery.compiler.XQ.GeneralCompLE;
+import static org.brackit.xquery.compiler.XQ.GeneralCompLT;
+import static org.brackit.xquery.compiler.XQ.GeneralCompNE;
+import static org.brackit.xquery.compiler.XQ.ValueCompEQ;
+import static org.brackit.xquery.compiler.XQ.ValueCompGE;
+import static org.brackit.xquery.compiler.XQ.ValueCompGT;
+import static org.brackit.xquery.compiler.XQ.ValueCompLE;
+import static org.brackit.xquery.compiler.XQ.ValueCompLT;
+import static org.brackit.xquery.compiler.XQ.ValueCompNE;
+
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.util.Cmp;
 
 /**
- * Inspects for the (common?) pattern of a left join
- * that is input of a let bind -> group by combination
- * that was introduced to lift a let bind pipeline.
- * In this case, the join may emit the match group directly as a sequence
- * and bind the grouped let bind variable directly.
- * 
  * @author Sebastian Baechle
  * 
  */
-public class LeftJoinGroupEmission extends Walker {
-	@Override
-	protected AST visit(AST node) {
-		if (node.getType() != XQ.Join) {
-			return node;
+public class CmpUtil {
+	public static Cmp cmp(AST cmpNode) {
+		switch (cmpNode.getType()) {
+		case ValueCompEQ:
+			return Cmp.eq;
+		case ValueCompGE:
+			return Cmp.ge;
+		case ValueCompLE:
+			return Cmp.le;
+		case ValueCompLT:
+			return Cmp.lt;
+		case ValueCompGT:
+			return Cmp.gt;
+		case ValueCompNE:
+			return Cmp.ne;
+		case GeneralCompEQ:
+			return Cmp.eq;
+		case GeneralCompGE:
+			return Cmp.ge;
+		case GeneralCompLE:
+			return Cmp.le;
+		case GeneralCompLT:
+			return Cmp.lt;
+		case GeneralCompGT:
+			return Cmp.gt;
+		case GeneralCompNE:
+			return Cmp.ne;
+		default:
+			throw new IllegalArgumentException();
 		}
+	}
 
-		if (!node.checkProperty("leftJoin")) {
-			return node;
+	public static boolean isGCmp(AST cmp) {
+		switch (cmp.getType()) {
+		case GeneralCompEQ:
+		case GeneralCompGE:
+		case GeneralCompGT:
+		case GeneralCompLE:
+		case GeneralCompLT:
+			return true;
+		default:
+			return false;
 		}
-		
-		AST letBind = node.getParent();
-		if ((letBind.getType() != XQ.LetBind)) {
-			return node;
-		}
-		AST groupBy = letBind.getParent();
-		if ((groupBy.getType() != XQ.GroupBy) 
-			|| (!groupBy.checkProperty("onlyLast"))) {
-			return node;
-		}
-		
-		// join and bind/group combo must not be
-		// part of the same check level, i.e., be 
-		// part of different liftings
-		QNm joinCheck = (QNm) node.getProperty("check");
-		QNm letCheck = (QNm) letBind.getProperty("check");
-		if ((joinCheck != null) && (joinCheck.equals(letCheck))) {
-			return node;
-		}
-		
-		AST groupinJoin = node.copyTree();
-		AST letCopy = letBind.copy();
-		letCopy.addChild(new AST(XQ.Start));
-		letCopy.addChild(letBind.getChild(1));
-		letCopy.addChild(letBind.getChild(2));
-		groupinJoin.addChild(letCopy);
-		AST parent = groupBy.getParent();
-		parent.replaceChild(groupBy.getChildIndex(), groupinJoin);
-		return groupinJoin;
 	}
 }

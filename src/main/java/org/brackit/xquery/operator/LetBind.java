@@ -30,7 +30,6 @@ package org.brackit.xquery.operator;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.compiler.translator.Reference;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Sequence;
 
@@ -39,10 +38,9 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  * 
  */
-public class LetBind implements Operator {
+public class LetBind extends Check implements Operator {
 	private final Operator in;
 	final Expr source;
-	int check = -1;
 	private boolean bind = true;
 
 	private class LetBindCursor implements Cursor {
@@ -64,7 +62,7 @@ public class LetBind implements Operator {
 			if (t == null) {
 				return null;
 			}
-			if ((check >= 0) && (t.get(check) == null)) {
+			if ((check) && (dead(t))) {
 				return t.concat((Sequence) null);
 			}
 
@@ -92,17 +90,16 @@ public class LetBind implements Operator {
 		return (bind) ? new LetBindCursor(in.create(ctx, tuple)) : in.create(
 				ctx, tuple);
 	}
-	
+
+	@Override
+	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
+			throws QueryException {
+		return (bind) ? new LetBindCursor(in.create(ctx, buf, len)) : in
+				.create(ctx, buf, len);
+	}
+
 	@Override
 	public int tupleWidth(int initSize) {
 		return in.tupleWidth(initSize) + (bind ? 1 : 0);
-	}
-	
-	public Reference check() {
-		return new Reference() {
-			public void setPos(int pos) {
-				check = pos;
-			}
-		};
 	}
 }

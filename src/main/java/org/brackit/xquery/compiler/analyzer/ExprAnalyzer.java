@@ -160,9 +160,10 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 		if (expr.getType() != XQ.TransformExpr) {
 			return false;
 		}
-		openScope();
+		int scopeCount = scopeCount();
 		int pos = 0;
 		while (pos < expr.getChildCount() - 2) {
+			openScope();
 			AST binding = expr.getChild(pos++);
 			QNm name = (QNm) binding.getChild(0).getValue();
 			// expand, bind and update AST
@@ -170,13 +171,15 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 			name = bind(name);
 			binding.getChild(0).setValue(name);
 			exprSingle(binding.getChild(1));
+			offerScope();
 		}
-		offerScope();
 		AST modify = expr.getChild(pos++);
 		exprSingle(modify);
 		AST ret = expr.getChild(pos);
 		exprSingle(ret);
-		closeScope();
+		for (int i = scopeCount(); i > scopeCount; i--) {
+			closeScope();
+		}
 		return true;
 	}
 
@@ -421,10 +424,10 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 		}
 		int scopeCount = scopeCount();
 		// child 0 is quantifier type
-		for (int i = 1; i < expr.getChildCount() - 1; i += 2) {
+		for (int i = 1; i < expr.getChildCount() - 1; i ++) {
 			openScope();
-			typedVarBinding(expr.getChild(i));
-			exprSingle(expr.getChild(i + 1));
+			typedVarBinding(expr.getChild(i).getChild(0));
+			exprSingle(expr.getChild(i).getChild(1));
 			offerScope();
 		}
 		exprSingle(expr.getChild(expr.getChildCount() - 1));

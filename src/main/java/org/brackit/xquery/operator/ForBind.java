@@ -33,7 +33,6 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
-import org.brackit.xquery.compiler.translator.Reference;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -44,13 +43,12 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  * 
  */
-public class ForBind implements Operator {
-	private final Operator in;
+public class ForBind extends Check implements Operator {
+	final Operator in;
 	final Expr bind;
 	final boolean allowingEmpty;
 	boolean bindVar = true;
 	boolean bindPos = false;
-	int check = -1;
 
 	private class ForBindCursor implements Cursor {
 		private final Cursor c;
@@ -85,7 +83,7 @@ public class ForBind implements Operator {
 				if ((t = c.next(ctx)) == null) {
 					return null;
 				}
-				if ((check >= 0) && (t.get(check) == null)) {
+				if ((check) && (dead(t))) {
 					Tuple tmp = passthrough(t);
 					t = null;
 					return tmp;
@@ -94,7 +92,7 @@ public class ForBind implements Operator {
 				pos = Int32.ZERO;
 				if (s == null) {
 					Tuple tmp = (allowingEmpty) ? emit(t, null)
-							: (check >= 0) ? passthroughUncheck(t, check) : null;
+							: (check) ? passthroughUncheck(t, local()) : null;
 					t = null;
 					return tmp;
 				} else if (s instanceof Item) {
@@ -111,8 +109,8 @@ public class ForBind implements Operator {
 						Tuple tmp = emit(i, null);
 						t = null;
 						return tmp;
-					} else if (check >= 0) {
-						Tuple tmp = passthroughUncheck(t, check);
+					} else if (check) {
+						Tuple tmp = passthroughUncheck(t, local());
 						t = null;
 						return tmp;
 					}
@@ -148,8 +146,9 @@ public class ForBind implements Operator {
 				return t;
 			}
 		}
-		
-		private Tuple passthroughUncheck(Tuple t, int check) throws QueryException {
+
+		private Tuple passthroughUncheck(Tuple t, int check)
+				throws QueryException {
 			if (bindVar) {
 				if (bindPos) {
 					return t.conreplace(new Sequence[2], check, null);
@@ -186,6 +185,12 @@ public class ForBind implements Operator {
 	}
 
 	@Override
+	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
+			throws QueryException {
+		return new ForBindCursor(in.create(ctx, buf, len));
+	}
+
+	@Override
 	public int tupleWidth(int initSize) {
 		return in.tupleWidth(initSize) + (bindVar ? 1 : 0) + (bindPos ? 1 : 0);
 	}
@@ -196,13 +201,5 @@ public class ForBind implements Operator {
 
 	public void bindPosition(boolean bindPos) {
 		this.bindPos = bindPos;
-	}
-
-	public Reference check() {
-		return new Reference() {
-			public void setPos(int pos) {
-				check = pos;
-			}
-		};
 	}
 }

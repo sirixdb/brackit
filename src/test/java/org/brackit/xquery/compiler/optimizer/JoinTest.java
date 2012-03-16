@@ -34,6 +34,7 @@ import org.brackit.xquery.XQuery;
 import org.brackit.xquery.XQueryBaseTest;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.sequence.ItemSequence;
+import org.brackit.xquery.util.serialize.StringSerializer;
 import org.brackit.xquery.xdm.Sequence;
 import org.junit.Before;
 import org.junit.Test;
@@ -88,6 +89,7 @@ public class JoinTest extends XQueryBaseTest {
 				"          where $a = $b " +
 				"          return $a " +
 				"return $c").execute(ctx);
+		new StringSerializer(System.out).serialize(res);
 		ResultChecker.dCheck(intSequence(2,3), res);
 	}
 	
@@ -116,6 +118,38 @@ public class JoinTest extends XQueryBaseTest {
 				"			return $c " +
 				"return $x").execute(ctx);
 		ResultChecker.dCheck(intSequence(1,1), res);
+	}
+	
+	@Test
+	public void simpleForFor() throws Exception {
+		String query = readQuery("/join/", "simpleForFor.xq");
+		XQuery xq = new XQuery(query);
+		Sequence res = xq.execute(createContext());
+		ResultChecker.dCheck(intSequence(2, 3, 5), res);
+	}
+
+	@Test
+	public void forNestedFor() throws Exception {
+		String query = readQuery("/join/", "forNestedFor.xq");
+		XQuery xq = new XQuery(query);
+		Sequence res = xq.execute(createContext());
+		ResultChecker.dCheck(intSequence(2, 3, 5), res);
+	}
+
+	@Test
+	public void forNestedFor2JoinPredicates() throws Exception {
+		String query = readQuery("/join/", "forNestedFor2JoinPredicates.xq");
+		XQuery xq = new XQuery(query);
+		Sequence res = xq.execute(createContext());
+		ResultChecker.dCheck(intSequence(3, 4, 6), res);
+	}
+
+	@Test
+	public void forNestedForWithOutsideRef() throws Exception {
+		String query = readQuery("/join/", "forNestedForWithOutsideRef.xq");
+		XQuery xq = new XQuery(query);
+		Sequence res = xq.execute(createContext());
+		ResultChecker.dCheck(intSequence(3, 3, 4, 4, 6, 6), res);
 	}
 	
 	private Sequence intSequence(int... v) {

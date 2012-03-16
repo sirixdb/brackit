@@ -25,78 +25,54 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.optimizer.walker;
+package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
+import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.compiler.optimizer.walker.Walker;
 
 /**
- * 
  * @author Sebastian Baechle
  * 
  */
-public class UnnestRewriter extends Walker {
+public class LeftJoinRemoval extends Walker {
+
 	@Override
-	protected AST visit(AST node) {
-		if (node.getType() != XQ.FlowrExpr) {
-			return node;
+	protected AST visit(AST join) {
+		if ((join.getType() != XQ.Join) || (!join.checkProperty("leftJoin"))) {
+			return join;
 		}
 
-		AST in = new AST(XQ.Start);
-		AST[] unnested = unnestFlowr(in, node);
-		AST pipeExpr = new AST(XQ.PipeExpr);
-		pipeExpr.addChild(unnested[0]);
-		pipeExpr.addChild(unnested[1]);
-		node.getParent().replaceChild(node.getChildIndex(), pipeExpr);
+		AST leftIn = join.getChild(0).getChild(0);
+		AST rightIn = join.getChild(1).getChild(0);
+		if ((leftIn.getType() != XQ.Join)
+				|| (!leftIn.checkProperty("leftJoin"))
+				|| (!constTrueJoinKey(findEnd(leftIn).getChild(0)))
+				|| (!constTrueJoinKey(findEnd(rightIn).getChild(0)))
+				|| (join.getChild(2).getChild(0).getType() != XQ.End)) {
+			return join;
+		}
 
-		return pipeExpr;
+		AST liftedJoin = leftIn.copy();
+		liftedJoin.addChild(leftIn.getChild(0).copyTree());
+		liftedJoin.addChild(leftIn.getChild(1).copyTree());
+		liftedJoin.addChild(leftIn.getChild(2).copyTree());
+		liftedJoin.addChild(join.getChild(3).copyTree());
+		AST parent = join.getParent();
+		parent.replaceChild(join.getChildIndex(), liftedJoin);
+		return parent;
 	}
 
-	private AST[] unnestFlowr(AST in, AST node) {
-		int childCount = node.getChildCount();
-		for (int pos = 0; pos < childCount - 1; pos++) {
-			AST clause = node.getChild(pos);
-
-			switch (clause.getType()) {
-			case XQ.ForClause:
-				in = unnestClause(in, clause, XQ.ForBind);
-				break;
-			case XQ.LetClause:
-				in = unnestClause(in, clause, XQ.LetBind);
-				break;
-			case XQ.WhereClause:
-				in = unnestClause(in, clause, XQ.Selection);
-				break;
-			case XQ.OrderByClause:
-				in = unnestClause(in, clause, XQ.OrderBy);
-				break;
-			case XQ.CountClause:
-				in = unnestClause(in, clause, XQ.Count);
-				break;
-			case XQ.GroupByClause:
-				in = unnestClause(in, clause, XQ.GroupBy);
-				break;
-			default:
-				throw new IllegalStateException();
-			}
+	private AST findEnd(AST node) {
+		AST tmp = node;
+		while (tmp.getType() != XQ.End) {
+			tmp = tmp.getLastChild();
 		}
-
-		AST returnExpr = node.getChild(childCount - 1).getChild(0);
-
-		if (returnExpr.getType() == XQ.FlowrExpr) {
-			return unnestFlowr(in, returnExpr);
-		} else {
-			return new AST[] { in, returnExpr.copyTree() };
-		}
+		return tmp;
 	}
 
-	private AST unnestClause(AST in, AST forClause, int unnestType) {
-		AST letBind = new AST(unnestType);
-		letBind.addChild(in);
-		for (int i = 0; i < forClause.getChildCount(); i++) {
-			letBind.addChild(forClause.getChild(i).copyTree());
-		}
-		in = letBind;
-		return in;
+	private boolean constTrueJoinKey(AST joinKey) {
+		return ((joinKey.getType() == XQ.Bool) && (((Bool) joinKey.getValue()).bool));
 	}
 }

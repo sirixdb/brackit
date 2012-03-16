@@ -27,12 +27,10 @@
  */
 package org.brackit.xquery.xdm;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
-import org.brackit.xquery.operator.TupleImpl;
+import org.brackit.xquery.sequence.AbstractSequence;
 import org.brackit.xquery.sequence.BaseIter;
 
 /**
@@ -41,7 +39,7 @@ import org.brackit.xquery.sequence.BaseIter;
  * @author Sebastian Baechle
  * 
  */
-public abstract class AbstractItem implements Item {
+public abstract class AbstractItem extends AbstractSequence implements Item {
 
 	public AbstractItem() {
 	}
@@ -73,96 +71,5 @@ public abstract class AbstractItem implements Item {
 			public final void close() {
 			}
 		};
-	}
-
-	@Override
-	public Sequence[] array() throws QueryException {
-		return new Sequence[] { this };
-	}
-
-	@Override
-	public Sequence get(int position) throws QueryException {
-		if (position != 0) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
-					position);
-		}
-		return this;
-	}
-
-	@Override
-	public Tuple project(int... positions) throws QueryException {
-		Sequence[] projected = new Sequence[positions.length];
-		int targetPos = 0;
-		for (int pos : positions) {
-			projected[targetPos++] = get(pos);
-		}
-		return new TupleImpl(projected);
-	}
-
-	@Override
-	public Tuple project(int start, int end) throws QueryException {
-		if (start != 0) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
-					start);
-		}
-		if (end != 0) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
-					end);
-		}
-		return this;
-	}
-
-	@Override
-	public Tuple replace(int position, Sequence s) throws QueryException {
-		if (position != 0) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
-					position);
-		}
-		return new TupleImpl(s);
-	}
-
-	@Override
-	public Tuple concat(Sequence s) throws QueryException {
-		return new TupleImpl(new Sequence[] { this, s });
-	}
-
-	@Override
-	public Tuple concat(Sequence[] s) throws QueryException {
-		Sequence[] tmp = new Sequence[s.length + 1];
-		tmp[0] = this;
-		System.arraycopy(s, 0, tmp, 1, s.length);
-		return new TupleImpl(tmp);
-	}
-	
-	@Override
-	public Tuple conreplace(Sequence con, int position, Sequence s)
-			throws QueryException {
-		if ((position < 0) || (position >= 2)) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
-					position);
-		}
-		Sequence[] tmp = new Sequence[] { this, con };
-		tmp[position] = s;
-		return new TupleImpl(tmp);
-	}
-	
-	@Override
-	public Tuple conreplace(Sequence[] con, int position, Sequence s)
-			throws QueryException {
-		int nLen = con.length + 1;
-		if ((position < 0) || (position >= nLen)) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
-					position);
-		}
-		Sequence[] tmp = new Sequence[nLen];
-		tmp[0] = this;		
-		System.arraycopy(con, 0, tmp, 1, con.length);
-		tmp[position] = s;
-		return new TupleImpl(tmp);
-	}
-
-	@Override
-	public int getSize() {
-		return 1;
 	}
 }

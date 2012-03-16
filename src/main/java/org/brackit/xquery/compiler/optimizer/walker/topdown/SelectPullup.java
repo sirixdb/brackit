@@ -25,78 +25,85 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.optimizer.walker;
+package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
 import static org.brackit.xquery.compiler.XQ.Count;
-import static org.brackit.xquery.compiler.XQ.ForBind;
 import static org.brackit.xquery.compiler.XQ.GroupBy;
-import static org.brackit.xquery.compiler.XQ.LetBind;
-import static org.brackit.xquery.compiler.XQ.PipeExpr;
+import static org.brackit.xquery.compiler.XQ.Selection;
+import static org.brackit.xquery.compiler.XQ.Start;
 
 import java.util.HashSet;
 
 import org.brackit.xquery.compiler.AST;
 
 /**
- * Push variable bindings upstream in a pipeline to reduce
- * size (tuple width) and number of tuples in a pipeline.
+ * Move select's upstream in a pipeline to reduce number of tuples in a
+ * pipeline.
  * 
  * @author Sebastian Baechle
  * 
  */
-public class BindingPushup extends PipelineVarTracker {
+public class SelectPullup extends ScopeWalker {
 
-	private HashSet<AST> pushed = new HashSet<AST>();
-	
-	@Override
-	protected AST prepare(AST root) {
-		collectVars(root);
-		return root;
-	}
-	
+	// used to avoid repeated pull of several selects
+	// NOTE: This relies on the fact the we do not
+	// copy nodes while reorganizing the AST
+	private HashSet<AST> moved = new HashSet<AST>();
+
 	@Override
 	protected AST visit(AST node) {
-		// TODO window clause
-		if ((node.getType() != ForBind) && (node.getType() != LetBind)) {
+		if (node.getType() != Selection) {
 			return node;
 		}
-		if (pushed.contains(node)) {
+		if (moved.contains(node)) {
 			return node;
 		}
-		final AST parent = node.getParent();
-		final AST in = parent;
-		AST tmp = in;
-		while (tmp.getType() != PipeExpr) {
+		
+		// get the dependencies of the predicate
+		AST parent;
+		VarRef refs = findVarRefs(node.getChild(0));
+		AST stopAt = null;
+		if (refs != null) {
+			// find reference to closest ancestor scope
+			Scope[] scopes = sortScopes(refs);
+			Scope local = findScope(node);
+			for (int i = scopes.length - 1; i >= 0; i--) {
+				Scope scope = scopes[i];
+				if (scope.compareTo(local) < 0) {
+					stopAt = scope.node;
+					break;
+				}
+			}
+		}
+		
+		// find the top-most scope in the pipeline
+		// to which we can lift the selection
+		AST tmp = node;			
+		while ((parent = tmp.getParent()).getType() != Start) {
 			if (tmp.getType() == GroupBy) {
+				// TODO OK if all references are grouping keys
 				break;
-			} else if ((tmp.getType() == Count) && (!pushableAfterCount(node, tmp))) {
+			} else if (tmp.getType() == Count) {
 				break;
-			} else if ((tmp.getType() == ForBind) && (tmp.getType() == ForBind)) {
-				// TODO switching ForBinds is legal if order does not matter
-				// e.g., because of a following order by or because 
-				// the static context is unordered
-				break;
-			} else if (dependsOn(tmp, node)){
+			} else if (parent == stopAt) {
 				break;
 			}
-			tmp = tmp.getParent();
+			tmp = parent;
 		}
-		if (tmp == in) {
+		if (parent == node.getParent()) {
 			return node;
 		}
-		push(node, tmp);
+		
+		// swap the position in the pipeline:
+		// 1. remove it from current position 
+		// 3. place it on top the current downstream pipeline
+		// 2. append the downstream pipeline
+		node.getParent().replaceChild(node.getChildIndex(), node.getLastChild());
+		parent.replaceChild(tmp.getChildIndex(), node);
+		node.replaceChild(1, tmp);				
+		
+		moved.add(node);
+		refreshScopes(parent, true);
 		return parent;
-	}
-
-	protected void push(AST node, AST newParent) {
-		AST parent = node.getParent();
-		parent.replaceChild(0, node.getChild(0));
-		node.replaceChild(0, newParent.getChild(0));
-		newParent.replaceChild(0, node);
-		pushed.add(node);
-	}
-
-	protected boolean pushableAfterCount(AST binding, AST count) {
-		return (binding.getType() == LetBind);
 	}
 }

@@ -45,7 +45,7 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  * 
  */
-public class TableJoin implements Operator {
+public class TableJoin extends Check implements Operator {
 	private class TableJoinCursor implements Cursor {
 		final Cursor lc;
 		final Sequence[] padding;
@@ -85,8 +85,9 @@ public class TableJoin implements Operator {
 
 			while (((tuple = next) != null) || ((tuple = lc.next(ctx)) != null)) {
 				next = null;
-				if ((check >= 0) && (tuple.get(check) == null)) {
-					return tuple.concat(padding);
+				if ((check) && (dead(tuple))) {
+					prev = tuple.concat(padding);
+					return prev;
 				}
 				if (groupVar >= 0) {
 					Atomic gk = (Atomic) tuple.get(groupVar);
@@ -109,24 +110,23 @@ public class TableJoin implements Operator {
 					prev = tuple.concat(matches.get(itPos++));
 					return prev;
 				} else if (leftJoin) {
-					if (check >= 0) {
+					if (check) {
 						// predicate is not fulfilled but we must keep
-						// lifted iteration group alive for "left-join" semantics.
-						Atomic gk = (Atomic) tuple.get(check);
-						// skip if previously returned tuple was in same iteration group
-						Atomic pgk = (prev != null) ? (Atomic) prev.get(check) : null;
-						if ((pgk != null) && (gk.cmp(pgk) == 0)) {
+						// lifted iteration group alive for "left-join"
+						// semantics:
+						// skip if previously returned tuple was in same
+						// iteration group
+						if ((prev != null) && (!separate(prev, tuple))) {
 							continue;
 						}
 						next = lc.next(ctx);
 						// skip if next tuple is in same iteration group
-						Atomic ngk = (next != null) ? (Atomic) next.get(check) : null;
-						if ((ngk != null) && (gk.cmp(ngk) == 0)) {
+						if ((next != null) && (!separate(tuple, next))) {
 							continue;
 						}
 						// emit "dead" tuple where "check" field is switched-off
 						// for pass-through in upstream operators
-						prev = tuple.conreplace(padding, check, null);
+						prev = tuple.conreplace(padding, local(), null);
 					} else {
 						prev = tuple.concat(padding);
 					}
@@ -172,7 +172,6 @@ public class TableJoin implements Operator {
 	final Cmp cmp;
 	final boolean isGCmp;
 	final boolean skipSort;
-	int check = -1;
 	int groupVar = -1;
 
 	public TableJoin(Cmp cmp, boolean isGCmsp, boolean leftJoin,
@@ -195,16 +194,16 @@ public class TableJoin implements Operator {
 	}
 
 	@Override
-	public int tupleWidth(int initSize) {
-		return l.tupleWidth(initSize) + r.tupleWidth(initSize) - initSize;
+	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
+			throws QueryException {
+		int lSize = l.tupleWidth(buf[0].getSize());
+		int pad = r.tupleWidth(buf[0].getSize()) - buf[0].getSize();
+		return new TableJoinCursor(l.create(ctx, buf, len), lSize, pad);
 	}
 
-	public Reference check() {
-		return new Reference() {
-			public void setPos(int pos) {
-				check = pos;
-			}
-		};
+	@Override
+	public int tupleWidth(int initSize) {
+		return l.tupleWidth(initSize) + r.tupleWidth(initSize) - initSize;
 	}
 
 	public Reference group() {

@@ -34,8 +34,10 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.analyzer.Analyzer;
 import org.brackit.xquery.compiler.optimizer.DefaultOptimizer;
 import org.brackit.xquery.compiler.optimizer.Optimizer;
+import org.brackit.xquery.compiler.optimizer.TopDownOptimizer;
 import org.brackit.xquery.compiler.parser.XQParser;
 import org.brackit.xquery.compiler.translator.PipelineCompiler;
+import org.brackit.xquery.compiler.translator.TopDownTranslator;
 import org.brackit.xquery.compiler.translator.Translator;
 import org.brackit.xquery.function.bit.Create;
 import org.brackit.xquery.function.bit.Drop;
@@ -130,11 +132,11 @@ public class CompileChain {
 	}
 
 	protected Optimizer getOptimizer() {
-		return new DefaultOptimizer();
+		return new TopDownOptimizer();
 	}
 
 	protected Translator getTranslator() {
-		return new PipelineCompiler();
+		return new TopDownTranslator();
 	}
 
 	protected ModuleResolver getModuleResolver() {

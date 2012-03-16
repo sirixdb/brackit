@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.compiler.translator;
 
+import java.util.List;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -34,10 +36,12 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.expr.PipeExpr;
+import org.brackit.xquery.operator.Check;
 import org.brackit.xquery.operator.Count;
 import org.brackit.xquery.operator.ForBind;
 import org.brackit.xquery.operator.GroupBy;
 import org.brackit.xquery.operator.LetBind;
+import org.brackit.xquery.operator.NLJoin;
 import org.brackit.xquery.operator.Operator;
 import org.brackit.xquery.operator.OrderBy;
 import org.brackit.xquery.operator.Print;
@@ -60,9 +64,9 @@ import org.brackit.xquery.xdm.type.SequenceType;
  * @author Sebastian Baechle
  * 
  */
-public class PipelineCompiler extends Compiler {
+public class TopDownTranslator extends Compiler {
 
-	public PipelineCompiler() {
+	public TopDownTranslator() {
 		super();
 	}
 
@@ -77,8 +81,15 @@ public class PipelineCompiler extends Compiler {
 
 	protected Expr pipeExpr(AST node) throws QueryException {
 		int initialBindSize = table.bound().length;
-		Operator root = anyOp(node.getChild(0));
-		Expr expr = anyExpr(node.getChild(1));
+		Operator root = anyOp(null, node.getChild(0));
+
+		// for simpler scoping, the return expression is
+		// at the right-most leaf
+		AST returnExpr = node.getChild(0);
+		while (returnExpr.getType() != XQ.End) {
+			returnExpr = returnExpr.getLastChild();
+		}
+		Expr expr = anyExpr(returnExpr.getChild(0));
 
 		// clear operator bindings
 		int unbind = table.bound().length - initialBindSize;
@@ -89,29 +100,35 @@ public class PipelineCompiler extends Compiler {
 		return new PipeExpr(root, expr);
 	}
 
-	protected Operator anyOp(AST node) throws QueryException {
-		return _anyOp(node);
+	protected Operator anyOp(Operator in, AST node) throws QueryException {
+		return _anyOp(in, node);
 		// return new Print(_anyOp(in, node));
 	}
 
-	protected Operator _anyOp(AST node) throws QueryException {
+	protected Operator _anyOp(Operator in, AST node) throws QueryException {
 		switch (node.getType()) {
 		case XQ.Start:
-			return new Start();
+			if (node.getChildCount() == 0) {
+				return new Start();
+			} else {
+				return anyOp(new Start(), node.getLastChild());
+			}
+		case XQ.End:
+			return in;
 		case XQ.ForBind:
-			return forBind(node);
+			return forBind(in, node);
 		case XQ.LetBind:
-			return letBind(node);
+			return letBind(in, node);
 		case XQ.Selection:
-			return select(node);
+			return select(in, node);
 		case XQ.OrderBy:
-			return orderBy(node);
-		case XQ.Join:
-			return join(node);
+			return orderBy(in, node);
 		case XQ.GroupBy:
-			return groupBy(node);
+			return groupBy(in, node);
 		case XQ.Count:
-			return count(node);
+			return count(in, node);
+		case XQ.Join:
+			return join(in, node);
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
 					"Unexpected AST operator node '%s' of type: %s", node,
@@ -119,47 +136,41 @@ public class PipelineCompiler extends Compiler {
 		}
 	}
 
-	protected Operator groupBy(AST node) throws QueryException {
-		Operator in = anyOp(node.getChild(0));
-		int groupSpecCount = node.getChildCount() - 1;
+	@SuppressWarnings("unchecked")
+	protected Operator groupBy(Operator in, AST node) throws QueryException {
+		int groupSpecCount = Math.max(node.getChildCount() - 1, 0);
 		boolean onlyLast = node.checkProperty("onlyLast");
+		QNm[] grpVars = new QNm[groupSpecCount];
 		GroupBy groupBy = new GroupBy(in, groupSpecCount, onlyLast);
 		for (int i = 0; i < groupSpecCount; i++) {
-			QNm grpVarName = (QNm) node.getChild(1 + i).getChild(0).getValue();
-			table.resolve(grpVarName, groupBy.group(i));
+			grpVars[i] = (QNm) node.getChild(i).getChild(0).getValue();
+			table.resolve(grpVars[i], groupBy.group(i));
 		}
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop, groupBy.check());
-		}
-		return groupBy;
+		addChecks(groupBy, (List<QNm>) node.getProperty("check"));
+		return anyOp(groupBy, node.getLastChild());
 	}
 
-	protected Operator join(AST node) throws QueryException {
-		// compile left (outer) join branch
-		int pos = 0;
-		Operator leftIn = anyOp(node.getChild(pos++));
-
+	@SuppressWarnings("unchecked")
+	protected Operator join(Operator in, AST node) throws QueryException {
 		// get join type
-		AST comparison = node.getChild(pos++);
-		Cmp cmp = cmp(comparison.getChild(0));
+		Cmp cmp = (Cmp) node.getProperty("cmp");
+		boolean isGcmp = node.checkProperty("GCmp");
 
-		boolean isGcmp = false;
-		switch (comparison.getChild(0).getType()) {
-		case XQ.GeneralCompEQ:
-		case XQ.GeneralCompGE:
-		case XQ.GeneralCompLE:
-		case XQ.GeneralCompLT:
-		case XQ.GeneralCompGT:
-		case XQ.GeneralCompNE:
-			isGcmp = true;
+		// compile left (outer) join branch (skip initial start)
+		Operator leftIn = anyOp(in, node.getChild(0).getChild(0));
+		AST tmp = node.getChild(0);
+		while (tmp.getType() != XQ.End) {
+			tmp = tmp.getLastChild();
 		}
-
-		Expr leftExpr = anyExpr(comparison.getChild(1));
+		Expr leftExpr = anyExpr(tmp.getChild(0));
 
 		// compile right (inner) join branch
-		Operator rightIn = anyOp(node.getChild(pos++));
-		Expr rightExpr = anyExpr(comparison.getChild(2));
+		Operator rightIn = anyOp(new Start(), node.getChild(1));
+		tmp = node.getChild(1);
+		while (tmp.getType() != XQ.End) {
+			tmp = tmp.getLastChild();
+		}
+		Expr rightExpr = anyExpr(tmp.getChild(0));
 
 		boolean leftJoin = node.checkProperty("leftJoin");
 		boolean skipSort = node.checkProperty("skipSort");
@@ -170,64 +181,66 @@ public class PipelineCompiler extends Compiler {
 		if (prop != null) {
 			table.resolve(prop, join.group());
 		}
-		prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop, join.check());
+		addChecks(join, (List<QNm>) node.getProperty("check"));
+
+		Operator op = join;
+		AST post = node.getChild(2).getChild(0);
+		if ((post.getType() != XQ.End)) {
+			op = anyOp(join, post);
 		}
 
-		return join;
+		return anyOp(op, node.getChild(3).getChild(0));
 	}
 
-	private Cmp cmp(AST cmpNode) throws QueryException {
-		switch (cmpNode.getType()) {
-		case XQ.ValueCompEQ:
-			return Cmp.eq;
-		case XQ.ValueCompGE:
-			return Cmp.ge;
-		case XQ.ValueCompLE:
-			return Cmp.le;
-		case XQ.ValueCompLT:
-			return Cmp.lt;
-		case XQ.ValueCompGT:
-			return Cmp.gt;
-		case XQ.ValueCompNE:
-			return Cmp.ne;
-		case XQ.GeneralCompEQ:
-			return Cmp.eq;
-		case XQ.GeneralCompGE:
-			return Cmp.ge;
-		case XQ.GeneralCompLE:
-			return Cmp.le;
-		case XQ.GeneralCompLT:
-			return Cmp.lt;
-		case XQ.GeneralCompGT:
-			return Cmp.gt;
-		case XQ.GeneralCompNE:
-			return Cmp.ne;
-		default:
-			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-					"Unexpected AST comparison node '%s' of type: %s", cmpNode,
-					cmpNode.getType());
+	protected Operator nljoin(Operator in, AST node) throws QueryException {
+		// compile left (outer) join branch (skip initial start)
+		Operator leftIn = anyOp(in, node.getChild(0).getChild(0));
+
+		// get join type
+		Cmp cmp = (Cmp) node.getProperty("cmp");
+		boolean isGcmp = node.checkProperty("GCmp");
+
+		AST tmp = node.getChild(0);
+		while (tmp.getType() != XQ.End) {
+			tmp = tmp.getLastChild();
 		}
+		Expr leftExpr = anyExpr(tmp.getChild(0));
+
+		// compile right (inner) join branch
+		Operator rightIn = anyOp(new Start(), node.getChild(1));
+		tmp = node.getChild(1);
+		while (tmp.getType() != XQ.End) {
+			tmp = tmp.getLastChild();
+		}
+		Expr rightExpr = anyExpr(tmp.getChild(0));
+
+		boolean leftJoin = node.checkProperty("leftJoin");
+		boolean skipSort = node.checkProperty("skipSort");
+		Operator join = new NLJoin(leftIn, rightIn, leftExpr, rightExpr, cmp,
+				isGcmp, leftJoin);
+
+		Operator op = join;
+		// if (node.getParent().getParent().getType() == XQ.Join) {
+		// return new Print(anyOp(op, node.getLastChild()), System.out);
+		// }
+		//
+		return anyOp(op, node.getLastChild().getLastChild());
 	}
 
-	protected Operator forBind(AST node) throws QueryException {
-		QNm posVarName = null;
-		Operator in = anyOp(node.getChild(0));
-
-		int forClausePos = 1; // child zero is the input
-		AST forClause = node;
-		AST runVarDecl = forClause.getChild(forClausePos++);
+	@SuppressWarnings("unchecked")
+	protected Operator forBind(Operator in, AST node) throws QueryException {
+		int pos = 0;
+		AST runVarDecl = node.getChild(pos++);
 		QNm runVarName = (QNm) runVarDecl.getChild(0).getValue();
 		SequenceType runVarType = SequenceType.ITEM_SEQUENCE;
 		if (runVarDecl.getChildCount() == 2) {
 			runVarType = sequenceType(runVarDecl.getChild(1));
 		}
-		AST posBindingOrSourceExpr = forClause.getChild(forClausePos++);
-
+		AST posBindingOrSourceExpr = node.getChild(pos++);
+		QNm posVarName = null;
 		if (posBindingOrSourceExpr.getType() == XQ.TypedVariableBinding) {
 			posVarName = (QNm) posBindingOrSourceExpr.getChild(0).getValue();
-			posBindingOrSourceExpr = forClause.getChild(forClausePos);
+			posBindingOrSourceExpr = node.getChild(pos++);
 		}
 		Expr sourceExpr = expr(posBindingOrSourceExpr, true);
 
@@ -247,40 +260,34 @@ public class PipelineCompiler extends Compiler {
 		if (posBinding != null) {
 			forBind.bindPosition(posBinding.isReferenced());
 		}
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop, forBind.check());
-		}
-		return forBind;
+		addChecks(forBind, (List<QNm>) node.getProperty("check"));
+		return anyOp(forBind, node.getLastChild());
 	}
 
-	protected Operator letBind(AST node) throws QueryException {
-		Operator in = anyOp(node.getChild(0));
-		int letClausePos = 1; // child zero is the input
-		AST letClause = node;
-		AST letVarDecl = letClause.getChild(letClausePos++);
+	@SuppressWarnings("unchecked")
+	protected Operator letBind(Operator in, AST node) throws QueryException {
+		int pos = 0;
+		AST letVarDecl = node.getChild(pos++);
 		QNm letVarName = (QNm) letVarDecl.getChild(0).getValue();
 		SequenceType letVarType = SequenceType.ITEM_SEQUENCE;
 		if (letVarDecl.getChildCount() == 2) {
 			letVarType = sequenceType(letVarDecl.getChild(1));
 		}
-		Expr sourceExpr = expr(letClause.getChild(letClausePos++), true);
+		Expr sourceExpr = expr(node.getChild(pos++), true);
 		Binding binding = table.bind(letVarName, letVarType);
 
 		// Fake binding of let variable because set-oriented processing requires
 		// the variable anyway
 		table.resolve(letVarName);
 		LetBind letBind = new LetBind(in, sourceExpr);
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop, letBind.check());
-		}
-		return letBind;
+		addChecks(letBind, (List<QNm>) node.getProperty("check"));
+		return anyOp(letBind, node.getLastChild());
 	}
 
-	protected Operator count(AST node) throws QueryException {
-		Operator in = anyOp(node.getChild(0));
-		AST posVarDecl = node.getChild(1);
+	@SuppressWarnings("unchecked")
+	protected Operator count(Operator in, AST node) throws QueryException {
+		int pos = 0;
+		AST posVarDecl = node.getChild(pos++);
 		QNm posVarName = (QNm) posVarDecl.getChild(0).getValue();
 		SequenceType posVarType = SequenceType.ITEM_SEQUENCE;
 		if (posVarDecl.getChildCount() == 2) {
@@ -292,41 +299,40 @@ public class PipelineCompiler extends Compiler {
 		// the variable anyway
 		table.resolve(posVarName);
 		Count count = new Count(in);
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop, count.check());
-		}
-		return count;
+		addChecks(count, (List<QNm>) node.getProperty("check"));
+		return anyOp(count, node.getLastChild());
 	}
 
-	protected Operator select(AST node) throws QueryException {
-		Operator in = anyOp(node.getChild(0));
-		Expr expr = anyExpr(node.getChild(1));
+	@SuppressWarnings("unchecked")
+	protected Operator select(Operator in, AST node) throws QueryException {
+		int pos = 0;
+		Expr expr = anyExpr(node.getChild(pos++));
 		Select select = new Select(in, expr);
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop, select.check());
-		}
-		return select;
+		addChecks(select, (List<QNm>) node.getProperty("check"));
+		return anyOp(select, node.getLastChild());
 	}
 
-	protected Operator orderBy(AST node) throws QueryException {
-		Operator in = anyOp(node.getChild(0));
-
+	@SuppressWarnings("unchecked")
+	protected Operator orderBy(Operator in, AST node) throws QueryException {
 		int orderBySpecCount = node.getChildCount() - 1;
 		Expr[] orderByExprs = new Expr[orderBySpecCount];
 		OrderModifier[] orderBySpec = new OrderModifier[orderBySpecCount];
 		for (int i = 0; i < orderBySpecCount; i++) {
-			AST orderBy = node.getChild(i + 1);
+			AST orderBy = node.getChild(i);
 			orderByExprs[i] = expr(orderBy.getChild(0), true);
 			orderBySpec[i] = orderModifier(orderBy);
 		}
 		OrderBy orderBy = new OrderBy(in, orderByExprs, orderBySpec);
-		QNm prop = (QNm) node.getProperty("check");
-		if (prop != null) {
-			table.resolve(prop, orderBy.check());
+		addChecks(orderBy, (List<QNm>) node.getProperty("check"));
+		return anyOp(orderBy, node.getLastChild());
+	}
+
+	protected void addChecks(Check op, List<QNm> check) throws QueryException {
+		if (check != null) {
+			for (QNm checkVar : check) {
+				table.resolve(checkVar, op.check());
+			}
 		}
-		return orderBy;
 	}
 
 	protected Operator wrapDebugOutput(Operator root) {

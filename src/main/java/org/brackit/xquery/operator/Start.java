@@ -39,14 +39,11 @@ import org.brackit.xquery.Tuple;
  */
 public class Start implements Operator {
 	public static class StartCursor implements Cursor {
-		private final Tuple start;
-
+		final Tuple start;
 		boolean open = false;
-
 		boolean deliver = false;
 
 		public StartCursor(Tuple start) {
-			super();
 			this.start = start;
 		}
 
@@ -77,10 +74,53 @@ public class Start implements Operator {
 		}
 	}
 
+	public static class BufferStartCursor implements Cursor {
+		Tuple[] buf;
+		final int len;
+		int pos = -1;
+
+		public BufferStartCursor(Tuple[] buf, int len) {
+			this.buf = buf;
+			this.len = len;
+		}
+
+		@Override
+		public void close(QueryContext ctx) {
+			buf = null; // allow gc
+			pos = -1;
+		}
+
+		@Override
+		public Tuple next(QueryContext ctx) throws QueryException {
+			if (pos < 0) {
+				throw new QueryException(
+						ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR);
+			}
+			if (pos < len) {
+				Tuple t = buf[pos];
+				buf[pos++] = null; // allow gc
+				return t;
+			} else {
+				return null;
+			}
+		}
+
+		@Override
+		public void open(QueryContext ctx) throws QueryException {
+			pos = 0;
+		}
+	}
+
 	@Override
 	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
 		return new StartCursor(tuple);
-	}	
+	}
+
+	@Override
+	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
+			throws QueryException {
+		return new BufferStartCursor(buf, len);
+	}
 
 	@Override
 	public int tupleWidth(int initSize) {

@@ -195,6 +195,10 @@ public class AST {
 		return children[position];
 	}
 
+	public AST getLastChild() {
+		return (children != null) ? children[children.length - 1] : null;
+	}
+
 	public void replaceChild(int position, AST child) {
 		if ((position < 0) || (children == null)
 				|| (position >= children.length)) {

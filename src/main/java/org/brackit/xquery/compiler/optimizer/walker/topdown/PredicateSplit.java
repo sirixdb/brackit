@@ -25,64 +25,50 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.optimizer.walker;
-
-import static org.brackit.xquery.compiler.XQ.Count;
-import static org.brackit.xquery.compiler.XQ.GroupBy;
-import static org.brackit.xquery.compiler.XQ.Selection;
-import static org.brackit.xquery.compiler.XQ.Start;
-
-import java.util.HashSet;
+package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.compiler.optimizer.walker.Walker;
 
 /**
- * Push select operators downstream in a pipeline to reduce
- * number of tuples in a pipeline.
+ * 
+ * For example: where expr1 and expr2 and expr3 -> where expr1 where expr2 where
+ * expr3
  * 
  * @author Sebastian Baechle
  * 
  */
-public class SelectPushdown extends PipelineVarTracker {
-
-	private HashSet<AST> pushed = new HashSet<AST>();
-
-	@Override
-	protected AST prepare(AST root) {
-		collectVars(root);
-		return root;
-	}
+public class PredicateSplit extends Walker {
 
 	@Override
 	protected AST visit(AST node) {
-		if (node.getType() != Selection) {
+		if (node.getType() != XQ.Selection) {
 			return node;
 		}
-		if (pushed.contains(node)) {
-			return node;
-		}
-		VarRef refs = varRefs(node.getChild(1), null);
-		final AST parent = node.getParent();
-		final AST in = node.getChild(0);
-		AST tmp = in;
-		while (tmp.getType() != Start) {
-			if (tmp.getType() == GroupBy) {
-				// TODO Pushdown is OK if bindings are grouping keys
-				break;
-			} else if (tmp.getType() == Count) {
-				break;
-			} else if ((refs != null) && declares(tmp, refs.first())) {
+		AST select = node;
+		AST output = select.getChild(1);
+		while (true) {			
+			AST predicate = select.getChild(0);
+
+			if (predicate.getType() != XQ.AndExpr) {
 				break;
 			}
-			tmp = tmp.getChild(0);
+
+			AST andLeft = predicate.getChild(0);
+			AST andRight = predicate.getChild(1);
+
+			AST newSelect = new AST(XQ.Selection);
+			newSelect.addChild(andLeft);
+			newSelect.addChild(output);
+
+			select.replaceChild(0, andRight);
+			select.replaceChild(1, newSelect);
+
+			select = newSelect;
 		}
-		if (tmp == in) {
-			return node;
-		}
-		tmp.getParent().replaceChild(0, node);
-		node.replaceChild(0, tmp);
-		parent.replaceChild(0, in);
-		pushed.add(node);
-		return in;
+
+		return node;
 	}
+
 }

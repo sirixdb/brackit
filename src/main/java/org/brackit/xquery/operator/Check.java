@@ -25,75 +25,71 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.optimizer.walker;
+package org.brackit.xquery.operator;
 
-import static org.brackit.xquery.compiler.XQ.FlowrExpr;
-import static org.brackit.xquery.compiler.XQ.LetClause;
-import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
-import static org.brackit.xquery.compiler.XQ.VariableRef;
+import java.util.Arrays;
 
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.QueryException;
+import org.brackit.xquery.Tuple;
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.compiler.translator.Reference;
 
 /**
+ * Encapsulation of iteration nesting checks.
  * 
  * @author Sebastian Baechle
  * 
  */
-public class ExtractFLWOR extends Walker {
+public class Check {
+	protected boolean check;
+	private int len;
+	private int[] iterations;
 
-	private int extracedVarCount;
-
-	@Override
-	protected AST visit(AST node) {
-		if (node.getType() != FlowrExpr) {
-			return node;
-		}
-
-		final AST parent = node.getParent();
-		if (isFLWORClause(parent)) {
-			return node;
-		}
-		AST anc = parent;
-		while (anc != null) {
-			if (isFLWORClause(anc)) {
-				break;
-			}
-			int aType = anc.getType();
-			if ((aType == XQ.PathExpr)
-					|| (aType == XQ.StepExpr)
-					|| (aType == XQ.FilterExpr)
-					|| (aType == XQ.MapExpr)
-					|| (aType == XQ.IfExpr)) {
-				return node;
-			}
-			anc = anc.getParent();
-		}
-
-		if (anc == null) {
-			return node;
-		}
-
-		QNm varName = createVarName();
-		AST binding = new AST(TypedVariableBinding);
-		binding.addChild(new AST(XQ.Variable, varName));
-		AST letClause = new AST(LetClause);
-		letClause.addChild(binding);
-		letClause.addChild(node.copyTree());
-
-		AST varRef = new AST(VariableRef, varName);
-		parent.replaceChild(node.getChildIndex(), varRef);
-		anc.getParent().insertChild(anc.getChildIndex(), letClause);
-		return letClause;
+	public Check() {
+		this.iterations = new int[2];
+		this.len = 0;
 	}
 
-	private boolean isFLWORClause(AST anc) {
-		AST grandAnc = anc.getParent();
-		return (grandAnc != null) && (grandAnc.getType() == FlowrExpr);
+	public final boolean alive(Tuple t) throws QueryException {
+		return t.get(iterations[len - 1]) != null;
 	}
 
-	private QNm createVarName() {
-		return new QNm("_extracted;" + (extracedVarCount++));
+	public final boolean dead(Tuple t) throws QueryException {
+		return t.get(iterations[len - 1]) == null;
+	}
+
+	public final boolean separate(Tuple t1, Tuple t2) throws QueryException {
+		for (int i = len - 1; i >= 0; i--) {
+			Atomic gk1 = (Atomic) t1.get(iterations[i]);			
+			if (gk1 == null) {
+				return true;
+			}
+			Atomic gk2 = (Atomic) t2.get(iterations[i]);
+			if (gk2 == null) {
+				return true;
+			}
+			if (gk1.atomicCmp(gk2) != 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public final int local() {
+		return iterations[len - 1];
+	}
+
+	public final Reference check() {
+		check = true;
+		final int i = len++;
+		if (len == iterations.length) {
+			iterations = Arrays.copyOf(iterations, len + 2);
+		}
+		return new Reference() {
+			@Override
+			public void setPos(int pos) {
+				iterations[i] = pos;
+			}
+		};
 	}
 }

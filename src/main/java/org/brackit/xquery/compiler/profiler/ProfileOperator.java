@@ -103,6 +103,12 @@ public class ProfileOperator extends ProfilingNode implements Operator {
 	}
 
 	@Override
+	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
+			throws QueryException {
+		return new StatOpCursor(op.create(ctx, buf, len));
+	}
+
+	@Override
 	public int tupleWidth(int initSize) {
 		return op.tupleWidth(initSize);
 	}

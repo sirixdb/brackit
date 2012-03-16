@@ -25,71 +25,79 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.optimizer;
+package org.brackit.xquery.compiler.optimizer.walker.topdown;
+
+import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
+import static org.brackit.xquery.compiler.XQ.Variable;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.optimizer.walker.DoSNStepMerger;
-import org.brackit.xquery.compiler.optimizer.walker.OrderForGroupBy;
-import org.brackit.xquery.compiler.optimizer.walker.PathDDOElimination;
-import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.util.Cfg;
+import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.compiler.optimizer.walker.Walker;
 
 /**
  * @author Sebastian Baechle
  * 
  */
-public class DefaultOptimizer implements Optimizer {
+public class PullEvaluation extends Walker {
 
-	public static final String JOIN_DETECTION_CFG = "org.brackit.xquery.joinDetection";
+	private int checkVar;
 
-	public static final String UNNEST_CFG = "org.brackit.xquery.unnest";
-
-	public static boolean UNNEST = Cfg.asBool(UNNEST_CFG, true);
-
-	public static boolean JOIN_DETECTION = Cfg.asBool(JOIN_DETECTION_CFG,
-			true);
-
-	protected final List<Stage> stages;
-
-	public DefaultOptimizer() {
-		stages = new ArrayList<Stage>();
-		stages.add(new Simplification());
-		stages.add(new Finalize());
+	private List<QNm> appendCheck(List<QNm> checks, QNm var) {
+		ArrayList<QNm> l = (checks == null) ? new ArrayList<QNm>()
+				: new ArrayList<QNm>(checks);
+		l.add(var);
+		return l;
 	}
-	
-	protected DefaultOptimizer(List<Stage> stages) {
-		this.stages = stages;
+
+	private QNm createCheckVarName() {
+		return new QNm("_check;" + (checkVar++));
 	}
 
 	@Override
-	public List<Stage> getStages() {
-		return stages;
-	}
-
-	@Override
-	public AST optimize(StaticContext sctx, AST ast) throws QueryException {
-		for (Stage stage : stages) {
-			ast = stage.rewrite(sctx, ast);
+	protected AST visit(AST join) {
+		if ((join.getType() != XQ.Join) || (!join.checkProperty("leftJoin"))) {
+			return join;
 		}
-		return ast;
-	}
-
-	protected static class Simplification implements Stage {
-		public AST rewrite(StaticContext sctx, AST ast) {
-			ast = new DoSNStepMerger().walk(ast);
-			ast = new OrderForGroupBy().walk(ast);
-			return ast;
+		AST post = join.getChild(2);
+		boolean hasPost = (post.getChild(0).getType() != XQ.End);
+		if (!hasPost) {
+			return join;
 		}
-	}
 
-	protected static class Finalize implements Stage {
-		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
-			ast = new PathDDOElimination(sctx).walk(ast);
-			return ast;
+		@SuppressWarnings("unchecked")
+		List<QNm> check = (List<QNm>) join.getProperty("check");
+
+		// append a check counter to the left input
+		QNm postJoinVar = createCheckVarName();
+		AST count = new AST(XQ.Count);
+		AST runVarBinding = new AST(TypedVariableBinding);
+		runVarBinding.addChild(new AST(Variable, postJoinVar));
+		count.addChild(runVarBinding);
+		if (check != null) {
+			count.setProperty("check", check);
 		}
+
+		AST tmp = join.getChild(0);
+		while (tmp.getType() != XQ.End) {
+			tmp = tmp.getLastChild();
+		}
+		tmp.getParent().replaceChild(tmp.getChildIndex(), count);
+		count.addChild(tmp);
+
+		// add check markers to the join and the post-join part with
+		List<QNm> check2 = appendCheck(check, postJoinVar);
+		tmp = post;
+		while (tmp.getType() != XQ.End) {
+			tmp.setProperty("check", check2);
+			tmp = tmp.getLastChild();
+		}
+		join.setProperty("check", check2);
+
+		snapshot();
+		return join;
 	}
 }

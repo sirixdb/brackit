@@ -25,55 +25,70 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.optimizer.walker;
+package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.compiler.optimizer.walker.Walker;
 
 /**
- * Breaks conjunctions of where clauses into separate where clauses, in order
- * to enable join recognition on multiple sources with a single predicate.
+ * @author Sebastian Baechle
  * 
- * For example:
- * where expr1 and expr2 and expr3 -> where expr1 where expr2 where expr3
- * 
- * @author csauer
- *
  */
-public class ConjunctionSplitting extends Walker {
-
+public class TopDownPipeline extends Walker {
 	@Override
-	protected AST visit(AST node)
-	{
-		if (node.getType() != XQ.Selection) {
+	protected AST visit(AST node) {
+		if (node.getType() != XQ.FlowrExpr) {
 			return node;
 		}
-		
-		AST currentSelect = node;
-		
-		while (true)
-		{
-			AST input = currentSelect.getChild(0);
-			AST predicate = currentSelect.getChild(1);
-			
-			if (predicate.getType() != XQ.AndExpr) {
-				break;
+
+		AST pipeExpr = new AST(XQ.PipeExpr);
+		AST start = new AST(XQ.Start);
+		start.addChild(pipeline(node, 0));
+		pipeExpr.addChild(start);
+		node.getParent().replaceChild(node.getChildIndex(), pipeExpr);
+
+		return pipeExpr;
+	}
+
+	private AST pipeline(AST node, int pos) {
+		AST clause = node.getChild(pos);
+		switch (clause.getType()) {
+		case XQ.ForClause:
+			return pipelineClause(node, pos, XQ.ForBind);
+		case XQ.LetClause:
+			return pipelineClause(node, pos, XQ.LetBind);
+		case XQ.WhereClause:
+			return pipelineClause(node, pos, XQ.Selection);
+		case XQ.OrderByClause:
+			return pipelineClause(node, pos, XQ.OrderBy);
+		case XQ.CountClause:
+			return pipelineClause(node, pos, XQ.Count);
+		case XQ.GroupByClause:
+			return pipelineClause(node, pos, XQ.GroupBy);
+		case XQ.ReturnClause:
+			if (clause.getChild(0).getType() == XQ.FlowrExpr) {
+				return pipeline(clause.getChild(0), 0);
+			} else {
+				AST end = new AST(XQ.End);
+				end.addChild(clause.getChild(0).copyTree());
+				return end;
 			}
-			
-			AST andLeft = predicate.getChild(0);
-			AST andRight = predicate.getChild(1);
-			
-			AST newSelection = new AST(XQ.Selection);
-			newSelection.addChild(input);
-			newSelection.addChild(andLeft);
-			
-			currentSelect.replaceChild(0, newSelection);
-			currentSelect.replaceChild(1, andRight);
-			
-			currentSelect = newSelection;
+		default:
+			throw new IllegalStateException();
 		}
-		
-		return node;
-	}	
-	
+	}
+
+	private AST pipelineClause(AST node, int pos, int opType) {
+		AST clause = node.getChild(pos);
+		AST op = new AST(opType);
+		for (int i = 0; i < clause.getChildCount(); i++) {
+			op.addChild(clause.getChild(i).copyTree());
+		}
+		AST out = pipeline(node, pos + 1);
+		if (out != null) {
+			op.addChild(out);
+		}
+		return op;
+	}
 }

@@ -32,7 +32,6 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
-import org.brackit.xquery.compiler.translator.Reference;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
@@ -40,14 +39,14 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  * 
  */
-public class Count implements Operator {
+public class Count extends Check implements Operator {
 	private final Operator in;
 	private boolean bind = true;
-	int check = -1;
 
 	private class CountCursor implements Cursor {
 		private final Cursor c;
 		private IntNumeric pos;
+		private Tuple t;
 
 		public CountCursor(Cursor c) {
 			this.c = c;
@@ -60,13 +59,21 @@ public class Count implements Operator {
 
 		@Override
 		public Tuple next(QueryContext ctx) throws QueryException {
-			Tuple t = c.next(ctx);
+			Tuple prev = t;
+			t = c.next(ctx);
 
 			if (t == null) {
 				return null;
 			}
-			if ((check >= 0) && (t.get(check) == null)) {
-				return t.concat((Sequence) null);
+
+			if (check) {
+				if (dead(t)) {
+					pos = Int32.ZERO;
+					return t.concat((Sequence) null);
+				}
+				if ((prev == null) || (separate(prev, t))) {
+					pos = Int32.ZERO;
+				}
 			}
 
 			return t.concat(pos = pos.inc());
@@ -75,6 +82,7 @@ public class Count implements Operator {
 		@Override
 		public void open(QueryContext ctx) throws QueryException {
 			c.open(ctx);
+			t = null;
 			pos = Int32.ZERO;
 		}
 	}
@@ -88,7 +96,14 @@ public class Count implements Operator {
 		return (bind) ? new CountCursor(in.create(ctx, tuple)) : in.create(ctx,
 				tuple);
 	}
-	
+
+	@Override
+	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
+			throws QueryException {
+		return (bind) ? new CountCursor(in.create(ctx, buf, len)) : in.create(
+				ctx, buf, len);
+	}
+
 	@Override
 	public int tupleWidth(int initSize) {
 		return in.tupleWidth(initSize) + 1;
@@ -96,13 +111,5 @@ public class Count implements Operator {
 
 	public void bind(boolean bind) {
 		this.bind = bind;
-	}
-
-	public Reference check() {
-		return new Reference() {
-			public void setPos(int pos) {
-				check = pos;
-			}
-		};
 	}
 }

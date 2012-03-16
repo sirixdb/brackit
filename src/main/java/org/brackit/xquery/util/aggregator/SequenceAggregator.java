@@ -56,6 +56,12 @@ public class SequenceAggregator implements Aggregator {
 
 	@Override
 	public Sequence getAggregate() {
+		if (len == 0) {
+			return null;
+		}
+		if (len == 1) {
+			return buf[0];
+		}
 		if (buf.length != len) {
 			buf = Arrays.copyOf(buf, len);
 		}

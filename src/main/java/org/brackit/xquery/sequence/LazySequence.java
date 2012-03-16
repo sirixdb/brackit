@@ -35,14 +35,13 @@ import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.Sequence;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public abstract class LazySequence implements Sequence {
+public abstract class LazySequence extends AbstractSequence {
 	// use volatile fields because
 	// they are computed on demand
 	private volatile IntNumeric size;

@@ -34,14 +34,13 @@ import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.Sequence;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public class ItemSequence implements Sequence {
+public class ItemSequence extends AbstractSequence {
 	protected final Item[] items;
 
 	public ItemSequence(Item... items) {
