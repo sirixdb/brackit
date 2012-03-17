@@ -89,7 +89,6 @@ public class JoinTest extends XQueryBaseTest {
 				"          where $a = $b " +
 				"          return $a " +
 				"return $c").execute(ctx);
-		new StringSerializer(System.out).serialize(res);
 		ResultChecker.dCheck(intSequence(2,3), res);
 	}
 	
