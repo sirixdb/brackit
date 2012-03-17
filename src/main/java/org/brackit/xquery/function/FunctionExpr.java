@@ -43,6 +43,8 @@ import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.xdm.type.Cardinality;
+import org.brackit.xquery.xdm.type.ItemType;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
@@ -55,6 +57,7 @@ public class FunctionExpr implements Expr {
 	private final Function function;
 	private final Expr[] exprs;
 	private final boolean builtin;
+	private final SequenceType dftCtxType;
 
 	public FunctionExpr(StaticContext sctx, Function function, Expr... exprs)
 			throws QueryException {
@@ -62,6 +65,12 @@ public class FunctionExpr implements Expr {
 		this.function = function;
 		this.exprs = exprs;
 		this.builtin = function.isBuiltIn();
+		ItemType dftCtxItemType = function.getSignature().defaultCtxItemType();
+		if (dftCtxItemType != null) {
+			this.dftCtxType = new SequenceType(dftCtxItemType, Cardinality.One);
+		} else {
+			this.dftCtxType = null;
+		}
 	}
 
 	public Signature getSignature() {
@@ -74,8 +83,11 @@ public class FunctionExpr implements Expr {
 		Sequence res;
 		Sequence[] args;
 
-		if (function.getSignature().defaultIsContextItem()) {
-			args = new Sequence[] { exprs[0].evaluateToItem(ctx, tuple) };
+		if (dftCtxType != null) {
+			Item ctxItem = exprs[0].evaluateToItem(ctx, tuple);
+			FunctionConversionSequence.asTypedSequence(dftCtxType, ctxItem,
+					builtin);
+			args = new Sequence[] { ctxItem };
 		} else {
 			SequenceType[] params = function.getSignature().getParams();
 			args = new Sequence[exprs.length];

@@ -889,7 +889,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 		if (fun == null) {
 			unknownFunction(name, noOfParams);
 		}
-		if ((noOfParams == 0) && (fun.getSignature().defaultIsContextItem())) {
+		if ((noOfParams == 0) && (fun.getSignature().defaultCtxItemType() != null)) {
 			referContextItem();
 		}
 		if (fun == null) {

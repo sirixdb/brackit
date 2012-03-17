@@ -134,7 +134,7 @@ public abstract class AbstractAnalyzer {
 		if (annotationOrTest.getType() == XQ.AnyFunctionType) {
 			SequenceType any = new SequenceType(AnyItemType.ANY,
 					Cardinality.ZeroOrMany);
-			return new FunctionType(new Signature(any, true, false, any));
+			return new FunctionType(new Signature(any, true, null, any));
 		} else if (annotationOrTest.getType() == XQ.TypedFunctionType) {
 			return typedFunctionTest(annotationOrTest);
 		} else {

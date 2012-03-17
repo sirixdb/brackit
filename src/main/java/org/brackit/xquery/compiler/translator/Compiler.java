@@ -689,7 +689,7 @@ public class Compiler implements Translator {
 				}
 				args[i] = expr(arg, true);
 			}
-		} else if (function.getSignature().defaultIsContextItem()) {
+		} else if (function.getSignature().defaultCtxItemType() != null) {
 			Expr contextItemRef = table.resolve(Namespaces.FS_DOT);
 			args = new Expr[] { contextItemRef };
 		} else {

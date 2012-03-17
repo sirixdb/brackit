@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.xdm;
 
+import org.brackit.xquery.xdm.type.ItemType;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
@@ -41,21 +42,21 @@ public class Signature {
 
 	private final boolean lastIsVarArg;
 
-	private final boolean defaultsIsContextItem;
+	private final ItemType defaultCtxItemType;
 
 	public Signature(SequenceType resultType, SequenceType... params) {
 		this.resultType = resultType;
 		this.params = params;
 		this.lastIsVarArg = false;
-		this.defaultsIsContextItem = false;
+		this.defaultCtxItemType = null;
 	}
 
 	public Signature(SequenceType resultType, boolean lastIsVarArg,
-			boolean defaultIsContextItem, SequenceType... params) {
+			ItemType defaultCtxItemType, SequenceType... params) {
 		this.resultType = resultType;
 		this.params = params;
 		this.lastIsVarArg = lastIsVarArg;
-		this.defaultsIsContextItem = defaultIsContextItem;
+		this.defaultCtxItemType = defaultCtxItemType;
 	}
 
 	public SequenceType getResultType() {
@@ -70,8 +71,8 @@ public class Signature {
 		return lastIsVarArg;
 	}
 
-	public boolean defaultIsContextItem() {
-		return defaultsIsContextItem;
+	public ItemType defaultCtxItemType() {
+		return defaultCtxItemType;
 	}
 
 	public String toString() {
@@ -102,7 +103,9 @@ public class Signature {
 		}
 		if ((!resultType.equals(s.resultType))
 				|| (lastIsVarArg != s.lastIsVarArg)
-				|| (defaultsIsContextItem != s.defaultsIsContextItem)) {
+				|| ((defaultCtxItemType != null) && ((s.defaultCtxItemType == null) || (!defaultCtxItemType
+						.equals(s.defaultCtxItemType))))
+				|| ((defaultCtxItemType == null) && (s.defaultCtxItemType != null))) {
 			return false;
 		}
 		for (int i = 0; i < params.length; i++) {
