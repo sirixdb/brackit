@@ -41,6 +41,7 @@ import org.brackit.xquery.compiler.optimizer.walker.topdown.PredicateSplit;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.PullEvaluation;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.SelectPullup;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.TopDownPipeline;
+import org.brackit.xquery.compiler.optimizer.walker.topdown.TrivialLeftJoinRemoval;
 import org.brackit.xquery.module.StaticContext;
 
 /**
@@ -60,9 +61,6 @@ public class TopDownOptimizer extends DefaultOptimizer {
 		if (UNNEST) {
 			stages.add(new Unnest());
 		}
-//		if (JOIN_DETECTION) {
-//			stages.add(new JoinProcessing());
-//		}
 		stages.add(new FinalizePipeline());
 		stages.add(new Finalize());
 	}
@@ -89,13 +87,6 @@ public class TopDownOptimizer extends DefaultOptimizer {
 		}
 	}
 
-	private static class JoinProcessing implements Stage {
-		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
-			ast = new JoinGroupDemarcation().walk(ast);
-			return ast;
-		}
-	}
-
 	private static class Unnest implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new LetBindToLeftJoin().walk(ast);
@@ -108,6 +99,7 @@ public class TopDownOptimizer extends DefaultOptimizer {
 	private static class FinalizePipeline implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new PredicateMerge().walk(ast);
+			ast = new TrivialLeftJoinRemoval().walk(ast);
 			ast = new JoinGroupDemarcation().walk(ast);
 			ast = new PullEvaluation().walk(ast);
 			return ast;
