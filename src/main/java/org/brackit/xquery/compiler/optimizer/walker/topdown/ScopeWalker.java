@@ -180,7 +180,9 @@ public abstract class ScopeWalker extends Walker {
 			Scope s = findScope(node);
 			Scope rs = s.resolve(var);
 			if (rs == null) {
-				System.out.println("Did not find " + var + " in any scope");
+				// var ref to declared variable or function parameter
+				// if not, it's a bug!
+				// System.out.println("Did not find " + var + " in any scope");
 				return null;
 			}
 			return new VarRef(var, node, s, rs);
