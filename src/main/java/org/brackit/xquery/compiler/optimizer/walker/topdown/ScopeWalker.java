@@ -46,12 +46,27 @@ import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.util.dot.DotContext;
 import org.brackit.xquery.util.dot.DotNode;
 import org.brackit.xquery.util.dot.DotUtil;
+import org.brackit.xquery.xdm.type.AnyItemType;
+import org.brackit.xquery.xdm.type.AtomicType;
+import org.brackit.xquery.xdm.type.Cardinality;
+import org.brackit.xquery.xdm.type.DocumentType;
+import org.brackit.xquery.xdm.type.ElementType;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * @author Sebastian Baechle
  * 
  */
 public abstract class ScopeWalker extends Walker {
+
+	protected static SequenceType ONE_INTEGER = new SequenceType(
+			AtomicType.INR, Cardinality.One);
+
+	protected static SequenceType ONE_ITEM = new SequenceType(AnyItemType.ANY,
+			Cardinality.One);
+
+	protected static SequenceType ITEMS = new SequenceType(AnyItemType.ANY,
+			Cardinality.ZeroOrMany);
 
 	private BindingTable table;
 
@@ -185,7 +200,7 @@ public abstract class ScopeWalker extends Walker {
 				// System.out.println("Did not find " + var + " in any scope");
 				return null;
 			}
-			return new VarRef(var, node, s, rs);
+			return new VarRef(rs.get(var), node, s, rs);
 		}
 		VarRef varRefs = null;
 		for (int i = 0; i < node.getChildCount(); i++) {
@@ -206,14 +221,28 @@ public abstract class ScopeWalker extends Walker {
 		return varRefs;
 	}
 
-	protected static class VarRef {
+	protected static class Var {
 		final QNm var;
+		final SequenceType type;
+
+		Var(QNm var, SequenceType type) {
+			this.var = var;
+			this.type = type;
+		}
+
+		public String toString() {
+			return var.toString();
+		}
+	}
+
+	protected static class VarRef {
+		final Var var;
 		final AST ref;
 		final Scope refScope;
 		final Scope referredScope;
 		VarRef next;
 
-		public VarRef(QNm var, AST ref, Scope refScope, Scope referredScope) {
+		public VarRef(Var var, AST ref, Scope refScope, Scope referredScope) {
 			this.var = var;
 			this.ref = ref;
 			this.refScope = refScope;
@@ -226,17 +255,12 @@ public abstract class ScopeWalker extends Walker {
 	}
 
 	protected static class Scope implements Comparable<Scope> {
-		private static class Node {
-			final QNm var;
+		private static class Node extends Var {
 			Node next;
 
-			Node(QNm var, Node next) {
-				this.var = var;
+			Node(QNm var, SequenceType type, Node next) {
+				super(var, type);
 				this.next = next;
-			}
-
-			public String toString() {
-				return var.toString();
 			}
 		}
 
@@ -275,7 +299,7 @@ public abstract class ScopeWalker extends Walker {
 			return s.toString();
 		}
 
-		private void bind(QNm var) {
+		private void bind(QNm var, SequenceType type) {
 			Scope.Node p = null;
 			Scope.Node n = lvars;
 			while (n != null) {
@@ -287,9 +311,9 @@ public abstract class ScopeWalker extends Walker {
 				n = n.next;
 			}
 			if (p == null) {
-				lvars = new Scope.Node(var, null);
+				lvars = new Scope.Node(var, type, null);
 			} else {
-				p.next = new Scope.Node(var, null);
+				p.next = new Scope.Node(var, type, null);
 			}
 		}
 
@@ -311,6 +335,15 @@ public abstract class ScopeWalker extends Walker {
 			return (parent != null) ? (parent.resolve(var)) : null;
 		}
 
+		protected Var get(QNm var) {
+			for (Scope.Node n = lvars; n != null; n = n.next) {
+				if (n.var.atomicCmp(var) == 0) {
+					return n;
+				}
+			}
+			return null;
+		}
+
 		private Scope open(AST node, boolean inPipeline) {
 			Scope s;
 			if (firstChild == null) {
@@ -325,20 +358,20 @@ public abstract class ScopeWalker extends Walker {
 			return s;
 		}
 
-		public List<QNm> localBindings() {
+		public List<Var> localBindings() {
 			if (lvars == null) {
 				return Collections.EMPTY_LIST;
 			}
-			ArrayList<QNm> bindings = new ArrayList<QNm>();
+			ArrayList<Var> bindings = new ArrayList<Var>();
 			for (Scope.Node n = lvars; n != null; n = n.next) {
-				bindings.add(n.var);
+				bindings.add(n);
 			}
 			return bindings;
 		}
 
 		public void promoteToParent() {
 			for (Scope.Node n = lvars; n != null; n = n.next) {
-				parent.bind(n.var);
+				parent.bind(n.var, n.type);
 			}
 		}
 
@@ -482,8 +515,8 @@ public abstract class ScopeWalker extends Walker {
 			}
 		}
 
-		void bind(QNm var) {
-			scope.bind(var);
+		void bind(QNm var, SequenceType type) {
+			scope.bind(var, type);
 		}
 
 		void openScope(AST node, boolean inPipeline) {
@@ -508,7 +541,7 @@ public abstract class ScopeWalker extends Walker {
 			scope.resolve(var);
 		}
 
-		List<QNm> inScopeBindings() {
+		List<Var> inScopeBindings() {
 			return scope.localBindings();
 		}
 
@@ -541,9 +574,9 @@ public abstract class ScopeWalker extends Walker {
 		}
 
 		// bind variables
-		table.bind(forVar);
+		table.bind(forVar, ONE_ITEM);
 		if (posVar != null) {
-			table.bind(posVar);
+			table.bind(posVar, ONE_INTEGER);
 		}
 
 		if (!bindOnly) {
@@ -568,7 +601,7 @@ public abstract class ScopeWalker extends Walker {
 		}
 
 		// bind variable
-		table.bind(letVar);
+		table.bind(letVar, ITEMS);
 
 		if (!bindOnly) {
 			walkInspect(node.getLastChild(), true, bindOnly);
@@ -638,7 +671,7 @@ public abstract class ScopeWalker extends Walker {
 		QNm countVar = (QNm) node.getChild(0).getChild(0).getValue();
 
 		// bind variable
-		table.bind(countVar);
+		table.bind(countVar, ONE_INTEGER);
 
 		if (!bindOnly) {
 			walkInspect(node.getLastChild(), true, bindOnly);
@@ -682,9 +715,9 @@ public abstract class ScopeWalker extends Walker {
 		}
 
 		// collect all bindings provided by left and right join branch
-		List<QNm> leftInBinding = getPipelineBindings(node.getChild(0));
-		List<QNm> rightInBinding = getPipelineBindings(node.getChild(1));
-		List<QNm> postBinding = getPipelineBindings(node.getChild(2));
+		List<Var> leftInBinding = getPipelineBindings(node.getChild(0));
+		List<Var> rightInBinding = getPipelineBindings(node.getChild(1));
+		List<Var> postBinding = getPipelineBindings(node.getChild(2));
 
 		if (!bindOnly) {
 			// visit left input
@@ -698,11 +731,11 @@ public abstract class ScopeWalker extends Walker {
 			// and "bind" variables of join outputs
 			AST postStart = node.getChild(2);
 			table.openScope(postStart, true);
-			for (QNm var : leftInBinding) {
-				table.bind(var);
+			for (Var var : leftInBinding) {
+				table.bind(var.var, var.type);
 			}
-			for (QNm var : rightInBinding) {
-				table.bind(var);
+			for (Var var : rightInBinding) {
+				table.bind(var.var, var.type);
 			}
 			// visit post
 			walkInspect(postStart.getChild(0), true, bindOnly);
@@ -711,14 +744,14 @@ public abstract class ScopeWalker extends Walker {
 			// start nested scope for output
 			AST outStart = node.getChild(3);
 			table.openScope(outStart, true);
-			for (QNm var : leftInBinding) {
-				table.bind(var);
+			for (Var var : leftInBinding) {
+				table.bind(var.var, var.type);
 			}
-			for (QNm var : rightInBinding) {
-				table.bind(var);
+			for (Var var : rightInBinding) {
+				table.bind(var.var, var.type);
 			}
-			for (QNm var : postBinding) {
-				table.bind(var);
+			for (Var var : postBinding) {
+				table.bind(var.var, var.type);
 			}
 			walkInspect(outStart.getChild(0), true, bindOnly);
 			table.closeScope();
@@ -729,19 +762,19 @@ public abstract class ScopeWalker extends Walker {
 			// Note: A name collision will not
 			// bind a variable twice
 			// in this joined scope twice!
-			for (QNm var : leftInBinding) {
-				table.bind(var);
+			for (Var var : leftInBinding) {
+				table.bind(var.var, var.type);
 			}
-			for (QNm var : rightInBinding) {
-				table.bind(var);
+			for (Var var : rightInBinding) {
+				table.bind(var.var, var.type);
 			}
-			for (QNm var : postBinding) {
-				table.bind(var);
+			for (Var var : postBinding) {
+				table.bind(var.var, var.type);
 			}
 		}
 	}
 
-	private List<QNm> getPipelineBindings(AST input) {
+	private List<Var> getPipelineBindings(AST input) {
 		table.openScope(input, true);
 
 		for (AST node = input; node.getType() != XQ.End; node = node
@@ -775,7 +808,7 @@ public abstract class ScopeWalker extends Walker {
 			}
 		}
 
-		List<QNm> bindings = table.inScopeBindings();
+		List<Var> bindings = table.inScopeBindings();
 		table.dropScope();
 		return bindings;
 	}
@@ -795,7 +828,7 @@ public abstract class ScopeWalker extends Walker {
 		AST varOrType = clause.getChild(0);
 		if (varOrType.getType() == XQ.Variable) {
 			QNm name = (QNm) varOrType.getValue();
-			table.bind(name);
+			table.bind(name, ITEMS);
 		}
 		// skip intermediate nodes reflecting sequence types....
 		walkInspect(clause.getChild(clause.getChildCount() - 1), true, false);
@@ -810,7 +843,7 @@ public abstract class ScopeWalker extends Walker {
 			walkInspect(expr.getChild(i).getChild(1), true, false);
 			QNm name = (QNm) expr.getChild(i).getChild(0).getChild(0)
 					.getValue();
-			table.bind(name);
+			table.bind(name, ONE_ITEM);
 			// trick: promote local bindings
 			table.promoteBindings();
 			table.closeScope();
@@ -825,7 +858,7 @@ public abstract class ScopeWalker extends Walker {
 			AST binding = expr.getChild(pos++);
 			table.openScope(binding, false);
 			QNm name = (QNm) binding.getChild(0).getValue();
-			table.bind(name);
+			table.bind(name, ITEMS);
 			walkInspect(binding.getChild(1), true, false);
 			// trick: promote local bindings
 			table.promoteBindings();
@@ -841,7 +874,7 @@ public abstract class ScopeWalker extends Walker {
 		walkInspect(expr.getChild(0), true, false);
 		table.openScope(expr, false);
 		for (int i = 1; i < 7; i++) {
-			table.bind((QNm) expr.getChild(i).getChild(0).getValue());
+			table.bind((QNm) expr.getChild(i).getChild(0).getValue(), ONE_ITEM);
 		}
 		for (int i = 7; i < expr.getChildCount(); i++) {
 			// child i,0 is catch error list
@@ -854,9 +887,9 @@ public abstract class ScopeWalker extends Walker {
 		walkInspect(expr.getChild(0), true, false);
 		for (int i = 1; i < expr.getChildCount(); i++) {
 			table.openScope(expr.getChild(i), false);
-			table.bind(Namespaces.FS_DOT);
-			table.bind(Namespaces.FS_POSITION);
-			table.bind(Namespaces.FS_LAST);
+			table.bind(Namespaces.FS_DOT, ONE_ITEM);
+			table.bind(Namespaces.FS_POSITION, ONE_INTEGER);
+			table.bind(Namespaces.FS_LAST, ONE_INTEGER);
 			walkInspect(expr.getChild(i), true, false);
 			table.closeScope();
 		}
@@ -867,9 +900,9 @@ public abstract class ScopeWalker extends Walker {
 		walkInspect(expr.getChild(1), true, false);
 		for (int i = 2; i < expr.getChildCount(); i++) {
 			table.openScope(expr.getChild(i), false);
-			table.bind(Namespaces.FS_DOT);
-			table.bind(Namespaces.FS_POSITION);
-			table.bind(Namespaces.FS_LAST);
+			table.bind(Namespaces.FS_DOT, ONE_ITEM);
+			table.bind(Namespaces.FS_POSITION, ONE_INTEGER);
+			table.bind(Namespaces.FS_LAST, ONE_INTEGER);
 			walkInspect(expr.getChild(i), true, false);
 			table.closeScope();
 		}
@@ -880,9 +913,9 @@ public abstract class ScopeWalker extends Walker {
 		for (int i = 0; i < expr.getChildCount(); i++) {
 			table.openScope(expr.getChild(i), false);
 			if (i > 0) {
-				table.bind(Namespaces.FS_DOT);
-				table.bind(Namespaces.FS_POSITION);
-				table.bind(Namespaces.FS_LAST);
+				table.bind(Namespaces.FS_DOT, ONE_ITEM);
+				table.bind(Namespaces.FS_POSITION, ONE_INTEGER);
+				table.bind(Namespaces.FS_LAST, ONE_INTEGER);
 			}
 			walkInspect(expr.getChild(i), true, false);
 			table.closeScope();
@@ -892,7 +925,8 @@ public abstract class ScopeWalker extends Walker {
 
 	private void documentExpr(AST node) {
 		table.openScope(node, false);
-		table.bind(Namespaces.FS_PARENT);
+		table.bind(Namespaces.FS_PARENT, new SequenceType(DocumentType.DOC,
+				Cardinality.One));
 		walkInspect(node.getChild(0), true, false);
 		table.closeScope();
 	}
@@ -904,7 +938,8 @@ public abstract class ScopeWalker extends Walker {
 		}
 		walkInspect(node.getChild(pos++), true, false);
 		table.openScope(node, false);
-		table.bind(Namespaces.FS_PARENT);
+		table.bind(Namespaces.FS_PARENT, new SequenceType(ElementType.ELEMENT,
+				Cardinality.One));
 		// visit content sequence
 		walkInspect(node.getChild(pos++), true, false);
 		table.closeScope();
