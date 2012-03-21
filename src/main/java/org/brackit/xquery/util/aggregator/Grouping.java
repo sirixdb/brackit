@@ -44,35 +44,49 @@ import org.brackit.xquery.xdm.Type;
  */
 public class Grouping {
 	final int[] groupSpecs;
-	final boolean onlyLast;
+	final int[] addAggsSpecs;
+	final Aggregate defaultAgg;
+	final Aggregate[] additionalAggs;
+	
 	int tupleSize = -1;
-	boolean[] skipgroup;
+	Aggregate[] aggSpecs;
 	Atomic[] gk; // current grouping key
 	Aggregator[] aggs;
-	private int size;
+	int size;
 
-	public Grouping(int[] groupSpecs, boolean onlyLast) {
+	public Grouping(int[] groupSpecs, int[] addAggsSpecs, Aggregate defaultAgg,
+			Aggregate[] additionalAggs) {
 		this.groupSpecs = groupSpecs;
-		this.onlyLast = onlyLast;
+		this.addAggsSpecs = addAggsSpecs;
+		this.defaultAgg = defaultAgg;
+		this.additionalAggs = additionalAggs;
 	}
 
-	public Grouping(int[] groupSpecs, boolean onlyLast, int tupleSize) {
+	public Grouping(int[] groupSpecs, int[] addAggsSpecs, Aggregate defaultAgg,
+			Aggregate[] additionalAggs, int tupleSize) {
 		this.groupSpecs = groupSpecs;
-		this.onlyLast = onlyLast;
+		this.addAggsSpecs = addAggsSpecs;
+		this.defaultAgg = defaultAgg;
+		this.additionalAggs = additionalAggs;
 		init(tupleSize);
 	}
 
 	private void init(int tupleSize) {
 		this.tupleSize = tupleSize;
-		this.aggs = new Aggregator[tupleSize];
-		this.skipgroup = new boolean[tupleSize];
-		for (int pos : groupSpecs) {
-			skipgroup[pos] = true;
+		int len = tupleSize + additionalAggs.length;
+		this.aggSpecs = new Aggregate[len];
+		this.aggs = new Aggregator[len];
+		// init each incoming binding position to default aggregation
+		for (int pos = 0; pos < tupleSize; pos++) {
+			aggSpecs[pos] = defaultAgg;
 		}
-		if (onlyLast) {
-			for (int pos = 0; pos < tupleSize - 1; pos++) {
-				skipgroup[pos] = true;
-			}
+		// override aggregation for grouping variables
+		for (int pos : groupSpecs) {
+			aggSpecs[pos] = Aggregate.SINGLE;
+		}
+		// init additional aggregation bindings
+		for (int pos = tupleSize; pos < len; pos++) {
+			aggSpecs[pos] = additionalAggs[pos - tupleSize];
 		}
 		clear();
 	}
@@ -81,7 +95,7 @@ public class Grouping {
 		return size;
 	}
 
-	public Atomic[] extractGroupingKeys(Tuple t) throws QueryException {
+	public static Atomic[] groupingKeys(int[] groupSpecs, Tuple t) throws QueryException {
 		Atomic[] gk = new Atomic[groupSpecs.length];
 		for (int i = 0; i < groupSpecs.length; i++) {
 			Sequence seq = t.get(groupSpecs[i]);
@@ -112,8 +126,8 @@ public class Grouping {
 	}
 
 	public void clear() {
-		for (int i = 0; i < tupleSize; i++) {
-			aggs[i] = new SequenceAggregator();
+		for (int i = 0; i < aggSpecs.length; i++) {
+			aggs[i] = aggSpecs[i].aggregator();
 		}
 		size = 0;
 	}
@@ -123,7 +137,7 @@ public class Grouping {
 			init(t.getSize());
 		}
 		Atomic[] pgk = gk;
-		gk = extractGroupingKeys(t);
+		gk = groupingKeys(groupSpecs, t);
 		if ((pgk != null) && (!cmp(pgk, gk))) {
 			return false;
 		}
@@ -145,21 +159,25 @@ public class Grouping {
 
 	private void addInternal(Tuple t) throws QueryException {
 		for (int i = 0; i < tupleSize; i++) {
-			if ((skipgroup[i]) && (getSize() > 0)) {
-				continue;
-			}
 			Sequence s = t.get(i);
 			if (s == null) {
 				continue;
 			}
 			aggs[i].add(s);
 		}
+		for (int i = 0; i < addAggsSpecs.length; i++) {
+			Sequence s = t.get(addAggsSpecs[i]);
+			if (s == null) {
+				continue;
+			}
+			aggs[tupleSize + i].add(s);
+		}
 		size++;
 	}
 
 	public Tuple emit() throws QueryException {
-		Sequence[] groupings = new Sequence[tupleSize];
-		for (int i = 0; i < tupleSize; i++) {
+		Sequence[] groupings = new Sequence[aggs.length];
+		for (int i = 0; i < aggs.length; i++) {
 			groupings[i] = aggs[i].getAggregate();
 		}
 		return new TupleImpl(groupings);

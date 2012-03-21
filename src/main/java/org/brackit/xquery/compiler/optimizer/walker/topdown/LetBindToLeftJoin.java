@@ -27,11 +27,8 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
-import static org.brackit.xquery.compiler.XQ.GroupBy;
-import static org.brackit.xquery.compiler.XQ.LetBind;
-import static org.brackit.xquery.compiler.XQ.PipeExpr;
-
 import org.brackit.xquery.atomic.Bool;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.util.Cmp;
@@ -44,13 +41,13 @@ public class LetBindToLeftJoin extends ScopeWalker {
 
 	@Override
 	protected AST visit(AST node) {
-		if (node.getType() != LetBind) {
+		if (node.getType() != XQ.LetBind) {
 			return node;
 		}
 
 		AST bindingExpr = node.getChild(1);
 
-		if (bindingExpr.getType() != PipeExpr) {
+		if (bindingExpr.getType() != XQ.PipeExpr) {
 			return node;
 		}
 
@@ -90,32 +87,63 @@ public class LetBindToLeftJoin extends ScopeWalker {
 		AST post = new AST(XQ.Start);
 		AST letVarBinding = let.getChild(0).copyTree();
 		// TODO fix cardinality of binding if necessary
-		AST rlet = new AST(LetBind);
+		AST rlet = new AST(XQ.LetBind);
 		rlet.addChild(letVarBinding);
 		rlet.addChild(letReturn);
-		post.addChild(rlet);
-		AST groupBy = new AST(GroupBy);
-		groupBy.setProperty("onlyLast", Boolean.TRUE);
-		AST end = new AST(XQ.End);
-		groupBy.addChild(end);
+		QNm letVar = (QNm) letVarBinding.getChild(0).getValue();
+		AST groupBy = createGroupBy(letVar);		
 		rlet.addChild(groupBy);
 
+		post.addChild(rlet);
+
 		// finally assemble left join
-		AST ljoin = new AST(XQ.Join);
-		ljoin.setProperty("leftJoin", Boolean.TRUE);
-		ljoin.addChild(leftIn);
-		ljoin.setProperty("cmp", Cmp.eq);
-		ljoin.setProperty("GCmp", false);
-		ljoin.addChild(rightIn);
-		ljoin.addChild(post);
 		AST outStart = new AST(XQ.Start);
 		outStart.addChild(let.getLastChild().copyTree());
-		ljoin.addChild(outStart);
+		AST ljoin = createJoin(leftIn, rightIn, post, outStart);
 
 		int replaceAt = insertJoinAfter.getChildCount() - 1;
 		insertJoinAfter.replaceChild(replaceAt, ljoin);
 		snapshot();
 		refreshScopes(insertJoinAfter, true);
 		return insertJoinAfter;
+	}
+
+	private AST createJoin(AST leftIn, AST rightIn, AST post, AST out) {
+		AST ljoin = new AST(XQ.Join);
+		ljoin.setProperty("leftJoin", Boolean.TRUE);
+		ljoin.setProperty("cmp", Cmp.eq);
+		ljoin.setProperty("GCmp", false);
+		ljoin.addChild(leftIn);
+		ljoin.addChild(rightIn);
+		ljoin.addChild(post);
+		ljoin.addChild(out);
+		return ljoin;
+	}
+
+	private AST createGroupBy(QNm letVar) {
+		AST groupBy = new AST(XQ.GroupBy);
+		groupBy.setProperty("sequential", Boolean.TRUE);
+
+		AST aggSpec = new AST(XQ.AggregateSpec);
+		aggSpec.addChild(new AST(XQ.VariableRef, letVar));
+		aggSpec.addChild(createBinding(letVar, XQ.SequenceAgg));
+		groupBy.addChild(aggSpec);
+
+		AST dftAgg = new AST(XQ.DftAggregateSpec);
+		dftAgg.addChild(new AST(XQ.SingleAgg));
+		groupBy.addChild(dftAgg);
+
+		groupBy.addChild(new AST(XQ.End));
+		
+		return groupBy;
+	}
+
+	private AST createBinding(QNm name, int type) {
+		AST agg = new AST(XQ.AggregateBinding);
+		AST binding = new AST(XQ.TypedVariableBinding);
+		binding.addChild(new AST(XQ.Variable, name));
+		agg.addChild(binding);
+		agg.addChild(new AST(type));
+		return agg;
 	}
 }

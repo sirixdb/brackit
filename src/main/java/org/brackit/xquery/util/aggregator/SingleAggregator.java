@@ -25,62 +25,29 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.compiler.optimizer.walker;
+package org.brackit.xquery.util.aggregator;
 
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.QueryException;
+import org.brackit.xquery.xdm.Sequence;
 
 /**
- * Insert an orderBy clause in front of a groupBy clause that orders the tuple
- * stream in according to the grouping specification.
- * 
  * @author Sebastian Baechle
- * 
+ *
  */
-public class OrderForGroupBy extends Walker {
+public class SingleAggregator implements Aggregator {
+
+	private Sequence s;
+	
+	@Override
+	public Sequence getAggregate() throws QueryException {
+		return s;
+	}
 
 	@Override
-	protected AST visit(AST node) {
-		if (node.getType() != XQ.GroupByClause) {
-			return node;
+	public void add(Sequence seq) throws QueryException {
+		if (s == null) {
+			s = seq;
 		}
-
-		// check if prev sibling is already the needed group by
-		AST prev = node.getParent().getChild(node.getChildIndex() - 1);
-		if (prev.getType() == XQ.OrderByClause) {
-			if (checkOrderBy(node, prev)) {
-				return node;
-			}
-		}
-
-		// introduce order by
-		AST orderBy = new AST(XQ.OrderByClause);
-		for (int i = 0; i < node.getChildCount() - 1; i++) {
-			AST groupBySpec = node.getChild(i);
-			AST orderBySpec = new AST(XQ.OrderBySpec);
-			for (int j = 0; j < groupBySpec.getChildCount(); j++) {
-				orderBySpec.addChild(groupBySpec.getChild(0).copyTree());
-			}
-			orderBy.addChild(orderBySpec);
-		}
-
-		node.setProperty("sequential", Boolean.TRUE);
-		node.getParent().insertChild(node.getChildIndex(), orderBy);
-		return orderBy;
 	}
 
-	private boolean checkOrderBy(AST groupBy, AST orderBy) {
-		if (groupBy.getChildCount() - 1 != orderBy.getChildCount()) {
-			return false;
-		}
-		for (int i = 0; i < groupBy.getChildCount() - 1; i++) {
-			QNm groupByVar = (QNm) groupBy.getChild(i).getChild(0).getValue();
-			QNm orderByVar = (QNm) orderBy.getChild(i).getChild(0).getValue();
-			if (!groupByVar.equals(orderByVar)) {
-				return false;
-			}
-		}
-		return true;
-	}
 }

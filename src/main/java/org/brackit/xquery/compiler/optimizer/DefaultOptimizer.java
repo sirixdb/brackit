@@ -27,10 +27,16 @@
  */
 package org.brackit.xquery.compiler.optimizer;
 
+import static org.brackit.xquery.module.Namespaces.BIT_NSURI;
+import static org.brackit.xquery.module.Namespaces.BIT_PREFIX;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.optimizer.walker.DoSNStepMerger;
 import org.brackit.xquery.compiler.optimizer.walker.OrderForGroupBy;
@@ -44,25 +50,30 @@ import org.brackit.xquery.util.Cfg;
  */
 public class DefaultOptimizer implements Optimizer {
 
+	public static final QNm SEQUENTIAL_GROUPBY = new QNm(BIT_NSURI, BIT_PREFIX,
+			"sequential-groupby");
+
 	public static final String JOIN_DETECTION_CFG = "org.brackit.xquery.joinDetection";
 
 	public static final String UNNEST_CFG = "org.brackit.xquery.unnest";
 
 	public static boolean UNNEST = Cfg.asBool(UNNEST_CFG, true);
 
-	public static boolean JOIN_DETECTION = Cfg.asBool(JOIN_DETECTION_CFG,
-			true);
+	public static boolean JOIN_DETECTION = Cfg.asBool(JOIN_DETECTION_CFG, true);
 
 	protected final List<Stage> stages;
+	protected final Map<QNm, Str> options;
 
-	public DefaultOptimizer() {
+	public DefaultOptimizer(Map<QNm, Str> options) {
 		stages = new ArrayList<Stage>();
 		stages.add(new Simplification());
 		stages.add(new Finalize());
+		this.options = options;
 	}
-	
-	protected DefaultOptimizer(List<Stage> stages) {
+
+	protected DefaultOptimizer(Map<QNm, Str> options, List<Stage> stages) {
 		this.stages = stages;
+		this.options = options;
 	}
 
 	@Override
@@ -78,18 +89,25 @@ public class DefaultOptimizer implements Optimizer {
 		return ast;
 	}
 
-	protected static class Simplification implements Stage {
+	protected class Simplification implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) {
 			ast = new DoSNStepMerger().walk(ast);
-			ast = new OrderForGroupBy().walk(ast);
+			if (enabled(SEQUENTIAL_GROUPBY)) {
+				ast = new OrderForGroupBy().walk(ast);
+			}
 			return ast;
 		}
 	}
 
-	protected static class Finalize implements Stage {
+	protected class Finalize implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new PathDDOElimination(sctx).walk(ast);
 			return ast;
 		}
+	}
+	
+	protected boolean enabled(QNm option) {
+		Str opt = options.get(option);
+		return ((opt != null) && Boolean.parseBoolean(opt.stringValue()));
 	}
 }

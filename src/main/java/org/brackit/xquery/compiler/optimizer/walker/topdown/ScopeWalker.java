@@ -31,7 +31,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -146,6 +148,9 @@ public abstract class ScopeWalker extends Walker {
 		case XQ.CompElementConstructor:
 			elementExpr(node);
 			return false;
+		case XQ.PipeExpr:
+			pipeExpr(node);
+			return false;
 		case XQ.Start:
 			start(node, newScope, bindOnly);
 			return false;
@@ -177,6 +182,12 @@ public abstract class ScopeWalker extends Walker {
 			return true;
 		}
 	}
+	
+	private void pipeExpr(AST node) {
+		table.openScope(node, false);
+		walkInspect(node.getChild(0), true, false);
+		table.closeScope();
+	}
 
 	protected final Scope findScope(AST node) {
 		AST tmp = node;
@@ -188,24 +199,31 @@ public abstract class ScopeWalker extends Walker {
 		} while ((tmp = tmp.getParent()) != null);
 		return table.rootScope;
 	}
-
+	
 	protected final VarRef findVarRefs(AST node) {
+		return findVarRefs(null, node);
+	}
+
+	protected final VarRef findVarRefs(Var toVar, AST node) {
 		if (node.getType() == XQ.VariableRef) {
-			QNm var = (QNm) node.getValue();
+			QNm name = (QNm) node.getValue();
+			if ((toVar != null) && (name.atomicCmp(toVar.var) != 0)) {
+				return null;
+			}
 			Scope s = findScope(node);
-			Scope rs = s.resolve(var);
-			if (rs == null) {
+			Var var = s.resolve(name);
+			if (var == null) {
 				// var ref to declared variable or function parameter
 				// if not, it's a bug!
 				// System.out.println("Did not find " + var + " in any scope");
 				return null;
 			}
-			return new VarRef(rs.get(var), node, s, rs);
+			return new VarRef(var, node, s);
 		}
 		VarRef varRefs = null;
 		for (int i = 0; i < node.getChildCount(); i++) {
 			AST child = node.getChild(i);
-			VarRef tmp = findVarRefs(child);
+			VarRef tmp = findVarRefs(toVar, child);
 			if (tmp != null) {
 				if (varRefs == null) {
 					varRefs = tmp;
@@ -222,10 +240,12 @@ public abstract class ScopeWalker extends Walker {
 	}
 
 	protected static class Var {
+		final Scope scope;
 		final QNm var;
 		final SequenceType type;
 
-		Var(QNm var, SequenceType type) {
+		Var(Scope scope, QNm var, SequenceType type) {
+			this.scope = scope;
 			this.var = var;
 			this.type = type;
 		}
@@ -239,14 +259,12 @@ public abstract class ScopeWalker extends Walker {
 		final Var var;
 		final AST ref;
 		final Scope refScope;
-		final Scope referredScope;
 		VarRef next;
 
-		public VarRef(Var var, AST ref, Scope refScope, Scope referredScope) {
+		public VarRef(Var var, AST ref, Scope refScope) {
 			this.var = var;
 			this.ref = ref;
 			this.refScope = refScope;
-			this.referredScope = referredScope;
 		}
 
 		public String toString() {
@@ -258,8 +276,8 @@ public abstract class ScopeWalker extends Walker {
 		private static class Node extends Var {
 			Node next;
 
-			Node(QNm var, SequenceType type, Node next) {
-				super(var, type);
+			Node(Scope scope, QNm var, SequenceType type, Node next) {
+				super(scope, var, type);
 				this.next = next;
 			}
 		}
@@ -311,9 +329,9 @@ public abstract class ScopeWalker extends Walker {
 				n = n.next;
 			}
 			if (p == null) {
-				lvars = new Scope.Node(var, type, null);
+				lvars = new Scope.Node(this, var, type, null);
 			} else {
-				p.next = new Scope.Node(var, type, null);
+				p.next = new Scope.Node(this, var, type, null);
 			}
 		}
 
@@ -326,10 +344,10 @@ public abstract class ScopeWalker extends Walker {
 			return false;
 		}
 
-		protected Scope resolve(QNm var) {
+		protected Var resolve(QNm var) {
 			for (Scope.Node n = lvars; n != null; n = n.next) {
 				if (n.var.atomicCmp(var) == 0) {
-					return this;
+					return n;
 				}
 			}
 			return (parent != null) ? (parent.resolve(var)) : null;
@@ -545,6 +563,16 @@ public abstract class ScopeWalker extends Walker {
 			return scope.localBindings();
 		}
 
+		List<Var> inPipelineBindings() {
+			ArrayList<Var> bindings = new ArrayList<Var>();
+			Scope s = scope;
+			while (s.inPipeline) {
+				bindings.addAll(s.localBindings());
+				s = s.parent;
+			}
+			return bindings;
+		}
+
 		Set<AST> getScopes() {
 			return scopemap.keySet();
 		}
@@ -634,10 +662,23 @@ public abstract class ScopeWalker extends Walker {
 			table.openScope(node, true);
 		}
 
-		// group by does not declare variables
+		// group by does rebinds all non-grouped pipeline variables
+		Set<QNm> groupVars = new HashSet<QNm>();
+		int groupSpecCount = Math.max(node.getChildCount() - 2, 0);
+		for (int i = 0; i < groupSpecCount; i++) {
+			groupVars.add((QNm) node.getChild(i).getChild(0).getValue());
+		}
+		for (Var var : table.inPipelineBindings()) {
+			if (!groupVars.contains(var.var)) {
+				table.bind(var.var, new SequenceType(var.type.getItemType(),
+						Cardinality.ZeroOrMany));
+			}
+		}
 
 		if (!bindOnly) {
 			walkInspect(node.getLastChild(), true, bindOnly);
+		}
+		if (newScope) {
 			table.closeScope();
 		}
 	}
@@ -959,7 +1000,7 @@ public abstract class ScopeWalker extends Walker {
 		int pos = 0;
 		Scope[] tmp = new Scope[cnt];
 		for (VarRef ref = varRefs; ref != null; ref = ref.next) {
-			tmp[pos++] = ref.referredScope;
+			tmp[pos++] = ref.var.scope;
 		}
 		Arrays.sort(tmp);
 		pos = 0;
@@ -971,6 +1012,31 @@ public abstract class ScopeWalker extends Walker {
 			}
 		}
 		return Arrays.copyOfRange(tmp, 0, pos);
+	}
+
+	/*
+	 * create a sorted and duplicate-free array of variable accesses
+	 */
+	protected VarRef[] sortVarRefs(VarRef varRefs) {
+		if (varRefs == null) {
+			return new VarRef[0];
+		}
+		int cnt = 0;
+		for (VarRef ref = varRefs; ref != null; ref = ref.next) {
+			cnt++;
+		}
+		int pos = 0;
+		VarRef[] tmp = new VarRef[cnt];
+		for (VarRef ref = varRefs; ref != null; ref = ref.next) {
+			tmp[pos++] = ref;
+		}
+		Arrays.sort(tmp, new Comparator<VarRef>() {
+			@Override
+			public int compare(VarRef o1, VarRef o2) {
+				return o1.var.scope.compareTo(o2.var.scope);
+			}
+		});
+		return tmp;
 	}
 
 	public static void main(String[] args) throws Exception {

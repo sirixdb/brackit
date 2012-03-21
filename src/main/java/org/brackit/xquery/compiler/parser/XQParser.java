@@ -40,7 +40,6 @@ import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.module.Functions;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.util.log.Logger;
 import org.brackit.xquery.xdm.Type;
 
@@ -1290,6 +1289,11 @@ public class XQParser extends Tokenizer {
 			}
 			groupByClause.addChild(gs);
 		} while (attemptSkipWS(","));
+		// per default all non-grouping variables
+		// in the current flwor are grouped as a sequences		
+		AST dftAggregate = new AST(XQ.DftAggregateSpec);
+		dftAggregate.addChild(new AST(XQ.SequenceAgg));
+		groupByClause.addChild(dftAggregate);
 		return groupByClause;
 	}
 

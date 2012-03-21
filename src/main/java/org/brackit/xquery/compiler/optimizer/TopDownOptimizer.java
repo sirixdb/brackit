@@ -28,8 +28,11 @@
 package org.brackit.xquery.compiler.optimizer;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinGroupDemarcation;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinRewriter;
@@ -50,8 +53,8 @@ import org.brackit.xquery.module.StaticContext;
  */
 public class TopDownOptimizer extends DefaultOptimizer {
 
-	public TopDownOptimizer() {
-		super(new ArrayList<Stage>());
+	public TopDownOptimizer(Map<QNm, Str> options) {
+		super(options, new ArrayList<Stage>());
 		stages.add(new Simplification());
 		stages.add(new Pipelining());
 		stages.add(new Reordering());
@@ -65,14 +68,14 @@ public class TopDownOptimizer extends DefaultOptimizer {
 		stages.add(new Finalize());
 	}
 
-	private static class Pipelining implements Stage {
+	private class Pipelining implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new TopDownPipeline().walk(ast);
 			return ast;
 		}
 	}
 
-	private static class Reordering implements Stage {
+	private class Reordering implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new PredicateSplit().walk(ast);
 			ast = new SelectPullup().walk(ast);
@@ -80,14 +83,14 @@ public class TopDownOptimizer extends DefaultOptimizer {
 		}
 	}
 
-	private static class JoinRecognition implements Stage {
+	private class JoinRecognition implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new JoinRewriter().walk(ast);
 			return ast;
 		}
 	}
 
-	private static class Unnest implements Stage {
+	private class Unnest implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new LetBindToLeftJoin().walk(ast);
 			ast = new LeftJoinLifting().walk(ast);
@@ -96,7 +99,7 @@ public class TopDownOptimizer extends DefaultOptimizer {
 		}
 	}
 
-	private static class FinalizePipeline implements Stage {
+	private class FinalizePipeline implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new PredicateMerge().walk(ast);
 			ast = new TrivialLeftJoinRemoval().walk(ast);

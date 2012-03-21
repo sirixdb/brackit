@@ -27,7 +27,10 @@
  */
 package org.brackit.xquery.compiler.translator;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
@@ -93,6 +96,7 @@ import org.brackit.xquery.update.ReplaceValue;
 import org.brackit.xquery.update.Transform;
 import org.brackit.xquery.util.Cmp;
 import org.brackit.xquery.util.Whitespace;
+import org.brackit.xquery.util.aggregator.Aggregate;
 import org.brackit.xquery.util.sort.Ordering.OrderModifier;
 import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.Expr;
@@ -139,12 +143,28 @@ public class Compiler implements Translator {
 			}
 		}
 	}
+	
+	protected static class AggregateBinding {
+		final QNm srcVar;
+		final QNm aggVar;
+		final SequenceType aggVarType;
+		final Aggregate agg;
+
+		public AggregateBinding(QNm srcVar, QNm aggVar,
+				SequenceType aggVarType, Aggregate agg) {
+			this.srcVar = srcVar;
+			this.aggVar = aggVar;
+			this.aggVarType = aggVarType;
+			this.agg = agg;
+		}
+	}
 
 	protected VariableTable table;
-
 	protected StaticContext ctx;
+	protected final Map<QNm, Str> options;
 
-	public Compiler() {
+	public Compiler(Map<QNm, Str> options) {
+		this.options = options;
 	}
 
 	public Expr expression(Module module, StaticContext ctx, AST expr,
@@ -1019,8 +1039,7 @@ public class Compiler implements Translator {
 			bindSize[i] = sizeBinding.isReferenced();
 		}
 
-		return new StepExpr(axis, test, in, filter, bindItem, bindPos,
-				bindSize);
+		return new StepExpr(axis, test, in, filter, bindItem, bindPos, bindSize);
 	}
 
 	protected Accessor axis(AST node) throws QueryException {
@@ -1346,13 +1365,77 @@ public class Compiler implements Translator {
 
 	protected ClauseBinding groupByClause(AST node, ClauseBinding in)
 			throws QueryException {
-		int groupSpecCount = node.getChildCount();
-		GroupBy groupBy = new GroupBy(in.operator, groupSpecCount, false);
-		for (int i = 0; i < groupSpecCount; i++) {
+		int pos = 0;
+		while (node.getChild(pos).getType() == XQ.GroupBySpec) {
+			pos++;
+		}
+		int grpSpecCnt = pos;
+		// collect additional aggregate bindings
+		List<AggregateBinding> bnds = new ArrayList<AggregateBinding>();
+		while (node.getChild(pos).getType() == XQ.AggregateSpec) {
+			AST aggSpec = node.getChild(pos);
+			QNm var = (QNm) aggSpec.getChild(0).getValue();
+			for (int j = 1; j < aggSpec.getChildCount(); j++) {
+				AST aggBinding = aggSpec.getChild(j);
+				AST typedVarBnd = aggBinding.getChild(0);
+				Aggregate agg = aggregate(aggBinding.getChild(1));
+				QNm aggVar = (QNm) typedVarBnd.getChild(0).getValue();
+				SequenceType aggType = SequenceType.ITEM_SEQUENCE;
+				if (typedVarBnd.getChildCount() == 2) {
+					aggType = sequenceType(typedVarBnd.getChild(1));
+				}				
+				bnds.add(new AggregateBinding(var, aggVar, aggType, agg));
+			}
+			pos++;
+		}
+		Aggregate dftAgg = aggregate(node.getChild(pos).getChild(0));
+		Aggregate[] addAggs = new Aggregate[bnds.size()];
+		for (int i = 0; i < bnds.size(); i++) {
+			AggregateBinding bnd = bnds.get(i);
+			addAggs[i] = bnd.agg;
+		}
+		boolean sequential = node.checkProperty("sequential");
+		GroupBy groupBy = new GroupBy(in.operator, dftAgg, addAggs, grpSpecCnt, sequential);
+		// resolve positions grouping variables
+		for (int i = 0; i < grpSpecCnt; i++) {
 			QNm grpVarName = (QNm) node.getChild(i).getChild(0).getValue();
 			table.resolve(grpVarName, groupBy.group(i));
 		}
+		// resolve positions for additional aggregates
+		for (int i = 0; i < bnds.size(); i++) {
+			AggregateBinding bnd = bnds.get(i);
+			table.resolve(bnd.srcVar, groupBy.aggregate(i));
+		}
+		// bind additional aggregates
+		for (int i = 0; i < bnds.size(); i++) {
+			AggregateBinding bnd = bnds.get(i);
+			table.bind(bnd.aggVar, bnd.aggVarType);
+			// fake binding
+			table.resolve(bnd.aggVar);
+		}
 		return new ClauseBinding(in, groupBy);
+	}
+
+	protected Aggregate aggregate(AST node) throws QueryException {
+		switch (node.getType()) {
+		case XQ.SequenceAgg:
+			return Aggregate.SEQUENCE;
+		case XQ.CountAgg:
+			return Aggregate.COUNT;
+		case XQ.SumAgg:
+			return Aggregate.SUM;
+		case XQ.AvgAgg:
+			return Aggregate.AVG;
+		case XQ.MinAgg:
+			return Aggregate.MIN;
+		case XQ.MaxAgg:
+			return Aggregate.MAX;
+		case XQ.SingleAgg:
+			return Aggregate.SINGLE;
+		default:
+			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+					"Unknown aggregate type: %s", node);
+		}
 	}
 
 	protected ClauseBinding whereClause(AST node, ClauseBinding in)

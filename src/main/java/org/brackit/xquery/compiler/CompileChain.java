@@ -27,10 +27,13 @@
  */
 package org.brackit.xquery.compiler;
 
+import java.util.Map;
+
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.analyzer.Analyzer;
 import org.brackit.xquery.compiler.optimizer.Optimizer;
 import org.brackit.xquery.compiler.optimizer.TopDownOptimizer;
@@ -129,12 +132,12 @@ public class CompileChain {
 		this.baseURI = baseURI;
 	}
 
-	protected Optimizer getOptimizer() {
-		return new TopDownOptimizer();
+	protected Optimizer getOptimizer(Map<QNm, Str> options) {
+		return new TopDownOptimizer(options);
 	}
 
-	protected Translator getTranslator() {
-		return new TopDownTranslator();
+	protected Translator getTranslator(Map<QNm, Str> options) {
+		return new TopDownTranslator(options);
 	}
 
 	protected ModuleResolver getModuleResolver() {
@@ -155,23 +158,25 @@ public class CompileChain {
 		if (XQuery.DEBUG) {
 			DotUtil.drawDotToFile(xquery.dot(), XQuery.DEBUG_DIR, "parsed");
 		}
+		Module module = analyzer.getModules().get(0);
+		Map<QNm, Str> options = module.getOptions();
 		// optimize all targets of all modules
 		for (Target t : analyzer.getTargets()) {
-			t.optimize(getOptimizer());
+			t.optimize(getOptimizer(options));
 		}
 		// translate all targets of all modules
 		for (Target t : analyzer.getTargets()) {
-			t.translate(getTranslator());
+			t.translate(getTranslator(options));
 		}
 		// everything went fine - add compiled modules to library
-		for (Module module : analyzer.getModules()) {
-			if (module.getTargetNS() != null) {
-				resolver.register(module.getTargetNS(), module);
+		for (Module m : analyzer.getModules()) {
+			if (m.getTargetNS() != null) {
+				resolver.register(m.getTargetNS(), m);
 			}
 		}
 		if (XQuery.DEBUG) {
 			DotUtil.drawDotToFile(xquery.dot(), XQuery.DEBUG_DIR, "xquery");
 		}
-		return analyzer.getModules().get(0);
+		return module;
 	}
 }

@@ -27,12 +27,15 @@
  */
 package org.brackit.xquery.compiler.translator;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.expr.PipeExpr;
@@ -49,6 +52,7 @@ import org.brackit.xquery.operator.Select;
 import org.brackit.xquery.operator.Start;
 import org.brackit.xquery.operator.TableJoin;
 import org.brackit.xquery.util.Cmp;
+import org.brackit.xquery.util.aggregator.Aggregate;
 import org.brackit.xquery.util.sort.Ordering.OrderModifier;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Expr;
@@ -66,8 +70,8 @@ import org.brackit.xquery.xdm.type.SequenceType;
  */
 public class TopDownTranslator extends Compiler {
 
-	public TopDownTranslator() {
-		super();
+	public TopDownTranslator(Map<QNm, Str> options) {
+		super(options);
 	}
 
 	@Override
@@ -138,13 +142,53 @@ public class TopDownTranslator extends Compiler {
 
 	@SuppressWarnings("unchecked")
 	protected Operator groupBy(Operator in, AST node) throws QueryException {
-		int groupSpecCount = Math.max(node.getChildCount() - 1, 0);
-		boolean onlyLast = node.checkProperty("onlyLast");
-		QNm[] grpVars = new QNm[groupSpecCount];
-		GroupBy groupBy = new GroupBy(in, groupSpecCount, onlyLast);
-		for (int i = 0; i < groupSpecCount; i++) {
-			grpVars[i] = (QNm) node.getChild(i).getChild(0).getValue();
-			table.resolve(grpVars[i], groupBy.group(i));
+		int pos = 0;
+		while (node.getChild(pos).getType() == XQ.GroupBySpec) {
+			pos++;
+		}
+		int grpSpecCnt = pos;
+		// collect additional aggregate bindings
+		List<AggregateBinding> bnds = new ArrayList<AggregateBinding>();
+		while (node.getChild(pos).getType() == XQ.AggregateSpec) {
+			AST aggSpec = node.getChild(pos);
+			QNm var = (QNm) aggSpec.getChild(0).getValue();
+			for (int j = 1; j < aggSpec.getChildCount(); j++) {
+				AST aggBinding = aggSpec.getChild(j);
+				AST typedVarBnd = aggBinding.getChild(0);
+				Aggregate agg = aggregate(aggBinding.getChild(1));
+				QNm aggVar = (QNm) typedVarBnd.getChild(0).getValue();
+				SequenceType aggType = SequenceType.ITEM_SEQUENCE;
+				if (typedVarBnd.getChildCount() == 2) {
+					aggType = sequenceType(typedVarBnd.getChild(1));
+				}
+				bnds.add(new AggregateBinding(var, aggVar, aggType, agg));
+			}
+			pos++;
+		}
+		Aggregate dftAgg = aggregate(node.getChild(pos).getChild(0));
+		Aggregate[] addAggs = new Aggregate[bnds.size()];
+		for (int i = 0; i < bnds.size(); i++) {
+			AggregateBinding bnd = bnds.get(i);
+			addAggs[i] = bnd.agg;
+		}
+		boolean sequential = node.checkProperty("sequential");
+		GroupBy groupBy = new GroupBy(in, dftAgg, addAggs, grpSpecCnt, sequential);
+		// resolve positions grouping variables
+		for (int i = 0; i < grpSpecCnt; i++) {
+			QNm grpVarName = (QNm) node.getChild(i).getChild(0).getValue();
+			table.resolve(grpVarName, groupBy.group(i));
+		}
+		// resolve positions for additional aggregates
+		for (int i = 0; i < bnds.size(); i++) {
+			AggregateBinding bnd = bnds.get(i);
+			table.resolve(bnd.srcVar, groupBy.aggregate(i));
+		}
+		// bind additional aggregates
+		for (int i = 0; i < bnds.size(); i++) {
+			AggregateBinding bnd = bnds.get(i);
+			table.bind(bnd.aggVar, bnd.aggVarType);
+			// fake binding
+			table.resolve(bnd.aggVar);
 		}
 		addChecks(groupBy, (List<QNm>) node.getProperty("check"));
 		return anyOp(groupBy, node.getLastChild());

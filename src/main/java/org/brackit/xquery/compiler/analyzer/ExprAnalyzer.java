@@ -365,7 +365,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 		if (clause.getType() != XQ.GroupByClause) {
 			return false;
 		}
-		for (int i = 0; i < clause.getChildCount(); i++) {
+		for (int i = 0; i < clause.getChildCount() - 1; i++) {
 			AST groupBySpec = clause.getChild(i);
 			QNm name = (QNm) groupBySpec.getChild(0).getValue();
 			// expand resolve and update AST

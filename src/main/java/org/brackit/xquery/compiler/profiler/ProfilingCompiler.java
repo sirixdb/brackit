@@ -28,9 +28,12 @@
 package org.brackit.xquery.compiler.profiler;
 
 import java.io.File;
+import java.util.Map;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.translator.TopDownTranslator;
 import org.brackit.xquery.module.MainModule;
@@ -53,8 +56,8 @@ public class ProfilingCompiler extends TopDownTranslator {
 
 	private ProfileOperator pending; // "upcoming" parent operator to
 	
-	public ProfilingCompiler() {
-		super();
+	public ProfilingCompiler(Map<QNm, Str> options) {
+		super(options);
 	}
 
 	@Override
