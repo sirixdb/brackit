@@ -322,7 +322,6 @@ public abstract class ScopeWalker extends Walker {
 			Scope.Node n = lvars;
 			while (n != null) {
 				if (n.var.atomicCmp(var) == 0) {
-					System.out.println("Var " + var + "bound twice. OK?");
 					return;
 				}
 				p = n;
@@ -662,17 +661,34 @@ public abstract class ScopeWalker extends Walker {
 			table.openScope(node, true);
 		}
 
-		// group by does rebinds all non-grouped pipeline variables
+		int pos = 0;
 		Set<QNm> groupVars = new HashSet<QNm>();
-		int groupSpecCount = Math.max(node.getChildCount() - 2, 0);
-		for (int i = 0; i < groupSpecCount; i++) {
-			groupVars.add((QNm) node.getChild(i).getChild(0).getValue());
+		while (node.getChild(pos).getType() == XQ.GroupBySpec) {
+			AST varRef = node.getChild(pos).getChild(0);
+			if (!bindOnly) {
+				walkInspect(varRef, true, bindOnly);
+			}
+			groupVars.add((QNm) varRef.getValue());
+			pos++;
 		}
+		// groupby rebinds all non-grouped pipeline variables
 		for (Var var : table.inPipelineBindings()) {
 			if (!groupVars.contains(var.var)) {
 				table.bind(var.var, new SequenceType(var.type.getItemType(),
 						Cardinality.ZeroOrMany));
 			}
+		}
+		// bind additional aggregation specs
+		while (node.getChild(pos).getType() == XQ.AggregateSpec) {
+			AST aggSpec = node.getChild(pos);
+			for (int i = 1; i < aggSpec.getChildCount(); i++) {
+				AST aggBnd = aggSpec.getChild(i);
+				AST typedVar = aggBnd.getChild(0);
+				QNm aggVar = (QNm) typedVar.getChild(0).getValue();
+				SequenceType aggVarType = ONE_ITEM;
+				table.bind(aggVar, aggVarType);
+			}
+			pos++;
 		}
 
 		if (!bindOnly) {
