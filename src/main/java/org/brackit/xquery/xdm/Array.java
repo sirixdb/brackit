@@ -25,71 +25,57 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm.type;
+package org.brackit.xquery.xdm;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.atomic.IntNumeric;
 
 /**
+ * <p>
+ * Representation of an ordered sequence of values.
+ * </p>
+ * <p>
+ * CAVEAT: This representation allows to build arrays
+ * of arbitrary sequences including nodes, functions,
+ * the empty sequence and even nested arrays as values.   
+ * </p>
+ * <p>
+ * The relaxed data representation does not conform to
+ * XQuery's data model but facilitates a more flexible
+ * data representation within the query engine. 
+ * </p>
+ * <p>
+ * Since it is not possible to create or validate arrays,
+ * i.e., list types in vanilla XQuery/XPath/XML (optionally 
+ * with XMLSchema support), we must not take special care.
+ * </p>
  * 
  * @author Sebastian Baechle
  * 
  */
-public abstract class NodeType implements ItemType {
-	@Override
-	public boolean isAnyItem() {
-		return false;
-	}
-
-	@Override
-	public boolean isAtomic() {
-		return false;
-	}
-
-	@Override
-	public boolean isNode() {
-		return true;
-	}
-
-	@Override
-	public boolean isFunction() {
-		return false;
-	}
+public interface Array extends ListOrUnion {
+	/**
+	 * Returns the value at the given position. 
+	 */
+	public Sequence at(IntNumeric i) throws QueryException;
 	
-	@Override
-	public boolean isListOrUnion() {
-		return false;
-	}
+	/**
+	 * Returns the value at the given position.
+	 */
+	public Sequence at(int i) throws QueryException;
 
 	/**
-	 * null indicates any node kind
+	 * Returns the length of this array.
 	 */
-	public Kind getNodeKind() {
-		return null;
-	}
-
-	/**
-	 * null indicates any name
-	 */
-	public QNm getQName() {
-		return null;
-	}
-
-	/**
-	 * null indicates any type
-	 */
-	public Type getType() {
-		return null;
-	}
+	public IntNumeric length() throws QueryException;
 	
-	@Override
-	public boolean matches(Item item) throws QueryException {
-		return ((item instanceof Node<?>) && (matches((Node<?>) item)));
-	}
+	/**
+	 * Returns the length of this array.
+	 */
+	public int len() throws QueryException;
 
-	public abstract boolean matches(Node<?> node) throws QueryException;	
+	/**
+	 * Creates a slice of this array in the given boundaries. 
+	 */
+	public Array range(IntNumeric from, IntNumeric to) throws QueryException;
 }

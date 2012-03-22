@@ -25,13 +25,18 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm.type;
+package org.brackit.xquery.expr;
 
+import org.brackit.xquery.ErrorCode;
+import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.Tuple;
+import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.util.ExprUtil;
+import org.brackit.xquery.xdm.Array;
+import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Type;
 
 /**
@@ -39,57 +44,49 @@ import org.brackit.xquery.xdm.Type;
  * @author Sebastian Baechle
  * 
  */
-public abstract class NodeType implements ItemType {
+public class ArrayAccessExpr implements Expr {
+	private final Expr expr;
+	private final Expr index;
+
+	public ArrayAccessExpr(Expr expr, Expr index) {
+		this.expr = expr;
+		this.index = index;
+	}
+
 	@Override
-	public boolean isAnyItem() {
+	public Sequence evaluate(QueryContext ctx, Tuple tuple)
+			throws QueryException {
+		Item a = expr.evaluateToItem(ctx, tuple);
+		if (a == null) {
+			return null;
+		}
+		if (!(a instanceof Array)) {
+			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+					"Illegal operand type '%s' where '%s' is expected",
+					a.itemType(), Type.INR);
+		}
+		Item i = index.evaluateToItem(ctx, tuple);
+		if (!(i instanceof IntNumeric)) {
+			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+					"Illegal operand type '%s' where '%s' is expected",
+					i.itemType(), Type.INR);
+		}
+		return ((Array) a).at((IntNumeric) i);
+	}
+
+	@Override
+	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
+			throws QueryException {
+		return ExprUtil.asItem(evaluate(ctx, tuple));
+	}
+
+	@Override
+	public boolean isUpdating() {
+		return ((expr.isUpdating()) || (index.isUpdating()));
+	}
+
+	@Override
+	public boolean isVacuous() {
 		return false;
 	}
-
-	@Override
-	public boolean isAtomic() {
-		return false;
-	}
-
-	@Override
-	public boolean isNode() {
-		return true;
-	}
-
-	@Override
-	public boolean isFunction() {
-		return false;
-	}
-	
-	@Override
-	public boolean isListOrUnion() {
-		return false;
-	}
-
-	/**
-	 * null indicates any node kind
-	 */
-	public Kind getNodeKind() {
-		return null;
-	}
-
-	/**
-	 * null indicates any name
-	 */
-	public QNm getQName() {
-		return null;
-	}
-
-	/**
-	 * null indicates any type
-	 */
-	public Type getType() {
-		return null;
-	}
-	
-	@Override
-	public boolean matches(Item item) throws QueryException {
-		return ((item instanceof Node<?>) && (matches((Node<?>) item)));
-	}
-
-	public abstract boolean matches(Node<?> node) throws QueryException;	
 }

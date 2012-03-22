@@ -68,7 +68,7 @@ public final class XQ {
 	public static final int AvgAgg = 22;
 	public static final int MinAgg = 23;
 	public static final int MaxAgg = 24;
-	public static final int SingleAgg = 25;	
+	public static final int SingleAgg = 25;
 	public static final int VariableRef = 26;
 	public static final int Collation = 27;
 	public static final int OrderByClause = 28;
@@ -289,6 +289,12 @@ public final class XQ {
 	public static final int Count = 240;
 	public static final int End = 241;
 	// End brackit's set-oriented extensions
+	// Begin brackit's custom array syntax
+	public static final int ArrayAccess = 242;
+	public static final int ArrayConstructor = 243;
+	public static final int SequenceField = 244;
+	public static final int FlattenedField = 245;
+	// End brackit's custom array syntax
 
 	public static final String NAMES[] = new String[] { "XQuery",
 			"LibraryModule", "MainModule", "Prolog", "NamespaceDeclaration",
@@ -296,9 +302,9 @@ public final class XQ {
 			"AllowingEmpty", "TypedVariableBinding", "Variable", "LetClause",
 			"WhereClause", "GroupByClause", "GroupBySpec", "AggregateSpec",
 			"DftAggregateSpec", "AggregateBinding", "SequenceAgg", "CountAgg",
-			"SumAgg", "AvgAgg", "MinAgg", "MaxAgg", "SingleAgg", "VariableRef", "Collation",
-			"OrderByClause", "OrderBySpec", "OrderByKind", "ASCENDING",
-			"DESCENDING", "OrderByEmptyMode", "GREATEST", "LEAST",
+			"SumAgg", "AvgAgg", "MinAgg", "MaxAgg", "SingleAgg", "VariableRef",
+			"Collation", "OrderByClause", "OrderBySpec", "OrderByKind",
+			"ASCENDING", "DESCENDING", "OrderByEmptyMode", "GREATEST", "LEAST",
 			"CountClause", "ReturnClause", "OrExpr", "AndExpr",
 			"GeneralCompEQ", "GeneralCompNE", "GeneralCompLT", "GeneralCompLE",
 			"GeneralCompGT", "GeneralCompGE", "ValueCompEQ", "ValueCompNE",
@@ -358,7 +364,8 @@ public final class XQ {
 			"DecimalFormatPropertyDigit",
 			"DecimalFormatPropertyPatternSeparator", "OptionDeclaration",
 			"CompNamespaceConstructor", "CompPIConstructor", "Predicate",
-			"FilterExpr", "DynamicFunctionCallExpr",
+			"FilterExpr",
+			"DynamicFunctionCallExpr",
 			"SlidingWindowClause",
 			"TumblingWindowClause",
 			"WindowStartCondition",
@@ -370,20 +377,27 @@ public final class XQ {
 			"RevalidationDeclaration", "RevalidationModeStrict",
 			"RevalidationModeLax", "RevalidationModeSkip", "InsertExpr",
 			"InsertFirst", "InsertLast", "InsertAfter", "InsertBefore",
-			"InsertInto", "DeleteExpr", "ReplaceValueExpr", "ReplaceNodeExpr",
-			"RenameExpr", "TransformExpr",
+			"InsertInto", "DeleteExpr", "ReplaceValueExpr",
+			"ReplaceNodeExpr",
+			"RenameExpr",
+			"TransformExpr",
 			"CopyVariableBinding",
 			// End XQuery Update Facility 1.0
 			// Begin brackit's set-oriented extensions
 			"PipeExpr", "Selection", "GroupBy", "OrderBy", "Join",
-			"JoinClause", "Start", "ForBind", "LetBind", "Count", "End"
-	// End brackit's set-oriented extensions
+			"JoinClause", "Start", "ForBind", "LetBind", "Count",
+			"End",
+			// End brackit's set-oriented extensions
+			// Begin brackit's custom array syntax
+			"ArrayAccess", "ArrayConstructor", "SequenceField",
+			"FlattenedField"
+	// End brackit's custom array syntax
 	};
 
 	private XQ() {
 	}
 
-	private static int base = 242;
+	private static int base = 246;
 
 	public static synchronized int allocate(int noOfTokens) {
 		int r = base;

@@ -45,6 +45,8 @@ import org.brackit.xquery.expr.Accessor;
 import org.brackit.xquery.expr.AndExpr;
 import org.brackit.xquery.expr.ArithmeticExpr;
 import org.brackit.xquery.expr.ArithmeticExpr.ArithmeticOp;
+import org.brackit.xquery.expr.ArrayAccessExpr;
+import org.brackit.xquery.expr.ArrayExpr;
 import org.brackit.xquery.expr.AttributeExpr;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.expr.Castable;
@@ -312,6 +314,12 @@ public class Compiler implements Translator {
 			throw new QueryException(
 					ErrorCode.ERR_SCHEMA_VALIDATION_FEATURE_NOT_SUPPORTED,
 					"Schema validation feature is not supported.");
+		// BEGIN Custom array syntax extension
+		case XQ.ArrayConstructor:
+			return arrayExpr(node);
+		case XQ.ArrayAccess:
+			return arrayAccessExpr(node);
+		// END Custom array syntax extension
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
 					"Unexpected AST expr node '%s' of type: %s", node,
@@ -1506,4 +1514,24 @@ public class Compiler implements Translator {
 			}
 		};
 	}
+
+	// BEGIN Custom array syntax extension
+	protected Expr arrayAccessExpr(AST node) throws QueryException {
+		Expr expr = expr(node.getChild(0), true);
+		Expr index = expr(node.getChild(1), true);
+		return new ArrayAccessExpr(expr, index);
+	}
+
+	protected Expr arrayExpr(AST node) throws QueryException {
+		int cnt = node.getChildCount();
+		boolean[] flatten = new boolean[cnt];
+		Expr[] expr = new Expr[cnt];
+		for (int i = 0; i < cnt; i++) {
+			AST field = node.getChild(i);
+			flatten[i] = (field.getType() == XQ.FlattenedField);
+			expr[i] = expr(field.getChild(0), true);
+		}
+		return new ArrayExpr(expr, flatten);
+	}
+	// END Custom array syntax extension
 }

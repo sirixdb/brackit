@@ -60,6 +60,11 @@ public final class AnyItemType implements ItemType {
 	public boolean isFunction() {
 		return true;
 	}
+	
+	@Override
+	public boolean isListOrUnion() {
+		return true;
+	}
 
 	@Override
 	public boolean matches(Item item) throws QueryException {

@@ -2669,6 +2669,16 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		while (true) {
+			// BEGIN Custom array syntax extension
+			AST index = index();
+			if (index != null) {
+				AST arrayAccess = new AST(XQ.ArrayAccess);
+				arrayAccess.addChild(expr);
+				arrayAccess.addChild(index);
+				expr = arrayAccess;
+				continue;
+			}
+			// END Custom array syntax extension
 			AST predicate = predicate();
 			if (predicate != null) {
 				AST filterExpr = new AST(XQ.FilterExpr);
@@ -2843,6 +2853,9 @@ public class XQParser extends Tokenizer {
 	private AST constructor() throws TokenizerException {
 		AST con = directConstructor(false);
 		con = (con != null) ? con : computedConstructor();
+		// BEGIN Custom array syntax
+		con = (con != null) ? con : arrayConstructor();
+		// END Custom array syntax
 		return con;
 	}
 
@@ -3534,6 +3547,32 @@ public class XQParser extends Tokenizer {
 		consume(la);
 		return (la == null) ? null : new AST(XQ.PragmaContent, la.string());
 	}
+	
+	// BEGIN Custom array syntax
+	private AST index() throws TokenizerException {
+		if (!attemptSkipWS("[[")) {
+			return null;
+		}
+		AST index = exprSingle();
+		consumeSkipWS("]]");
+		return index;
+	}
+	
+	private AST arrayConstructor() throws TokenizerException {
+		if (!attemptSkipWS("[")) {
+			return null;
+		}
+		AST array = new AST(XQ.ArrayConstructor);
+		do {
+			AST f = new AST((attemptSkipS("=")) ? XQ.FlattenedField
+					: XQ.SequenceField);
+			f.addChild(exprSingle());
+			array.addChild(f);
+		} while (attemptSkipWS(","));
+		consumeSkipWS("]");
+		return array;
+	}
+	// END Custom array syntax
 
 	private AST[] add(AST[] asts, AST ast) {
 		int len = asts.length;

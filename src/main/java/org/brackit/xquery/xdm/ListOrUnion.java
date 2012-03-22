@@ -25,71 +25,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm.type;
-
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.Type;
+package org.brackit.xquery.xdm;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
+ *
  */
-public abstract class NodeType implements ItemType {
-	@Override
-	public boolean isAnyItem() {
-		return false;
-	}
+public interface ListOrUnion extends Item {
 
-	@Override
-	public boolean isAtomic() {
-		return false;
-	}
-
-	@Override
-	public boolean isNode() {
-		return true;
-	}
-
-	@Override
-	public boolean isFunction() {
-		return false;
-	}
-	
-	@Override
-	public boolean isListOrUnion() {
-		return false;
-	}
-
-	/**
-	 * null indicates any node kind
-	 */
-	public Kind getNodeKind() {
-		return null;
-	}
-
-	/**
-	 * null indicates any name
-	 */
-	public QNm getQName() {
-		return null;
-	}
-
-	/**
-	 * null indicates any type
-	 */
-	public Type getType() {
-		return null;
-	}
-	
-	@Override
-	public boolean matches(Item item) throws QueryException {
-		return ((item instanceof Node<?>) && (matches((Node<?>) item)));
-	}
-
-	public abstract boolean matches(Node<?> node) throws QueryException;	
 }

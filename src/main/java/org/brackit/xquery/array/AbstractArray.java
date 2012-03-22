@@ -25,71 +25,44 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm.type;
+package org.brackit.xquery.array;
 
+import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.xdm.AbstractItem;
+import org.brackit.xquery.xdm.Array;
+import org.brackit.xquery.xdm.type.ItemType;
+import org.brackit.xquery.xdm.type.ListOrUnionType;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
+ *
  */
-public abstract class NodeType implements ItemType {
-	@Override
-	public boolean isAnyItem() {
-		return false;
-	}
-
-	@Override
-	public boolean isAtomic() {
-		return false;
-	}
-
-	@Override
-	public boolean isNode() {
-		return true;
-	}
-
-	@Override
-	public boolean isFunction() {
-		return false;
-	}
-	
-	@Override
-	public boolean isListOrUnion() {
-		return false;
-	}
+public abstract class AbstractArray extends AbstractItem {
 
 	/**
-	 * null indicates any node kind
+	 * 
 	 */
-	public Kind getNodeKind() {
-		return null;
+	public AbstractArray() {
+		super();
 	}
 
-	/**
-	 * null indicates any name
-	 */
-	public QNm getQName() {
-		return null;
-	}
-
-	/**
-	 * null indicates any type
-	 */
-	public Type getType() {
-		return null;
-	}
-	
 	@Override
-	public boolean matches(Item item) throws QueryException {
-		return ((item instanceof Node<?>) && (matches((Node<?>) item)));
+	public ItemType itemType() throws QueryException {
+		return ListOrUnionType.LIST_OR_UNION;
 	}
 
-	public abstract boolean matches(Node<?> node) throws QueryException;	
+	@Override
+	public Atomic atomize() throws QueryException {
+		throw new QueryException(ErrorCode.ERR_ITEM_HAS_NO_TYPED_VALUE,
+				"The atomized value of array items is undefined");
+	}
+
+	@Override
+	public boolean booleanValue() throws QueryException {
+		throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+				"Effective boolean value of array items is undefined.");
+	}
+
 }

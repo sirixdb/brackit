@@ -25,71 +25,62 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm.type;
+package org.brackit.xquery.array;
 
+import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.atomic.Int32;
+import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.xdm.Array;
+import org.brackit.xquery.xdm.Sequence;
 
 /**
- * 
  * @author Sebastian Baechle
  * 
  */
-public abstract class NodeType implements ItemType {
-	@Override
-	public boolean isAnyItem() {
-		return false;
+public class DArray extends AbstractArray implements Array {
+
+	private final Sequence[] vals;
+
+	public DArray(Sequence... vals) {
+		this.vals = vals;
 	}
 
 	@Override
-	public boolean isAtomic() {
-		return false;
+	public Sequence at(IntNumeric i) throws QueryException {
+		try {
+			// TODO ensure that index is not out of int range
+			return (vals[i.intValue()]);
+		} catch (ArrayIndexOutOfBoundsException e) {
+			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+					"Invalid array index: %s", i);
+		}
 	}
 
 	@Override
-	public boolean isNode() {
-		return true;
+	public Sequence at(int i) throws QueryException {
+		try {
+			return (vals[i]);
+		} catch (ArrayIndexOutOfBoundsException e) {
+			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+					"Invalid array index: %s", i);
+		}
 	}
 
 	@Override
-	public boolean isFunction() {
-		return false;
+	public IntNumeric length() throws QueryException {
+		int l = vals.length;
+		return (l <= 20) ? Int32.ZERO_TWO_TWENTY[l] : new Int32(l);
 	}
-	
+
 	@Override
-	public boolean isListOrUnion() {
-		return false;
+	public int len() throws QueryException {
+		return vals.length;
 	}
 
-	/**
-	 * null indicates any node kind
-	 */
-	public Kind getNodeKind() {
-		return null;
-	}
-
-	/**
-	 * null indicates any name
-	 */
-	public QNm getQName() {
-		return null;
-	}
-
-	/**
-	 * null indicates any type
-	 */
-	public Type getType() {
-		return null;
-	}
-	
 	@Override
-	public boolean matches(Item item) throws QueryException {
-		return ((item instanceof Node<?>) && (matches((Node<?>) item)));
+	public Array range(IntNumeric from, IntNumeric to) throws QueryException {
+		// TODO ensure that indexes are not out of int range
+		return new DRArray(vals, from.intValue(), to.intValue());
 	}
-
-	public abstract boolean matches(Node<?> node) throws QueryException;	
 }

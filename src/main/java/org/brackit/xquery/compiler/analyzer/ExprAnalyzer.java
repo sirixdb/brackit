@@ -424,7 +424,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 		}
 		int scopeCount = scopeCount();
 		// child 0 is quantifier type
-		for (int i = 1; i < expr.getChildCount() - 1; i ++) {
+		for (int i = 1; i < expr.getChildCount() - 1; i++) {
 			openScope();
 			typedVarBinding(expr.getChild(i).getChild(0));
 			exprSingle(expr.getChild(i).getChild(1));
@@ -733,7 +733,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 			return false;
 		}
 		// child 0 is the axis
-		nodeTest(expr.getChild(1), expr.getChild(0).getChild(0).getType() == XQ.ATTRIBUTE);
+		nodeTest(expr.getChild(1),
+				expr.getChild(0).getChild(0).getType() == XQ.ATTRIBUTE);
 		referContextItem();
 		openContextItemScope();
 		for (int i = 2; i < expr.getChildCount(); i++) {
@@ -783,7 +784,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 			return new NSWildcardNameTest(kind, test.getStringValue());
 		} else if (test.getType() == XQ.NSNameWildcardTest) {
 			Kind kind = (element) ? Kind.ELEMENT : Kind.ATTRIBUTE;
-			return new NSNameWildcardTest(kind, resolvePrefix(test.getStringValue()));
+			return new NSNameWildcardTest(kind,
+					resolvePrefix(test.getStringValue()));
 		} else {
 			return null;
 		}
@@ -809,6 +811,13 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 	}
 
 	protected boolean postFixExpr(AST expr) throws QueryException {
+		// BEGIN Custom array syntax extension
+		if (expr.getType() == XQ.ArrayAccess) {
+			expr(expr.getChild(0));
+			exprSingle(expr.getChild(1));
+			return true;
+		}
+		// END Custom array syntax extension
 		if (expr.getType() == XQ.FilterExpr) {
 			expr(expr.getChild(0));
 			openContextItemScope();
@@ -889,7 +898,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 		if (fun == null) {
 			unknownFunction(name, noOfParams);
 		}
-		if ((noOfParams == 0) && (fun.getSignature().defaultCtxItemType() != null)) {
+		if ((noOfParams == 0)
+				&& (fun.getSignature().defaultCtxItemType() != null)) {
 			referContextItem();
 		}
 		if (fun == null) {
@@ -995,7 +1005,12 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 	}
 
 	protected boolean constructor(AST expr) throws QueryException {
-		return (directConstructor(expr) || computedConstructor(expr));
+		if (directConstructor(expr) || computedConstructor(expr)) {
+			return true;
+		}
+		// BEGIN Custom array syntax extension
+		return arrayConstructor(expr);
+		// END Custom array syntax extension
 	}
 
 	protected boolean directConstructor(AST expr) throws QueryException {
@@ -1303,6 +1318,26 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 		expr(expr.getChild(0));
 		return true;
 	}
+
+	// BEGIN Custom array syntax extension
+	protected boolean arrayConstructor(AST expr) throws QueryException {
+		if (expr.getType() != XQ.ArrayConstructor) {
+			return false;
+		}
+		for (int i = 0; i < expr.getChildCount(); i++) {
+			AST field = expr.getChild(i);
+			int fType = field.getType();
+			if ((fType != XQ.SequenceField) && (fType != XQ.FlattenedField)) {
+				throw new QueryException(
+						ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+						"Invalid array field type: %s", fType);
+			}
+			expr(field.getChild(0));
+		}
+		return true;
+	}
+
+	// END Custom array syntax extension
 
 	protected boolean numericLiteral(AST literal) throws QueryException {
 		return (integerLiteral(literal) || decimalLiteral(literal) || (doubleLiteral(literal)));

@@ -32,6 +32,10 @@ import java.io.PrintWriter;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.Bool;
+import org.brackit.xquery.atomic.Numeric;
+import org.brackit.xquery.xdm.Array;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Kind;
@@ -104,18 +108,95 @@ public class StringSerializer implements Serializer {
 
 					printer.print(node);
 					first = true;
-				} else {
+				} else if (item instanceof Atomic) {
 					if (!first) {
 						out.write(" ");
 					}
 					out.write(item.toString());
 					first = false;
+				} else if (item instanceof Array) {
+					json(item, printer);
+				} else {
+					throw new QueryException(
+							ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
+							"Serialization of item type '%s' not implemented yet.",
+							item.itemType());
 				}
 			}
 		} finally {
 			printer.flush();
 			out.flush();
 			it.close();
+		}
+	}
+
+	private void json(Sequence s, SubtreePrinter p) throws QueryException {
+		if (s == null) {
+			out.print("null");
+		} else if (s instanceof Item) {
+			if (s instanceof Atomic) {
+				if (s instanceof Numeric) {
+					out.write(s.toString());
+				} else if (s instanceof Bool) {
+					out.write(((Bool) s).booleanValue() ? "true" : "false");
+				} else {
+					out.write("\"");
+					out.write(s.toString());
+					out.write("\"");
+				}
+			} else if (s instanceof Array) {
+				Array a = (Array) s;
+				out.write("[");
+				for (int i = 0; i < a.len(); i++) {
+					if (i > 0) {
+						out.append(",");
+					}
+					json(a.at(i), p);
+				}
+				out.write("]");
+			} else if (s instanceof Node<?>) {
+				// TODO
+				// we should serialize XML trees as JSON record....
+				Node<?> node = (Node<?>) s;
+				Kind kind = node.getKind();
+
+				if (kind == Kind.ATTRIBUTE) {
+					throw new QueryException(
+							ErrorCode.ERR_SERIALIZE_ATTRIBUTE_OR_NAMESPACE_NODE);
+				}
+				if (kind == Kind.DOCUMENT) {
+					node = node.getFirstChild();
+					while (node.getKind() != Kind.ELEMENT) {
+						node = node.getNextSibling();
+					}
+				}
+				out.write("\"");
+				p.print(node);
+				out.write("\"");
+			} else {
+				throw new QueryException(
+						ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
+						"Serialization of item type '%s' not implemented yet.",
+						((Item) s).itemType());
+			}
+		} else {
+			// serialize sequence as JSON array
+			out.write("[");
+			Iter it = s.iterate();
+			try {
+				boolean first = true;
+				Item i;
+				while ((i = it.next()) != null) {
+					if (!first) {
+						out.write(",");
+					}
+					json(i, p);
+					first = false;
+				}
+			} finally {
+				it.close();
+			}
+			out.write("]");
 		}
 	}
 

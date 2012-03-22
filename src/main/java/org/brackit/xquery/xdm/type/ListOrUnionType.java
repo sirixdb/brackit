@@ -28,18 +28,20 @@
 package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.xdm.ListOrUnion;
 
 /**
- * 
  * @author Sebastian Baechle
  * 
  */
-public abstract class NodeType implements ItemType {
+public final class ListOrUnionType implements ItemType {
+
+	public static final ListOrUnionType LIST_OR_UNION = new ListOrUnionType();
+	
+	public ListOrUnionType() {
+	}
+
 	@Override
 	public boolean isAnyItem() {
 		return false;
@@ -52,44 +54,27 @@ public abstract class NodeType implements ItemType {
 
 	@Override
 	public boolean isNode() {
-		return true;
+		return false;
 	}
 
 	@Override
 	public boolean isFunction() {
-		return false;
+		return true;
 	}
-	
+
 	@Override
 	public boolean isListOrUnion() {
-		return false;
+		return true;
 	}
 
-	/**
-	 * null indicates any node kind
-	 */
-	public Kind getNodeKind() {
-		return null;
-	}
-
-	/**
-	 * null indicates any name
-	 */
-	public QNm getQName() {
-		return null;
-	}
-
-	/**
-	 * null indicates any type
-	 */
-	public Type getType() {
-		return null;
-	}
-	
 	@Override
 	public boolean matches(Item item) throws QueryException {
-		return ((item instanceof Node<?>) && (matches((Node<?>) item)));
+		// TODO subtyping??? At the moment we have Object[]-like semantics
+		return (item instanceof ListOrUnion);
 	}
 
-	public abstract boolean matches(Node<?> node) throws QueryException;	
+	public boolean equals(Object obj) {
+		// TODO subtyping??? At the moment we have Object[]-like semantics
+		return (obj instanceof ListOrUnionType);
+	}
 }

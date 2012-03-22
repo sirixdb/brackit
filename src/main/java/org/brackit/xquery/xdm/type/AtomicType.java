@@ -142,6 +142,11 @@ public class AtomicType implements ItemType {
 	public boolean isFunction() {
 		return false;
 	}
+	
+	@Override
+	public boolean isListOrUnion() {
+		return false;
+	}
 
 	@Override
 	public boolean matches(Item item) throws QueryException {
