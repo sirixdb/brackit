@@ -3570,11 +3570,14 @@ public class XQParser extends Tokenizer {
 			// for JSON-like semantics
 			// the tokens 'true' and 'false' are
 			// matched as boolean constants and
-			// not as path expressions!
+			// not as path expressions, the token 'null'
+			// is interpreted as empty sequence
 			if (attemptSymSkipWS("true")) {
 				f.addChild(new AST(XQ.Bool, Bool.TRUE));
 			} else if (attemptSymSkipWS("false")) {
 				f.addChild(new AST(XQ.Bool, Bool.FALSE));
+			} else if (attemptSymSkipWS("null")) {
+				f.addChild(new AST(XQ.SequenceExpr));
 			} else {
 				f.addChild(exprSingle());
 			}
