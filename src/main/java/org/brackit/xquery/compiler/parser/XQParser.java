@@ -32,6 +32,7 @@ import java.util.Arrays;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.AnyURI;
+import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.Dbl;
 import org.brackit.xquery.atomic.Dec;
 import org.brackit.xquery.atomic.Int32;
@@ -3566,7 +3567,17 @@ public class XQParser extends Tokenizer {
 		do {
 			AST f = new AST((attemptSkipS("=")) ? XQ.FlattenedField
 					: XQ.SequenceField);
-			f.addChild(exprSingle());
+			// for JSON-like semantics
+			// the tokens 'true' and 'false' are
+			// matched as boolean constants and
+			// not as path expressions!
+			if (attemptSymSkipWS("true")) {
+				f.addChild(new AST(XQ.Bool, Bool.TRUE));
+			} else if (attemptSymSkipWS("false")) {
+				f.addChild(new AST(XQ.Bool, Bool.FALSE));
+			} else {
+				f.addChild(exprSingle());
+			}
 			array.addChild(f);
 		} while (attemptSkipWS(","));
 		consumeSkipWS("]");
