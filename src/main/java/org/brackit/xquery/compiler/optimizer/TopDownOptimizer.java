@@ -34,6 +34,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.optimizer.walker.topdown.GroupByAggregates;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinGroupDemarcation;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinRewriter;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.LeftJoinLifting;
@@ -103,6 +104,7 @@ public class TopDownOptimizer extends DefaultOptimizer {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new PredicateMerge().walk(ast);
 			ast = new TrivialLeftJoinRemoval().walk(ast);
+			ast = new GroupByAggregates().walk(ast);
 			ast = new JoinGroupDemarcation().walk(ast);
 			ast = new PullEvaluation().walk(ast);
 			return ast;
