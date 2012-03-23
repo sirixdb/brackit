@@ -48,7 +48,7 @@ public class DRArray extends AbstractArray implements Array {
 			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
 					"Invalid array start index: %s", start);
 		}
-		if ((end < 0) || (end >= vals.length)) {
+		if ((end < 0) || (end > vals.length)) {
 			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
 					"Invalid array end index: %s", start);
 		}
