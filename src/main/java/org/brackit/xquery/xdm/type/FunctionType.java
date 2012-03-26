@@ -74,6 +74,11 @@ public final class FunctionType implements ItemType {
 	}
 
 	@Override
+	public boolean isRecord() {
+		return false;
+	}
+
+	@Override
 	public boolean matches(Item item) throws QueryException {
 		return ((item instanceof Function) && (((Function) item).getSignature()
 				.equals(signature)));

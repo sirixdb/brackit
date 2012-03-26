@@ -51,6 +51,7 @@ import org.brackit.xquery.expr.AttributeExpr;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.expr.Castable;
 import org.brackit.xquery.expr.CommentExpr;
+import org.brackit.xquery.expr.DerefExpr;
 import org.brackit.xquery.expr.DocumentExpr;
 import org.brackit.xquery.expr.ElementExpr;
 import org.brackit.xquery.expr.EmptyExpr;
@@ -67,6 +68,10 @@ import org.brackit.xquery.expr.PIExpr;
 import org.brackit.xquery.expr.PathStepExpr;
 import org.brackit.xquery.expr.PipeExpr;
 import org.brackit.xquery.expr.RangeExpr;
+import org.brackit.xquery.expr.RecordExpr;
+import org.brackit.xquery.expr.RecordExpr.Field;
+import org.brackit.xquery.expr.RecordExpr.KeyValueField;
+import org.brackit.xquery.expr.RecordExpr.RecordField;
 import org.brackit.xquery.expr.SequenceExpr;
 import org.brackit.xquery.expr.StepExpr;
 import org.brackit.xquery.expr.SwitchExpr;
@@ -145,7 +150,7 @@ public class Compiler implements Translator {
 			}
 		}
 	}
-	
+
 	protected static class AggregateBinding {
 		final QNm srcVar;
 		final QNm aggVar;
@@ -314,12 +319,18 @@ public class Compiler implements Translator {
 			throw new QueryException(
 					ErrorCode.ERR_SCHEMA_VALIDATION_FEATURE_NOT_SUPPORTED,
 					"Schema validation feature is not supported.");
-		// BEGIN Custom array syntax extension
+			// BEGIN Custom array syntax extension
 		case XQ.ArrayConstructor:
 			return arrayExpr(node);
 		case XQ.ArrayAccess:
 			return arrayAccessExpr(node);
-		// END Custom array syntax extension
+			// END Custom array syntax extension
+			// BEGIN Custom record syntax extension
+		case XQ.RecordConstructor:
+			return recordExpr(node);
+		case XQ.DerefExpr:
+			return derefExpr(node);
+			// END Custom array syntax extension
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
 					"Unexpected AST expr node '%s' of type: %s", node,
@@ -1391,7 +1402,7 @@ public class Compiler implements Translator {
 				SequenceType aggType = SequenceType.ITEM_SEQUENCE;
 				if (typedVarBnd.getChildCount() == 2) {
 					aggType = sequenceType(typedVarBnd.getChild(1));
-				}				
+				}
 				bnds.add(new AggregateBinding(var, aggVar, aggType, agg));
 			}
 			pos++;
@@ -1403,7 +1414,8 @@ public class Compiler implements Translator {
 			addAggs[i] = bnd.agg;
 		}
 		boolean sequential = node.checkProperty("sequential");
-		GroupBy groupBy = new GroupBy(in.operator, dftAgg, addAggs, grpSpecCnt, sequential);
+		GroupBy groupBy = new GroupBy(in.operator, dftAgg, addAggs, grpSpecCnt,
+				sequential);
 		// resolve positions grouping variables
 		for (int i = 0; i < grpSpecCnt; i++) {
 			QNm grpVarName = (QNm) node.getChild(i).getChild(0).getValue();
@@ -1533,5 +1545,33 @@ public class Compiler implements Translator {
 		}
 		return new ArrayExpr(expr, flatten);
 	}
+
 	// END Custom array syntax extension
+
+	// BEGIN Custom record syntax extension
+	protected Expr recordExpr(AST node) throws QueryException {
+		int cnt = node.getChildCount();
+		Field[] fields = new Field[cnt];
+		for (int i = 0; i < cnt; i++) {
+			AST field = node.getChild(i);
+			if (field.getType() == XQ.KeyValueField) {
+				QNm name = (QNm) field.getChild(0).getValue();
+				fields[i] = new KeyValueField(name, expr(field.getChild(1),
+						true));
+			} else {
+				fields[i] = new RecordField(expr(field.getChild(0), true));
+			}
+		}
+		return new RecordExpr(fields);
+	}
+
+	protected Expr derefExpr(AST node) throws QueryException {
+		Expr record = expr(node.getChild(0), true);
+		Expr[] fields = new Expr[node.getChildCount() - 1];
+		for (int i = 1; i < node.getChildCount(); i++) {
+			fields[i - 1] = expr(node.getChild(i), true);
+		}
+		return new DerefExpr(record, fields);
+	}
+	// END Custom record syntax extension
 }

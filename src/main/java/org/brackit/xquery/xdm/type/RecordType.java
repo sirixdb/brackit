@@ -29,17 +29,17 @@ package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.ListOrUnion;
+import org.brackit.xquery.xdm.Record;
 
 /**
  * @author Sebastian Baechle
  * 
  */
-public final class ListOrUnionType implements ItemType {
+public final class RecordType implements ItemType {
 
-	public static final ListOrUnionType LIST_OR_UNION = new ListOrUnionType();
-	
-	public ListOrUnionType() {
+	public static final RecordType RECORD = new RecordType();
+
+	public RecordType() {
 	}
 
 	@Override
@@ -64,22 +64,22 @@ public final class ListOrUnionType implements ItemType {
 
 	@Override
 	public boolean isListOrUnion() {
-		return true;
-	}
-	
-	@Override
-	public boolean isRecord() {
 		return false;
 	}
 
 	@Override
+	public boolean isRecord() {
+		return true;
+	}
+
+	@Override
 	public boolean matches(Item item) throws QueryException {
-		// TODO subtyping??? At the moment we have Object[]-like semantics
-		return (item instanceof ListOrUnion);
+		// TODO subtyping???
+		return (item instanceof Record);
 	}
 
 	public boolean equals(Object obj) {
-		// TODO subtyping??? At the moment we have Object[]-like semantics
-		return (obj instanceof ListOrUnionType);
+		// TODO subtyping???
+		return (obj instanceof Record);
 	}
 }

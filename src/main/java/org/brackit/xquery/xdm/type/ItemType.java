@@ -48,4 +48,6 @@ public interface ItemType {
 	public boolean isFunction();
 	
 	public boolean isListOrUnion();
+	
+	public boolean isRecord();
 }

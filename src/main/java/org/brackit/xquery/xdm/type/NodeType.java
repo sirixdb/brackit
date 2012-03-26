@@ -64,6 +64,11 @@ public abstract class NodeType implements ItemType {
 	public boolean isListOrUnion() {
 		return false;
 	}
+	
+	@Override
+	public boolean isRecord() {
+		return false;
+	}
 
 	/**
 	 * null indicates any node kind

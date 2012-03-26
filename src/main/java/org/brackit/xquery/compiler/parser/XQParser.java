@@ -2167,13 +2167,32 @@ public class XQParser extends Tokenizer {
 		return parenthesized;
 	}
 
+	// BEGIN Custom record syntax
 	private AST stepExpr() throws TokenizerException {
+		AST expr = origStepExpr();
+		if (expr == null) {
+			return null;
+		}
+		if (!attemptSkipS("=>")) {
+			return expr;
+		}
+		AST tmp = new AST(XQ.DerefExpr);
+		tmp.addChild(expr);
+		do {
+			tmp.addChild(derefStep());
+		} while (attemptSkipS("=>"));
+		return tmp;
+	}
+
+	// vanilla XQuery 3.0 step expr 
+	private AST origStepExpr() throws TokenizerException {
 		AST expr = postFixExpr();
 		if (expr != null) {
 			return expr;
 		}
 		return axisStep();
 	}
+	// END Custom record syntax
 
 	private AST axisStep() throws TokenizerException {
 		AST[] step = forwardStep();
@@ -2857,6 +2876,9 @@ public class XQParser extends Tokenizer {
 		// BEGIN Custom array syntax
 		con = (con != null) ? con : arrayConstructor();
 		// END Custom array syntax
+		// BEGIN Custom record syntax
+		con = (con != null) ? con : recordConstructor();
+		// END Custom record syntax
 		return con;
 	}
 
@@ -3586,7 +3608,72 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS("]");
 		return array;
 	}
+
 	// END Custom array syntax
+
+	// BEGIN Custom record syntax
+	private AST derefStep() throws TokenizerException {
+		Token la = laStringSkipWS(true);
+		EQNameToken la2;
+		if (la != null) {
+			consume(la);
+			return new AST(XQ.QNm, new QNm(null, null, la.string()));
+		} else if ((la2 = laEQNameSkipWS(true)) != null) {
+			consume(la2);
+			return new AST(XQ.QNm, la2.qname());
+		} else {
+			return origStepExpr();
+		}
+	}
+
+	private AST recordConstructor() throws TokenizerException {
+		if (!attemptSkipWS("{")) {
+			return null;
+		}
+		AST record = new AST(XQ.RecordConstructor);
+		do {
+			AST f;
+			Token la = laStringSkipWS(true);
+			EQNameToken la2;
+			if (la != null) {
+				consume(la);
+				f = new AST(XQ.KeyValueField);
+				f.addChild(new AST(XQ.QNm, new QNm(null, null, la.string())));
+				f.addChild(recordValue());
+			} else if ((la2 = laEQNameSkipWS(true)) != null) {
+				consume(la2);
+				f = new AST(XQ.KeyValueField);
+				f.addChild(new AST(XQ.QNm, la2.qname()));
+				f.addChild(recordValue());
+			} else {
+				f = new AST(XQ.RecordField);
+				f.addChild(exprSingle());
+			}
+			record.addChild(f);
+		} while (attemptSkipWS(","));
+		consumeSkipWS("}");
+		return record;
+	}
+
+	private AST recordValue() throws TokenizerException {
+		consumeSkipWS(":");
+		// for JSON-like semantics
+		// the tokens 'true' and 'false' are
+		// matched as boolean constants and
+		// not as path expressions, the token 'null'
+		// is interpreted as empty sequence
+		if (attemptSymSkipWS("true")) {
+			return new AST(XQ.Bool, Bool.TRUE);
+		} else if (attemptSymSkipWS("false")) {
+			return new AST(XQ.Bool, Bool.FALSE);
+		} else if (attemptSymSkipWS("null")) {
+			return new AST(XQ.SequenceExpr);
+		} else {
+			return exprSingle();
+		}
+	}
+
+	// END Custom record syntax
 
 	private AST[] add(AST[] asts, AST ast) {
 		int len = asts.length;

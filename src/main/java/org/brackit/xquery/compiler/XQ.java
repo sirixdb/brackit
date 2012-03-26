@@ -295,6 +295,13 @@ public final class XQ {
 	public static final int SequenceField = 244;
 	public static final int FlattenedField = 245;
 	// End brackit's custom array syntax
+	// Begin brackit's custom record syntax
+	public static final int RecordAccess = 246;
+	public static final int RecordConstructor = 247;
+	public static final int RecordField = 248;
+	public static final int KeyValueField = 249;
+	public static final int DerefExpr = 250;
+	// End brackit's custom array syntax
 
 	public static final String NAMES[] = new String[] { "XQuery",
 			"LibraryModule", "MainModule", "Prolog", "NamespaceDeclaration",
@@ -363,7 +370,8 @@ public final class XQ {
 			"DecimalFormatPropertyPerMille", "DecimalFormatPropertyZeroDigit",
 			"DecimalFormatPropertyDigit",
 			"DecimalFormatPropertyPatternSeparator", "OptionDeclaration",
-			"CompNamespaceConstructor", "CompPIConstructor", "Predicate",
+			"CompNamespaceConstructor", "CompPIConstructor",
+			"Predicate",
 			"FilterExpr",
 			"DynamicFunctionCallExpr",
 			"SlidingWindowClause",
@@ -377,7 +385,9 @@ public final class XQ {
 			"RevalidationDeclaration", "RevalidationModeStrict",
 			"RevalidationModeLax", "RevalidationModeSkip", "InsertExpr",
 			"InsertFirst", "InsertLast", "InsertAfter", "InsertBefore",
-			"InsertInto", "DeleteExpr", "ReplaceValueExpr",
+			"InsertInto",
+			"DeleteExpr",
+			"ReplaceValueExpr",
 			"ReplaceNodeExpr",
 			"RenameExpr",
 			"TransformExpr",
@@ -385,19 +395,26 @@ public final class XQ {
 			// End XQuery Update Facility 1.0
 			// Begin brackit's set-oriented extensions
 			"PipeExpr", "Selection", "GroupBy", "OrderBy", "Join",
-			"JoinClause", "Start", "ForBind", "LetBind", "Count",
+			"JoinClause", "Start", "ForBind",
+			"LetBind",
+			"Count",
 			"End",
 			// End brackit's set-oriented extensions
 			// Begin brackit's custom array syntax
-			"ArrayAccess", "ArrayConstructor", "SequenceField",
-			"FlattenedField"
-	// End brackit's custom array syntax
+			"ArrayAccess", "ArrayConstructor",
+			"SequenceField",
+			"FlattenedField",
+			// End brackit's custom array syntax
+			// Begin brackit's custom array syntax
+			"RecordAccess", "RecordConstructor", "RecordField",
+			"KeyValueField", "DerefExpr"
+	// End brackit's custom record syntax
 	};
 
 	private XQ() {
 	}
 
-	private static int base = 246;
+	private static int base = 251;
 
 	public static synchronized int allocate(int noOfTokens) {
 		int r = base;

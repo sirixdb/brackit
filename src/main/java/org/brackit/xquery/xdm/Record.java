@@ -25,61 +25,34 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm.type;
+package org.brackit.xquery.xdm;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.ListOrUnion;
+import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.atomic.QNm;
 
 /**
  * @author Sebastian Baechle
- * 
+ *
  */
-public final class ListOrUnionType implements ItemType {
+public interface Record extends Item {
 
-	public static final ListOrUnionType LIST_OR_UNION = new ListOrUnionType();
-	
-	public ListOrUnionType() {
-	}
+	public abstract Sequence get(QNm field) throws QueryException;
 
-	@Override
-	public boolean isAnyItem() {
-		return false;
-	}
+	public abstract Sequence value(IntNumeric i) throws QueryException;
 
-	@Override
-	public boolean isAtomic() {
-		return false;
-	}
+	public abstract Sequence value(int i) throws QueryException;
 
-	@Override
-	public boolean isNode() {
-		return false;
-	}
+	public abstract Sequence names() throws QueryException;
 
-	@Override
-	public boolean isFunction() {
-		return true;
-	}
+	public abstract Sequence values() throws QueryException;
 
-	@Override
-	public boolean isListOrUnion() {
-		return true;
-	}
-	
-	@Override
-	public boolean isRecord() {
-		return false;
-	}
+	public abstract QNm name(IntNumeric i) throws QueryException;
 
-	@Override
-	public boolean matches(Item item) throws QueryException {
-		// TODO subtyping??? At the moment we have Object[]-like semantics
-		return (item instanceof ListOrUnion);
-	}
+	public abstract QNm name(int i) throws QueryException;
 
-	public boolean equals(Object obj) {
-		// TODO subtyping??? At the moment we have Object[]-like semantics
-		return (obj instanceof ListOrUnionType);
-	}
+	public abstract IntNumeric length() throws QueryException;
+
+	public abstract int len() throws QueryException;
+
 }

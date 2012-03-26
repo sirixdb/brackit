@@ -40,6 +40,7 @@ import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.Record;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
@@ -114,7 +115,7 @@ public class StringSerializer implements Serializer {
 					}
 					out.write(item.toString());
 					first = false;
-				} else if (item instanceof Array) {
+				} else if ((item instanceof Array) || (item instanceof Record)) {
 					json(item, printer);
 				} else {
 					throw new QueryException(
@@ -154,6 +155,18 @@ public class StringSerializer implements Serializer {
 					json(a.at(i), p);
 				}
 				out.write("]");
+			} else if (s instanceof Record) {
+				Record r = (Record) s;
+				out.write("{");
+				for (int i = 0; i < r.len(); i++) {
+					if (i > 0) {
+						out.write(", ");
+					}
+					out.write(r.name(i).stringValue());
+					out.write(" : ");
+					json(r.value(i), p);
+				}
+				out.write("}");
 			} else if (s instanceof Node<?>) {
 				// TODO
 				// we should serialize XML trees as JSON record....

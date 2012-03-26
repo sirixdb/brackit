@@ -724,9 +724,16 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 		return true;
 	}
 
+	// BEGIN Custom record syntax extension
 	protected boolean stepExpr(AST expr) throws QueryException {
+		return (origStepExpr(expr) || derefExpr(expr));
+	}
+
+	// vanilla XQuery 3.0 step expression
+	protected boolean origStepExpr(AST expr) throws QueryException {
 		return (postFixExpr(expr) || axisStep(expr));
 	}
+	// END Custom record syntax extension
 
 	protected boolean axisStep(AST expr) throws QueryException {
 		if (expr.getType() != XQ.StepExpr) {
@@ -1009,8 +1016,16 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 			return true;
 		}
 		// BEGIN Custom array syntax extension
-		return arrayConstructor(expr);
+		if (arrayConstructor(expr)) {
+			return true;
+		}
 		// END Custom array syntax extension
+		// BEGIN Custom record syntax extension
+		if (recordConstructor(expr)) {
+			return true;
+		}
+		// END Custom record syntax extension
+		return false;
 	}
 
 	protected boolean directConstructor(AST expr) throws QueryException {
@@ -1338,6 +1353,45 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 	}
 
 	// END Custom array syntax extension
+
+	// BEGIN Custom record syntax extension
+	protected boolean recordConstructor(AST expr) throws QueryException {
+		if (expr.getType() != XQ.RecordConstructor) {
+			return false;
+		}
+		for (int i = 0; i < expr.getChildCount(); i++) {
+			AST field = expr.getChild(i);
+			int fType = field.getType();
+			if (fType == XQ.KeyValueField) {
+				QNm name = (QNm) field.getChild(0).getValue();
+				name = expand(name, DefaultNS.EMPTY);
+				field.getChild(0).setValue(name);
+				expr(field.getChild(1));
+			} else if (fType == XQ.RecordField) {
+				expr(field.getChild(0));
+			} else {
+				throw new QueryException(
+						ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+						"Invalid record field type: %s", fType);
+			}
+		}
+		return true;
+	}
+
+	protected boolean derefExpr(AST expr) throws QueryException {
+		if (expr.getType() != XQ.DerefExpr) {
+			return false;
+		}
+		expr(expr.getChild(0));
+		for (int i = 1; i < expr.getChildCount(); i++) {
+			if (!origStepExpr(expr.getChild(i))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	// END Custom record syntax extension
 
 	protected boolean numericLiteral(AST literal) throws QueryException {
 		return (integerLiteral(literal) || decimalLiteral(literal) || (doubleLiteral(literal)));
