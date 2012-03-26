@@ -39,14 +39,7 @@ import org.brackit.xquery.xdm.type.ListOrUnionType;
  * @author Sebastian Baechle
  *
  */
-public abstract class AbstractArray extends AbstractItem {
-
-	/**
-	 * 
-	 */
-	public AbstractArray() {
-		super();
-	}
+public abstract class AbstractArray extends AbstractItem implements Array {
 
 	@Override
 	public ItemType itemType() throws QueryException {

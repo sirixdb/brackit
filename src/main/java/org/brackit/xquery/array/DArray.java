@@ -38,7 +38,7 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  * 
  */
-public class DArray extends AbstractArray implements Array {
+public class DArray extends AbstractArray {
 
 	private final Sequence[] vals;
 
