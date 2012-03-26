@@ -296,7 +296,7 @@ public final class XQ {
 	public static final int FlattenedField = 245;
 	// End brackit's custom array syntax
 	// Begin brackit's custom record syntax
-	public static final int RecordAccess = 246;
+	public static final int RecordProjection = 246;
 	public static final int RecordConstructor = 247;
 	public static final int RecordField = 248;
 	public static final int KeyValueField = 249;
@@ -406,7 +406,7 @@ public final class XQ {
 			"FlattenedField",
 			// End brackit's custom array syntax
 			// Begin brackit's custom array syntax
-			"RecordAccess", "RecordConstructor", "RecordField",
+			"RecordProjection", "RecordConstructor", "RecordField",
 			"KeyValueField", "DerefExpr"
 	// End brackit's custom record syntax
 	};

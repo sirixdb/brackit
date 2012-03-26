@@ -2699,6 +2699,16 @@ public class XQParser extends Tokenizer {
 				continue;
 			}
 			// END Custom array syntax extension
+			// BEGIN Custom record syntax
+			AST[] projectionList = projectionList();
+			if ((projectionList != null) && (projectionList.length > 0)) {
+				AST projectionExpr = new AST(XQ.RecordProjection);
+				projectionExpr.addChild(expr);
+				projectionExpr.addChildren(projectionList);
+				expr = projectionExpr;
+				continue;
+			}
+			// END Custom record syntax
 			AST predicate = predicate();
 			if (predicate != null) {
 				AST filterExpr = new AST(XQ.FilterExpr);
@@ -3673,6 +3683,27 @@ public class XQParser extends Tokenizer {
 		}
 	}
 
+	private AST[] projectionList() throws TokenizerException {
+		if (!attemptSkipWS("{")) {
+			return null;
+		}
+		AST[] args = new AST[0];
+		do {
+			Token la = laStringSkipWS(true);
+			EQNameToken la2;
+			if (la != null) {
+				consume(la);
+				args = add(args, new AST(XQ.QNm, new QNm(null, null, la.string())));
+			} else if ((la2 = laEQNameSkipWS(true)) != null) {
+				consume(la2);
+				args = add(args, new AST(XQ.QNm, la2.qname()));
+			} else {
+				args = add(args, exprSingle());
+			}
+		} while (attemptSkipWS(","));
+		consumeSkipWS("}");
+		return args;
+	}
 	// END Custom record syntax
 
 	private AST[] add(AST[] asts, AST ast) {

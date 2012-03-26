@@ -62,6 +62,7 @@ import org.brackit.xquery.expr.IfExpr;
 import org.brackit.xquery.expr.InstanceOf;
 import org.brackit.xquery.expr.IntersectExpr;
 import org.brackit.xquery.expr.NodeCmpExpr;
+import org.brackit.xquery.expr.ProjectionExpr;
 import org.brackit.xquery.expr.NodeCmpExpr.NodeCmp;
 import org.brackit.xquery.expr.OrExpr;
 import org.brackit.xquery.expr.PIExpr;
@@ -330,6 +331,8 @@ public class Compiler implements Translator {
 			return recordExpr(node);
 		case XQ.DerefExpr:
 			return derefExpr(node);
+		case XQ.RecordProjection:
+			return projectionExpr(node);
 			// END Custom array syntax extension
 		default:
 			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
@@ -1572,6 +1575,15 @@ public class Compiler implements Translator {
 			fields[i - 1] = expr(node.getChild(i), true);
 		}
 		return new DerefExpr(record, fields);
+	}
+	
+	protected Expr projectionExpr(AST node) throws QueryException {
+		Expr record = expr(node.getChild(0), true);
+		Expr[] fields = new Expr[node.getChildCount() - 1];
+		for (int i = 1; i < node.getChildCount(); i++) {
+			fields[i - 1] = expr(node.getChild(i), true);
+		}
+		return new ProjectionExpr(record, fields);
 	}
 	// END Custom record syntax extension
 }

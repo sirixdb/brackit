@@ -733,6 +733,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 	protected boolean origStepExpr(AST expr) throws QueryException {
 		return (postFixExpr(expr) || axisStep(expr));
 	}
+
 	// END Custom record syntax extension
 
 	protected boolean axisStep(AST expr) throws QueryException {
@@ -822,6 +823,15 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 		if (expr.getType() == XQ.ArrayAccess) {
 			expr(expr.getChild(0));
 			exprSingle(expr.getChild(1));
+			return true;
+		}
+		// END Custom array syntax extension
+		// BEGIN Custom array syntax extension
+		if (expr.getType() == XQ.RecordProjection) {
+			expr(expr.getChild(0));
+			for (int i = 1; i < expr.getChildCount(); i++) {
+				exprSingle(expr.getChild(i));
+			}
 			return true;
 		}
 		// END Custom array syntax extension
