@@ -31,7 +31,6 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
@@ -39,7 +38,6 @@ import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.io.URIHandler;
 import org.brackit.xquery.xdm.Item;
@@ -57,8 +55,8 @@ import org.brackit.xquery.xdm.type.SequenceType;
  * 
  */
 public class Writeline extends AbstractFunction {
-	public static final QNm DEFAULT_NAME = new QNm(Namespaces.IO_NSURI,
-			Namespaces.IO_PREFIX, "writeline");
+	public static final QNm DEFAULT_NAME = new QNm(IOFun.IO_NSURI,
+			IOFun.IO_PREFIX, "writeline");
 
 	public Writeline() {
 		this(DEFAULT_NAME);
@@ -97,7 +95,7 @@ public class Writeline extends AbstractFunction {
 
 			return count;
 		} catch (IOException e) {
-			throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR);
+			throw new QueryException(e, IOFun.IO_WRITEFILE_INT_ERROR);
 		}
 	}
 }

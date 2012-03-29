@@ -34,8 +34,8 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.io.IOUtils;
 import org.brackit.xquery.util.serialize.StringSerializer;
@@ -52,8 +52,8 @@ import org.brackit.xquery.xdm.type.SequenceType;
  */
 public class Serialize extends AbstractFunction {
 
-	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
-			Namespaces.BIT_PREFIX, "serialize");
+	public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI,
+			Bits.BIT_PREFIX, "serialize");
 
 	public Serialize() {
 		this(DEFAULT_NAME);

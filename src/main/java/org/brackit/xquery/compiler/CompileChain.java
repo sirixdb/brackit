@@ -40,32 +40,26 @@ import org.brackit.xquery.compiler.optimizer.TopDownOptimizer;
 import org.brackit.xquery.compiler.parser.XQParser;
 import org.brackit.xquery.compiler.translator.TopDownTranslator;
 import org.brackit.xquery.compiler.translator.Translator;
+import org.brackit.xquery.function.bit.BitFun;
 import org.brackit.xquery.function.bit.Create;
 import org.brackit.xquery.function.bit.Drop;
 import org.brackit.xquery.function.bit.Eval;
-import org.brackit.xquery.function.bit.Every;
 import org.brackit.xquery.function.bit.Exists;
 import org.brackit.xquery.function.bit.Load;
 import org.brackit.xquery.function.bit.Mkdir;
 import org.brackit.xquery.function.bit.Parse;
 import org.brackit.xquery.function.bit.Serialize;
 import org.brackit.xquery.function.bit.Silent;
-import org.brackit.xquery.function.bit.Some;
 import org.brackit.xquery.function.bit.Store;
 import org.brackit.xquery.function.io.Ls;
 import org.brackit.xquery.function.io.Read;
 import org.brackit.xquery.function.io.Readline;
 import org.brackit.xquery.function.io.Write;
 import org.brackit.xquery.function.io.Writeline;
+import org.brackit.xquery.function.json.JSONParse;
 import org.brackit.xquery.module.Functions;
 import org.brackit.xquery.module.Module;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.util.dot.DotUtil;
-import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.type.AnyItemType;
-import org.brackit.xquery.xdm.type.AtomicType;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * Compiles an {@link Module XQuery module}.
@@ -74,16 +68,6 @@ import org.brackit.xquery.xdm.type.SequenceType;
  * 
  */
 public class CompileChain {
-
-	public static final Every BIT_EVERY_FUNC = new Every(new QNm(
-			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "every"),
-			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
-					new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)));
-
-	public static final Some BIT_SOME_FUNC = new Some(new QNm(
-			Namespaces.XML_NSURI, Namespaces.BIT_PREFIX, "some"),
-			new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
-					new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)));
 
 	static {
 		// IO
@@ -94,8 +78,8 @@ public class CompileChain {
 		Functions.predefine(new Ls(true));
 		Functions.predefine(new Ls(false));
 		// Internal
-		Functions.predefine(BIT_SOME_FUNC);
-		Functions.predefine(BIT_EVERY_FUNC);
+		Functions.predefine(BitFun.SOME_FUNC);
+		Functions.predefine(BitFun.EVERY_FUNC);
 		// Utility
 		Functions.predefine(new Silent());
 		Functions.predefine(new Parse());
@@ -110,6 +94,8 @@ public class CompileChain {
 		Functions.predefine(new Drop());
 		Functions.predefine(new Mkdir());
 		Functions.predefine(new Exists());
+		// JSON
+		Functions.predefine(new JSONParse());
 	}
 
 	final AnyURI baseURI;
@@ -122,11 +108,11 @@ public class CompileChain {
 	public CompileChain(AnyURI baseURI) {
 		this(new BaseResolver(), baseURI);
 	}
-	
+
 	public CompileChain(ModuleResolver resolver) {
 		this(resolver, null);
 	}
-	
+
 	public CompileChain(ModuleResolver resolver, AnyURI baseURI) {
 		this.resolver = resolver;
 		this.baseURI = baseURI;

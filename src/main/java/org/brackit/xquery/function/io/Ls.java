@@ -36,7 +36,6 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.util.Regex;
@@ -59,8 +58,8 @@ import org.brackit.xquery.xdm.type.SequenceType;
 		+ "instead of a shell-like \"*.xml\"", parameters = { "$path",
 		"$pattern" })
 public class Ls extends AbstractFunction {
-	public static final QNm DEFAULT_NAME = new QNm(Namespaces.IO_NSURI,
-			Namespaces.IO_PREFIX, "ls");
+	public static final QNm DEFAULT_NAME = new QNm(IOFun.IO_NSURI,
+			IOFun.IO_PREFIX, "ls");
 
 	public Ls(boolean withFilter) {
 		this(DEFAULT_NAME, withFilter);

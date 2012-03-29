@@ -32,8 +32,8 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
@@ -48,8 +48,8 @@ import org.brackit.xquery.xdm.type.SequenceType;
  */
 public class Mkdir extends AbstractFunction {
 
-	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
-			Namespaces.BIT_PREFIX, "mkdir");
+	public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI,
+			Bits.BIT_PREFIX, "mkdir");
 
 	public Mkdir() {
 		super(Mkdir.DEFAULT_NAME, new Signature(new SequenceType(
@@ -65,7 +65,7 @@ public class Mkdir extends AbstractFunction {
 			ctx.getStore().makeDir(vDirName);
 			return Bool.TRUE;
 		} catch (Exception e) {
-			throw new QueryException(e, BitError.BIT_MAKEDIRECTORY_INT_ERROR,
+			throw new QueryException(e, BitFun.BIT_MAKEDIRECTORY_INT_ERROR,
 					e.getMessage());
 		}
 	}

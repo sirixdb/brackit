@@ -28,31 +28,32 @@
 package org.brackit.xquery.function.bit;
 
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.module.Namespaces;
+import org.brackit.xquery.compiler.Bits;
 
 /**
  * @author Sebastian Baechle
  * 
  */
-public class BitError {
+public class BitFun {
+	public static final Every EVERY_FUNC = new Every();
+
+	public static final Some SOME_FUNC = new Some();
 
 	/**
 	 * Errors for the predefined bit functions
 	 */
 	public static final QNm BIT_ADDTOCOLLECTION_INT_ERROR = new QNm(
-			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0001");
+			Bits.BIT_NSURI, Bits.BIT_PREFIX, "BIBI0001");
 	public static final QNm BIT_CREATECOLLECTION_INT_ERROR = new QNm(
-			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0002");
+			Bits.BIT_NSURI, Bits.BIT_PREFIX, "BIBI0002");
 	public static final QNm BIT_DROPCOLLECTION_INT_ERROR = new QNm(
-			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0003");
-	public static final QNm BIT_EVAL_INT_ERROR = new QNm(Namespaces.BIT_NSURI,
-			Namespaces.BIT_PREFIX, "BIT0004");
+			Bits.BIT_NSURI, Bits.BIT_PREFIX, "BIBI0003");
+	public static final QNm BIT_EVAL_INT_ERROR = new QNm(Bits.BIT_NSURI,
+			Bits.BIT_PREFIX, "BIT0004");
 	public static final QNm BIT_EXISTCOLLECTION_INT_ERROR = new QNm(
-			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0005");
-	public static final QNm BIT_LOADFILE_INT_ERROR = new QNm(
-			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0006");
+			Bits.BIT_NSURI, Bits.BIT_PREFIX, "BIBI0005");
 	public static final QNm BIT_MAKEDIRECTORY_INT_ERROR = new QNm(
-			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0007");
-	public static final QNm BIT_STOREDOC_INT_ERROR = new QNm(
-			Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "BIT0008");
+			Bits.BIT_NSURI, Bits.BIT_PREFIX, "BIBI0007");
+	public static final QNm BIT_STOREDOC_INT_ERROR = new QNm(Bits.BIT_NSURI,
+			Bits.BIT_PREFIX, "BIBI0008");
 }

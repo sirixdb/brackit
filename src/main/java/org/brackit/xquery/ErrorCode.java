@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery;
 
+import static org.brackit.xquery.compiler.Bits.BIT_NSURI;
+import static org.brackit.xquery.compiler.Bits.BIT_PREFIX;
 import static org.brackit.xquery.module.Namespaces.ERR_NSURI;
 import static org.brackit.xquery.module.Namespaces.ERR_PREFIX;
 
@@ -91,7 +93,7 @@ public class ErrorCode {
 	 */
 	public static final QNm ERR_PATH_STEP_CONTEXT_ITEM_IS_NOT_A_NODE = new QNm(
 			ERR_NSURI, ERR_PREFIX, "XPTY0020");
-	
+
 	/**
 	 * err:XPTY0117
 	 */
@@ -185,9 +187,9 @@ public class ErrorCode {
 	/**
 	 * err:XQST0046
 	 */
-	public static final QNm ERR_INVALID_URI_LITERAL = new QNm(
-			ERR_NSURI, ERR_PREFIX, "XQST0046");
-	
+	public static final QNm ERR_INVALID_URI_LITERAL = new QNm(ERR_NSURI,
+			ERR_PREFIX, "XQST0046");
+
 	/**
 	 * err:XQST0047
 	 */
@@ -409,7 +411,7 @@ public class ErrorCode {
 	 */
 	public static final QNm ERR_DOCUMENT_NOT_FOUND = new QNm(ERR_NSURI,
 			ERR_PREFIX, "FODC0005");
-	
+
 	/**
 	 * err:FONS0005
 	 */
@@ -457,12 +459,12 @@ public class ErrorCode {
 	 */
 	public static final QNm ERR_DATETIME_FUNCTION_DIFFERENT_TZ = new QNm(
 			ERR_NSURI, ERR_PREFIX, "FORG0008");
-	
+
 	/**
 	 * err:FORG0009
 	 */
-	public static final QNm ERR_FN_RESOLVE_URI = new QNm(
-			ERR_NSURI, ERR_PREFIX, "FORG0009");
+	public static final QNm ERR_FN_RESOLVE_URI = new QNm(ERR_NSURI, ERR_PREFIX,
+			"FORG0009");
 
 	/**
 	 * err:FORX0001
@@ -643,30 +645,34 @@ public class ErrorCode {
 	public static final QNm ERR_COMMENT_WOULD_CONTAIN_ILLEGAL_HYPHENS = new QNm(
 			ERR_NSURI, ERR_PREFIX, "XQDY0072");
 
-	public static final QNm BIT_DYN_RT_ILLEGAL_STATE_ERROR = new QNm(ERR_NSURI,
-			"bit", "DY0001");
+	/*
+	 * Error codes of the runtime. This should be placed in {@link Bits}, but
+	 * for compatibility reasons we leave it here.
+	 */
+	public static final QNm BIT_DYN_RT_ILLEGAL_STATE_ERROR = new QNm(BIT_NSURI,
+			BIT_PREFIX, "BIDY0001");
 
-	public static final QNm BIT_DYN_RT_OUT_OF_BOUNDS_ERROR = new QNm(ERR_NSURI,
-			"bit", "DY0002");
+	public static final QNm BIT_DYN_RT_OUT_OF_BOUNDS_ERROR = new QNm(BIT_NSURI,
+			BIT_PREFIX, "BIDY0002");
 
 	public static final QNm BIT_DYN_RT_ILLEGAL_COMPARISON_ERROR = new QNm(
-			ERR_NSURI, "bit", "DY0003");
+			BIT_NSURI, BIT_PREFIX, "BIDY0003");
 
 	public static final QNm BIT_DYN_RT_ILLEGAL_ARGUMENTS_ERROR = new QNm(
-			ERR_NSURI, "bit", "DY0004");
+			BIT_NSURI, BIT_PREFIX, "BIDY0004");
 
 	public static final QNm BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR = new QNm(
-			ERR_NSURI, "bit", "DY0005");
+			BIT_NSURI, BIT_PREFIX, "BIDY0005");
 
-	public static final QNm BIT_DYN_RT_STACK_OVERFLOW = new QNm(ERR_NSURI,
-			"bit", "DY0006");
+	public static final QNm BIT_DYN_RT_STACK_OVERFLOW = new QNm(BIT_NSURI,
+			BIT_PREFIX, "BIDY0006");
 
-	public static final QNm BIT_DYN_ABORTED_ERROR = new QNm(ERR_NSURI, "bit",
-			"DY0007");
+	public static final QNm BIT_DYN_ABORTED_ERROR = new QNm(BIT_NSURI,
+			BIT_PREFIX, "BIDY0007");
 
-	public static final QNm BIT_DYN_DOCUMENT_ACCESS_ERROR = new QNm(ERR_NSURI,
-			"bit", "DY0200");
+	public static final QNm BIT_DYN_DOCUMENT_ACCESS_ERROR = new QNm(BIT_NSURI,
+			BIT_PREFIX, "BIDY0200");
 
-	public static final QNm BIT_DYN_INT_ERROR = new QNm(ERR_NSURI, "bit",
-			"DY0300");
+	public static final QNm BIT_DYN_INT_ERROR = new QNm(BIT_NSURI, BIT_PREFIX,
+			"BIDY0300");
 }

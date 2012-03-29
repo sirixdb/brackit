@@ -34,15 +34,13 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.StreamSubtreeParser;
 import org.brackit.xquery.node.parser.SubtreeHandler;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.util.annotation.FunctionAnnotation;
-import org.brackit.xquery.util.io.URIHandler;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Item;
@@ -71,8 +69,8 @@ import org.brackit.xquery.xdm.type.SequenceType;
 		"$fragments", "$create-new" })
 public class Store extends AbstractFunction {
 
-	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
-			Namespaces.BIT_PREFIX, "store");
+	public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI,
+			Bits.BIT_PREFIX, "store");
 
 	public Store(boolean createNew) {
 		this(DEFAULT_NAME, createNew);
@@ -113,7 +111,7 @@ public class Store extends AbstractFunction {
 			// TODO return statistics?
 			return null;
 		} catch (Exception e) {
-			throw new QueryException(e, BitError.BIT_ADDTOCOLLECTION_INT_ERROR,
+			throw new QueryException(e, BitFun.BIT_ADDTOCOLLECTION_INT_ERROR,
 					e.getMessage());
 		}
 	}
@@ -149,7 +147,7 @@ public class Store extends AbstractFunction {
 
 	private static class StoreParser extends StreamSubtreeParser {
 		private final boolean intercept;
-		
+
 		public StoreParser(Node<?> node) throws DocumentException {
 			super(node.getSubtree());
 			intercept = (node.getKind() != Kind.DOCUMENT);
@@ -170,7 +168,7 @@ public class Store extends AbstractFunction {
 		public InterceptorHandler(SubtreeHandler handler) {
 			this.handler = handler;
 		}
-		
+
 		public void beginFragment() throws DocumentException {
 			handler.beginFragment();
 			handler.startDocument();
@@ -235,7 +233,7 @@ public class Store extends AbstractFunction {
 			handler.fail();
 		}
 	}
-	
+
 	private static class ParserStream implements Stream<SubtreeParser> {
 		Iter it;
 

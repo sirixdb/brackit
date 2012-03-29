@@ -36,8 +36,8 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.Int64;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.serialize.StringSerializer;
 import org.brackit.xquery.xdm.Sequence;
@@ -53,8 +53,8 @@ import org.brackit.xquery.xdm.type.SequenceType;
  */
 public class Silent extends AbstractFunction {
 
-	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
-			Namespaces.BIT_PREFIX, "silent");
+	public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI,
+			Bits.BIT_PREFIX, "silent");
 
 	private static class CountStream extends OutputStream {
 		long count = 0;
@@ -68,7 +68,7 @@ public class Silent extends AbstractFunction {
 	public Silent() {
 		this(DEFAULT_NAME);
 	}
-	
+
 	public Silent(QNm name) {
 		super(name, new Signature(new SequenceType(AtomicType.INR,
 				Cardinality.One), SequenceType.ITEM_SEQUENCE), true);

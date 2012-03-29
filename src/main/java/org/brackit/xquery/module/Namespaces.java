@@ -32,6 +32,9 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.Bits;
+import org.brackit.xquery.function.io.IOFun;
+import org.brackit.xquery.function.json.JSONFun;
 
 /**
  * 
@@ -55,10 +58,6 @@ public class Namespaces {
 
 	public static final String ERR_NSURI = "http://www.w3.org/2005/xqt-errors";
 
-	public static final String BIT_NSURI = "http://brackit.org/ns/bit";
-
-	public static final String IO_NSURI = "http://brackit.org/ns/io";
-
 	public static final String LOCAL_PREFIX = "local";
 
 	public static final String FN_PREFIX = "fn";
@@ -68,10 +67,6 @@ public class Namespaces {
 	public static final String XS_PREFIX = "xs";
 
 	public static final String XML_PREFIX = "xml";
-
-	public static final String BIT_PREFIX = "bit";
-
-	public static final String IO_PREFIX = "io";
 
 	public static final String XMLNS_PREFIX = "xmlns";
 
@@ -109,8 +104,9 @@ public class Namespaces {
 		predefine(FN_PREFIX, FN_NSURI);
 		predefine(LOCAL_PREFIX, LOCAL_NSURI);
 		predefine(ERR_PREFIX, ERR_NSURI);
-		predefine(BIT_PREFIX, BIT_NSURI);
-		predefine(IO_PREFIX, IO_NSURI);
+		predefine(Bits.BIT_PREFIX, Bits.BIT_NSURI);
+		predefine(IOFun.IO_PREFIX, IOFun.IO_NSURI);
+		predefine(JSONFun.JSON_PREFIX, JSONFun.JSON_NSURI);
 	}
 
 	public Namespaces() {

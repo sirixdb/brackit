@@ -34,8 +34,8 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.annotation.FunctionAnnotation;
 import org.brackit.xquery.util.io.IOUtils;
@@ -55,8 +55,8 @@ import org.brackit.xquery.xdm.type.SequenceType;
 @FunctionAnnotation(description = "Executes the given query.", parameters = "$query")
 public class Eval extends AbstractFunction {
 
-	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
-			Namespaces.BIT_PREFIX, "eval");
+	public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI,
+			Bits.BIT_PREFIX, "eval");
 
 	public Eval() {
 		this(DEFAULT_NAME);
@@ -84,7 +84,7 @@ public class Eval extends AbstractFunction {
 			XQuery x = new XQuery(vQuery);
 			return x.execute(new QueryContext(ctx.getStore()));
 		} catch (Exception e) {
-			throw new QueryException(e, BitError.BIT_EVAL_INT_ERROR,
+			throw new QueryException(e, BitFun.BIT_EVAL_INT_ERROR,
 					e.getMessage());
 		}
 	}

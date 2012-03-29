@@ -32,8 +32,8 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.annotation.FunctionAnnotation;
 import org.brackit.xquery.xdm.Sequence;
@@ -50,8 +50,8 @@ import org.brackit.xquery.xdm.type.SequenceType;
 @FunctionAnnotation(description = "Checks whether a collection exists or not.", parameters = "$name")
 public class Exists extends AbstractFunction {
 
-	public static final QNm DEFAULT_NAME = new QNm(Namespaces.BIT_NSURI,
-			Namespaces.BIT_PREFIX, "exists");
+	public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI,
+			Bits.BIT_PREFIX, "exists");
 
 	public Exists() {
 		this(DEFAULT_NAME);
@@ -71,7 +71,7 @@ public class Exists extends AbstractFunction {
 			return (ctx.getStore().lookup(name) != null) ? Bool.TRUE
 					: Bool.FALSE;
 		} catch (Exception e) {
-			throw new QueryException(e, BitError.BIT_EXISTCOLLECTION_INT_ERROR,
+			throw new QueryException(e, BitFun.BIT_EXISTCOLLECTION_INT_ERROR,
 					e.getMessage());
 		}
 	}

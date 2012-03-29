@@ -31,8 +31,8 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.xdm.Sequence;
@@ -49,8 +49,8 @@ import org.brackit.xquery.xdm.type.SequenceType;
  */
 public class Parse extends AbstractFunction {
 
-	public static final QNm PARSE = new QNm(Namespaces.BIT_NSURI,
-			Namespaces.BIT_PREFIX, "parse");
+	public static final QNm PARSE = new QNm(Bits.BIT_NSURI, Bits.BIT_PREFIX,
+			"parse");
 
 	public Parse() {
 		super(PARSE, new Signature(new SequenceType(DocumentType.DOC,

@@ -31,14 +31,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
@@ -57,8 +55,8 @@ import org.brackit.xquery.xdm.type.SequenceType;
  * 
  */
 public class Readline extends AbstractFunction {
-	public static final QNm DEFAULT_NAME = new QNm(Namespaces.IO_NSURI,
-			Namespaces.IO_PREFIX, "readline");
+	public static final QNm DEFAULT_NAME = new QNm(IOFun.IO_NSURI,
+			IOFun.IO_PREFIX, "readline");
 
 	public Readline() {
 		this(DEFAULT_NAME);
@@ -91,7 +89,7 @@ public class Readline extends AbstractFunction {
 							return (line != null) ? new Str(line) : null;
 						} catch (Exception e) {
 							throw new QueryException(e,
-									ErrorCode.BIT_DYN_INT_ERROR);
+									IOFun.IO_LOADFILE_INT_ERROR);
 						}
 					}
 

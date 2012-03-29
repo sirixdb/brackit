@@ -39,7 +39,6 @@ import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.io.URIHandler;
 import org.brackit.xquery.xdm.Item;
@@ -57,13 +56,13 @@ import org.brackit.xquery.xdm.type.SequenceType;
  * 
  */
 public class Write extends AbstractFunction {
-	public static final QNm DEFAULT_NAME = new QNm(Namespaces.IO_NSURI,
-			Namespaces.IO_PREFIX, "write");
+	public static final QNm DEFAULT_NAME = new QNm(IOFun.IO_NSURI,
+			IOFun.IO_PREFIX, "write");
 
 	public Write() {
 		this(DEFAULT_NAME);
 	}
-	
+
 	public Write(QNm name) {
 		super(name, new Signature(new SequenceType(AtomicType.INR,
 				Cardinality.One), new SequenceType(AtomicType.STR,
@@ -96,7 +95,7 @@ public class Write extends AbstractFunction {
 
 			return count;
 		} catch (IOException e) {
-			throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR);
+			throw new QueryException(e, IOFun.IO_WRITEFILE_INT_ERROR);
 		}
 	}
 }

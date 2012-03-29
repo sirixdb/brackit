@@ -31,12 +31,17 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.xdm.type.AnyItemType;
+import org.brackit.xquery.xdm.type.AtomicType;
+import org.brackit.xquery.xdm.type.Cardinality;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * 
@@ -44,14 +49,25 @@ import org.brackit.xquery.xdm.Signature;
  * 
  */
 public class Every extends AbstractFunction {
-	
-	public Every(QNm name, Signature signature) {
-		super(name, signature, false);
+
+	public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI,
+			Bits.BIT_PREFIX, "every");
+
+	public static final Every BIT_EVERY_FUNC = new Every();
+
+	public Every() {
+		this(DEFAULT_NAME);
+	}
+
+	public Every(QNm name) {
+		super(name, new Signature(new SequenceType(AtomicType.BOOL,
+				Cardinality.One), new SequenceType(AnyItemType.ANY,
+				Cardinality.ZeroOrMany)), false);
 	}
 
 	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
+	public Sequence execute(StaticContext sctx, QueryContext ctx,
+			Sequence[] args) throws QueryException {
 		Sequence sequence = args[0];
 		if (sequence == null) {
 			return Bool.FALSE;

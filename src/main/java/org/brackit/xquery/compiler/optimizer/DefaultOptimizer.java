@@ -27,9 +27,6 @@
  */
 package org.brackit.xquery.compiler.optimizer;
 
-import static org.brackit.xquery.module.Namespaces.BIT_NSURI;
-import static org.brackit.xquery.module.Namespaces.BIT_PREFIX;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +35,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.optimizer.walker.DoSNStepMerger;
 import org.brackit.xquery.compiler.optimizer.walker.OrderForGroupBy;
 import org.brackit.xquery.compiler.optimizer.walker.PathDDOElimination;
@@ -50,8 +48,8 @@ import org.brackit.xquery.util.Cfg;
  */
 public class DefaultOptimizer implements Optimizer {
 
-	public static final QNm SEQUENTIAL_GROUPBY = new QNm(BIT_NSURI, BIT_PREFIX,
-			"sequential-groupby");
+	public static final QNm SEQUENTIAL_GROUPBY = new QNm(Bits.BIT_NSURI,
+			Bits.BIT_PREFIX, "sequential-groupby");
 
 	public static final String JOIN_DETECTION_CFG = "org.brackit.xquery.joinDetection";
 
@@ -105,7 +103,7 @@ public class DefaultOptimizer implements Optimizer {
 			return ast;
 		}
 	}
-	
+
 	protected boolean enabled(QNm option) {
 		Str opt = options.get(option);
 		return ((opt != null) && Boolean.parseBoolean(opt.stringValue()));

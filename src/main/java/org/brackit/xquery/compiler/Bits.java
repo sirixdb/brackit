@@ -27,17 +27,19 @@
  */
 package org.brackit.xquery.compiler;
 
-import static org.brackit.xquery.module.Namespaces.ERR_NSURI;
-
 import org.brackit.xquery.atomic.QNm;
 
 /**
  * Collection of brackit-related constants (names, error codes).
  * 
  * @author Sebastian Baechle
- *
+ * 
  */
 public class Bits {
+	public static final String BIT_NSURI = "http://brackit.org/ns/bit";
+
+	public static final String BIT_PREFIX = "bit";
+
 	/*
 	 * Variables names for internal compilation processes
 	 */
@@ -53,15 +55,15 @@ public class Bits {
 			"position");
 
 	public static final QNm FS_PARENT = new QNm(FS_NSURI, FS_PREFIX, "parent");
-	
+
 	public static final QNm FS_FOO = new QNm(FS_NSURI, FS_PREFIX, "foo");
-	
+
 	/*
 	 * Error codes for runtime errors and built-in expressions.
 	 */
-	public static final QNm BIT_ILLEGAL_RECORD_FIELD = new QNm(ERR_NSURI, "bit",
-			"BITS0001");
-	
-	public static final QNm BIT_DUPLICATE_RECORD_FIELD = new QNm(ERR_NSURI, "bit",
-			"BITS0002");
+	public static final QNm BIT_ILLEGAL_RECORD_FIELD = new QNm(BIT_NSURI,
+			"bit", "BIEX0001");
+
+	public static final QNm BIT_DUPLICATE_RECORD_FIELD = new QNm(BIT_NSURI,
+			"bit", "BIEX0002");
 }

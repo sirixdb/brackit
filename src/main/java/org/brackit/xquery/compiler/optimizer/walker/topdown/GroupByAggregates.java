@@ -27,7 +27,6 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
-import static org.brackit.xquery.module.Namespaces.BIT_NSURI;
 import static org.brackit.xquery.module.Namespaces.FN_NSURI;
 import static org.brackit.xquery.module.Namespaces.FN_PREFIX;
 
@@ -39,6 +38,7 @@ import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.CompileChain;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.compiler.optimizer.DefaultOptimizer;
@@ -153,14 +153,14 @@ public class GroupByAggregates extends ScopeWalker {
 					if (fun.atomicCmp(aggFun) == 0) {
 						// create function aggregate binding if necessary
 						if (aggFunVars[i] == null) {
-							QNm subsitute = new QNm(BIT_NSURI, null,
+							QNm subsitute = new QNm(Bits.BIT_NSURI, null,
 									aggFun.getLocalName() + ";"
 											+ var.var.getLocalName());
 							aggFunVars[i] = subsitute;
 							AST agg = createBinding(subsitute, aggFunMap[i]);
 							aggSpec.addChild(agg);
 						}
-						// replace whole function call with 
+						// replace whole function call with
 						// sequence aggregate binding
 						replaceRef(p, aggFunVars[i]);
 						isAggFun = true;

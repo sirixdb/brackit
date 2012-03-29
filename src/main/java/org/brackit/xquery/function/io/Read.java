@@ -35,8 +35,7 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.bit.BitError;
-import org.brackit.xquery.module.Namespaces;
+import org.brackit.xquery.function.bit.BitFun;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.annotation.FunctionAnnotation;
 import org.brackit.xquery.util.io.IOUtils;
@@ -54,13 +53,13 @@ import org.brackit.xquery.xdm.type.SequenceType;
  */
 @FunctionAnnotation(description = "Loads a resource as plain text.", parameters = "$path")
 public class Read extends AbstractFunction {
-	public static final QNm DEFAULT_NAME = new QNm(Namespaces.IO_NSURI,
-			Namespaces.IO_PREFIX, "read");
+	public static final QNm DEFAULT_NAME = new QNm(IOFun.IO_NSURI,
+			IOFun.IO_PREFIX, "read");
 
 	public Read() {
 		this(DEFAULT_NAME);
 	}
-	
+
 	public Read(QNm name) {
 		super(name, new Signature(new SequenceType(AtomicType.STR,
 				Cardinality.One), new SequenceType(AtomicType.STR,
@@ -76,7 +75,7 @@ public class Read extends AbstractFunction {
 					.getInputStream(uri));
 			return new Str(s);
 		} catch (IOException e) {
-			throw new QueryException(e, BitError.BIT_LOADFILE_INT_ERROR);
+			throw new QueryException(e, IOFun.IO_LOADFILE_INT_ERROR);
 		}
 	}
 }

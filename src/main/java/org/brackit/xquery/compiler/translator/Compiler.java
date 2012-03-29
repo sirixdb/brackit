@@ -40,7 +40,6 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.Bits;
-import org.brackit.xquery.compiler.CompileChain;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.expr.Accessor;
 import org.brackit.xquery.expr.AndExpr;
@@ -63,12 +62,12 @@ import org.brackit.xquery.expr.IfExpr;
 import org.brackit.xquery.expr.InstanceOf;
 import org.brackit.xquery.expr.IntersectExpr;
 import org.brackit.xquery.expr.NodeCmpExpr;
-import org.brackit.xquery.expr.ProjectionExpr;
 import org.brackit.xquery.expr.NodeCmpExpr.NodeCmp;
 import org.brackit.xquery.expr.OrExpr;
 import org.brackit.xquery.expr.PIExpr;
 import org.brackit.xquery.expr.PathStepExpr;
 import org.brackit.xquery.expr.PipeExpr;
+import org.brackit.xquery.expr.ProjectionExpr;
 import org.brackit.xquery.expr.RangeExpr;
 import org.brackit.xquery.expr.RecordExpr;
 import org.brackit.xquery.expr.RecordExpr.Field;
@@ -85,8 +84,10 @@ import org.brackit.xquery.expr.UnionExpr;
 import org.brackit.xquery.expr.VCmpExpr;
 import org.brackit.xquery.function.FunctionExpr;
 import org.brackit.xquery.function.UDF;
+import org.brackit.xquery.function.bit.BitFun;
+import org.brackit.xquery.function.bit.Every;
+import org.brackit.xquery.function.bit.Some;
 import org.brackit.xquery.module.Module;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.operator.Count;
 import org.brackit.xquery.operator.ForBind;
@@ -679,9 +680,9 @@ public class Compiler implements Translator {
 		Function function;
 
 		if (someQuantified) {
-			function = CompileChain.BIT_SOME_FUNC;
+			function = BitFun.SOME_FUNC;
 		} else {
-			function = CompileChain.BIT_EVERY_FUNC;
+			function = BitFun.EVERY_FUNC;
 		}
 
 		return new IfExpr(new FunctionExpr(node.getStaticContext(), function,
