@@ -153,11 +153,12 @@ public class CompileChain {
 			System.out.println(String.format("Compiling:\n%s", query));
 		}
 		ModuleResolver resolver = getModuleResolver();
-		Analyzer analyzer = new Analyzer(resolver, baseURI, parse(query));
-		AST xquery = analyzer.getAST();
+		AST parsed = parse(query);
 		if (XQuery.DEBUG) {
-			DotUtil.drawDotToFile(xquery.dot(), XQuery.DEBUG_DIR, "parsed");
+			DotUtil.drawDotToFile(parsed.dot(), XQuery.DEBUG_DIR, "parsed");
 		}
+		Analyzer analyzer = new Analyzer(resolver, baseURI, parsed);
+		AST xquery = analyzer.getAST();
 		Module module = analyzer.getModules().get(0);
 		Map<QNm, Str> options = module.getOptions();
 		// optimize all targets of all modules
