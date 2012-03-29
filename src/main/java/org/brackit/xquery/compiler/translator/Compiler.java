@@ -39,6 +39,7 @@ import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.CompileChain;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.expr.Accessor;
@@ -290,7 +291,7 @@ public class Compiler implements Translator {
 		case XQ.StepExpr:
 			return stepExpr(node);
 		case XQ.ContextItemExpr:
-			return table.resolve(Namespaces.FS_DOT);
+			return table.resolve(Bits.FS_DOT);
 		case XQ.InsertExpr:
 			return insertExpr(node);
 		case XQ.DeleteExpr:
@@ -565,12 +566,11 @@ public class Compiler implements Translator {
 		boolean[] bindSize = new boolean[noOfPredicates];
 
 		for (int i = 0; i < noOfPredicates; i++) {
-			Binding itemBinding = table.bind(Namespaces.FS_DOT,
-					SequenceType.ITEM);
-			Binding posBinding = table.bind(Namespaces.FS_POSITION,
+			Binding itemBinding = table.bind(Bits.FS_DOT, SequenceType.ITEM);
+			Binding posBinding = table.bind(Bits.FS_POSITION,
 					SequenceType.INTEGER);
-			Binding sizeBinding = table.bind(Namespaces.FS_LAST,
-					SequenceType.INTEGER);
+			Binding sizeBinding = table
+					.bind(Bits.FS_LAST, SequenceType.INTEGER);
 			predicates[i] = expr(node.getChild(1 + i).getChild(0), true);
 			table.unbind();
 			table.unbind();
@@ -732,7 +732,7 @@ public class Compiler implements Translator {
 				args[i] = expr(arg, true);
 			}
 		} else if (function.getSignature().defaultCtxItemType() != null) {
-			Expr contextItemRef = table.resolve(Namespaces.FS_DOT);
+			Expr contextItemRef = table.resolve(Bits.FS_DOT);
 			args = new Expr[] { contextItemRef };
 		} else {
 			args = new Expr[0];
@@ -743,7 +743,7 @@ public class Compiler implements Translator {
 
 	protected Expr documentExpr(AST node) throws QueryException {
 		boolean bind = false;
-		Binding binding = table.bind(Namespaces.FS_PARENT, SequenceType.ITEM);
+		Binding binding = table.bind(Bits.FS_PARENT, SequenceType.ITEM);
 		Expr contentExpr = expr(node.getChild(0), false);
 		table.unbind();
 		bind = binding.isReferenced();
@@ -774,8 +774,7 @@ public class Compiler implements Translator {
 		Expr[] contentExpr;
 
 		if (node.getChildCount() > 0) {
-			Binding binding = table.bind(Namespaces.FS_PARENT,
-					SequenceType.ITEM);
+			Binding binding = table.bind(Bits.FS_PARENT, SequenceType.ITEM);
 			contentExpr = contentSequence(node.getChild(pos++));
 			table.unbind();
 			bind = binding.isReferenced();
@@ -858,7 +857,7 @@ public class Compiler implements Translator {
 				|| (parent.getType() == XQ.CompDocumentConstructor);
 
 		if (parentIsConstructor) {
-			table.resolve(Namespaces.FS_PARENT);
+			table.resolve(Bits.FS_PARENT);
 		}
 
 		return parentIsConstructor;
@@ -1000,12 +999,11 @@ public class Compiler implements Translator {
 	protected Expr pathExpr(AST node) throws QueryException {
 		Expr e1 = expr(node.getChild(0), true);
 		for (int i = 1; i < node.getChildCount(); i++) {
-			Binding itemBinding = table.bind(Namespaces.FS_DOT,
-					SequenceType.NODE);
-			Binding posBinding = table.bind(Namespaces.FS_POSITION,
+			Binding itemBinding = table.bind(Bits.FS_DOT, SequenceType.NODE);
+			Binding posBinding = table.bind(Bits.FS_POSITION,
 					SequenceType.INTEGER);
-			Binding sizeBinding = table.bind(Namespaces.FS_LAST,
-					SequenceType.INTEGER);
+			Binding sizeBinding = table
+					.bind(Bits.FS_LAST, SequenceType.INTEGER);
 			AST step = node.getChild(i);
 			Expr e2 = expr(step, true);
 
@@ -1036,7 +1034,7 @@ public class Compiler implements Translator {
 			axis = Accessor.CHILD;
 		}
 
-		Expr in = table.resolve(Namespaces.FS_DOT);
+		Expr in = table.resolve(Bits.FS_DOT);
 		NodeType test = nodeTest(child, axis.getAxis());
 
 		int noOfPredicates = Math.max(node.getChildCount() - 2, 0);
@@ -1046,12 +1044,11 @@ public class Compiler implements Translator {
 		boolean[] bindSize = new boolean[noOfPredicates];
 
 		for (int i = 0; i < noOfPredicates; i++) {
-			Binding itemBinding = table.bind(Namespaces.FS_DOT,
-					SequenceType.ITEM);
-			Binding posBinding = table.bind(Namespaces.FS_POSITION,
+			Binding itemBinding = table.bind(Bits.FS_DOT, SequenceType.ITEM);
+			Binding posBinding = table.bind(Bits.FS_POSITION,
 					SequenceType.INTEGER);
-			Binding sizeBinding = table.bind(Namespaces.FS_LAST,
-					SequenceType.INTEGER);
+			Binding sizeBinding = table
+					.bind(Bits.FS_LAST, SequenceType.INTEGER);
 			filter[i] = expr(node.getChild(2 + i).getChild(0), true);
 			table.unbind();
 			table.unbind();
@@ -1576,7 +1573,7 @@ public class Compiler implements Translator {
 		}
 		return new DerefExpr(record, fields);
 	}
-	
+
 	protected Expr projectionExpr(AST node) throws QueryException {
 		Expr record = expr(node.getChild(0), true);
 		Expr[] fields = new Expr[node.getChildCount() - 1];

@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.expr.DeclVariable;
 import org.brackit.xquery.expr.DefaultCtxItem;
 import org.brackit.xquery.expr.DefaultCtxPos;
@@ -76,11 +77,11 @@ public class Variables {
 		Variable var = vars.get(name);
 		if (var != null) {
 			return var;
-		} else if (name.equals(Namespaces.FS_DOT)) {
+		} else if (name.equals(Bits.FS_DOT)) {
 			return dftItem;
-		} else if (name.equals(Namespaces.FS_POSITION)) {
+		} else if (name.equals(Bits.FS_POSITION)) {
 			return dftPos;
-		} else if (name.equals(Namespaces.FS_LAST)) {
+		} else if (name.equals(Bits.FS_LAST)) {
 			return var;
 		}
 		for (Variables v : imports) {
@@ -90,9 +91,9 @@ public class Variables {
 				return var;
 			}
 		}
-		return null;		
+		return null;
 	}
-	
+
 	public void importVariables(Variables variables) {
 		imports.add(variables);
 	}

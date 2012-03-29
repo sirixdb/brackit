@@ -34,6 +34,7 @@ import org.brackit.xquery.Tuple;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
@@ -73,7 +74,7 @@ public class DerefExpr implements Expr {
 			} else if (f instanceof IntNumeric) {
 				s = r.value((IntNumeric) f);
 			} else {
-				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+				throw new QueryException(Bits.BIT_ILLEGAL_RECORD_FIELD,
 						"Illegal record field reference: %s", f);
 			}
 		}
@@ -112,10 +113,11 @@ public class DerefExpr implements Expr {
 		}
 		return s.toString();
 	}
-	
+
 	public static void main(String[] args) throws QueryException {
-		//  a:1, b:2, c:3 , {x:1}, d:5, 
-		new XQuery("let $n := <x><y>yval</y></x> return {e : {m:'mvalue', n:$n}}=>e=>n/y").serialize(
-				new QueryContext(), System.out);
+		// a:1, b:2, c:3 , {x:1}, d:5,
+		new XQuery(
+				"let $n := <x><y>yval</y></x> return {e : {m:'mvalue', n:$n}}=>e=>n/y")
+				.serialize(new QueryContext(), System.out);
 	}
 }

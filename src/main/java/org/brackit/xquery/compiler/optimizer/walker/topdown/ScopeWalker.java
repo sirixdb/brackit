@@ -42,9 +42,9 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.compiler.optimizer.walker.Walker;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.util.dot.DotContext;
 import org.brackit.xquery.util.dot.DotNode;
 import org.brackit.xquery.util.dot.DotUtil;
@@ -944,9 +944,9 @@ public abstract class ScopeWalker extends Walker {
 		walkInspect(expr.getChild(0), true, false);
 		for (int i = 1; i < expr.getChildCount(); i++) {
 			table.openScope(expr.getChild(i), false);
-			table.bind(Namespaces.FS_DOT, ONE_ITEM);
-			table.bind(Namespaces.FS_POSITION, ONE_INTEGER);
-			table.bind(Namespaces.FS_LAST, ONE_INTEGER);
+			table.bind(Bits.FS_DOT, ONE_ITEM);
+			table.bind(Bits.FS_POSITION, ONE_INTEGER);
+			table.bind(Bits.FS_LAST, ONE_INTEGER);
 			walkInspect(expr.getChild(i), true, false);
 			table.closeScope();
 		}
@@ -957,9 +957,9 @@ public abstract class ScopeWalker extends Walker {
 		walkInspect(expr.getChild(1), true, false);
 		for (int i = 2; i < expr.getChildCount(); i++) {
 			table.openScope(expr.getChild(i), false);
-			table.bind(Namespaces.FS_DOT, ONE_ITEM);
-			table.bind(Namespaces.FS_POSITION, ONE_INTEGER);
-			table.bind(Namespaces.FS_LAST, ONE_INTEGER);
+			table.bind(Bits.FS_DOT, ONE_ITEM);
+			table.bind(Bits.FS_POSITION, ONE_INTEGER);
+			table.bind(Bits.FS_LAST, ONE_INTEGER);
 			walkInspect(expr.getChild(i), true, false);
 			table.closeScope();
 		}
@@ -970,9 +970,9 @@ public abstract class ScopeWalker extends Walker {
 		for (int i = 0; i < expr.getChildCount(); i++) {
 			table.openScope(expr.getChild(i), false);
 			if (i > 0) {
-				table.bind(Namespaces.FS_DOT, ONE_ITEM);
-				table.bind(Namespaces.FS_POSITION, ONE_INTEGER);
-				table.bind(Namespaces.FS_LAST, ONE_INTEGER);
+				table.bind(Bits.FS_DOT, ONE_ITEM);
+				table.bind(Bits.FS_POSITION, ONE_INTEGER);
+				table.bind(Bits.FS_LAST, ONE_INTEGER);
 			}
 			walkInspect(expr.getChild(i), true, false);
 			table.closeScope();
@@ -982,7 +982,7 @@ public abstract class ScopeWalker extends Walker {
 
 	private void documentExpr(AST node) {
 		table.openScope(node, false);
-		table.bind(Namespaces.FS_PARENT, new SequenceType(DocumentType.DOC,
+		table.bind(Bits.FS_PARENT, new SequenceType(DocumentType.DOC,
 				Cardinality.One));
 		walkInspect(node.getChild(0), true, false);
 		table.closeScope();
@@ -995,7 +995,7 @@ public abstract class ScopeWalker extends Walker {
 		}
 		walkInspect(node.getChild(pos++), true, false);
 		table.openScope(node, false);
-		table.bind(Namespaces.FS_PARENT, new SequenceType(ElementType.ELEMENT,
+		table.bind(Bits.FS_PARENT, new SequenceType(ElementType.ELEMENT,
 				Cardinality.One));
 		// visit content sequence
 		walkInspect(node.getChild(pos++), true, false);

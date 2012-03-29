@@ -32,7 +32,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.module.Namespaces;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
 
@@ -47,7 +47,7 @@ public class DefaultCtxPos extends Variable {
 	private final DefaultCtxItem expr;
 
 	public DefaultCtxPos(DefaultCtxItem expr) {
-		super(Namespaces.FS_POSITION);
+		super(Bits.FS_POSITION);
 		this.expr = expr;
 	}
 

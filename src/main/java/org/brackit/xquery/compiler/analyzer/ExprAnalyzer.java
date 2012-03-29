@@ -36,6 +36,7 @@ import org.brackit.xquery.atomic.Numeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.expr.Variable;
 import org.brackit.xquery.module.Functions;
@@ -947,8 +948,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 			}
 			// change expr to variable reference
 			expr.setType(XQ.VariableRef);
-			QNm newName = name.equals(Functions.FN_POSITION) ? Namespaces.FS_POSITION
-					: Namespaces.FS_LAST;
+			QNm newName = name.equals(Functions.FN_POSITION) ? Bits.FS_POSITION
+					: Bits.FS_LAST;
 			expr.setValue(newName);
 			return true;
 		}

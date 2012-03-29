@@ -77,21 +77,6 @@ public class Namespaces {
 
 	public static final String ERR_PREFIX = "err";
 
-	/* BEGIN TODO */
-	public static final String FS_NSURI = "FormalSemanticsOnly";
-
-	public static final String FS_PREFIX = "fs";
-
-	public static final QNm FS_DOT = new QNm(FS_NSURI, FS_PREFIX, "dot");
-
-	public static final QNm FS_LAST = new QNm(FS_NSURI, FS_PREFIX, "last");
-
-	public static final QNm FS_POSITION = new QNm(FS_NSURI, FS_PREFIX,
-			"position");
-
-	public static final QNm FS_PARENT = new QNm(FS_NSURI, FS_PREFIX, "parent");
-	/* END TODO */
-
 	/* BEGIN try-catch */
 	public static final QNm ERR_CODE = new QNm(Namespaces.ERR_NSURI,
 			Namespaces.ERR_PREFIX, "code");

@@ -25,46 +25,43 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.expr;
+package org.brackit.xquery.compiler;
 
-import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.compiler.Bits;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Sequence;
+import static org.brackit.xquery.module.Namespaces.ERR_NSURI;
+
+import org.brackit.xquery.atomic.QNm;
 
 /**
- * Reference to the context size of the default context item.
+ * Collection of brackit-related constants (names, error codes).
  * 
  * @author Sebastian Baechle
- * 
+ *
  */
-public class DefaultCtxSize extends Variable {
-	
-	private final DefaultCtxItem expr;
-	
-	public DefaultCtxSize(DefaultCtxItem expr) {
-		super(Bits.FS_LAST);
-		this.expr = expr;
-	}
+public class Bits {
+	/*
+	 * Variables names for internal compilation processes
+	 */
+	public static final String FS_NSURI = "http://brackit.org/ns/InternalUseOnly";
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return evaluateToItem(ctx, tuple);
-	}
+	public static final String FS_PREFIX = "fs";
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		if (expr.evaluateToItem(ctx, tuple) == null) {
-			throw new QueryException(
-					ErrorCode.ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED,
-					"Dynamic context variable %s is not assigned a value", name);
-		}
-		return Int32.ONE;
-	}
+	public static final QNm FS_DOT = new QNm(FS_NSURI, FS_PREFIX, "dot");
+
+	public static final QNm FS_LAST = new QNm(FS_NSURI, FS_PREFIX, "last");
+
+	public static final QNm FS_POSITION = new QNm(FS_NSURI, FS_PREFIX,
+			"position");
+
+	public static final QNm FS_PARENT = new QNm(FS_NSURI, FS_PREFIX, "parent");
+	
+	public static final QNm FS_FOO = new QNm(FS_NSURI, FS_PREFIX, "foo");
+	
+	/*
+	 * Error codes for runtime errors and built-in expressions.
+	 */
+	public static final QNm BIT_ILLEGAL_RECORD_FIELD = new QNm(ERR_NSURI, "bit",
+			"BITS0001");
+	
+	public static final QNm BIT_DUPLICATE_RECORD_FIELD = new QNm(ERR_NSURI, "bit",
+			"BITS0002");
 }

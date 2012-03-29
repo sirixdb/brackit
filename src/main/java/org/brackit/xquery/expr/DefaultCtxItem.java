@@ -31,8 +31,8 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.Unit;
-import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.sequence.TypedSequence;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
@@ -56,7 +56,7 @@ public class DefaultCtxItem extends Variable implements Unit {
 	private Item item;
 
 	public DefaultCtxItem() {
-		super(Namespaces.FS_DOT);
+		super(Bits.FS_DOT);
 	}
 
 	@Override

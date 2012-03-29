@@ -36,6 +36,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.record.ArrayRecord;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
@@ -127,8 +128,7 @@ public class RecordExpr implements Expr {
 			for (int j = 0; j < res.len(); j++) {
 				QNm name = res.name(j);
 				if (!dedup.add(name)) {
-					throw new QueryException(
-							ErrorCode.BIT_DYN_DOCUMENT_ACCESS_ERROR,
+					throw new QueryException(Bits.BIT_DUPLICATE_RECORD_FIELD,
 							"Duplicate field name: %s", name);
 				}
 				Sequence val = res.value(j);
@@ -183,7 +183,7 @@ public class RecordExpr implements Expr {
 	}
 
 	public static void main(String[] args) throws QueryException {
-		new XQuery("{ a:1, b:2, c:3 , {x:1}, b:5}").serialize(
+		new XQuery("{ a:1, b:2, c:3 , {x:1}, y:5, z : {foo : 'bar'}, 'aha' : 2, 'h h' : 5 }").serialize(
 				new QueryContext(), System.out);
 	}
 }
