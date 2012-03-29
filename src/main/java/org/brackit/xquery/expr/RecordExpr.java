@@ -144,6 +144,10 @@ public class RecordExpr implements Expr {
 				pos++;
 			}
 		}
+		if (pos < names.length) {
+			names = Arrays.copyOfRange(names, 0, pos);
+			vals = Arrays.copyOfRange(vals, 0, pos);
+		}
 		return new ArrayRecord(names, vals);
 	}
 
