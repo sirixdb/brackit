@@ -55,18 +55,19 @@ import org.brackit.xquery.xdm.type.TextType;
 
 /**
  * @author Sebastian Baechle
- *
+ * 
  */
 public abstract class AbstractAnalyzer {
-	
-	protected static final Logger log = Logger.getLogger(AbstractAnalyzer.class);
+
+	protected static final Logger log = Logger
+			.getLogger(AbstractAnalyzer.class);
 
 	protected enum DefaultNS {
 		EMPTY, FUNCTION, ELEMENT_OR_TYPE, PRAGMA
 	}
-	
+
 	protected StaticContext sctx;
-	
+
 	SequenceType sequenceType(AST stype) throws QueryException {
 		AST type = stype.getChild(0);
 		if (type.getType() == XQ.EmptySequenceType) {
@@ -174,7 +175,7 @@ public abstract class AbstractAnalyzer {
 		}
 		return new SequenceType(aouType, card);
 	}
-	
+
 	protected ItemType kindTest(AST kindTest) throws QueryException {
 		ItemType test = documentTest(kindTest);
 		test = (test != null) ? test : elementTest(kindTest);
@@ -337,8 +338,14 @@ public abstract class AbstractAnalyzer {
 		}
 		return AnyNodeType.ANY_NODE;
 	}
-		
+
 	protected QNm expand(QNm name, DefaultNS mode) throws QueryException {
+		// Don't try to expand when name Namespace URI is already 
+		// defined, e.g., an EQName or an internal special QName
+		// like 'fs:dot'
+		if (!name.getNamespaceURI().isEmpty()) {
+			return name;
+		}
 		String prefix = name.getPrefix();
 		String uri;
 		Namespaces ns = sctx.getNamespaces();
