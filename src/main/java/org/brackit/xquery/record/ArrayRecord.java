@@ -29,12 +29,12 @@ package org.brackit.xquery.record;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.array.DArray;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
-import org.brackit.xquery.sequence.FlatteningSequence;
 import org.brackit.xquery.sequence.ItemSequence;
+import org.brackit.xquery.xdm.Array;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
@@ -46,10 +46,10 @@ public class ArrayRecord extends AbstractRecord {
 	// two arrays for key/value mapping
 	// if lookup costs dominate because the compiler cannot
 	// exploit positional access as alternative, we should
-	// switch to a more efficient (hash) map.  
+	// switch to a more efficient (hash) map.
 	private final QNm[] fields;
 	private final Sequence[] vals;
-	
+
 	public ArrayRecord(QNm[] fields, Sequence[] values) {
 		this.fields = fields;
 		this.vals = values;
@@ -85,22 +85,15 @@ public class ArrayRecord extends AbstractRecord {
 					"Invalid field index: %s", i);
 		}
 	}
-	
+
 	@Override
-	public Sequence names() throws QueryException {
-		return new ItemSequence(fields);
+	public Array names() throws QueryException {
+		return new DArray(fields);
 	}
 
 	@Override
-	public Sequence values() throws QueryException {
-		return new FlatteningSequence() {
-			Sequence[] v = vals;
-
-			@Override
-			protected Sequence sequence(int pos) throws QueryException {
-				return (v[pos] != null) ? v[pos] : EMPTY;
-			}
-		};
+	public Array values() throws QueryException {
+		return new DArray(vals);
 	}
 
 	@Override

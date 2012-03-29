@@ -28,18 +28,18 @@
 package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.xdm.Array;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.ListOrUnion;
 
 /**
  * @author Sebastian Baechle
  * 
  */
-public final class ListOrUnionType implements ItemType {
+public final class ArrayType implements ItemType {
 
-	public static final ListOrUnionType LIST_OR_UNION = new ListOrUnionType();
+	public static final ArrayType ARRAY = new ArrayType();
 
-	public ListOrUnionType() {
+	public ArrayType() {
 	}
 
 	@Override
@@ -75,15 +75,16 @@ public final class ListOrUnionType implements ItemType {
 	@Override
 	public boolean matches(Item item) throws QueryException {
 		// TODO subtyping??? At the moment we have Object[]-like semantics
-		return (item instanceof ListOrUnion);
+		return (item instanceof Array);
 	}
 
 	public boolean equals(Object obj) {
 		// TODO subtyping??? At the moment we have Object[]-like semantics
-		return (obj instanceof ListOrUnionType);
+		return (obj instanceof Array);
 	}
 
+	@Override
 	public String toString() {
-		return "listOrUnion()";
+		return "array()";
 	}
 }

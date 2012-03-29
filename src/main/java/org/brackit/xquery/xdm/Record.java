@@ -43,9 +43,9 @@ public interface Record extends Item {
 
 	public abstract Sequence value(int i) throws QueryException;
 
-	public abstract Sequence names() throws QueryException;
+	public abstract Array names() throws QueryException;
 
-	public abstract Sequence values() throws QueryException;
+	public abstract Array values() throws QueryException;
 
 	public abstract QNm name(IntNumeric i) throws QueryException;
 

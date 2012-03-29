@@ -25,65 +25,48 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm.type;
+package org.brackit.xquery.function.bit;
 
+import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.ListOrUnion;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.Bits;
+import org.brackit.xquery.function.AbstractFunction;
+import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.util.annotation.FunctionAnnotation;
+import org.brackit.xquery.xdm.Record;
+import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.xdm.type.ArrayType;
+import org.brackit.xquery.xdm.type.Cardinality;
+import org.brackit.xquery.xdm.type.RecordType;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
+ * 
  * @author Sebastian Baechle
  * 
  */
-public final class ListOrUnionType implements ItemType {
+@FunctionAnnotation(description = "Returns an array with the field names of the given record.", parameters = "$record")
+public class Fields extends AbstractFunction {
 
-	public static final ListOrUnionType LIST_OR_UNION = new ListOrUnionType();
+	public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI,
+			Bits.BIT_PREFIX, "fields");
 
-	public ListOrUnionType() {
+	public Fields() {
+		this(DEFAULT_NAME);
+	}
+
+	public Fields(QNm name) {
+		super(name, new Signature(new SequenceType(ArrayType.ARRAY,
+				Cardinality.One), new SequenceType(RecordType.RECORD,
+				Cardinality.ZeroOrOne)), true);
 	}
 
 	@Override
-	public boolean isAnyItem() {
-		return false;
-	}
-
-	@Override
-	public boolean isAtomic() {
-		return false;
-	}
-
-	@Override
-	public boolean isNode() {
-		return false;
-	}
-
-	@Override
-	public boolean isFunction() {
-		return true;
-	}
-
-	@Override
-	public boolean isListOrUnion() {
-		return true;
-	}
-
-	@Override
-	public boolean isRecord() {
-		return false;
-	}
-
-	@Override
-	public boolean matches(Item item) throws QueryException {
-		// TODO subtyping??? At the moment we have Object[]-like semantics
-		return (item instanceof ListOrUnion);
-	}
-
-	public boolean equals(Object obj) {
-		// TODO subtyping??? At the moment we have Object[]-like semantics
-		return (obj instanceof ListOrUnionType);
-	}
-
-	public String toString() {
-		return "listOrUnion()";
+	public Sequence execute(StaticContext sctx, QueryContext ctx,
+			Sequence[] args) throws QueryException {
+		Record r = (Record) args[0];
+		return (r == null) ? null : r.names();
 	}
 }

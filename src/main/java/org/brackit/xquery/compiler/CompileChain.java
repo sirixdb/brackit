@@ -45,12 +45,15 @@ import org.brackit.xquery.function.bit.Create;
 import org.brackit.xquery.function.bit.Drop;
 import org.brackit.xquery.function.bit.Eval;
 import org.brackit.xquery.function.bit.Exists;
+import org.brackit.xquery.function.bit.Fields;
+import org.brackit.xquery.function.bit.Len;
 import org.brackit.xquery.function.bit.Load;
 import org.brackit.xquery.function.bit.Mkdir;
 import org.brackit.xquery.function.bit.Parse;
 import org.brackit.xquery.function.bit.Serialize;
 import org.brackit.xquery.function.bit.Silent;
 import org.brackit.xquery.function.bit.Store;
+import org.brackit.xquery.function.bit.Values;
 import org.brackit.xquery.function.io.Ls;
 import org.brackit.xquery.function.io.Read;
 import org.brackit.xquery.function.io.Readline;
@@ -85,6 +88,9 @@ public class CompileChain {
 		Functions.predefine(new Parse());
 		Functions.predefine(new Eval());
 		Functions.predefine(new Serialize());
+		Functions.predefine(new Len());
+		Functions.predefine(new Fields());
+		Functions.predefine(new Values());
 		// Storage
 		Functions.predefine(new Store(true));
 		Functions.predefine(new Store(false));

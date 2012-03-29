@@ -82,4 +82,8 @@ public final class RecordType implements ItemType {
 		// TODO subtyping???
 		return (obj instanceof Record);
 	}
+	
+	public String toString() {
+		return "record()";
+	}
 }
