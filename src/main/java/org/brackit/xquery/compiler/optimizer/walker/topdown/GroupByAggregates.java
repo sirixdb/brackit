@@ -71,6 +71,7 @@ public class GroupByAggregates extends ScopeWalker {
 			return node;
 		}
 
+		boolean skipUnspecified = false;
 		AST dftAgg = node.getChild(node.getChildCount() - 2);
 		AST dftAggType = dftAgg.getChild(0);
 		if (dftAggType.getType() == XQ.SequenceAgg) {
@@ -78,30 +79,62 @@ public class GroupByAggregates extends ScopeWalker {
 			// This reduces the grouping overhead for variables
 			// which are not accessed at all.
 			dftAgg.replaceChild(0, new AST(XQ.SingleAgg));
-		} else if (dftAggType.getType() != XQ.SingleAgg) {
+		} else if (dftAggType.getType() == XQ.SingleAgg) {
+			// Consider only variables which already have a special
+			// aggregation spec
+			skipUnspecified = true;
+		} else {
 			// There's already a specialized aggregation type in place.
 			// It seems unlikely that further optimization is necessary
 			// so just exit the rule.
 			return node;
 		}
 
-		// Now define the substitute aggregate bindings
-		// for non-grouping variables, which are really
+		// Define the substitute aggregate bindings
+		// only for those non-grouping variables, which are really
 		// referenced after the grouping.
 		for (Var var : findScope(node).localBindings()) {
+			AST aggSpec = findAggSpec(node, var);
+			if (aggSpec == null) {
+				if (skipUnspecified) {
+					continue;
+				} else {
+					aggSpec = addAggSpec(node, var);
+				}
+			}
 			VarRef refs = findVarRefs(var, node.getLastChild());
-			AST aggSpec = getAggSpec(node, var);
-			introduceAggBindings(aggSpec, var, refs);
+			if (refs != null) {
+				// variable is referenced; introduce
+				// specialized bindings
+				introduceAggBindings(aggSpec, var, refs);
+			} else {
+				// variable is not referenced; remove
+				// specific aggregate spec
+//				node.deleteChild(aggSpec.getChildIndex());
+			}
 		}
 		snapshot();
+
 		return node;
 	}
 
-	private AST getAggSpec(AST node, Var var) {
+	private AST addAggSpec(AST node, Var var) {
 		AST aggSpec = new AST(XQ.AggregateSpec);
 		aggSpec.addChild(new AST(XQ.VariableRef, var.var));
 		node.insertChild(node.getChildCount() - 2, aggSpec);
 		return aggSpec;
+	}
+
+	private AST findAggSpec(AST node, Var var) {
+		// find existing aggregate spec for re-use
+		for (int i = 0; i < node.getChildCount() - 2; i++) {
+			AST aggSpec = node.getChild(i);
+			QNm aggVar = (QNm) aggSpec.getChild(0).getValue();
+			if (aggVar.atomicCmp(var.var) == 0) {
+				return aggSpec;
+			}
+		}
+		return null;
 	}
 
 	/*
@@ -127,7 +160,9 @@ public class GroupByAggregates extends ScopeWalker {
 	 */
 	private void introduceAggBindings(AST aggSpec, Var var, VarRef refs) {
 		QNm seqAggVar = null;
+		boolean seqAggVarInUse = false;
 		QNm[] aggFunVars = new QNm[aggFuns.length];
+		boolean[] funVarInUse = new boolean[aggFuns.length];
 
 		// collect all pre-existing aggregate bindings for re-use
 		for (int i = 1; i < aggSpec.getChildCount(); i++) {
@@ -164,6 +199,7 @@ public class GroupByAggregates extends ScopeWalker {
 						// sequence aggregate binding
 						replaceRef(p, aggFunVars[i]);
 						isAggFun = true;
+						funVarInUse[i] = true;
 						break;
 					}
 				}
@@ -177,8 +213,24 @@ public class GroupByAggregates extends ScopeWalker {
 				}
 				// change variable ref directly to sequence aggregate binding
 				replaceRef(ref.ref, seqAggVar);
+				seqAggVarInUse = true;
 			}
 		}
+
+		// delete pre-existing but unused bindings if possible
+//		for (int i = 1; i < aggSpec.getChildCount(); i++) {
+//			int type = aggSpec.getChild(i).getChild(1).getType();
+//			if (type == XQ.SequenceAgg) {
+//				if (!seqAggVarInUse) {
+//					aggSpec.deleteChild(i);
+//				}
+//			} else {
+//				int aggFunType = aggFunType(type);
+//				if (!funVarInUse[aggFunType]) {
+//					aggSpec.deleteChild(i);
+//				}
+//			}
+//		}
 	}
 
 	private AST createBinding(QNm subsitute, int type) {

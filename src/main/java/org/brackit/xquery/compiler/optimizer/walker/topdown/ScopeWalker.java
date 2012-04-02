@@ -218,6 +218,9 @@ public abstract class ScopeWalker extends Walker {
 				// System.out.println("Did not find " + var + " in any scope");
 				return null;
 			}
+			if ((toVar != null) && (toVar != null)) {
+				return null;
+			}
 			return new VarRef(var, node, s);
 		}
 		VarRef varRefs = null;
