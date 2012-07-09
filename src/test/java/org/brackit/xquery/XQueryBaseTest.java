@@ -50,12 +50,14 @@ import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Store;
 import org.junit.Before;
+import org.junit.Ignore;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
+@Ignore
 public class XQueryBaseTest {
 	protected QueryContext ctx;
 
