@@ -59,13 +59,14 @@ public class PredicateSplit extends Walker {
 			AST andRight = predicate.getChild(1);
 
 			AST newSelect = new AST(XQ.Selection);
-			newSelect.addChild(andLeft);
+			newSelect.addChild(andRight);
 			newSelect.addChild(output);
 
-			select.replaceChild(0, andRight);
+			select.replaceChild(0, andLeft);
 			select.replaceChild(1, newSelect);
 
-			select = newSelect;
+			output = newSelect;
+			snapshot();
 		}
 
 		return node;
