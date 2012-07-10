@@ -54,7 +54,7 @@ import org.brackit.xquery.xdm.Type;
  * @author Sebastian Baechle
  * 
  */
-public interface Atomic extends Item, Expr, Comparable<Atomic> {
+public interface Atomic extends Item, Comparable<Atomic> {
 
 	/**
 	 * Returns the {@link Type} of this value.

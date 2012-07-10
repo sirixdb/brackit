@@ -56,7 +56,7 @@ import org.brackit.xquery.atomic.IntNumeric;
  * @author Sebastian Baechle
  * 
  */
-public interface Sequence extends Tuple {
+public interface Sequence extends Tuple, Expr {
 	/**
 	 * Checks the effective boolean value of this sequence as defined in
 	 * {@linkplain http://www.w3.org/TR/xquery/#id-ebv}.
