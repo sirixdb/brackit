@@ -33,6 +33,7 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.parser.SubtreeHandler;
 import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.xdm.type.NodeType;
 
 /**
  * A {@link Node} defines the common interface of an XML node in the system.
@@ -97,18 +98,18 @@ import org.brackit.xquery.node.parser.SubtreeParser;
  * </p>
  * <p>
  * At runtime the system must be able to distinguish different implementations
- * of this interface, e.g., to establish a global ordering among nodes. 
- * For that, each implementation must be identified by a system-wide
- * unique node class ID. ID collisions will result in unexpected behavior 
- * in many places. The node class ID of a node instance can be obtained
- * by the method {@link #getNodeClassID()}. 
+ * of this interface, e.g., to establish a global ordering among nodes. For
+ * that, each implementation must be identified by a system-wide unique node
+ * class ID. ID collisions will result in unexpected behavior in many places.
+ * The node class ID of a node instance can be obtained by the method
+ * {@link #getNodeClassID()}.
  * </p>
- * <p> 
- * Users are responsible to ensure uniqueness of all node class IDs of the
- * used node implementations, but implementors are advised to cross-check existing
- * implementations when implementing a new node type to avoid collisions.
- * Note that uniqueness must also be ensured across JVM boundaries for 
- * distributed computations. 
+ * <p>
+ * Users are responsible to ensure uniqueness of all node class IDs of the used
+ * node implementations, but implementors are advised to cross-check existing
+ * implementations when implementing a new node type to avoid collisions. Note
+ * that uniqueness must also be ensured across JVM boundaries for distributed
+ * computations.
  * </p>
  * 
  * @see http://www.w3.org/TR/xpath-datamodel-30/
@@ -267,12 +268,11 @@ public interface Node<E extends Node<E>> extends Item {
 	public boolean isRoot();
 
 	/**
-	 * Identifier for a particular implementation of the
-	 * {@link Node} interface. Identifiers must be ensure to
-	 * be system-wide unique, e.g., for global ordering. Note that
-	 * uniqueness must also be ensured across JVM boundaries for 
-	 * distributed computations. ID collisions
-	 * will result in unexpected behavior in many places.
+	 * Identifier for a particular implementation of the {@link Node} interface.
+	 * Identifiers must be ensure to be system-wide unique, e.g., for global
+	 * ordering. Note that uniqueness must also be ensured across JVM boundaries
+	 * for distributed computations. ID collisions will result in unexpected
+	 * behavior in many places.
 	 */
 	public int getNodeClassID();
 
@@ -846,4 +846,10 @@ public interface Node<E extends Node<E>> extends Item {
 	 *             if the operation or the handler failed
 	 */
 	public void parse(SubtreeHandler handler) throws DocumentException;
+
+	/**
+	 * Try to pushdown navigation to node
+	 */
+	public Stream<? extends Node<?>> performStep(Axis axis, NodeType test)
+			throws DocumentException;
 }
