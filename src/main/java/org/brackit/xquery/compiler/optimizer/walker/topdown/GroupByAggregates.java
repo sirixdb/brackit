@@ -27,8 +27,6 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
-import static org.brackit.xquery.module.Namespaces.FN_NSURI;
-import static org.brackit.xquery.module.Namespaces.FN_PREFIX;
 
 import java.util.Map;
 
@@ -51,19 +49,7 @@ import org.brackit.xquery.module.StaticContext;
  * @author Sebastian Baechle
  * 
  */
-public class GroupByAggregates extends ScopeWalker {
-
-	private static final QNm FN_COUNT = new QNm(FN_NSURI, FN_PREFIX, "count");
-	private static final QNm FN_SUM = new QNm(FN_NSURI, FN_PREFIX, "sum");
-	private static final QNm FN_AVG = new QNm(FN_NSURI, FN_PREFIX, "avg");
-	private static final QNm FN_MIN = new QNm(FN_NSURI, FN_PREFIX, "min");
-	private static final QNm FN_MAX = new QNm(FN_NSURI, FN_PREFIX, "max");
-
-	private static final QNm[] aggFuns = new QNm[] { FN_COUNT, FN_SUM, FN_AVG,
-			FN_MIN, FN_MAX };
-
-	private static final int[] aggFunMap = new int[] { XQ.CountAgg, XQ.SumAgg,
-			XQ.AvgAgg, XQ.MinAgg, XQ.MaxAgg };
+public class GroupByAggregates extends AggFunChecker {
 
 	@Override
 	protected AST visit(AST node) {
@@ -240,31 +226,6 @@ public class GroupByAggregates extends ScopeWalker {
 		agg.addChild(binding);
 		agg.addChild(new AST(type));
 		return agg;
-	}
-
-	private QNm replaceRef(AST node, QNm name) {
-		node.getParent().replaceChild(node.getChildIndex(),
-				new AST(XQ.VariableRef, name));
-		return name;
-	}
-
-	private int aggFunType(int type) {
-		switch (type) {
-		case XQ.CountAgg:
-			return 0;
-		case XQ.SumAgg:
-			return 1;
-		case XQ.AvgAgg:
-			return 2;
-		case XQ.MinAgg:
-			return 3;
-		case XQ.MaxAgg:
-			return 4;
-		case XQ.SequenceAgg:
-		default:
-			throw new RuntimeException("Unexpected aggregate function type: "
-					+ type);
-		}
 	}
 
 	public static void main(String[] args) throws QueryException {
