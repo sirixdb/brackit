@@ -1323,19 +1323,26 @@ public class XQParser extends Tokenizer {
 		}
 		consumeSymSkipWS("by");
 		AST groupByClause = new AST(XQ.GroupByClause);
-		do {
-			consumeSkipWS("$");
-			AST gs = new AST(XQ.GroupBySpec);
-			QNm varName = eqname(false, true);
-			gs.addChild(new AST(XQ.VariableRef, varName));
-			if (attemptSymSkipWS("collation")) {
-				AST uriLiteral = uriLiteral(false, true);
-				AST collation = new AST(XQ.Collation);
-				collation.addChild(uriLiteral);
-				gs.addChild(collation);
-			}
-			groupByClause.addChild(gs);
-		} while (attemptSkipWS(","));
+		// BEGIN Custom Group By All Extension
+		if (attemptSkipWS("*")) {
+			// TO NOTHING
+		} 
+		// END Custom Group By All Extension
+		else {
+			do {
+				consumeSkipWS("$");
+				AST gs = new AST(XQ.GroupBySpec);
+				QNm varName = eqname(false, true);
+				gs.addChild(new AST(XQ.VariableRef, varName));
+				if (attemptSymSkipWS("collation")) {
+					AST uriLiteral = uriLiteral(false, true);
+					AST collation = new AST(XQ.Collation);
+					collation.addChild(uriLiteral);
+					gs.addChild(collation);
+				}
+				groupByClause.addChild(gs);
+			} while (attemptSkipWS(","));
+		}
 		// per default all non-grouping variables
 		// in the current flwor are grouped as a sequences
 		AST dftAggregate = new AST(XQ.DftAggregateSpec);

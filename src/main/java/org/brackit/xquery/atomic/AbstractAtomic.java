@@ -32,7 +32,6 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.xdm.AbstractItem;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.type.AtomicType;
 import org.brackit.xquery.xdm.type.ItemType;
 
@@ -44,24 +43,8 @@ import org.brackit.xquery.xdm.type.ItemType;
  */
 public abstract class AbstractAtomic extends AbstractItem implements Atomic {
 	@Override
-	public final Sequence evaluate(QueryContext ctx, Tuple context)
-			throws QueryException {
-		return this;
-	}
-
-	@Override
 	public final Item evaluateToItem(QueryContext ctx, Tuple tuple) {
 		return this;
-	}
-
-	@Override
-	public boolean isUpdating() {
-		return false;
-	}
-
-	@Override
-	public boolean isVacuous() {
-		return false;
 	}
 
 	@Override

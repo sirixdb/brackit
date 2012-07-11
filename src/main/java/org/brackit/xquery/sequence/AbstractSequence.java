@@ -28,9 +28,12 @@
 package org.brackit.xquery.sequence;
 
 import org.brackit.xquery.ErrorCode;
+import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.operator.TupleImpl;
+import org.brackit.xquery.util.ExprUtil;
+import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
@@ -38,7 +41,28 @@ import org.brackit.xquery.xdm.Sequence;
  *
  */
 public abstract class AbstractSequence implements Sequence {
+	@Override
+	public final Sequence evaluate(QueryContext ctx, Tuple context)
+			throws QueryException {
+		return this;
+	}
 
+	@Override
+	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
+			throws QueryException {
+		return ExprUtil.asItem(this);
+	}
+
+	@Override
+	public boolean isUpdating() {
+		return false;
+	}
+
+	@Override
+	public boolean isVacuous() {
+		return false;
+	}
+	
 	@Override
 	public Sequence[] array() throws QueryException {
 		return new Sequence[] { this };
