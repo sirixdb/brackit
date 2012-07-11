@@ -179,7 +179,7 @@ public class Grouping {
 			aggs[i].add(s);
 		}
 		for (int i = 0; i < addAggsSpecs.length; i++) {
-			if ((size > 0) && (onlyFirst[i])) {
+			if ((size > 0) && (onlyFirst[tupleSize + i])) {
 				continue;
 			}
 			Sequence s = t.get(addAggsSpecs[i]);
