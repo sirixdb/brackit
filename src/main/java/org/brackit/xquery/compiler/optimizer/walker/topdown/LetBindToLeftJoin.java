@@ -132,7 +132,9 @@ public class LetBindToLeftJoin extends AggFunChecker {
 		Var var = findScope(letBind).localBindings().get(0);
 		VarRef refs = findVarRefs(var, letBind.getLastChild());
 		if (refs == null) {
-			aggType = XQ.SingleAgg;
+			// TODO Unused variable???? SingleAgg OK but currently causes errors
+			// in GroupByAggregates....
+			// aggType = XQ.SingleAgg;
 		} else if (refs.next != null) {
 			// TODO optimize me
 		} else {
