@@ -57,7 +57,6 @@ public class GroupByAggregates extends AggFunChecker {
 			return node;
 		}
 
-		boolean skipUnspecified = false;
 		AST dftAgg = node.getChild(node.getChildCount() - 2);
 		AST dftAggType = dftAgg.getChild(0);
 		if (dftAggType.getType() == XQ.SequenceAgg) {
@@ -65,10 +64,6 @@ public class GroupByAggregates extends AggFunChecker {
 			// This reduces the grouping overhead for variables
 			// which are not accessed at all.
 			dftAgg.replaceChild(0, new AST(XQ.SingleAgg));
-		} else if (dftAggType.getType() == XQ.SingleAgg) {
-			// Consider only variables which already have a special
-			// aggregation spec
-			skipUnspecified = true;
 		} else {
 			// There's already a specialized aggregation type in place.
 			// It seems unlikely that further optimization is necessary
@@ -82,11 +77,7 @@ public class GroupByAggregates extends AggFunChecker {
 		for (Var var : findScope(node).localBindings()) {
 			AST aggSpec = findAggSpec(node, var);
 			if (aggSpec == null) {
-				if (skipUnspecified) {
-					continue;
-				} else {
-					aggSpec = addAggSpec(node, var);
-				}
+				aggSpec = addAggSpec(node, var);
 			}
 			VarRef refs = findVarRefs(var, node.getLastChild());
 			if (refs != null) {
