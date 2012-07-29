@@ -67,7 +67,7 @@ public class SumAvgAggregator implements Aggregator {
 	public Sequence getAggregate() throws QueryException {
 		if (sum == null) {
 			return (avg) ? null : defaultValue;
-		}		
+		}	
 		if (aggType == AggType.NUMERIC) {
 			sum = numericAggCalc((Numeric) sum, count);
 		} else if (aggType == AggType.YMD) {
@@ -76,6 +76,13 @@ public class SumAvgAggregator implements Aggregator {
 			sum = dtdAggCalc((DTD) sum, count);
 		}
 		return sum;
+	}
+	
+	@Override
+	public void clear() {
+		count = 0;
+		sum = null;
+		aggType = null;
 	}
 
 	public void add(Sequence seq) throws QueryException {

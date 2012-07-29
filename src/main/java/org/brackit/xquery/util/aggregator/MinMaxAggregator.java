@@ -63,6 +63,13 @@ public class MinMaxAggregator implements Aggregator {
 	}
 
 	@Override
+	public void clear() {
+		aggType = null;
+		minmax = null;
+		minmaxType = null;
+	}
+
+	@Override
 	public void add(Sequence seq) throws QueryException {
 		if (seq == null) {
 			return;

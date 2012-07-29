@@ -67,4 +67,12 @@ public class SequenceAggregator implements Aggregator {
 		}
 		return new NestedSequence(buf);
 	}
+
+	@Override
+	public void clear() {
+		if (len > 1) {
+			buf = new Sequence[5];
+		}
+		len = 0;
+	}
 }
