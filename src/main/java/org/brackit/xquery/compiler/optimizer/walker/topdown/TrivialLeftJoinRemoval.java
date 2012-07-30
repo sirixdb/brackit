@@ -89,7 +89,7 @@ public class TrivialLeftJoinRemoval extends Walker {
 		AST appendTo = count;
 		appendTo = copyPipeline(check2, appendTo, rightIn);
 		appendTo = copyPipeline(check2, appendTo, join.getChild(2).getChild(0));
-		appendTo.addChild(join.getChild(3).getChild(0).copyTree());
+		appendTo.addChild(join.getChild(3).copyTree());
 
 		AST parent = join.getParent();
 		parent.replaceChild(join.getChildIndex(), count);

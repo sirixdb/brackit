@@ -157,6 +157,9 @@ public class CompileChain {
 		for (Target t : analyzer.getTargets()) {
 			t.optimize(getOptimizer(options));
 		}
+		if (XQuery.DEBUG) {
+			DotUtil.drawDotToFile(xquery.dot(), XQuery.DEBUG_DIR, "xquery");
+		}
 		// translate all targets of all modules
 		for (Target t : analyzer.getTargets()) {
 			t.translate(getTranslator(options));
@@ -166,9 +169,6 @@ public class CompileChain {
 			if (m.getTargetNS() != null) {
 				resolver.register(m.getTargetNS(), m);
 			}
-		}
-		if (XQuery.DEBUG) {
-			DotUtil.drawDotToFile(xquery.dot(), XQuery.DEBUG_DIR, "xquery");
 		}
 		return module;
 	}

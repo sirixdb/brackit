@@ -39,6 +39,7 @@ import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinGroupDemarcation
 import org.brackit.xquery.compiler.optimizer.walker.topdown.JoinRewriter;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.LeftJoinLifting;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.LeftJoinRemoval;
+import org.brackit.xquery.compiler.optimizer.walker.topdown.LeftJoinUnnesting;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.LetBindToLeftJoin;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.PredicateMerge;
 import org.brackit.xquery.compiler.optimizer.walker.topdown.PredicateSplit;
@@ -96,6 +97,7 @@ public class TopDownOptimizer extends DefaultOptimizer {
 			ast = new LetBindToLeftJoin().walk(ast);
 			ast = new LeftJoinLifting().walk(ast);
 			ast = new LeftJoinRemoval().walk(ast);
+			ast = new LeftJoinUnnesting().walk(ast);
 			return ast;
 		}
 	}

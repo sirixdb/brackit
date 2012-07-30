@@ -179,14 +179,91 @@ public class JoinRewriter extends ScopeWalker {
 		AST postStart = new AST(XQ.Start);
 		postStart.addChild(new AST(XQ.End));
 		join.addChild(postStart);
-		AST outStart = new AST(XQ.Start);
-		outStart.addChild(select.getChild(1).copyTree());
-		join.addChild(outStart);
+		join.addChild(select.getLastChild().copyTree());
 
-		AST parent = rightInRoot.getParent();
+		AST parent = rightInRoot.getParent();		
 		parent.replaceChild(rightInRoot.getChildIndex(), join);
+
 		snapshot();
 		refreshScopes(parent, true);
+
+		parent = pushRightInput(join);
+		snapshot();
+
+		refreshScopes(parent, true);
 		return parent;
+	}
+
+	protected AST pushRightInput(AST join) {
+		VarRef rRefs = findVarRefs(join.getChild(1));
+		VarRef[] sortedRRefs = sortVarRefs(rRefs);
+		Scope joinScope = findScope(join);
+
+		
+		AST target = null;
+		Scope targetScope = null;
+		for (int i = sortedRRefs.length - 1; i >= 0; i--) {
+			Scope s = sortedRRefs[i].var.scope;
+			if (s.compareTo(joinScope) < 0) {
+				target = s.node;
+				targetScope = s;
+				break;
+			}
+		}
+
+		if (target == null) {
+			// TODO right input is completely independent
+			// goto start?
+			target = join.getParent();
+			while (target.getType() != XQ.Start) {
+				target = target.getParent();
+			}
+		} else {
+			VarRef lRefs = findVarRefs(join.getChild(0));
+			VarRef[] sortedLRefs = sortVarRefs(lRefs);
+			for (int i = 0; i < sortedLRefs.length; i++) {
+				Scope s = sortedLRefs[i].var.scope;
+				if (s.compareTo(targetScope) > 0) {
+					target = s.node.getParent();
+				}
+			}
+		}
+		
+		/*
+		 * CAVEAT: Ensure that begin of left
+		 * input is inside current pipeline!!!
+		 */
+		AST leftInRoot = join.getParent();
+		while ((leftInRoot.getType() != XQ.Start) && (leftInRoot != target)) {
+			leftInRoot = leftInRoot.getParent();
+		}
+		
+		// create copy of pipeline section between
+		// target and this node
+		AST copy = new AST(XQ.Start);
+		AST copyEnd = copy;
+		AST tmp = leftInRoot.getLastChild();
+		if (tmp == join) {
+			// stop if there's nothing to do
+			return join;
+		}
+		while (tmp != join) {
+			AST clone = tmp.copy();
+			for (int i = 0; i < tmp.getChildCount() - 1; i++) {
+				clone.addChild(tmp.getChild(i).copyTree());
+			}
+			copyEnd.addChild(clone);
+			copyEnd = clone;
+			tmp = tmp.getLastChild();
+		}
+
+		// now append copy of current left input
+		copyEnd.addChild(join.getChild(0).getChild(0).copyTree());
+		// replace left input with copy
+		join.replaceChild(0, copy);
+		// cut-out moved pipeline section
+		leftInRoot.replaceChild(leftInRoot.getChildCount() - 1, join);
+
+		return leftInRoot;
 	}
 }

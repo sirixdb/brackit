@@ -67,8 +67,10 @@ public class LeftJoinLifting extends Walker {
 		ljoin.setProperty("leftJoin", Boolean.TRUE);
 		ljoin.addChild(rightIn.getChild(0).copyTree());
 		ljoin.addChild(rightIn.getChild(1).copyTree());
-		ljoin.addChild(rightIn.getChild(3).copyTree());
-		ljoin.addChild(emptyJoinInput());
+		AST outStart = new AST(XQ.Start);
+		outStart.addChild(rightIn.getChild(3).copyTree());
+		ljoin.addChild(outStart);
+		ljoin.addChild(emptyJoinInput(false));
 		// concat join
 		newLeftInEnd.getParent().replaceChild(newLeftInEnd.getChildIndex(),
 				ljoin);
@@ -82,17 +84,22 @@ public class LeftJoinLifting extends Walker {
 		// and replace the right input and the post-join
 		// with empty pipelines 
 		join.replaceChild(0, newLeftIn);
-		join.replaceChild(1, emptyJoinInput());
+		join.replaceChild(1, emptyJoinInput(true));
 		join.getChild(2).replaceChild(0, new AST(XQ.End));
 
 		snapshot();
 		return join;
 	}
 
-	private AST emptyJoinInput() {
-		AST in = new AST(XQ.Start);
+	private AST emptyJoinInput(boolean withStart) {
 		AST end = new AST(XQ.End);
 		end.addChild(new AST(XQ.Bool, Bool.TRUE));
+		
+		if (!withStart) {
+			return end;
+		}
+		
+		AST in = new AST(XQ.Start);		
 		in.addChild(end);
 		return in;
 	}

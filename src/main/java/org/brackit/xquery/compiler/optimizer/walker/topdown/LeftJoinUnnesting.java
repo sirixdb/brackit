@@ -27,80 +27,33 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
-import static org.brackit.xquery.compiler.XQ.TypedVariableBinding;
-import static org.brackit.xquery.compiler.XQ.Variable;
-
-import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.compiler.optimizer.walker.Walker;
 
 /**
  * @author Sebastian Baechle
  * 
  */
-public class JoinGroupDemarcation extends ScopeWalker {
-
-	private int tableJoinGroupVar;
-
-	private QNm createGroupVarName() {
-		return new QNm("_joingroup;" + (tableJoinGroupVar++));
-	}
+public class LeftJoinUnnesting extends Walker {
 
 	@Override
 	protected AST visit(AST join) {
-		if ((join.getType() != XQ.Join) || (join.getProperty("group") != null)) {
+		if ((join.getType() != XQ.Join) || (!join.checkProperty("leftJoin"))) {
 			return join;
 		}
-
-		// find closest scope from which
-		// right input is independent of
-		VarRef refs = findVarRefs(join.getChild(1));
-		Scope[] scopes = sortScopes(refs);
-		Scope local = findScope(join);
-
-		AST stopAt = null;
-		for (int i = scopes.length - 1; i >= 0; i--) {
-			Scope scope = scopes[i];
-			if (scope.compareTo(local) < 0) {
-				stopAt = scope.node;
-				break;
-			}
+		AST parentJoin = join.getParent().getParent();
+		if ((parentJoin.getType() != XQ.Join)
+				|| (join.getParent().getChildIndex() != 1)) {
+			return join;
 		}
-
-		// locate farthest scope we can go to
-		AST parent = join.getParent();
-		AST anc = parent;
-		boolean reachedStopAt = false;
-		while (true) {
-			reachedStopAt = (reachedStopAt || (anc == stopAt));   
-			if (anc.getType() == XQ.Start) {
-				if (anc.getParent().getType() != XQ.Join) {
-					return join;
-				}
-				anc = anc.getParent().getParent();
-			} else if (anc.getType() == XQ.LetBind) {
-				// let-bindings are "static" within an iteration;
-				// we may safely increase the scope
-				anc = anc.getParent();	
-			} else if (reachedStopAt) {
-				break;
-			} else {
-				anc = anc.getParent();
-			}
-		}
-
-		// prepend an artificial count for
-		// marking the join group boundaries
-		QNm joingroupVar = createGroupVarName();
-		join.setProperty("group", joingroupVar);
-
-		AST count = new AST(XQ.Count);
-		AST runVarBinding = new AST(TypedVariableBinding);
-		runVarBinding.addChild(new AST(Variable, joingroupVar));
-		count.addChild(runVarBinding);
-		count.addChild(anc.getLastChild().copyTree());
-		anc.replaceChild(anc.getChildCount() - 1, count);
-		refreshScopes(anc, true);
+		
+		AST anc = parentJoin.getParent();
+		anc.replaceChild(parentJoin.getChildIndex(), join);
+		AST out = join.getLastChild();
+		join.replaceChild(3, parentJoin);
+		parentJoin.replaceChild(1, out);
+		
 		return anc;
 	}
 }

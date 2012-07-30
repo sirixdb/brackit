@@ -233,7 +233,7 @@ public class TopDownTranslator extends Compiler {
 			op = anyOp(join, post);
 		}
 
-		return anyOp(op, node.getChild(3).getChild(0));
+		return anyOp(op, node.getLastChild());
 	}
 
 	protected Operator nljoin(Operator in, AST node) throws QueryException {
@@ -268,7 +268,7 @@ public class TopDownTranslator extends Compiler {
 		// return new Print(anyOp(op, node.getLastChild()), System.out);
 		// }
 		//
-		return anyOp(op, node.getLastChild().getLastChild());
+		return anyOp(op, node.getLastChild());
 	}
 
 	@SuppressWarnings("unchecked")

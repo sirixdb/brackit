@@ -674,6 +674,10 @@ public abstract class ScopeWalker extends Walker {
 			groupVars.add((QNm) varRef.getValue());
 			pos++;
 		}
+		
+		// TODO bind non-grouping variables only
+		// if default aggregation type is not SINGLE!
+		/*
 		// groupby rebinds all non-grouped pipeline variables
 		for (Var var : table.inPipelineBindings()) {
 			if (!groupVars.contains(var.var)) {
@@ -681,6 +685,8 @@ public abstract class ScopeWalker extends Walker {
 						Cardinality.ZeroOrMany));
 			}
 		}
+		*/
+		
 		// bind additional aggregation specs
 		while (node.getChild(pos).getType() == XQ.AggregateSpec) {
 			AST aggSpec = node.getChild(pos);
@@ -801,9 +807,7 @@ public abstract class ScopeWalker extends Walker {
 			walkInspect(postStart.getChild(0), true, bindOnly);
 			table.closeScope();
 
-			// start nested scope for output
-			AST outStart = node.getChild(3);
-			table.openScope(outStart, true);
+			// bind join output
 			for (Var var : leftInBinding) {
 				table.bind(var.var, var.type);
 			}
@@ -813,9 +817,7 @@ public abstract class ScopeWalker extends Walker {
 			for (Var var : postBinding) {
 				table.bind(var.var, var.type);
 			}
-			walkInspect(outStart.getChild(0), true, bindOnly);
-			table.closeScope();
-			table.closeScope();
+			walkInspect(node.getChild(3), true, bindOnly);			
 		} else {
 			// "pretend" to bind variables from both
 			// left and right input and output
@@ -831,6 +833,10 @@ public abstract class ScopeWalker extends Walker {
 			for (Var var : postBinding) {
 				table.bind(var.var, var.type);
 			}
+		}
+		
+		if (newScope) {
+			table.closeScope();
 		}
 	}
 
