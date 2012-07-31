@@ -79,6 +79,25 @@ public class CmpUtil {
 		}
 	}
 
+	public static int type(Cmp cmp, boolean isGCmp) {
+		switch (cmp) {
+		case eq:
+			return (isGCmp) ? GeneralCompEQ : ValueCompEQ;
+		case ge:
+			return (isGCmp) ? GeneralCompGE : ValueCompGE;
+		case gt:
+			return (isGCmp) ? GeneralCompGT : ValueCompGT;
+		case le:
+			return (isGCmp) ? GeneralCompLE : ValueCompLE;
+		case lt:
+			return (isGCmp) ? GeneralCompLT : ValueCompLT;
+		case ne:
+			return (isGCmp) ? GeneralCompNE : ValueCompNE;
+		default:
+			return -1;
+		}
+	}
+
 	public static boolean isGCmp(AST cmp) {
 		switch (cmp.getType()) {
 		case GeneralCompEQ:
