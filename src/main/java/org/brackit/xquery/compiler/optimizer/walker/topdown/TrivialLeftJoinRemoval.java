@@ -102,6 +102,9 @@ public class TrivialLeftJoinRemoval extends Walker {
 			for (int i = 0; i < node.getChildCount() - 1; i++) {
 				tmp.addChild(node.getChild(i).copyTree());
 			}
+			if (tmp.getType() == XQ.Join) {
+				tmp.setProperty("leftJoin", Boolean.TRUE);
+			}
 			tmp.setProperty("check", check);
 			parent.addChild(tmp);
 			parent = tmp;

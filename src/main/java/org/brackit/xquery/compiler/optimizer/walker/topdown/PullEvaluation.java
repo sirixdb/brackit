@@ -71,7 +71,7 @@ public class PullEvaluation extends Walker {
 		@SuppressWarnings("unchecked")
 		List<QNm> check = (List<QNm>) join.getProperty("check");
 
-		// append a check counter to the left input
+		// prepend a check counter to the left input
 		QNm postJoinVar = createCheckVarName();
 		AST count = new AST(XQ.Count);
 		AST runVarBinding = new AST(TypedVariableBinding);
@@ -81,15 +81,21 @@ public class PullEvaluation extends Walker {
 			count.setProperty("check", check);
 		}
 
-		AST tmp = join.getChild(0);
-		while (tmp.getType() != XQ.End) {
-			tmp = tmp.getLastChild();
-		}
-		tmp.getParent().replaceChild(tmp.getChildIndex(), count);
-		count.addChild(tmp);
-
+		AST lstart = join.getChild(0);
+		AST left = lstart.getChild(0);
+		lstart.replaceChild(0, count);
+		count.addChild(left);
+		
 		// add check markers to the join and the post-join part with
 		List<QNm> check2 = appendCheck(check, postJoinVar);
+		
+		// add check markers to the left input
+		AST tmp = left;
+		while (tmp.getType() != XQ.End) {
+			tmp.setProperty("check", check2);
+			tmp = tmp.getLastChild();
+		}
+		
 		tmp = post;
 		while (tmp.getType() != XQ.End) {
 			tmp.setProperty("check", check2);
