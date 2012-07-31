@@ -35,8 +35,11 @@ import static org.brackit.xquery.compiler.XQ.NodeCompPrecedes;
 import static org.brackit.xquery.compiler.XQ.Selection;
 import static org.brackit.xquery.compiler.XQ.ValueCompNE;
 
+import java.util.ArrayDeque;
+
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.Cmp;
 
 /**
@@ -44,6 +47,13 @@ import org.brackit.xquery.util.Cmp;
  * 
  */
 public class JoinRewriter extends ScopeWalker {
+
+	private ArrayDeque<Boolean> ordered = new ArrayDeque<Boolean>();
+	
+	public JoinRewriter(StaticContext sctx) {
+		super(sctx);
+		ordered.push(sctx.isOrderingModeOrdered());
+	}
 
 	@Override
 	protected AST visit(AST select) {
@@ -175,6 +185,9 @@ public class JoinRewriter extends ScopeWalker {
 		join.addChild(leftIn);
 		join.setProperty("cmp", cmp);
 		join.setProperty("GCmp", isGCmp);
+		if (!ordered.peek()) {
+			join.setProperty("skipSort", Boolean.TRUE);
+		}
 		join.addChild(rightIn);
 		AST postStart = new AST(XQ.Start);
 		postStart.addChild(new AST(XQ.End));

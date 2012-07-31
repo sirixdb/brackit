@@ -88,7 +88,7 @@ public class TopDownOptimizer extends DefaultOptimizer {
 
 	private class JoinRecognition implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
-			ast = new JoinRewriter().walk(ast);
+			ast = new JoinRewriter(sctx).walk(ast);
 			return ast;
 		}
 	}

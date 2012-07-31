@@ -45,6 +45,7 @@ import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.compiler.optimizer.walker.Walker;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.dot.DotContext;
 import org.brackit.xquery.util.dot.DotNode;
 import org.brackit.xquery.util.dot.DotUtil;
@@ -73,6 +74,14 @@ public abstract class ScopeWalker extends Walker {
 	private BindingTable table;
 
 	private int dotCount;
+
+	public ScopeWalker() {
+		super();
+	}
+
+	public ScopeWalker(StaticContext sctx) {
+		super(sctx);
+	}
 
 	@Override
 	protected AST prepare(AST root) {
