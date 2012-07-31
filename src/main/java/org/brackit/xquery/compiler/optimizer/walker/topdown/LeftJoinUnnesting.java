@@ -52,7 +52,7 @@ public class LeftJoinUnnesting extends Walker {
 		anc.replaceChild(parentJoin.getChildIndex(), join);
 		AST out = join.getLastChild();
 		join.replaceChild(3, parentJoin);
-		parentJoin.replaceChild(1, out);
+		parentJoin.getChild(1).replaceChild(0, out);
 		
 		return anc;
 	}

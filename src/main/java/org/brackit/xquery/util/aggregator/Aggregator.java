@@ -39,4 +39,5 @@ public interface Aggregator {
 
 	public void add(Sequence seq) throws QueryException;
 
+	public void clear();
 }

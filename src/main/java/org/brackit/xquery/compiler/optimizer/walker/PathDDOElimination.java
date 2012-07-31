@@ -98,9 +98,11 @@ public class PathDDOElimination extends Walker {
 				boolean isLastStep = (i + 1 == stepCount);
 				if ((!isDescOrDescOSStep) || (isLastStep)) {
 					step.setProperty("skipDDO", Boolean.TRUE);
+				}
+				if (isDescOrDescOSStep) {
 					// be conservative:
 					// stop trying to skip DDO after a '//'
-					break;
+					return node;
 				}
 			} else if (isBackwardStep(step)) {
 

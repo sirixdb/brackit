@@ -65,6 +65,9 @@ public class LeftJoinLifting extends Walker {
 		AST newLeftInEnd = findEnd(newLeftIn);
 		AST ljoin = rightIn.copy();
 		ljoin.setProperty("leftJoin", Boolean.TRUE);
+		if (join.checkProperty("skipSort")) {
+			ljoin.setProperty("skipSort", Boolean.TRUE);
+		}
 		ljoin.addChild(rightIn.getChild(0).copyTree());
 		ljoin.addChild(rightIn.getChild(1).copyTree());
 		AST outStart = new AST(XQ.Start);

@@ -98,9 +98,7 @@ public class GroupBy extends Check implements Operator {
 
 			// pass through
 			if ((check) && (dead(t))) {
-				grp.add(t);
-				Tuple emit = grp.emit();
-				grp.clear();
+				Tuple emit = grp.singleEmit(t);
 				return emit;
 			}
 
@@ -289,9 +287,7 @@ public class GroupBy extends Check implements Operator {
 					if ((check) && (dead(t))) {
 						if (grp.getSize() == 0) {
 							next = null;
-							grp.add(t);
-							Tuple emit = grp.emit();
-							grp.clear();
+							Tuple emit = grp.singleEmit(t);
 							return emit;
 						} else {
 							// keep next and output grouping map first

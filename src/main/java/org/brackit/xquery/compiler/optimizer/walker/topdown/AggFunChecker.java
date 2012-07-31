@@ -25,54 +25,55 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.util.aggregator;
+package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
-import java.util.Arrays;
+import static org.brackit.xquery.module.Namespaces.FN_NSURI;
+import static org.brackit.xquery.module.Namespaces.FN_PREFIX;
 
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.sequence.NestedSequence;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.XQ;
 
 /**
- * Aggregator for sequence concatenation
- * 
  * @author Sebastian Baechle
- * 
+ *
  */
-public class SequenceAggregator implements Aggregator {
-	private Sequence[] buf = new Sequence[5];
-	private int len;
+public abstract class AggFunChecker extends ScopeWalker {
 
-	@Override
-	public void add(Sequence s) throws QueryException {
-		if (s == null) {
-			return;
-		}
-		if (len == buf.length) {
-			buf = Arrays.copyOf(buf, ((buf.length * 3) / 2 + 1));
-		}
-		buf[len++] = s;
+	protected static final QNm FN_COUNT = new QNm(FN_NSURI, FN_PREFIX, "count");
+	protected static final QNm FN_SUM = new QNm(FN_NSURI, FN_PREFIX, "sum");
+	protected static final QNm FN_AVG = new QNm(FN_NSURI, FN_PREFIX, "avg");
+	protected static final QNm FN_MIN = new QNm(FN_NSURI, FN_PREFIX, "min");
+	protected static final QNm FN_MAX = new QNm(FN_NSURI, FN_PREFIX, "max");
+	protected static final QNm[] aggFuns = new QNm[] { FN_COUNT, FN_SUM, FN_AVG,
+				FN_MIN, FN_MAX };
+	protected static final int[] aggFunMap = new int[] { XQ.CountAgg, XQ.SumAgg,
+				XQ.AvgAgg, XQ.MinAgg, XQ.MaxAgg };
+
+
+	protected QNm replaceRef(AST node, QNm name) {
+		node.getParent().replaceChild(node.getChildIndex(),
+				new AST(XQ.VariableRef, name));
+		return name;
 	}
 
-	@Override
-	public Sequence getAggregate() {
-		if (len == 0) {
-			return null;
+	protected int aggFunType(int type) {
+		switch (type) {
+		case XQ.CountAgg:
+			return 0;
+		case XQ.SumAgg:
+			return 1;
+		case XQ.AvgAgg:
+			return 2;
+		case XQ.MinAgg:
+			return 3;
+		case XQ.MaxAgg:
+			return 4;
+		case XQ.SequenceAgg:
+		default:
+			throw new RuntimeException("Unexpected aggregate function type: "
+					+ type);
 		}
-		if (len == 1) {
-			return buf[0];
-		}
-		if (buf.length != len) {
-			buf = Arrays.copyOf(buf, len);
-		}
-		return new NestedSequence(buf);
 	}
 
-	@Override
-	public void clear() {
-		if (len > 1) {
-			buf = new Sequence[5];
-		}
-		len = 0;
-	}
 }

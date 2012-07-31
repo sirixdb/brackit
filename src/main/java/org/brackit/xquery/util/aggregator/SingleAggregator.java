@@ -50,4 +50,8 @@ public class SingleAggregator implements Aggregator {
 		}
 	}
 
+	@Override
+	public void clear() {
+		s = null;
+	}
 }

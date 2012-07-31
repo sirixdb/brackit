@@ -59,4 +59,9 @@ public class CountAggregator implements Aggregator {
 			count = (IntNumeric) count.add(seq.size());
 		}
 	}
+
+	@Override
+	public void clear() {
+		count = Int32.ZERO;
+	}
 }

@@ -112,7 +112,7 @@ public class XQuery {
 
 	public void serialize(QueryContext ctx, PrintWriter out)
 			throws QueryException {
-		Sequence result = run(ctx, false);
+		Sequence result = run(ctx, true);
 		if (result == null) {
 			return;
 		}
@@ -122,7 +122,7 @@ public class XQuery {
 	}
 	
 	public void serialize(QueryContext ctx, Serializer serializer) throws QueryException {
-		Sequence result = run(ctx, false);
+		Sequence result = run(ctx, true);
 		if (result == null) {
 			return;
 		}

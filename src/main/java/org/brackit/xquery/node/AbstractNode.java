@@ -35,6 +35,7 @@ import org.brackit.xquery.node.stream.AtomStream;
 import org.brackit.xquery.node.stream.filter.Filter;
 import org.brackit.xquery.node.stream.filter.FilteredStream;
 import org.brackit.xquery.xdm.AbstractItem;
+import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
@@ -42,6 +43,7 @@ import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.Type;
 import org.brackit.xquery.xdm.type.ElementType;
 import org.brackit.xquery.xdm.type.ItemType;
+import org.brackit.xquery.xdm.type.NodeType;
 
 /**
  * 
@@ -168,6 +170,12 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem
 		default:
 			return null;
 		}
+	}
+
+	@Override
+	public Stream<? extends Node<?>> performStep(Axis axis, NodeType test)
+			throws DocumentException {
+		return null;
 	}
 
 	@Override

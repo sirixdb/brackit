@@ -37,7 +37,7 @@ import org.brackit.xquery.util.Cmp;
  * @author Sebastian Baechle
  * 
  */
-public class LetBindToLeftJoin extends ScopeWalker {
+public class LetBindToLeftJoin extends AggFunChecker {
 
 	@Override
 	protected AST visit(AST node) {
@@ -91,13 +91,19 @@ public class LetBindToLeftJoin extends ScopeWalker {
 		rlet.addChild(letVarBinding);
 		rlet.addChild(letReturn);
 		QNm letVar = (QNm) letVarBinding.getChild(0).getValue();
-		AST groupBy = createGroupBy(letVar);		
+		AST groupBy = createGroupBy(letVar, let);		
 		rlet.addChild(groupBy);
 
 		post.addChild(rlet);
 
 		// finally assemble left join
 		AST ljoin = createJoin(leftIn, rightIn, post, let.getLastChild().copyTree());
+		
+		// we must not sort if result is directly aggregated
+		boolean skipSort = (groupBy.getChild(1).getChild(0).getType() != XQ.SequenceAgg);
+		if (skipSort) {
+			ljoin.setProperty("skipSort", Boolean.TRUE);
+		}
 
 		int replaceAt = insertJoinAfter.getChildCount() - 1;
 		insertJoinAfter.replaceChild(replaceAt, ljoin);
@@ -118,13 +124,38 @@ public class LetBindToLeftJoin extends ScopeWalker {
 		return ljoin;
 	}
 
-	private AST createGroupBy(QNm letVar) {
+	private AST createGroupBy(QNm letVar, AST letBind) {
+		int aggType = XQ.SequenceAgg;
+		
+		Var var = findScope(letBind).localBindings().get(0);
+		VarRef refs = findVarRefs(var, letBind.getLastChild());
+		if (refs == null) {
+			// TODO Unused variable???? SingleAgg OK but currently causes errors
+			// in GroupByAggregates....
+			// aggType = XQ.SingleAgg;
+		} else if (refs.next != null) {
+			// TODO optimize me
+		} else {
+			AST p = refs.ref.getParent();
+			if (p.getType() == XQ.FunctionCall) {
+				QNm fun = (QNm) p.getValue();
+				for (int i = 0; i < aggFuns.length; i++) {
+					QNm aggFun = aggFuns[i];
+					if (fun.atomicCmp(aggFun) == 0) {					
+						replaceRef(p, letVar);
+						aggType = aggFunMap[i];
+						break;
+					}
+				}
+			}
+		}		
+		
 		AST groupBy = new AST(XQ.GroupBy);
 		groupBy.setProperty("sequential", Boolean.TRUE);
 
 		AST aggSpec = new AST(XQ.AggregateSpec);
 		aggSpec.addChild(new AST(XQ.VariableRef, letVar));
-		aggSpec.addChild(createBinding(letVar, XQ.SequenceAgg));
+		aggSpec.addChild(createBinding(letVar, aggType));
 		groupBy.addChild(aggSpec);
 
 		AST dftAgg = new AST(XQ.DftAggregateSpec);

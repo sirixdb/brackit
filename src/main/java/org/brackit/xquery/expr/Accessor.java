@@ -372,6 +372,7 @@ public abstract class Accessor {
 
 	public Stream<? extends Node<?>> performStep(Node<?> node, NodeType test)
 			throws QueryException {
-		return new KindFilter(test, performStep(node));
+		Stream<? extends Node<?>> s = node.performStep(axis, test);
+		return (s != null) ? s : new KindFilter(test, performStep(node));
 	}
 }
