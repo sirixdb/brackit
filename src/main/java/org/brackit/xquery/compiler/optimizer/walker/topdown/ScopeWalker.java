@@ -684,17 +684,17 @@ public abstract class ScopeWalker extends Walker {
 			pos++;
 		}
 		
-		// TODO bind non-grouping variables only
-		// if default aggregation type is not SINGLE!
-		/*
-		// groupby rebinds all non-grouped pipeline variables
-		for (Var var : table.inPipelineBindings()) {
-			if (!groupVars.contains(var.var)) {
-				table.bind(var.var, new SequenceType(var.type.getItemType(),
-						Cardinality.ZeroOrMany));
+		AST dftAgg = node.getChild(node.getChildCount() - 2);
+		AST dftAggType = dftAgg.getChild(0);
+		if (dftAggType.getType() != XQ.SingleAgg) {
+			// groupby rebinds all non-grouped pipeline variables
+			for (Var var : table.inPipelineBindings()) {
+				if (!groupVars.contains(var.var)) {
+					table.bind(var.var, new SequenceType(var.type.getItemType(),
+							Cardinality.ZeroOrMany));
+				}
 			}
 		}
-		*/
 		
 		// bind additional aggregation specs
 		while (node.getChild(pos).getType() == XQ.AggregateSpec) {
