@@ -1,0 +1,3 @@
+[paths]
+default = https://code.google.com/p/brackit/
+git = git+ssh://git@github.com/JohannesLichtenberger/brackit.git
