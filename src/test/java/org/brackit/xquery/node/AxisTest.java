@@ -42,6 +42,7 @@ import org.brackit.xquery.expr.Accessor;
 import org.brackit.xquery.node.stream.StreamUtil;
 import org.brackit.xquery.node.stream.filter.Filter;
 import org.brackit.xquery.node.stream.filter.FilteredStream;
+import org.brackit.xquery.util.serialize.SubtreePrinter;
 import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
@@ -80,14 +81,10 @@ public abstract class AxisTest extends XQueryBaseTest {
 			try {
 				boolean check = !axis.check(element, node);
 				/*
-				if (check) {
-					System.err.println("Filter out " + element + " -> !" + axis
-							+ " of " + node);
-				} else {
-					System.out.println("Accept " + element + " -> " + axis
-							+ " of " + node);
-				}
-				*/				
+				 * if (check) { System.err.println("Filter out " + element + " -> !" +
+				 * axis + " of " + node); } else { System.out.println("Accept " +
+				 * element + " -> " + axis + " of " + node); }
+				 */
 				return check;
 			} catch (QueryException e) {
 				throw new DocumentException(e);
@@ -99,8 +96,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 	@Test
 	public void testCmp() throws Exception {
 		Stream<?> subtree = collection.getDocument().getSubtree();
-		List<? extends Node<?>> nodes = new ArrayList(StreamUtil
-				.asList(subtree));
+		List<? extends Node<?>> nodes = new ArrayList(StreamUtil.asList(subtree));
 		for (int i = 0; i < nodes.size(); i++) {
 			Node<?> a = nodes.get(i);
 			for (int j = 0; j < nodes.size(); j++) {
@@ -113,12 +109,11 @@ public abstract class AxisTest extends XQueryBaseTest {
 					else
 						Assert.assertTrue("a > b", a.cmp(b) > 0);
 				} catch (AssertionError e) {
-					// SubtreePrinter.print(collection.getDocument(),
-					// System.out);
-					// System.err.println(nodes);
-					// System.err.println(a);
-					// System.err.println(b);
-					// System.err.println(a.cmp(b));
+//					SubtreePrinter.print(collection.getDocument(), System.out);
+//					System.err.println(nodes);
+					System.err.println(a);
+					System.err.println(b);
+					System.err.println(a.cmp(b));
 					throw e;
 				}
 			}
@@ -237,8 +232,8 @@ public abstract class AxisTest extends XQueryBaseTest {
 		}
 		nodes.close();
 		try {
-			Assert.assertEquals("Expected number of nodes delivered", expected
-					.size(), delivered.size());
+			Assert.assertEquals("Expected number of nodes delivered",
+					expected.size(), delivered.size());
 
 			for (Node<?> n : delivered) {
 				// System.err.println("CHECKING " + n);
@@ -251,8 +246,8 @@ public abstract class AxisTest extends XQueryBaseTest {
 				}
 			}
 
-			Assert.assertTrue("Expected nodes delivered", expected
-					.containsAll(delivered));
+			Assert.assertTrue("Expected nodes delivered",
+					expected.containsAll(delivered));
 		} catch (Error e) {
 			// System.out.println("Expected:\t" + expected);
 			// System.out.println("Delivered:\t" + delivered);
@@ -268,4 +263,5 @@ public abstract class AxisTest extends XQueryBaseTest {
 		super.setUp();
 		collection = storeFile("text.xml", "/docs/orga.xml");
 	}
+
 }

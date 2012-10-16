@@ -238,7 +238,7 @@ public abstract class Accessor {
 			final Node<?> n = node;
 			Node<?> p = node.getParent();
 
-			if (p == null) {
+			if (p == null || p.isRoot()) {
 				return new EmptyStream<Node<?>>();
 			}
 

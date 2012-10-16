@@ -214,7 +214,7 @@ public abstract class ConstructedNodeBuilder {
 		} else if ((nameType.instanceOf(Type.STR))
 				|| (nameType.instanceOf(Type.UNA))) {
 			QNm qnm = new QNm(atomicName.stringValue());
-			if (qnm.getPrefix() != null) {
+			if (qnm.getPrefix() != "") {
 				String uri = ctx.getNamespaces().resolve(qnm.getPrefix());
 				if (uri == null) {
 					throw new QueryException(
@@ -250,7 +250,7 @@ public abstract class ConstructedNodeBuilder {
 		} else if ((nameType.instanceOf(Type.STR))
 				|| (nameType.instanceOf(Type.UNA))) {
 			QNm qnm = new QNm(atomicName.stringValue());
-			if (qnm.getPrefix() != null) {
+			if (qnm.getPrefix() != "") {
 				String uri = ctx.getNamespaces().resolve(qnm.getPrefix());
 				if (uri == null) {
 					throw new QueryException(
