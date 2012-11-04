@@ -193,7 +193,7 @@ abstract class ParentD2Node extends D2Node {
 
 	@Override
 	public Atomic getValue() throws DocumentException {
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		Stream<D2Node> scanner = new DescendantScanner(this);
 		try {
 			D2Node descendant;

@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.node;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -42,7 +43,6 @@ import org.brackit.xquery.expr.Accessor;
 import org.brackit.xquery.node.stream.StreamUtil;
 import org.brackit.xquery.node.stream.filter.Filter;
 import org.brackit.xquery.node.stream.filter.FilteredStream;
-import org.brackit.xquery.util.serialize.SubtreePrinter;
 import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
@@ -102,15 +102,12 @@ public abstract class AxisTest extends XQueryBaseTest {
 			for (int j = 0; j < nodes.size(); j++) {
 				Node<?> b = nodes.get(j);
 				try {
-					if (i < j)
-						Assert.assertTrue("a < b", a.cmp(b) < 0);
-					else if (i == j)
-						Assert.assertTrue("a == b", a.cmp(b) == 0);
-					else
-						Assert.assertTrue("a > b", a.cmp(b) > 0);
+					if (i < j) Assert.assertTrue("a < b", a.cmp(b) < 0);
+					else if (i == j) Assert.assertTrue("a == b", a.cmp(b) == 0);
+					else Assert.assertTrue("a > b", a.cmp(b) > 0);
 				} catch (AssertionError e) {
-//					SubtreePrinter.print(collection.getDocument(), System.out);
-//					System.err.println(nodes);
+					// SubtreePrinter.print(collection.getDocument(), System.out);
+					// System.err.println(nodes);
 					System.err.println(a);
 					System.err.println(b);
 					System.err.println(a.cmp(b));
@@ -261,7 +258,9 @@ public abstract class AxisTest extends XQueryBaseTest {
 	@Override
 	public void setUp() throws Exception, FileNotFoundException {
 		super.setUp();
-		collection = storeFile("text.xml", "/docs/orga.xml");
+		collection = storeFile("text.xml",
+				new StringBuilder(RESOURCES).append(File.separator).append("docs")
+						.append(File.separator).append("orga.xml").toString());
 	}
 
 }

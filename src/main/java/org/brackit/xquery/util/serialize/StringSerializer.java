@@ -51,7 +51,7 @@ public class StringSerializer implements Serializer {
 
 	private final PrintWriter out;
 	private boolean format;
-	private String indent = "    ";
+	private String indent = "  ";
 
 	public StringSerializer(PrintWriter out) {
 		this.out = out;
@@ -65,16 +65,18 @@ public class StringSerializer implements Serializer {
 		return format;
 	}
 
-	public void setFormat(boolean format) {
+	public Serializer setFormat(boolean format) {
 		this.format = format;
+		return this;
 	}
 
 	public String getIndent() {
 		return indent;
 	}
 
-	public void setIndent(String indent) {
+	public Serializer setIndent(String indent) {
 		this.indent = indent;
+		return this;
 	}
 
 	@Override

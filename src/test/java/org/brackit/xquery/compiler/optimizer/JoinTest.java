@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.compiler.optimizer;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 
 import org.brackit.xquery.ResultChecker;
@@ -34,94 +35,71 @@ import org.brackit.xquery.XQuery;
 import org.brackit.xquery.XQueryBaseTest;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.sequence.ItemSequence;
-import org.brackit.xquery.util.serialize.StringSerializer;
 import org.brackit.xquery.xdm.Sequence;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
  * @author Sebastian Baechle
- *
+ * 
  */
 public class JoinTest extends XQueryBaseTest {
-	
+
+	/** Join folder. */
+	private static final String JOIN = new StringBuilder(RESOURCES)
+			.append(File.separator).append("join").append(File.separator).toString();
+
 	@Test
 	public void simpleNestedFor() throws Exception {
-		Sequence res = new XQuery(
-				"for $a in (1,2,3) " +
-				"for $b in (2,3,4) " +
-				"where $a = $b " +
-				"return $a").execute(ctx);
-		ResultChecker.dCheck(intSequence(2,3), res);
+		Sequence res = new XQuery("for $a in (1,2,3) " + "for $b in (2,3,4) "
+				+ "where $a = $b " + "return $a").execute(ctx);
+		ResultChecker.dCheck(intSequence(2, 3), res);
 	}
-	
+
 	@Test
 	public void nestedForWithLetsInOuterFor() throws Exception {
-		Sequence res = new XQuery(
-				"for $w in (2,4) " +
-				"let $x := (2 to $w) " +
-				"for $a in (1,2,3) " +
-				"for $b in $x " +
-				"let $z := $a + $x[0] " +
-				"where $a = $b " +
-				"return $a").execute(ctx);
-		ResultChecker.dCheck(intSequence(2,2,3), res);
+		Sequence res = new XQuery("for $w in (2,4) " + "let $x := (2 to $w) "
+				+ "for $a in (1,2,3) " + "for $b in $x " + "let $z := $a + $x[0] "
+				+ "where $a = $b " + "return $a").execute(ctx);
+		ResultChecker.dCheck(intSequence(2, 2, 3), res);
 	}
-	
+
 	@Test
 	public void nestedForWithLets() throws Exception {
-		Sequence res = new XQuery(
-				"let $x := (2,3,4) " +
-				"for $a in (1,2,3) " +
-				"let $y := 'foo'" +
-				"for $b in $x " +
-				"let $z := $a + $x[0] " + 
-				"where $a = $b " +
-				"return $a").execute(ctx);
-		ResultChecker.dCheck(intSequence(2,3), res);
+		Sequence res = new XQuery("let $x := (2,3,4) " + "for $a in (1,2,3) "
+				+ "let $y := 'foo'" + "for $b in $x " + "let $z := $a + $x[0] "
+				+ "where $a = $b " + "return $a").execute(ctx);
+		ResultChecker.dCheck(intSequence(2, 3), res);
 	}
-	
+
 	@Test
 	public void letNestedFor() throws Exception {
-		Sequence res = new XQuery(
-				"for $a in (1,2,3) " +
-				"let $c := for $b in (2,3,4) " +
-				"          where $a = $b " +
-				"          return $a " +
-				"return $c").execute(ctx);
-		ResultChecker.dCheck(intSequence(2,3), res);
+		Sequence res = new XQuery("for $a in (1,2,3) "
+				+ "let $c := for $b in (2,3,4) " + "          where $a = $b "
+				+ "          return $a " + "return $c").execute(ctx);
+		ResultChecker.dCheck(intSequence(2, 3), res);
 	}
-	
+
 	@Test
 	public void letNestedForWithLets() throws Exception {
-		Sequence res = new XQuery(
-				"for $w in (2,4) " +
-				"let $x := (2 to $w) " +
-				"for $a in (1,2,3) " +
-				"let $y := 'foo'" +
-				"let $c := for $b in $x " +
-				"          let $z := $a + $x[0] " +
-				"          where $a = $b " +
-				"          return $a " +
-				"return $c").execute(ctx);
-		ResultChecker.dCheck(intSequence(2,2,3), res);
+		Sequence res = new XQuery("for $w in (2,4) " + "let $x := (2 to $w) "
+				+ "for $a in (1,2,3) " + "let $y := 'foo'" + "let $c := for $b in $x "
+				+ "          let $z := $a + $x[0] " + "          where $a = $b "
+				+ "          return $a " + "return $c").execute(ctx);
+		ResultChecker.dCheck(intSequence(2, 2, 3), res);
 	}
-	
+
 	@Test
 	public void fakeJoin() throws Exception {
-		Sequence res = new XQuery(
-				"for $a in (1,2,3) " +
-				"for $b in (2,3,4) " +
-				"let $x := for $c in 1 " +
-				"			where $a = $b " +
-				"			return $c " +
-				"return $x").execute(ctx);
-		ResultChecker.dCheck(intSequence(1,1), res);
+		Sequence res = new XQuery("for $a in (1,2,3) " + "for $b in (2,3,4) "
+				+ "let $x := for $c in 1 " + "			where $a = $b " + "			return $c "
+				+ "return $x").execute(ctx);
+		ResultChecker.dCheck(intSequence(1, 1), res);
 	}
-	
+
 	@Test
 	public void simpleForFor() throws Exception {
-		String query = readQuery("/join/", "simpleForFor.xq");
+		String query = readQuery(JOIN, "simpleForFor.xq");
 		XQuery xq = new XQuery(query);
 		Sequence res = xq.execute(createContext());
 		ResultChecker.dCheck(intSequence(2, 3, 5), res);
@@ -129,7 +107,7 @@ public class JoinTest extends XQueryBaseTest {
 
 	@Test
 	public void forNestedFor() throws Exception {
-		String query = readQuery("/join/", "forNestedFor.xq");
+		String query = readQuery(JOIN, "forNestedFor.xq");
 		XQuery xq = new XQuery(query);
 		Sequence res = xq.execute(createContext());
 		ResultChecker.dCheck(intSequence(2, 3, 5), res);
@@ -137,7 +115,7 @@ public class JoinTest extends XQueryBaseTest {
 
 	@Test
 	public void forNestedFor2JoinPredicates() throws Exception {
-		String query = readQuery("/join/", "forNestedFor2JoinPredicates.xq");
+		String query = readQuery(JOIN, "forNestedFor2JoinPredicates.xq");
 		XQuery xq = new XQuery(query);
 		Sequence res = xq.execute(createContext());
 		ResultChecker.dCheck(intSequence(3, 4, 6), res);
@@ -145,12 +123,12 @@ public class JoinTest extends XQueryBaseTest {
 
 	@Test
 	public void forNestedForWithOutsideRef() throws Exception {
-		String query = readQuery("/join/", "forNestedForWithOutsideRef.xq");
+		String query = readQuery(JOIN, "forNestedForWithOutsideRef.xq");
 		XQuery xq = new XQuery(query);
 		Sequence res = xq.execute(createContext());
 		ResultChecker.dCheck(intSequence(3, 3, 4, 4, 6, 6), res);
 	}
-	
+
 	private Sequence intSequence(int... v) {
 		Int32[] s = new Int32[v.length];
 		for (int i = 0; i < v.length; i++) {

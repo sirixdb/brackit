@@ -29,6 +29,8 @@ package org.brackit.xquery.compiler.parser;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQueryBaseTest;
@@ -40,6 +42,9 @@ import org.junit.Test;
  */
 public class XQParserTest extends XQueryBaseTest {
 
+	private static final String PARSER = new StringBuilder(RESOURCES)
+	.append(File.separator).append("parser").append(File.separator).toString();
+	
 	@Test
 	public void ncname() throws Exception {
 		new XQParser("declare").parse();
@@ -113,7 +118,7 @@ public class XQParserTest extends XQueryBaseTest {
 
 	@Test
 	public void weird() throws Exception {
-		new XQParser(readQuery("/parser/", "weird.xq")).parse();
+		new XQParser(readQuery(PARSER, "weird.xq")).parse();
 	}
 
 	@Test

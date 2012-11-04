@@ -29,6 +29,7 @@ package org.brackit.xquery;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -37,15 +38,21 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Test of slighlty modified XMark queries against stored documents
+ * Test of slightly modified XMark queries against stored documents.
  * 
  * @author Sebastian Baechle
  * 
  */
 public class XMarkFnDocTest extends XQueryBaseTest {
-	private static final String QUERY_DIR = "/xmark/queries/fndoc/";
+	/** Query directory. */
+	private static final String QUERY_DIR = new StringBuilder(RESOURCES)
+			.append(File.separator).append("xmark").append(File.separator)
+			.append("queries").append(File.separator).append("fndoc").append(File.separator).toString();
 
-	private static final String RESULT_DIR = "/xmark/results/";
+	/** Result directory. */
+	private static final String RESULT_DIR = new StringBuilder(RESOURCES)
+			.append(File.separator).append("xmark").append(File.separator)
+			.append("results").append(File.separator).toString();
 
 	@Test
 	public void xmark01() throws Exception, IOException {
@@ -210,6 +217,8 @@ public class XMarkFnDocTest extends XQueryBaseTest {
 	@Before
 	public void setUp() throws Exception, FileNotFoundException {
 		super.setUp();
-		storeFile("auction.xml", "/xmark/auction.xml");
+		storeFile("auction.xml",
+				new StringBuilder(RESOURCES).append(File.separator).append("xmark")
+						.append(File.separator).append("auction.xml").toString());
 	}
 }

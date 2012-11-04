@@ -157,6 +157,9 @@ public class SubtreePrinter extends DefaultHandler {
 			out.print("</");
 			out.print(name);
 			out.print(">");
+			if (prettyPrint) {
+				out.println();
+			}
 		}
 		openElement = false;
 		emptyElement = false;

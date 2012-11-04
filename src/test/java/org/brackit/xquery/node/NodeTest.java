@@ -33,6 +33,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.io.StringReader;
 import java.util.ArrayList;
 
@@ -66,33 +67,33 @@ import org.xml.sax.InputSource;
  */
 public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
+	private static final String DOCS = new StringBuilder(RESOURCES)
+			.append(File.separator).append("docs").append(File.separator).toString();
+
 	protected static final String ROOT_ONLY_DOCUMENT = "<?xml version = '1.0' encoding = 'UTF-8'?><root/>";
 
 	@Test
 	public void testStoreDocument() throws Exception {
-		createDocument(new DocumentParser(readFile("/docs/", "orga.xml")));
+		createDocument(new DocumentParser(readFile(DOCS, "orga.xml")));
 	}
 
 	@Test
 	public void testGetFirstChildForDocumentNode() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(
-				"<a><b/><c/></a>"));
+		Collection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
 		assertEquals("First child is document root node", coll.getDocument()
 				.getFirstChild(), coll.getDocument().getFirstChild());
 	}
 
 	@Test
 	public void testGetLastChildForDocumentNode() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(
-				"<a><b/><c/></a>"));
+		Collection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
 		assertEquals("Last child is document root node", coll.getDocument()
 				.getFirstChild(), coll.getDocument().getLastChild());
 	}
 
 	@Test
 	public void testGetChildrenForDocumentNode() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(
-				"<a><b/><c/></a>"));
+		Collection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
 
 		Stream<? extends E> children = coll.getDocument().getChildren();
 		E n;
@@ -105,8 +106,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
 	@Test
 	public void testGetSubtreeForDocumentNode() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(
-				"<a><b/><c/></a>"));
+		Collection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
 
 		Stream<? extends E> subtree = coll.getDocument().getSubtree();
 
@@ -127,8 +127,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
 	@Test
 	public void testGetSubtreeForRootNode() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(
-				"<a><b/><c/></a>"));
+		Collection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
 
 		Stream<? extends E> subtree = coll.getDocument().getFirstChild()
 				.getSubtree();
@@ -159,43 +158,37 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		assertEquals("First node is document root node", coll.getDocument()
 				.getFirstChild().getFirstChild(), n);
 		assertNotNull("Stream not empty", n = subtree.next());
-		assertEquals(
-				"Second node is document root node's first child first child",
-				coll.getDocument().getFirstChild().getFirstChild()
-						.getFirstChild(), n);
+		assertEquals("Second node is document root node's first child first child",
+				coll.getDocument().getFirstChild().getFirstChild().getFirstChild(), n);
 		assertNotNull("Stream not empty", n = subtree.next());
-		assertEquals(
-				"Third node is document root node's first child last child",
-				coll.getDocument().getFirstChild().getFirstChild()
-						.getLastChild(), n);
+		assertEquals("Third node is document root node's first child last child",
+				coll.getDocument().getFirstChild().getFirstChild().getLastChild(), n);
 		subtree.close();
 	}
 
 	@Test
 	public void traverseDocumentInPreorder() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(readFile(
-				"/docs/", "orga.xml")));
+		Collection<E> coll = createDocument(new DocumentParser(readFile(DOCS,
+				"orga.xml")));
 		E root = coll.getDocument().getFirstChild();
 		org.w3c.dom.Node domRoot = null;
 
-		domRoot = createDomTree(new InputSource(new StringReader(readFile(
-				"/docs/", "orga.xml"))));
+		domRoot = createDomTree(new InputSource(new StringReader(readFile(DOCS,
+				"orga.xml"))));
 
 		checkSubtreePreOrder(root, domRoot); // check document index
 	}
 
-	protected org.w3c.dom.Node createDomTree(InputSource source)
-			throws Exception {
+	protected org.w3c.dom.Node createDomTree(InputSource source) throws Exception {
 		try {
-			DocumentBuilderFactory factory = DocumentBuilderFactory
-					.newInstance();
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder builder = factory.newDocumentBuilder();
 			Document document = builder.parse(source);
 			return document.getDocumentElement();
 		} catch (Exception e) {
 			throw new DocumentException(
-					"An error occured while creating DOM input source: %s", e
-							.getMessage());
+					"An error occured while creating DOM input source: %s",
+					e.getMessage());
 		}
 	}
 
@@ -205,15 +198,14 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
 		if (domNode instanceof Element) {
 			Element element = (Element) domNode;
-			assertEquals(node + " is of type element", Kind.ELEMENT, node
-					.getKind());
+			assertEquals(node + " is of type element", Kind.ELEMENT, node.getKind());
 
 			// System.out.println("Checking name of element " +
 			// node.getDeweyID() + " level " + node.getDeweyID().getLevel() +
 			// " is " + element.getNodeName());
 
-			assertEquals(String.format("Name of node %s", node), element
-					.getNodeName(), node.getName().toString());
+			assertEquals(String.format("Name of node %s", node),
+					element.getNodeName(), node.getName().toString());
 			compareAttributes(node, element);
 
 			NodeList domChildNodes = element.getChildNodes();
@@ -227,50 +219,50 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 				for (E ancestor = node; ancestor != null; ancestor = ancestor
 						.getParent()) {
 					if (ancestorLevel == 0) {
-						assertTrue(String.format("node %s is child of %s", c,
-								ancestor), c.isChildOf(ancestor));
-						assertTrue(String.format("node %s is parent of %s",
-								ancestor, c), ancestor.isParentOf(c));
+						assertTrue(String.format("node %s is child of %s", c, ancestor),
+								c.isChildOf(ancestor));
+						assertTrue(String.format("node %s is parent of %s", ancestor, c),
+								ancestor.isParentOf(c));
 					}
-					assertTrue(String.format("node %s is descendant of %s", c,
-							ancestor), c.isDescendantOf(ancestor));
-					assertTrue(String.format("node %s is ancestor of %s",
-							ancestor, c), ancestor.isAncestorOf(c));
+					assertTrue(String.format("node %s is descendant of %s", c, ancestor),
+							c.isDescendantOf(ancestor));
+					assertTrue(String.format("node %s is ancestor of %s", ancestor, c),
+							ancestor.isAncestorOf(c));
 					ancestorLevel++;
 				}
 
 				for (E sibling : children) {
-					assertTrue(String.format("node %s is sibling of %s", c,
-							sibling), c.isSiblingOf(sibling));
-					assertTrue(String.format("node %s is sibling of %s",
-							sibling, c), sibling.isSiblingOf(c));
-					assertTrue(String.format(
-							"node %s is preceding sibling of %s", sibling, c),
+					assertTrue(String.format("node %s is sibling of %s", c, sibling),
+							c.isSiblingOf(sibling));
+					assertTrue(String.format("node %s is sibling of %s", sibling, c),
+							sibling.isSiblingOf(c));
+					assertTrue(
+							String.format("node %s is preceding sibling of %s", sibling, c),
 							sibling.isPrecedingSiblingOf(c));
-					assertTrue(String.format(
-							"node %s is following sibling of %s", c, sibling),
+					assertTrue(
+							String.format("node %s is following sibling of %s", c, sibling),
 							c.isFollowingSiblingOf(sibling));
-					assertTrue(String.format("node %s is preceding of %s",
-							sibling, c), sibling.isPrecedingOf(c));
-					assertTrue(String.format("node %s is following of %s", c,
-							sibling), c.isFollowingOf(sibling));
+					assertTrue(String.format("node %s is preceding of %s", sibling, c),
+							sibling.isPrecedingOf(c));
+					assertTrue(String.format("node %s is following of %s", c, sibling),
+							c.isFollowingOf(sibling));
 
 					try {
-						assertFalse(String.format(
-								"node %s is not preceding sibling of %s", c,
-								sibling), c.isPrecedingSiblingOf(sibling));
+						assertFalse(String.format("node %s is not preceding sibling of %s",
+								c, sibling), c.isPrecedingSiblingOf(sibling));
 					} catch (AssertionError e) {
 						c.isPrecedingSiblingOf(sibling);
 						throw e;
 					}
-					assertFalse(String.format(
-							"node %s is following sibling of %s", sibling, c),
+					assertFalse(
+							String.format("node %s is following sibling of %s", sibling, c),
 							sibling.isFollowingSiblingOf(c));
 
-					assertFalse(String.format("node %s is not preceding of %s",
-							c, sibling), c.isPrecedingOf(sibling));
-					assertFalse(String.format("node %s is following of %s",
-							sibling, c), sibling.isFollowingOf(c));
+					assertFalse(
+							String.format("node %s is not preceding of %s", c, sibling),
+							c.isPrecedingOf(sibling));
+					assertFalse(String.format("node %s is following of %s", sibling, c),
+							sibling.isFollowingOf(c));
 				}
 
 				children.add(c);
@@ -293,8 +285,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 					// oldChild, child));
 				}
 
-				assertNotNull(String
-						.format("child node %s of node %s", i, node), child);
+				assertNotNull(String.format("child node %s of node %s", i, node), child);
 
 				checkSubtreePreOrder(child, domChild);
 			}
@@ -305,34 +296,32 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		} else if (domNode instanceof Text) {
 			Text text = (Text) domNode;
 
-			assertEquals(node + " is of type text : \"" + text.getNodeValue()
-					+ "\"", Kind.TEXT, node.getKind());
-			assertEquals(String.format("Text of node %s", node), text
-					.getNodeValue().trim(), node.getValue().stringValue());
+			assertEquals(node + " is of type text : \"" + text.getNodeValue() + "\"",
+					Kind.TEXT, node.getKind());
+			assertEquals(String.format("Text of node %s", node), text.getNodeValue()
+					.trim(), node.getValue().stringValue());
 		} else {
-			throw new DocumentException("Unexpected dom node: %s", domNode
-					.getClass());
+			throw new DocumentException("Unexpected dom node: %s", domNode.getClass());
 		}
 	}
 
 	@Test
 	public void traverseDocumentInPostorder() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(readFile(
-				"/docs/", "orga.xml")));
+		Collection<E> coll = createDocument(new DocumentParser(readFile(DOCS,
+				"orga.xml")));
 		E root = coll.getDocument().getFirstChild();
 		org.w3c.dom.Node domRoot = null;
 
 		try {
-			DocumentBuilderFactory factory = DocumentBuilderFactory
-					.newInstance();
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder builder = factory.newDocumentBuilder();
 			Document document = builder.parse(new InputSource(new StringReader(
-					readFile("/docs/", "orga.xml"))));
+					readFile(DOCS, "orga.xml"))));
 			domRoot = document.getDocumentElement();
 		} catch (Exception e) {
 			throw new DocumentException(
-					"An error occured while creating DOM input source: %s", e
-							.getMessage());
+					"An error occured while creating DOM input source: %s",
+					e.getMessage());
 		}
 
 		checkSubtreePostOrder(root, domRoot); // check document index
@@ -344,21 +333,19 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
 		if (domNode instanceof Element) {
 			Element element = (Element) domNode;
-			assertEquals(node + " is of type element", Kind.ELEMENT, node
-					.getKind());
+			assertEquals(node + " is of type element", Kind.ELEMENT, node.getKind());
 
 			// //System.out.println("Checking name of element " + node +
 			// " level " + node.getLevel() + " is " + element.getNodeName());
 
-			assertEquals(String.format("Name of node %s", node), element
-					.getNodeName(), node.getName().stringValue());
+			assertEquals(String.format("Name of node %s", node),
+					element.getNodeName(), node.getName().stringValue());
 			compareAttributes(node, element);
 
 			NodeList domChildNodes = element.getChildNodes();
 			ArrayList<E> children = new ArrayList<E>();
 
-			for (E c = node.getLastChild(); c != null; c = c
-					.getPreviousSibling()) {
+			for (E c = node.getLastChild(); c != null; c = c.getPreviousSibling()) {
 				// //System.out.println(String.format("Parent of %s is %s.", c,
 				// c.getParent(transaction)));
 				children.add(c);
@@ -382,8 +369,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 					// oldChild, child));
 				}
 
-				assertNotNull(String
-						.format("child node %s of node %s", i, node), child);
+				assertNotNull(String.format("child node %s of node %s", i, node), child);
 
 				checkSubtreePostOrder(child, domChild);
 			}
@@ -395,11 +381,10 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 			Text text = (Text) domNode;
 
 			assertEquals(node + " is of type text", Kind.TEXT, node.getKind());
-			assertEquals(String.format("Text of node %s", node), text
-					.getNodeValue().trim(), node.getValue().stringValue());
+			assertEquals(String.format("Text of node %s", node), text.getNodeValue()
+					.trim(), node.getValue().stringValue());
 		} else {
-			throw new DocumentException("Unexpected dom node: %s", domNode
-					.getClass());
+			throw new DocumentException("Unexpected dom node: %s", domNode.getClass());
 		}
 	}
 
@@ -413,21 +398,21 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 			attributesSize++;
 
 			int ancestorLevel = 0;
-			for (E ancestor = node; ancestor != null; ancestor = ancestor
-					.getParent()) {
+			for (E ancestor = node; ancestor != null; ancestor = ancestor.getParent()) {
 				if (ancestorLevel == 0) {
 					try {
-						assertTrue(String.format("node %s is attribute of %s",
-								c, ancestor), c.isAttributeOf(ancestor));
+						assertTrue(
+								String.format("node %s is attribute of %s", c, ancestor),
+								c.isAttributeOf(ancestor));
 					} catch (AssertionError e) {
 						c.isAttributeOf(ancestor);
 						throw e;
 					}
-					assertTrue(String.format("node %s is parent of %s",
-							ancestor, c), ancestor.isParentOf(c));
+					assertTrue(String.format("node %s is parent of %s", ancestor, c),
+							ancestor.isParentOf(c));
 				}
-				assertTrue(String.format("node %s is ancestor of %s", ancestor,
-						c), ancestor.isAncestorOf(c));
+				assertTrue(String.format("node %s is ancestor of %s", ancestor, c),
+						ancestor.isAncestorOf(c));
 				ancestorLevel++;
 			}
 		}
@@ -444,19 +429,18 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 					domAttribute.getName(), node), attribute);
 			assertEquals(attribute + " is of type attribute", Kind.ATTRIBUTE,
 					attribute.getKind());
-			assertEquals(String.format(
-					"Value of attribute \"%s\" (%s) of node %s", domAttribute
-							.getName(), attribute, node), domAttribute
-					.getValue(), attribute.getValue().stringValue());
+			assertEquals(String.format("Value of attribute \"%s\" (%s) of node %s",
+					domAttribute.getName(), attribute, node), domAttribute.getValue(),
+					attribute.getValue().stringValue());
 		}
 	}
 
 	@Test
 	public void testAppendSubtree() throws Exception {
-		Collection<E> orig = createDocument(new DocumentParser(readFile(
-				"/docs/", "orga.xml")));
-		Collection<E> doc = createDocument(new DocumentParser(readFile(
-				"/docs/", "orga.xml")));
+		Collection<E> orig = createDocument(new DocumentParser(readFile(DOCS,
+				"orga.xml")));
+		Collection<E> doc = createDocument(new DocumentParser(readFile(DOCS,
+				"orga.xml")));
 
 		E onode = orig.getDocument().getFirstChild().getLastChild();
 		E test = onode.append(Kind.ELEMENT, new QNm("test"), null);
@@ -472,10 +456,10 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
 	@Test
 	public void testReplaceSubtree() throws Exception {
-		Collection<E> orig = createDocument(new DocumentParser(readFile(
-				"/docs/", "orga.xml")));
-		Collection<E> doc = createDocument(new DocumentParser(readFile(
-				"/docs/", "orga.xml")));
+		Collection<E> orig = createDocument(new DocumentParser(readFile(DOCS,
+				"orga.xml")));
+		Collection<E> doc = createDocument(new DocumentParser(readFile(DOCS,
+				"orga.xml")));
 
 		E onode = orig.getDocument().getFirstChild().getLastChild();
 		E test = onode.replaceWith(Kind.ELEMENT, new QNm("test"), null);
@@ -492,8 +476,8 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
 	@Test
 	public void testSetAttribute() throws Exception {
-		Collection<E> coll = createDocument(new DocumentParser(readFile(
-				"/docs/", "orga.xml")));
+		Collection<E> coll = createDocument(new DocumentParser(readFile(DOCS,
+				"orga.xml")));
 
 		E root = coll.getDocument().getFirstChild();
 		E node = root.getFirstChild();
@@ -510,6 +494,6 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 	public void tearDown() throws Exception {
 	}
 
-	protected abstract Collection<E> createDocument(
-			DocumentParser documentParser) throws Exception;
+	protected abstract Collection<E> createDocument(DocumentParser documentParser)
+			throws Exception;
 }
