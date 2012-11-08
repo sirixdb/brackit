@@ -47,10 +47,12 @@ public interface Collection<E extends Node<E>> extends Sequence {
 	public void remove(long documentID) throws OperationNotSupportedException,
 			DocumentException;
 
-	public E getDocument() throws DocumentException;
+	public E getDocument(int revision) throws DocumentException;
 
 	public Stream<? extends E> getDocuments() throws DocumentException;
 
 	public E add(SubtreeParser parser) throws OperationNotSupportedException,
 			DocumentException;
+
+	public long getDocumentCount();
 }

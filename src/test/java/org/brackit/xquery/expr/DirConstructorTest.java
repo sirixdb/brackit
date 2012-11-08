@@ -49,7 +49,7 @@ public class DirConstructorTest extends XQueryBaseTest {
 	@Test
 	public void dirAttributeContent1() throws Exception {
 		PrintStream buf = createBuffer();
-		Sequence s = new XQuery("<shoe size=\"7\"/>").execute(ctx);
+		new XQuery("<shoe size=\"7\"/>").execute(ctx);
 		new XQuery("<shoe size=\"7\"/>").serialize(ctx, buf);
 		Assert.assertEquals("serialized result differs", "<shoe size=\"7\"/>",
 				buf.toString());

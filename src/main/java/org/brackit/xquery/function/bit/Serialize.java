@@ -59,15 +59,22 @@ public class Serialize extends AbstractFunction {
 		this(DEFAULT_NAME);
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param name
+	 *          the qname
+	 */
 	public Serialize(QNm name) {
-		super(name, new Signature(new SequenceType(AtomicType.STR,
-				Cardinality.One), SequenceType.ITEM_SEQUENCE), true);
+		super(name, new Signature(
+				new SequenceType(AtomicType.STR, Cardinality.One),
+				SequenceType.ITEM_SEQUENCE), true);
 	}
 
 	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx,
-			Sequence[] args) throws QueryException {
-		Sequence sequence = args[0];
+	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
+			throws QueryException {
+		final Sequence sequence = args[0];
 		if (sequence == null) {
 			return Int32.ZERO;
 		}

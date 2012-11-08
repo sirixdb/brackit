@@ -31,6 +31,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.node.stream.ArrayStream;
 import org.brackit.xquery.node.stream.AtomStream;
 import org.brackit.xquery.node.stream.EmptyStream;
 import org.brackit.xquery.node.stream.IteratorStream;
@@ -39,6 +40,7 @@ import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.TemporalNode;
 import org.brackit.xquery.xdm.type.NodeType;
 
 /**
@@ -320,6 +322,98 @@ public abstract class Accessor {
 					return deliver;
 				}
 			};
+		}
+	};
+	
+	public static final Accessor NEXT = new Accessor(Axis.NEXT) {
+		@Override
+		public Stream<? extends Node<?>> performStep(Node<?> node)
+				throws QueryException {
+			final TemporalNode<?> next = ((TemporalNode<?>) node).getNext();
+			if (next == null) {
+				return new EmptyStream<>();
+			}
+			return new ArrayStream<TemporalNode<?>>(new TemporalNode<?>[] { next });
+		}
+	};
+
+	public static final Accessor PREVIOUS = new Accessor(Axis.PREVIOUS) {
+		@Override
+		public Stream<? extends Node<?>> performStep(Node<?> node)
+				throws QueryException {
+			final TemporalNode<?> previous = ((TemporalNode<?>) node).getPrevious();
+			if (previous == null) {
+				return new EmptyStream<>();
+			}
+			return new ArrayStream<TemporalNode<?>>(
+					new TemporalNode<?>[] { previous });
+		}
+	};
+
+	public static final Accessor FIRST = new Accessor(Axis.FIRST) {
+		@Override
+		public Stream<? extends Node<?>> performStep(Node<?> node)
+				throws QueryException {
+			final TemporalNode<?> first = ((TemporalNode<?>) node).getFirst();
+			if (first == null) {
+				return new EmptyStream<>();
+			}
+			return new ArrayStream<TemporalNode<?>>(new TemporalNode<?>[] { first });
+		}
+	};
+
+	public static final Accessor LAST = new Accessor(Axis.LAST) {
+		@Override
+		public Stream<? extends Node<?>> performStep(Node<?> node)
+				throws QueryException {
+			final TemporalNode<?> last = ((TemporalNode<?>) node).getLast();
+			if (last == null) {
+				return new EmptyStream<>();
+			}
+			return new ArrayStream<TemporalNode<?>>(new TemporalNode<?>[] { last });
+		}
+	};
+
+	public static final Accessor FUTURE = new Accessor(Axis.FUTURE) {
+		@Override
+		public Stream<? extends Node<?>> performStep(Node<?> node)
+				throws QueryException {
+			return ((TemporalNode<?>) node).getFuture(false);
+		}
+	};
+
+	public static final Accessor FUTURE_OR_SELF = new Accessor(
+			Axis.FUTURE_OR_SELF) {
+		@Override
+		public Stream<? extends Node<?>> performStep(Node<?> node)
+				throws QueryException {
+			return ((TemporalNode<?>) node).getFuture(true);
+		}
+	};
+
+	public static final Accessor EARLIER = new Accessor(Axis.EARLIER) {
+		@Override
+		public Stream<? extends Node<?>> performStep(Node<?> node)
+				throws QueryException {
+			return ((TemporalNode<?>) node).getEarlier(false);
+		}
+	};
+
+	public static final Accessor EARLIER_OR_SELF = new Accessor(
+			Axis.EARLIER_OR_SELF) {
+		@Override
+		public Stream<? extends Node<?>> performStep(Node<?> node)
+				throws QueryException {
+			return ((TemporalNode<?>) node).getEarlier(true);
+		}
+	};
+
+	public static final Accessor ALL_TIME = new Accessor(Axis.ALL_TIME) {
+		@Override
+		public Stream<? extends Node<?>> performStep(Node<?> node)
+				throws QueryException {
+			// TODO
+			return null;
 		}
 	};
 

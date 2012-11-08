@@ -38,6 +38,7 @@ import org.brackit.xquery.QueryException;
  * </p>
  * 
  * @author Sebastian Baechle
+ * @author Johannes Lichtenberger
  * 
  */
 public enum Axis {
@@ -112,10 +113,66 @@ public enum Axis {
 		public boolean check(Node<?> node, Node<?> other) throws QueryException {
 			return node.isPrecedingSiblingOf(other);
 		}
+	},
+	NEXT(true) {
+		@Override
+		public boolean check(Node<?> node, Node<?> other) throws QueryException {
+			return ((TemporalNode<?>) node).isNextOf((TemporalNode<?>) other);
+		}
+	},
+	PREVIOUS(false) {
+		@Override
+		public boolean check(Node<?> node, Node<?> other) throws QueryException {
+			return ((TemporalNode<?>) node).isPreviousOf((TemporalNode<?>) other);
+		}
+	},
+	FUTURE(true) {
+		@Override
+		public boolean check(Node<?> node, Node<?> other) throws QueryException {
+			return ((TemporalNode<?>) node).isFutureOf((TemporalNode<?>) other);
+		}
+	},
+	FUTURE_OR_SELF(true) {
+		@Override
+		public boolean check(Node<?> node, Node<?> other) throws QueryException {
+			return ((TemporalNode<?>) node).isFutureOrSelfOf((TemporalNode<?>) other);
+		}
+	},
+	EARLIER(false) {
+		@Override
+		public boolean check(Node<?> node, Node<?> other) throws QueryException {
+			return ((TemporalNode<?>) node).isEarlierOf((TemporalNode<?>) other);
+		}
+	},
+	EARLIER_OR_SELF(false) {
+		@Override
+		public boolean check(Node<?> node, Node<?> other) throws QueryException {
+			return ((TemporalNode<?>) node)
+					.isEarlierOrSelfOf((TemporalNode<?>) other);
+		}
+	},
+	LAST(false) {
+		@Override
+		public boolean check(Node<?> node, Node<?> other) throws QueryException {
+			return ((TemporalNode<?>) node).isLastOf((TemporalNode<?>) other);
+		}
+	},
+	FIRST(true) {
+		@Override
+		public boolean check(Node<?> node, Node<?> other) throws QueryException {
+			return ((TemporalNode<?>) node).isFirstOf((TemporalNode<?>) other);
+		}
+	},
+	ALL_TIME(true) {
+		@Override
+		public boolean check(Node<?> node, Node<?> other) throws QueryException {
+			// TODO
+			return true;
+		}
 	};
-	
+
 	private final boolean forward;
-	
+
 	private Axis(boolean forward) {
 		this.forward = forward;
 	}

@@ -896,6 +896,11 @@ public class Functions {
 				Cardinality.ZeroOrOne), new SequenceType(AtomicType.STR,
 				Cardinality.ZeroOrOne))));
 		predefine(new Doc(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
+				"doc"), true, new Signature(new SequenceType(DocumentType.DOC,
+				Cardinality.ZeroOrOne), new SequenceType(AtomicType.STR,
+				Cardinality.ZeroOrOne), new SequenceType(AtomicType.INT,
+						Cardinality.ZeroOrOne))));
+		predefine(new Doc(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX,
 				"doc-available"), false, new Signature(new SequenceType(
 				AtomicType.BOOL, Cardinality.One), new SequenceType(
 				AtomicType.STR, Cardinality.ZeroOrOne))));

@@ -94,15 +94,15 @@ public class FnTest extends XQueryBaseTest {
 	@Test
 	public void fnDoc() throws Exception {
 		Sequence result = new XQuery("doc('test.xml')").execute(ctx);
-		ResultChecker.dCheck(store.lookup("test.xml").getDocument(), result);
+		ResultChecker.dCheck(store.lookup("test.xml").getDocument(0), result);
 	}
 
 	@Test
 	public void fnDocDefaultDocument() throws Exception {
 		org.brackit.xquery.xdm.Collection<?> collection = store
 				.lookup("test.xml");
-		Node<?> documentNode = collection.getDocument();
-		ctx.setDefaultDocument(collection.getDocument());
+		Node<?> documentNode = collection.getDocument(0);
+		ctx.setDefaultDocument(collection.getDocument(0));
 		Sequence result = new XQuery("doc('')").execute(ctx);
 		ResultChecker.dCheck(documentNode, result);
 	}
@@ -123,7 +123,7 @@ public class FnTest extends XQueryBaseTest {
 	public void fnRootDefaultContextItem() throws Exception {
 		org.brackit.xquery.xdm.Collection<?> collection = store
 				.lookup("test.xml");
-		Node<?> documentNode = collection.getDocument();
+		Node<?> documentNode = collection.getDocument(0);
 		ctx.setContextItem(documentNode);
 		Sequence result = new XQuery("fn:root()").execute(ctx);
 		ResultChecker.dCheck(documentNode, result);
@@ -133,7 +133,7 @@ public class FnTest extends XQueryBaseTest {
 	public void fnRootDefaultContextItemExplicit() throws Exception {
 		org.brackit.xquery.xdm.Collection<?> collection = store
 				.lookup("test.xml");
-		Node<?> documentNode = collection.getDocument();
+		Node<?> documentNode = collection.getDocument(0);
 		ctx.setContextItem(documentNode);
 		Sequence result = new XQuery("fn:root(.)").execute(ctx);
 		ResultChecker.dCheck(documentNode, result);
@@ -143,7 +143,7 @@ public class FnTest extends XQueryBaseTest {
 	public void fnRootInPathExpr() throws Exception {
 		Collection<?> coll = ctx.getStore().create("test.xml",
 				new DocumentParser("<a><b><c/><d/></b></a>"));
-		Node<?> doc = coll.getDocument();
+		Node<?> doc = coll.getDocument(0);
 		ctx.setContextItem(doc);
 		Sequence result = new XQuery(".//d/fn:root()").execute(ctx);
 		ResultChecker.dCheck(doc, result);

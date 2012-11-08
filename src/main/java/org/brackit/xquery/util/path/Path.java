@@ -429,8 +429,9 @@ public class Path<E> {
 		return Arrays.hashCode(hashes);
 	}
 
+	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder();
 		Step<E> previous = null;
 
 		for (Step<E> section : path) {

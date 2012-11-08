@@ -56,7 +56,7 @@ public class ArrayCollection<E extends Node<E>> extends AbstractCollection<E> {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public E getDocument() throws DocumentException {
+	public E getDocument(int revision) throws DocumentException {
 		if (docs.length == 1) {
 			return (E) docs[0];
 		}
@@ -89,5 +89,10 @@ public class ArrayCollection<E extends Node<E>> extends AbstractCollection<E> {
 	public void remove(long documentID) throws OperationNotSupportedException,
 			DocumentException {
 		throw new OperationNotSupportedException();
+	}
+
+	@Override
+	public long getDocumentCount() {
+		return docs.length;
 	}
 }

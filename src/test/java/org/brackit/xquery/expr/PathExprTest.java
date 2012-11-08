@@ -57,7 +57,7 @@ public class PathExprTest extends XQueryBaseTest {
 	@Test
 	public void oneChildStepPathExpr() throws Exception {
 		Collection<?> locator = storeDocument("test.xml", "<a><b/><b/></a>");
-		Node<?> documentNode = locator.getDocument();
+		Node<?> documentNode = locator.getDocument(0);
 		Node<?> root = documentNode.getFirstChild();
 		ctx.setContextItem(root);
 		Sequence result = new XQuery("b").execute(ctx);
@@ -69,7 +69,7 @@ public class PathExprTest extends XQueryBaseTest {
 	@Test
 	public void singleSlashStepPathExpr() throws Exception {
 		Collection<?> locator = storeDocument("test.xml", "<a><b/><b/></a>");
-		Node<?> documentNode = locator.getDocument();
+		Node<?> documentNode = locator.getDocument(0);
 		Node<?> aNode = documentNode.getFirstChild().getFirstChild();
 		ctx.setContextItem(aNode);
 		Sequence result = new XQuery("/").execute(ctx);
@@ -79,7 +79,7 @@ public class PathExprTest extends XQueryBaseTest {
 	@Test
 	public void oneDoubleSlashStepPathExpr() throws Exception {
 		Collection<?> locator = storeDocument("test.xml", "<a><b/></a>");
-		Node<?> documentNode = locator.getDocument();
+		Node<?> documentNode = locator.getDocument(0);
 		ctx.setContextItem(documentNode);
 		Sequence result = new XQuery(".//b").execute(ctx);
 		ResultChecker.dCheck(documentNode.getFirstChild().getFirstChild(),

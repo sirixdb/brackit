@@ -56,10 +56,10 @@ public class XQParser extends Tokenizer {
 	private static final Logger log = Logger.getLogger(XQParser.class);
 
 	private static final String[] RESERVED_FUNC_NAMES = new String[] {
-			"attribute", "comment", "document-node", "element",
-			"empty-sequence", "function", "if", "item", "namespace-node",
-			"node", "processing-instruction", "schema-attribute",
-			"schema-element", "switch", "text", "typeswitch" };
+			"attribute", "comment", "document-node", "element", "empty-sequence",
+			"function", "if", "item", "namespace-node", "node",
+			"processing-instruction", "schema-attribute", "schema-element", "switch",
+			"text", "typeswitch" };
 
 	public class IllegalNestingException extends TokenizerException {
 		private final String expected;
@@ -97,22 +97,20 @@ public class XQParser extends Tokenizer {
 		try {
 			AST module = module();
 			if (module == null) {
-				throw new QueryException(ErrorCode.ERR_PARSING_ERROR,
-						"No module found");
+				throw new QueryException(ErrorCode.ERR_PARSING_ERROR, "No module found");
 			}
 			consumeEOF();
 			AST xquery = new AST(XQ.XQuery);
 			xquery.addChild(module);
 			return xquery;
 		} catch (IllegalCharRefException e) {
-			throw new QueryException(e,
-					ErrorCode.ERR_UNDEFINED_CHARACTER_REFERENCE, e.getMessage());
+			throw new QueryException(e, ErrorCode.ERR_UNDEFINED_CHARACTER_REFERENCE,
+					e.getMessage());
 		} catch (InvalidURIException e) {
 			throw new QueryException(e, ErrorCode.ERR_INVALID_URI_LITERAL,
 					e.getMessage());
 		} catch (Exception e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR,
-					e.getMessage());
+			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e.getMessage());
 		}
 	}
 
@@ -124,8 +122,8 @@ public class XQParser extends Tokenizer {
 		} else if ("1.1".equals(version)) {
 			this.version = version;
 		} else {
-			throw new TokenizerException("unsupported version '%s': %s",
-					version, paraphrase());
+			throw new TokenizerException("unsupported version '%s': %s", version,
+					paraphrase());
 		}
 	}
 
@@ -703,8 +701,7 @@ public class XQParser extends Tokenizer {
 			return null;
 		}
 		// perform look ahead
-		if ((laSkipWS(la, "%") == null)
-				&& (laSymSkipWS(la, "variable") == null)
+		if ((laSkipWS(la, "%") == null) && (laSymSkipWS(la, "variable") == null)
 				&& (laSymSkipWS(la, "function") == null)
 				// Begin XQuery Update Facility 1.0
 				&& (laSymSkipWS(la, "updating") == null)
@@ -891,8 +888,7 @@ public class XQParser extends Tokenizer {
 		// End XQuery Update Facility 1.0
 		expr = (expr != null) ? expr : orExpr();
 		if (expr == null) {
-			throw new TokenizerException("Non-expression faced: %s",
-					paraphrase());
+			throw new TokenizerException("Non-expression faced: %s", paraphrase());
 		}
 		return expr;
 	}
@@ -1326,7 +1322,7 @@ public class XQParser extends Tokenizer {
 		// BEGIN Custom Group By All Extension
 		if (attemptSkipWS("*")) {
 			// TO NOTHING
-		} 
+		}
 		// END Custom Group By All Extension
 		else {
 			do {
@@ -1478,8 +1474,7 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS(")");
 		AST clause = switchClause();
 		if (clause == null) {
-			throw new TokenizerException("Expected switch clause: %s",
-					paraphrase());
+			throw new TokenizerException("Expected switch clause: %s", paraphrase());
 		}
 		sExpr.addChild(clause);
 		while ((clause = switchClause()) != null) {
@@ -1519,8 +1514,7 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS(")");
 		AST clause = caseClause();
 		if (clause == null) {
-			throw new TokenizerException("Expected case clause: %s",
-					paraphrase());
+			throw new TokenizerException("Expected case clause: %s", paraphrase());
 		}
 		tsExpr.addChild(clause);
 		while ((clause = caseClause()) != null) {
@@ -1593,8 +1587,7 @@ public class XQParser extends Tokenizer {
 		consumeSkipWS("}");
 		AST clause = tryClause();
 		if (clause == null) {
-			throw new TokenizerException("Expected try clause: %s",
-					paraphrase());
+			throw new TokenizerException("Expected try clause: %s", paraphrase());
 		}
 		tcExpr.addChild(clause);
 		while ((clause = tryClause()) != null) {
@@ -1903,8 +1896,7 @@ public class XQParser extends Tokenizer {
 		test = (test != null) ? test : typedFunctionTest();
 		if (test == null) {
 			if (funcTest != null) {
-				throw new TokenizerException("Expected function test: %s",
-						paraphrase());
+				throw new TokenizerException("Expected function test: %s", paraphrase());
 			}
 			return null;
 		}
@@ -2129,8 +2121,7 @@ public class XQParser extends Tokenizer {
 		if (attemptSkipWS("//")) {
 			step = stepExpr();
 			if (step == null) {
-				throw new TokenizerException("Incomplete path step: %s",
-						paraphrase());
+				throw new TokenizerException("Incomplete path step: %s", paraphrase());
 			}
 			// initial '//' is translated to
 			// (fn:root(self::node()) treat as
@@ -2142,8 +2133,7 @@ public class XQParser extends Tokenizer {
 			step = stepExpr();
 			if (step == null) {
 				if (!checkLeadingLoneSlash()) {
-					throw new TokenizerException("Incomplete path step: %s",
-							paraphrase());
+					throw new TokenizerException("Incomplete path step: %s", paraphrase());
 				}
 				// single '/' is translated to
 				// (fn:root(self::node()) treat as document-node())
@@ -2171,8 +2161,7 @@ public class XQParser extends Tokenizer {
 			}
 			step = stepExpr();
 			if (step == null) {
-				throw new TokenizerException("Incomplete path step: %s",
-						paraphrase());
+				throw new TokenizerException("Incomplete path step: %s", paraphrase());
 			}
 			path = add(path, step);
 		}
@@ -2253,6 +2242,13 @@ public class XQParser extends Tokenizer {
 		if (step == null) {
 			step = reverseStep();
 		}
+		
+		// BEGIN: temporal axes
+		if (step == null) {
+			step = temporalStep();
+		}
+		// END: temporal axes
+		
 		if (step == null) {
 			return null;
 		}
@@ -2263,6 +2259,52 @@ public class XQParser extends Tokenizer {
 			stepExpr.addChildren(predicateList);
 		}
 		return stepExpr;
+	}
+	
+	private AST[] temporalStep() throws TokenizerException {
+		AST axis = temporalAxis();
+		if (axis == null) {
+			return null;
+		}
+//		if (axis == null) {
+//			return abbrevTemporalStep();
+//		}
+		AST axisSpec = new AST(XQ.AxisSpec);
+		axisSpec.addChild(axis);
+		return new AST[] { axisSpec, nodeTest(axis.getType() == XQ.ATTRIBUTE) };
+	}
+
+	private AST temporalAxis() {
+		Token la;
+		AST axis;
+		if ((la = laSkipWS("next")) != null) {
+			axis = new AST(XQ.NEXT);
+		} else if ((la = laSkipWS("previous")) != null) {
+			axis = new AST(XQ.PREVIOUS);
+		} else if ((la = laSkipWS("future-or-self")) != null) {
+			axis = new AST(XQ.FUTURE_OR_SELF);
+		} else if ((la = laSkipWS("future")) != null) {
+			axis = new AST(XQ.FUTURE);
+		} else if ((la = laSkipWS("earlier")) != null) {
+			axis = new AST(XQ.PREVIOUS);
+		} else if ((la = laSkipWS("earlier-or-self")) != null) {
+			axis = new AST(XQ.EARLIER_OR_SELF);
+		} else if ((la = laSkipWS("last")) != null) {
+			axis = new AST(XQ.LAST);
+		} else if ((la = laSkipWS("first")) != null) {
+			axis = new AST(XQ.FIRST);
+		} else if ((la = laSkipWS("all-time")) != null) {
+			axis = new AST(XQ.ALL_TIME);
+		} else {
+			return null;
+		}
+		Token la2 = laSkipWS(la, "::");
+		if (la2 == null) {
+			return null;
+		}
+		consume(la);
+		consume(la2);
+		return axis;
 	}
 
 	private AST[] forwardStep() throws TokenizerException {
@@ -3500,8 +3542,7 @@ public class XQParser extends Tokenizer {
 			if (cond) {
 				return null;
 			}
-			throw new TokenizerException("Expected URI literal: '%s'",
-					paraphrase());
+			throw new TokenizerException("Expected URI literal: '%s'", paraphrase());
 		}
 		consume(la);
 		try {
@@ -3584,8 +3625,8 @@ public class XQParser extends Tokenizer {
 			return new AST(XQ.Dbl, new Dbl(la.string()));
 		} catch (QueryException e) {
 			// this should never happen...
-			throw new TokenizerException(e,
-					"Error parsing double literal: '%s'", paraphrase());
+			throw new TokenizerException(e, "Error parsing double literal: '%s'",
+					paraphrase());
 		}
 	}
 
@@ -3604,8 +3645,8 @@ public class XQParser extends Tokenizer {
 			return new AST(XQ.Dec, new Dec(la.string()));
 		} catch (QueryException e) {
 			// this should never happen...
-			throw new TokenizerException(e,
-					"Error parsing decimal literal: '%s'", paraphrase());
+			throw new TokenizerException(e, "Error parsing decimal literal: '%s'",
+					paraphrase());
 		}
 	}
 
@@ -3624,8 +3665,8 @@ public class XQParser extends Tokenizer {
 			return new AST(XQ.Int, Int32.parse(la.string()));
 		} catch (QueryException e) {
 			// this should never happen...
-			throw new TokenizerException(e,
-					"Error parsing integer literal: '%s'", paraphrase());
+			throw new TokenizerException(e, "Error parsing integer literal: '%s'",
+					paraphrase());
 		}
 	}
 
@@ -3742,8 +3783,7 @@ public class XQParser extends Tokenizer {
 			EQNameToken la2;
 			if (la != null) {
 				consume(la);
-				args = add(args,
-						new AST(XQ.QNm, new QNm(null, null, la.string())));
+				args = add(args, new AST(XQ.QNm, new QNm(null, null, la.string())));
 			} else if ((la2 = laEQNameSkipWS(true)) != null) {
 				consume(la2);
 				args = add(args, new AST(XQ.QNm, la2.qname()));

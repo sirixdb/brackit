@@ -302,6 +302,17 @@ public final class XQ {
 	public static final int KeyValueField = 249;
 	public static final int DerefExpr = 250;
 	// End brackit's custom array syntax
+	// Begin temporal
+	public static final int NEXT = 251;
+	public static final int PREVIOUS = 252;
+	public static final int FUTURE = 253;
+	public static final int FUTURE_OR_SELF = 254;
+	public static final int EARLIER = 255;
+	public static final int EARLIER_OR_SELF = 256;
+	public static final int FIRST = 257;
+	public static final int LAST = 258;
+	public static final int ALL_TIME = 259;
+	// End temporal
 
 	public static final String NAMES[] = new String[] { "XQuery",
 			"LibraryModule", "MainModule", "Prolog", "NamespaceDeclaration",
@@ -407,8 +418,11 @@ public final class XQ {
 			// End brackit's custom array syntax
 			// Begin brackit's custom array syntax
 			"RecordProjection", "RecordConstructor", "RecordField",
-			"KeyValueField", "DerefExpr"
-	// End brackit's custom record syntax
+			"KeyValueField", "DerefExpr",
+			// End brackit's custom record syntax
+			// Begin temporal
+			"NEXT", "PREVIOUS", "EARLIER", "EARLIER_OR_SELF", "FUTURE", "FUTURE_OR_SELF", "FIRST", "LAST", "ALL_TIME"
+			// End temporal
 	};
 
 	private XQ() {

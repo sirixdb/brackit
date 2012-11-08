@@ -32,6 +32,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Bool;
+import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
@@ -41,7 +42,6 @@ import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.Stream;
 
 /**
  * Implementation of predefined functions fn:doc($arg1) and
@@ -52,24 +52,26 @@ import org.brackit.xquery.xdm.Stream;
  * 
  * @author Sebastian Baechle
  * @author Max Bechtold
+ * @author Johannes Lichtenberger
  * 
  */
 public class Doc extends AbstractFunction {
 	private boolean retrieve;
 
-	public Doc(QNm name, boolean retrieve, Signature signature) {
+	public Doc(final QNm name, final boolean retrieve, final Signature signature) {
 		super(name, signature, true);
 		this.retrieve = retrieve;
 	}
 
 	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx,
-			Sequence[] args) throws QueryException {
+	public Sequence execute(final StaticContext sctx, final QueryContext ctx,
+			final Sequence[] args) throws QueryException {
 		if (args[0] == null) {
 			return (retrieve ? null : Bool.FALSE);
 		}
 
-		String name = ((Str) args[0]).stringValue();
+		final String name = ((Str) args[0]).stringValue();
+		final int revision = args.length == 2 ? ((Int32) args[1]).intValue() : -1;
 
 		try {
 			Node<?> document;
@@ -80,8 +82,7 @@ public class Doc extends AbstractFunction {
 
 				if (document == null) {
 					if (retrieve) {
-						throw new QueryException(
-								ErrorCode.ERR_DOCUMENT_NOT_FOUND,
+						throw new QueryException(ErrorCode.ERR_DOCUMENT_NOT_FOUND,
 								"No default document defined.");
 					} else {
 						return Bool.FALSE;
@@ -90,36 +91,40 @@ public class Doc extends AbstractFunction {
 
 				return document;
 			} else {
-				AnyURI uri = resolve(sctx, name);
-				Collection<?> collection = ctx.getStore().lookup(uri.stringValue());
-				Stream<? extends Node<?>> docs = collection.getDocuments();
-				try {
-					document = (Node<?>) docs.next();
+				final AnyURI uri = resolve(sctx, name);
+				final Collection<?> collection = ctx.getStore().lookup(
+						uri.stringValue());
+				final long documents = collection.getDocumentCount();
 
-					if (document == null) {
-						if (retrieve) {
-							throw new QueryException(
-									ErrorCode.ERR_DOCUMENT_NOT_FOUND,
-									"Empty collection");
-						} else {
-							return Bool.FALSE;
-						}
-					}
-
-					if (docs.next() != null) {
-						throw new QueryException(
-								ErrorCode.ERR_DOCUMENT_NOT_FOUND,
-								"Collection %s contains more than one document",
-								name);
-					}
-
+				if (documents == 0) {
 					if (retrieve) {
-						return document;
+						throw new QueryException(ErrorCode.ERR_DOCUMENT_NOT_FOUND,
+								"Empty collection");
 					} else {
 						return Bool.FALSE;
 					}
-				} finally {
-					docs.close();
+				}
+
+				if (documents > 1) {
+					throw new QueryException(ErrorCode.ERR_DOCUMENT_NOT_FOUND,
+							"Collection %s contains more than one document", name);
+				}
+
+				document = collection.getDocument(revision);
+
+				if (document == null) {
+					if (retrieve) {
+						throw new QueryException(ErrorCode.ERR_DOCUMENT_NOT_FOUND,
+								"Empty collection");
+					} else {
+						return Bool.FALSE;
+					}
+				}
+
+				if (retrieve) {
+					return document;
+				} else {
+					return Bool.FALSE;
 				}
 			}
 		} catch (DocumentException e) {
@@ -131,9 +136,9 @@ public class Doc extends AbstractFunction {
 			}
 		}
 	}
-	
-	static AnyURI resolve(StaticContext sctx, AnyURI base,
-			AnyURI relative) throws QueryException {
+
+	static AnyURI resolve(StaticContext sctx, AnyURI base, AnyURI relative)
+			throws QueryException {
 		if (relative.isAbsolute()) {
 			return relative;
 		}

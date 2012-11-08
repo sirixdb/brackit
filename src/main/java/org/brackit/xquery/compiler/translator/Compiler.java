@@ -1088,6 +1088,24 @@ public class Compiler implements Translator {
 			return Accessor.PRECEDING_SIBLING;
 		case XQ.SELF:
 			return Accessor.SELF;
+		case XQ.NEXT:
+			return Accessor.NEXT;
+		case XQ.PREVIOUS:
+			return Accessor.PREVIOUS;
+		case XQ.FUTURE:
+			return Accessor.FUTURE;
+		case XQ.FUTURE_OR_SELF:
+			return Accessor.FUTURE_OR_SELF;
+		case XQ.EARLIER:
+			return Accessor.EARLIER;
+		case XQ.EARLIER_OR_SELF:
+			return Accessor.EARLIER_OR_SELF;
+		case XQ.FIRST:
+			return Accessor.FIRST;
+		case XQ.LAST:
+			return Accessor.LAST;
+		case XQ.ALL_TIME:
+			return Accessor.ALL_TIME;
 		default:
 			throw new QueryException(
 					ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
