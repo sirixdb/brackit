@@ -53,11 +53,11 @@ public class StringSerializer implements Serializer {
 	private boolean format;
 	private String indent = "  ";
 
-	public StringSerializer(PrintWriter out) {
+	public StringSerializer(final PrintWriter out) {
 		this.out = out;
 	}
 
-	public StringSerializer(PrintStream out) {
+	public StringSerializer(final PrintStream out) {
 		this.out = new PrintWriter(out);
 	}
 
@@ -65,7 +65,7 @@ public class StringSerializer implements Serializer {
 		return format;
 	}
 
-	public Serializer setFormat(boolean format) {
+	public Serializer setFormat(final boolean format) {
 		this.format = format;
 		return this;
 	}
@@ -74,19 +74,19 @@ public class StringSerializer implements Serializer {
 		return indent;
 	}
 
-	public Serializer setIndent(String indent) {
+	public Serializer setIndent(final String indent) {
 		this.indent = indent;
 		return this;
 	}
 
 	@Override
-	public void serialize(Sequence s) throws QueryException {
+	public void serialize(final Sequence s) throws QueryException {
 		if (s == null) {
 			return;
 		}
 
 		boolean first = true;
-		SubtreePrinter printer = new SubtreePrinter(out);
+		final SubtreePrinter printer = new SubtreePrinter(out);
 		printer.setPrettyPrint(format);
 		printer.setIndent(indent);
 		printer.setAutoFlush(false);

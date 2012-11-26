@@ -108,12 +108,12 @@ public class ReplaceNode extends ConstructedNodeBuilder implements Expr {
 
 		node = (Node<?>) targetItem;
 
-		if (!allowedForReplaceNonAtt.contains(node.getKind())) {
-			throw new QueryException(
-					ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
-					"Target node kind %s is not allowed for replace node: %",
-					node.getKind());
-		}
+//		if (!allowedForReplaceNonAtt.contains(node.getKind())) {
+//			throw new QueryException(
+//					ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
+//					"Target node kind %s is not allowed for replace node: ",
+//					node.getKind());
+//		}
 
 		parent = node.getParent();
 

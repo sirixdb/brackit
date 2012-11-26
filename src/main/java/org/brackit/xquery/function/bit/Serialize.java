@@ -78,7 +78,7 @@ public class Serialize extends AbstractFunction {
 		if (sequence == null) {
 			return Int32.ZERO;
 		}
-		PrintStream buf = IOUtils.createBuffer();
+		final PrintStream buf = IOUtils.createBuffer();
 		new StringSerializer(buf).serialize(sequence);
 		return new Str(buf.toString());
 	}

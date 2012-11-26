@@ -331,7 +331,7 @@ public abstract class Accessor {
 				throws QueryException {
 			final TemporalNode<?> next = ((TemporalNode<?>) node).getNext();
 			if (next == null) {
-				return new EmptyStream<>();
+				return new EmptyStream<TemporalNode<?>>();
 			}
 			return new ArrayStream<TemporalNode<?>>(new TemporalNode<?>[] { next });
 		}
@@ -343,7 +343,7 @@ public abstract class Accessor {
 				throws QueryException {
 			final TemporalNode<?> previous = ((TemporalNode<?>) node).getPrevious();
 			if (previous == null) {
-				return new EmptyStream<>();
+				return new EmptyStream<TemporalNode<?>>();
 			}
 			return new ArrayStream<TemporalNode<?>>(
 					new TemporalNode<?>[] { previous });
@@ -356,7 +356,7 @@ public abstract class Accessor {
 				throws QueryException {
 			final TemporalNode<?> first = ((TemporalNode<?>) node).getFirst();
 			if (first == null) {
-				return new EmptyStream<>();
+				return new EmptyStream<TemporalNode<?>>();
 			}
 			return new ArrayStream<TemporalNode<?>>(new TemporalNode<?>[] { first });
 		}
@@ -368,7 +368,7 @@ public abstract class Accessor {
 				throws QueryException {
 			final TemporalNode<?> last = ((TemporalNode<?>) node).getLast();
 			if (last == null) {
-				return new EmptyStream<>();
+				return new EmptyStream<TemporalNode<?>>();
 			}
 			return new ArrayStream<TemporalNode<?>>(new TemporalNode<?>[] { last });
 		}
@@ -412,8 +412,7 @@ public abstract class Accessor {
 		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
-			// TODO
-			return null;
+			return ((TemporalNode<?>) node).getAllTime();
 		}
 	};
 

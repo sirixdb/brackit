@@ -43,7 +43,7 @@ import org.brackit.xquery.xdm.Sequence;
  */
 public class SequenceExpr implements Expr {
 
-	private final class EvalSequence extends FlatteningSequence {
+	public final class EvalSequence extends FlatteningSequence {
 		final Tuple tuple;
 		final QueryContext ctx;
 		final Sequence[] seqs;

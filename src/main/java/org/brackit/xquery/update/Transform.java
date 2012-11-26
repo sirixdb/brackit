@@ -35,6 +35,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.expr.ConstructedNodeBuilder;
+import org.brackit.xquery.expr.SequenceExpr.EvalSequence;
 import org.brackit.xquery.update.op.UpdateOp;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
@@ -90,9 +91,12 @@ public class Transform extends ConstructedNodeBuilder implements Expr {
 			}
 		}
 		// evaluate transform expression
-		modifyExpr.evaluate(ctx, tuple);
+		final Sequence seq = modifyExpr.evaluate(ctx, tuple);
+		if (seq instanceof EvalSequence) {
+			seq.evaluateToItem(ctx, tuple);
+		}
 		// ensure that only copies are affected by the transformation
-		for (UpdateOp op : mods.list()) {
+		for (final UpdateOp op : mods.list()) {
 			boolean ok = false;
 			for (Node<?> copy : copies) {
 				if (copy.isAncestorOrSelfOf((Node<?>) op.getTarget())) {

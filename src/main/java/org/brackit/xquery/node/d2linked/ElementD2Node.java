@@ -206,7 +206,7 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
 			for (D2Node attribute = firstAttribute; attribute != null; attribute = attribute.sibling) {
 				if (attribute.getName().equals(name)) {
 					throw new DocumentException(
-							"Attribute '%s' already exists", name);
+							"Attribute '%s' already exists.", name);
 				}
 				prev = attribute;
 			}

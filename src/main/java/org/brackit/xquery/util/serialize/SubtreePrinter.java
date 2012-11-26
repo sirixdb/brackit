@@ -49,7 +49,7 @@ public class SubtreePrinter extends DefaultHandler {
 	private boolean prettyPrint = true;
 	private boolean autoFlush = true;
 	private boolean printEmptyElementTag = true;
-	private String indent = "    ";
+	private String indent = "  ";
 
 	private int level;
 	private boolean emptyElement;
@@ -65,23 +65,23 @@ public class SubtreePrinter extends DefaultHandler {
 		private final String uri;
 		private NS next;
 
-		NS(String prefix, String uri) {
+		NS(final String prefix, final String uri) {
 			this.prefix = prefix;
 			this.uri = uri;
 		}
 	}
 
-	public SubtreePrinter(PrintWriter out) {
+	public SubtreePrinter(final PrintWriter out) {
 		this(out, false);
 	}
 
-	public SubtreePrinter(PrintWriter out, boolean printXmlHead) {
+	public SubtreePrinter(final PrintWriter out, final boolean printXmlHead) {
 		this.out = out;
 		this.printXmlHead = printXmlHead;
 	}
 
-	public SubtreePrinter(PrintWriter out, boolean printXmlHead,
-			boolean prettyPrint) {
+	public SubtreePrinter(final PrintWriter out, final boolean printXmlHead,
+			final boolean prettyPrint) {
 		this.out = out;
 		this.printXmlHead = printXmlHead;
 		this.prettyPrint = prettyPrint;
@@ -127,6 +127,9 @@ public class SubtreePrinter extends DefaultHandler {
 	public void end() throws DocumentException {
 		if (autoFlush) {
 			out.flush();
+		}
+		if (prettyPrint) {
+			out.println();
 		}
 	}
 
@@ -208,7 +211,7 @@ public class SubtreePrinter extends DefaultHandler {
 	}
 
 	@Override
-	public void comment(Atomic value) throws DocumentException {
+	public void comment(final Atomic value) throws DocumentException {
 		newChild();
 		out.print("<!-- ");
 		out.print(value);
@@ -217,7 +220,7 @@ public class SubtreePrinter extends DefaultHandler {
 	}
 
 	@Override
-	public void processingInstruction(QNm target, Atomic value)
+	public void processingInstruction(final QNm target, final Atomic value)
 			throws DocumentException {
 		newChild();
 		out.print("<?");
@@ -258,7 +261,7 @@ public class SubtreePrinter extends DefaultHandler {
 		return printXmlHead;
 	}
 
-	public void setPrintXmlHead(boolean printXmlHead) {
+	public void setPrintXmlHead(final boolean printXmlHead) {
 		this.printXmlHead = printXmlHead;
 	}
 
@@ -266,16 +269,18 @@ public class SubtreePrinter extends DefaultHandler {
 		return prettyPrint;
 	}
 
-	public void setPrettyPrint(boolean indent) {
+	public SubtreePrinter setPrettyPrint(final boolean indent) {
 		this.prettyPrint = indent;
+		return this;
 	}
 
 	public boolean isAutoFlush() {
 		return autoFlush;
 	}
 
-	public void setAutoFlush(boolean autoFlush) {
+	public SubtreePrinter setAutoFlush(final boolean autoFlush) {
 		this.autoFlush = autoFlush;
+		return this;
 	}
 
 	public void flush() {
@@ -286,38 +291,40 @@ public class SubtreePrinter extends DefaultHandler {
 		return printEmptyElementTag;
 	}
 
-	public void setPrintEmptyElementTag(boolean print) {
+	public SubtreePrinter setPrintEmptyElementTag(final boolean print) {
 		this.printEmptyElementTag = print;
+		return this;
 	}
 
 	public String getIndent() {
 		return indent;
 	}
 
-	public void setIndent(String indent) {
+	public SubtreePrinter setIndent(final String indent) {
 		this.indent = indent;
+		return this;
 	}
 
-	public void print(Node<?> node) throws DocumentException {
+	public void print(final Node<?> node) throws DocumentException {
 		node.parse(this);
 	}
 
-	public static void print(Node<?> node, PrintStream out)
+	public static void print(final Node<?> node, PrintStream out)
 			throws DocumentException {
 		node.parse(new SubtreePrinter(out));
 	}
 
-	public static void print(Node<?> node, PrintWriter out)
+	public static void print(final Node<?> node, PrintWriter out)
 			throws DocumentException {
 		node.parse(new SubtreePrinter(out));
 	}
 
 	@Override
-	public void endMapping(String prefix) throws DocumentException {
+	public void endMapping(final String prefix) throws DocumentException {
 	}
 
 	@Override
-	public void startMapping(String prefix, String uri)
+	public void startMapping(final String prefix, final String uri)
 			throws DocumentException {
 		NS tmp = ns;
 		ns = new NS(prefix, uri);

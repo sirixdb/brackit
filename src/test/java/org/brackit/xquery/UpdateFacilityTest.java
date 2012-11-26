@@ -33,6 +33,7 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.sequence.ItemSequence;
+import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
@@ -70,8 +71,8 @@ public class UpdateFacilityTest extends XQueryBaseTest {
 	public void simpleReplaceNode() throws Exception {
 		ctx.setContextItem(doc);
 		new XQuery("replace node ./a/c with <d/>").execute(ctx);
-		orig.getFirstChild().getLastChild().replaceWith(Kind.ELEMENT,
-				new QNm("d"), null);
+		orig.getFirstChild().getLastChild()
+				.replaceWith(Kind.ELEMENT, new QNm("d"), null);
 		ResultChecker.dCheck(orig, doc, false);
 	}
 
@@ -104,6 +105,22 @@ public class UpdateFacilityTest extends XQueryBaseTest {
 		a.setAttribute(new QNm("att"), new Una("1"));
 		a.append(Kind.ELEMENT, new QNm("b"), null);
 		ResultChecker.dCheck(a, res, false);
+	}
+
+	@Test(expected = DocumentException.class)
+	public void transformIllegalExpression() throws QueryException {
+		// Two attributes with the same name (insert applied before delete).
+		new XQuery(
+				"copy $c := <x a='a'/> modify (delete node $c/@a, insert node attribute a { 'b' } into $c) return $c")
+				.execute(ctx);
+	}
+
+	@Test(expected = DocumentException.class)
+	public void transformIllegalExpressionSecond() throws QueryException {
+		// Two attributes with the same name (insert applied before delete).
+		new XQuery(
+				"copy $c := <x a='a'/> modify (delete node $c/@a, insert node attribute a { 'b' } into $c, replace node $c/@a with attribute a { 'b' }) return $c")
+				.execute(ctx);
 	}
 
 	@Test

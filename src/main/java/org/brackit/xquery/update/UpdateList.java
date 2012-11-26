@@ -42,16 +42,17 @@ import org.brackit.xquery.util.log.Logger;
 /**
  * 
  * @author Sebastian Baechle
+ * @author Johannes Lichtenberger
  * 
  */
-public class UpdateList {
+public final class UpdateList {
 	private static final Logger log = Logger.getLogger(UpdateList.class);
 
 	private static final EnumSet<OpType> checkOps = EnumSet.of(OpType.RENAME,
 			OpType.REPLACE_NODE, OpType.REPLACE_VALUE,
 			OpType.REPLACE_ELEMENT_CONTENT);
 
-	private ArrayList<UpdateOp> ops = new ArrayList<UpdateOp>();
+	private final List<UpdateOp> ops = new ArrayList<UpdateOp>();
 
 	public void append(UpdateOp op) {
 		ops.add(op);
@@ -72,10 +73,10 @@ public class UpdateList {
 		Collections.sort(ops, orderByType);
 
 		for (int i = 0; i < ops.size(); i++) {
-			UpdateOp op1 = ops.get(i);
+			final UpdateOp op1 = ops.get(i);
 			if (checkOps.contains(op1.getType())) {
 				for (int j = i + 1; j < ops.size(); j++) {
-					UpdateOp op2 = ops.get(j);
+					final UpdateOp op2 = ops.get(j);
 
 					if (op2.getType() != op1.getType()) {
 						break;
@@ -86,7 +87,7 @@ public class UpdateList {
 		}
 
 		// finally apply all updates
-		for (UpdateOp op : ops) {
+		for (final UpdateOp op : ops) {
 			if (log.isDebugEnabled()) {
 				log.debug(String.format("Applying pending update %s", op));
 			}
@@ -94,7 +95,7 @@ public class UpdateList {
 		}
 	}
 
-	private void checkCompatibility(UpdateOp op1, UpdateOp op2)
+	private void checkCompatibility(final UpdateOp op1, final UpdateOp op2)
 			throws QueryException {
 		switch (op1.getType()) {
 		case RENAME:
@@ -129,6 +130,8 @@ public class UpdateList {
 						op2.getTarget());
 			}
 			break;
+		default:
+			// Do nothing.
 		}
 	}
 
