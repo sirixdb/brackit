@@ -391,7 +391,7 @@ public abstract class Accessor {
 		}
 	};
 
-	public static final Accessor EARLIER = new Accessor(Axis.EARLIER) {
+	public static final Accessor PAST = new Accessor(Axis.PAST) {
 		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {
@@ -399,8 +399,8 @@ public abstract class Accessor {
 		}
 	};
 
-	public static final Accessor EARLIER_OR_SELF = new Accessor(
-			Axis.EARLIER_OR_SELF) {
+	public static final Accessor PAST_OR_SELF = new Accessor(
+			Axis.PAST_OR_SELF) {
 		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
 				throws QueryException {

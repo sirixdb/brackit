@@ -1096,10 +1096,10 @@ public class Compiler implements Translator {
 			return Accessor.FUTURE;
 		case XQ.FUTURE_OR_SELF:
 			return Accessor.FUTURE_OR_SELF;
-		case XQ.EARLIER:
-			return Accessor.EARLIER;
-		case XQ.EARLIER_OR_SELF:
-			return Accessor.EARLIER_OR_SELF;
+		case XQ.PAST:
+			return Accessor.PAST;
+		case XQ.PAST_OR_SELF:
+			return Accessor.PAST_OR_SELF;
 		case XQ.FIRST:
 			return Accessor.FIRST;
 		case XQ.LAST:

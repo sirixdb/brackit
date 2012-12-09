@@ -307,8 +307,8 @@ public final class XQ {
 	public static final int PREVIOUS = 252;
 	public static final int FUTURE = 253;
 	public static final int FUTURE_OR_SELF = 254;
-	public static final int EARLIER = 255;
-	public static final int EARLIER_OR_SELF = 256;
+	public static final int PAST = 255;
+	public static final int PAST_OR_SELF = 256;
 	public static final int FIRST = 257;
 	public static final int LAST = 258;
 	public static final int ALL_TIME = 259;

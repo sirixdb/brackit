@@ -138,13 +138,13 @@ public enum Axis {
 			return ((TemporalNode<?>) node).isFutureOrSelfOf((TemporalNode<?>) other);
 		}
 	},
-	EARLIER(false) {
+	PAST(false) {
 		@Override
 		public boolean check(Node<?> node, Node<?> other) throws QueryException {
 			return ((TemporalNode<?>) node).isEarlierOf((TemporalNode<?>) other);
 		}
 	},
-	EARLIER_OR_SELF(false) {
+	PAST_OR_SELF(false) {
 		@Override
 		public boolean check(Node<?> node, Node<?> other) throws QueryException {
 			return ((TemporalNode<?>) node)
