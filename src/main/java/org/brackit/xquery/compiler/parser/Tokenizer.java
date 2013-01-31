@@ -30,6 +30,8 @@ package org.brackit.xquery.compiler.parser;
 import java.math.BigInteger;
 import java.util.Arrays;
 
+import javax.xml.namespace.QName;
+
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.util.log.Logger;
@@ -130,6 +132,10 @@ public class Tokenizer {
 
 		public QNm qname() {
 			return new QNm(uri, prefix, ncname);
+		}
+		
+		public QName getName() {
+			return new QName(uri, ncname, prefix);
 		}
 
 		public String string() {

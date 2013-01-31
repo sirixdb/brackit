@@ -37,9 +37,9 @@ import org.brackit.xquery.xdm.Type;
  * 
  */
 public class QNm extends AbstractAtomic {
-	public final String nsURI; // must be "" if not set
-	public final String prefix; // must null if not set
-	public final String localName;
+	private final String nsURI; // must be "" if not set
+	private final String prefix; // must be "" if not set
+	private final String localName;
 
 	private class DQnm extends QNm {
 		private final Type type;
@@ -58,16 +58,15 @@ public class QNm extends AbstractAtomic {
 	public QNm(String nsURI, String prefix, String localName) {
 		this.nsURI = (nsURI == null) ? "" : nsURI;
 		this.prefix = (prefix == null) ? "" : prefix;
-		this.localName = localName;
+		this.localName = (localName == null) ? "" : localName;
 	}
 
-	public QNm(String nsURI, String string) throws QueryException {
+	public QNm(String nsURI, String string) {
 		int prefixLength = string.indexOf(":");
 		if (prefixLength > -1) {
 			if ((prefixLength == 0) || (prefixLength == string.length() - 1)
 					|| (string.indexOf(":", prefixLength + 1) != -1)) {
-				throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-						"Illegal QName: '%s'", string);
+				throw new IllegalStateException("Illegal QName: " + string);
 			}
 
 			this.prefix = string.substring(0, prefixLength);
@@ -76,13 +75,13 @@ public class QNm extends AbstractAtomic {
 			prefix = "";
 		}
 		this.nsURI = (nsURI == null) ? "" : nsURI;
-		this.localName = string;
+		this.localName = (string == null) ? "" : string;
 	}
 
 	public QNm(String string) {
 		this.prefix = "";
 		this.nsURI = "";
-		this.localName = string;
+		this.localName = (string == null) ? "" : string;
 	}
 
 	@Override
@@ -96,8 +95,9 @@ public class QNm extends AbstractAtomic {
 	}
 
 	/**
-	 * Returns the prefix of this QName or <code>null</code> if
-	 * this QName does not have a prefix. 
+	 * Returns the prefix of this QName or <code>null</code> if this QName does
+	 * not have a prefix.
+	 * 
 	 * @return the prefix of this QName or <code>null</code>
 	 */
 	public String getPrefix() {
@@ -106,6 +106,7 @@ public class QNm extends AbstractAtomic {
 
 	/**
 	 * Returns the local name of this QName.
+	 * 
 	 * @return the local name
 	 */
 	public String getLocalName() {
@@ -114,7 +115,8 @@ public class QNm extends AbstractAtomic {
 
 	/**
 	 * Returns the namespace URI of this QName or the empty <code>""</code> if
-	 * this QName is in the empty default namespace. 
+	 * this QName is in the empty default namespace.
+	 * 
 	 * @return the namespace URI of this QName or the empty string <code>""</code>
 	 */
 	public String getNamespaceURI() {
@@ -162,7 +164,7 @@ public class QNm extends AbstractAtomic {
 
 	@Override
 	public int hashCode() {
-		return localName.hashCode();
+		return nsURI.hashCode() + localName.hashCode();
 	}
 
 	@Override

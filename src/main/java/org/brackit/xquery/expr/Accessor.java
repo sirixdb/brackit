@@ -240,14 +240,14 @@ public abstract class Accessor {
 			final Node<?> n = node;
 			Node<?> p = node.getParent();
 
-			if (p == null || p.isRoot()) {
+			if (p == null || p.isDocumentRoot()) {
 				return new EmptyStream<Node<?>>();
 			}
 
-			if (!p.isRoot()) {
+			if (!p.isDocumentRoot()) {
 				while (true) {
 					Node<?> a = p.getParent();
-					if (a == null || a.isRoot()) {
+					if (a == null || a.isDocumentRoot()) {
 						break;
 					}
 					p = a;

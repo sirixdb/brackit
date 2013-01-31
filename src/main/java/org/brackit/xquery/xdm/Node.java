@@ -121,10 +121,18 @@ import org.brackit.xquery.xdm.type.NodeType;
  */
 public interface Node<E extends Node<E>> extends Item {
 	/**
+	 * Checks if this node is the document root node.
+	 * 
+	 * @return {@code true}, iff the current node is the document root node,
+	 *         {@code false} otherwise
+	 */
+	public boolean isDocumentRoot();
+
+	/**
 	 * Checks if this node is the same as <code>node</code>.
 	 * 
 	 * @param node
-	 *            the node to be checked
+	 *          the node to be checked
 	 * @return <code>true</code> iff the current node is the same as
 	 *         <code>node</code>
 	 */
@@ -134,7 +142,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Checks if this node is the parent node of <code>node</code>.
 	 * 
 	 * @param node
-	 *            the node to be checked
+	 *          the node to be checked
 	 * @return <code>true</code> iff the current node is the parent of
 	 *         <code>node</code>
 	 */
@@ -144,7 +152,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Checks if this node is a child node of <code>node</code>.
 	 * 
 	 * @param node
-	 *            the node to be checked
+	 *          the node to be checked
 	 * @return <code>true</code> iff the current node is a child of
 	 *         <code>node</code>
 	 */
@@ -154,7 +162,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Checks if this node is a descendant node of <code>node</code>.
 	 * 
 	 * @param node
-	 *            the node to be checked
+	 *          the node to be checked
 	 * @return <code>true</code> iff the current node is a descendant of
 	 *         <code>node</code>
 	 */
@@ -173,7 +181,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Checks if this node is an ancestor node of <code>node</code>.
 	 * 
 	 * @param node
-	 *            the node to be checked
+	 *          the node to be checked
 	 * @return <code>true</code> iff the current node is an ancestor of
 	 *         <code>node</code>
 	 */
@@ -183,7 +191,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Checks if this node is an ancestor or self node of <code>node</code>.
 	 * 
 	 * @param node
-	 *            the node to be checked
+	 *          the node to be checked
 	 * @return <code>true</code> iff the current node is an ancestor or self of
 	 *         <code>node</code>
 	 */
@@ -193,7 +201,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Checks if this node is a sibling node of <code>node</code>.
 	 * 
 	 * @param node
-	 *            the node to be checked
+	 *          the node to be checked
 	 * @return <code>true</code> iff the current node is a child of
 	 *         <code>node</code>
 	 */
@@ -203,7 +211,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Checks if this node is a preceding sibling node of <code>node</code>.
 	 * 
 	 * @param node
-	 *            the node to be checked
+	 *          the node to be checked
 	 * @return <code>true</code> iff the current node is a preceding sibling of
 	 *         <code>node</code>
 	 */
@@ -213,7 +221,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Checks if this node is a following sibling node of <code>node</code>.
 	 * 
 	 * @param node
-	 *            the node to be checked
+	 *          the node to be checked
 	 * @return <code>true</code> iff the current node is a following sibling of
 	 *         <code>node</code>
 	 */
@@ -223,7 +231,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Checks if this node is a preceding node of <code>node</code>.
 	 * 
 	 * @param node
-	 *            the node to be checked
+	 *          the node to be checked
 	 * @return <code>true</code> iff the current node is a preceding of
 	 *         <code>node</code>
 	 */
@@ -233,7 +241,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Checks if this node is a following node of <code>node</code>.
 	 * 
 	 * @param node
-	 *            the node to be checked
+	 *          the node to be checked
 	 * @return <code>true</code> iff the current node is a following of
 	 *         <code>node</code>
 	 */
@@ -243,7 +251,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Checks if this node is an attribute node of <code>node</code>.
 	 * 
 	 * @param node
-	 *            the node to be checked
+	 *          the node to be checked
 	 * @return <code>true</code> iff the current node is an attribute of
 	 *         <code>node</code>
 	 */
@@ -253,7 +261,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Checks if this node is the document node of <code>node</code>.
 	 * 
 	 * @param node
-	 *            the node to be checked
+	 *          the node to be checked
 	 * @return <code>true</code> iff the current node is the document node of
 	 *         <code>node</code>
 	 */
@@ -341,7 +349,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * @return name of this node, and <code>null</code> if this type of node has
 	 *         no name
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public QNm getName() throws DocumentException;
 
@@ -349,18 +357,18 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Sets the name of this node to <code>name</code>.
 	 * 
 	 * @param name
-	 *            the new name
+	 *          the new name
 	 * @throws OperationNotSupportedException
-	 *             if the operation is not supported by this type of node
+	 *           if the operation is not supported by this type of node
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public void setName(QNm name) throws OperationNotSupportedException,
 			DocumentException;
 
 	/**
-	 * Returns the typed value of this node, and <code>null</code> if this type
-	 * of node has no value.
+	 * Returns the typed value of this node, and <code>null</code> if this type of
+	 * node has no value.
 	 * 
 	 * <p>
 	 * For nodes created from an Infoset, the type of the returned value is as
@@ -409,32 +417,32 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * <p>
 	 * Note, this method is not intended to work with nodes created from a PSVI
-	 * (schema validated document) where the typed-value property of a node may
-	 * be a sequence of zero or more items. For documents with a schema use
-	 * {@link getValues()}.
+	 * (schema validated document) where the typed-value property of a node may be
+	 * a sequence of zero or more items. For documents with a schema use {@link
+	 * getValues()}.
 	 * </p>
 	 * 
 	 * @see http://www.w3.org/TR/xml-infoset/
 	 * 
-	 * @return value of this node, and <code>null</code> if this type of node
-	 *         has no value
+	 * @return value of this node, and <code>null</code> if this type of node has
+	 *         no value
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public Atomic getValue() throws DocumentException;
 
 	/**
-	 * Returns the typed values of this node, and an empty stream if this type
-	 * of node has no typed value.
+	 * Returns the typed values of this node, and an empty stream if this type of
+	 * node has no typed value.
 	 * 
 	 * <p>
 	 * Realizes the dm:typed-value accessor.
 	 * </p>
 	 * 
-	 * @return typed values of this node, and an empty stream if this type of
-	 *         node has no typed value
+	 * @return typed values of this node, and an empty stream if this type of node
+	 *         has no typed value
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public Stream<Atomic> getValues() throws DocumentException;
 
@@ -446,10 +454,10 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Realizes the dm:string-value accessor.
 	 * </p>
 	 * 
-	 * @return value of this node, and <code>null</code> if this type of node
-	 *         has no value
+	 * @return value of this node, and <code>null</code> if this type of node has
+	 *         no value
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public Str getStrValue() throws DocumentException;
 
@@ -457,18 +465,17 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Sets the value of this node to <code>value</code>.
 	 * 
 	 * @param value
-	 *            the new value
+	 *          the new value
 	 * @throws OperationNotSupportedException
-	 *             if the operation is not supported by this type of node
+	 *           if the operation is not supported by this type of node
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public void setValue(Atomic value) throws OperationNotSupportedException,
 			DocumentException;
 
 	/**
-	 * Returns the parent node, and <code>null</code> if this node has no
-	 * parent.
+	 * Returns the parent node, and <code>null</code> if this node has no parent.
 	 * 
 	 * <p>
 	 * Realizes the dm:parent accessor.
@@ -476,7 +483,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the parent node, and <code>null</code> if this node has no parent
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E getParent() throws DocumentException;
 
@@ -487,7 +494,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * @return the first child node, and <code>null</code> if this node has no
 	 *         children
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E getFirstChild() throws DocumentException;
 
@@ -498,7 +505,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * @return the last child node, and <code>null</code> if this node has no
 	 *         children
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E getLastChild() throws DocumentException;
 
@@ -513,7 +520,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * @return all children, and an empty {link Stream} if this node has no
 	 *         children
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public Stream<? extends E> getChildren() throws DocumentException;
 
@@ -524,18 +531,18 @@ public interface Node<E extends Node<E>> extends Item {
 	 * @return all nodes in the subtree rooted a this current node in document
 	 *         order
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public Stream<? extends E> getSubtree() throws DocumentException;
 
 	/**
-	 * Returns a {@link Stream} over all descendant nodes in the subtree rooted
-	 * a this current node in document order
+	 * Returns a {@link Stream} over all descendant nodes in the subtree rooted a
+	 * this current node in document order
 	 * 
 	 * @return all descendant nodes in the subtree rooted a this current node in
 	 *         document order
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public Stream<? extends E> getDescendantOrSelf() throws DocumentException;
 
@@ -546,7 +553,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * @return all nodes in the subtree rooted a this current node in document
 	 *         order
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public Stream<? extends E> getPath() throws DocumentException;
 
@@ -555,7 +562,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return <code>true</code> iff this node has children
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public boolean hasChildren() throws DocumentException;
 
@@ -566,7 +573,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * @return the next sibling node, and <code>null</code> if this node has no
 	 *         next sibling
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E getNextSibling() throws DocumentException;
 
@@ -577,7 +584,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * @return the previous sibling node, and <code>null</code> if this node has
 	 *         no previous sibling
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E getPreviousSibling() throws DocumentException;
 
@@ -586,9 +593,9 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E append(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
@@ -598,9 +605,9 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E append(Node<?> child) throws OperationNotSupportedException,
 			DocumentException;
@@ -610,21 +617,21 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
-	public E append(SubtreeParser parser)
-			throws OperationNotSupportedException, DocumentException;
+	public E append(SubtreeParser parser) throws OperationNotSupportedException,
+			DocumentException;
 
 	/**
 	 * Prepends a new node.
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E prepend(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
@@ -634,9 +641,9 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E prepend(Node<?> child) throws OperationNotSupportedException,
 			DocumentException;
@@ -646,21 +653,21 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
-	public E prepend(SubtreeParser parser)
-			throws OperationNotSupportedException, DocumentException;
+	public E prepend(SubtreeParser parser) throws OperationNotSupportedException,
+			DocumentException;
 
 	/**
 	 * Inserts a new node before this node.
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E insertBefore(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
@@ -670,9 +677,9 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E insertBefore(Node<?> node) throws OperationNotSupportedException,
 			DocumentException;
@@ -682,9 +689,9 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E insertBefore(SubtreeParser parser)
 			throws OperationNotSupportedException, DocumentException;
@@ -694,9 +701,9 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E insertAfter(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
@@ -706,9 +713,9 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E insertAfter(Node<?> node) throws OperationNotSupportedException,
 			DocumentException;
@@ -718,9 +725,9 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E insertAfter(SubtreeParser parser)
 			throws OperationNotSupportedException, DocumentException;
@@ -730,9 +737,9 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E setAttribute(Node<?> attribute)
 			throws OperationNotSupportedException, DocumentException;
@@ -742,9 +749,9 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E setAttribute(QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
@@ -754,9 +761,9 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public boolean deleteAttribute(QNm name)
 			throws OperationNotSupportedException, DocumentException;
@@ -772,7 +779,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * @return all attributes, and an empty {link Stream} if this node has no
 	 *         attributes
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public Stream<? extends E> getAttributes()
 			throws OperationNotSupportedException, DocumentException;
@@ -782,7 +789,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the attribute with the given name.
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E getAttribute(QNm name) throws DocumentException;
 
@@ -791,9 +798,9 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E replaceWith(Node<?> node) throws OperationNotSupportedException,
 			DocumentException;
@@ -803,9 +810,9 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E replaceWith(SubtreeParser parser)
 			throws OperationNotSupportedException, DocumentException;
@@ -815,9 +822,9 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return the newly created node
 	 * @throws OperationNotSupportedException
-	 *             if this operation is not supported
+	 *           if this operation is not supported
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public E replaceWith(Kind kind, QNm name, Atomic value)
 			throws OperationNotSupportedException, DocumentException;
@@ -827,7 +834,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * 
 	 * @return <code>true</code> iff this node has attributes
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public boolean hasAttributes() throws DocumentException;
 
@@ -835,7 +842,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Delete this node.
 	 * 
 	 * @throws DocumentException
-	 *             if the operation failed
+	 *           if the operation failed
 	 */
 	public void delete() throws DocumentException;
 
@@ -843,7 +850,7 @@ public interface Node<E extends Node<E>> extends Item {
 	 * Parse the subtree rooted at this node.
 	 * 
 	 * @throws DocumentException
-	 *             if the operation or the handler failed
+	 *           if the operation or the handler failed
 	 */
 	public void parse(SubtreeHandler handler) throws DocumentException;
 

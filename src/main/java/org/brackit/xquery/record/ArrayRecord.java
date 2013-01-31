@@ -55,6 +55,10 @@ public class ArrayRecord extends AbstractRecord {
 		this.vals = values;
 	}
 
+	public static ArrayRecord emptyInstance() {
+		return new ArrayRecord(new QNm[] { new QNm("") }, new Sequence[] { EMPTY });
+	}
+
 	@Override
 	public Sequence get(QNm field) throws QueryException {
 		for (int i = 0; i < fields.length; i++) {

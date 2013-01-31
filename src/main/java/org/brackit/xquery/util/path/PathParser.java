@@ -209,14 +209,14 @@ public class PathParser extends Tokenizer {
 	 * 
 	 */
 	private QNm expand(QNm qname) throws PathException {
-		if (namespaces == null || qname.prefix == null) {
+		if (namespaces == null || qname.getPrefix() == null) {
 			return qname;
 		}
-		String uri = namespaces.get(qname.prefix);
+		String uri = namespaces.get(qname.getPrefix());
 		if (uri == null) {
 			throw new PathException("Undefined namespace prefix: %s",
-					qname.prefix);
+					qname.getPrefix());
 		}
-		return new QNm(uri, qname.prefix, qname.localName);
+		return new QNm(uri, qname.getPrefix(), qname.getLocalName());
 	}
 }

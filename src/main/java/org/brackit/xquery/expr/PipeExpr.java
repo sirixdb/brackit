@@ -135,7 +135,8 @@ public class PipeExpr implements Expr {
 	@Override
 	public boolean isUpdating() {
 		// TODO
-		return false;
+		return expr.isUpdating();
+//		return false;
 	}
 
 	@Override

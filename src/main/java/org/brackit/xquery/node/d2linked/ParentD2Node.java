@@ -302,7 +302,9 @@ abstract class ParentD2Node extends D2Node {
 		int[] nsd = (ns != null) ? ns.division : null;
 		D2Node c = buildChild(psd, nsd, kind, name, value);
 		c.sibling = ns;
-		if (ps != null) {
+		if (ps == null) {
+			firstChild = c;
+		} else {
 			ps.sibling = c;
 		}
 		return c;

@@ -264,7 +264,7 @@ public class MultiTypeJoinTable {
 	public final FastList<Sequence[]> probe(Sequence keys)
 			throws QueryException {
 		if (keys == null) {
-			return FastList.EMPTY_LIST;
+			return FastList.<Sequence[]> emptyList();
 		}
 
 		FastList<TValue> matches = new FastList<TValue>();
@@ -284,7 +284,7 @@ public class MultiTypeJoinTable {
 		}
 
 		if (matches.isEmpty()) {
-			return FastList.EMPTY_LIST;
+			return FastList.<Sequence[]> emptyList();
 		}
 
 		return sortAndDeduplicate(matches);

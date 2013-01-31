@@ -122,6 +122,17 @@ public class UpdateFacilityTest extends XQueryBaseTest {
 				"copy $c := <x a='a'/> modify (delete node $c/@a, insert node attribute a { 'b' } into $c, replace node $c/@a with attribute a { 'b' }) return $c")
 				.execute(ctx);
 	}
+	
+	@Test
+	public void transformModify() throws QueryException {
+		Sequence res = new XQuery(
+				"copy $c := <n><a/><a/></n> modify for $a in $c//a return replace node $a with <b/> return $c")
+				.execute(ctx);
+		Node<?> a = ctx.getNodeFactory().element(new QNm("n"));
+		a.append(Kind.ELEMENT, new QNm("b"), null);
+		a.append(Kind.ELEMENT, new QNm("b"), null);
+		ResultChecker.dCheck(a, res, false);
+	}
 
 	@Test
 	public void transformTestTwoCopyVars() throws QueryException {

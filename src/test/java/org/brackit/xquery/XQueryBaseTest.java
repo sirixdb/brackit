@@ -35,7 +35,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.net.URL;
 import java.util.Random;
 
 import org.brackit.xquery.node.SimpleStore;

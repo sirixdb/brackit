@@ -430,7 +430,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 
 	@Override
 	public final boolean isRoot() {
-		return (parent == null);
+		return ((getKind() == Kind.ELEMENT) && (parent != null) && (parent.getKind() == Kind.DOCUMENT)); 
 	}
 
 	@Override
@@ -441,6 +441,11 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 				&& ((Object) node != this) && (parent != null)
 				&& (node.isChildOf(parent));
 	}
+	
+  @Override
+  public final boolean isDocumentRoot() {
+      return (parent == null);
+  } 
 	
 	public boolean isDocumentOf(Node<?> node) {
 		return false;

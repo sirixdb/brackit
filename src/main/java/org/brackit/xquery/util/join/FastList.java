@@ -30,7 +30,7 @@ package org.brackit.xquery.util.join;
 import java.util.Arrays;
 
 /**
- * Array-based variant of a list. Faster than java.util.ArrayList for out
+ * Array-based variant of a list. Faster than java.util.ArrayList for our
  * purposes, e.g., makes less error-checks.
  * 
  * @author Sebastian Baechle
@@ -38,8 +38,7 @@ import java.util.Arrays;
  */
 public class FastList<E> {
 
-	@SuppressWarnings("unchecked")
-	public static final FastList EMPTY_LIST = new FastList(0);
+	public static final FastList<Object> EMPTY_LIST = new FastList<Object>(0);
 
 	private Object[] values;
 
@@ -51,6 +50,11 @@ public class FastList<E> {
 
 	public FastList() {
 		values = new Object[10];
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <T> FastList<T> emptyList() {
+		return (FastList<T>) EMPTY_LIST;
 	}
 
 	public int getSize() {
