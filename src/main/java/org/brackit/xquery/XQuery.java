@@ -133,8 +133,8 @@ public class XQuery {
 		return prettyPrint;
 	}
 
-	public XQuery setPrettyPrint(boolean prettyPrint) {
-		this.prettyPrint = prettyPrint;
+	public XQuery prettyPrint() {
+		this.prettyPrint = true;
 		return this;
 	}
 }

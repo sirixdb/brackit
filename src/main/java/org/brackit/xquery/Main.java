@@ -100,7 +100,7 @@ public class Main {
 					String name = uri.toURL().getFile();
 					NodeFactory<?> factory = ctx.getNodeFactory();
 					Collection<?> coll = factory.collection(name, parser);
-					Node<?> doc = coll.getDocument(-1);
+					Node<?> doc = coll.getDocument();
 					ctx.setContextItem(doc);
 				} finally {
 					in.close();
@@ -115,8 +115,9 @@ public class Main {
 			}
 
 			XQuery xq = new XQuery(query);
-			xq.setPrettyPrint(config.isSet("-p"));
-
+			if (config.isSet("-p")) {
+				xq.prettyPrint();
+			}
 			xq.serialize(ctx, System.out);
 		} catch (QueryException e) {
 			System.out.println("Error: " + e.getMessage());

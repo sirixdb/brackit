@@ -56,7 +56,7 @@ public class ArrayCollection<E extends Node<E>> extends AbstractCollection<E> {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public E getDocument(int revision) throws DocumentException {
+	public E getDocument() throws DocumentException {
 		if (docs.length == 1) {
 			return (E) docs[0];
 		}

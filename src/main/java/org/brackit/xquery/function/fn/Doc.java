@@ -42,6 +42,7 @@ import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.xdm.TemporalCollection;
 
 /**
  * Implementation of predefined functions fn:doc($arg1) and
@@ -110,7 +111,11 @@ public class Doc extends AbstractFunction {
 							"Collection %s contains more than one document", name);
 				}
 
-				document = collection.getDocument(revision);
+				if (collection instanceof TemporalCollection<?>) {
+					document = ((TemporalCollection<?>) collection).getDocument(revision);
+				} else {
+					document = collection.getDocument();
+				}
 
 				if (document == null) {
 					if (retrieve) {

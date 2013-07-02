@@ -95,7 +95,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testCmp() throws Exception {
-		Stream<?> subtree = collection.getDocument(-1).getSubtree();
+		Stream<?> subtree = collection.getDocument().getSubtree();
 		List<? extends Node<?>> nodes = new ArrayList(StreamUtil.asList(subtree));
 		for (int i = 0; i < nodes.size(); i++) {
 			Node<?> a = nodes.get(i);
@@ -106,7 +106,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 					else if (i == j) Assert.assertTrue("a == b", a.cmp(b) == 0);
 					else Assert.assertTrue("a > b", a.cmp(b) > 0);
 				} catch (AssertionError e) {
-					// SubtreePrinter.print(collection.getDocument(-1), System.out);
+					// SubtreePrinter.print(collection.getDocument(), System.out);
 					// System.err.println(nodes);
 					System.err.println(a);
 					System.err.println(b);
@@ -119,84 +119,84 @@ public abstract class AxisTest extends XQueryBaseTest {
 
 	@Test
 	public void testRootElementChildren() throws Exception {
-		Node<?> node = collection.getDocument(-1).getFirstChild();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument(-1)
+		Node<?> node = collection.getDocument().getFirstChild();
+		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(), new AxisFilter(node, Axis.CHILD));
 		checkOutput(Accessor.CHILD.performStep(node), expected);
 	}
 
 	@Test
 	public void testNonRootElementChildren() throws Exception {
-		Node<?> node = collection.getDocument(-1).getFirstChild().getFirstChild();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument(-1)
+		Node<?> node = collection.getDocument().getFirstChild().getFirstChild();
+		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(), new AxisFilter(node, Axis.CHILD));
 		checkOutput(Accessor.CHILD.performStep(node), expected);
 	}
 
 	@Test
 	public void testRootFollowing() throws Exception {
-		Node<?> node = collection.getDocument(-1).getFirstChild();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument(-1)
+		Node<?> node = collection.getDocument().getFirstChild();
+		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(), new AxisFilter(node, Axis.FOLLOWING));
 		checkOutput(Accessor.FOLLOWING.performStep(node), expected);
 	}
 
 	@Test
 	public void testNonRootFollowing() throws Exception {
-		Node<?> node = collection.getDocument(-1).getFirstChild().getFirstChild()
+		Node<?> node = collection.getDocument().getFirstChild().getFirstChild()
 				.getFirstChild().getNextSibling();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument(-1)
+		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(), new AxisFilter(node, Axis.FOLLOWING));
 		checkOutput(Accessor.FOLLOWING.performStep(node), expected);
 	}
 
 	@Test
 	public void testRootPreceding() throws Exception {
-		Node<?> node = collection.getDocument(-1).getFirstChild();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument(-1)
+		Node<?> node = collection.getDocument().getFirstChild();
+		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(), new AxisFilter(node, Axis.PRECEDING));
 		checkOutput(Accessor.PRECEDING.performStep(node), expected);
 	}
 
 	@Test
 	public void testNonRootPreceding() throws Exception {
-		Node<?> node = collection.getDocument(-1).getFirstChild().getFirstChild()
+		Node<?> node = collection.getDocument().getFirstChild().getFirstChild()
 				.getFirstChild().getNextSibling();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument(-1)
+		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(), new AxisFilter(node, Axis.PRECEDING));
 		checkOutput(Accessor.PRECEDING.performStep(node), expected);
 	}
 
 	@Test
 	public void testRootPrecedingSibling() throws Exception {
-		Node<?> node = collection.getDocument(-1).getFirstChild();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument(-1)
+		Node<?> node = collection.getDocument().getFirstChild();
+		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(), new AxisFilter(node, Axis.PRECEDING_SIBLING));
 		checkOutput(Accessor.PRECEDING_SIBLING.performStep(node), expected);
 	}
 
 	@Test
 	public void testNonRootPrecedingSibling() throws Exception {
-		Node<?> node = collection.getDocument(-1).getFirstChild().getFirstChild()
+		Node<?> node = collection.getDocument().getFirstChild().getFirstChild()
 				.getFirstChild().getNextSibling();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument(-1)
+		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(), new AxisFilter(node, Axis.PRECEDING_SIBLING));
 		checkOutput(Accessor.PRECEDING_SIBLING.performStep(node), expected);
 	}
 
 	@Test
 	public void testRootFollowingSibling() throws Exception {
-		Node<?> node = collection.getDocument(-1).getFirstChild();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument(-1)
+		Node<?> node = collection.getDocument().getFirstChild();
+		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(), new AxisFilter(node, Axis.FOLLOWING_SIBLING));
 		checkOutput(Accessor.FOLLOWING_SIBLING.performStep(node), expected);
 	}
 
 	@Test
 	public void testNonRootFollowingSibling() throws Exception {
-		Node<?> node = collection.getDocument(-1).getFirstChild().getFirstChild()
+		Node<?> node = collection.getDocument().getFirstChild().getFirstChild()
 				.getFirstChild().getNextSibling();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument(-1)
+		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
 				.getSubtree(), new AxisFilter(node, Axis.FOLLOWING_SIBLING));
 		checkOutput(Accessor.FOLLOWING_SIBLING.performStep(node), expected);
 	}

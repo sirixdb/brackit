@@ -30,6 +30,7 @@ package org.brackit.xquery;
 import java.io.FileNotFoundException;
 
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.sequence.ItemSequence;
@@ -122,15 +123,26 @@ public class UpdateFacilityTest extends XQueryBaseTest {
 				"copy $c := <x a='a'/> modify (delete node $c/@a, insert node attribute a { 'b' } into $c, replace node $c/@a with attribute a { 'b' }) return $c")
 				.execute(ctx);
 	}
-	
+
 	@Test
-	public void transformModify() throws QueryException {
+	public void transformModifyFirst() throws QueryException {
 		Sequence res = new XQuery(
 				"copy $c := <n><a/><a/></n> modify for $a in $c//a return replace node $a with <b/> return $c")
 				.execute(ctx);
 		Node<?> a = ctx.getNodeFactory().element(new QNm("n"));
 		a.append(Kind.ELEMENT, new QNm("b"), null);
 		a.append(Kind.ELEMENT, new QNm("b"), null);
+		ResultChecker.dCheck(a, res, false);
+	}
+
+	@Test
+	public void transformModifySecond() throws QueryException {
+		final String xq = "copy $foo := <foo/>" + " modify "
+				+ "  for $x in ('b', 'a') " + "  order by $x "
+				+ "  return insert node text { $x } into $foo return $foo";
+		Sequence res = new XQuery(xq).execute(ctx);
+		Node<?> a = ctx.getNodeFactory().element(new QNm("foo"));
+		a.append(Kind.TEXT, null, new Str("ab"));
 		ResultChecker.dCheck(a, res, false);
 	}
 

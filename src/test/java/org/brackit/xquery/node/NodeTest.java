@@ -80,25 +80,25 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 	@Test
 	public void testGetFirstChildForDocumentNode() throws Exception {
 		Collection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
-		assertEquals("First child is document root node", coll.getDocument(-1)
-				.getFirstChild(), coll.getDocument(-1).getFirstChild());
+		assertEquals("First child is document root node", coll.getDocument()
+				.getFirstChild(), coll.getDocument().getFirstChild());
 	}
 
 	@Test
 	public void testGetLastChildForDocumentNode() throws Exception {
 		Collection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
-		assertEquals("Last child is document root node", coll.getDocument(-1)
-				.getFirstChild(), coll.getDocument(-1).getLastChild());
+		assertEquals("Last child is document root node", coll.getDocument()
+				.getFirstChild(), coll.getDocument().getLastChild());
 	}
 
 	@Test
 	public void testGetChildrenForDocumentNode() throws Exception {
 		Collection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
 
-		Stream<? extends E> children = coll.getDocument(-1).getChildren();
+		Stream<? extends E> children = coll.getDocument().getChildren();
 		E n;
 		assertNotNull("Document node has a child node", n = children.next());
-		assertEquals("First child is document root node", coll.getDocument(-1)
+		assertEquals("First child is document root node", coll.getDocument()
 				.getFirstChild(), n);
 		assertNull("Document node no further children", n = children.next());
 		children.close();
@@ -108,20 +108,20 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 	public void testGetSubtreeForDocumentNode() throws Exception {
 		Collection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
 
-		Stream<? extends E> subtree = coll.getDocument(-1).getSubtree();
+		Stream<? extends E> subtree = coll.getDocument().getSubtree();
 
 		E n;
 		assertNotNull("Stream not empty", n = subtree.next());
-		assertEquals("First node is document node", coll.getDocument(-1), n);
+		assertEquals("First node is document node", coll.getDocument(), n);
 		assertNotNull("Stream not empty", n = subtree.next());
-		assertEquals("Second node is document root node", coll.getDocument(-1)
+		assertEquals("Second node is document root node", coll.getDocument()
 				.getFirstChild(), n);
 		assertNotNull("Stream not empty", n = subtree.next());
 		assertEquals("Third node is document root node's first child", coll
-				.getDocument(-1).getFirstChild().getFirstChild(), n);
+				.getDocument().getFirstChild().getFirstChild(), n);
 		assertNotNull("Stream not empty", n = subtree.next());
 		assertEquals("Fourth node is document root node's last child", coll
-				.getDocument(-1).getFirstChild().getLastChild(), n);
+				.getDocument().getFirstChild().getLastChild(), n);
 		subtree.close();
 	}
 
@@ -129,19 +129,19 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 	public void testGetSubtreeForRootNode() throws Exception {
 		Collection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
 
-		Stream<? extends E> subtree = coll.getDocument(-1).getFirstChild()
+		Stream<? extends E> subtree = coll.getDocument().getFirstChild()
 				.getSubtree();
 
 		E n;
 		assertNotNull("Stream not empty", n = subtree.next());
-		assertEquals("First node is document root node", coll.getDocument(-1)
+		assertEquals("First node is document root node", coll.getDocument()
 				.getFirstChild(), n);
 		assertNotNull("Stream not empty", n = subtree.next());
 		assertEquals("Second node is document root node's first child", coll
-				.getDocument(-1).getFirstChild().getFirstChild(), n);
+				.getDocument().getFirstChild().getFirstChild(), n);
 		assertNotNull("Stream not empty", n = subtree.next());
 		assertEquals("Third node is document root node's last child", coll
-				.getDocument(-1).getFirstChild().getLastChild(), n);
+				.getDocument().getFirstChild().getLastChild(), n);
 		subtree.close();
 	}
 
@@ -150,19 +150,19 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		Collection<E> coll = createDocument(new DocumentParser(
 				"<a><b><d/><e/></b><c/></a>"));
 
-		Stream<? extends E> subtree = coll.getDocument(-1).getFirstChild()
+		Stream<? extends E> subtree = coll.getDocument().getFirstChild()
 				.getFirstChild().getSubtree();
 
 		E n;
 		assertNotNull("Stream not empty", n = subtree.next());
-		assertEquals("First node is document root node", coll.getDocument(-1)
+		assertEquals("First node is document root node", coll.getDocument()
 				.getFirstChild().getFirstChild(), n);
 		assertNotNull("Stream not empty", n = subtree.next());
 		assertEquals("Second node is document root node's first child first child",
-				coll.getDocument(-1).getFirstChild().getFirstChild().getFirstChild(), n);
+				coll.getDocument().getFirstChild().getFirstChild().getFirstChild(), n);
 		assertNotNull("Stream not empty", n = subtree.next());
 		assertEquals("Third node is document root node's first child last child",
-				coll.getDocument(-1).getFirstChild().getFirstChild().getLastChild(), n);
+				coll.getDocument().getFirstChild().getFirstChild().getLastChild(), n);
 		subtree.close();
 	}
 
@@ -170,7 +170,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 	public void traverseDocumentInPreorder() throws Exception {
 		Collection<E> coll = createDocument(new DocumentParser(readFile(DOCS,
 				"orga.xml")));
-		E root = coll.getDocument(-1).getFirstChild();
+		E root = coll.getDocument().getFirstChild();
 		org.w3c.dom.Node domRoot = null;
 
 		domRoot = createDomTree(new InputSource(new StringReader(readFile(DOCS,
@@ -309,7 +309,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 	public void traverseDocumentInPostorder() throws Exception {
 		Collection<E> coll = createDocument(new DocumentParser(readFile(DOCS,
 				"orga.xml")));
-		E root = coll.getDocument(-1).getFirstChild();
+		E root = coll.getDocument().getFirstChild();
 		org.w3c.dom.Node domRoot = null;
 
 		try {
@@ -442,16 +442,16 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		Collection<E> doc = createDocument(new DocumentParser(readFile(DOCS,
 				"orga.xml")));
 
-		E onode = orig.getDocument(-1).getFirstChild().getLastChild();
+		E onode = orig.getDocument().getFirstChild().getLastChild();
 		E test = onode.append(Kind.ELEMENT, new QNm("test"), null);
 		test.append(Kind.ELEMENT, new QNm("a"), null);
 		test.append(Kind.ELEMENT, new QNm("b"), null);
 
-		E cnode = doc.getDocument(-1).getFirstChild().getLastChild();
+		E cnode = doc.getDocument().getFirstChild().getLastChild();
 		DocumentParser docParser = new DocumentParser("<test><a/><b/></test>");
 		docParser.setParseAsFragment(true);
 		cnode.append(docParser);
-		ResultChecker.check(orig.getDocument(-1), doc.getDocument(-1), false);
+		ResultChecker.check(orig.getDocument(), doc.getDocument(), false);
 	}
 
 	@Test
@@ -461,17 +461,17 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		Collection<E> doc = createDocument(new DocumentParser(readFile(DOCS,
 				"orga.xml")));
 
-		E onode = orig.getDocument(-1).getFirstChild().getLastChild();
+		E onode = orig.getDocument().getFirstChild().getLastChild();
 		E test = onode.replaceWith(Kind.ELEMENT, new QNm("test"), null);
 		test.append(Kind.ELEMENT, new QNm("a"), null);
 		test.append(Kind.ELEMENT, new QNm("b"), null);
 
-		E cnode = doc.getDocument(-1).getFirstChild().getLastChild();
+		E cnode = doc.getDocument().getFirstChild().getLastChild();
 		DocumentParser docParser = new DocumentParser("<test><a/><b/></test>");
 		docParser.setParseAsFragment(true);
 		cnode.replaceWith(docParser);
 
-		ResultChecker.check(orig.getDocument(-1), doc.getDocument(-1), false);
+		ResultChecker.check(orig.getDocument(), doc.getDocument(), false);
 	}
 
 	@Test
@@ -479,7 +479,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 		Collection<E> coll = createDocument(new DocumentParser(readFile(DOCS,
 				"orga.xml")));
 
-		E root = coll.getDocument(-1).getFirstChild();
+		E root = coll.getDocument().getFirstChild();
 		E node = root.getFirstChild();
 		node = root.getFirstChild();
 		node = root.getFirstChild();

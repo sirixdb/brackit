@@ -222,14 +222,14 @@ public class Path<E> {
 			boolean pIsNodeStep = (pAxis == Axis.CHILD) || (pAxis == Axis.DESC);
 
 			Axis oAxis = o[oPos].axis;
-			boolean oIsAttributeChildStep = (oAxis == Axis.CHILD_ATTRIBUTE);
+			boolean oIsAttributeStep = (oAxis == Axis.CHILD_ATTRIBUTE) || (oAxis == Axis.DESC_ATTRIBUTE);
 			boolean oIsNodeStep = (oAxis == Axis.CHILD) || (oAxis == Axis.DESC);
 
 			if (!pIsNodeStep && !pIsAttributeStep) {
 				throw new PathException("Illegal pattern path: %s", this);
 			}
 
-			if (!oIsAttributeChildStep && !oIsNodeStep) {
+			if (!oIsAttributeStep && !oIsNodeStep) {
 				throw new PathException("Illegal path: %s", path);
 			}
 
