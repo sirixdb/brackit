@@ -48,6 +48,9 @@ public final class SequenceType {
 
 	public static SequenceType INTEGER = new SequenceType(AtomicType.INR,
 			Cardinality.One);
+	
+	public static SequenceType STRING = new SequenceType(AtomicType.STR,
+			Cardinality.One);
 
 	private final ItemType itemType;
 

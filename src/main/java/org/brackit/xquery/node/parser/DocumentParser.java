@@ -88,6 +88,10 @@ public class DocumentParser implements SubtreeParser {
 			throw new DocumentException(e, "Error creating document parser.");
 		}
 	}
+	
+	public InputSource getSource() {
+		return source;
+	}
 
 	public void setParseAsFragment(boolean parseAsFragment) {
 		this.parseAsFragment = parseAsFragment;
