@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: org.brackit.xquery.expr.PrologDeclarationTest
+-------------------------------------------------------------------------------
+Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.077 sec

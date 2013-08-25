@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite failures="0" time="1.364" errors="0" skipped="0" tests="201" name="org.brackit.xquery.function.fn.FnTest">
+  <properties>
+    <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
+    <property name="sun.boot.library.path" value="/usr/lib/jvm/java-7-oracle/jre/lib/amd64"/>
+    <property name="java.vm.version" value="23.3-b01"/>
+    <property name="java.vm.vendor" value="Oracle Corporation"/>
+    <property name="java.vendor.url" value="http://java.oracle.com/"/>
+    <property name="path.separator" value=":"/>
+    <property name="guice.disable.misplaced.annotation.check" value="true"/>
+    <property name="java.vm.name" value="Java HotSpot(TM) 64-Bit Server VM"/>
+    <property name="file.encoding.pkg" value="sun.io"/>
+    <property name="user.country" value="US"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="sun.os.patch.level" value="unknown"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="user.dir" value="/home/johannes/brackit"/>
+    <property name="java.runtime.version" value="1.7.0_07-b10"/>
+    <property name="java.awt.graphicsenv" value="sun.awt.X11GraphicsEnvironment"/>
+    <property name="java.endorsed.dirs" value="/usr/lib/jvm/java-7-oracle/jre/lib/endorsed"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.io.tmpdir" value="/tmp"/>
+    <property name="line.separator" value="
+"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="os.name" value="Linux"/>
+    <property name="classworlds.conf" value="/usr/share/maven/bin/m2.conf"/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="java.library.path" value="/usr/java/packages/lib/amd64:/usr/lib64:/lib64:/lib:/usr/lib"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="java.class.version" value="51.0"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="os.version" value="3.8.0-25-generic"/>
+    <property name="user.home" value="/home/johannes"/>
+    <property name="user.timezone" value="Europe/Berlin"/>
+    <property name="java.awt.printerjob" value="sun.print.PSPrinterJob"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.specification.version" value="1.7"/>
+    <property name="user.name" value="johannes"/>
+    <property name="java.class.path" value="/usr/share/maven/boot/plexus-classworlds-2.x.jar"/>
+    <property name="java.vm.specification.version" value="1.7"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="java.home" value="/usr/lib/jvm/java-7-oracle/jre"/>
+    <property name="sun.java.command" value="org.codehaus.plexus.classworlds.launcher.Launcher clean deploy"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="user.language" value="en"/>
+    <property name="awt.toolkit" value="sun.awt.X11.XToolkit"/>
+    <property name="java.vm.info" value="mixed mode"/>
+    <property name="java.version" value="1.7.0_07"/>
+    <property name="java.ext.dirs" value="/usr/lib/jvm/java-7-oracle/jre/lib/ext:/usr/java/packages/lib/ext"/>
+    <property name="securerandom.source" value="file:/dev/./urandom"/>
+    <property name="sun.boot.class.path" value="/usr/lib/jvm/java-7-oracle/jre/lib/resources.jar:/usr/lib/jvm/java-7-oracle/jre/lib/rt.jar:/usr/lib/jvm/java-7-oracle/jre/lib/sunrsasign.jar:/usr/lib/jvm/java-7-oracle/jre/lib/jsse.jar:/usr/lib/jvm/java-7-oracle/jre/lib/jce.jar:/usr/lib/jvm/java-7-oracle/jre/lib/charsets.jar:/usr/lib/jvm/java-7-oracle/jre/lib/jfr.jar:/usr/lib/jvm/java-7-oracle/jre/classes"/>
+    <property name="java.vendor" value="Oracle Corporation"/>
+    <property name="maven.home" value="/usr/share/maven"/>
+    <property name="file.separator" value="/"/>
+    <property name="java.vendor.url.bug" value="http://bugreport.sun.com/bugreport/"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="sun.desktop" value="gnome"/>
+    <property name="sun.cpu.isalist" value=""/>
+  </properties>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnConcatNoVarArg"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnConcatOneVarArg"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnConcatTwoVarArgs"/>
+  <testcase time="0.277" classname="org.brackit.xquery.function.fn.FnTest" name="fnAvg"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAvgEmptySequence"/>
+  <testcase time="0.764" classname="org.brackit.xquery.function.fn.FnTest" name="fnAvgLargeSequence"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnDoc"/>
+  <testcase time="0.003" classname="org.brackit.xquery.function.fn.FnTest" name="fnDocDefaultDocument"/>
+  <testcase time="0" classname="org.brackit.xquery.function.fn.FnTest" name="fnTrue"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnFalse"/>
+  <testcase time="0" classname="org.brackit.xquery.function.fn.FnTest" name="fnRootDefaultContextItem"/>
+  <testcase time="0" classname="org.brackit.xquery.function.fn.FnTest" name="fnRootDefaultContextItemExplicit"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnRootInPathExpr"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringValueString"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringValueNode"/>
+  <testcase time="0.004" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringValueEmptySeq"/>
+  <testcase time="0" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringValueNoArg"/>
+  <testcase time="0" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringValueNoArgCtxItemNotSet"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringLength"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringLengthAccessContextItem"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringLengthEmptySeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringLengthNoArg"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringLengthNoArgCtxItemNotSet"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnUpperCase"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnUpperCaseEmptySeq"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnLowerCase"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnLowerCaseEmptySeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringNormalize"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringNormalizeEmptySeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringNormalizeNoArg"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringNormalizeNoArgCtxItemNotSet"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringTranslate"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringTranslateEmptySeq"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubsequence2ArgFromStart"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubsequence2ArgFromMiddle"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubsequence2ArgFromEnd"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubsequence2ArgFromBeforeStart"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubsequence2ArgFromAfterEnd"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubsequence3ArgFromStart"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubsequence3ArgFromMiddle"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubsequence3ArgFromMiddleToAfterEnd"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubsequenceEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnReverse"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnReverseEmpSeq"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnRemoveStart"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnRemoveMiddle"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnRemoveEnd"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnRemoveIllegalIndex"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnRemoveEmpSeq"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnInsertBeforeStart"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnInsertBeforeMiddle"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnInsertBeforeEnd"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnInsertBeforeEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnInsertBeforeEmpIns"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnInsertBeforeEmpBoth"/>
+  <testcase time="0.003" classname="org.brackit.xquery.function.fn.FnTest" name="fnIndexOfExistant"/>
+  <testcase time="0" classname="org.brackit.xquery.function.fn.FnTest" name="fnIndexOfUnExistant"/>
+  <testcase time="0.003" classname="org.brackit.xquery.function.fn.FnTest" name="fnIndexOfEmpSeq"/>
+  <testcase time="0" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringToCodepoints"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringToCodepointsEmpStr"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnStringToCodepointsEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnCodepointsToString"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnCodepointsToStringEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnCodepointsToStrIllegalCodepoint"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubstringBefore"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubstringBeforeEmpPattern"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubstringBeforeEmpTarget"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubstringBeforeNotContained"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubstringAfter"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubstringAfterEmpPattern"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubstringAfterEmpTarget"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSubstringAfterNotContained"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnEncodeForUri"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnEncodeForUriIllegalUri"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnEncodeForUriIllegalUriIsIri"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnEncodeForUriIllegalUriIllegalASCII"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnEncodeForUriIllegalUriEndsOnSurrogatePair"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnIriToUri"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnIriToUriIllegalIri"/>
+  <testcase time="0.003" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesSimple1"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesSimple2"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesSimple3"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesSimple4"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesSimpleEmptySeqInput"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesSimpleEmptyInput"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesEmptyFlags"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesIrrelaventFlags"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesNoMatchSingleLine"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesMatchLineSpanning"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesNoMatchWholeInput"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesMatchWholeLine"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesIgnoreCase"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesIgnoreWhitespace"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesKeepWhitespaceInCharClass"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesIllegalFlag"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesPureGroup"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesTooManyOpenBrackets"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesTooManyCloseBrackets"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesTooManyOpenParens"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesTooManyCloseParens"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesLegalBackRef"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesIllegalBackRef"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesTrailingBackslash"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesBackRefToGroup0"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMatchesIllegalBackRefInCharClass"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnReplaceSimple1"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnReplaceSimple2"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnReplaceSimple3"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnReplaceSimple4"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnReplaceSimple5"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnReplaceEmptySeqInput"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnReplaceEmptyPattern"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnReplaceSingleBackslash"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnReplaceSingleDollarSign"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnReplaceIllegallyUsedBackslash"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnReplaceIllegallyUsedDollarSign"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnReplaceEscapedDollarSign"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnReplaceEscapedBackSlash"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnReplaceAlternative"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnTokenizeSimple1"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnTokenizeSimple2"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnTokenizeEmptySeqInput"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnTokenizeEmptyInput"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnTokenizeEmptyPattern"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnYearsFromDuration"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnYearsFromDurationNegative"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnYearsFromDurationEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnYearsFromDurationOtherDur"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMonthsFromDuration"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnMinDouble"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMonthsFromDurationNegative"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMonthsFromDurationEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMonthsFromDurationOtherDur"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnDaysFromDuration"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnDaysFromDurationNegative"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnDaysFromDurationEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnDaysFromDurationOtherDur"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnHoursFromDuration"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnHoursFromDurationNegative"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnHoursFromDurationEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnHoursFromDurationOtherDur"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMinutesFromDuration"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMinutesFromDurationNegative"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMinutesFromDurationEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMinutesFromDurationOtherDur"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSecondsFromDuration"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSecondsFromDurationNegative"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSecondsFromDurationEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSecondsFromDurationOtherDur"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnYearFromDateTime"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnYearFromDateTimeEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMonthFromDateTime"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMonthFromDateTimeEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnDayFromDateTime"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnDayFromDateTimeEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnHoursFromDateTime"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnHoursFromDateTimeEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMinutesFromDateTime"/>
+  <testcase time="0.004" classname="org.brackit.xquery.function.fn.FnTest" name="fnMinutesFromDateTimeEmpSeq"/>
+  <testcase time="0" classname="org.brackit.xquery.function.fn.FnTest" name="fnSecondsFromDateTime"/>
+  <testcase time="0" classname="org.brackit.xquery.function.fn.FnTest" name="fnSecondsFromDateTimeEmpSeq"/>
+  <testcase time="0" classname="org.brackit.xquery.function.fn.FnTest" name="fnTimezoneFromDateTime"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnTimezoneFromDateTimeWithoutTimezone"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnTimezoneFromDateTimeEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnYearFromDate"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnYearFromDateEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMonthFromDate"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMonthFromDateEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnDayFromDate"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnDayFromDateEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnTimezoneFromDate"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnTimezoneFromDateWithoutTimezone"/>
+  <testcase time="0" classname="org.brackit.xquery.function.fn.FnTest" name="fnTimezoneFromDateEmpSeq"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnHoursFromTime"/>
+  <testcase time="0" classname="org.brackit.xquery.function.fn.FnTest" name="fnHoursFromTimeEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMinutesFromTime"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMinutesFromTimeEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSecondsFromTime"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnSecondsFromTimeEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnTimezoneFromTime"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnTimezoneFromTimeWithoutTimezone"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnTimezoneFromTimeEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustDateTimeToTimezoneEmptyTimezone"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustDateTimeToTimezone"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustDateTimeToTimezoneWithoutTimezone"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustDateTimeToTimezoneImplicitTimezone"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustDateTimeToTimezoneEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustDateTimeToTimezoneIllegalTimezone"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustDateToTimezoneEmptyTimezone"/>
+  <testcase time="0.002" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustDateToTimezone"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustDateToTimezoneWithoutTimezone"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustDateToTimezoneImplicitTimezone"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustDateToTimezoneEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustDateToTimezoneIllegalTimezone"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustTimeToTimezoneEmptyTimezone"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustTimeToTimezone"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustTimeToTimezoneWithoutTimezone"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustTimeToTimezoneImplicitTimezone"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustTimeToTimezoneEmpSeq"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnAdjustTimeToTimezoneIllegalTimezone"/>
+  <testcase time="0.001" classname="org.brackit.xquery.function.fn.FnTest" name="fnMaxDouble"/>
+</testsuite>
