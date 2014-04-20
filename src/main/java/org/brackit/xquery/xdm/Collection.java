@@ -48,9 +48,13 @@ public interface Collection<E extends Node<E>> extends Sequence {
 			DocumentException;
 
 	public E getDocument() throws DocumentException;
+	
+	public E getDocument(boolean updatabale) throws DocumentException;
 
 	public Stream<? extends E> getDocuments() throws DocumentException;
 
+	public Stream<? extends E> getDocuments(boolean updatable) throws DocumentException;
+	
 	public E add(SubtreeParser parser) throws OperationNotSupportedException,
 			DocumentException;
 

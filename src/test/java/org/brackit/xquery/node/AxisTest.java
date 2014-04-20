@@ -64,7 +64,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 			// System.out.println(o1 + " cmp " + o2 + ": " + o1.cmp(o2));
 			return o1.cmp(o2);
 		}
-	};;
+	};
 
 	private Collection<?> collection;
 

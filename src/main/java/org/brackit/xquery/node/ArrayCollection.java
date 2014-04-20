@@ -95,4 +95,15 @@ public class ArrayCollection<E extends Node<E>> extends AbstractCollection<E> {
 	public long getDocumentCount() {
 		return docs.length;
 	}
+
+	@Override
+	public E getDocument(boolean updatabale) throws DocumentException {
+		return getDocument();
+	}
+
+	@Override
+	public Stream<? extends E> getDocuments(boolean updatable)
+			throws DocumentException {
+		return getDocuments();
+	}
 }
