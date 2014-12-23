@@ -100,7 +100,7 @@ public class Ls extends AbstractFunction {
 		File[] files = dir.listFiles(filter);
 		Str[] res = new Str[files.length];
 		for (int i = 0; i < files.length; i++) {
-			res[i] = new Str(files[i].getAbsolutePath());
+			res[i] = new Str(files[i].toURI().toString());
 		}
 		return new ItemSequence(res);
 	}
