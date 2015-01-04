@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -37,12 +37,12 @@ import org.brackit.xquery.atomic.QNm;
 
 /**
  * General purpose representation of a path or a path expression.
- * 
+ *
  * A typical use of the generic type is either {@see java.lang.Integer}
  * representing vocIDs or {@see java.lang.String}.
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  */
 public class Path<E> {
 	public enum Axis {
@@ -82,7 +82,7 @@ public class Path<E> {
 			return value;
 		}
 
-		@SuppressWarnings("unchecked")
+		@Override
 		public boolean equals(Object obj) {
 			if (!(obj instanceof Step)) {
 				return false;
@@ -100,6 +100,7 @@ public class Path<E> {
 					.hashCode();
 		}
 
+		@Override
 		public String toString() {
 			String axisString = (axis != null) ? axis.getText() : "";
 			String valueString = ((value != null) ? value.toString()
@@ -175,20 +176,25 @@ public class Path<E> {
 
 	/**
 	 * The semantics of this method are twofold, as one has to distinguish
-	 * abstract <i>path patterns</i> from absolute <i>path instances</i>: It 
-	 * returns true if 
-	 * <ol><li>a path instance matches a path pattern, i.e.
-	 * path pattern X matches Y if Y is absolute and X matches Y</li>
+	 * abstract <i>path patterns</i> from absolute <i>path instances</i>: It
+	 * returns true if
+	 * <ol>
+	 * <li>a path instance matches a path pattern, i.e. path pattern X matches Y
+	 * if Y is absolute and X matches Y</li>
 	 * <li>a path pattern is subsumed by another pattern, i.e. X and Y are path
-	 * patterns and every absolute path matching Y also matches X.</li></ol><br/>
+	 * patterns and every absolute path matching Y also matches X.</li>
+	 * </ol>
+	 * <br/>
 	 * Examples:
-	 * <ol><li>/a/b//c matches /a/b/c<br/>
+	 * <ol>
+	 * <li>/a/b//c matches /a/b/c<br/>
 	 * /a/b//d matches /a/b/c/d<br/>
 	 * /a/b/d does not match /a/b/c/d</li>
 	 * <li>/a/b/c matches /a/b//c<br/>
 	 * /a/b//c matches /a/b//c<br/>
 	 * /a//b/c matches a/b//b/c<br/>
-	 * /a//b/c does not match /a/b//c (cf. /a/b/d/c)</li></ol>
+	 * /a//b/c does not match /a/b//c (cf. /a/b/d/c)</li>
+	 * </ol>
 	 */
 	@SuppressWarnings("unchecked")
 	public boolean matches(Path<E> other) throws PathException {
@@ -200,10 +206,10 @@ public class Path<E> {
 			throw new PathException("Illegal path: %s", path);
 		}
 
-		final Step<E>[] o = other.path.toArray((Step<E>[]) Array.newInstance(
-				path.get(0).getClass(), other.path.size()));
-		final Step<E>[] p = path.toArray((Step<E>[]) Array.newInstance(path
-				.get(0).getClass(), path.size()));
+		final Step<E>[] o = other.path.toArray((Step<E>[]) Array.newInstance(path
+				.get(0).getClass(), other.path.size()));
+		final Step<E>[] p = path.toArray((Step<E>[]) Array.newInstance(path.get(0)
+				.getClass(), path.size()));
 		int oLen = o.length;
 		int pLen = p.length;
 		int[] matchTable = new int[pLen];
@@ -222,7 +228,8 @@ public class Path<E> {
 			boolean pIsNodeStep = (pAxis == Axis.CHILD) || (pAxis == Axis.DESC);
 
 			Axis oAxis = o[oPos].axis;
-			boolean oIsAttributeStep = (oAxis == Axis.CHILD_ATTRIBUTE) || (oAxis == Axis.DESC_ATTRIBUTE);
+			boolean oIsAttributeStep = (oAxis == Axis.CHILD_ATTRIBUTE)
+					|| (oAxis == Axis.DESC_ATTRIBUTE);
 			boolean oIsNodeStep = (oAxis == Axis.CHILD) || (oAxis == Axis.DESC);
 
 			if (!pIsNodeStep && !pIsAttributeStep) {
@@ -236,11 +243,9 @@ public class Path<E> {
 			// System.out.print(String.format("p: %3s  o: %3s  oPos: %3s  pPos: %3s  ",
 			// p[pPos], o[oPos], oPos, pPos));
 
-			if (((p[pPos].value == null) || o[oPos].value
-					.equals((p[pPos].value)))
+			if (((p[pPos].value == null) || o[oPos].value.equals((p[pPos].value)))
 					&& ((pAxis == oAxis)
-							|| ((pAxis == Axis.DESC) && (oAxis == Axis.CHILD)) 
-							|| ((pAxis == Axis.DESC_ATTRIBUTE) && (oAxis == Axis.CHILD_ATTRIBUTE)))) {
+							|| ((pAxis == Axis.DESC) && (oAxis == Axis.CHILD)) || ((pAxis == Axis.DESC_ATTRIBUTE) && (oAxis == Axis.CHILD_ATTRIBUTE)))) {
 				// System.out.println("match " + p[pPos]);
 				matchTable[pPos] = oPos;
 				oPos--;
@@ -296,8 +301,8 @@ public class Path<E> {
 		if (path.size() == 0) {
 			return new Path<E>();
 		} else {
-			return new Path<E>(new ArrayList<Step<E>>(path.subList(0,
-					path.size() - 1)));
+			return new Path<E>(new ArrayList<Step<E>>(
+					path.subList(0, path.size() - 1)));
 		}
 	}
 
@@ -311,9 +316,8 @@ public class Path<E> {
 		return Collections.unmodifiableList(path);
 	}
 
-	@SuppressWarnings("unchecked")
-	public List<Path<E>> explode() {
-		Path<E>[] list = new Path[path.size()];
+	public List<Path<?>> explode() {
+		final Path<?>[] list = new Path[path.size()];
 
 		Path<E> current = this;
 
@@ -330,7 +334,7 @@ public class Path<E> {
 	}
 
 	public boolean isAbsolute() {
-		for (Step<E> section : path) {
+		for (final Step<E> section : path) {
 			if ((section.axis != Axis.CHILD) || (section.value == null)) {
 				return false;
 			}
@@ -360,12 +364,11 @@ public class Path<E> {
 			return true;
 		}
 
-		for (Step<E> step : path) {
+		for (final Step<E> step : path) {
 			Axis a = step.axis;
 
 			if (((a != Axis.CHILD) && (a != Axis.CHILD_ATTRIBUTE))
-					&& (a != Axis.SELF) && (a != Axis.DESC)
-					&& (a != Axis.DESC_ATTRIBUTE)) {
+					&& (a != Axis.SELF) && (a != Axis.DESC) && (a != Axis.DESC_ATTRIBUTE)) {
 				return false;
 			}
 		}
@@ -434,8 +437,7 @@ public class Path<E> {
 		final StringBuilder builder = new StringBuilder();
 		Step<E> previous = null;
 
-		for (Step<E> section : path) {
-
+		for (final Step<E> section : path) {
 			if (((section.axis == Axis.SELF) || (section.axis == Axis.PARENT))
 					&& (previous != null)
 					&& ((previous.axis == Axis.SELF) || (previous.axis == Axis.PARENT))) {
@@ -459,7 +461,7 @@ public class Path<E> {
 
 	public static void main(String[] args) {
 		Path<String> path = new Path<String>();
-		Path<String> pattern = new Path<String>();
+		new Path<String>();
 
 		path.child("bib").descendant().descendant("book").child("title");
 		System.out.println("Tail " + path.tail());
