@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -38,10 +38,10 @@ import java.net.URISyntaxException;
 import java.net.URL;
 
 /**
- * 
+ *
  * @author Caetano Sauer
  * @author Sebastian Baechle
- * 
+ *
  */
 public class URIHandler {
 
@@ -63,16 +63,14 @@ public class URIHandler {
 			// handle files locally
 			String fullPath = uri.getSchemeSpecificPart();
 			if (fullPath == null) {
-				throw new IOException(String.format("Illegal file name: %s",
-						uri));
+				throw new IOException(String.format("Illegal file name: %s", uri));
 			}
 			if (fullPath.startsWith("//")) {
 				fullPath = fullPath.substring(1);
 			}
 			File f = new File(fullPath);
 			if (f.exists() && !f.isFile()) {
-				throw new IOException(String.format(
-						"Location is not a file: %s", uri));
+				throw new IOException(String.format("Location is not a file: %s", uri));
 			}
 			if (overwrite) {
 				if (f.exists())
@@ -85,8 +83,7 @@ public class URIHandler {
 			URL url = uri.toURL();
 			return new URLOutputStream(url, TIMEOUT);
 		} else {
-			throw new IOException(String.format("Unsupported protocol: %s",
-					scheme));
+			throw new IOException(String.format("Unsupported protocol: %s", scheme));
 		}
 	}
 
@@ -104,8 +101,7 @@ public class URIHandler {
 			// handle files locally
 			String fullPath = uri.getSchemeSpecificPart();
 			if (fullPath == null) {
-				throw new IOException(String.format("Illegal file name: %s",
-						uri));
+				throw new IOException(String.format("Illegal file name: %s", uri));
 			}
 			if (fullPath.startsWith("//")) {
 				fullPath = fullPath.substring(1);
@@ -115,8 +111,7 @@ public class URIHandler {
 				|| scheme.equals("ftp") || scheme.equals("jar")) {
 			return new URLInputStream(uri.toURL(), TIMEOUT);
 		} else {
-			throw new IOException(String.format("Unsupported protocol: %s",
-					scheme));
+			throw new IOException(String.format("Unsupported protocol: %s", scheme));
 		}
 	}
 
