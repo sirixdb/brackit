@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -29,14 +29,13 @@ package org.brackit.xquery.atomic;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Type;
 
 /**
  * An {@link Atomic} defines the common interface of an atomic value in the
  * system.
- * 
+ *
  * <p>
  * The API is designed to follow the general rules of the <b>XQuery and XPath
  * Data Model 3.0</b> and <b>XQuery 3.0</b>.
@@ -47,18 +46,18 @@ import org.brackit.xquery.xdm.Type;
  * {@link Object#equals(Object)} and {@link Comparable#compareTo(Object)} have
  * to be consistent with {@link Atomic#atomicCmp(Atomic)}.
  * </p>
- * 
+ *
  * @see http://www.w3.org/TR/xpath-datamodel-30/
  * @see http://www.w3.org/TR/xquery-30/
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  */
 public interface Atomic extends Item, Comparable<Atomic> {
 
 	/**
 	 * Returns the {@link Type} of this value.
-	 * 
+	 *
 	 * @return the {@link Type} of this value
 	 */
 	public Type type();
@@ -67,12 +66,12 @@ public interface Atomic extends Item, Comparable<Atomic> {
 	 * Compares this atomic with the given one. Numeric types are expected to
 	 * perform numeric type promotion as xs:anyURI is expected to be promoted to
 	 * xs:string.
-	 * 
+	 *
 	 * This method backs up the operations lt, le, eq, ge, gt on atomic types as
 	 * defined in XQuery 3.0: B.2 Operator Mapping.
-	 * 
+	 *
 	 * The result is defined as in {@link Comparable#compareTo(Object)}.
-	 * 
+	 *
 	 * If two Atomics are of a different, incomparable type, an exception with
 	 * error code {@link ErrorCode#ERR_TYPE_INAPPROPRIATE_TYPE} must be thrown.
 	 */
@@ -82,35 +81,35 @@ public interface Atomic extends Item, Comparable<Atomic> {
 	 * Compares this atomic with the given one. Numeric types are expected to
 	 * perform numeric type promotion as xs:anyURI is expected to be promoted to
 	 * xs:string.
-	 * 
+	 *
 	 * This method backs up only the operation eq on atomic types as defined in
 	 * XQuery 3.0: B.2 Operator Mapping.
-	 * 
+	 *
 	 * The result is defined as in {@link Comparable#compareTo(Object)}.
-	 * 
+	 *
 	 * If two Atomics are of a different, incomparable type, an exception with
 	 * error code {@link ErrorCode#ERR_TYPE_INAPPROPRIATE_TYPE} must be thrown.
 	 */
 	public boolean eq(Atomic atomic) throws QueryException;
 
 	/**
-	 * Compares this atomic with the given one. This order is defined to be
-	 * global and total for all atomic types.
-	 * 
+	 * Compares this atomic with the given one. This order is defined to be global
+	 * and total for all atomic types.
+	 *
 	 * CAVEAT: The total order is implementation defined and does not strictly
 	 * obey the definitions of the <code>eq</code> definition. In general, the
 	 * order relation as defined by <code>eq</code> is used. Type promotion is
 	 * performed as usual for numeric types and URI types. To enforce a total
-	 * ordering, a stable total order is guaranteed by the implementation also
-	 * if <code>eq</code> is not defined (e.g. xs:duration) or if
-	 * <code>eq</code> only defines partial (e.g. xs:dateTime) ordering.
-	 * 
+	 * ordering, a stable total order is guaranteed by the implementation also if
+	 * <code>eq</code> is not defined (e.g. xs:duration) or if <code>eq</code>
+	 * only defines partial (e.g. xs:dateTime) ordering.
+	 *
 	 * This method backs up the functions fn:distinct and fn:index-of, which
 	 * require tests for identity and duplicate elimination. According to their
 	 * definition, types that cannot be compared, i.e., the <code>eq</code>
 	 * operator is not defined for their types, are considered to be distinct.
 	 * Also, values of type xs:untypedAtomic are compared as xs:string
-	 * 
+	 *
 	 * The result is defined as in {@link Comparable#compareTo(Object)}.
 	 */
 	public int atomicCmp(Atomic atomic);
@@ -123,21 +122,21 @@ public interface Atomic extends Item, Comparable<Atomic> {
 
 	/**
 	 * Returns the string value of this item.
-	 * 
+	 *
 	 * @see http://www.w3.org/TR/xquery-operators/#func-string
 	 */
 	public String stringValue();
 
 	/**
 	 * Returns the string value of this item.
-	 * 
+	 *
 	 * @see http://www.w3.org/TR/xquery-operators/#func-string
 	 */
 	public Str asStr();
 
 	/**
 	 * Returns the string value of this item as untyped atomic.
-	 * 
+	 *
 	 * @see http://www.w3.org/TR/xquery-operators/#func-string
 	 */
 	public Una asUna();
