@@ -87,7 +87,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements
 			int end = pos;
 			int v = (end - start == 2) ? Integer.parseInt(str.substring(start,
 					end)) : -1;
-			if ((v < 0) || (v > 14)) {
+			if ((v < 0) || (v > 24)) {
 				throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
 						"Cannot cast '%s' to xs:dateTime: illegal hour", str);
 			}
