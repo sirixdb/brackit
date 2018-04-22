@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -29,7 +29,6 @@ package org.brackit.xquery.node;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -52,9 +51,9 @@ import org.brackit.xquery.xdm.Stream;
 import org.junit.Test;
 
 /**
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  */
 public abstract class AxisTest extends XQueryBaseTest {
 
@@ -77,6 +76,7 @@ public abstract class AxisTest extends XQueryBaseTest {
 			this.axis = axis;
 		}
 
+		@Override
 		public boolean filter(Node<?> element) throws DocumentException {
 			try {
 				boolean check = !axis.check(element, node);
@@ -92,19 +92,22 @@ public abstract class AxisTest extends XQueryBaseTest {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void testCmp() throws Exception {
-		Stream<?> subtree = collection.getDocument().getSubtree();
-		List<? extends Node<?>> nodes = new ArrayList(StreamUtil.asList(subtree));
+		final Stream<? extends Node<?>> subtree = collection.getDocument()
+				.getSubtree();
+		final List<? extends Node<?>> nodes = StreamUtil.asList(subtree);
 		for (int i = 0; i < nodes.size(); i++) {
-			Node<?> a = nodes.get(i);
+			final Node<?> a = nodes.get(i);
 			for (int j = 0; j < nodes.size(); j++) {
-				Node<?> b = nodes.get(j);
+				final Node<?> b = nodes.get(j);
 				try {
-					if (i < j) Assert.assertTrue("a < b", a.cmp(b) < 0);
-					else if (i == j) Assert.assertTrue("a == b", a.cmp(b) == 0);
-					else Assert.assertTrue("a > b", a.cmp(b) > 0);
+					if (i < j)
+						Assert.assertTrue("a < b", a.cmp(b) < 0);
+					else if (i == j)
+						Assert.assertTrue("a == b", a.cmp(b) == 0);
+					else
+						Assert.assertTrue("a > b", a.cmp(b) > 0);
 				} catch (AssertionError e) {
 					// SubtreePrinter.print(collection.getDocument(), System.out);
 					// System.err.println(nodes);

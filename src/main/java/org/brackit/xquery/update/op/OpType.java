@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,40 +28,40 @@
 package org.brackit.xquery.update.op;
 
 /**
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  */
 public enum OpType {
-	INSERT_INTO(0),
+  REPLACE_NODE(-1),
 
-	INSERT_ATTRIBUTES(1),
+  INSERT_INTO(0),
 
-	REPLACE_VALUE(2),
+  INSERT_ATTRIBUTES(1),
 
-	RENAME(3),
+  REPLACE_VALUE(2),
 
-	INSERT_BEFORE(4),
+  RENAME(3),
 
-	INSERT_AFTER(5),
+  INSERT_BEFORE(4),
 
-	INSERT_INTO_AS_FIRST(6),
+  INSERT_AFTER(5),
 
-	INSERT_INTO_AS_LAST(7),
+  INSERT_INTO_AS_FIRST(6),
 
-	REPLACE_NODE(8),
+  INSERT_INTO_AS_LAST(7),
 
-	REPLACE_ELEMENT_CONTENT(9),
+  REPLACE_ELEMENT_CONTENT(9),
 
-	DELETE(10);
+  DELETE(10);
 
-	private final int priority;
+  private final int priority;
 
-	private OpType(int priority) {
-		this.priority = priority;
-	}
+  private OpType(int priority) {
+    this.priority = priority;
+  }
 
-	public final int getPriority() {
-		return priority;
-	}
+  public final int getPriority() {
+    return priority;
+  }
 }
