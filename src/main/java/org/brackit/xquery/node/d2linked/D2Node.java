@@ -82,10 +82,6 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 	protected int localFragmentID = -1;
 
 	protected D2Node(ParentD2Node parent, int[] division) {
-		if ((this.parent != null) && (this.parent != parent)) {
-			throw new RuntimeException(String.format(
-					"Node is already connected to parent node %s.", parent));
-		}
 		this.parent = parent;
 		this.division = division;
 		this.localFragmentID = (parent == null) ? localFragmentID()

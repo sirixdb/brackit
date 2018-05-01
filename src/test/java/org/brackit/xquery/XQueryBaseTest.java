@@ -38,6 +38,7 @@ import java.io.PrintStream;
 import java.net.URL;
 import java.util.Random;
 
+import org.brackit.xquery.atomic.DTD;
 import org.brackit.xquery.node.SimpleStore;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
@@ -166,7 +167,12 @@ public class XQueryBaseTest {
 	}
 
 	protected QueryContext createContext() throws Exception {
-		return new QueryContext(store);
+		return new QueryContext(store) {
+			@Override
+			public DTD getImplicitTimezone() {
+				return new DTD(false, (short) 0, (byte) 2, (byte) 0, 0);
+			}
+		};
 	}
 
 	@Before

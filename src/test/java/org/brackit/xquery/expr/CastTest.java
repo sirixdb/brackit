@@ -257,22 +257,20 @@ public class CastTest extends XQueryBaseTest {
 	}
 
 
-	@Ignore
 	@Test
 	public void subtractDateTimes() throws QueryException {
 		Sequence res = new XQuery(
 				"xs:dateTime(\"2000-10-30T06:12:00\") -  xs:dateTime(\"1999-11-28T09:00:00\")")
 				.execute(ctx);
-		ResultChecker.dCheck(Bool.FALSE, res);
+		ResultChecker.dCheck(new DTD(false, (short) 336, (byte) 21, (byte) 12, 0), res);
 	}
 
-	@Ignore
 	@Test
 	public void subtractDateTimes2() throws QueryException {
 		Sequence res = new XQuery(
 				"xs:dateTime(\"2000-10-30T06:12:00\") -  xs:dateTime(\"1999-11-28T09:00:00Z\")")
 				.execute(ctx);
-		ResultChecker.dCheck(Bool.FALSE, res);
+		ResultChecker.dCheck(new DTD(false, (short) 336, (byte) 21, (byte) 12, 0), res);
 	}
 
 	@Test

@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.atomic;
 
+import java.math.BigDecimal;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
@@ -262,7 +264,7 @@ public class YMD extends AbstractDuration {
 		return new YMD(newNegative, (short) newYears, (byte) newMonths);
 	}
 
-	public Dbl divide(YMD dur) throws QueryException {
+	public Numeric divide(YMD dur) throws QueryException {
 		int a = getYears() * 12 + getMonths();
 		int b = dur.getYears() * 12 + dur.getMonths();
 
@@ -270,7 +272,7 @@ public class YMD extends AbstractDuration {
 			throw new QueryException(ErrorCode.ERR_DIVISION_BY_ZERO);
 		}
 
-		return new Dbl(a / b);
+		return new Dec(new BigDecimal(a)).div(new Dec(new BigDecimal(b)));
 	}
 
 	private YMD addInternal(boolean n2, short y2, byte m2)

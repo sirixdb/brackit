@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.atomic;
 
+import java.math.BigDecimal;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
@@ -407,17 +409,17 @@ public class DTD extends AbstractDuration {
 				(byte) newMinutes, (int) newMicros);
 	}
 
-	public Dbl divide(DTD dur) throws QueryException {
-		long a = ((((((getDays() * 24l) + getHours()) * 59l) + getMinutes()) * 59l) * 1000000)
+	public Numeric divide(DTD dur) throws QueryException {
+		long a = ((((((getDays() * 24l) + getHours()) * 60l) + getMinutes()) * 60l) * 1000000)
 				+ getMicros();
-		long b = ((((((dur.getDays() * 24l) + dur.getHours()) * 59l) + dur
-				.getMinutes()) * 59l) * 1000000) + dur.getMicros();
+		long b = ((((((dur.getDays() * 24l) + dur.getHours()) * 60l) + dur
+				.getMinutes()) * 60l) * 1000000) + dur.getMicros();
 
 		if (b == 0) {
 			throw new QueryException(ErrorCode.ERR_DIVISION_BY_ZERO);
 		}
 
-		return new Dbl(a / b);
+		return new Dec(new BigDecimal(a)).div(new Dec(new BigDecimal(b)));
 	}
 
 	private DTD addInternal(boolean n2, short d2, byte h2, byte m2, int mic2)
