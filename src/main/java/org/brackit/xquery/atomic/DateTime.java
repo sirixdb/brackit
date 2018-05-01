@@ -28,6 +28,7 @@
 package org.brackit.xquery.atomic;
 
 import java.util.Calendar;
+import java.util.TimeZone;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
@@ -271,7 +272,9 @@ public class DateTime extends AbstractTimeInstant {
 	}
 
 	public DateTime(DTD timezone) {
-		Calendar cal = Calendar.getInstance();
+		int utcDiff = timezone.getHours() * 60 + (timezone.isNegative() ? -1 : 1) * timezone.getMinutes();
+		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+		cal.add(Calendar.MINUTE, utcDiff);
 		this.year = (short) cal.get(Calendar.YEAR);
 		this.month = (byte) (cal.get(Calendar.MONTH) + 1);
 		this.day = (byte) (cal.get(Calendar.DAY_OF_MONTH));

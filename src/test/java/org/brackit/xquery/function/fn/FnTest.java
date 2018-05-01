@@ -1519,7 +1519,7 @@ public class FnTest extends XQueryBaseTest {
 		Sequence result = new XQuery(
 				"fn:adjust-date-to-timezone(xs:date('2002-03-07-05:00'))")
 				.execute(ctx);
-		ResultChecker.dCheck(new Date("2002-03-07+01:00"), result);
+		ResultChecker.dCheck(new Date("2002-03-07+02:00"), result);
 	}
 
 	@Test

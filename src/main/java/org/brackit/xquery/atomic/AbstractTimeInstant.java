@@ -27,7 +27,7 @@
  */
 package org.brackit.xquery.atomic;
 
-import java.util.Calendar;
+import java.util.TimeZone;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
@@ -52,7 +52,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements
 	public static DTD LOCAL_TIMEZONE;
 
 	static {
-		int offset = Calendar.getInstance().getTimeZone().getRawOffset();
+		int offset = TimeZone.getDefault().getOffset(System.currentTimeMillis());
 		int hours = fQuotient(offset, 3600000);
 		int remainder = modulo(offset, 3600000);
 		int minutes = fQuotient(remainder, 60000);
@@ -268,11 +268,11 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements
 		boolean negative = false;
 		AbstractTimeInstant a = this;
 		
-		if (a.getTimezone() == null) {
+		if (a.getTimezone() != null) {
 			a = a.canonicalize();
 		}
-		if (b.getTimezone() == null) {
-			b.canonicalize();
+		if (b.getTimezone() != null) {
+			b = b.canonicalize();
 		}
 		
 		if (a.cmp(b) <= 0) {
