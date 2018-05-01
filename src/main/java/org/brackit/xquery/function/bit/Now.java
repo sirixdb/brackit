@@ -27,15 +27,13 @@
  */
 package org.brackit.xquery.function.bit;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.util.Calendar;
+import java.util.TimeZone;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.AbstractTimeInstant;
-import org.brackit.xquery.atomic.DTD;
-import org.brackit.xquery.atomic.DateTime;
 import org.brackit.xquery.atomic.Int64;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
@@ -73,21 +71,18 @@ public class Now extends AbstractFunction {
 			Sequence[] args) throws QueryException {
 		try {
 			AbstractTimeInstant dateTime = ctx.getDateTime().canonicalize();
-			int nanos = (int) ((dateTime.getMicros() % 1000000) * 1000);
+			int millis = (int) ((dateTime.getMicros() % 1000000) / 1000);
 			int seconds = (int) (dateTime.getMicros() / 1000000);
 			
-			OffsetDateTime dt = OffsetDateTime.of(
-				dateTime.getYear(),
-				dateTime.getMonth(),
-				dateTime.getDay(),
-				dateTime.getHours(),
-				dateTime.getMinutes(),
-				seconds,
-				nanos,
-				ZoneOffset.UTC
-			);
+			Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+			cal.set(Calendar.YEAR, dateTime.getYear());
+			cal.set(Calendar.MONTH, dateTime.getMonth() - 1);
+			cal.set(Calendar.HOUR_OF_DAY, dateTime.getHours());
+			cal.set(Calendar.MINUTE, dateTime.getMinutes());
+			cal.set(Calendar.SECOND, seconds);
+			cal.set(Calendar.MILLISECOND, millis);
 
-			long currentMillis = dt.toInstant().toEpochMilli();
+			long currentMillis = cal.getTimeInMillis();
 			return new Int64(currentMillis);
 		} catch (Exception e) {
 			throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR);
