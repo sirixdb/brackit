@@ -2,6 +2,8 @@
 
 Brackit is a flexible XQuery-based query engine developed during my time as PhD student at the TU Kaiserslautern in the context of our research in the field of query processing for semi-structured data. The system features a fast runtime and a flexible compiler backend, which is , e.g., able to rewrite queries for optimized join processing and efficient aggregation operations.
 
+[![Build Status](https://travis-ci.org/sebbae/brackit.svg?branch=master)](https://travis-ci.org/sebbae/brackit)
+
 ## Features
 
 At the moment we support XQuery 1.0 including library module support, the XQuery Update Facility 1.0 and some features of XQuery 3.0 like the new FLWOR clauses group by and count.
