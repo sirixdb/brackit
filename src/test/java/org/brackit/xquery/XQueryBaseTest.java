@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -36,7 +36,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Random;
-
+import org.brackit.xquery.atomic.DTD;
 import org.brackit.xquery.node.SimpleStore;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
@@ -52,131 +52,137 @@ import org.junit.Before;
 import org.junit.Ignore;
 
 /**
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  */
 @Ignore
 public class XQueryBaseTest {
 
-	/** Path to resources folder. */
-	public static final String RESOURCES = new StringBuilder("src")
-			.append(File.separator).append("test").append(File.separator)
-			.append("resources").toString();
+  /** Path to resources folder. */
+  public static final String RESOURCES = new StringBuilder("src").append(File.separator)
+                                                                 .append("test")
+                                                                 .append(File.separator)
+                                                                 .append("resources")
+                                                                 .toString();
 
-	protected QueryContext ctx;
+  protected QueryContext ctx;
 
-	protected Random rand;
+  protected Random rand;
 
-	protected Store store;
+  protected Store store;
 
-	protected void print(Sequence s) throws QueryException {
-		if (s == null) {
-			return;
-		}
-		Iter it = s.iterate();
-		Item item;
-		try {
-			while ((item = it.next()) != null) {
-				System.out.print(item);
-				System.out.print(" ");
-				if ((item instanceof Node<?>)
-						&& (((Node<?>) item).getKind() != Kind.ATTRIBUTE)) {
-					new SubtreePrinter(System.out, false, false).print((Node<?>) item);
-				}
-			}
-		} finally {
-			it.close();
-		}
-		System.out.println();
-	}
+  protected void print(Sequence s) throws QueryException {
+    if (s == null) {
+      return;
+    }
+    Iter it = s.iterate();
+    Item item;
+    try {
+      while ((item = it.next()) != null) {
+        System.out.print(item);
+        System.out.print(" ");
+        if ((item instanceof Node<?>) && (((Node<?>) item).getKind() != Kind.ATTRIBUTE)) {
+          new SubtreePrinter(System.out, false, false).print((Node<?>) item);
+        }
+      }
+    } finally {
+      it.close();
+    }
+    System.out.println();
+  }
 
-	protected XQuery xquery(String query) throws QueryException {
-		return new XQuery(query);
-	}
+  protected XQuery xquery(String query) throws QueryException {
+    return new XQuery(query);
+  }
 
-	protected PrintStream createBuffer() {
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		return new PrintStream(out) {
-			final OutputStream baos = out;
+  protected PrintStream createBuffer() {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    return new PrintStream(out) {
+      final OutputStream baos = out;
 
-			public String toString() {
-				return baos.toString();
-			}
-		};
-	}
+      @Override
+      public String toString() {
+        return baos.toString();
+      }
+    };
+  }
 
-	protected String readQuery(String dirname, String filename)
-			throws IOException {
-		StringBuilder query = new StringBuilder();
-//		URL url = getClass().getResource(dirname + filename);
-//		if (url == null) {
-//			throw new RuntimeException("Resource not found: " + dirname + filename);
-//		}
-		BufferedReader file = new BufferedReader(new FileReader(new File(dirname + filename)));
-		boolean first = true;
+  protected String readQuery(String dirname, String filename) throws IOException {
+    StringBuilder query = new StringBuilder();
+    // URL url = getClass().getResource(dirname + filename);
+    // if (url == null) {
+    // throw new RuntimeException("Resource not found: " + dirname + filename);
+    // }
+    BufferedReader file = new BufferedReader(new FileReader(new File(dirname + filename)));
+    boolean first = true;
 
-		String line;
-		while ((line = file.readLine()) != null) {
-			if (!first) query.append(' ');
-			query.append(line);
-			first = false;
-		}
-		file.close();
-		return query.toString();
-	}
+    String line;
+    while ((line = file.readLine()) != null) {
+      if (!first)
+        query.append(' ');
+      query.append(line);
+      first = false;
+    }
+    file.close();
+    return query.toString();
+  }
 
-	protected String readFile(String dirname, String filename) throws IOException {
-		StringBuilder read = new StringBuilder();
-//		URL url = getClass().getResource(dirname + filename);
-		BufferedReader file = new BufferedReader(new FileReader(new File(dirname + filename)));
-		boolean first = true;
+  protected String readFile(String dirname, String filename) throws IOException {
+    StringBuilder read = new StringBuilder();
+    // URL url = getClass().getResource(dirname + filename);
+    BufferedReader file = new BufferedReader(new FileReader(new File(dirname + filename)));
+    boolean first = true;
 
-		String line;
-		while ((line = file.readLine()) != null) {
-			if (!first) read.append('\n');
-			read.append(line);
-			first = false;
-		}
-		file.close();
-		return read.toString();
-	}
+    String line;
+    while ((line = file.readLine()) != null) {
+      if (!first)
+        read.append('\n');
+      read.append(line);
+      first = false;
+    }
+    file.close();
+    return read.toString();
+  }
 
-	protected Collection<?> storeFile(String name, String document)
-			throws Exception, FileNotFoundException {
-		// URL url = getClass().getResource(document);
-		DocumentParser parser = new DocumentParser(new File(document));// new
-																																		// File(url.getFile()));
-		parser.setRetainWhitespace(true);
-		return storeDocument(name, parser);
-	}
+  protected Collection<?> storeFile(String name, String document)
+      throws Exception, FileNotFoundException {
+    // URL url = getClass().getResource(document);
+    DocumentParser parser = new DocumentParser(new File(document));// new
+                                                                   // File(url.getFile()));
+    parser.setRetainWhitespace(true);
+    return storeDocument(name, parser);
+  }
 
-	protected Collection<?> storeDocument(String name, String document)
-			throws Exception {
-		return storeDocument(name, new DocumentParser(document));
-	}
+  protected Collection<?> storeDocument(String name, String document) throws Exception {
+    return storeDocument(name, new DocumentParser(document));
+  }
 
-	protected Collection<?> storeDocument(String name, SubtreeParser parser)
-			throws Exception {
-		Collection<?> collection = store.create(name, parser);
-		return collection;
-	}
+  protected Collection<?> storeDocument(String name, SubtreeParser parser) throws Exception {
+    Collection<?> collection = store.create(name, parser);
+    return collection;
+  }
 
-	protected Store createStore() throws Exception {
-		return new SimpleStore();
-	}
+  protected Store createStore() throws Exception {
+    return new SimpleStore();
+  }
 
-	protected QueryContext createContext() throws Exception {
-		return new QueryContext(store);
-	}
+  protected QueryContext createContext() throws Exception {
+    return new QueryContext(store) {
+      @Override
+      public DTD getImplicitTimezone() {
+        return new DTD(false, (short) 0, (byte) 2, (byte) 0, 0);
+      }
+    };
+  }
 
-	@Before
-	public void setUp() throws Exception, FileNotFoundException {
-		store = createStore();
-		ctx = createContext();
+  @Before
+  public void setUp() throws Exception, FileNotFoundException {
+    store = createStore();
+    ctx = createContext();
 
-		// use same random source to get reproducible results in case of an
-		// error
-		rand = new Random(12345678);
-	}
+    // use same random source to get reproducible results in case of an
+    // error
+    rand = new Random(12345678);
+  }
 }

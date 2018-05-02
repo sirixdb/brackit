@@ -48,6 +48,7 @@ import org.brackit.xquery.function.bit.Fields;
 import org.brackit.xquery.function.bit.Len;
 import org.brackit.xquery.function.bit.Load;
 import org.brackit.xquery.function.bit.Mkdir;
+import org.brackit.xquery.function.bit.Now;
 import org.brackit.xquery.function.bit.Parse;
 import org.brackit.xquery.function.bit.Serialize;
 import org.brackit.xquery.function.bit.Silent;
@@ -83,6 +84,7 @@ public class CompileChain {
     Functions.predefine(BitFun.SOME_FUNC);
     Functions.predefine(BitFun.EVERY_FUNC);
     // Utility
+    Functions.predefine(new Now());
     Functions.predefine(new Silent());
     Functions.predefine(new Parse());
     Functions.predefine(new Eval());
