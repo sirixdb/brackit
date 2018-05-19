@@ -29,8 +29,10 @@ package org.brackit.xquery.update.op;
 
 import java.util.Arrays;
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.OperationNotSupportedException;
 
 /**
  * Base class for all insert operations.
@@ -69,17 +71,36 @@ public class ReplaceNodeOp implements UpdateOp {
         insertAfter = false;
         ancorNode = target.getParent();
       }
-      // for (int i = 0; i < size; i++) {
-      // target.insertBefore(content[i]);
-      // }
-      target.delete();
 
-      for (int i = 0; i < size; i++) {
-        if (insertAfter)
-          ancorNode.insertAfter(content[i]);
-        else
-          ancorNode.prepend(content[i]);
+      if (target.getKind() == Kind.TEXT) {
+        deleteAndThenInsert(ancorNode, insertAfter);
+      } else {
+        insertAndThenDelete(ancorNode, insertAfter);
       }
+    }
+  }
+
+  private void insertAndThenDelete(Node<?> ancorNode, boolean insertAfter)
+      throws OperationNotSupportedException, DocumentException {
+    insert(ancorNode, insertAfter);
+
+    target.delete();
+  }
+
+  private void deleteAndThenInsert(Node<?> ancorNode, boolean insertAfter)
+      throws DocumentException, OperationNotSupportedException {
+    target.delete();
+
+    insert(ancorNode, insertAfter);
+  }
+
+  private void insert(Node<?> ancorNode, boolean insertAfter)
+      throws OperationNotSupportedException, DocumentException {
+    for (int i = 0; i < size; i++) {
+      if (insertAfter)
+        ancorNode.insertAfter(content[i]);
+      else
+        ancorNode.prepend(content[i]);
     }
   }
 
