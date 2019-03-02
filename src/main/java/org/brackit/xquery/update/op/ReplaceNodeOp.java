@@ -72,7 +72,7 @@ public class ReplaceNodeOp implements UpdateOp {
         ancorNode = target.getParent();
       }
 
-      if (target.getKind() == Kind.TEXT) {
+      if (target.getKind() == Kind.TEXT || target.isRoot()) {
         deleteAndThenInsert(ancorNode, insertAfter);
       } else {
         insertAndThenDelete(ancorNode, insertAfter);
@@ -94,8 +94,7 @@ public class ReplaceNodeOp implements UpdateOp {
     insert(ancorNode, insertAfter);
   }
 
-  private void insert(Node<?> ancorNode, boolean insertAfter)
-      throws OperationNotSupportedException, DocumentException {
+  private void insert(Node<?> ancorNode, boolean insertAfter) throws OperationNotSupportedException, DocumentException {
     for (int i = 0; i < size; i++) {
       if (insertAfter)
         ancorNode.insertAfter(content[i]);
