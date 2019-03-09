@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -29,7 +29,6 @@ package org.brackit.xquery.expr;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.node.stream.ArrayStream;
 import org.brackit.xquery.node.stream.AtomStream;
@@ -45,14 +44,14 @@ import org.brackit.xquery.xdm.type.NodeType;
 
 /**
  * Standard accessors for all document axes as defined in XQuery 1.0: 3.2.1.1
- * 
+ *
  * <p>
  * Note that we sometimes have to check a node's kind because attributes are
  * often not in in the defined path axes.
  * </p>
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  */
 public abstract class Accessor {
 	public static final Accessor PARENT = new Accessor(Axis.PARENT) {
@@ -324,7 +323,7 @@ public abstract class Accessor {
 			};
 		}
 	};
-	
+
 	public static final Accessor NEXT = new Accessor(Axis.NEXT) {
 		@Override
 		public Stream<? extends Node<?>> performStep(Node<?> node)
@@ -455,7 +454,8 @@ public abstract class Accessor {
 		return axis;
 	}
 
-	public String toString() {
+	@Override
+  public String toString() {
 		return axis.toString();
 	}
 

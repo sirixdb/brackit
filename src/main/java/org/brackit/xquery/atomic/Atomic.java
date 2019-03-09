@@ -93,16 +93,16 @@ public interface Atomic extends Item, Comparable<Atomic> {
 	public boolean eq(Atomic atomic) throws QueryException;
 
 	/**
-	 * Compares this atomic with the given one. This order is defined to be global
-	 * and total for all atomic types.
+	 * Compares this atomic with the given one. This order is defined to be
+	 * global and total for all atomic types.
 	 *
 	 * CAVEAT: The total order is implementation defined and does not strictly
 	 * obey the definitions of the <code>eq</code> definition. In general, the
 	 * order relation as defined by <code>eq</code> is used. Type promotion is
 	 * performed as usual for numeric types and URI types. To enforce a total
-	 * ordering, a stable total order is guaranteed by the implementation also if
-	 * <code>eq</code> is not defined (e.g. xs:duration) or if <code>eq</code>
-	 * only defines partial (e.g. xs:dateTime) ordering.
+	 * ordering, a stable total order is guaranteed by the implementation also
+	 * if <code>eq</code> is not defined (e.g. xs:duration) or if
+	 * <code>eq</code> only defines partial (e.g. xs:dateTime) ordering.
 	 *
 	 * This method backs up the functions fn:distinct and fn:index-of, which
 	 * require tests for identity and duplicate elimination. According to their

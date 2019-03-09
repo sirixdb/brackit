@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -37,116 +37,117 @@ import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- * 
+ *
  * @author Sebastian Baechle
  *
  */
 public class SequenceExpr implements Expr {
 
-	public final class EvalSequence extends FlatteningSequence {
-		final Tuple tuple;
-		final QueryContext ctx;
-		final Sequence[] seqs;
-		int eval;
+    public final class EvalSequence extends FlatteningSequence {
+        final Tuple tuple;
+        final QueryContext ctx;
+        final Sequence[] seqs;
+        int eval;
 
-		private EvalSequence(Tuple tuple, QueryContext ctx) {
-			this.tuple = tuple;
-			this.ctx = ctx;
-			this.seqs = new Sequence[expr.length];
-		}
-		
-		@Override
-		protected Sequence sequence(int pos) throws QueryException {
-			if (pos >= expr.length) {
-				return null;
-			}
-			Sequence s = seqs[pos];
-			if (s != null) {
-				return s;
-			}
-			synchronized (seqs) {
-				while ((s == null) && (eval < expr.length)) {
-					s = seqs[pos] = expr[eval++].evaluate(ctx, tuple);	
-				}				
-			}
-			return s;
-		}
-	}
+        private EvalSequence(Tuple tuple, QueryContext ctx) {
+            this.tuple = tuple;
+            this.ctx = ctx;
+            this.seqs = new Sequence[expr.length];
+        }
 
-	final Expr[] expr;
+        @Override
+        protected Sequence sequence(int pos) throws QueryException {
+            if (pos >= expr.length) {
+                return null;
+            }
+            Sequence s = seqs[pos];
+            if (s != null) {
+                return s;
+            }
+            synchronized (seqs) {
+                while ((s == null) && (eval < expr.length)) {
+                    s = seqs[pos] = expr[eval++].evaluate(ctx, tuple);
+                }
+            }
+            return s;
+        }
+    }
 
-	public SequenceExpr(Expr... expr) {
-		this.expr = expr;
-	}
+    final Expr[] expr;
 
-	@Override
-	public Sequence evaluate(final QueryContext ctx, final Tuple tuple)
-			throws QueryException {
+    public SequenceExpr(Expr... expr) {
+        this.expr = expr;
+    }
 
-		return new EvalSequence(tuple, ctx);
-	}
+    @Override
+    public Sequence evaluate(final QueryContext ctx, final Tuple tuple)
+            throws QueryException {
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		if (expr.length == 0) {
-			return null;
-		} else if (expr.length == 1) {
-			return expr[0].evaluateToItem(ctx, tuple);
-		} else {
-			int i = 0;
-			Item res = null;
-			while ((i < expr.length)
-					&& ((res = expr[i++].evaluateToItem(ctx, tuple)) == null))
-				;
+        return new EvalSequence(tuple, ctx);
+    }
 
-			if (i == expr.length) {
-				return res;
-			}
+    @Override
+    public Item evaluateToItem(QueryContext ctx, Tuple tuple)
+            throws QueryException {
+        if (expr.length == 0) {
+            return null;
+        } else if (expr.length == 1) {
+            return expr[0].evaluateToItem(ctx, tuple);
+        } else {
+            int i = 0;
+            Item res = null;
+            while ((i < expr.length)
+                    && ((res = expr[i++].evaluateToItem(ctx, tuple)) == null))
+                ;
 
-			while (i < expr.length) {
-				if (expr[i++].evaluateToItem(ctx, tuple) != null) {
-					throw new QueryException(
-							ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
-				}
-			}
+            if (i == expr.length) {
+                return res;
+            }
 
-			return res;
-		}
-	}
+            while (i < expr.length) {
+                if (expr[i++].evaluateToItem(ctx, tuple) != null) {
+                    throw new QueryException(
+                            ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
+                }
+            }
 
-	@Override
-	public boolean isUpdating() {
-		for (Expr e : this.expr) {
-			if (e.isUpdating()) {
-				return true;
-			}
-		}
-		return false;
-	}
+            return res;
+        }
+    }
 
-	@Override
-	public boolean isVacuous() {
-		for (Expr e : this.expr) {
-			if (!e.isVacuous()) {
-				return false;
-			}
-		}
-		return true;
-	}
+    @Override
+    public boolean isUpdating() {
+        for (Expr e : this.expr) {
+            if (e.isUpdating()) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-	public String toString() {
-		StringBuilder out = new StringBuilder();
-		out.append("(");
-		boolean first = true;
-		for (Expr e : expr) {
-			if (!first) {
-				out.append(", ");
-			}
-			first = false;
-			out.append(e.toString());
-		}
-		out.append(")");
-		return out.toString();
-	}
+    @Override
+    public boolean isVacuous() {
+        for (Expr e : this.expr) {
+            if (!e.isVacuous()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder out = new StringBuilder();
+        out.append("(");
+        boolean first = true;
+        for (Expr e : expr) {
+            if (!first) {
+                out.append(", ");
+            }
+            first = false;
+            out.append(e.toString());
+        }
+        out.append(")");
+        return out.toString();
+    }
 }

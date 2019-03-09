@@ -1,5 +1,9 @@
 /*
  * [New BSD License]
+<<<<<<< HEAD
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
+ * All rights reserved.
+ *
  * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
  *

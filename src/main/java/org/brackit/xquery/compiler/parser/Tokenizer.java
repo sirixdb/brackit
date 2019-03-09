@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -29,18 +29,16 @@ package org.brackit.xquery.compiler.parser;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-
 import javax.xml.namespace.QName;
-
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.util.log.Logger;
 import org.brackit.xquery.xdm.XMLChar;
 
 /**
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  */
 public class Tokenizer {
 
@@ -87,7 +85,8 @@ public class Tokenizer {
 			return new String(input, start, end - start);
 		}
 
-		public String toString() {
+		@Override
+    public String toString() {
 			return string();
 		}
 	}
@@ -100,7 +99,8 @@ public class Tokenizer {
 			this.s = s;
 		}
 
-		public String string() {
+		@Override
+    public String string() {
 			return s;
 		}
 	}
@@ -133,12 +133,13 @@ public class Tokenizer {
 		public QNm qname() {
 			return new QNm(uri, prefix, ncname);
 		}
-		
+
 		public QName getName() {
 			return new QName(uri, ncname, prefix);
 		}
 
-		public String string() {
+		@Override
+    public String string() {
 			return (uri != null) ? ("\"" + uri + "\":")
 					+ ((prefix != null) ? prefix + ":" + ncname : ncname)
 					: ((prefix != null) ? prefix + ":" + ncname : ncname);
@@ -218,15 +219,15 @@ public class Tokenizer {
 	protected Token laSymSkipWS(String token) {
 		return laSymSkipWS(pos, token);
 	}
-	
+
 	protected Token laSymSkipS(Token prev, String token) {
 		return laSymSkipS(prev.end, token);
 	}
-	
+
 	private Token laSymSkipS(int from, String token) {
 		return laSym(from + s(from), token);
 	}
-	
+
 	protected Token laSymSkipS(String token) {
 		return laSymSkipWS(pos + s(pos), token);
 	}
@@ -296,7 +297,7 @@ public class Tokenizer {
 		consume(la);
 		return true;
 	}
-	
+
 	protected boolean attemptS() {
 		Token la = laS();
 		if (la == null) {
@@ -314,7 +315,7 @@ public class Tokenizer {
 		consume(la);
 		return true;
 	}
-	
+
 	protected boolean attemptSkipS(String token) {
 		Token la = laSkipS(pos, token);
 		if (la == null) {
@@ -332,7 +333,7 @@ public class Tokenizer {
 		consume(la);
 		return true;
 	}
-	
+
 	protected boolean attemptSymSkipS(String token) {
 		Token la = laSymSkipS(pos, token);
 		if (la == null) {
@@ -612,7 +613,7 @@ public class Tokenizer {
 	protected Token laNCNameSkipWS() {
 		return laNCName(pos + ws(pos));
 	}
-	
+
 	protected Token laNCNameSkipS() {
 		return laNCName(pos + s(pos));
 	}
@@ -1184,7 +1185,7 @@ public class Tokenizer {
 		if ((input[e++] != '&') || (input[e++] != '#')) {
 			return null;
 		}
-		if (end - e <= 3) {			
+		if (end - e <= 3) {
 			String charRef = new String(input, pos, Math.min(4, end - pos));
 			throw new TokenizerException("Illegal Unicode character reference '%s' %s: '%s'", charRef, paraphrase());
 		}

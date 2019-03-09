@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
@@ -85,8 +84,6 @@ import org.brackit.xquery.expr.VCmpExpr;
 import org.brackit.xquery.function.FunctionExpr;
 import org.brackit.xquery.function.UDF;
 import org.brackit.xquery.function.bit.BitFun;
-import org.brackit.xquery.function.bit.Every;
-import org.brackit.xquery.function.bit.Some;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.operator.Count;
@@ -130,9 +127,9 @@ import org.brackit.xquery.xdm.type.SequenceType;
 import org.brackit.xquery.xdm.type.TextType;
 
 /**
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  */
 public class Compiler implements Translator {
 
@@ -177,7 +174,8 @@ public class Compiler implements Translator {
 		this.options = options;
 	}
 
-	public Expr expression(Module module, StaticContext ctx, AST expr,
+	@Override
+  public Expr expression(Module module, StaticContext ctx, AST expr,
 			boolean allowUpdate) throws QueryException {
 		this.table = new VariableTable(module);
 		this.ctx = ctx;
@@ -186,7 +184,8 @@ public class Compiler implements Translator {
 		return e;
 	}
 
-	public Expr function(Module module, StaticContext ctx, UDF udf,
+	@Override
+  public Expr function(Module module, StaticContext ctx, UDF udf,
 			QNm[] params, AST expr, boolean allowUpdate) throws QueryException {
 		this.table = new VariableTable(module);
 		this.ctx = ctx;

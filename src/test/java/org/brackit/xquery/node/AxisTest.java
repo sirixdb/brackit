@@ -33,9 +33,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-
-import junit.framework.Assert;
-
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQueryBaseTest;
 import org.brackit.xquery.expr.Accessor;
@@ -49,6 +46,7 @@ import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Store;
 import org.brackit.xquery.xdm.Stream;
 import org.junit.Test;
+import junit.framework.Assert;
 
 /**
  *
@@ -57,213 +55,213 @@ import org.junit.Test;
  */
 public abstract class AxisTest extends XQueryBaseTest {
 
-	private static final Comparator<Node<?>> COMPARATOR = new Comparator<Node<?>>() {
-		@Override
-		public int compare(Node<?> o1, Node<?> o2) {
-			// System.out.println(o1 + " cmp " + o2 + ": " + o1.cmp(o2));
-			return o1.cmp(o2);
-		}
-	};
+    private static final Comparator<Node<?>> COMPARATOR = new Comparator<Node<?>>() {
+        @Override
+        public int compare(Node<?> o1, Node<?> o2) {
+            // System.out.println(o1 + " cmp " + o2 + ": " + o1.cmp(o2));
+            return o1.cmp(o2);
+        }
+    };
 
-	private Collection<?> collection;
+    private Collection<?> collection;
 
-	private class AxisFilter implements Filter<Node<?>> {
-		private final Node<?> node;
-		private final Axis axis;
+    private class AxisFilter implements Filter<Node<?>> {
+        private final Node<?> node;
+        private final Axis axis;
 
-		public AxisFilter(Node<?> node, Axis axis) {
-			this.node = node;
-			this.axis = axis;
-		}
+        public AxisFilter(Node<?> node, Axis axis) {
+            this.node = node;
+            this.axis = axis;
+        }
 
-		@Override
-		public boolean filter(Node<?> element) throws DocumentException {
-			try {
-				boolean check = !axis.check(element, node);
-				/*
-				 * if (check) { System.err.println("Filter out " + element + " -> !" +
-				 * axis + " of " + node); } else { System.out.println("Accept " +
-				 * element + " -> " + axis + " of " + node); }
-				 */
-				return check;
-			} catch (QueryException e) {
-				throw new DocumentException(e);
-			}
-		}
-	}
+        @Override
+        public boolean filter(Node<?> element) throws DocumentException {
+            try {
+                boolean check = !axis.check(element, node);
+                /*
+                 * if (check) { System.err.println("Filter out " + element + " -> !" +
+                 * axis + " of " + node); } else { System.out.println("Accept " +
+                 * element + " -> " + axis + " of " + node); }
+                 */
+                return check;
+            } catch (QueryException e) {
+                throw new DocumentException(e);
+            }
+        }
+    }
 
-	@Test
-	public void testCmp() throws Exception {
-		final Stream<? extends Node<?>> subtree = collection.getDocument()
-				.getSubtree();
-		final List<? extends Node<?>> nodes = StreamUtil.asList(subtree);
-		for (int i = 0; i < nodes.size(); i++) {
-			final Node<?> a = nodes.get(i);
-			for (int j = 0; j < nodes.size(); j++) {
-				final Node<?> b = nodes.get(j);
-				try {
-					if (i < j)
-						Assert.assertTrue("a < b", a.cmp(b) < 0);
-					else if (i == j)
-						Assert.assertTrue("a == b", a.cmp(b) == 0);
-					else
-						Assert.assertTrue("a > b", a.cmp(b) > 0);
-				} catch (AssertionError e) {
-					// SubtreePrinter.print(collection.getDocument(), System.out);
-					// System.err.println(nodes);
-					System.err.println(a);
-					System.err.println(b);
-					System.err.println(a.cmp(b));
-					throw e;
-				}
-			}
-		}
-	}
+    @Test
+    public void testCmp() throws Exception {
+        final Stream<? extends Node<?>> subtree = collection.getDocument()
+                .getSubtree();
+        final List<? extends Node<?>> nodes = StreamUtil.asList(subtree);
+        for (int i = 0; i < nodes.size(); i++) {
+            final Node<?> a = nodes.get(i);
+            for (int j = 0; j < nodes.size(); j++) {
+                final Node<?> b = nodes.get(j);
+                try {
+                    if (i < j)
+                        Assert.assertTrue("a < b", a.cmp(b) < 0);
+                    else if (i == j)
+                        Assert.assertTrue("a == b", a.cmp(b) == 0);
+                    else
+                        Assert.assertTrue("a > b", a.cmp(b) > 0);
+                } catch (AssertionError e) {
+                    // SubtreePrinter.print(collection.getDocument(), System.out);
+                    // System.err.println(nodes);
+                    System.err.println(a);
+                    System.err.println(b);
+                    System.err.println(a.cmp(b));
+                    throw e;
+                }
+            }
+        }
+    }
 
-	@Test
-	public void testRootElementChildren() throws Exception {
-		Node<?> node = collection.getDocument().getFirstChild();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(), new AxisFilter(node, Axis.CHILD));
-		checkOutput(Accessor.CHILD.performStep(node), expected);
-	}
+    @Test
+    public void testRootElementChildren() throws Exception {
+        Node<?> node = collection.getDocument().getFirstChild();
+        Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
+                .getSubtree(), new AxisFilter(node, Axis.CHILD));
+        checkOutput(Accessor.CHILD.performStep(node), expected);
+    }
 
-	@Test
-	public void testNonRootElementChildren() throws Exception {
-		Node<?> node = collection.getDocument().getFirstChild().getFirstChild();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(), new AxisFilter(node, Axis.CHILD));
-		checkOutput(Accessor.CHILD.performStep(node), expected);
-	}
+    @Test
+    public void testNonRootElementChildren() throws Exception {
+        Node<?> node = collection.getDocument().getFirstChild().getFirstChild();
+        Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
+                .getSubtree(), new AxisFilter(node, Axis.CHILD));
+        checkOutput(Accessor.CHILD.performStep(node), expected);
+    }
 
-	@Test
-	public void testRootFollowing() throws Exception {
-		Node<?> node = collection.getDocument().getFirstChild();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(), new AxisFilter(node, Axis.FOLLOWING));
-		checkOutput(Accessor.FOLLOWING.performStep(node), expected);
-	}
+    @Test
+    public void testRootFollowing() throws Exception {
+        Node<?> node = collection.getDocument().getFirstChild();
+        Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
+                .getSubtree(), new AxisFilter(node, Axis.FOLLOWING));
+        checkOutput(Accessor.FOLLOWING.performStep(node), expected);
+    }
 
-	@Test
-	public void testNonRootFollowing() throws Exception {
-		Node<?> node = collection.getDocument().getFirstChild().getFirstChild()
-				.getFirstChild().getNextSibling();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(), new AxisFilter(node, Axis.FOLLOWING));
-		checkOutput(Accessor.FOLLOWING.performStep(node), expected);
-	}
+    @Test
+    public void testNonRootFollowing() throws Exception {
+        Node<?> node = collection.getDocument().getFirstChild().getFirstChild()
+                .getFirstChild().getNextSibling();
+        Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
+                .getSubtree(), new AxisFilter(node, Axis.FOLLOWING));
+        checkOutput(Accessor.FOLLOWING.performStep(node), expected);
+    }
 
-	@Test
-	public void testRootPreceding() throws Exception {
-		Node<?> node = collection.getDocument().getFirstChild();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(), new AxisFilter(node, Axis.PRECEDING));
-		checkOutput(Accessor.PRECEDING.performStep(node), expected);
-	}
+    @Test
+    public void testRootPreceding() throws Exception {
+        Node<?> node = collection.getDocument().getFirstChild();
+        Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
+                .getSubtree(), new AxisFilter(node, Axis.PRECEDING));
+        checkOutput(Accessor.PRECEDING.performStep(node), expected);
+    }
 
-	@Test
-	public void testNonRootPreceding() throws Exception {
-		Node<?> node = collection.getDocument().getFirstChild().getFirstChild()
-				.getFirstChild().getNextSibling();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(), new AxisFilter(node, Axis.PRECEDING));
-		checkOutput(Accessor.PRECEDING.performStep(node), expected);
-	}
+    @Test
+    public void testNonRootPreceding() throws Exception {
+        Node<?> node = collection.getDocument().getFirstChild().getFirstChild()
+                .getFirstChild().getNextSibling();
+        Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
+                .getSubtree(), new AxisFilter(node, Axis.PRECEDING));
+        checkOutput(Accessor.PRECEDING.performStep(node), expected);
+    }
 
-	@Test
-	public void testRootPrecedingSibling() throws Exception {
-		Node<?> node = collection.getDocument().getFirstChild();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(), new AxisFilter(node, Axis.PRECEDING_SIBLING));
-		checkOutput(Accessor.PRECEDING_SIBLING.performStep(node), expected);
-	}
+    @Test
+    public void testRootPrecedingSibling() throws Exception {
+        Node<?> node = collection.getDocument().getFirstChild();
+        Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
+                .getSubtree(), new AxisFilter(node, Axis.PRECEDING_SIBLING));
+        checkOutput(Accessor.PRECEDING_SIBLING.performStep(node), expected);
+    }
 
-	@Test
-	public void testNonRootPrecedingSibling() throws Exception {
-		Node<?> node = collection.getDocument().getFirstChild().getFirstChild()
-				.getFirstChild().getNextSibling();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(), new AxisFilter(node, Axis.PRECEDING_SIBLING));
-		checkOutput(Accessor.PRECEDING_SIBLING.performStep(node), expected);
-	}
+    @Test
+    public void testNonRootPrecedingSibling() throws Exception {
+        Node<?> node = collection.getDocument().getFirstChild().getFirstChild()
+                .getFirstChild().getNextSibling();
+        Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
+                .getSubtree(), new AxisFilter(node, Axis.PRECEDING_SIBLING));
+        checkOutput(Accessor.PRECEDING_SIBLING.performStep(node), expected);
+    }
 
-	@Test
-	public void testRootFollowingSibling() throws Exception {
-		Node<?> node = collection.getDocument().getFirstChild();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(), new AxisFilter(node, Axis.FOLLOWING_SIBLING));
-		checkOutput(Accessor.FOLLOWING_SIBLING.performStep(node), expected);
-	}
+    @Test
+    public void testRootFollowingSibling() throws Exception {
+        Node<?> node = collection.getDocument().getFirstChild();
+        Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
+                .getSubtree(), new AxisFilter(node, Axis.FOLLOWING_SIBLING));
+        checkOutput(Accessor.FOLLOWING_SIBLING.performStep(node), expected);
+    }
 
-	@Test
-	public void testNonRootFollowingSibling() throws Exception {
-		Node<?> node = collection.getDocument().getFirstChild().getFirstChild()
-				.getFirstChild().getNextSibling();
-		Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
-				.getSubtree(), new AxisFilter(node, Axis.FOLLOWING_SIBLING));
-		checkOutput(Accessor.FOLLOWING_SIBLING.performStep(node), expected);
-	}
+    @Test
+    public void testNonRootFollowingSibling() throws Exception {
+        Node<?> node = collection.getDocument().getFirstChild().getFirstChild()
+                .getFirstChild().getNextSibling();
+        Set<Node<?>> expected = buildExpectedSet(collection.getDocument()
+                .getSubtree(), new AxisFilter(node, Axis.FOLLOWING_SIBLING));
+        checkOutput(Accessor.FOLLOWING_SIBLING.performStep(node), expected);
+    }
 
-	protected Set<Node<?>> buildExpectedSet(
-			final Stream<? extends Node<?>> original, Filter<Node<?>> filter)
-			throws DocumentException {
-		TreeSet<Node<?>> expected = new TreeSet<Node<?>>(COMPARATOR);
-		Stream<? extends Node<?>> stream = original;
+    protected Set<Node<?>> buildExpectedSet(
+            final Stream<? extends Node<?>> original, Filter<Node<?>> filter)
+            throws DocumentException {
+        TreeSet<Node<?>> expected = new TreeSet<Node<?>>(COMPARATOR);
+        Stream<? extends Node<?>> stream = original;
 
-		if (filter != null) {
-			stream = new FilteredStream<Node<?>>(original, filter);
-		}
+        if (filter != null) {
+            stream = new FilteredStream<Node<?>>(original, filter);
+        }
 
-		Node<?> next;
-		while ((next = stream.next()) != null) {
-			expected.add(next);
-		}
-		stream.close();
-		return expected;
-	}
+        Node<?> next;
+        while ((next = stream.next()) != null) {
+            expected.add(next);
+        }
+        stream.close();
+        return expected;
+    }
 
-	protected void checkOutput(Stream<? extends Node<?>> nodes,
-			Set<Node<?>> expected) throws Exception {
-		TreeSet<Node<?>> delivered = new TreeSet<Node<?>>(COMPARATOR);
-		Node<?> node;
-		while ((node = nodes.next()) != null) {
-			Assert.assertTrue("Node not delivered yet.", delivered.add(node));
-			// System.out.println(node);
-		}
-		nodes.close();
-		try {
-			Assert.assertEquals("Expected number of nodes delivered",
-					expected.size(), delivered.size());
+    protected void checkOutput(Stream<? extends Node<?>> nodes,
+            Set<Node<?>> expected) throws Exception {
+        TreeSet<Node<?>> delivered = new TreeSet<Node<?>>(COMPARATOR);
+        Node<?> node;
+        while ((node = nodes.next()) != null) {
+            Assert.assertTrue("Node not delivered yet.", delivered.add(node));
+            // System.out.println(node);
+        }
+        nodes.close();
+        try {
+            Assert.assertEquals("Expected number of nodes delivered",
+                    expected.size(), delivered.size());
 
-			for (Node<?> n : delivered) {
-				// System.err.println("CHECKING " + n);
-				if (!expected.contains(n)) {
-					// System.err.println(n + " is not contained in " +
-					// expected);
-					// System.err.println("Expected:\t" + expected);
-					// System.err.println("Delivered:\t" + delivered);
-					return;
-				}
-			}
+            for (Node<?> n : delivered) {
+                // System.err.println("CHECKING " + n);
+                if (!expected.contains(n)) {
+                    // System.err.println(n + " is not contained in " +
+                    // expected);
+                    // System.err.println("Expected:\t" + expected);
+                    // System.err.println("Delivered:\t" + delivered);
+                    return;
+                }
+            }
 
-			Assert.assertTrue("Expected nodes delivered",
-					expected.containsAll(delivered));
-		} catch (Error e) {
-			// System.out.println("Expected:\t" + expected);
-			// System.out.println("Delivered:\t" + delivered);
-			throw e;
-		}
-	}
+            Assert.assertTrue("Expected nodes delivered",
+                    expected.containsAll(delivered));
+        } catch (Error e) {
+            // System.out.println("Expected:\t" + expected);
+            // System.out.println("Delivered:\t" + delivered);
+            throw e;
+        }
+    }
 
-	@Override
-	protected abstract Store createStore() throws Exception;
+    @Override
+    protected abstract Store createStore() throws Exception;
 
-	@Override
-	public void setUp() throws Exception, FileNotFoundException {
-		super.setUp();
-		collection = storeFile("text.xml",
-				new StringBuilder(RESOURCES).append(File.separator).append("docs")
-						.append(File.separator).append("orga.xml").toString());
-	}
+    @Override
+    public void setUp() throws Exception, FileNotFoundException {
+        super.setUp();
+        collection = storeFile("text.xml",
+                new StringBuilder(RESOURCES).append(File.separator).append("docs")
+                        .append(File.separator).append("orga.xml").toString());
+    }
 
 }

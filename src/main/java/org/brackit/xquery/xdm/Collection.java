@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -31,15 +31,15 @@ import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.node.parser.SubtreeParser;
 
 /**
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  * @param <E>
  */
 public interface Collection<E extends Node<E>> extends Sequence {
-	
+
 	public AnyURI getDocumentURI();
-	
+
 	public String getName();
 
 	public void delete() throws DocumentException;
@@ -48,13 +48,13 @@ public interface Collection<E extends Node<E>> extends Sequence {
 			DocumentException;
 
 	public E getDocument() throws DocumentException;
-	
+
 	public E getDocument(boolean updatabale) throws DocumentException;
 
 	public Stream<? extends E> getDocuments() throws DocumentException;
 
 	public Stream<? extends E> getDocuments(boolean updatable) throws DocumentException;
-	
+
 	public E add(SubtreeParser parser) throws OperationNotSupportedException,
 			DocumentException;
 

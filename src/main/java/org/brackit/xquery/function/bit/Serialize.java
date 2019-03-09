@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,7 +28,6 @@
 package org.brackit.xquery.function.bit;
 
 import java.io.PrintStream;
-
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Int32;
@@ -46,40 +45,40 @@ import org.brackit.xquery.xdm.type.Cardinality;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  */
 public class Serialize extends AbstractFunction {
 
-	public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI,
-			Bits.BIT_PREFIX, "serialize");
+    public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI,
+            Bits.BIT_PREFIX, "serialize");
 
-	public Serialize() {
-		this(DEFAULT_NAME);
-	}
+    public Serialize() {
+        this(DEFAULT_NAME);
+    }
 
-	/**
-	 * Constructor.
-	 * 
-	 * @param name
-	 *          the qname
-	 */
-	public Serialize(QNm name) {
-		super(name, new Signature(
-				new SequenceType(AtomicType.STR, Cardinality.One),
-				SequenceType.ITEM_SEQUENCE), true);
-	}
+    /**
+     * Constructor.
+     *
+     * @param name
+     *          the qname
+     */
+    public Serialize(QNm name) {
+        super(name, new Signature(
+                new SequenceType(AtomicType.STR, Cardinality.One),
+                SequenceType.ITEM_SEQUENCE), true);
+    }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		final Sequence sequence = args[0];
-		if (sequence == null) {
-			return Int32.ZERO;
-		}
-		final PrintStream buf = IOUtils.createBuffer();
-		new StringSerializer(buf).serialize(sequence);
-		return new Str(buf.toString());
-	}
+    @Override
+    public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
+            throws QueryException {
+        final Sequence sequence = args[0];
+        if (sequence == null) {
+            return Int32.ZERO;
+        }
+        final PrintStream buf = IOUtils.createBuffer();
+        new StringSerializer(buf).serialize(sequence);
+        return new Str(buf.toString());
+    }
 }

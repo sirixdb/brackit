@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,7 +28,6 @@
 package org.brackit.xquery.node.parser;
 
 import java.util.List;
-
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Node;
@@ -36,84 +35,84 @@ import org.brackit.xquery.xdm.Stream;
 
 /**
  * Navigating {@link SubtreeProcessor} for fragments.
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  */
 public class NavigationalSubtreeProcessor<E extends Node<E>> extends
-		SubtreeProcessor<E> {
-	private final E root;
+        SubtreeProcessor<E> {
+    private final E root;
 
-	public NavigationalSubtreeProcessor(E root,
-			List<SubtreeListener<? super E>> listeners) {
-		super(listeners);
-		this.root = root;
-	}
+    public NavigationalSubtreeProcessor(E root,
+            List<SubtreeListener<? super E>> listeners) {
+        super(listeners);
+        this.root = root;
+    }
 
-	public void process() throws DocumentException {
-		try {
-			notifyBegin();
-			notifyBeginFragment();
-			traverse(root);
-			notifyEndFragment();
-			notifyEnd();
-		} catch (DocumentException e) {
-			notifyFail();
-			throw e;
-		}
-	}
+    public void process() throws DocumentException {
+        try {
+            notifyBegin();
+            notifyBeginFragment();
+            traverse(root);
+            notifyEndFragment();
+            notifyEnd();
+        } catch (DocumentException e) {
+            notifyFail();
+            throw e;
+        }
+    }
 
-	private void traverse(E node) throws DocumentException {
-		Kind kind = node.getKind();
+    private void traverse(E node) throws DocumentException {
+        Kind kind = node.getKind();
 
-		if (kind == Kind.ELEMENT) {
-			notifyStartElement(node);
+        if (kind == Kind.ELEMENT) {
+            notifyStartElement(node);
 
-			Stream<? extends E> attributeStream = node.getAttributes();
+            Stream<? extends E> attributeStream = node.getAttributes();
 
-			try {
-				E attribute;
-				while ((attribute = attributeStream.next()) != null) {
-					notifyAttribute(attribute);
-				}
-			} finally {
-				attributeStream.close();
-			}
+            try {
+                E attribute;
+                while ((attribute = attributeStream.next()) != null) {
+                    notifyAttribute(attribute);
+                }
+            } finally {
+                attributeStream.close();
+            }
 
-			Stream<? extends E> childStream = node.getChildren();
-			try {
-				E child;
-				while ((child = childStream.next()) != null) {
-					traverse(child);
-				}
+            Stream<? extends E> childStream = node.getChildren();
+            try {
+                E child;
+                while ((child = childStream.next()) != null) {
+                    traverse(child);
+                }
 
-			} finally {
-				childStream.close();
-			}
+            } finally {
+                childStream.close();
+            }
 
-			notifyEndElement(node);
-		} else if (kind == Kind.TEXT) {
-			notifyText(node);
-		} else if (kind == Kind.COMMENT) {
-			notifyComment(node);
-		} else if (kind == Kind.PROCESSING_INSTRUCTION) {
-			notifyProcessingInstruction(node);
-		} else if (kind == Kind.ATTRIBUTE) {
-			notifyAttribute(node);
-		} else if (kind == Kind.DOCUMENT) {
-			notifyBeginDocument();
-			Stream<? extends E> childStream = node.getChildren();
-			try {
-				E child;
-				while ((child = childStream.next()) != null) {
-					traverse(child);
-				}
-			} finally {
-				childStream.close();
-			}
-			notifyEndDocument();
-		} else {
-			throw new DocumentException("Illegal node type: %s", kind);
-		}
-	}
+            notifyEndElement(node);
+        } else if (kind == Kind.TEXT) {
+            notifyText(node);
+        } else if (kind == Kind.COMMENT) {
+            notifyComment(node);
+        } else if (kind == Kind.PROCESSING_INSTRUCTION) {
+            notifyProcessingInstruction(node);
+        } else if (kind == Kind.ATTRIBUTE) {
+            notifyAttribute(node);
+        } else if (kind == Kind.DOCUMENT) {
+            notifyBeginDocument();
+            Stream<? extends E> childStream = node.getChildren();
+            try {
+                E child;
+                while ((child = childStream.next()) != null) {
+                    traverse(child);
+                }
+            } finally {
+                childStream.close();
+            }
+            notifyEndDocument();
+        } else {
+            throw new DocumentException("Illegal node type: %s", kind);
+        }
+    }
 }

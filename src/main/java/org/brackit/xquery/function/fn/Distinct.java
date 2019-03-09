@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -30,7 +30,6 @@ package org.brackit.xquery.function.fn;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
-
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -47,9 +46,9 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
 
 /**
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  */
 public class Distinct extends AbstractFunction {
 	public Distinct(QNm name, Signature signature) {
@@ -62,8 +61,7 @@ public class Distinct extends AbstractFunction {
 		if (args.length == 2) {
 			Str collation = (Str) args[1];
 
-			if (!collation.stringValue()
-					.equals("http://www.w3.org/2005/xpath-functions/collation/codepoint")) {
+			if (!collation.stringValue().equals("http://www.w3.org/2005/xpath-functions/collation/codepoint")) {
 				throw new QueryException(ErrorCode.ERR_UNSUPPORTED_COLLATION,
 						"Unsupported collation: %s", collation);
 			}

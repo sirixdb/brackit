@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -32,7 +32,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
-
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.update.op.OpType;
@@ -40,102 +39,102 @@ import org.brackit.xquery.update.op.UpdateOp;
 import org.brackit.xquery.util.log.Logger;
 
 /**
- * 
+ *
  * @author Sebastian Baechle
  * @author Johannes Lichtenberger
- * 
+ *
  */
 public final class UpdateList {
-	private static final Logger log = Logger.getLogger(UpdateList.class);
+    private static final Logger log = Logger.getLogger(UpdateList.class);
 
-	private static final EnumSet<OpType> checkOps = EnumSet.of(OpType.RENAME,
-			OpType.REPLACE_NODE, OpType.REPLACE_VALUE,
-			OpType.REPLACE_ELEMENT_CONTENT);
+    private static final EnumSet<OpType> checkOps = EnumSet.of(OpType.RENAME,
+            OpType.REPLACE_NODE, OpType.REPLACE_VALUE,
+            OpType.REPLACE_ELEMENT_CONTENT);
 
-	private final List<UpdateOp> ops = new ArrayList<UpdateOp>();
+    private final List<UpdateOp> ops = new ArrayList<UpdateOp>();
 
-	public void append(UpdateOp op) {
-		ops.add(op);
-	}
+    public void append(UpdateOp op) {
+        ops.add(op);
+    }
 
-	public void apply() throws QueryException {
-		// See XQuery Update Facility 1.0: 3.2.2 upd:applyUpdates
-		// First all ops are sorted according to the order of their
-		// application which is determined by their type.
-		// The resulting list is then checked if some ops
-		// are performed twice or more on the same target node
-		Comparator<UpdateOp> orderByType = new Comparator<UpdateOp>() {
-			@Override
-			public int compare(UpdateOp o1, UpdateOp o2) {
-				return o1.getType().compareTo(o2.getType());
-			}
-		};
-		Collections.sort(ops, orderByType);
+    public void apply() throws QueryException {
+        // See XQuery Update Facility 1.0: 3.2.2 upd:applyUpdates
+        // First all ops are sorted according to the order of their
+        // application which is determined by their type.
+        // The resulting list is then checked if some ops
+        // are performed twice or more on the same target node
+        Comparator<UpdateOp> orderByType = new Comparator<UpdateOp>() {
+            @Override
+            public int compare(UpdateOp o1, UpdateOp o2) {
+                return o1.getType().compareTo(o2.getType());
+            }
+        };
+        Collections.sort(ops, orderByType);
 
-		for (int i = 0; i < ops.size(); i++) {
-			final UpdateOp op1 = ops.get(i);
-			if (checkOps.contains(op1.getType())) {
-				for (int j = i + 1; j < ops.size(); j++) {
-					final UpdateOp op2 = ops.get(j);
+        for (int i = 0; i < ops.size(); i++) {
+            final UpdateOp op1 = ops.get(i);
+            if (checkOps.contains(op1.getType())) {
+                for (int j = i + 1; j < ops.size(); j++) {
+                    final UpdateOp op2 = ops.get(j);
 
-					if (op2.getType() != op1.getType()) {
-						break;
-					}
-					checkCompatibility(op1, op2);
-				}
-			}
-		}
+                    if (op2.getType() != op1.getType()) {
+                        break;
+                    }
+                    checkCompatibility(op1, op2);
+                }
+            }
+        }
 
-		// finally apply all updates
-		for (final UpdateOp op : ops) {
-			if (log.isDebugEnabled()) {
-				log.debug(String.format("Applying pending update %s", op));
-			}
-			op.apply();
-		}
-	}
+        // finally apply all updates
+        for (final UpdateOp op : ops) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Applying pending update %s", op));
+            }
+            op.apply();
+        }
+    }
 
-	private void checkCompatibility(final UpdateOp op1, final UpdateOp op2)
-			throws QueryException {
-		switch (op1.getType()) {
-		case RENAME:
-			if (op1.getTarget().equals(op2.getTarget())) {
-				throw new QueryException(
-						ErrorCode.ERR_UPDATE_DUPLICATE_RENAME_TARGET,
-						"Node %s is target of more than one replace operation.",
-						op2.getTarget());
-			}
-			break;
-		case REPLACE_NODE:
-			if (op1.getTarget().equals(op2.getTarget())) {
-				throw new QueryException(
-						ErrorCode.ERR_UPDATE_DUPLICATE_REPLACE_NODE_TARGET,
-						"Node %s is target of more than one replace node operation.",
-						op2.getTarget());
-			}
-			break;
-		case REPLACE_VALUE:
-			if (op1.getTarget().equals(op2.getTarget())) {
-				throw new QueryException(
-						ErrorCode.ERR_UPDATE_DUPLICATE_REPLACE_VALUE_TARGET,
-						"Node %s is target of more than one replace value operation.",
-						op2.getTarget());
-			}
-			break;
-		case REPLACE_ELEMENT_CONTENT:
-			if (op1.getTarget().equals(op2.getTarget())) {
-				throw new QueryException(
-						ErrorCode.ERR_UPDATE_DUPLICATE_REPLACE_VALUE_TARGET,
-						"Node %s is target of more than one replace element content operation.",
-						op2.getTarget());
-			}
-			break;
-		default:
-			// Do nothing.
-		}
-	}
+    private void checkCompatibility(final UpdateOp op1, final UpdateOp op2)
+            throws QueryException {
+        switch (op1.getType()) {
+        case RENAME:
+            if (op1.getTarget().equals(op2.getTarget())) {
+                throw new QueryException(
+                        ErrorCode.ERR_UPDATE_DUPLICATE_RENAME_TARGET,
+                        "Node %s is target of more than one replace operation.",
+                        op2.getTarget());
+            }
+            break;
+        case REPLACE_NODE:
+            if (op1.getTarget().equals(op2.getTarget())) {
+                throw new QueryException(
+                        ErrorCode.ERR_UPDATE_DUPLICATE_REPLACE_NODE_TARGET,
+                        "Node %s is target of more than one replace node operation.",
+                        op2.getTarget());
+            }
+            break;
+        case REPLACE_VALUE:
+            if (op1.getTarget().equals(op2.getTarget())) {
+                throw new QueryException(
+                        ErrorCode.ERR_UPDATE_DUPLICATE_REPLACE_VALUE_TARGET,
+                        "Node %s is target of more than one replace value operation.",
+                        op2.getTarget());
+            }
+            break;
+        case REPLACE_ELEMENT_CONTENT:
+            if (op1.getTarget().equals(op2.getTarget())) {
+                throw new QueryException(
+                        ErrorCode.ERR_UPDATE_DUPLICATE_REPLACE_VALUE_TARGET,
+                        "Node %s is target of more than one replace element content operation.",
+                        op2.getTarget());
+            }
+            break;
+        default:
+            // Do nothing.
+        }
+    }
 
-	public List<UpdateOp> list() {
-		return ops;
-	}
+    public List<UpdateOp> list() {
+        return ops;
+    }
 }

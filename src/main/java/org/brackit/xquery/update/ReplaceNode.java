@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,7 +28,6 @@
 package org.brackit.xquery.update;
 
 import java.util.EnumSet;
-
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -43,9 +42,9 @@ import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  */
 public class ReplaceNode extends ConstructedNodeBuilder implements Expr {
 	private static final EnumSet<Kind> replaceNodeKind = EnumSet.of(
@@ -108,12 +107,12 @@ public class ReplaceNode extends ConstructedNodeBuilder implements Expr {
 
 		node = (Node<?>) targetItem;
 
-//		if (!allowedForReplaceNonAtt.contains(node.getKind())) {
-//			throw new QueryException(
-//					ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
-//					"Target node kind %s is not allowed for replace node: ",
-//					node.getKind());
-//		}
+		if (!allowedForReplaceNonAtt.contains(node.getKind())) {
+			throw new QueryException(
+					ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
+					"Target node kind %s is not allowed for replace node: %s",
+					node.getKind(), node);
+		}
 
 		parent = node.getParent();
 

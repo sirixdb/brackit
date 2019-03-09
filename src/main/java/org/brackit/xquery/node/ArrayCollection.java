@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,7 +28,6 @@
 package org.brackit.xquery.node;
 
 import java.util.Arrays;
-
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.node.stream.ArrayStream;
 import org.brackit.xquery.xdm.DocumentException;
@@ -37,73 +36,73 @@ import org.brackit.xquery.xdm.OperationNotSupportedException;
 import org.brackit.xquery.xdm.Stream;
 
 /**
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  */
 public class ArrayCollection<E extends Node<E>> extends AbstractCollection<E> {
-	protected Node[] docs;
+    protected Node[] docs;
 
-	public ArrayCollection(String name, E doc) {
-		super(name);
-		this.docs = new Node[]{doc};
-	}
-	
-	public ArrayCollection(String name, E... docs) {
-		super(name);
-		this.docs = docs;
-	}
+    public ArrayCollection(String name, E doc) {
+        super(name);
+        this.docs = new Node[]{doc};
+    }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public E getDocument() throws DocumentException {
-		if (docs.length == 1) {
-			return (E) docs[0];
-		}
-		throw new DocumentException("Illegal access to non-singular collection");
-	}
+    public ArrayCollection(String name, E... docs) {
+        super(name);
+        this.docs = docs;
+    }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public Stream<? extends E> getDocuments() throws DocumentException {
-		return new ArrayStream(docs);
-	}
+    @SuppressWarnings("unchecked")
+    @Override
+    public E getDocument() throws DocumentException {
+        if (docs.length == 1) {
+            return (E) docs[0];
+        }
+        throw new DocumentException("Illegal access to non-singular collection");
+    }
 
-	@Override
-	public E add(SubtreeParser parser) throws OperationNotSupportedException,
-			DocumentException {
-		throw new OperationNotSupportedException();
-	}
-	
-	public void add(Node<? super E> doc) {
-		this.docs = Arrays.copyOf(docs, docs.length + 1);
-		this.docs[docs.length - 1] = doc;
-	}
+    @SuppressWarnings("unchecked")
+    @Override
+    public Stream<? extends E> getDocuments() throws DocumentException {
+        return new ArrayStream(docs);
+    }
 
-	@Override
-	public void delete() throws DocumentException {
-		throw new OperationNotSupportedException();
-	}
+    @Override
+    public E add(SubtreeParser parser) throws OperationNotSupportedException,
+            DocumentException {
+        throw new OperationNotSupportedException();
+    }
 
-	@Override
-	public void remove(long documentID) throws OperationNotSupportedException,
-			DocumentException {
-		throw new OperationNotSupportedException();
-	}
+    public void add(Node<? super E> doc) {
+        this.docs = Arrays.copyOf(docs, docs.length + 1);
+        this.docs[docs.length - 1] = doc;
+    }
 
-	@Override
-	public long getDocumentCount() {
-		return docs.length;
-	}
+    @Override
+    public void delete() throws DocumentException {
+        throw new OperationNotSupportedException();
+    }
 
-	@Override
-	public E getDocument(boolean updatabale) throws DocumentException {
-		return getDocument();
-	}
+    @Override
+    public void remove(long documentID) throws OperationNotSupportedException,
+            DocumentException {
+        throw new OperationNotSupportedException();
+    }
 
-	@Override
-	public Stream<? extends E> getDocuments(boolean updatable)
-			throws DocumentException {
-		return getDocuments();
-	}
+    @Override
+    public long getDocumentCount() {
+        return docs.length;
+    }
+
+    @Override
+    public E getDocument(boolean updatabale) throws DocumentException {
+        return getDocument();
+    }
+
+    @Override
+    public Stream<? extends E> getDocuments(boolean updatable)
+            throws DocumentException {
+        return getDocuments();
+    }
 }
