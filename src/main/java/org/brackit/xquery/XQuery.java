@@ -23,7 +23,6 @@ package org.brackit.xquery;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
-
 import org.brackit.xquery.compiler.CompileChain;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.operator.TupleImpl;
@@ -41,91 +40,90 @@ import org.brackit.xquery.xdm.Sequence;
  *
  */
 public class XQuery {
-	public static final String DEBUG_CFG = "org.brackit.xquery.debug";
-	public static final String DEBUG_DIR_CFG = "org.brackit.xquery.debugDir";
-	public static boolean DEBUG = Cfg.asBool(DEBUG_CFG, false);
-	public static String DEBUG_DIR = Cfg.asString(DEBUG_DIR_CFG, "debug/");
+  public static final String DEBUG_CFG = "org.brackit.xquery.debug";
+  public static final String DEBUG_DIR_CFG = "org.brackit.xquery.debugDir";
+  public static boolean DEBUG = Cfg.asBool(DEBUG_CFG, false);
+  public static String DEBUG_DIR = Cfg.asString(DEBUG_DIR_CFG, "debug/");
 
-	private final Module module;
-	private boolean prettyPrint;
+  private final Module module;
+  private boolean prettyPrint;
 
-	public XQuery(Module module) {
-		this.module = module;
-	}
+  public XQuery(Module module) {
+    this.module = module;
+  }
 
-	public XQuery(String query) throws QueryException {
-		this.module = new CompileChain().compile(query);
-	}
+  public XQuery(String query) throws QueryException {
+    this.module = new CompileChain().compile(query);
+  }
 
-	public XQuery(CompileChain chain, String query) throws QueryException {
-		this.module = chain.compile(query);
-	}
+  public XQuery(CompileChain chain, String query) throws QueryException {
+    this.module = chain.compile(query);
+  }
 
-	public Module getModule() {
-		return module;
-	}
+  public Module getModule() {
+    return module;
+  }
 
-	public Sequence execute(QueryContext ctx) throws QueryException {
-		return run(ctx, true);
-	}
+  public Sequence execute(QueryContext ctx) throws QueryException {
+    return run(ctx, true);
+  }
 
-	public Sequence evaluate(QueryContext ctx) throws QueryException {
-		return run(ctx, false);
-	}
+  public Sequence evaluate(QueryContext ctx) throws QueryException {
+    return run(ctx, false);
+  }
 
-	private Sequence run(QueryContext ctx, boolean lazy) throws QueryException {
-		Expr body = module.getBody();
-		if (body == null) {
-			throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
-					"Module does not contain a query body.");
-		}
-		Sequence result = body.evaluate(ctx, new TupleImpl());
+  private Sequence run(QueryContext ctx, boolean lazy) throws QueryException {
+    Expr body = module.getBody();
+    if (body == null) {
+      throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR, "Module does not contain a query body.");
+    }
+    Sequence result = body.evaluate(ctx, new TupleImpl());
 
-		if ((!lazy) || (body.isUpdating())) {
-			// iterate possibly lazy result sequence to "pull-in" all pending
-			// updates
-			if ((result != null) && (!(result instanceof Item))) {
-				Iter it = result.iterate();
-				try {
-					while (it.next() != null);
-				} finally {
-					it.close();
-				}
-			}
-			ctx.applyUpdates();
-		}
+    if ((!lazy) || (body.isUpdating())) {
+      // iterate possibly lazy result sequence to "pull-in" all pending
+      // updates
+      if ((result != null) && (!(result instanceof Item))) {
+        Iter it = result.iterate();
+        try {
+          while (it.next() != null);
+        } finally {
+          it.close();
+        }
+      }
+      ctx.applyUpdates();
+    }
 
-		return result;
-	}
+    return result;
+  }
 
-	public void serialize(QueryContext ctx, PrintStream out) throws QueryException {
-		serialize(ctx, new PrintWriter(out));
-	}
+  public void serialize(QueryContext ctx, PrintStream out) throws QueryException {
+    serialize(ctx, new PrintWriter(out));
+  }
 
-	public void serialize(QueryContext ctx, PrintWriter out) throws QueryException {
-		Sequence result = run(ctx, true);
-		if (result == null) {
-			return;
-		}
-		StringSerializer serializer = new StringSerializer(out);
-		serializer.setFormat(prettyPrint);
-		serializer.serialize(result);
-	}
+  public void serialize(QueryContext ctx, PrintWriter out) throws QueryException {
+    Sequence result = run(ctx, true);
+    if (result == null) {
+      return;
+    }
+    StringSerializer serializer = new StringSerializer(out);
+    serializer.setFormat(prettyPrint);
+    serializer.serialize(result);
+  }
 
-	public void serialize(QueryContext ctx, Serializer serializer) throws QueryException {
-		Sequence result = run(ctx, true);
-		if (result == null) {
-			return;
-		}
-		serializer.serialize(result);
-	}
+  public void serialize(QueryContext ctx, Serializer serializer) throws QueryException {
+    Sequence result = run(ctx, true);
+    if (result == null) {
+      return;
+    }
+    serializer.serialize(result);
+  }
 
-	public boolean isPrettyPrint() {
-		return prettyPrint;
-	}
+  public boolean isPrettyPrint() {
+    return prettyPrint;
+  }
 
-	public XQuery prettyPrint() {
-		this.prettyPrint = true;
-		return this;
-	}
+  public XQuery prettyPrint() {
+    this.prettyPrint = true;
+    return this;
+  }
 }
