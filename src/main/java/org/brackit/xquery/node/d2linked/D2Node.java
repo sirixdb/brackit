@@ -1,14 +1,8 @@
 /*
  * [New BSD License]
-<<<<<<< HEAD
  * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
  *
-=======
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
- * All rights reserved.
- *
->>>>>>> upstream/master
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -19,11 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
-<<<<<<< HEAD
  *
-=======
- *
->>>>>>> upstream/master
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -188,10 +178,9 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   protected final int[] siblingAfter(int[] p) {
-    return getDivision(
-        p[0] + (((p[0] & 1) != 0)
-            ? 2
-            : 1));
+    return getDivision(p[0] + (((p[0] & 1) != 0)
+        ? 2
+        : 1));
   }
 
   protected final int[] getDivision(int value) {
@@ -208,8 +197,8 @@ public abstract class D2Node extends AbstractNode<D2Node> {
     for (int i = 0; i < length; i++) {
       if (n[i] != p[i]) {
         if (n[i] < p[i]) {
-          throw new IllegalArgumentException(String.format(
-              "Illegal sibling divisions: %s > %s", Arrays.toString(p), Arrays.toString(n)));
+          throw new IllegalArgumentException(
+              String.format("Illegal sibling divisions: %s > %s", Arrays.toString(p), Arrays.toString(n)));
         } else if ((p[i] & 1) == 0) // p[i] is even
         {
           if (n[i] - p[i] > 1) // e.g. p[i] == 4 and n[i] >= 6
@@ -280,8 +269,8 @@ public abstract class D2Node extends AbstractNode<D2Node> {
         }
       }
     }
-    throw new IllegalArgumentException(String.format(
-        "Illegal sibling divisions: %s and %s", Arrays.toString(p), Arrays.toString(n)));
+    throw new IllegalArgumentException(
+        String.format("Illegal sibling divisions: %s and %s", Arrays.toString(p), Arrays.toString(n)));
   }
 
   protected final int[] siblingBefore(int[] n) {
@@ -369,15 +358,14 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   @Override
   public boolean isDescendantOf(Node<?> node) {
     // TODO: fix for sun's compiler bug using generics parent == node
-    return ((node != null)
-        && ((parent == node) || ((parent != null) && (parent.isDescendantOf(node)))));
+    return ((node != null) && ((parent == node) || ((parent != null) && (parent.isDescendantOf(node)))));
   }
 
   @Override
   public boolean isDescendantOrSelfOf(Node<?> node) {
     // TODO: fix for sun's compiler bug using generics parent == node
-    return ((node != null) && ((this == node) || (parent == node)
-        || ((parent != null) && (parent.isDescendantOrSelfOf(node)))));
+    return ((node != null)
+        && ((this == node) || (parent == node) || ((parent != null) && (parent.isDescendantOrSelfOf(node)))));
   }
 
   @Override
@@ -387,8 +375,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 
   @Override
   public boolean isFollowingOf(Node<?> node) {
-    if ((node == null) || (node == this) || (!(node instanceof D2Node))
-        || (getKind() == Kind.ATTRIBUTE)) {
+    if ((node == null) || (node == this) || (!(node instanceof D2Node)) || (getKind() == Kind.ATTRIBUTE)) {
       return false;
     }
     D2Node n = (D2Node) node;
@@ -421,8 +408,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 
   @Override
   public boolean isPrecedingOf(Node<?> node) {
-    if ((node == null) || (node == this) || (!(node instanceof D2Node))
-        || (getKind() == Kind.ATTRIBUTE)) {
+    if ((node == null) || (node == this) || (!(node instanceof D2Node)) || (getKind() == Kind.ATTRIBUTE)) {
       return false;
     }
     D2Node n = (D2Node) node;
@@ -564,20 +550,17 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public D2Node setAttribute(Node<?> attribute)
-      throws OperationNotSupportedException, DocumentException {
+  public D2Node setAttribute(Node<?> attribute) throws OperationNotSupportedException, DocumentException {
     throw new OperationNotSupportedException();
   }
 
   @Override
-  public D2Node setAttribute(QNm name, Atomic value)
-      throws OperationNotSupportedException, DocumentException {
+  public D2Node setAttribute(QNm name, Atomic value) throws OperationNotSupportedException, DocumentException {
     throw new OperationNotSupportedException();
   }
 
   @Override
-  public boolean deleteAttribute(QNm name)
-      throws OperationNotSupportedException, DocumentException {
+  public boolean deleteAttribute(QNm name) throws OperationNotSupportedException, DocumentException {
     throw new OperationNotSupportedException();
   }
 
@@ -587,20 +570,17 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public D2Node append(SubtreeParser parser)
-      throws OperationNotSupportedException, DocumentException {
+  public D2Node append(SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
     throw new OperationNotSupportedException();
   }
 
   @Override
-  public D2Node append(Kind kind, QNm name, Atomic value)
-      throws OperationNotSupportedException, DocumentException {
+  public D2Node append(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException {
     throw new OperationNotSupportedException();
   }
 
   @Override
-  public D2Node prepend(Kind kind, QNm name, Atomic value)
-      throws OperationNotSupportedException, DocumentException {
+  public D2Node prepend(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException {
     throw new OperationNotSupportedException();
   }
 
@@ -610,8 +590,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public D2Node prepend(SubtreeParser parser)
-      throws OperationNotSupportedException, DocumentException {
+  public D2Node prepend(SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
     throw new OperationNotSupportedException();
   }
 
@@ -625,8 +604,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public D2Node insertAfter(Node<?> child)
-      throws OperationNotSupportedException, DocumentException {
+  public D2Node insertAfter(Node<?> child) throws OperationNotSupportedException, DocumentException {
     if (parent == null) {
       throw new DocumentException("%s has no parent", this);
     }
@@ -634,8 +612,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public D2Node insertAfter(SubtreeParser parser)
-      throws OperationNotSupportedException, DocumentException {
+  public D2Node insertAfter(SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
     if (parent == null) {
       throw new DocumentException("%s has no parent", this);
     }
@@ -652,8 +629,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public D2Node insertBefore(Node<?> child)
-      throws OperationNotSupportedException, DocumentException {
+  public D2Node insertBefore(Node<?> child) throws OperationNotSupportedException, DocumentException {
     if (parent == null) {
       throw new DocumentException("%s has no parent", this);
     }
@@ -661,8 +637,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public D2Node insertBefore(SubtreeParser parser)
-      throws OperationNotSupportedException, DocumentException {
+  public D2Node insertBefore(SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
     if (parent == null) {
       throw new DocumentException("%s has no parent", this);
     }
@@ -689,8 +664,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public D2Node replaceWith(SubtreeParser parser)
-      throws OperationNotSupportedException, DocumentException {
+  public D2Node replaceWith(SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
     final D2Node me = this;
     D2NodeBuilder builder = new D2NodeBuilder() {
       @Override

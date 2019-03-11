@@ -25,72 +25,45 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.node;
+package org.brackit.xquery.xdm;
 
-import java.util.Arrays;
-import org.brackit.xquery.node.parser.SubtreeParser;
-import org.brackit.xquery.node.stream.ArrayStream;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.OperationNotSupportedException;
-import org.brackit.xquery.xdm.Stream;
+import java.nio.file.Path;
 
 /**
  *
  * @author Sebastian Baechle
  *
+ * @param <E>
  */
-public class ArrayCollection<E extends Node<E>> extends AbstractCollection<E> {
-  protected Node[] docs;
-
-  public ArrayCollection(String name, E doc) {
-    super(name);
-    this.docs = new Node[] {doc};
-  }
-
-  public ArrayCollection(String name, E... docs) {
-    super(name);
-    this.docs = docs;
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public E getDocument() throws DocumentException {
-    if (docs.length == 1) {
-      return (E) docs[0];
-    }
-    throw new DocumentException("Illegal access to non-singular collection");
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public Stream<? extends E> getDocuments() throws DocumentException {
-    return new ArrayStream(docs);
-  }
+public interface JsonCollection<E extends StructuredItem> extends StructuredItemCollection<E> {
 
   @Override
-  public E add(SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
-    throw new OperationNotSupportedException();
-  }
-
-  public void add(Node<? super E> doc) {
-    this.docs = Arrays.copyOf(docs, docs.length + 1);
-    this.docs[docs.length - 1] = doc;
-  }
+  public String getName();
 
   @Override
-  public void delete() throws DocumentException {
-    throw new OperationNotSupportedException();
-  }
+  public void delete() throws DocumentException;
 
   @Override
-  public void remove(long documentID) throws OperationNotSupportedException, DocumentException {
-    throw new OperationNotSupportedException();
-  }
+  public void remove(long documentID);
 
   @Override
-  public long getDocumentCount() {
-    return docs.length;
-  }
+  public E getDocument();
 
+  @Override
+  public Stream<? extends E> getDocuments();
+
+  public Stream<? extends E> getDocuments(boolean updatable) throws DocumentException;
+
+  /**
+   * Add a file to the JSON collection.
+   *
+   * @param file the file to add to the collection
+   * @return the JSON root
+   * @throws OperationNotSupportedException if the operation is not supported
+   * @throws DocumentException if anything else went wrong.
+   */
+  public E add(Path file);
+
+  @Override
+  public long getDocumentCount();
 }

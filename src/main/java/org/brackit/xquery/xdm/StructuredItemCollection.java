@@ -28,7 +28,6 @@
 package org.brackit.xquery.xdm;
 
 import org.brackit.xquery.atomic.AnyURI;
-import org.brackit.xquery.node.parser.SubtreeParser;
 
 /**
  *
@@ -36,36 +35,19 @@ import org.brackit.xquery.node.parser.SubtreeParser;
  *
  * @param <E>
  */
-public interface Collection<E extends Node<E>> extends StructuredItemCollection<Node<E>> {
+public interface StructuredItemCollection<E extends StructuredItem> extends Sequence {
 
-  @Override
   public AnyURI getDocumentURI();
 
-  @Override
   public String getName();
 
-  @Override
-  public void delete();
+  public void delete() throws DocumentException;
 
-  @Override
   public void remove(long documentID) throws OperationNotSupportedException, DocumentException;
 
-  @Override
   public E getDocument() throws DocumentException;
 
-  @Override
   public Stream<? extends E> getDocuments() throws DocumentException;
 
-  /**
-   * Add to the collection.
-   *
-   * @param parser the subtree parser
-   * @return the new root node added to the collection
-   * @throws OperationNotSupportedException if the operation is not supported
-   * @throws DocumentException if anything else went wrong
-   */
-  public E add(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
-
-  @Override
   public long getDocumentCount();
 }
