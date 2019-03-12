@@ -43,7 +43,7 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.parser.DefaultHandler;
 import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.node.Node;
 
 /**
  *

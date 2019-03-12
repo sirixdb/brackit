@@ -34,8 +34,8 @@ import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.sequence.ItemSequence;
-import org.brackit.xquery.xdm.Array;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.json.Array;
 
 /**
  * @author Sebastian Baechle

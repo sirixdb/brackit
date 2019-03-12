@@ -25,34 +25,65 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm;
+package org.brackit.xquery.node;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.IntNumeric;
-import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.AnyURI;
+import org.brackit.xquery.sequence.BaseIter;
+import org.brackit.xquery.sequence.LazySequence;
+import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.Iter;
+import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.xdm.node.NodeCollection;
 
 /**
+ * 
  * @author Sebastian Baechle
- *
+ * 
+ * @param <E>
  */
-public interface Record extends Item {
+public abstract class AbstractNodeCollection<E extends Node<E>> extends
+		LazySequence implements NodeCollection<E> {
+	protected String name;
 
-	public abstract Sequence get(QNm field) throws QueryException;
+	public AbstractNodeCollection(String name) {
+		this.name = name;
+	}
 
-	public abstract Sequence value(IntNumeric i) throws QueryException;
+	protected AbstractNodeCollection(AbstractNodeCollection<E> collection) {
+		this.name = collection.name;
+	}
 
-	public abstract Sequence value(int i) throws QueryException;
+	@Override
+	public String getName() {
+		return name;
+	}
 
-	public abstract Array names() throws QueryException;
+	@Override
+	public AnyURI getDocumentURI() {
+		return AnyURI.fromString(name);
+	}
 
-	public abstract Array values() throws QueryException;
+	@Override
+	public Iter iterate() {
+		return new BaseIter() {
+			Stream<? extends Node<?>> docs;
 
-	public abstract QNm name(IntNumeric i) throws QueryException;
+			@Override
+			public void close() {
+				if (docs != null) {
+					docs.close();
+				}
+			}
 
-	public abstract QNm name(int i) throws QueryException;
-
-	public abstract IntNumeric length() throws QueryException;
-
-	public abstract int len() throws QueryException;
-
+			@Override
+			public Item next() throws QueryException {
+				if (docs == null) {
+					docs = getDocuments();
+				}
+				return docs.next();
+			}
+		};
+	}
 }

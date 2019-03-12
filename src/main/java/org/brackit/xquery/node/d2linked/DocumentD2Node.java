@@ -30,8 +30,8 @@ package org.brackit.xquery.node.d2linked;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.node.Node;
 
 /**
  *

@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm;
+package org.brackit.xquery.xdm.node;
 
 import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.Atomic;
@@ -33,6 +33,14 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.parser.SubtreeHandler;
 import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.xdm.Axis;
+import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.xdm.Kind;
+import org.brackit.xquery.xdm.OperationNotSupportedException;
+import org.brackit.xquery.xdm.Scope;
+import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.StructuredItem;
+import org.brackit.xquery.xdm.Type;
 import org.brackit.xquery.xdm.type.NodeType;
 
 /**
@@ -252,12 +260,12 @@ public interface Node<E extends Node<E>> extends StructuredItem {
   public int cmp(Node<?> other);
 
   /**
-   * Returns the {@link Collection} of this document, and <code>null</code> if this node not
+   * Returns the {@link NodeCollection} of this document, and <code>null</code> if this node not
    * associated with a document.
    *
    * @return the collection associated with this node
    */
-  public Collection<E> getCollection();
+  public NodeCollection<E> getCollection();
 
   /**
    * Returns the {@link Scope} for this node.

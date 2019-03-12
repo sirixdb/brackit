@@ -1,4 +1,6 @@
-package org.brackit.xquery.xdm;
+package org.brackit.xquery.xdm.node;
+
+import org.brackit.xquery.xdm.Stream;
 
 /**
  * Adds temporal methods.

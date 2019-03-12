@@ -36,41 +36,41 @@ import org.brackit.xquery.node.d2linked.D2NodeFactory;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.util.io.URIHandler;
-import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.NodeFactory;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
-import org.brackit.xquery.xdm.Store;
 import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.xdm.node.NodeCollection;
+import org.brackit.xquery.xdm.node.NodeFactory;
+import org.brackit.xquery.xdm.node.NodeStore;
 
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
-public class SimpleStore implements Store {
-	private HashMap<String, Collection<?>> docs = new HashMap<String, Collection<?>>();
+public class SimpleStore implements NodeStore {
+	private HashMap<String, NodeCollection<?>> docs = new HashMap<String, NodeCollection<?>>();
 
 	@Override
-	public Collection<?> create(String name) throws DocumentException {
-		Collection<?> coll = getNodeFactory().collection(name);
+	public NodeCollection<?> create(String name) throws DocumentException {
+		NodeCollection<?> coll = getNodeFactory().collection(name);
 		docs.put(name, coll);
 		return coll;
 	}
 
 	@Override
-	public Collection<?> create(String name, SubtreeParser parser)
+	public NodeCollection<?> create(String name, SubtreeParser parser)
 			throws DocumentException {
-		Collection<?> coll = getNodeFactory().collection(name, parser);
+		NodeCollection<?> coll = getNodeFactory().collection(name, parser);
 		docs.put(name, coll);
 		return coll;
 	}
 
 	@Override
-	public Collection<?> create(String name, Stream<SubtreeParser> parsers)
+	public NodeCollection<?> create(String name, Stream<SubtreeParser> parsers)
 			throws DocumentException {
-		Collection<?> coll = getNodeFactory().collection(name, parsers);
+		NodeCollection<?> coll = getNodeFactory().collection(name, parsers);
 		docs.put(name, coll);
 		return coll;
 	}
@@ -83,8 +83,8 @@ public class SimpleStore implements Store {
 	}
 
 	@Override
-	public Collection<?> lookup(String name) throws DocumentException {
-		Collection<?> coll = docs.get(name);
+	public NodeCollection<?> lookup(String name) throws DocumentException {
+		NodeCollection<?> coll = docs.get(name);
 		if (coll != null) {
 			return coll;
 		}

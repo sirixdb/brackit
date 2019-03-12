@@ -40,8 +40,8 @@ import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.record.ArrayRecord;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Record;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.json.Record;
 
 /**
  * 

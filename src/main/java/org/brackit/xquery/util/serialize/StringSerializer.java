@@ -44,13 +44,13 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.Numeric;
-import org.brackit.xquery.xdm.Array;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.Record;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.json.Array;
+import org.brackit.xquery.xdm.json.Record;
+import org.brackit.xquery.xdm.node.Node;
 
 /**
  * @author Sebastian Baechle

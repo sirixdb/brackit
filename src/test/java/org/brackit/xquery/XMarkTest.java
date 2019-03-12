@@ -28,8 +28,8 @@ import java.io.PrintStream;
 import org.brackit.xquery.node.d2linked.D2Node;
 import org.brackit.xquery.node.d2linked.D2NodeBuilder;
 import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.xdm.node.NodeCollection;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -55,7 +55,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
             .append("xmark").append(File.separator).append("results").append(File.separator).toString();
 
     /** Collection build from XMark auction document. */
-    protected Collection<?> coll;
+    protected NodeCollection<?> coll;
 
     @Test
     public void xmark01() throws Exception {
@@ -253,7 +253,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
      * @return build collection
      * @throws DocumentException if anything went wrong
      */
-    protected Collection<?> createDoc(final DocumentParser parser) throws DocumentException {
+    protected NodeCollection<?> createDoc(final DocumentParser parser) throws DocumentException {
         final D2NodeBuilder builder = new D2NodeBuilder();
         parser.parse(builder);
         final D2Node subtreeRoot = builder.root();

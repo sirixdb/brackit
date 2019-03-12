@@ -37,9 +37,9 @@ import org.brackit.xquery.node.stream.IteratorStream;
 import org.brackit.xquery.xdm.Axis;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.TemporalNode;
+import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.xdm.node.TemporalNode;
 import org.brackit.xquery.xdm.type.NodeType;
 
 /**

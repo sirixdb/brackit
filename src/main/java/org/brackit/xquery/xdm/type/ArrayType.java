@@ -28,8 +28,8 @@
 package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Array;
 import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.json.Array;
 
 /**
  * @author Sebastian Baechle

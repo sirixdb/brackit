@@ -25,9 +25,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm;
+package org.brackit.xquery.xdm.node;
 
-import java.nio.file.Path;
+import org.brackit.xquery.atomic.AnyURI;
+import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.xdm.OperationNotSupportedException;
+import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.StructuredItemCollection;
 
 /**
  *
@@ -35,34 +40,35 @@ import java.nio.file.Path;
  *
  * @param <E>
  */
-public interface JsonCollection<E extends StructuredItem> extends StructuredItemCollection<E> {
+public interface NodeCollection<E extends Node<E>> extends StructuredItemCollection<Node<E>> {
+
+  @Override
+  public AnyURI getDocumentURI();
 
   @Override
   public String getName();
 
   @Override
-  public void delete() throws DocumentException;
+  public void delete();
 
   @Override
-  public void remove(long documentID);
+  public void remove(long documentID) throws OperationNotSupportedException, DocumentException;
 
   @Override
-  public E getDocument();
+  public E getDocument() throws DocumentException;
 
   @Override
-  public Stream<? extends E> getDocuments();
-
-  public Stream<? extends E> getDocuments(boolean updatable) throws DocumentException;
+  public Stream<? extends E> getDocuments() throws DocumentException;
 
   /**
-   * Add a file to the JSON collection.
+   * Add to the collection.
    *
-   * @param file the file to add to the collection
-   * @return the JSON root
+   * @param parser the subtree parser
+   * @return the new root node added to the collection
    * @throws OperationNotSupportedException if the operation is not supported
-   * @throws DocumentException if anything else went wrong.
+   * @throws DocumentException if anything else went wrong
    */
-  public E add(Path file);
+  public E add(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
 
   @Override
   public long getDocumentCount();

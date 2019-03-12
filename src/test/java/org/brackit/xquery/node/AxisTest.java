@@ -40,11 +40,11 @@ import org.brackit.xquery.node.stream.StreamUtil;
 import org.brackit.xquery.node.stream.filter.Filter;
 import org.brackit.xquery.node.stream.filter.FilteredStream;
 import org.brackit.xquery.xdm.Axis;
-import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.Store;
 import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.xdm.node.NodeCollection;
+import org.brackit.xquery.xdm.node.NodeStore;
 import org.junit.Test;
 import junit.framework.Assert;
 
@@ -63,7 +63,7 @@ public abstract class AxisTest extends XQueryBaseTest {
         }
     };
 
-    private Collection<?> collection;
+    private NodeCollection<?> collection;
 
     private class AxisFilter implements Filter<Node<?>> {
         private final Node<?> node;
@@ -254,7 +254,7 @@ public abstract class AxisTest extends XQueryBaseTest {
     }
 
     @Override
-    protected abstract Store createStore() throws Exception;
+    protected abstract NodeStore createStore() throws Exception;
 
     @Override
     public void setUp() throws Exception, FileNotFoundException {

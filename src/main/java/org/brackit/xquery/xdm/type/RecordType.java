@@ -29,7 +29,7 @@ package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Record;
+import org.brackit.xquery.xdm.json.Record;
 
 /**
  * @author Sebastian Baechle

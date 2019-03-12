@@ -54,7 +54,7 @@ public class Collection extends AbstractFunction {
 			Sequence[] args) throws QueryException {
 		String name = (args.length > 0) ? ((Str) args[0]).stringValue() : null;
 		try {
-			org.brackit.xquery.xdm.Collection<?> collection;
+			org.brackit.xquery.xdm.node.NodeCollection<?> collection;
 			if ((name == null) || (name.isEmpty())) {
 				collection = ctx.getDefaultCollection();
 

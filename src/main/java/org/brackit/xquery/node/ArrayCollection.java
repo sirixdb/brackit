@@ -31,16 +31,16 @@ import java.util.Arrays;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.node.stream.ArrayStream;
 import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
 import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.node.Node;
 
 /**
  *
  * @author Sebastian Baechle
  *
  */
-public class ArrayCollection<E extends Node<E>> extends AbstractCollection<E> {
+public class ArrayCollection<E extends Node<E>> extends AbstractNodeCollection<E> {
   protected Node[] docs;
 
   public ArrayCollection(String name, E doc) {

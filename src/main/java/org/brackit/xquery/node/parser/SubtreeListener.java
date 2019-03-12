@@ -28,7 +28,7 @@
 package org.brackit.xquery.node.parser;
 
 import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.node.Node;
 
 /**
  * SAX-like handler-interface for documents.

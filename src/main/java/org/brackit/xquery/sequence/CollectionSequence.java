@@ -29,11 +29,11 @@ package org.brackit.xquery.sequence;
 
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.xdm.node.NodeCollection;
 
 /**
  * 
@@ -42,9 +42,9 @@ import org.brackit.xquery.xdm.Stream;
  */
 public class CollectionSequence extends LazySequence {
 	final QueryContext ctx;
-	final Collection<?> collection;
+	final NodeCollection<?> collection;
 
-	public CollectionSequence(QueryContext ctx, Collection<?> collection) {
+	public CollectionSequence(QueryContext ctx, NodeCollection<?> collection) {
 		this.ctx = ctx;
 		this.collection = collection;
 	}

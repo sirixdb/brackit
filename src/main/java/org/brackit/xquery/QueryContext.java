@@ -41,12 +41,12 @@ import org.brackit.xquery.node.SimpleStore;
 import org.brackit.xquery.node.d2linked.D2NodeFactory;
 import org.brackit.xquery.update.UpdateList;
 import org.brackit.xquery.update.op.UpdateOp;
-import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Node;
-import org.brackit.xquery.xdm.NodeFactory;
 import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Store;
+import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.xdm.node.NodeCollection;
+import org.brackit.xquery.xdm.node.NodeFactory;
+import org.brackit.xquery.xdm.node.NodeStore;
 import org.brackit.xquery.xdm.type.ItemType;
 
 /**
@@ -57,11 +57,11 @@ import org.brackit.xquery.xdm.type.ItemType;
 public class QueryContext {
 	protected static final NodeFactory<?> FACTORY = new D2NodeFactory();
 
-	protected static final Store STORE = null;
+	protected static final NodeStore STORE = null;
 
 	private final NodeFactory<?> factory;
 
-	private final Store store;
+	private final NodeStore store;
 
 	private UpdateList updates;
 
@@ -73,7 +73,7 @@ public class QueryContext {
 
 	private Node<?> defaultDocument;
 
-	private Collection<?> defaultCollection;
+	private NodeCollection<?> defaultCollection;
 
 	private DateTime dateTime;
 
@@ -88,7 +88,7 @@ public class QueryContext {
 		this.store = new SimpleStore();
 	}
 
-	public QueryContext(Store store) {
+	public QueryContext(NodeStore store) {
 		this.factory = FACTORY;
 		this.store = store;
 	}
@@ -152,11 +152,11 @@ public class QueryContext {
 		this.defaultDocument = defaultDocument;
 	}
 
-	public Collection<?> getDefaultCollection() {
+	public NodeCollection<?> getDefaultCollection() {
 		return defaultCollection;
 	}
 
-	public void setDefaultCollection(Collection<?> defaultCollection) {
+	public void setDefaultCollection(NodeCollection<?> defaultCollection) {
 		this.defaultCollection = defaultCollection;
 	}
 
@@ -185,7 +185,7 @@ public class QueryContext {
 		return factory;
 	}
 
-	public Store getStore() {
+	public NodeStore getStore() {
 		return store;
 	}
 }

@@ -41,15 +41,15 @@ import org.brackit.xquery.node.parser.StreamSubtreeParser;
 import org.brackit.xquery.node.parser.SubtreeHandler;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.util.annotation.FunctionAnnotation;
-import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.xdm.node.NodeCollection;
 import org.brackit.xquery.xdm.type.AnyNodeType;
 import org.brackit.xquery.xdm.type.AtomicType;
 import org.brackit.xquery.xdm.type.Cardinality;
@@ -96,12 +96,12 @@ public class Store extends AbstractFunction {
 			String name = ((Atomic) args[0]).stringValue();
 			Sequence nodes = args[1];
 
-			org.brackit.xquery.xdm.Store s = ctx.getStore();
+			org.brackit.xquery.xdm.node.NodeStore s = ctx.getStore();
 			if (createNew) {
 				create(s, name, nodes);
 			} else {
 				try {
-					Collection<?> coll = s.lookup(name);
+					NodeCollection<?> coll = s.lookup(name);
 					add(s, coll, nodes);
 				} catch (DocumentException e) {
 					// collection does not exist
@@ -116,7 +116,7 @@ public class Store extends AbstractFunction {
 		}
 	}
 
-	private void add(org.brackit.xquery.xdm.Store store, Collection<?> coll,
+	private void add(org.brackit.xquery.xdm.node.NodeStore store, NodeCollection<?> coll,
 			Sequence nodes) throws DocumentException, IOException {
 
 		if (nodes instanceof Node) {
@@ -135,7 +135,7 @@ public class Store extends AbstractFunction {
 		}
 	}
 
-	private void create(org.brackit.xquery.xdm.Store store, String name,
+	private void create(org.brackit.xquery.xdm.node.NodeStore store, String name,
 			Sequence nodes) throws DocumentException, IOException {
 		if (nodes instanceof Node) {
 			Node<?> n = (Node<?>) nodes;

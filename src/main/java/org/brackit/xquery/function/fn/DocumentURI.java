@@ -33,9 +33,9 @@ import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.xdm.node.Node;
 
 /**
  * 
@@ -54,7 +54,7 @@ public class DocumentURI extends AbstractFunction {
 			return null;
 		}
 		Node<?> node = (Node<?>) args[0];
-		org.brackit.xquery.xdm.Collection<?> collection = node.getCollection();
+		org.brackit.xquery.xdm.node.NodeCollection<?> collection = node.getCollection();
 		return (collection != null) ? new AnyURI(collection.getName()) : null;
 	}
 }

@@ -35,7 +35,7 @@ import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.node.d2linked.D2NodeFactory;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.node.Node;
 
 /**
  * Utility that provides a convenient way to build in-memory document fragments.

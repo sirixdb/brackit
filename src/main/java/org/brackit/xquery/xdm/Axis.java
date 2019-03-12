@@ -28,6 +28,8 @@
 package org.brackit.xquery.xdm;
 
 import org.brackit.xquery.QueryException;
+import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.xdm.node.TemporalNode;
 
 /**
  * Covers the document axes as defined in XQuery 1.0: 3.2.1.1 Axes

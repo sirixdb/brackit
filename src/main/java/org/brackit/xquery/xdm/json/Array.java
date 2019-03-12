@@ -25,27 +25,58 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm;
+package org.brackit.xquery.xdm.json;
 
-import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.xdm.Sequence;
 
 /**
+ * <p>
+ * Representation of an ordered sequence of values.
+ * </p>
+ * <p>
+ * CAVEAT: This representation allows to build arrays
+ * of arbitrary sequences including nodes, functions,
+ * the empty sequence and even nested arrays as values.   
+ * </p>
+ * <p>
+ * The relaxed data representation does not conform to
+ * XQuery's data model but facilitates a more flexible
+ * data representation within the query engine. 
+ * </p>
+ * <p>
+ * Since it is not possible to create or validate arrays,
+ * i.e., list types in vanilla XQuery/XPath/XML (optionally 
+ * with XMLSchema support), we must not take special care.
+ * </p>
  * 
  * @author Sebastian Baechle
  * 
  */
-public interface Store {
-	public Collection<?> lookup(String name) throws DocumentException;
+public interface Array extends ListOrUnion {
+	/**
+	 * Returns the value at the given position. 
+	 */
+	public Sequence at(IntNumeric i) throws QueryException;
+	
+	/**
+	 * Returns the value at the given position.
+	 */
+	public Sequence at(int i) throws QueryException;
 
-	public Collection<?> create(String name) throws DocumentException;
+	/**
+	 * Returns the length of this array.
+	 */
+	public IntNumeric length() throws QueryException;
+	
+	/**
+	 * Returns the length of this array.
+	 */
+	public int len() throws QueryException;
 
-	public Collection<?> create(String name, SubtreeParser parser)
-			throws DocumentException;
-
-	public Collection<?> create(String name, Stream<SubtreeParser> parsers)
-			throws DocumentException;
-
-	public void drop(String name) throws DocumentException;
-
-	public void makeDir(String path) throws DocumentException;
+	/**
+	 * Creates a slice of this array in the given boundaries. 
+	 */
+	public Array range(IntNumeric from, IntNumeric to) throws QueryException;
 }

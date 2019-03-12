@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -25,12 +25,31 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm;
+package org.brackit.xquery.xdm.json;
+
+import java.nio.file.Path;
+import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.StructuredItemStore;
 
 /**
+ *
  * @author Sebastian Baechle
  *
  */
-public interface ListOrUnion extends Item {
+public interface JsonStore extends StructuredItemStore {
+  @Override
+  public JsonCollection<?> lookup(String name);
 
+  @Override
+  public JsonCollection<?> create(String name);
+
+  public JsonCollection<?> create(String name, Path path);
+
+  public JsonCollection<?> create(String name, Stream<Path> parsers);
+
+  @Override
+  public void drop(String name);
+
+  @Override
+  public void makeDir(String path);
 }

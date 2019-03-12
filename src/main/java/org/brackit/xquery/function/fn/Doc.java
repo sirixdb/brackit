@@ -37,12 +37,12 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.TemporalCollection;
+import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.xdm.node.NodeCollection;
+import org.brackit.xquery.xdm.node.TemporalNodeCollection;
 
 /**
  * Implementation of predefined functions fn:doc($arg1) and
@@ -93,7 +93,7 @@ public class Doc extends AbstractFunction {
                 return document;
             } else {
                 final AnyURI uri = resolve(sctx, name);
-                final Collection<?> collection = ctx.getStore().lookup(
+                final NodeCollection<?> collection = ctx.getStore().lookup(
                         uri.stringValue());
                 final long documents = collection.getDocumentCount();
 
@@ -111,8 +111,8 @@ public class Doc extends AbstractFunction {
                             "Collection %s contains more than one document", name);
                 }
 
-                if (collection instanceof TemporalCollection<?>) {
-                    document = ((TemporalCollection<?>) collection).getDocument(revision);
+                if (collection instanceof TemporalNodeCollection<?>) {
+                    document = ((TemporalNodeCollection<?>) collection).getDocument(revision);
                 } else {
                     document = collection.getDocument();
                 }

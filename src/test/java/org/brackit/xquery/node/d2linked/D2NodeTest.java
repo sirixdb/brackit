@@ -29,8 +29,8 @@ package org.brackit.xquery.node.d2linked;
 
 import org.brackit.xquery.node.NodeTest;
 import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.xdm.node.NodeCollection;
 
 /**
  * 
@@ -40,7 +40,7 @@ import org.brackit.xquery.xdm.DocumentException;
 public class D2NodeTest extends NodeTest<D2Node> {
 
 	@Override
-	protected Collection<D2Node> createDocument(DocumentParser documentParser)
+	protected NodeCollection<D2Node> createDocument(DocumentParser documentParser)
 			throws DocumentException {
 		return new D2NodeFactory().build(documentParser).getCollection();
 	}

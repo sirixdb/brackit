@@ -25,12 +25,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm;
+package org.brackit.xquery.xdm.node;
 
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.xdm.Stream;
 
 /**
  * 
@@ -54,11 +56,11 @@ public interface NodeFactory<E extends Node<E>> {
 
 	public E build(SubtreeParser parser) throws DocumentException;
 
-	public Collection<E> collection(String name, SubtreeParser parser)
+	public NodeCollection<E> collection(String name, SubtreeParser parser)
 			throws DocumentException;
 
-	public Collection<E> collection(String name, Stream<SubtreeParser> parsers)
+	public NodeCollection<E> collection(String name, Stream<SubtreeParser> parsers)
 			throws DocumentException;
 
-	public Collection<E> collection(String name) throws DocumentException;
+	public NodeCollection<E> collection(String name) throws DocumentException;
 }

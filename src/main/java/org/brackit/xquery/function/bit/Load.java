@@ -41,13 +41,13 @@ import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.util.annotation.FunctionAnnotation;
 import org.brackit.xquery.util.io.URIHandler;
-import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.node.NodeCollection;
 import org.brackit.xquery.xdm.type.AtomicType;
 import org.brackit.xquery.xdm.type.Cardinality;
 import org.brackit.xquery.xdm.type.ElementType;
@@ -93,12 +93,12 @@ public class Load extends AbstractFunction {
 			String name = ((Atomic) args[0]).stringValue();
 			Sequence resources = args[1];
 
-			org.brackit.xquery.xdm.Store s = ctx.getStore();
+			org.brackit.xquery.xdm.node.NodeStore s = ctx.getStore();
 			if (createNew) {
 				create(s, name, resources);
 			} else {
 				try {
-					Collection<?> coll = s.lookup(name);
+					NodeCollection<?> coll = s.lookup(name);
 					add(s, coll, resources);
 				} catch (DocumentException e) {
 					// collection does not exist
@@ -113,7 +113,7 @@ public class Load extends AbstractFunction {
 		}
 	}
 
-	private void add(org.brackit.xquery.xdm.Store store, Collection<?> coll,
+	private void add(org.brackit.xquery.xdm.node.NodeStore store, NodeCollection<?> coll,
 			Sequence resources) throws DocumentException, IOException {
 
 		if (resources instanceof Atomic) {
@@ -132,7 +132,7 @@ public class Load extends AbstractFunction {
 		}
 	}
 
-	private void create(org.brackit.xquery.xdm.Store store, String name,
+	private void create(org.brackit.xquery.xdm.node.NodeStore store, String name,
 			Sequence resources) throws DocumentException, IOException {
 		if (resources instanceof Atomic) {
 			String r = ((Atomic) resources).stringValue();

@@ -45,9 +45,9 @@ import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.atomic.Time;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.sequence.ItemSequence;
-import org.brackit.xquery.xdm.Collection;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.xdm.node.NodeCollection;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -97,7 +97,7 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnDocDefaultDocument() throws Exception {
-    org.brackit.xquery.xdm.Collection<?> collection = store.lookup("test.xml");
+    NodeCollection<?> collection = store.lookup("test.xml");
     Node<?> documentNode = collection.getDocument();
     ctx.setDefaultDocument(collection.getDocument());
     Sequence result = new XQuery("doc('')").execute(ctx);
@@ -118,7 +118,7 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnRootDefaultContextItem() throws Exception {
-    org.brackit.xquery.xdm.Collection<?> collection = store.lookup("test.xml");
+    NodeCollection<?> collection = store.lookup("test.xml");
     Node<?> documentNode = collection.getDocument();
     ctx.setContextItem(documentNode);
     Sequence result = new XQuery("fn:root()").execute(ctx);
@@ -127,7 +127,7 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnRootDefaultContextItemExplicit() throws Exception {
-    org.brackit.xquery.xdm.Collection<?> collection = store.lookup("test.xml");
+    NodeCollection<?> collection = store.lookup("test.xml");
     Node<?> documentNode = collection.getDocument();
     ctx.setContextItem(documentNode);
     Sequence result = new XQuery("fn:root(.)").execute(ctx);
@@ -136,8 +136,7 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnRootInPathExpr() throws Exception {
-    Collection<?> coll =
-        ctx.getStore().create("test.xml", new DocumentParser("<a><b><c/><d/></b></a>"));
+    NodeCollection<?> coll = ctx.getStore().create("test.xml", new DocumentParser("<a><b><c/><d/></b></a>"));
     Node<?> doc = coll.getDocument();
     ctx.setContextItem(doc);
     Sequence result = new XQuery(".//d/fn:root()").execute(ctx);
@@ -240,8 +239,7 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnStringNormalize() throws QueryException {
-    Sequence result =
-        new XQuery("normalize-space(' \tin\r\nvade d by_whitespace \n ')").execute(ctx);
+    Sequence result = new XQuery("normalize-space(' \tin\r\nvade d by_whitespace \n ')").execute(ctx);
     ResultChecker.dCheck(new Str("in vade d by_whitespace"), result);
   }
 
@@ -283,8 +281,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnSubsequence2ArgFromStart() throws Exception {
     Sequence result = new XQuery("fn:subsequence((1, 2, 3, 4, 5), xs:double(1))").execute(ctx);
-    ResultChecker.dCheck(
-        new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5)),
+    ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5)),
         result);
   }
 
@@ -303,8 +300,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnSubsequence2ArgFromBeforeStart() throws Exception {
     Sequence result = new XQuery("fn:subsequence((1, 2, 3, 4, 5), xs:double(0))").execute(ctx);
-    ResultChecker.dCheck(
-        new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5)),
+    ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5)),
         result);
   }
 
@@ -316,24 +312,20 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnSubsequence3ArgFromStart() throws Exception {
-    Sequence result =
-        new XQuery("fn:subsequence((1, 2, 3, 4, 5), xs:double(1), xs:double(5))").execute(ctx);
-    ResultChecker.dCheck(
-        new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5)),
+    Sequence result = new XQuery("fn:subsequence((1, 2, 3, 4, 5), xs:double(1), xs:double(5))").execute(ctx);
+    ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5)),
         result);
   }
 
   @Test
   public void fnSubsequence3ArgFromMiddle() throws Exception {
-    Sequence result =
-        new XQuery("fn:subsequence((1, 2, 3, 4, 5), xs:double(4), xs:double(1))").execute(ctx);
+    Sequence result = new XQuery("fn:subsequence((1, 2, 3, 4, 5), xs:double(4), xs:double(1))").execute(ctx);
     ResultChecker.dCheck(new ItemSequence(new Int32(4)), result);
   }
 
   @Test
   public void fnSubsequence3ArgFromMiddleToAfterEnd() throws Exception {
-    Sequence result =
-        new XQuery("fn:subsequence((1, 2, 3, 4, 5), xs:double(4), xs:double(3))").execute(ctx);
+    Sequence result = new XQuery("fn:subsequence((1, 2, 3, 4, 5), xs:double(4), xs:double(3))").execute(ctx);
     ResultChecker.dCheck(new ItemSequence(new Int32(4), new Int32(5)), result);
   }
 
@@ -346,8 +338,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnReverse() throws Exception {
     Sequence result = new XQuery("fn:reverse((1, 2, 3, 4, 5))").execute(ctx);
-    ResultChecker.dCheck(
-        new ItemSequence(new Int32(5), new Int32(4), new Int32(3), new Int32(2), new Int32(1)),
+    ResultChecker.dCheck(new ItemSequence(new Int32(5), new Int32(4), new Int32(3), new Int32(2), new Int32(1)),
         result);
   }
 
@@ -360,29 +351,25 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnRemoveStart() throws Exception {
     Sequence result = new XQuery("fn:remove((1, 2, 3, 4, 5), 1)").execute(ctx);
-    ResultChecker.dCheck(
-        new ItemSequence(new Int32(2), new Int32(3), new Int32(4), new Int32(5)), result);
+    ResultChecker.dCheck(new ItemSequence(new Int32(2), new Int32(3), new Int32(4), new Int32(5)), result);
   }
 
   @Test
   public void fnRemoveMiddle() throws Exception {
     Sequence result = new XQuery("fn:remove((1, 2, 3, 4, 5), 2)").execute(ctx);
-    ResultChecker.dCheck(
-        new ItemSequence(new Int32(1), new Int32(3), new Int32(4), new Int32(5)), result);
+    ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(3), new Int32(4), new Int32(5)), result);
   }
 
   @Test
   public void fnRemoveEnd() throws Exception {
     Sequence result = new XQuery("fn:remove((1, 2, 3, 4, 5), 5)").execute(ctx);
-    ResultChecker.dCheck(
-        new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4)), result);
+    ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4)), result);
   }
 
   @Test
   public void fnRemoveIllegalIndex() throws Exception {
     Sequence result = new XQuery("fn:remove((1, 2, 3, 4, 5), 7)").execute(ctx);
-    ResultChecker.dCheck(
-        new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5)),
+    ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5)),
         result);
   }
 
@@ -396,27 +383,21 @@ public class FnTest extends XQueryBaseTest {
   public void fnInsertBeforeStart() throws Exception {
     Sequence result = new XQuery("fn:insert-before((1, 2, 3, 4, 5), 1, (7))").execute(ctx);
     ResultChecker.dCheck(
-        new ItemSequence(new Int32(7), new Int32(1), new Int32(2), new Int32(3), new Int32(4),
-            new Int32(5)),
-        result);
+        new ItemSequence(new Int32(7), new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5)), result);
   }
 
   @Test
   public void fnInsertBeforeMiddle() throws Exception {
     Sequence result = new XQuery("fn:insert-before((1, 2, 3, 4, 5), 3, (7))").execute(ctx);
     ResultChecker.dCheck(
-        new ItemSequence(new Int32(1), new Int32(2), new Int32(7), new Int32(3), new Int32(4),
-            new Int32(5)),
-        result);
+        new ItemSequence(new Int32(1), new Int32(2), new Int32(7), new Int32(3), new Int32(4), new Int32(5)), result);
   }
 
   @Test
   public void fnInsertBeforeEnd() throws Exception {
     Sequence result = new XQuery("fn:insert-before((1, 2, 3, 4, 5), 6, (7))").execute(ctx);
     ResultChecker.dCheck(
-        new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5),
-            new Int32(7)),
-        result);
+        new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5), new Int32(7)), result);
   }
 
   @Test
@@ -428,8 +409,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnInsertBeforeEmpIns() throws Exception {
     Sequence result = new XQuery("fn:insert-before((1, 2, 3, 4, 5), 6, ())").execute(ctx);
-    ResultChecker.dCheck(
-        new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5)),
+    ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5)),
         result);
   }
 
@@ -460,10 +440,8 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnStringToCodepoints() throws Exception {
     Sequence result = new XQuery("fn:string-to-codepoints('Thérèse')").execute(ctx);
-    ResultChecker.dCheck(
-        new ItemSequence(new Int32(84), new Int32(104), new Int32(233), new Int32(114),
-            new Int32(232), new Int32(115), new Int32(101)),
-        result);
+    ResultChecker.dCheck(new ItemSequence(new Int32(84), new Int32(104), new Int32(233), new Int32(114), new Int32(232),
+        new Int32(115), new Int32(101)), result);
   }
 
   @Test
@@ -480,8 +458,7 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnCodepointsToString() throws Exception {
-    Sequence result =
-        new XQuery("fn:codepoints-to-string((84, 104, 233, 114, 232, 115, 101))").execute(ctx);
+    Sequence result = new XQuery("fn:codepoints-to-string((84, 104, 233, 114, 232, 115, 101))").execute(ctx);
     ResultChecker.dCheck(new Str("Thérèse"), result);
   }
 
@@ -521,8 +498,7 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnSubstringBeforeNotContained() throws Exception {
-    Sequence result =
-        new XQuery("fn:substring-before('Thérèse est jolie.', 'baguette')").execute(ctx);
+    Sequence result = new XQuery("fn:substring-before('Thérèse est jolie.', 'baguette')").execute(ctx);
     ResultChecker.dCheck(Str.EMPTY, result);
   }
 
@@ -546,8 +522,7 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnSubstringAfterNotContained() throws Exception {
-    Sequence result =
-        new XQuery("fn:substring-after('Thérèse est jolie.', 'baguette')").execute(ctx);
+    Sequence result = new XQuery("fn:substring-after('Thérèse est jolie.', 'baguette')").execute(ctx);
     ResultChecker.dCheck(Str.EMPTY, result);
   }
 
@@ -676,16 +651,14 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnMatchesIgnoreCase() throws Exception {
     Sequence result = new XQuery(
-        "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'kaum', 'i')").execute(
-            ctx);
+        "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'kaum', 'i')").execute(ctx);
     ResultChecker.dCheck(Bool.TRUE, result);
   }
 
   @Test
   public void fnMatchesIgnoreWhitespace() throws Exception {
     Sequence result = new XQuery(
-        "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'K aum', 'x')").execute(
-            ctx);
+        "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'K aum', 'x')").execute(ctx);
     ResultChecker.dCheck(Bool.TRUE, result);
   }
 
@@ -698,7 +671,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnMatchesIllegalFlag() throws Exception {
     try {
-      Sequence result = new XQuery("fn:matches('abracadabra', 'bra', 'ü')").execute(ctx);
+      new XQuery("fn:matches('abracadabra', 'bra', 'ü')").execute(ctx);
       fail("Function accepted illegal flag.");
     } catch (QueryException e) {
       assertEquals(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION_FLAGS, e.getCode());
@@ -708,7 +681,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnMatchesPureGroup() throws Exception {
     try {
-      Sequence result = new XQuery("fn:matches('abracadabra', '(?bra).*')").execute(ctx);
+      new XQuery("fn:matches('abracadabra', '(?bra).*')").execute(ctx);
       fail("Pure groups disallowed.");
     } catch (QueryException e) {
       assertEquals(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, e.getCode());
@@ -718,7 +691,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnMatchesTooManyOpenBrackets() throws Exception {
     try {
-      Sequence result = new XQuery("fn:matches('abracadabra', '[bra')").execute(ctx);
+      new XQuery("fn:matches('abracadabra', '[bra')").execute(ctx);
       fail("Too many opening brackets.");
     } catch (QueryException e) {
       assertEquals(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, e.getCode());
@@ -728,7 +701,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnMatchesTooManyCloseBrackets() throws Exception {
     try {
-      Sequence result = new XQuery("fn:matches('abracadabra', 'bra]')").execute(ctx);
+      new XQuery("fn:matches('abracadabra', 'bra]')").execute(ctx);
       fail("Too many closing brackets.");
     } catch (QueryException e) {
       assertEquals(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, e.getCode());
@@ -738,7 +711,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnMatchesTooManyOpenParens() throws Exception {
     try {
-      Sequence result = new XQuery("fn:matches('abracadabra', '(bra')").execute(ctx);
+      new XQuery("fn:matches('abracadabra', '(bra')").execute(ctx);
       fail("Too many opening parentheses.");
     } catch (QueryException e) {
       assertEquals(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, e.getCode());
@@ -748,7 +721,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnMatchesTooManyCloseParens() throws Exception {
     try {
-      Sequence result = new XQuery("fn:matches('abracadabra', 'bra)')").execute(ctx);
+      new XQuery("fn:matches('abracadabra', 'bra)')").execute(ctx);
       fail("Too many closing parentheses.");
     } catch (QueryException e) {
     }
@@ -763,7 +736,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnMatchesIllegalBackRef() throws Exception {
     try {
-      Sequence result = new XQuery("fn:matches('brabra', '(bra)\\2')").execute(ctx);
+      new XQuery("fn:matches('brabra', '(bra)\\2')").execute(ctx);
       fail("Illegal back reference.");
     } catch (QueryException e) {
       assertEquals(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, e.getCode());
@@ -773,7 +746,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnMatchesTrailingBackslash() throws Exception {
     try {
-      Sequence result = new XQuery("fn:matches('brabra', '(bra)\\')").execute(ctx);
+      new XQuery("fn:matches('brabra', '(bra)\\')").execute(ctx);
       fail("Trailing back slash.");
     } catch (QueryException e) {
       assertEquals(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, e.getCode());
@@ -783,7 +756,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnMatchesBackRefToGroup0() throws Exception {
     try {
-      Sequence result = new XQuery("fn:matches('brabra', '(bra)\\0')").execute(ctx);
+      new XQuery("fn:matches('brabra', '(bra)\\0')").execute(ctx);
       fail("Back ref to group 0.");
     } catch (QueryException e) {
       assertEquals(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, e.getCode());
@@ -793,7 +766,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnMatchesIllegalBackRefInCharClass() throws Exception {
     try {
-      Sequence result = new XQuery("fn:matches('brabra', '(bra)[a-r\\1]*')").execute(ctx);
+      new XQuery("fn:matches('brabra', '(bra)[a-r\\1]*')").execute(ctx);
       fail("Illegal back reference in character class.");
     } catch (QueryException e) {
       assertEquals(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, e.getCode());
@@ -839,7 +812,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnReplaceEmptyPattern() throws Exception {
     try {
-      Sequence result = new XQuery("fn:replace('abracadabra', '.*?', '$1')").execute(ctx);
+      new XQuery("fn:replace('abracadabra', '.*?', '$1')").execute(ctx);
       fail("Pattern matches empty string.");
     } catch (QueryException e) {
       assertEquals(ErrorCode.ERR_REGULAR_EXPRESSION_EMPTY_STRING, e.getCode());
@@ -849,7 +822,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnReplaceSingleBackslash() throws Exception {
     try {
-      Sequence result = new XQuery("fn:replace('abracadabra', 'bra', '\\')").execute(ctx);
+      new XQuery("fn:replace('abracadabra', 'bra', '\\')").execute(ctx);
       fail("Replacement string consists of single backslash.");
     } catch (QueryException e) {
       assertEquals(ErrorCode.ERR_INVALID_REPLACEMENT_STRING, e.getCode());
@@ -859,7 +832,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnReplaceSingleDollarSign() throws Exception {
     try {
-      Sequence result = new XQuery("fn:replace('abracadabra', 'bra', '$')").execute(ctx);
+      new XQuery("fn:replace('abracadabra', 'bra', '$')").execute(ctx);
       fail("Replacement string consists of single dollar sign.");
     } catch (QueryException e) {
       assertEquals(ErrorCode.ERR_INVALID_REPLACEMENT_STRING, e.getCode());
@@ -869,7 +842,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnReplaceIllegallyUsedBackslash() throws Exception {
     try {
-      Sequence result = new XQuery("fn:replace('abracadabra', 'bra', 'x\\x')").execute(ctx);
+      new XQuery("fn:replace('abracadabra', 'bra', 'x\\x')").execute(ctx);
       fail("Replacement string makes illegal use of backslash.");
     } catch (QueryException e) {
       assertEquals(ErrorCode.ERR_INVALID_REPLACEMENT_STRING, e.getCode());
@@ -879,7 +852,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnReplaceIllegallyUsedDollarSign() throws Exception {
     try {
-      Sequence result = new XQuery("fn:replace('abracadabra', 'bra', 'x$x')").execute(ctx);
+      new XQuery("fn:replace('abracadabra', 'bra', 'x$x')").execute(ctx);
       fail("Replacement string makes illegal use of dollar sign.");
     } catch (QueryException e) {
       assertEquals(ErrorCode.ERR_INVALID_REPLACEMENT_STRING, e.getCode());
@@ -914,9 +887,7 @@ public class FnTest extends XQueryBaseTest {
   public void fnTokenizeSimple2() throws Exception {
     Sequence result = new XQuery("fn:tokenize('1,15,,24,50,', ',')").execute(ctx);
     ResultChecker.dCheck(
-        new ItemSequence(new Str("1"), new Str("15"), Str.EMPTY, new Str("24"), new Str("50"),
-            Str.EMPTY),
-        result);
+        new ItemSequence(new Str("1"), new Str("15"), Str.EMPTY, new Str("24"), new Str("50"), Str.EMPTY), result);
   }
 
   @Test
@@ -934,7 +905,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnTokenizeEmptyPattern() throws Exception {
     try {
-      Sequence result = new XQuery("fn:tokenize('abracadabra', '.?')").execute(ctx);
+      new XQuery("fn:tokenize('abracadabra', '.?')").execute(ctx);
       fail("Pattern matches empty string.");
     } catch (QueryException e) {
       assertEquals(ErrorCode.ERR_REGULAR_EXPRESSION_EMPTY_STRING, e.getCode());
@@ -943,15 +914,13 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnYearsFromDuration() throws Exception {
-    Sequence result =
-        new XQuery("fn:years-from-duration(xs:yearMonthDuration('P20Y15M'))").execute(ctx);
+    Sequence result = new XQuery("fn:years-from-duration(xs:yearMonthDuration('P20Y15M'))").execute(ctx);
     ResultChecker.dCheck(new Int32(21), result);
   }
 
   @Test
   public void fnYearsFromDurationNegative() throws Exception {
-    Sequence result =
-        new XQuery("fn:years-from-duration(xs:yearMonthDuration('-P20Y15M'))").execute(ctx);
+    Sequence result = new XQuery("fn:years-from-duration(xs:yearMonthDuration('-P20Y15M'))").execute(ctx);
     ResultChecker.dCheck(new Int32(-21), result);
   }
 
@@ -963,22 +932,19 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnYearsFromDurationOtherDur() throws Exception {
-    Sequence result =
-        new XQuery("fn:years-from-duration(xs:dayTimeDuration('P7DT25H'))").execute(ctx);
+    Sequence result = new XQuery("fn:years-from-duration(xs:dayTimeDuration('P7DT25H'))").execute(ctx);
     ResultChecker.dCheck(Int32.ZERO, result);
   }
 
   @Test
   public void fnMonthsFromDuration() throws Exception {
-    Sequence result =
-        new XQuery("fn:months-from-duration(xs:yearMonthDuration('P20Y15M'))").execute(ctx);
+    Sequence result = new XQuery("fn:months-from-duration(xs:yearMonthDuration('P20Y15M'))").execute(ctx);
     ResultChecker.dCheck(new Int32(3), result);
   }
 
   @Test
   public void fnMonthsFromDurationNegative() throws Exception {
-    Sequence result =
-        new XQuery("fn:months-from-duration(xs:yearMonthDuration('-P20Y15M'))").execute(ctx);
+    Sequence result = new XQuery("fn:months-from-duration(xs:yearMonthDuration('-P20Y15M'))").execute(ctx);
     ResultChecker.dCheck(new Int32(-3), result);
   }
 
@@ -990,22 +956,19 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnMonthsFromDurationOtherDur() throws Exception {
-    Sequence result =
-        new XQuery("fn:months-from-duration(xs:dayTimeDuration('P7DT25H'))").execute(ctx);
+    Sequence result = new XQuery("fn:months-from-duration(xs:dayTimeDuration('P7DT25H'))").execute(ctx);
     ResultChecker.dCheck(Int32.ZERO, result);
   }
 
   @Test
   public void fnDaysFromDuration() throws Exception {
-    Sequence result =
-        new XQuery("fn:days-from-duration(xs:dayTimeDuration('P7DT25H'))").execute(ctx);
+    Sequence result = new XQuery("fn:days-from-duration(xs:dayTimeDuration('P7DT25H'))").execute(ctx);
     ResultChecker.dCheck(new Int32(8), result);
   }
 
   @Test
   public void fnDaysFromDurationNegative() throws Exception {
-    Sequence result =
-        new XQuery("fn:days-from-duration(xs:dayTimeDuration('-P7DT25H'))").execute(ctx);
+    Sequence result = new XQuery("fn:days-from-duration(xs:dayTimeDuration('-P7DT25H'))").execute(ctx);
     ResultChecker.dCheck(new Int32(-8), result);
   }
 
@@ -1017,22 +980,19 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnDaysFromDurationOtherDur() throws Exception {
-    Sequence result =
-        new XQuery("fn:days-from-duration(xs:yearMonthDuration('P20Y15M'))").execute(ctx);
+    Sequence result = new XQuery("fn:days-from-duration(xs:yearMonthDuration('P20Y15M'))").execute(ctx);
     ResultChecker.dCheck(Int32.ZERO, result);
   }
 
   @Test
   public void fnHoursFromDuration() throws Exception {
-    Sequence result =
-        new XQuery("fn:hours-from-duration(xs:dayTimeDuration('P7DT25H61M'))").execute(ctx);
+    Sequence result = new XQuery("fn:hours-from-duration(xs:dayTimeDuration('P7DT25H61M'))").execute(ctx);
     ResultChecker.dCheck(new Int32(2), result);
   }
 
   @Test
   public void fnHoursFromDurationNegative() throws Exception {
-    Sequence result =
-        new XQuery("fn:hours-from-duration(xs:dayTimeDuration('-P7DT25H61M'))").execute(ctx);
+    Sequence result = new XQuery("fn:hours-from-duration(xs:dayTimeDuration('-P7DT25H61M'))").execute(ctx);
     ResultChecker.dCheck(new Int32(-2), result);
   }
 
@@ -1044,22 +1004,19 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnHoursFromDurationOtherDur() throws Exception {
-    Sequence result =
-        new XQuery("fn:hours-from-duration(xs:yearMonthDuration('P20Y15M'))").execute(ctx);
+    Sequence result = new XQuery("fn:hours-from-duration(xs:yearMonthDuration('P20Y15M'))").execute(ctx);
     ResultChecker.dCheck(Int32.ZERO, result);
   }
 
   @Test
   public void fnMinutesFromDuration() throws Exception {
-    Sequence result =
-        new XQuery("fn:minutes-from-duration(xs:dayTimeDuration('PT1M61S'))").execute(ctx);
+    Sequence result = new XQuery("fn:minutes-from-duration(xs:dayTimeDuration('PT1M61S'))").execute(ctx);
     ResultChecker.dCheck(new Int32(2), result);
   }
 
   @Test
   public void fnMinutesFromDurationNegative() throws Exception {
-    Sequence result =
-        new XQuery("fn:minutes-from-duration(xs:dayTimeDuration('-PT1M61S'))").execute(ctx);
+    Sequence result = new XQuery("fn:minutes-from-duration(xs:dayTimeDuration('-PT1M61S'))").execute(ctx);
     ResultChecker.dCheck(new Int32(-2), result);
   }
 
@@ -1071,22 +1028,19 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnMinutesFromDurationOtherDur() throws Exception {
-    Sequence result =
-        new XQuery("fn:minutes-from-duration(xs:yearMonthDuration('P20Y15M'))").execute(ctx);
+    Sequence result = new XQuery("fn:minutes-from-duration(xs:yearMonthDuration('P20Y15M'))").execute(ctx);
     ResultChecker.dCheck(Int32.ZERO, result);
   }
 
   @Test
   public void fnSecondsFromDuration() throws Exception {
-    Sequence result =
-        new XQuery("fn:seconds-from-duration(xs:dayTimeDuration('PT1M61S'))").execute(ctx);
+    Sequence result = new XQuery("fn:seconds-from-duration(xs:dayTimeDuration('PT1M61S'))").execute(ctx);
     ResultChecker.dCheck(new Dbl(1.0), result);
   }
 
   @Test
   public void fnSecondsFromDurationNegative() throws Exception {
-    Sequence result =
-        new XQuery("fn:seconds-from-duration(xs:dayTimeDuration('-PT1M61S'))").execute(ctx);
+    Sequence result = new XQuery("fn:seconds-from-duration(xs:dayTimeDuration('-PT1M61S'))").execute(ctx);
     ResultChecker.dCheck(new Dbl(-1.0), result);
   }
 
@@ -1098,15 +1052,13 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnSecondsFromDurationOtherDur() throws Exception {
-    Sequence result =
-        new XQuery("fn:seconds-from-duration(xs:yearMonthDuration('P20Y15M'))").execute(ctx);
+    Sequence result = new XQuery("fn:seconds-from-duration(xs:yearMonthDuration('P20Y15M'))").execute(ctx);
     ResultChecker.dCheck(new Dbl(0.0), result);
   }
 
   @Test
   public void fnYearFromDateTime() throws Exception {
-    Sequence result =
-        new XQuery("fn:year-from-dateTime(xs:dateTime('1999-05-31T13:20:00-05:00'))").execute(ctx);
+    Sequence result = new XQuery("fn:year-from-dateTime(xs:dateTime('1999-05-31T13:20:00-05:00'))").execute(ctx);
     ResultChecker.dCheck(new Int32(1999), result);
   }
 
@@ -1118,8 +1070,7 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnMonthFromDateTime() throws Exception {
-    Sequence result =
-        new XQuery("fn:month-from-dateTime(xs:dateTime('1999-05-31T13:20:00-05:00'))").execute(ctx);
+    Sequence result = new XQuery("fn:month-from-dateTime(xs:dateTime('1999-05-31T13:20:00-05:00'))").execute(ctx);
     ResultChecker.dCheck(new Int32(5), result);
   }
 
@@ -1131,8 +1082,7 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnDayFromDateTime() throws Exception {
-    Sequence result =
-        new XQuery("fn:day-from-dateTime(xs:dateTime('1999-05-31T13:20:00-05:00'))").execute(ctx);
+    Sequence result = new XQuery("fn:day-from-dateTime(xs:dateTime('1999-05-31T13:20:00-05:00'))").execute(ctx);
     ResultChecker.dCheck(new Int32(31), result);
   }
 
@@ -1144,8 +1094,7 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnHoursFromDateTime() throws Exception {
-    Sequence result =
-        new XQuery("fn:hours-from-dateTime(xs:dateTime('1999-05-31T13:20:00-05:00'))").execute(ctx);
+    Sequence result = new XQuery("fn:hours-from-dateTime(xs:dateTime('1999-05-31T13:20:00-05:00'))").execute(ctx);
     ResultChecker.dCheck(new Int32(13), result);
   }
 
@@ -1157,9 +1106,7 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnMinutesFromDateTime() throws Exception {
-    Sequence result =
-        new XQuery("fn:minutes-from-dateTime(xs:dateTime('1999-05-31T13:20:00-05:00'))").execute(
-            ctx);
+    Sequence result = new XQuery("fn:minutes-from-dateTime(xs:dateTime('1999-05-31T13:20:00-05:00'))").execute(ctx);
     ResultChecker.dCheck(new Int32(20), result);
   }
 
@@ -1171,9 +1118,7 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnSecondsFromDateTime() throws Exception {
-    Sequence result =
-        new XQuery("fn:seconds-from-dateTime(xs:dateTime('1999-05-31T13:20:00-05:00'))").execute(
-            ctx);
+    Sequence result = new XQuery("fn:seconds-from-dateTime(xs:dateTime('1999-05-31T13:20:00-05:00'))").execute(ctx);
     ResultChecker.dCheck(new Dbl(0.0), result);
   }
 
@@ -1185,16 +1130,13 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnTimezoneFromDateTime() throws Exception {
-    Sequence result =
-        new XQuery("fn:timezone-from-dateTime(xs:dateTime('1999-05-31T13:20:00-05:00'))").execute(
-            ctx);
+    Sequence result = new XQuery("fn:timezone-from-dateTime(xs:dateTime('1999-05-31T13:20:00-05:00'))").execute(ctx);
     ResultChecker.dCheck(new DTD("-PT5H"), result);
   }
 
   @Test
   public void fnTimezoneFromDateTimeWithoutTimezone() throws Exception {
-    Sequence result =
-        new XQuery("fn:timezone-from-dateTime(xs:dateTime('1999-05-31T13:20:00'))").execute(ctx);
+    Sequence result = new XQuery("fn:timezone-from-dateTime(xs:dateTime('1999-05-31T13:20:00'))").execute(ctx);
     ResultChecker.dCheck(null, result);
   }
 
@@ -1314,9 +1256,8 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnAdjustDateTimeToTimezoneEmptyTimezone() throws Exception {
-    Sequence result = new XQuery(
-        "fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'), ())").execute(
-            ctx);
+    Sequence result =
+        new XQuery("fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'), ())").execute(ctx);
     ResultChecker.dCheck(new DateTime("2002-03-07T10:00:00"), result);
   }
 
@@ -1331,15 +1272,14 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnAdjustDateTimeToTimezoneWithoutTimezone() throws Exception {
     Sequence result = new XQuery(
-        "fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00'), xs:dayTimeDuration('PT10H'))").execute(
-            ctx);
+        "fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00'), xs:dayTimeDuration('PT10H'))").execute(ctx);
     ResultChecker.dCheck(new DateTime("2002-03-07T10:00:00+10:00"), result);
   }
 
   @Test
   public void fnAdjustDateTimeToTimezoneImplicitTimezone() throws Exception {
-    Sequence result = new XQuery(
-        "fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'))").execute(ctx);
+    Sequence result =
+        new XQuery("fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'))").execute(ctx);
     ResultChecker.dCheck(new DateTime("2002-03-07T16:00:00+01:00"), result);
   }
 
@@ -1363,31 +1303,28 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnAdjustDateToTimezoneEmptyTimezone() throws Exception {
-    Sequence result =
-        new XQuery("fn:adjust-date-to-timezone(xs:date('2002-03-07-05:00'), ())").execute(ctx);
+    Sequence result = new XQuery("fn:adjust-date-to-timezone(xs:date('2002-03-07-05:00'), ())").execute(ctx);
     ResultChecker.dCheck(new Date("2002-03-07"), result);
   }
 
   @Test
   public void fnAdjustDateToTimezone() throws Exception {
-    Sequence result = new XQuery(
-        "fn:adjust-date-to-timezone(xs:date('2002-03-07-05:00'), xs:dayTimeDuration('-PT10H'))").execute(
+    Sequence result =
+        new XQuery("fn:adjust-date-to-timezone(xs:date('2002-03-07-05:00'), xs:dayTimeDuration('-PT10H'))").execute(
             ctx);
     ResultChecker.dCheck(new Date("2002-03-06-10:00"), result);
   }
 
   @Test
   public void fnAdjustDateToTimezoneWithoutTimezone() throws Exception {
-    Sequence result = new XQuery(
-        "fn:adjust-date-to-timezone(xs:date('2002-03-07'), xs:dayTimeDuration('-PT10H'))").execute(
-            ctx);
+    Sequence result =
+        new XQuery("fn:adjust-date-to-timezone(xs:date('2002-03-07'), xs:dayTimeDuration('-PT10H'))").execute(ctx);
     ResultChecker.dCheck(new Date("2002-03-07-10:00"), result);
   }
 
   @Test
   public void fnAdjustDateToTimezoneImplicitTimezone() throws Exception {
-    Sequence result =
-        new XQuery("fn:adjust-date-to-timezone(xs:date('2002-03-07-05:00'))").execute(ctx);
+    Sequence result = new XQuery("fn:adjust-date-to-timezone(xs:date('2002-03-07-05:00'))").execute(ctx);
     ResultChecker.dCheck(new Date("2002-03-07+02:00"), result);
   }
 
@@ -1400,9 +1337,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnAdjustDateToTimezoneIllegalTimezone() throws Exception {
     try {
-      new XQuery(
-          "fn:adjust-date-to-timezone(xs:date('2002-03-07-05:00'), xs:dayTimeDuration('PT15H'))").execute(
-              ctx);
+      new XQuery("fn:adjust-date-to-timezone(xs:date('2002-03-07-05:00'), xs:dayTimeDuration('PT15H'))").execute(ctx);
       fail("Accepted illegal timezone.");
     } catch (QueryException e) {
       assertEquals("Wrong error code", ErrorCode.ERR_INVALID_TIMEZONE, e.getCode());
@@ -1411,31 +1346,27 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnAdjustTimeToTimezoneEmptyTimezone() throws Exception {
-    Sequence result =
-        new XQuery("fn:adjust-time-to-timezone(xs:time('10:00:00-05:00'), ())").execute(ctx);
+    Sequence result = new XQuery("fn:adjust-time-to-timezone(xs:time('10:00:00-05:00'), ())").execute(ctx);
     ResultChecker.dCheck(new Time("10:00:00"), result);
   }
 
   @Test
   public void fnAdjustTimeToTimezone() throws Exception {
-    Sequence result = new XQuery(
-        "fn:adjust-time-to-timezone(xs:time('10:00:00-05:00'), xs:dayTimeDuration('PT10H'))").execute(
-            ctx);
+    Sequence result =
+        new XQuery("fn:adjust-time-to-timezone(xs:time('10:00:00-05:00'), xs:dayTimeDuration('PT10H'))").execute(ctx);
     ResultChecker.dCheck(new Time("01:00:00+10:00"), result);
   }
 
   @Test
   public void fnAdjustTimeToTimezoneWithoutTimezone() throws Exception {
-    Sequence result = new XQuery(
-        "fn:adjust-time-to-timezone(xs:time('10:00:00'), xs:dayTimeDuration('PT10H'))").execute(
-            ctx);
+    Sequence result =
+        new XQuery("fn:adjust-time-to-timezone(xs:time('10:00:00'), xs:dayTimeDuration('PT10H'))").execute(ctx);
     ResultChecker.dCheck(new Time("10:00:00+10:00"), result);
   }
 
   @Test
   public void fnAdjustTimeToTimezoneImplicitTimezone() throws Exception {
-    Sequence result =
-        new XQuery("fn:adjust-time-to-timezone(xs:time('10:00:00-05:00'))").execute(ctx);
+    Sequence result = new XQuery("fn:adjust-time-to-timezone(xs:time('10:00:00-05:00'))").execute(ctx);
     ResultChecker.dCheck(new Time("16:00:00+01:00"), result);
   }
 
@@ -1448,9 +1379,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnAdjustTimeToTimezoneIllegalTimezone() throws Exception {
     try {
-      new XQuery(
-          "fn:adjust-time-to-timezone(xs:time('10:00:00-05:00'), xs:dayTimeDuration('PT15H'))").execute(
-              ctx);
+      new XQuery("fn:adjust-time-to-timezone(xs:time('10:00:00-05:00'), xs:dayTimeDuration('PT15H'))").execute(ctx);
       fail("Accepted illegal timezone.");
     } catch (QueryException e) {
       assertEquals("Wrong error code", ErrorCode.ERR_INVALID_TIMEZONE, e.getCode());

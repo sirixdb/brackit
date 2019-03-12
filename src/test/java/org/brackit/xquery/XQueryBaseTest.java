@@ -41,13 +41,13 @@ import org.brackit.xquery.node.SimpleStore;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.util.serialize.SubtreePrinter;
-import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Store;
+import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.xdm.node.NodeCollection;
+import org.brackit.xquery.xdm.node.NodeStore;
 import org.junit.Before;
 import org.junit.Ignore;
 
@@ -70,7 +70,7 @@ public class XQueryBaseTest {
 
   protected Random rand;
 
-  protected Store store;
+  protected NodeStore store;
 
   protected void print(Sequence s) throws QueryException {
     if (s == null) {
@@ -145,7 +145,7 @@ public class XQueryBaseTest {
     return read.toString();
   }
 
-  protected Collection<?> storeFile(String name, String document)
+  protected NodeCollection<?> storeFile(String name, String document)
       throws Exception, FileNotFoundException {
     // URL url = getClass().getResource(document);
     DocumentParser parser = new DocumentParser(new File(document));// new
@@ -154,16 +154,16 @@ public class XQueryBaseTest {
     return storeDocument(name, parser);
   }
 
-  protected Collection<?> storeDocument(String name, String document) throws Exception {
+  protected NodeCollection<?> storeDocument(String name, String document) throws Exception {
     return storeDocument(name, new DocumentParser(document));
   }
 
-  protected Collection<?> storeDocument(String name, SubtreeParser parser) throws Exception {
-    Collection<?> collection = store.create(name, parser);
+  protected NodeCollection<?> storeDocument(String name, SubtreeParser parser) throws Exception {
+    NodeCollection<?> collection = store.create(name, parser);
     return collection;
   }
 
-  protected Store createStore() throws Exception {
+  protected NodeStore createStore() throws Exception {
     return new SimpleStore();
   }
 

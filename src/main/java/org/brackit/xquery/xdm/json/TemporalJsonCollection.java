@@ -1,8 +1,8 @@
-package org.brackit.xquery.xdm;
+package org.brackit.xquery.xdm.json;
 
 import java.time.Instant;
 
-public interface TemporalCollection<E extends Node<E>> extends Collection<E> {
+public interface TemporalJsonCollection<E extends JsonItem> extends JsonCollection<E> {
 
   public E getDocument(int revision);
 

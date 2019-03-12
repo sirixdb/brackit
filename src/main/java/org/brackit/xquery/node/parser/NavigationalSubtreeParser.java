@@ -30,7 +30,7 @@ package org.brackit.xquery.node.parser;
 import java.util.ArrayList;
 import java.util.List;
 import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.node.Node;
 
 /**
  * @author Sebastian Baechle

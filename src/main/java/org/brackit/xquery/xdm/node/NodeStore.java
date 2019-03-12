@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -25,65 +25,31 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.node;
+package org.brackit.xquery.xdm.node;
 
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.AnyURI;
-import org.brackit.xquery.sequence.BaseIter;
-import org.brackit.xquery.sequence.LazySequence;
-import org.brackit.xquery.xdm.Collection;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.StructuredItemStore;
 
 /**
- * 
+ *
  * @author Sebastian Baechle
- * 
- * @param <E>
+ *
  */
-public abstract class AbstractCollection<E extends Node<E>> extends
-		LazySequence implements Collection<E> {
-	protected String name;
+public interface NodeStore extends StructuredItemStore {
+  @Override
+  public NodeCollection<?> lookup(String name);
 
-	public AbstractCollection(String name) {
-		this.name = name;
-	}
+  @Override
+  public NodeCollection<?> create(String name);
 
-	protected AbstractCollection(AbstractCollection<E> collection) {
-		this.name = collection.name;
-	}
+  public NodeCollection<?> create(String name, SubtreeParser parser);
 
-	@Override
-	public String getName() {
-		return name;
-	}
+  public NodeCollection<?> create(String name, Stream<SubtreeParser> parsers);
 
-	@Override
-	public AnyURI getDocumentURI() {
-		return AnyURI.fromString(name);
-	}
+  @Override
+  public void drop(String name);
 
-	@Override
-	public Iter iterate() {
-		return new BaseIter() {
-			Stream<? extends Node<?>> docs;
-
-			@Override
-			public void close() {
-				if (docs != null) {
-					docs.close();
-				}
-			}
-
-			@Override
-			public Item next() throws QueryException {
-				if (docs == null) {
-					docs = getDocuments();
-				}
-				return docs.next();
-			}
-		};
-	}
+  @Override
+  public void makeDir(String path);
 }

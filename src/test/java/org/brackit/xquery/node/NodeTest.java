@@ -42,11 +42,11 @@ import org.brackit.xquery.XQueryBaseTest;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.xdm.node.NodeCollection;
 import org.junit.After;
 import org.junit.Test;
 import org.w3c.dom.Attr;
@@ -76,21 +76,21 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
     @Test
     public void testGetFirstChildForDocumentNode() throws Exception {
-        Collection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
+        NodeCollection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
         assertEquals("First child is document root node", coll.getDocument()
                 .getFirstChild(), coll.getDocument().getFirstChild());
     }
 
     @Test
     public void testGetLastChildForDocumentNode() throws Exception {
-        Collection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
+        NodeCollection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
         assertEquals("Last child is document root node", coll.getDocument()
                 .getFirstChild(), coll.getDocument().getLastChild());
     }
 
     @Test
     public void testGetChildrenForDocumentNode() throws Exception {
-        Collection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
+        NodeCollection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
 
         Stream<? extends E> children = coll.getDocument().getChildren();
         E n;
@@ -103,7 +103,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
     @Test
     public void testGetSubtreeForDocumentNode() throws Exception {
-        Collection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
+        NodeCollection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
 
         Stream<? extends E> subtree = coll.getDocument().getSubtree();
 
@@ -124,7 +124,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
     @Test
     public void testGetSubtreeForRootNode() throws Exception {
-        Collection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
+        NodeCollection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
 
         Stream<? extends E> subtree = coll.getDocument().getFirstChild()
                 .getSubtree();
@@ -144,7 +144,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
     @Test
     public void testGetSubtreeForNonRootNode() throws Exception {
-        Collection<E> coll = createDocument(new DocumentParser(
+        NodeCollection<E> coll = createDocument(new DocumentParser(
                 "<a><b><d/><e/></b><c/></a>"));
 
         Stream<? extends E> subtree = coll.getDocument().getFirstChild()
@@ -165,7 +165,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
     @Test
     public void traverseDocumentInPreorder() throws Exception {
-        Collection<E> coll = createDocument(new DocumentParser(readFile(DOCS,
+        NodeCollection<E> coll = createDocument(new DocumentParser(readFile(DOCS,
                 "orga.xml")));
         E root = coll.getDocument().getFirstChild();
         org.w3c.dom.Node domRoot = null;
@@ -304,7 +304,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
     @Test
     public void traverseDocumentInPostorder() throws Exception {
-        Collection<E> coll = createDocument(new DocumentParser(readFile(DOCS,
+        NodeCollection<E> coll = createDocument(new DocumentParser(readFile(DOCS,
                 "orga.xml")));
         E root = coll.getDocument().getFirstChild();
         org.w3c.dom.Node domRoot = null;
@@ -434,9 +434,9 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
     @Test
     public void testAppendSubtree() throws Exception {
-        Collection<E> orig = createDocument(new DocumentParser(readFile(DOCS,
+        NodeCollection<E> orig = createDocument(new DocumentParser(readFile(DOCS,
                 "orga.xml")));
-        Collection<E> doc = createDocument(new DocumentParser(readFile(DOCS,
+        NodeCollection<E> doc = createDocument(new DocumentParser(readFile(DOCS,
                 "orga.xml")));
 
         E onode = orig.getDocument().getFirstChild().getLastChild();
@@ -453,9 +453,9 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
     @Test
     public void testReplaceSubtree() throws Exception {
-        Collection<E> orig = createDocument(new DocumentParser(readFile(DOCS,
+        NodeCollection<E> orig = createDocument(new DocumentParser(readFile(DOCS,
                 "orga.xml")));
-        Collection<E> doc = createDocument(new DocumentParser(readFile(DOCS,
+        NodeCollection<E> doc = createDocument(new DocumentParser(readFile(DOCS,
                 "orga.xml")));
 
         E onode = orig.getDocument().getFirstChild().getLastChild();
@@ -473,7 +473,7 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
 
     @Test
     public void testSetAttribute() throws Exception {
-        Collection<E> coll = createDocument(new DocumentParser(readFile(DOCS,
+        NodeCollection<E> coll = createDocument(new DocumentParser(readFile(DOCS,
                 "orga.xml")));
 
         E root = coll.getDocument().getFirstChild();
@@ -491,6 +491,6 @@ public abstract class NodeTest<E extends Node<E>> extends XQueryBaseTest {
     public void tearDown() throws Exception {
     }
 
-    protected abstract Collection<E> createDocument(DocumentParser documentParser)
+    protected abstract NodeCollection<E> createDocument(DocumentParser documentParser)
             throws Exception;
 }

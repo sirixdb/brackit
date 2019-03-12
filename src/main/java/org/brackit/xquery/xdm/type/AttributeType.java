@@ -31,8 +31,8 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.xdm.node.Node;
 
 /**
  * 

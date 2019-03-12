@@ -42,8 +42,8 @@ import org.w3c.dom.Node;
  * 
  */
 public class DOMListener extends
-		DefaultListener<org.brackit.xquery.xdm.Node<?>> implements
-		SubtreeListener<org.brackit.xquery.xdm.Node<?>> {
+		DefaultListener<org.brackit.xquery.xdm.node.Node<?>> implements
+		SubtreeListener<org.brackit.xquery.xdm.node.Node<?>> {
 	protected DocumentImpl document;
 
 	protected final Deque<NodeImpl> stack;
@@ -67,7 +67,7 @@ public class DOMListener extends
 	}
 
 	@Override
-	public <T extends org.brackit.xquery.xdm.Node<?>> void attribute(T node)
+	public <T extends org.brackit.xquery.xdm.node.Node<?>> void attribute(T node)
 			throws DocumentException {
 		Node current = stack.peekLast();
 		((Element) current).setAttributeNode(new AttrImpl(document, current,
@@ -75,7 +75,7 @@ public class DOMListener extends
 	}
 
 	@Override
-	public <T extends org.brackit.xquery.xdm.Node<?>> void startElement(T node)
+	public <T extends org.brackit.xquery.xdm.node.Node<?>> void startElement(T node)
 			throws DocumentException {
 		NodeImpl current = stack.peekLast();
 
@@ -92,25 +92,25 @@ public class DOMListener extends
 	}
 
 	@Override
-	public <T extends org.brackit.xquery.xdm.Node<?>> void endElement(T node)
+	public <T extends org.brackit.xquery.xdm.node.Node<?>> void endElement(T node)
 			throws DocumentException {
 		stack.pop();
 	}
 
 	@Override
-	public <T extends org.brackit.xquery.xdm.Node<?>> void text(T node)
+	public <T extends org.brackit.xquery.xdm.node.Node<?>> void text(T node)
 			throws DocumentException {
 		insertText(node.getValue().stringValue());
 	}
 
 	@Override
-	public <T extends org.brackit.xquery.xdm.Node<?>> void comment(T node)
+	public <T extends org.brackit.xquery.xdm.node.Node<?>> void comment(T node)
 			throws DocumentException {
 		insertComment(node.getValue().stringValue());
 	}
 
 	@Override
-	public <T extends org.brackit.xquery.xdm.Node<?>> void processingInstruction(
+	public <T extends org.brackit.xquery.xdm.node.Node<?>> void processingInstruction(
 			T node) throws DocumentException {
 		insertProcessingInstruction(node.getValue().stringValue());
 	}

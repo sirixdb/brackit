@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.brackit.xquery.util.log.Logger;
 import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.node.Node;
 
 /**
  *

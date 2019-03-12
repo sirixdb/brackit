@@ -25,10 +25,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm;
+package org.brackit.xquery.xdm.json;
 
-import org.brackit.xquery.atomic.AnyURI;
-import org.brackit.xquery.node.parser.SubtreeParser;
+import java.nio.file.Path;
+import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.xdm.OperationNotSupportedException;
+import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.StructuredItem;
+import org.brackit.xquery.xdm.StructuredItemCollection;
 
 /**
  *
@@ -36,35 +40,34 @@ import org.brackit.xquery.node.parser.SubtreeParser;
  *
  * @param <E>
  */
-public interface Collection<E extends Node<E>> extends StructuredItemCollection<Node<E>> {
-
-  @Override
-  public AnyURI getDocumentURI();
+public interface JsonCollection<E extends StructuredItem> extends StructuredItemCollection<E> {
 
   @Override
   public String getName();
 
   @Override
-  public void delete();
+  public void delete() throws DocumentException;
 
   @Override
-  public void remove(long documentID) throws OperationNotSupportedException, DocumentException;
+  public void remove(long documentID);
 
   @Override
-  public E getDocument() throws DocumentException;
+  public E getDocument();
 
   @Override
-  public Stream<? extends E> getDocuments() throws DocumentException;
+  public Stream<? extends E> getDocuments();
+
+  public Stream<? extends E> getDocuments(boolean updatable) throws DocumentException;
 
   /**
-   * Add to the collection.
+   * Add a file to the JSON collection.
    *
-   * @param parser the subtree parser
-   * @return the new root node added to the collection
+   * @param file the file to add to the collection
+   * @return the JSON root
    * @throws OperationNotSupportedException if the operation is not supported
-   * @throws DocumentException if anything else went wrong
+   * @throws DocumentException if anything else went wrong.
    */
-  public E add(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
+  public E add(Path file);
 
   @Override
   public long getDocumentCount();

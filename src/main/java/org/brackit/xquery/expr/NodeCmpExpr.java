@@ -34,8 +34,8 @@ import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.node.Node;
 
 /**
  * 

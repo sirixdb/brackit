@@ -36,9 +36,9 @@ import org.brackit.xquery.util.io.URIHandler;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.node.Node;
 
 /**
  * A Stream of SubtreeParsers that delivers one SubtreeParser for each item in

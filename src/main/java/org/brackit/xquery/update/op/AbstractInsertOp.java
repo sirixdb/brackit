@@ -30,7 +30,7 @@ package org.brackit.xquery.update.op;
 import java.util.Arrays;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Node;
+import org.brackit.xquery.xdm.node.Node;
 
 /**
  * Base class for all insert operations.

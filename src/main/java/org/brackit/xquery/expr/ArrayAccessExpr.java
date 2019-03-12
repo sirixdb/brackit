@@ -33,11 +33,11 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.util.ExprUtil;
-import org.brackit.xquery.xdm.Array;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.xdm.json.Array;
 
 /**
  * 

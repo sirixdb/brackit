@@ -29,8 +29,8 @@ package org.brackit.xquery.node.d2linked;
 
 import org.brackit.xquery.node.AxisTest;
 import org.brackit.xquery.node.SimpleStore;
-import org.brackit.xquery.xdm.NodeFactory;
-import org.brackit.xquery.xdm.Store;
+import org.brackit.xquery.xdm.node.NodeFactory;
+import org.brackit.xquery.xdm.node.NodeStore;
 
 /**
  * 
@@ -39,7 +39,7 @@ import org.brackit.xquery.xdm.Store;
  */
 public class D2NodeAxisTest extends AxisTest {
 	@Override
-	protected Store createStore() throws Exception {
+	protected NodeStore createStore() throws Exception {
 		return new SimpleStore() {
 			@Override
 			protected NodeFactory<?> getNodeFactory() {

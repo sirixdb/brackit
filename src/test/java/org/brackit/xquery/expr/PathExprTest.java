@@ -42,10 +42,10 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.sequence.ItemSequence;
-import org.brackit.xquery.xdm.Collection;
 import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.xdm.node.NodeCollection;
 import org.junit.Test;
 
 /**
@@ -56,7 +56,7 @@ import org.junit.Test;
 public class PathExprTest extends XQueryBaseTest {
 	@Test
 	public void oneChildStepPathExpr() throws Exception {
-		Collection<?> locator = storeDocument("test.xml", "<a><b/><b/></a>");
+		NodeCollection<?> locator = storeDocument("test.xml", "<a><b/><b/></a>");
 		Node<?> documentNode = locator.getDocument();
 		Node<?> root = documentNode.getFirstChild();
 		ctx.setContextItem(root);
@@ -68,7 +68,7 @@ public class PathExprTest extends XQueryBaseTest {
 
 	@Test
 	public void singleSlashStepPathExpr() throws Exception {
-		Collection<?> locator = storeDocument("test.xml", "<a><b/><b/></a>");
+		NodeCollection<?> locator = storeDocument("test.xml", "<a><b/><b/></a>");
 		Node<?> documentNode = locator.getDocument();
 		Node<?> aNode = documentNode.getFirstChild().getFirstChild();
 		ctx.setContextItem(aNode);
@@ -78,7 +78,7 @@ public class PathExprTest extends XQueryBaseTest {
 
 	@Test
 	public void oneDoubleSlashStepPathExpr() throws Exception {
-		Collection<?> locator = storeDocument("test.xml", "<a><b/></a>");
+		NodeCollection<?> locator = storeDocument("test.xml", "<a><b/></a>");
 		Node<?> documentNode = locator.getDocument();
 		ctx.setContextItem(documentNode);
 		Sequence result = new XQuery(".//b").execute(ctx);

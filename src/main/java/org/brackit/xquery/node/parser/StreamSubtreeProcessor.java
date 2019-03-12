@@ -31,8 +31,8 @@ import java.util.List;
 import org.brackit.xquery.util.log.Logger;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Node;
 import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.node.Node;
 
 /**
  * Streaming {@link SubtreeProcessor} for fragments.
