@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.expr;
 
+import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.ResultChecker;
 import org.brackit.xquery.atomic.Bool;
@@ -40,7 +41,7 @@ import org.junit.Test;
  * 
  */
 public class IfExprTest {
-	QueryContext ctx = new QueryContext(null);
+	QueryContext ctx = new BrackitQueryContext(null);
 
 	@Test
 	public void emptyCondition() throws Exception {

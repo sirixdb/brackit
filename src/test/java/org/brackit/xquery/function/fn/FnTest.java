@@ -136,7 +136,7 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnRootInPathExpr() throws Exception {
-    NodeCollection<?> coll = ctx.getStore().create("test.xml", new DocumentParser("<a><b><c/><d/></b></a>"));
+    NodeCollection<?> coll = ctx.getNodeStore().create("test.xml", new DocumentParser("<a><b><c/><d/></b></a>"));
     Node<?> doc = coll.getDocument();
     ctx.setContextItem(doc);
     Sequence result = new XQuery(".//d/fn:root()").execute(ctx);

@@ -29,6 +29,7 @@ package org.brackit.xquery.function.bit;
 
 import java.io.PrintStream;
 
+import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
@@ -82,7 +83,7 @@ public class Eval extends AbstractFunction {
 				vQuery = buf.toString();
 			}
 			XQuery x = new XQuery(vQuery);
-			return x.execute(new QueryContext(ctx.getStore()));
+			return x.execute(new BrackitQueryContext(ctx.getNodeStore()));
 		} catch (Exception e) {
 			throw new QueryException(e, BitFun.BIT_EVAL_INT_ERROR,
 					e.getMessage());

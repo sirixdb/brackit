@@ -168,7 +168,7 @@ public class XQueryBaseTest {
   }
 
   protected QueryContext createContext() throws Exception {
-    return new QueryContext(store) {
+    return new BrackitQueryContext(store) {
       @Override
       public DTD getImplicitTimezone() {
         return new DTD(false, (short) 0, (byte) 2, (byte) 0, 0);

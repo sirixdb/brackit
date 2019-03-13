@@ -96,7 +96,7 @@ public class Store extends AbstractFunction {
 			String name = ((Atomic) args[0]).stringValue();
 			Sequence nodes = args[1];
 
-			org.brackit.xquery.xdm.node.NodeStore s = ctx.getStore();
+			org.brackit.xquery.xdm.node.NodeStore s = ctx.getNodeStore();
 			if (createNew) {
 				create(s, name, nodes);
 			} else {

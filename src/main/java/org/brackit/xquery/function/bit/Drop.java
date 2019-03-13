@@ -68,7 +68,7 @@ public class Drop extends AbstractFunction {
 			Sequence[] args) throws QueryException {
 		try {
 			String doc = ((Atomic) args[0]).stringValue();
-			ctx.getStore().drop(doc);
+			ctx.getNodeStore().drop(doc);
 			return Bool.TRUE;
 		} catch (Exception e) {
 			throw new QueryException(e, BitFun.BIT_DROPCOLLECTION_INT_ERROR,

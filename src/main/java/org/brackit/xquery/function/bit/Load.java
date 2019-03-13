@@ -93,7 +93,7 @@ public class Load extends AbstractFunction {
 			String name = ((Atomic) args[0]).stringValue();
 			Sequence resources = args[1];
 
-			org.brackit.xquery.xdm.node.NodeStore s = ctx.getStore();
+			org.brackit.xquery.xdm.node.NodeStore s = ctx.getNodeStore();
 			if (createNew) {
 				create(s, name, resources);
 			} else {

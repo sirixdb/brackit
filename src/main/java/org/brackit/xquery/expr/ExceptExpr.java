@@ -28,7 +28,6 @@
 package org.brackit.xquery.expr;
 
 import java.util.Comparator;
-
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;

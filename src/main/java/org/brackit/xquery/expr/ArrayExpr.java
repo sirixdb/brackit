@@ -29,6 +29,7 @@ package org.brackit.xquery.expr;
 
 import java.util.Arrays;
 
+import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
@@ -131,6 +132,6 @@ public class ArrayExpr implements Expr {
 	}
 	
 	public static void main(String[] args) throws QueryException {
-		new XQuery("[ 1, '2', 3, (1 > 0) cast as xs:boolean, 1.2343 + 5, =(1,2,3)  ][[4]]").serialize(new QueryContext(), System.out);
+		new XQuery("[ 1, '2', 3, (1 > 0) cast as xs:boolean, 1.2343 + 5, =(1,2,3)  ][[4]]").serialize(new BrackitQueryContext(), System.out);
 	}
 }

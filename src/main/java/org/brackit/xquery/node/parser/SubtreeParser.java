@@ -36,5 +36,11 @@ import org.brackit.xquery.xdm.DocumentException;
  *
  */
 public interface SubtreeParser {
-	public void parse(SubtreeHandler handler) throws DocumentException;
+  /**
+   * Parse and use a subtree handler.
+   * 
+   * @param handler the handler to use
+   * @throws DocumentException if something goes wrong
+   */
+  public void parse(SubtreeHandler handler);
 }

@@ -29,7 +29,7 @@ package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
 
 import java.util.Map;
-import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.QNm;
@@ -235,6 +235,6 @@ public class GroupByAggregates extends AggFunChecker {
         + "let $y:= (for $a in (1 to 10) for $b in ($a to $a + 2) group by $b let $c := if ($x eq 1) then $b else () return <r b='{$c}' cnt='{count($a)}' vals='{$a}'/>) "
         + "return $y");
     xq.prettyPrint();
-    xq.serialize(new QueryContext(), System.out);
+    xq.serialize(new BrackitQueryContext(), System.out);
   }
 }

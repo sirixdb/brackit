@@ -29,7 +29,6 @@ package org.brackit.xquery.operator;
 
 import java.io.PrintStream;
 import java.util.Arrays;
-
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;

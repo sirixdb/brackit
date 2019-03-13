@@ -28,27 +28,24 @@
 package org.brackit.xquery.xdm;
 
 /**
- * Iterator-like interface for stream-based processing. A stream abstracts from
- * the underlying data sources and must be closed explicitly to release any held
- * resources, like e.g. buffer pages.
+ * Iterator-like interface for stream-based processing. A stream abstracts from the underlying data
+ * sources and must be closed explicitly to release any held resources, like e.g. buffer pages.
  *
  * @author Sebastian Baechle
  *
  */
 public interface Stream<E> {
-	/**
-	 * Consumes the next element in the stream.
-	 *
-	 * @return the next item or <code>null</code> if there are no more items
-	 * @throws DocumentException
-	 *             if an error occurs in this stream. If the exception is
-	 *             thrown, all held resources will be released and no closing is
-	 *             necessary.
-	 */
-	public E next() throws DocumentException;
+  /**
+   * Consumes the next element in the stream.
+   *
+   * @return the next item or <code>null</code> if there are no more items
+   * @throws DocumentException if an error occurs in this stream. If the exception is thrown, all held
+   *         resources will be released and no closing is necessary.
+   */
+  public E next();
 
-	/**
-	 * Closes this stream releasing all held resources
-	 */
-	public void close();
+  /**
+   * Closes this stream releasing all held resources
+   */
+  public void close();
 }

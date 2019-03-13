@@ -28,7 +28,6 @@
 package org.brackit.xquery.compiler.profiler;
 
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;

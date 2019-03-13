@@ -32,6 +32,7 @@ import java.util.HashSet;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.XQuery;
@@ -188,6 +189,6 @@ public class RecordExpr implements Expr {
 
 	public static void main(String[] args) throws QueryException {
 		new XQuery("{ a:1, b:2, c:3 , {x:1}, y:5, z : {foo : 'bar'}, 'aha' : 2, 'h h' : 5 }").serialize(
-				new QueryContext(), System.out);
+				new BrackitQueryContext(), System.out);
 	}
 }

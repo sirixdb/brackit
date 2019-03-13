@@ -88,7 +88,7 @@ public class Main {
 	public static void main(String[] args) {
 		try {
 			Config config = parseParams(args);
-			QueryContext ctx = new QueryContext();
+			QueryContext ctx = new BrackitQueryContext();
 
 			String file = config.getValue("-f");
 			if (file != null) {

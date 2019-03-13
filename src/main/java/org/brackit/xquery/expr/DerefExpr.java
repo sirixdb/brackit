@@ -29,6 +29,7 @@ package org.brackit.xquery.expr;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.XQuery;
@@ -118,6 +119,6 @@ public class DerefExpr implements Expr {
 		// a:1, b:2, c:3 , {x:1}, d:5,
 		new XQuery(
 				"let $n := <x><y>yval</y></x> return {e : {m:'mvalue', n:$n}}=>e=>n/y")
-				.serialize(new QueryContext(), System.out);
+				.serialize(new BrackitQueryContext(), System.out);
 	}
 }

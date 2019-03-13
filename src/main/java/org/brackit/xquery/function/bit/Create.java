@@ -68,7 +68,7 @@ public class Create extends AbstractFunction {
 			Sequence[] args) throws QueryException {
 		try {
 			String collection = ((Atomic) args[0]).stringValue();
-			ctx.getStore().create(collection);
+			ctx.getNodeStore().create(collection);
 			// TODO
 			return null;
 		} catch (Exception e) {

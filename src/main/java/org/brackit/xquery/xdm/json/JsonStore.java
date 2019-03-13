@@ -38,18 +38,21 @@ import org.brackit.xquery.xdm.StructuredItemStore;
  */
 public interface JsonStore extends StructuredItemStore {
   @Override
-  public JsonCollection<?> lookup(String name);
+  JsonCollection<?> lookup(String name);
 
   @Override
-  public JsonCollection<?> create(String name);
+  JsonCollection<?> create(String name);
 
-  public JsonCollection<?> create(String name, Path path);
+  JsonCollection<?> create(String name, Path path);
 
-  public JsonCollection<?> create(String name, Stream<Path> parsers);
+  JsonCollection<?> create(String collName, String optResName, Path path);
+
+  JsonCollection<?> create(String name, Stream<Path> parsers);
 
   @Override
-  public void drop(String name);
+  void drop(String name);
 
   @Override
-  public void makeDir(String path);
+  void makeDir(String path);
+
 }

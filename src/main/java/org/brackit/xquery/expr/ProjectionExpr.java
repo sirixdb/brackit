@@ -29,6 +29,7 @@ package org.brackit.xquery.expr;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.XQuery;
@@ -118,6 +119,6 @@ public class ProjectionExpr implements Expr {
 	public static void main(String[] args) throws QueryException {
 		new XQuery(
 				"let $a:= 1 let $b:= {'b':2.0} let $n := <x><y>yval</y></x> return {a:$a, $b, c:'3'}{a,c}=>c")
-				.serialize(new QueryContext(), System.out);
+				.serialize(new BrackitQueryContext(), System.out);
 	}
 }

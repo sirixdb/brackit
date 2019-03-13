@@ -28,7 +28,6 @@
 package org.brackit.xquery.operator;
 
 import java.util.ArrayList;
-
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;

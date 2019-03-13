@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
@@ -368,7 +369,7 @@ public class GroupBy extends Check implements Operator {
 				new Aggregate[] { Aggregate.AVG, Aggregate.SUM }, 1, true);
 		groupBy.group(0).setPos(1);
 		Print p = new Print(groupBy, System.out);
-		QueryContext ctx = new QueryContext();
+		QueryContext ctx = new BrackitQueryContext();
 		Cursor c = p.create(ctx, TupleImpl.EMPTY_TUPLE);
 		c.open(ctx);
 		try {

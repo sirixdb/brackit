@@ -29,6 +29,7 @@ package org.brackit.xquery.xdm;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 
@@ -39,7 +40,7 @@ import org.brackit.xquery.Tuple;
  * function call or a primitive {@link Item}.
  * 
  * Expressions are evaluated for a defined context which consists of both, the
- * current {@link QueryContext}, which provides access to e.g., to externally
+ * current {@link BrackitQueryContext}, which provides access to e.g., to externally
  * bound variables, and a {@link Tuple}, which contains the dynamically bound
  * variables of surrounding FLOWR expressions.
  * 
@@ -63,7 +64,7 @@ public interface Expr {
 
 	/**
 	 * Evaluates the expression as defined in {
-	 * {@link #evaluate(QueryContext, Tuple)}, but the result is ensured to be a
+	 * {@link #evaluate(BrackitQueryContext, Tuple)}, but the result is ensured to be a
 	 * single {@link Item} or <code>null</code> if this expression evaluates to
 	 * the empty sequence.
 	 * 

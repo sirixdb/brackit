@@ -30,7 +30,6 @@ package org.brackit.xquery.function.bit;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Int32;

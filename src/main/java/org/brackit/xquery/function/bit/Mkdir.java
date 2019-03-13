@@ -62,7 +62,7 @@ public class Mkdir extends AbstractFunction {
 			Sequence[] args) throws QueryException {
 		String vDirName = ((Atomic) args[0]).stringValue();
 		try {
-			ctx.getStore().makeDir(vDirName);
+			ctx.getNodeStore().makeDir(vDirName);
 			return Bool.TRUE;
 		} catch (Exception e) {
 			throw new QueryException(e, BitFun.BIT_MAKEDIRECTORY_INT_ERROR,

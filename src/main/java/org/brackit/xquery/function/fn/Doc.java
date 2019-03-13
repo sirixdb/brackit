@@ -93,7 +93,7 @@ public class Doc extends AbstractFunction {
                 return document;
             } else {
                 final AnyURI uri = resolve(sctx, name);
-                final NodeCollection<?> collection = ctx.getStore().lookup(
+                final NodeCollection<?> collection = ctx.getNodeStore().lookup(
                         uri.stringValue());
                 final long documents = collection.getDocumentCount();
 

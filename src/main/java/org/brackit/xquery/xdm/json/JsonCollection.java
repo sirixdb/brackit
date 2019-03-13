@@ -57,8 +57,6 @@ public interface JsonCollection<E extends StructuredItem> extends StructuredItem
   @Override
   public Stream<? extends E> getDocuments();
 
-  public Stream<? extends E> getDocuments(boolean updatable) throws DocumentException;
-
   /**
    * Add a file to the JSON collection.
    *
