@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,58 +34,67 @@ import org.brackit.xquery.xdm.Signature;
 
 /**
  * @author Sebastian Baechle
- * 
+ *
  */
 public final class FunctionType implements ItemType {
 
-	private final Signature signature;
+  private final Signature signature;
 
-	public FunctionType(Signature signature) {
-		this.signature = signature;
-	}
+  public FunctionType(Signature signature) {
+    this.signature = signature;
+  }
 
-	public Signature getSignature() {
-		return signature;
-	}
+  public Signature getSignature() {
+    return signature;
+  }
 
-	@Override
-	public boolean isAnyItem() {
-		return false;
-	}
+  @Override
+  public boolean isAnyItem() {
+    return false;
+  }
 
-	@Override
-	public boolean isAtomic() {
-		return false;
-	}
+  @Override
+  public boolean isAtomic() {
+    return false;
+  }
 
-	@Override
-	public boolean isNode() {
-		return false;
-	}
+  @Override
+  public boolean isJsonItem() {
+    return false;
+  }
 
-	@Override
-	public boolean isFunction() {
-		return true;
-	}
+  @Override
+  public boolean isStructuredItem() {
+    return false;
+  }
 
-	@Override
-	public boolean isListOrUnion() {
-		return false;
-	}
+  @Override
+  public boolean isNode() {
+    return false;
+  }
 
-	@Override
-	public boolean isRecord() {
-		return false;
-	}
+  @Override
+  public boolean isFunction() {
+    return true;
+  }
 
-	@Override
-	public boolean matches(Item item) throws QueryException {
-		return ((item instanceof Function) && (((Function) item).getSignature()
-				.equals(signature)));
-	}
+  @Override
+  public boolean isListOrUnion() {
+    return false;
+  }
 
-	public boolean equals(Object obj) {
-		return ((obj instanceof FunctionType) && (((FunctionType) obj).signature
-				.equals(signature)));
-	}
+  @Override
+  public boolean isRecord() {
+    return false;
+  }
+
+  @Override
+  public boolean matches(Item item) throws QueryException {
+    return ((item instanceof Function) && (((Function) item).getSignature().equals(signature)));
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    return ((obj instanceof FunctionType) && (((FunctionType) obj).signature.equals(signature)));
+  }
 }

@@ -67,6 +67,6 @@ public interface QueryContext {
 
   NodeStore getNodeStore();
 
-  JsonStore getJsonStore();
+  JsonStore getJsonItemStore();
 
 }

@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -35,66 +35,76 @@ import org.brackit.xquery.xdm.Type;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  */
 public abstract class NodeType implements ItemType {
-	@Override
-	public boolean isAnyItem() {
-		return false;
-	}
+  @Override
+  public boolean isAnyItem() {
+    return false;
+  }
 
-	@Override
-	public boolean isAtomic() {
-		return false;
-	}
+  @Override
+  public boolean isAtomic() {
+    return false;
+  }
 
-	@Override
-	public boolean isNode() {
-		return true;
-	}
+  @Override
+  public boolean isNode() {
+    return true;
+  }
 
-	@Override
-	public boolean isFunction() {
-		return false;
-	}
-	
-	@Override
-	public boolean isListOrUnion() {
-		return false;
-	}
-	
-	@Override
-	public boolean isRecord() {
-		return false;
-	}
+  @Override
+  public boolean isStructuredItem() {
+    return true;
+  }
 
-	/**
-	 * null indicates any node kind
-	 */
-	public Kind getNodeKind() {
-		return null;
-	}
+  @Override
+  public boolean isJsonItem() {
+    return false;
+  }
 
-	/**
-	 * null indicates any name
-	 */
-	public QNm getQName() {
-		return null;
-	}
+  @Override
+  public boolean isFunction() {
+    return false;
+  }
 
-	/**
-	 * null indicates any type
-	 */
-	public Type getType() {
-		return null;
-	}
-	
-	@Override
-	public boolean matches(Item item) throws QueryException {
-		return ((item instanceof Node<?>) && (matches((Node<?>) item)));
-	}
+  @Override
+  public boolean isListOrUnion() {
+    return false;
+  }
 
-	public abstract boolean matches(Node<?> node) throws QueryException;	
+  @Override
+  public boolean isRecord() {
+    return false;
+  }
+
+  /**
+   * null indicates any node kind
+   */
+  public Kind getNodeKind() {
+    return null;
+  }
+
+  /**
+   * null indicates any name
+   */
+  public QNm getQName() {
+    return null;
+  }
+
+  /**
+   * null indicates any type
+   */
+  public Type getType() {
+    return null;
+  }
+
+  @Override
+  public boolean matches(Item item) throws QueryException {
+    return ((item instanceof Node<?>) && (matches((Node<?>) item)));
+  }
+
+  public abstract boolean matches(Node<?> node) throws QueryException;
 }

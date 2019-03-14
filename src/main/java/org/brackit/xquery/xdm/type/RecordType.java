@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,57 +33,68 @@ import org.brackit.xquery.xdm.json.Record;
 
 /**
  * @author Sebastian Baechle
- * 
+ *
  */
 public final class RecordType implements ItemType {
 
-	public static final RecordType RECORD = new RecordType();
+  public static final RecordType RECORD = new RecordType();
 
-	public RecordType() {
-	}
+  public RecordType() {}
 
-	@Override
-	public boolean isAnyItem() {
-		return false;
-	}
+  @Override
+  public boolean isAnyItem() {
+    return false;
+  }
 
-	@Override
-	public boolean isAtomic() {
-		return false;
-	}
+  @Override
+  public boolean isAtomic() {
+    return false;
+  }
 
-	@Override
-	public boolean isNode() {
-		return false;
-	}
+  @Override
+  public boolean isNode() {
+    return false;
+  }
 
-	@Override
-	public boolean isFunction() {
-		return true;
-	}
+  @Override
+  public boolean isFunction() {
+    return true;
+  }
 
-	@Override
-	public boolean isListOrUnion() {
-		return false;
-	}
+  @Override
+  public boolean isListOrUnion() {
+    return false;
+  }
 
-	@Override
-	public boolean isRecord() {
-		return true;
-	}
+  @Override
+  public boolean isRecord() {
+    return true;
+  }
 
-	@Override
-	public boolean matches(Item item) throws QueryException {
-		// TODO subtyping???
-		return (item instanceof Record);
-	}
+  @Override
+  public boolean isJsonItem() {
+    return true;
+  }
 
-	public boolean equals(Object obj) {
-		// TODO subtyping???
-		return (obj instanceof Record);
-	}
-	
-	public String toString() {
-		return "record()";
-	}
+  @Override
+  public boolean isStructuredItem() {
+    return true;
+  }
+
+  @Override
+  public boolean matches(Item item) throws QueryException {
+    // TODO subtyping???
+    return (item instanceof Record);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    // TODO subtyping???
+    return (obj instanceof Record);
+  }
+
+  @Override
+  public String toString() {
+    return "record()";
+  }
 }

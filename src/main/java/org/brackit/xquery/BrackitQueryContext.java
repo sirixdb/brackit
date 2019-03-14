@@ -218,7 +218,7 @@ public class BrackitQueryContext implements QueryContext {
   }
 
   @Override
-  public JsonStore getJsonStore() {
+  public JsonStore getJsonItemStore() {
     return null;
   }
 }
