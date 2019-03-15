@@ -34,7 +34,7 @@ package org.brackit.xquery.xdm;
  * @author Sebastian Baechle
  *
  */
-public interface Stream<E> {
+public interface Stream<E> extends AutoCloseable {
   /**
    * Consumes the next element in the stream.
    *
@@ -47,5 +47,6 @@ public interface Stream<E> {
   /**
    * Closes this stream releasing all held resources
    */
+  @Override
   public void close();
 }

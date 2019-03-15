@@ -9,69 +9,69 @@ import org.brackit.xquery.xdm.Stream;
  *
  * @param <E> the implementing class
  */
-public interface TemporalJsonItem extends JsonItem {
+public interface TemporalJsonItem<E extends TemporalJsonItem<E>> extends JsonItem {
   /**
    * Get the same node in the next revision.
    *
    * @return same node in next revision
    */
-  TemporalJsonItem getNext();
+  E getNext();
 
   /**
    * Get the same node in the previous revision.
    *
    * @return same node in previous revision
    */
-  TemporalJsonItem getPrevious();
+  E getPrevious();
 
   /**
    * Get the same node in the first revision.
    *
    * @return same node in first revision
    */
-  TemporalJsonItem getFirst();
+  E getFirst();
 
   /**
    * Get the same node in the last revision.
    *
    * @return same node in last revision
    */
-  TemporalJsonItem getLast();
+  E getLast();
 
   /**
    * Get a stream of the same node in all earlier revisions.
    *
    * @return stream of the same node in all earlier revisions
    */
-  Stream<TemporalJsonItem> getEarlier(boolean includeSelf);
+  Stream<E> getEarlier(boolean includeSelf);
 
   /**
    * Get a stream of the same node in all future revisions.
    *
    * @return stream of the same node in all future revisions
    */
-  Stream<TemporalJsonItem> getFuture(boolean includeSelf);
+  Stream<E> getFuture(boolean includeSelf);
 
   /**
    * Get a stream of the same node in all revisions.
    *
    * @return stream of the same node in all revisions
    */
-  Stream<TemporalJsonItem> getAllTime();
+  Stream<E> getAllTime();
 
-  boolean isNextOf(TemporalJsonItem other);
+  boolean isNextOf(E other);
 
-  boolean isPreviousOf(TemporalJsonItem other);
+  boolean isPreviousOf(E other);
 
-  boolean isFutureOf(TemporalJsonItem other);
+  boolean isFutureOf(E other);
 
-  boolean isFutureOrSelfOf(TemporalJsonItem other);
+  boolean isFutureOrSelfOf(E other);
 
-  boolean isEarlierOf(TemporalJsonItem other);
+  boolean isEarlierOf(E other);
 
-  boolean isEarlierOrSelfOf(TemporalJsonItem other);
+  boolean isEarlierOrSelfOf(E other);
 
-  boolean isLastOf(TemporalJsonItem other);
+  boolean isLastOf(E other);
 
-  boolean isFirstOf(TemporalJsonItem other);
+  boolean isFirstOf(E other);
 }

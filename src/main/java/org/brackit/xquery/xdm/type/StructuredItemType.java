@@ -25,34 +25,84 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm.json;
+package org.brackit.xquery.xdm.type;
 
-import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.Kind;
+import org.brackit.xquery.xdm.StructuredItem;
+import org.brackit.xquery.xdm.Type;
 
 /**
+ *
  * @author Sebastian Baechle
  *
  */
-public interface Record extends JsonItem {
+public abstract class StructuredItemType implements ItemType {
 
-  Sequence get(QNm field);
+  @Override
+  public boolean isAnyItem() {
+    return false;
+  }
 
-  Sequence value(IntNumeric index);
+  @Override
+  public boolean isAtomic() {
+    return false;
+  }
 
-  Sequence value(int index);
+  @Override
+  public boolean isNode() {
+    return false;
+  }
 
-  Array names();
+  @Override
+  public boolean isStructuredItem() {
+    return true;
+  }
 
-  Array values();
+  @Override
+  public boolean isJsonItem() {
+    return false;
+  }
 
-  QNm name(IntNumeric index);
+  @Override
+  public boolean isFunction() {
+    return false;
+  }
 
-  QNm name(int index);
+  @Override
+  public boolean isListOrUnion() {
+    return false;
+  }
 
-  IntNumeric length();
+  @Override
+  public boolean isRecord() {
+    return false;
+  }
 
-  int len();
+  /**
+   * null indicates any node kind
+   */
+  public Kind getNodeKind() {
+    return null;
+  }
 
+  /**
+   * null indicates any name
+   */
+  public QNm getQName() {
+    return null;
+  }
+
+  /**
+   * null indicates any type
+   */
+  public Type getType() {
+    return null;
+  }
+
+  @Override
+  public boolean matches(Item item) {
+    return (item instanceof StructuredItem);
+  }
 }

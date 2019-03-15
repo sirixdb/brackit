@@ -34,67 +34,63 @@ package org.brackit.xquery.xdm.type;
  *
  */
 public final class SequenceType {
-	public static SequenceType EMPTY_SEQUENCE = new SequenceType(
-			new AnyItemType(), Cardinality.Zero);
+  public static SequenceType EMPTY_SEQUENCE = new SequenceType(new AnyItemType(), Cardinality.Zero);
 
-	public static SequenceType ITEM_SEQUENCE = new SequenceType(
-			new AnyItemType(), Cardinality.ZeroOrMany);
+  public static SequenceType ITEM_SEQUENCE = new SequenceType(new AnyItemType(), Cardinality.ZeroOrMany);
 
-	public static SequenceType ITEM = new SequenceType(new AnyItemType(),
-			Cardinality.One);
+  public static SequenceType ITEM = new SequenceType(new AnyItemType(), Cardinality.One);
 
-	public static SequenceType NODE = new SequenceType(AnyItemType.ANY,
-			Cardinality.One);
+  public static SequenceType JSON_ITEM = new SequenceType(AnyItemType.ANY, Cardinality.One);
 
-	public static SequenceType INTEGER = new SequenceType(AtomicType.INR,
-			Cardinality.One);
+  public static SequenceType NODE = new SequenceType(AnyItemType.ANY, Cardinality.One);
 
-	public static SequenceType STRING = new SequenceType(AtomicType.STR,
-			Cardinality.One);
+  public static SequenceType INTEGER = new SequenceType(AtomicType.INR, Cardinality.One);
 
-	private final ItemType itemType;
+  public static SequenceType STRING = new SequenceType(AtomicType.STR, Cardinality.One);
 
-	private final Cardinality cardinality;
+  private final ItemType itemType;
 
-	public SequenceType(ItemType itemType, Cardinality cardinality) {
-		this.itemType = itemType;
-		this.cardinality = cardinality;
-	}
+  private final Cardinality cardinality;
 
-	public ItemType getItemType() {
-		return itemType;
-	}
+  public SequenceType(ItemType itemType, Cardinality cardinality) {
+    this.itemType = itemType;
+    this.cardinality = cardinality;
+  }
 
-	public Cardinality getCardinality() {
-		return cardinality;
-	}
+  public ItemType getItemType() {
+    return itemType;
+  }
 
-	private String cardinalityString() {
-		switch (cardinality) {
-		case OneOrMany:
-			return "+";
-		case ZeroOrMany:
-			return "*";
-		case ZeroOrOne:
-			return "?";
-		case One:
-		case Zero:
-			return "";
-		default:
-			throw new RuntimeException();
-		}
-	}
+  public Cardinality getCardinality() {
+    return cardinality;
+  }
 
-	@Override
+  private String cardinalityString() {
+    switch (cardinality) {
+      case OneOrMany:
+        return "+";
+      case ZeroOrMany:
+        return "*";
+      case ZeroOrOne:
+        return "?";
+      case One:
+      case Zero:
+        return "";
+      default:
+        throw new RuntimeException();
+    }
+  }
+
+  @Override
   public String toString() {
-		return (cardinality == Cardinality.Zero) ? "empty-sequence()" : String
-				.format("%s%s", itemType, cardinalityString());
-	}
+    return (cardinality == Cardinality.Zero)
+        ? "empty-sequence()"
+        : String.format("%s%s", itemType, cardinalityString());
+  }
 
-	@Override
+  @Override
   public boolean equals(Object obj) {
-		return ((obj == this) || ((obj instanceof SequenceType)
-				&& (((SequenceType) obj).itemType.equals(itemType)) && (((SequenceType) obj).cardinality
-				.equals(cardinality))));
-	}
+    return ((obj == this) || ((obj instanceof SequenceType) && (((SequenceType) obj).itemType.equals(itemType))
+        && (((SequenceType) obj).cardinality.equals(cardinality))));
+  }
 }

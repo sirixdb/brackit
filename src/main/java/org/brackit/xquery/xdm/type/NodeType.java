@@ -39,7 +39,7 @@ import org.brackit.xquery.xdm.node.Node;
  * @author Sebastian Baechle
  *
  */
-public abstract class NodeType implements ItemType {
+public abstract class NodeType extends StructuredItemType {
   @Override
   public boolean isAnyItem() {
     return false;

@@ -25,34 +25,33 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm.json;
+package org.brackit.xquery.xdm.type;
 
-import org.brackit.xquery.atomic.IntNumeric;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.json.JsonItem;
 
 /**
+ *
  * @author Sebastian Baechle
  *
  */
-public interface Record extends JsonItem {
+public final class AnyJsonItemType extends JsonItemType {
+  public static final AnyJsonItemType ANY_JSON_ITEM = new AnyJsonItemType();
 
-  Sequence get(QNm field);
+  public AnyJsonItemType() {}
 
-  Sequence value(IntNumeric index);
+  @Override
+  public boolean matches(Item item) {
+    return (item instanceof JsonItem);
+  }
 
-  Sequence value(int index);
+  @Override
+  public String toString() {
+    return "json-item()";
+  }
 
-  Array names();
-
-  Array values();
-
-  QNm name(IntNumeric index);
-
-  QNm name(int index);
-
-  IntNumeric length();
-
-  int len();
-
+  @Override
+  public boolean equals(Object obj) {
+    return ((obj == this) || (obj instanceof AnyJsonItemType));
+  }
 }
