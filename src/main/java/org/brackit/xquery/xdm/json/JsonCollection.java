@@ -43,19 +43,19 @@ import org.brackit.xquery.xdm.StructuredItemCollection;
 public interface JsonCollection<E extends StructuredItem> extends StructuredItemCollection<E> {
 
   @Override
-  public String getName();
+  String getName();
 
   @Override
-  public void delete() throws DocumentException;
+  void delete() throws DocumentException;
 
   @Override
-  public void remove(long documentID);
+  void remove(long documentID);
 
   @Override
-  public E getDocument();
+  E getDocument();
 
   @Override
-  public Stream<? extends E> getDocuments();
+  Stream<? extends E> getDocuments();
 
   /**
    * Add a file to the JSON collection.
@@ -65,7 +65,17 @@ public interface JsonCollection<E extends StructuredItem> extends StructuredItem
    * @throws OperationNotSupportedException if the operation is not supported
    * @throws DocumentException if anything else went wrong.
    */
-  public E add(Path file);
+  E add(Path file);
+
+  /**
+   * Add a file to the JSON collection.
+   *
+   * @param file the file to add to the collection
+   * @return the JSON root
+   * @throws OperationNotSupportedException if the operation is not supported
+   * @throws DocumentException if anything else went wrong.
+   */
+  E add(String json);
 
   @Override
   public long getDocumentCount();

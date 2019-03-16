@@ -47,7 +47,13 @@ public interface JsonStore extends StructuredItemStore {
 
   JsonCollection<?> create(String collName, String optResName, Path path);
 
-  JsonCollection<?> create(String name, Stream<Path> parsers);
+  JsonCollection<?> createFromPaths(String name, Stream<Path> parsers);
+
+  JsonCollection<?> create(String name, String json);
+
+  JsonCollection<?> create(String collName, String optResName, String json);
+
+  JsonCollection<?> createFromJsonStrings(String name, Stream<String> json);
 
   @Override
   void drop(String name);
