@@ -165,10 +165,11 @@ public class StringSerializer implements Serializer {
         out.write("{");
         for (int i = 0; i < r.len(); i++) {
           if (i > 0) {
-            out.write(", ");
+            out.write(",");
           }
+          out.write("\"");
           out.write(r.name(i).stringValue());
-          out.write(" : ");
+          out.write("\":");
           json(r.value(i), p);
         }
         out.write("}");
