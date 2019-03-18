@@ -28,6 +28,7 @@
 package org.brackit.xquery.xdm.json;
 
 import java.nio.file.Path;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.StructuredItemStore;
 
@@ -53,7 +54,7 @@ public interface JsonStore extends StructuredItemStore {
 
   JsonCollection<?> create(String collName, String optResName, String json);
 
-  JsonCollection<?> createFromJsonStrings(String name, Stream<String> json);
+  JsonCollection<?> createFromJsonStrings(String name, Stream<Str> json);
 
   @Override
   void drop(String name);
