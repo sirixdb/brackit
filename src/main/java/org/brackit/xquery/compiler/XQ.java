@@ -311,7 +311,7 @@ public final class XQ {
 	public static final int PAST_OR_SELF = 256;
 	public static final int FIRST = 257;
 	public static final int LAST = 258;
-	public static final int ALL_TIME = 259;
+	public static final int ALL_TIMES = 259;
 	// End temporal
 
 	public static final String NAMES[] = new String[] { "XQuery",

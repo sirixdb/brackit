@@ -57,7 +57,7 @@ public interface TemporalJsonItem<E extends TemporalJsonItem<E>> extends JsonIte
    *
    * @return stream of the same node in all revisions
    */
-  Stream<E> getAllTime();
+  Stream<E> getAllTimes();
 
   boolean isNextOf(E other);
 

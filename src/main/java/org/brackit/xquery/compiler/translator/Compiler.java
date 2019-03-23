@@ -1103,7 +1103,7 @@ public class Compiler implements Translator {
 			return Accessor.FIRST;
 		case XQ.LAST:
 			return Accessor.LAST;
-		case XQ.ALL_TIME:
+		case XQ.ALL_TIMES:
 			return Accessor.ALL_TIME;
 		default:
 			throw new QueryException(

@@ -2378,8 +2378,8 @@ public class XQParser extends Tokenizer {
       axis = new AST(XQ.LAST);
     } else if ((la = laSkipWS("first")) != null) {
       axis = new AST(XQ.FIRST);
-    } else if ((la = laSkipWS("all-time")) != null) {
-      axis = new AST(XQ.ALL_TIME);
+    } else if ((la = laSkipWS("all-times")) != null) {
+      axis = new AST(XQ.ALL_TIMES);
     } else {
       return null;
     }

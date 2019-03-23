@@ -38,6 +38,9 @@ public final class SequenceType {
 
   public static SequenceType ITEM_SEQUENCE = new SequenceType(new AnyItemType(), Cardinality.ZeroOrMany);
 
+  public static SequenceType JSON_ITEM_SEQUENCE =
+      new SequenceType(AnyJsonItemType.ANY_JSON_ITEM, Cardinality.ZeroOrMany);
+
   public static SequenceType ITEM = new SequenceType(new AnyItemType(), Cardinality.One);
 
   public static SequenceType JSON_ITEM = new SequenceType(AnyItemType.ANY, Cardinality.One);
