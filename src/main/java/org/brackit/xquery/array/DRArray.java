@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -36,73 +36,69 @@ import org.brackit.xquery.xdm.json.Array;
 
 /**
  * @author Sebastian Baechle
- * 
+ *
  */
 public class DRArray extends AbstractArray {
-	private final Sequence[] vals;
-	private final int start;
-	private final int end;
+  private final Sequence[] vals;
+  private final int start;
+  private final int end;
 
-	public DRArray(Sequence[] vals, int start, int end) throws QueryException {
-		if ((start < 0) || (start > end) || (start >= vals.length)) {
-			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-					"Invalid array start index: %s", start);
-		}
-		if ((end < 0) || (end > vals.length)) {
-			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-					"Invalid array end index: %s", start);
-		}
-		this.vals = vals;
-		this.start = start;
-		this.end = end;
+  public DRArray(Sequence[] vals, int start, int end) {
+    if ((start < 0) || (start > end) || (start >= vals.length)) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array start index: %s", start);
+    }
+    if ((end < 0) || (end > vals.length)) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array end index: %s", end);
+    }
+    this.vals = vals;
+    this.start = start;
+    this.end = end;
 
-	}
+  }
 
-	@Override
-	public Sequence at(IntNumeric i) throws QueryException {
-		try {
-			// TODO ensure that index is not out of int range
-			int ii = start + i.intValue();
-			if (ii >= end) {
-				throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-						"Invalid array index: %s", i);
-			}
-			return (vals[ii]);
-		} catch (ArrayIndexOutOfBoundsException e) {
-			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-					"Invalid array index: %s", i);
-		}
-	}
+  @Override
+  public Sequence at(IntNumeric i) throws QueryException {
+    try {
+      // TODO ensure that index is not out of int range
+      int ii = start + i.intValue();
+      if (ii >= end) {
+        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
+      }
+      return (vals[ii]);
+    } catch (ArrayIndexOutOfBoundsException e) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
+    }
+  }
 
-	@Override
-	public Sequence at(int i) throws QueryException {
-		try {
-			int ii = start + i;
-			if (ii >= end) {
-				throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-						"Invalid array index: %s", i);
-			}
-			return (vals[ii]);
-		} catch (ArrayIndexOutOfBoundsException e) {
-			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-					"Invalid array index: %s", i);
-		}
-	}
+  @Override
+  public Sequence at(int i) throws QueryException {
+    try {
+      int ii = start + i;
+      if (ii >= end) {
+        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
+      }
+      return (vals[ii]);
+    } catch (ArrayIndexOutOfBoundsException e) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
+    }
+  }
 
-	@Override
-	public IntNumeric length() throws QueryException {
-		int l = end - start;
-		return (l <= 20) ? Int32.ZERO_TWO_TWENTY[l] : new Int32(l);
-	}
+  @Override
+  public IntNumeric length() throws QueryException {
+    int l = end - start;
+    return (l <= 20)
+        ? Int32.ZERO_TWO_TWENTY[l]
+        : new Int32(l);
+  }
 
-	@Override
-	public int len() throws QueryException {
-		return end - start;
-	}
+  @Override
+  public int len() throws QueryException {
+    return end - start;
+  }
 
-	@Override
-	public Array range(IntNumeric from, IntNumeric to) throws QueryException {
-		// TODO ensure that indexes are not out of int range
-		return new DRArray(vals, start + from.intValue(), start + to.intValue());
-	}
+  @Override
+  public Array range(IntNumeric from, IntNumeric to) throws QueryException {
+    // TODO ensure that indexes are not out of int range
+    return new DRArray(vals, start + from.intValue(), start + to.intValue());
+  }
 }
