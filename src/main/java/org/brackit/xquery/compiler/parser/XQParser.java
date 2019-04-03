@@ -2281,34 +2281,35 @@ public class XQParser extends Tokenizer {
   // BEGIN Custom record syntax
   private AST stepExpr() throws TokenizerException {
     AST expr = origStepExpr();
-    if (expr == null) {
-      return null;
-    }
-    if (!attemptSkipS("=>")) {
-      return expr;
-    }
-    AST tmp = new AST(XQ.DerefExpr);
-    tmp.addChild(expr);
-    boolean hasArray = false;
-    do {
-      if (hasArray) {
-        hasArray = false;
-        AST deref = new AST(XQ.DerefExpr);
-        deref.addChild(tmp);
-        tmp = deref;
-      }
-      tmp.addChild(derefStep());
-      AST index = index();
-      if (index != null) {
-        AST arrayAccess = new AST(XQ.ArrayAccess);
-        arrayAccess.addChild(tmp);
-        arrayAccess.addChild(index);
-        tmp = arrayAccess;
-        hasArray = true;
-      }
-    } while (attemptSkipS("=>"));
-
-    return tmp;
+    return expr;
+    // if (expr == null) {
+    // return null;
+    // }
+    // if (!attemptSkipS("=>")) {
+    // return expr;
+    // }
+    // AST tmp = new AST(XQ.DerefExpr);
+    // tmp.addChild(expr);
+    // boolean hasArray = false;
+    // do {
+    // if (hasArray) {
+    // hasArray = false;
+    // AST deref = new AST(XQ.DerefExpr);
+    // deref.addChild(tmp);
+    // tmp = deref;
+    // }
+    // tmp.addChild(derefStep());
+    // AST index = index();
+    // if (index != null) {
+    // AST arrayAccess = new AST(XQ.ArrayAccess);
+    // arrayAccess.addChild(tmp);
+    // arrayAccess.addChild(index);
+    // tmp = arrayAccess;
+    // hasArray = true;
+    // }
+    // } while (attemptSkipS("=>"));
+    //
+    // return tmp;
   }
 
   // vanilla XQuery 3.0 step expr
@@ -2896,6 +2897,17 @@ public class XQParser extends Tokenizer {
       return null;
     }
     while (true) {
+      // BEGIN Custom record deref extension
+      AST deref = derefStep();
+      if (deref != null) {
+        AST derefExpr = new AST(XQ.DerefExpr);
+        derefExpr.addChild(expr);
+        derefExpr.addChild(deref);
+        expr = derefExpr;
+        continue;
+      }
+      // END Custom record deref extension
+
       // BEGIN Custom array syntax extension
       AST index = index();
       if (index != null) {
@@ -3885,6 +3897,9 @@ public class XQParser extends Tokenizer {
 
   // BEGIN Custom record syntax
   private AST derefStep() throws TokenizerException {
+    if (!attemptSkipS("=>")) {
+      return null;
+    }
     Token la = laStringSkipWS(true);
     EQNameToken la2;
     if (la != null) {
