@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -36,51 +36,57 @@ import org.brackit.xquery.xdm.json.Array;
 
 /**
  * @author Sebastian Baechle
- * 
+ *
  */
 public class DArray extends AbstractArray {
 
-	private final Sequence[] vals;
+  private final Sequence[] vals;
 
-	public DArray(Sequence... vals) {
-		this.vals = vals;
-	}
+  public DArray(Sequence... vals) {
+    this.vals = vals;
+  }
 
-	@Override
-	public Sequence at(IntNumeric i) throws QueryException {
-		try {
-			// TODO ensure that index is not out of int range
-			return (vals[i.intValue()]);
-		} catch (ArrayIndexOutOfBoundsException e) {
-			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-					"Invalid array index: %s", i);
-		}
-	}
+  @Override
+  public Sequence[] array() throws QueryException {
+    // TODO Auto-generated method stub
+    return super.array();
+  }
 
-	@Override
-	public Sequence at(int i) throws QueryException {
-		try {
-			return (vals[i]);
-		} catch (ArrayIndexOutOfBoundsException e) {
-			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-					"Invalid array index: %s", i);
-		}
-	}
+  @Override
+  public Sequence at(IntNumeric i) throws QueryException {
+    try {
+      // TODO ensure that index is not out of int range
+      return (vals[i.intValue()]);
+    } catch (ArrayIndexOutOfBoundsException e) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
+    }
+  }
 
-	@Override
-	public IntNumeric length() throws QueryException {
-		int l = vals.length;
-		return (l <= 20) ? Int32.ZERO_TWO_TWENTY[l] : new Int32(l);
-	}
+  @Override
+  public Sequence at(int i) throws QueryException {
+    try {
+      return (vals[i]);
+    } catch (ArrayIndexOutOfBoundsException e) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
+    }
+  }
 
-	@Override
-	public int len() throws QueryException {
-		return vals.length;
-	}
+  @Override
+  public IntNumeric length() throws QueryException {
+    int l = vals.length;
+    return (l <= 20)
+        ? Int32.ZERO_TWO_TWENTY[l]
+        : new Int32(l);
+  }
 
-	@Override
-	public Array range(IntNumeric from, IntNumeric to) throws QueryException {
-		// TODO ensure that indexes are not out of int range
-		return new DRArray(vals, from.intValue(), to.intValue());
-	}
+  @Override
+  public int len() throws QueryException {
+    return vals.length;
+  }
+
+  @Override
+  public Array range(IntNumeric from, IntNumeric to) throws QueryException {
+    // TODO ensure that indexes are not out of int range
+    return new DRArray(vals, from.intValue(), to.intValue());
+  }
 }

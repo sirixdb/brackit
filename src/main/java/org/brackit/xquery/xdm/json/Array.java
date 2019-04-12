@@ -54,26 +54,36 @@ import org.brackit.xquery.xdm.Sequence;
 public interface Array extends ListOrUnion {
   /**
    * Returns the value at the given position.
+   *
+   * @throws QueryException if retrieving fails
    */
-  public Sequence at(IntNumeric i) throws QueryException;
+  public Sequence at(IntNumeric i);
 
   /**
    * Returns the value at the given position.
+   *
+   * @throws QueryException if retrieving fails
    */
-  public Sequence at(int i) throws QueryException;
+  public Sequence at(int i);
 
   /**
    * Returns the length of this array.
+   *
+   * @throws QueryException if retrieving fails
    */
-  public IntNumeric length() throws QueryException;
+  public IntNumeric length();
 
   /**
    * Returns the length of this array.
+   *
+   * @throws QueryException if retrieving fails
    */
-  public int len() throws QueryException;
+  public int len();
 
   /**
    * Creates a slice of this array in the given boundaries.
+   *
+   * @throws QueryException if retrieving fails
    */
-  public Array range(IntNumeric from, IntNumeric to) throws QueryException;
+  public Array range(IntNumeric from, IntNumeric to);
 }
