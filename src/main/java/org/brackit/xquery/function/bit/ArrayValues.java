@@ -25,62 +25,74 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.array;
+package org.brackit.xquery.function.bit;
 
-import org.brackit.xquery.ErrorCode;
+import java.util.List;
+import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.Bits;
+import org.brackit.xquery.function.AbstractFunction;
+import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.sequence.BaseIter;
+import org.brackit.xquery.sequence.LazySequence;
+import org.brackit.xquery.util.annotation.FunctionAnnotation;
+import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.json.Array;
+import org.brackit.xquery.xdm.type.ArrayType;
+import org.brackit.xquery.xdm.type.Cardinality;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
+ *
  * @author Sebastian Baechle
  *
  */
-public class DArray extends AbstractArray {
+@FunctionAnnotation(description = "Returns the values of the given array.", parameters = "$array")
+public class ArrayValues extends AbstractFunction {
 
-  private final Sequence[] vals;
+  public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI, Bits.BIT_PREFIX, "array-values");
 
-  public DArray(Sequence... vals) {
-    this.vals = vals;
+  public ArrayValues() {
+    this(DEFAULT_NAME);
+  }
+
+  public ArrayValues(QNm name) {
+    super(name, new Signature(SequenceType.ITEM_SEQUENCE, new SequenceType(ArrayType.ARRAY, Cardinality.ZeroOrOne)),
+        true);
   }
 
   @Override
-  public Sequence at(IntNumeric i) throws QueryException {
-    try {
-      // TODO ensure that index is not out of int range
-      return (vals[i.intValue()]);
-    } catch (ArrayIndexOutOfBoundsException e) {
-      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
-    }
-  }
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    final Array array = (Array) args[0];
 
-  @Override
-  public Sequence at(int i) throws QueryException {
-    try {
-      return (vals[i]);
-    } catch (ArrayIndexOutOfBoundsException e) {
-      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
-    }
-  }
+    if (array == null)
+      return null;
 
-  @Override
-  public IntNumeric length() throws QueryException {
-    int l = vals.length;
-    return (l <= 20)
-        ? Int32.ZERO_TWO_TWENTY[l]
-        : new Int32(l);
-  }
 
-  @Override
-  public int len() throws QueryException {
-    return vals.length;
-  }
+    return new LazySequence() {
+      @Override
+      public Iter iterate() {
+        return new BaseIter() {
+          private List<Sequence> sequences;
 
-  @Override
-  public Array range(IntNumeric from, IntNumeric to) throws QueryException {
-    // TODO ensure that indexes are not out of int range
-    return new DRArray(vals, from.intValue(), to.intValue());
+          private int index;
+
+          @Override
+          public Item next() {
+            if (sequences == null) {
+              sequences = List.of(array.array());
+            }
+            return (Item) sequences.get(index++);
+          }
+
+          @Override
+          public void close() {}
+        };
+      }
+    };
   }
 }
