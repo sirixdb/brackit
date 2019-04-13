@@ -85,7 +85,12 @@ public class ArrayValues extends AbstractFunction {
             if (sequences == null) {
               sequences = array.values();
             }
-            return (Item) sequences.get(index++);
+
+            if (index < sequences.size()) {
+              return (Item) sequences.get(index++);
+            }
+
+            return null;
           }
 
           @Override
