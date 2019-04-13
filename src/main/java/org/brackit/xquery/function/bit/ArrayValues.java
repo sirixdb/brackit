@@ -84,7 +84,7 @@ public class ArrayValues extends AbstractFunction {
           @Override
           public Item next() {
             if (sequences == null) {
-              sequences = List.of(array.array());
+              sequences = array.values();
             }
             return (Item) sequences.get(index++);
           }

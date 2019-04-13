@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.array;
 
+import java.util.List;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Int32;
@@ -47,7 +48,12 @@ public class DArray extends AbstractArray {
   }
 
   @Override
-  public Sequence at(IntNumeric i) throws QueryException {
+  public List<Sequence> values() {
+    return List.of(vals);
+  }
+
+  @Override
+  public Sequence at(IntNumeric i) {
     try {
       // TODO ensure that index is not out of int range
       return (vals[i.intValue()]);
@@ -57,7 +63,7 @@ public class DArray extends AbstractArray {
   }
 
   @Override
-  public Sequence at(int i) throws QueryException {
+  public Sequence at(int i) {
     try {
       return (vals[i]);
     } catch (ArrayIndexOutOfBoundsException e) {
@@ -66,7 +72,7 @@ public class DArray extends AbstractArray {
   }
 
   @Override
-  public IntNumeric length() throws QueryException {
+  public IntNumeric length() {
     int l = vals.length;
     return (l <= 20)
         ? Int32.ZERO_TWO_TWENTY[l]
@@ -74,12 +80,12 @@ public class DArray extends AbstractArray {
   }
 
   @Override
-  public int len() throws QueryException {
+  public int len() {
     return vals.length;
   }
 
   @Override
-  public Array range(IntNumeric from, IntNumeric to) throws QueryException {
+  public Array range(IntNumeric from, IntNumeric to) {
     // TODO ensure that indexes are not out of int range
     return new DRArray(vals, from.intValue(), to.intValue());
   }

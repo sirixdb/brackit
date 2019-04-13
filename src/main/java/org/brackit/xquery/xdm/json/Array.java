@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.xdm.json;
 
+import java.util.List;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.xdm.Sequence;
@@ -52,6 +53,13 @@ import org.brackit.xquery.xdm.Sequence;
  *
  */
 public interface Array extends ListOrUnion {
+  /**
+   * Returns the values.
+   *
+   * @throws QueryException if retrieving fails
+   */
+  public List<Sequence> values();
+
   /**
    * Returns the value at the given position.
    *
