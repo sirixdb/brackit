@@ -29,7 +29,6 @@ package org.brackit.xquery.function.bit;
 
 import java.util.List;
 import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.AbstractFunction;
@@ -66,7 +65,7 @@ public class ArrayValues extends AbstractFunction {
   }
 
   @Override
-  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) {
     final Array array = (Array) args[0];
 
     if (array == null)
