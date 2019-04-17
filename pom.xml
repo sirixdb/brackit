@@ -23,7 +23,7 @@
     <scm>
         <connection>scm:git:git@github.com:sirixdb/brackit.git</connection>
         <developerConnection>scm:git:git@github.com:sirixdb/brackit.git</developerConnection>
-        <url>git@github.com:sirixdb/brackit.git</url>
+        <url>https://github.com/sirixdb/brackit</url>
     </scm>
     <issueManagement>
         <url>https://github.com/sirixdb/brackit/issues</url>
