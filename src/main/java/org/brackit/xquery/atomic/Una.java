@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -32,86 +32,86 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Type;
 
 /**
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  */
 public class Una extends AbstractAtomic {
-	public static final Una EMPTY = new Una("");
+  public static final Una EMPTY = new Una("");
 
-	public final String str;
+  public final String str;
 
-	private class DUna extends Una {
-		private final Type type;
+  private class DUna extends Una {
+    private final Type type;
 
-		public DUna(String str, Type type) {
-			super(str);
-			this.type = type;
-		}
+    public DUna(String str, Type type) {
+      super(str);
+      this.type = type;
+    }
 
-		@Override
-		public Type type() {
-			return this.type;
-		}
-	}
+    @Override
+    public Type type() {
+      return this.type;
+    }
+  }
 
-	public Una(String str) {
-		if (str == null)
-			str = "";
-		this.str = str;
-	}
+  public Una(String str) {
+    if (str == null)
+      str = "";
+    this.str = str;
+  }
 
-	@Override
-	public Type type() {
-		return Type.UNA;
-	}
+  @Override
+  public Type type() {
+    return Type.UNA;
+  }
 
-	@Override
-	public Atomic asType(Type type) throws QueryException {
-		return new DUna(str, type);
-	}
-	
-	@Override
-	public Una asUna() {
-		return this;
-	}
+  @Override
+  public Atomic asType(Type type) throws QueryException {
+    return new DUna(str, type);
+  }
 
-	@Override
-	public boolean booleanValue() throws QueryException {
-		return (!str.isEmpty());
-	}
+  @Override
+  public Una asUna() {
+    return this;
+  }
 
-	@Override
-	public int cmp(Atomic other) throws QueryException {
-		if ((other instanceof Str) || (other instanceof Una)) // Optimization
-		// treat
-		// xs:untypedAtomic
-		// as string to
-		// avoid cast
-		{
-			return (str.compareTo(other.stringValue()));
-		}
-		throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-				"Cannot compare '%s' with '%s'", type(), other.type());
-	}
+  @Override
+  public boolean booleanValue() throws QueryException {
+    return (!str.isEmpty());
+  }
 
-	@Override
-	protected int atomicCmpInternal(Atomic atomic) {
-		return (str.compareTo(atomic.stringValue()));
-	}
+  @Override
+  public int cmp(Atomic other) throws QueryException {
+    if ((other instanceof Str) || (other instanceof Una)) // Optimization
+    // treat
+    // xs:untypedAtomic
+    // as string to
+    // avoid cast
+    {
+      return (str.compareTo(other.stringValue()));
+    }
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s' with '%s'", type(),
+        other.type());
+  }
 
-	@Override
-	public int atomicCode() {
-		return Type.STRING_CODE;
-	}
+  @Override
+  public int atomicCmpInternal(Atomic atomic) {
+    return (str.compareTo(atomic.stringValue()));
+  }
 
-	@Override
-	public String stringValue() {
-		return str;
-	}
+  @Override
+  public int atomicCode() {
+    return Type.STRING_CODE;
+  }
 
-	@Override
-	public int hashCode() {
-		return str.hashCode();
-	}
+  @Override
+  public String stringValue() {
+    return str;
+  }
+
+  @Override
+  public int hashCode() {
+    return str.hashCode();
+  }
 }

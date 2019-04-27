@@ -33,12 +33,12 @@ import java.io.PrintWriter;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.Numeric;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Type;
 import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.json.Record;
 import org.brackit.xquery.xdm.node.Node;
@@ -141,8 +141,8 @@ public class StringSerializer implements Serializer {
       if (s instanceof Atomic) {
         if (s instanceof Numeric) {
           out.write(s.toString());
-        } else if (s instanceof Bool) {
-          out.write(((Bool) s).booleanValue()
+        } else if (((Atomic) s).type() == Type.BOOL) {
+          out.write(((Atomic) s).booleanValue()
               ? "true"
               : "false");
         } else {

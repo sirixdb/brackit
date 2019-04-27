@@ -154,7 +154,7 @@ public class QNm extends AbstractAtomic {
   }
 
   @Override
-  protected int atomicCmpInternal(Atomic other) {
+  public int atomicCmpInternal(Atomic other) {
     QNm qName = (QNm) other;
     int res = nsURI.compareTo(qName.nsURI);
     if (res != 0) {

@@ -37,88 +37,88 @@ import org.brackit.xquery.xdm.Type;
  *
  */
 public class Str extends AbstractAtomic {
-	public static final Str EMPTY = new Str("");
+  public static final Str EMPTY = new Str("");
 
-	private final String str;
+  private final String str;
 
-	private class DStr extends Str {
-		private final Type type;
+  private class DStr extends Str {
+    private final Type type;
 
-		public DStr(String str, Type type) {
-			super(str);
-			this.type = type;
-		}
+    public DStr(String str, Type type) {
+      super(str);
+      this.type = type;
+    }
 
-		@Override
-		public Type type() {
-			return this.type;
-		}
-	}
+    @Override
+    public Type type() {
+      return this.type;
+    }
+  }
 
-	public Str(String str) {
-		if (str == null)
-			str = "";
-		this.str = str;
-	}
+  public Str(String str) {
+    if (str == null)
+      str = "";
+    this.str = str;
+  }
 
-	@Override
-	public Type type() {
-		return Type.STR;
-	}
+  @Override
+  public Type type() {
+    return Type.STR;
+  }
 
-	@Override
-	public Atomic asType(Type type) throws QueryException {
-		return new DStr(str, type);
-	}
+  @Override
+  public Atomic asType(Type type) throws QueryException {
+    return new DStr(str, type);
+  }
 
-	@Override
-	public Str asStr() {
-		return this;
-	}
+  @Override
+  public Str asStr() {
+    return this;
+  }
 
-	@Override
-	public boolean booleanValue() throws QueryException {
-		return (!str.isEmpty());
-	}
+  @Override
+  public boolean booleanValue() throws QueryException {
+    return (!str.isEmpty());
+  }
 
-	@Override
-	public int cmp(Atomic other) throws QueryException {
-		if ((other instanceof Str) || (other instanceof Una)) // Optimization
-		// treat
-		// xs:untypedAtomic
-		// as string to
-		// avoid cast
-		{
-			return (str.compareTo(other.stringValue()));
-		}
-		if (other instanceof AnyURI) {
-			return (str.compareTo(other.stringValue()));
-		}
-		throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-				"Cannot compare '%s' with '%s'", type(), other.type());
-	}
+  @Override
+  public int cmp(Atomic other) throws QueryException {
+    if ((other instanceof Str) || (other instanceof Una)) // Optimization
+    // treat
+    // xs:untypedAtomic
+    // as string to
+    // avoid cast
+    {
+      return (str.compareTo(other.stringValue()));
+    }
+    if (other instanceof AnyURI) {
+      return (str.compareTo(other.stringValue()));
+    }
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s' with '%s'", type(),
+        other.type());
+  }
 
-	@Override
-	protected int atomicCmpInternal(Atomic atomic) {
-		return (str.compareTo(atomic.stringValue()));
-	}
+  @Override
+  public int atomicCmpInternal(Atomic atomic) {
+    return (str.compareTo(atomic.stringValue()));
+  }
 
-	@Override
-	public int atomicCode() {
-		return Type.STRING_CODE;
-	}
+  @Override
+  public int atomicCode() {
+    return Type.STRING_CODE;
+  }
 
-	@Override
-	public String stringValue() {
-		return str;
-	}
+  @Override
+  public String stringValue() {
+    return str;
+  }
 
-	public Str concat(Str s) {
-		return new Str(str + s.str);
-	}
+  public Str concat(Str s) {
+    return new Str(str + s.str);
+  }
 
-	@Override
-	public int hashCode() {
-		return str.hashCode();
-	}
+  @Override
+  public int hashCode() {
+    return str.hashCode();
+  }
 }

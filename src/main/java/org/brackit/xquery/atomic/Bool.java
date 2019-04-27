@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -32,86 +32,94 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Type;
 
 /**
- * 
+ *
  * @author Sebastian Baechle
- * 
+ *
  */
 public class Bool extends AbstractAtomic {
-	public final boolean bool;
+  public final boolean bool;
 
-	public static final Bool FALSE = new Bool(false);
+  public static final Bool FALSE = new Bool(false);
 
-	public static final Bool TRUE = new Bool(true);
+  public static final Bool TRUE = new Bool(true);
 
-	private class DBool extends Bool {
-		public DBool(boolean bool, Type type) {
-			super(bool);
-			this.type = type;
-		}
+  private class DBool extends Bool {
+    public DBool(boolean bool, Type type) {
+      super(bool);
+      this.type = type;
+    }
 
-		private final Type type;
+    private final Type type;
 
-		@Override
-		public Type type() {
-			return this.type;
-		}
-	}
+    @Override
+    public Type type() {
+      return this.type;
+    }
+  }
 
-	public Bool(Boolean bool) {
-		this.bool = bool;
-	}
+  public Bool(Boolean bool) {
+    this.bool = bool;
+  }
 
-	public Bool(boolean bool) {
-		this.bool = bool;
-	}
+  public Bool(boolean bool) {
+    this.bool = bool;
+  }
 
-	public Bool(Bool v) {
-		this.bool = v.bool;
-	}
+  public Bool(Bool v) {
+    this.bool = v.bool;
+  }
 
-	@Override
-	public Type type() {
-		return Type.BOOL;
-	}
+  @Override
+  public Type type() {
+    return Type.BOOL;
+  }
 
-	@Override
-	public Atomic asType(Type type) throws QueryException {
-		return new DBool(bool, type);
-	}
+  @Override
+  public Atomic asType(Type type) throws QueryException {
+    return new DBool(bool, type);
+  }
 
-	@Override
-	public boolean booleanValue() throws QueryException {
-		return bool;
-	}
+  @Override
+  public boolean booleanValue() throws QueryException {
+    return bool;
+  }
 
-	@Override
-	public int cmp(Atomic other) throws QueryException {
-		if (other instanceof Bool) {
-			return ((bool == ((Bool) other).bool) ? 0
-					: (((Bool) other).bool) ? 1 : -1);
-		}
-		throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-				"Cannot compare '%s' with '%s'", type(), other.type());
-	}
+  @Override
+  public int cmp(Atomic other) throws QueryException {
+    if (other instanceof Bool) {
+      return ((bool == ((Bool) other).bool)
+          ? 0
+          : (((Bool) other).bool)
+              ? 1
+              : -1);
+    }
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s' with '%s'", type(),
+        other.type());
+  }
 
-	@Override
-	protected int atomicCmpInternal(Atomic other) {
-		return ((bool == ((Bool) other).bool) ? 0 : (((Bool) other).bool) ? 1
-				: -1);
-	}
+  @Override
+  public int atomicCmpInternal(Atomic other) {
+    return ((bool == ((Bool) other).bool)
+        ? 0
+        : (((Bool) other).bool)
+            ? 1
+            : -1);
+  }
 
-	@Override
-	public int atomicCode() {
-		return Type.BOOL_CODE;
-	}
+  @Override
+  public int atomicCode() {
+    return Type.BOOL_CODE;
+  }
 
-	@Override
-	public String stringValue() {
-		return Boolean.toString(bool);
-	}
+  @Override
+  public String stringValue() {
+    return Boolean.toString(bool);
+  }
 
-	@Override
-	public int hashCode() {
-		return bool ? 1231 : 1237;
-	}
+  @Override
+  public int hashCode() {
+    return bool
+        ? 1231
+        : 1237;
+  }
 }
