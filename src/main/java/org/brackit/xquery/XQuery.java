@@ -111,9 +111,10 @@ public class XQuery {
     if (result == null) {
       return;
     }
-    StringSerializer serializer = new StringSerializer(out);
-    serializer.setFormat(prettyPrint);
-    serializer.serialize(result);
+    try (StringSerializer serializer = new StringSerializer(out)) {
+      serializer.setFormat(prettyPrint);
+      serializer.serialize(result);
+    }
   }
 
   public void serialize(QueryContext ctx, Serializer serializer) throws QueryException {
@@ -121,7 +122,11 @@ public class XQuery {
     if (result == null) {
       return;
     }
-    serializer.serialize(result);
+    try {
+      serializer.serialize(result);
+    } finally {
+      serializer.close();
+    }
   }
 
   public boolean isPrettyPrint() {
