@@ -35,6 +35,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.file.Paths;
 import java.util.Random;
 import org.brackit.xquery.atomic.DTD;
 import org.brackit.xquery.node.SimpleStore;
@@ -60,11 +61,7 @@ import org.junit.Ignore;
 public class XQueryBaseTest {
 
   /** Path to resources folder. */
-  public static final String RESOURCES = new StringBuilder("src").append(File.separator)
-                                                                 .append("test")
-                                                                 .append(File.separator)
-                                                                 .append("resources")
-                                                                 .toString();
+  public static final String RESOURCES = Paths.get("src", "test", "resources").toString();
 
   protected QueryContext ctx;
 
@@ -145,8 +142,7 @@ public class XQueryBaseTest {
     return read.toString();
   }
 
-  protected NodeCollection<?> storeFile(String name, String document)
-      throws Exception, FileNotFoundException {
+  protected NodeCollection<?> storeFile(String name, String document) throws Exception, FileNotFoundException {
     // URL url = getClass().getResource(document);
     DocumentParser parser = new DocumentParser(new File(document));// new
                                                                    // File(url.getFile()));

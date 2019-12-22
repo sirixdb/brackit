@@ -31,11 +31,18 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- * @author Sebastian Baechle
+ * Serializer, to serialize a sequence.
  *
+ * @author Sebastian Baechle
  */
 public interface Serializer extends AutoCloseable {
-  public void serialize(Sequence s) throws QueryException;
+  /**
+   * Serialize a sequence
+   *
+   * @param s the sequence to serialize
+   * @throws QueryException if anything went wrong
+   */
+  public void serialize(Sequence s);
 
   @Override
   default void close() {}
