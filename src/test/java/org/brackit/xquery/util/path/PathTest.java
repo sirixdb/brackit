@@ -42,7 +42,7 @@ import org.junit.Test;
  */
 public class PathTest {
 	@Test
-	public void testSJsonPath() throws Exception {
+	public void testSJsonPath() {
 		// /paths/\/business_service_providers\/search/get.
 		Path<QNm> expected = (new Path<QNm>()).child(new QNm("paths")).child(new QNm("\\/business_service_providers\\/search")).child(new QNm("get"));
 		Path<QNm> parsed = (new PathParser(expected.toString())).parse();
@@ -50,14 +50,14 @@ public class PathTest {
 	}
 
 	@Test
-	public void testSimplePath() throws Exception {
+	public void testSimplePath() {
 		Path<QNm> expected = (new Path<QNm>()).child(new QNm("tag"));
 		Path<QNm> parsed = (new PathParser(expected.toString())).parse();
 		assertEquals("Path parsed correctly", expected, parsed);
 	}
 
 	@Test
-	public void testSimplePath2() throws Exception {
+	public void testSimplePath2() {
 		Path<QNm> expected = (new Path<QNm>()).child(new QNm("tag"))
 				.child(new QNm("hallo")).descendant(new QNm("aha"));
 		Path<QNm> parsed = (new PathParser(expected.toString())).parse();
@@ -65,7 +65,7 @@ public class PathTest {
 	}
 
 	@Test
-	public void testSimplePath3() throws Exception {
+	public void testSimplePath3() {
 		Path<QNm> expected = (new Path<QNm>()).self().child(new QNm("tag"))
 			.child(new QNm("hallo")).descendant(new QNm("aha"));
 		Path<QNm> parsed = (new PathParser(expected.toString())).parse();
@@ -73,7 +73,7 @@ public class PathTest {
 	}
 
 	@Test
-	public void testSimplePath4() throws Exception {
+	public void testSimplePath4() {
 		Path<QNm> expected = (new Path<QNm>()).self().child(new QNm("tag"))
 			.child(new QNm("hallo")).descendant(new QNm("aha"));
 		String implicitSelfPath = expected.toString().substring(2);
@@ -82,7 +82,7 @@ public class PathTest {
 	}
 
 	@Test
-	public void testSelfPath4() throws Exception {
+	public void testSelfPath4() {
 		Path<QNm> expected = (new Path<QNm>()).self().self().descendant(
 				new QNm("aha"));
 		Path<QNm> parsed = (new PathParser(expected.toString())).parse();
@@ -90,14 +90,14 @@ public class PathTest {
 	}
 
 	@Test
-	public void testQualifiedPath() throws Exception {
+	public void testQualifiedPath() {
 		Path<QNm> expected = (new Path<QNm>()).child(new QNm(null, "foo", "tag"));
 		Path<QNm> parsed = (new PathParser(expected.toString())).parse();
 		assertEquals("Path parsed correctly", expected, parsed);
 	}
 	
 	@Test
-	public void testQualifiedPathPreamble() throws Exception {
+	public void testQualifiedPathPreamble() {
 		Path<QNm> expected = (new Path<QNm>()).child(
 				new QNm("http://brackit.org/ns/bit", "bit", "tag"));
 		String path = "namespace foo = 'localhost'; " +
@@ -107,7 +107,7 @@ public class PathTest {
 	}
 	
 	@Test
-	public void testQualifiedPathMalformedPreamble() throws Exception {
+	public void testQualifiedPathMalformedPreamble() {
 		Path<QNm> expected = (new Path<QNm>()).child(
 				new QNm("http://brackit.org/ns/bit", "bit", "tag"));
 		String path = "namespace foo = 'localhost'" + expected.toString();
@@ -119,7 +119,7 @@ public class PathTest {
 	}
 	
 	@Test
-	public void testQualifiedPathUndefinedPrefix() throws Exception {
+	public void testQualifiedPathUndefinedPrefix() {
 		Path<QNm> expected = (new Path<QNm>()).child(
 				new QNm("http://brackit.org/ns/bit", "xzibit", "tag"));
 		String path = "namespace foo = 'localhost'; " + expected.toString();
@@ -131,28 +131,28 @@ public class PathTest {
 	}
 	
 	@Test
-	public void testFilePath() throws Exception {
+	public void testFilePath() {
 		Path<QNm> parsed = (new PathParser("/test.xml")).parse();
 		assertEquals("Path parsed correctly", new Path<QNm>()
 				.child(new QNm("test.xml")), parsed);
 	}
 
 	@Test
-	public void testFile2Path() throws Exception {
+	public void testFile2Path() {
 		Path<QNm> parsed = (new PathParser("_test.xml")).parse();
 		assertEquals("Path parsed correctly", new Path<QNm>().self().child(
 				new QNm("_test.xml")), parsed);
 	}
 
 	@Test
-	public void testFilePath2() throws Exception {
+	public void testFilePath2() {
 		Path<QNm> parsed = (new PathParser("../conf.d//test.xml")).parse();
 		assertEquals("Path parsed correctly", new Path<QNm>().parent()
 				.child(new QNm("conf.d")).descendant(new QNm("test.xml")), parsed);
 	}
 
 	@Test
-	public void testInvalidPath1() throws Exception {
+	public void testInvalidPath1() {
 		try {
 			Path<QNm> parsed = (new PathParser("/a/..b/c")).parse();
 			fail("Parser accepted invalid input");
@@ -162,7 +162,7 @@ public class PathTest {
 	}
 
 	@Test
-	public void testMatchWithBacktracking() throws Exception {
+	public void testMatchWithBacktracking() {
 		Path<QNm> pattern = (new PathParser("//a/b//c")).parse();
 		Path<QNm> path = (new PathParser("/e/a/b/b/f/b/e/c")).parse();
 		assertTrue("Pattern matches path", pattern.matches(path));
@@ -185,7 +185,7 @@ public class PathTest {
 	}
 
 	@Test
-	public void testNoMatchWithDoubleTwoStagedBacktracking() throws Exception {
+	public void testNoMatchWithDoubleTwoStagedBacktracking() {
 		Path<QNm> pattern = (new PathParser("//a/b/c//d")).parse();
 		Path<QNm> path = (new PathParser("/a/b/b/c/f/b/c/e/d")).parse();
 		assertFalse("Pattern does not match path", pattern.matches(path));
@@ -201,14 +201,14 @@ public class PathTest {
 	}
 
 	@Test
-	public void testMatch() throws Exception {
+	public void testMatch() {
 		Path<QNm> pattern = (new PathParser("//c")).parse();
 		Path<QNm> path = (new PathParser("//a/b/c")).parse();
 		assertTrue("Pattern does match path", pattern.matches(path));
 	}
 
 	@Test
-	public void testVerySimplePath() throws Exception {
+	public void testVerySimplePath() {
 		Path<QNm> parsed = (new PathParser("l")).parse();
 		assertFalse(parsed.isEmpty());
 	}

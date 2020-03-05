@@ -179,10 +179,6 @@ public class Tokenizer {
 		return laSkipWS(prev.end, token);
 	}
 
-	protected int getEnd() {
-		return end;
-	}
-
 	private Token laSkipS(int from, String token) {
 		int s = from + s(from);
 		int e = s;
