@@ -166,12 +166,22 @@ public final class PathParser extends Tokenizer {
         return false;
     }
 
-    private QNm name() throws MismatchException {
-        final int pos = position();
-        final String pathSegmentName = scanString(position(), '/');
+    private QNm name() throws TokenizerException {
+        final var pos = position();
+        String pathSegmentName = scanString(position(), '/');
 
         if (pathSegmentName == null) {
             throw new MismatchException("Wildcard", "Name");
+        }
+
+        while (pathSegmentName.endsWith("\\")) {
+            resetTo(pos + pathSegmentName.length() + 1);
+            final var segment = scanString(position(), '/');
+
+            if (segment != null) {
+                pathSegmentName += "/";
+                pathSegmentName += segment;
+            }
         }
 
         final String[] prefixAndLocalName  = pathSegmentName.split(":");
