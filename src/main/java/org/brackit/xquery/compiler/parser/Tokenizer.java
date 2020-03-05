@@ -140,9 +140,10 @@ public class Tokenizer {
 
 		@Override
     public String string() {
+			final var prefixAndNcName = (prefix != null) ? prefix + ":" + ncname : ncname;
 			return (uri != null) ? ("\"" + uri + "\":")
-					+ ((prefix != null) ? prefix + ":" + ncname : ncname)
-					: ((prefix != null) ? prefix + ":" + ncname : ncname);
+					+ prefixAndNcName
+					: prefixAndNcName;
 		}
 	}
 
@@ -1239,7 +1240,7 @@ public class Tokenizer {
 		return XMLChar.toString(charRef.intValue());
 	}
 
-	private String scanString(int pos, char escapeChar) {
+	protected String scanString(int pos, char escapeChar) {
 		int e = pos;
 		int s = e;
 		int len = 0;

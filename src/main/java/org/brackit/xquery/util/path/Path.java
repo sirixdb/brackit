@@ -43,14 +43,14 @@ import org.brackit.xquery.atomic.QNm;
  * @author Sebastian Baechle
  *
  */
-public class Path<E> {
+public final class Path<E> {
     public enum Axis {
         PARENT(".."), SELF("."), DESC("//"), CHILD("/"), DESC_ATTRIBUTE("//@"), CHILD_ATTRIBUTE(
                 "/@");
 
         private final String text;
 
-        private Axis(String text) {
+        Axis(String text) {
             this.text = text;
         }
 
@@ -111,7 +111,7 @@ public class Path<E> {
     private final ArrayList<Step<E>> path;
 
     public Path() {
-        path = new ArrayList<Step<E>>();
+        path = new ArrayList<>();
     }
 
     private Path(ArrayList<Step<E>> path) {
@@ -124,42 +124,42 @@ public class Path<E> {
     }
 
     public Path<E> child(E value) {
-        path.add(new Step<E>(Axis.CHILD, value));
+        path.add(new Step<>(Axis.CHILD, value));
         return this;
     }
 
     public Path<E> descendant(E value) {
-        path.add(new Step<E>(Axis.DESC, value));
+        path.add(new Step<>(Axis.DESC, value));
         return this;
     }
 
     public Path<E> attribute(E value) {
-        path.add(new Step<E>(Axis.CHILD_ATTRIBUTE, value));
+        path.add(new Step<>(Axis.CHILD_ATTRIBUTE, value));
         return this;
     }
 
     public Path<E> descendantAttribute(E value) {
-        path.add(new Step<E>(Axis.DESC_ATTRIBUTE, value));
+        path.add(new Step<>(Axis.DESC_ATTRIBUTE, value));
         return this;
     }
 
     public Path<E> child() {
-        path.add(new Step<E>(Axis.CHILD, null));
+        path.add(new Step<>(Axis.CHILD, null));
         return this;
     }
 
     public Path<E> descendant() {
-        path.add(new Step<E>(Axis.DESC, null));
+        path.add(new Step<>(Axis.DESC, null));
         return this;
     }
 
     public Path<E> attribute() {
-        path.add(new Step<E>(Axis.CHILD_ATTRIBUTE, null));
+        path.add(new Step<>(Axis.CHILD_ATTRIBUTE, null));
         return this;
     }
 
     public Path<E> descendantAttribute() {
-        path.add(new Step<E>(Axis.DESC_ATTRIBUTE, null));
+        path.add(new Step<>(Axis.DESC_ATTRIBUTE, null));
         return this;
     }
 

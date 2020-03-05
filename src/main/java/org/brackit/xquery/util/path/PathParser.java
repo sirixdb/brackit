@@ -34,9 +34,8 @@ import org.brackit.xquery.compiler.parser.Tokenizer;
 
 /**
  * @author Sebastian Baechle, Max Bechtold
- *
  */
-public class PathParser extends Tokenizer {
+public final class PathParser extends Tokenizer {
 
     private final Path<QNm> p;
 
@@ -149,12 +148,7 @@ public class PathParser extends Tokenizer {
             }
             consume(la);
             if (!attempt("*")) {
-                EQNameToken ela = laQName();
-                if (ela == null) {
-                    throw new MismatchException("Wildcard", "QName");
-                }
-                consume(ela);
-                q = ela.qname();
+                q = name();
             }
             p.descendant(expand(q));
             return true;
@@ -164,17 +158,34 @@ public class PathParser extends Tokenizer {
             }
             consume(la);
             if (!attempt("*")) {
-                EQNameToken ela = laQName();
-                if (ela == null) {
-                    throw new MismatchException("Wildcard", "QName");
-                }
-                consume(ela);
-                q = ela.qname();
+                q = name();
             }
             p.child(expand(q));
             return true;
         }
         return false;
+    }
+
+    private QNm name() throws MismatchException {
+        final int pos = position();
+        final String pathSegmentName = scanString(position(), '/');
+
+        if (pathSegmentName == null) {
+            throw new MismatchException("Wildcard", "Name");
+        }
+
+        final String[] prefixAndLocalName  = pathSegmentName.split(":");
+        final EQNameToken token;
+
+        if (prefixAndLocalName.length > 1) {
+            token = new EQNameToken(pos, pos + pathSegmentName.length(), null, prefixAndLocalName[0], prefixAndLocalName[1]);
+        } else {
+            token = new EQNameToken(pos, pos + pathSegmentName.length(), null, null, pathSegmentName);
+        }
+
+        consume(token);
+
+        return token.qname();
     }
 
     private void attributeStep() throws TokenizerException, PathException {
