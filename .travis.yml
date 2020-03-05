@@ -1,2 +1,11 @@
 language: java
 jdk: openjdk13
+
+after_success:
+  - mvn deploy --settings settings.xml
+  
+notifications:
+email:
+  on_failure: always
+  recipients:
+    - lichtenberger.johannes@gmail.com
