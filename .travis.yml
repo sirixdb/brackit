@@ -1,2 +1,11 @@
 language: java
-jdk: openjdk8
+jdk: openjdk13
+
+after_success:
+  - mvn deploy --settings travis-settings.xml -DskipTests=true -B
+  
+notifications:
+email:
+  on_failure: always
+  recipients:
+    - lichtenberger.johannes@gmail.com
