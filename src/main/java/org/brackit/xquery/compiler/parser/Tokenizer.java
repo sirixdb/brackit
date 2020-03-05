@@ -1240,6 +1240,10 @@ public class Tokenizer {
 		return XMLChar.toString(charRef.intValue());
 	}
 
+	protected int getEnd() {
+		return end;
+	}
+
 	protected String scanString(int pos, char escapeChar) {
 		int e = pos;
 		int s = e;

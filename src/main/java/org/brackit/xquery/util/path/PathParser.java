@@ -175,6 +175,9 @@ public final class PathParser extends Tokenizer {
         }
 
         while (pathSegmentName.endsWith("\\")) {
+            if (pos + pathSegmentName.length() + 1 > getEnd()) {
+                break;
+            }
             resetTo(pos + pathSegmentName.length() + 1);
             final var segment = scanString(position(), '/');
 
@@ -183,6 +186,8 @@ public final class PathParser extends Tokenizer {
                 pathSegmentName += segment;
             }
         }
+
+        resetTo(pos);
 
         final String[] prefixAndLocalName  = pathSegmentName.split(":");
         final EQNameToken token;
