@@ -2,7 +2,7 @@ language: java
 jdk: openjdk13
 
 after_success:
-  - mvn deploy --settings settings.xml
+  - mvn deploy --settings travis-settings.xml -DskipTests=true -B
   
 notifications:
 email:
