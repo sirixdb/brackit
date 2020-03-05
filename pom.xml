@@ -6,7 +6,7 @@
 		<artifactId>oss-parent</artifactId>
 		<version>7</version>
 	</parent>
-	<groupId>io.sirix.brackit</groupId>
+	<groupId>io.sirix</groupId>
 	<artifactId>brackit</artifactId>
 	<version>0.1.7-SNAPSHOT</version>
 	<name>Brackit Engine</name>
