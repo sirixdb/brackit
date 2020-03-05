@@ -6,7 +6,7 @@
 		<artifactId>oss-parent</artifactId>
 		<version>7</version>
 	</parent>
-	<groupId>com.github.sirixdb.brackit</groupId>
+	<groupId>io.sirix.brackit</groupId>
 	<artifactId>brackit</artifactId>
 	<version>0.1.7-SNAPSHOT</version>
 	<name>Brackit Engine</name>
@@ -24,7 +24,7 @@
 		<connection>scm:git:git@github.com:sirixdb/brackit.git</connection>
 		<developerConnection>scm:git:git@github.com:sirixdb/brackit.git</developerConnection>
 		<url>https://github.com/sirixdb/brackit</url>
-		<tag>brackit-0.1.6</tag>
+		<tag>brackit-0.1.7</tag>
 	</scm>
 	<issueManagement>
 		<url>https://github.com/sirixdb/brackit/issues</url>
