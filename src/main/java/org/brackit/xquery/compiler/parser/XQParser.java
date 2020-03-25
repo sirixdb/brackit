@@ -3905,33 +3905,31 @@ public class XQParser extends Tokenizer {
       return null;
     }
     AST array = new AST(XQ.ArrayConstructor);
-    do {
-      final var position = position();
-      if (attemptSymSkipWS("]")) {
-        resetTo(position);
-        break;
-      }
-      resetTo(position);
 
-      AST f = new AST((attemptSkipS("="))
-          ? XQ.FlattenedField
-          : XQ.SequenceField);
-      // for JSON-like semantics
-      // the tokens 'true' and 'false' are
-      // matched as boolean constants and
-      // not as path expressions, the token 'null'
-      // is interpreted as empty sequence
-      if (attemptSymSkipWS("true")) {
-        f.addChild(new AST(XQ.Bool, Bool.TRUE));
-      } else if (attemptSymSkipWS("false")) {
-        f.addChild(new AST(XQ.Bool, Bool.FALSE));
-      } else if (attemptSymSkipWS("null")) {
-        f.addChild(new AST(XQ.SequenceExpr));
-      } else {
-        f.addChild(exprSingle());
-      }
-      array.addChild(f);
-    } while (attemptSkipWS(","));
+    final var position = position();
+    final var isEmpty = attemptSymSkipWS("]");
+    resetTo(position);
+
+    if (!isEmpty) {
+      do {
+        AST f = new AST((attemptSkipS("=")) ? XQ.FlattenedField : XQ.SequenceField);
+        // for JSON-like semantics
+        // the tokens 'true' and 'false' are
+        // matched as boolean constants and
+        // not as path expressions, the token 'null'
+        // is interpreted as empty sequence
+        if (attemptSymSkipWS("true")) {
+          f.addChild(new AST(XQ.Bool, Bool.TRUE));
+        } else if (attemptSymSkipWS("false")) {
+          f.addChild(new AST(XQ.Bool, Bool.FALSE));
+        } else if (attemptSymSkipWS("null")) {
+          f.addChild(new AST(XQ.SequenceExpr));
+        } else {
+          f.addChild(exprSingle());
+        }
+        array.addChild(f);
+      } while (attemptSkipWS(","));
+    }
     consumeSkipWS("]");
     return array;
   }
@@ -3961,20 +3959,28 @@ public class XQParser extends Tokenizer {
       return null;
     }
     AST record = new AST(XQ.RecordConstructor);
-    do {
-      AST f;
-      Token la;
-      if (((la = laStringSkipWS(true)) != null) || ((la = laNCNameSkipWS()) != null)) {
-        consume(la);
-        f = new AST(XQ.KeyValueField);
-        f.addChild(new AST(XQ.QNm, new QNm(null, null, la.string())));
-        f.addChild(recordValue());
-      } else {
-        f = new AST(XQ.RecordField);
-        f.addChild(exprSingle());
-      }
-      record.addChild(f);
-    } while (attemptSkipWS(","));
+
+    final var position = position();
+    final var isEmpty = attemptSymSkipWS("}");
+    resetTo(position);
+
+    if (!isEmpty) {
+      do {
+        AST f;
+        Token la;
+        if (((la = laStringSkipWS(true)) != null) || ((la = laNCNameSkipWS()) != null)) {
+          consume(la);
+          f = new AST(XQ.KeyValueField);
+          f.addChild(new AST(XQ.QNm, new QNm(null, null, la.string())));
+          f.addChild(recordValue());
+        } else {
+          f = new AST(XQ.RecordField);
+          f.addChild(exprSingle());
+        }
+        record.addChild(f);
+      } while (attemptSkipWS(","));
+    }
+
     consumeSkipWS("}");
     return record;
   }

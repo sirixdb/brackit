@@ -44,7 +44,17 @@ public class XQParserTest extends XQueryBaseTest {
 	.append(File.separator).append("parser").append(File.separator).toString();
 
 	@Test
-	public void ncname() throws Exception {
+	public void emptyArray() {
+		new XQParser("[]").parse();
+	}
+
+	@Test
+	public void emptyRecord() {
+		new XQParser("{}").parse();
+	}
+
+	@Test
+	public void ncname() {
 		new XQParser("declare").parse();
 	}
 
