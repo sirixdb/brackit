@@ -41,9 +41,7 @@ import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.Type;
 import org.brackit.xquery.xdm.node.Node;
-import org.brackit.xquery.xdm.type.ElementType;
-import org.brackit.xquery.xdm.type.ItemType;
-import org.brackit.xquery.xdm.type.NodeType;
+import org.brackit.xquery.xdm.type.*;
 
 /**
  *
@@ -164,8 +162,9 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem imple
       case ELEMENT:
         return new ElementType(getName(), Type.UN);
       case ATTRIBUTE:
+        return new AttributeType(getName(), Type.UNA);
       case TEXT:
-        // return Type.UNA;
+        return new TextType();
       default:
         return null;
     }

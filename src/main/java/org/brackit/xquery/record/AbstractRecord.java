@@ -34,6 +34,7 @@ import org.brackit.xquery.xdm.AbstractItem;
 import org.brackit.xquery.xdm.json.Record;
 import org.brackit.xquery.xdm.type.ItemType;
 import org.brackit.xquery.xdm.type.ListOrUnionType;
+import org.brackit.xquery.xdm.type.RecordType;
 
 /**
  * @author Sebastian Baechle
@@ -43,7 +44,7 @@ public abstract class AbstractRecord extends AbstractItem implements Record {
 
 	@Override
 	public ItemType itemType() throws QueryException {
-		return ListOrUnionType.LIST_OR_UNION;
+		return RecordType.RECORD;
 	}
 
 	@Override

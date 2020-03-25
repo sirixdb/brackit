@@ -290,28 +290,30 @@ public final class XQ {
 	public static final int End = 241;
 	// End brackit's set-oriented extensions
 	// Begin brackit's custom array syntax
-	public static final int ArrayAccess = 242;
-	public static final int ArrayConstructor = 243;
-	public static final int SequenceField = 244;
-	public static final int FlattenedField = 245;
+	public static final int KindTestArray = 242;
+	public static final int ArrayAccess = 243;
+	public static final int ArrayConstructor = 244;
+	public static final int SequenceField = 245;
+	public static final int FlattenedField = 246;
 	// End brackit's custom array syntax
 	// Begin brackit's custom record syntax
-	public static final int RecordProjection = 246;
-	public static final int RecordConstructor = 247;
-	public static final int RecordField = 248;
-	public static final int KeyValueField = 249;
-	public static final int DerefExpr = 250;
+	public static final int KindTestRecord = 247;
+	public static final int RecordProjection = 248;
+	public static final int RecordConstructor = 249;
+	public static final int RecordField = 250;
+	public static final int KeyValueField = 251;
+	public static final int DerefExpr = 252;
 	// End brackit's custom array syntax
 	// Begin temporal
-	public static final int NEXT = 251;
-	public static final int PREVIOUS = 252;
-	public static final int FUTURE = 253;
-	public static final int FUTURE_OR_SELF = 254;
-	public static final int PAST = 255;
-	public static final int PAST_OR_SELF = 256;
-	public static final int FIRST = 257;
-	public static final int LAST = 258;
-	public static final int ALL_TIMES = 259;
+	public static final int NEXT = 253;
+	public static final int PREVIOUS = 254;
+	public static final int FUTURE = 255;
+	public static final int FUTURE_OR_SELF = 256;
+	public static final int PAST = 257;
+	public static final int PAST_OR_SELF = 258;
+	public static final int FIRST = 259;
+	public static final int LAST = 260;
+	public static final int ALL_TIMES = 261;
 	// End temporal
 
 	public static final String NAMES[] = new String[] { "XQuery",
@@ -416,15 +418,13 @@ public final class XQ {
 			"SequenceField",
 			"FlattenedField",
 			// End brackit's custom array syntax
-			// Begin brackit's custom array syntax
+			// Begin brackit's custom recird syntax
 			"RecordProjection", "RecordConstructor", "RecordField",
 			"KeyValueField", "DerefExpr",
 			// End brackit's custom record syntax
 			// Begin temporal
 			"NEXT", "PREVIOUS", "EARLIER", "EARLIER_OR_SELF", "FUTURE", "FUTURE_OR_SELF", "FIRST", "LAST", "ALL_TIME",
 			// End temporal
-			"KeyValueField", "DerefExpr"
-	// End brackit's custom record syntax
 	};
 
 	private XQ() {

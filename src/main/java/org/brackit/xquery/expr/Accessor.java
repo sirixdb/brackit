@@ -75,7 +75,7 @@ public abstract class Accessor {
 				throws QueryException {
 			Node<?> parent = node.getParent();
 			if (parent == null) {
-				return new EmptyStream<Node<?>>();
+				return new EmptyStream<>();
 			}
 			Deque<Node<?>> deque = new ArrayDeque<Node<?>>();
 			Stream<? extends Node<?>> path = parent.getPath();
@@ -87,7 +87,7 @@ public abstract class Accessor {
 			} finally {
 				path.close();
 			}
-			return new IteratorStream<Node<?>>(deque.iterator());
+			return new IteratorStream<>(deque.iterator());
 		}
 	};
 	public static final Accessor DESCENDANT = new Accessor(Axis.DESCENDANT) {
@@ -114,7 +114,7 @@ public abstract class Accessor {
 			} finally {
 				path.close();
 			}
-			return new IteratorStream<Node<?>>(deque.iterator());
+			return new IteratorStream<>(deque.iterator());
 		}
 	};
 	public static final Accessor DESCENDANT_OR_SELF = new Accessor(
@@ -142,7 +142,7 @@ public abstract class Accessor {
 				if ((att == null)
 						|| ((test.getType() != null) && (!att.type().instanceOf(
 								test.getType())))) {
-					return new EmptyStream<Node<?>>();
+					return new EmptyStream<>();
 				}
 				return new AtomStream<Node<?>>(att);
 			}

@@ -39,19 +39,7 @@ import org.brackit.xquery.util.log.Logger;
 import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.Type;
 import org.brackit.xquery.xdm.XMLChar;
-import org.brackit.xquery.xdm.type.AnyItemType;
-import org.brackit.xquery.xdm.type.AnyNodeType;
-import org.brackit.xquery.xdm.type.AtomicType;
-import org.brackit.xquery.xdm.type.AttributeType;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.CommentType;
-import org.brackit.xquery.xdm.type.DocumentType;
-import org.brackit.xquery.xdm.type.ElementType;
-import org.brackit.xquery.xdm.type.FunctionType;
-import org.brackit.xquery.xdm.type.ItemType;
-import org.brackit.xquery.xdm.type.PIType;
-import org.brackit.xquery.xdm.type.SequenceType;
-import org.brackit.xquery.xdm.type.TextType;
+import org.brackit.xquery.xdm.type.*;
 
 /**
  * @author Sebastian Baechle
@@ -186,6 +174,8 @@ public abstract class AbstractAnalyzer {
         test = (test != null) ? test : commentTest(kindTest);
         test = (test != null) ? test : textTest(kindTest);
         test = (test != null) ? test : namespaceNodeTest(kindTest);
+        test = (test != null) ? test : recordTest(kindTest);
+        test = (test != null) ? test : arrayTest(kindTest);
         test = (test != null) ? test : anyKindTest(kindTest);
         return test;
     }
@@ -330,6 +320,20 @@ public abstract class AbstractAnalyzer {
         throw new QueryException(
                 ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
                 "Namespace test not implemented yet");
+    }
+
+    protected ItemType recordTest(AST test) throws QueryException {
+        if (test.getType() != XQ.KindTestRecord) {
+            return null;
+        }
+        return new RecordType();
+    }
+
+    protected ItemType arrayTest(AST test) throws QueryException {
+        if (test.getType() != XQ.KindTestArray) {
+            return null;
+        }
+        return new ArrayType();
     }
 
     protected ItemType anyKindTest(AST test) throws QueryException {

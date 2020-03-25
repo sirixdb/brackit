@@ -57,7 +57,7 @@ import org.brackit.xquery.xdm.type.NodeType;
  * <p>
  * Each document node has a unique immutable identity, but several instances of {@link Node Nodes}
  * in the system may represent the same (logical) XML node. Thus, the identity of a node must not be
- * checked with the <code>==</code> operator but only with {@link Node#isSelf(Node)} or
+ * checked with the <code>==</code> operator but only with {@link Node#isSelfOf(Node)} or
  * {@link Node#equals(Object)}. Implementors have also to ensure to ensure to override
  * {@link Object#equals(Object)} and {@link Object#hashCode()} appropriately.
  * </p>
@@ -161,7 +161,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
   /**
    * Checks if this node is a descendant or self node of <code>node</code>.
    *
-   * @param rootNode
+   * @param node the node to be checked
    * @return <code>true</code> iff the current node is a descendant or self of <code>node</code>
    */
   public boolean isDescendantOrSelfOf(Node<?> node);
@@ -180,7 +180,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @param node the node to be checked
    * @return <code>true</code> iff the current node is an ancestor or self of <code>node</code>
    */
-  public boolean isAncestorOrSelfOf(Node<?> peek);
+  public boolean isAncestorOrSelfOf(Node<?> node);
 
   /**
    * Checks if this node is a sibling node of <code>node</code>.
@@ -349,7 +349,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * <td>{@link Type#UNA xs:untypedAtomic}</td>
    * </tr>
    * <tr>
-   * <td>{@link Kind#ATTIBUTE ATTRIBUTE}</td>
+   * <td>{@link Kind#ATTRIBUTE ATTRIBUTE}</td>
    * <td>{@link Type#UNA xs:untypedAtomic}</td>
    * </tr>
    * <tr>
@@ -378,7 +378,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * <p>
    * Note, this method is not intended to work with nodes created from a PSVI (schema validated
    * document) where the typed-value property of a node may be a sequence of zero or more items. For
-   * documents with a schema use {@link getValues()}.
+   * documents with a schema use {@link Node#getValues()}.
    * </p>
    *
    * @see http://www.w3.org/TR/xml-infoset/

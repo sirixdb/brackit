@@ -32,6 +32,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.xdm.AbstractItem;
 import org.brackit.xquery.xdm.json.Array;
+import org.brackit.xquery.xdm.type.ArrayType;
 import org.brackit.xquery.xdm.type.ItemType;
 import org.brackit.xquery.xdm.type.ListOrUnionType;
 
@@ -43,7 +44,7 @@ public abstract class AbstractArray extends AbstractItem implements Array {
 
 	@Override
 	public ItemType itemType() throws QueryException {
-		return ListOrUnionType.LIST_OR_UNION;
+		return ArrayType.ARRAY;
 	}
 
 	@Override

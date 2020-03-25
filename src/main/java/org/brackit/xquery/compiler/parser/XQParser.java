@@ -1917,6 +1917,36 @@ public class XQParser extends Tokenizer {
     return new AST(XQ.ItemType);
   }
 
+  private AST recordType() throws TokenizerException {
+    Token la = laSkipWS("record");
+    if (la == null) {
+      return null;
+    }
+    Token la2 = laSkipWS(la, "(");
+    if (la2 == null) {
+      return null;
+    }
+    consume(la);
+    consume(la2);
+    consumeSkipWS(")");
+    return new AST(XQ.KindTestRecord);
+  }
+
+  private AST arrayType() throws TokenizerException {
+    Token la = laSkipWS("array");
+    if (la == null) {
+      return null;
+    }
+    Token la2 = laSkipWS(la, "(");
+    if (la2 == null) {
+      return null;
+    }
+    consume(la);
+    consume(la2);
+    consumeSkipWS(")");
+    return new AST(XQ.KindTestArray);
+  }
+
   private AST occurrenceIndicator() {
     if (attemptSkipWS("?")) {
       return new AST(XQ.CardinalityZeroOrOne);
@@ -2549,6 +2579,12 @@ public class XQParser extends Tokenizer {
     test = (test != null)
         ? test
         : namespaceNodeTest();
+    test = (test != null)
+        ? test
+        : recordType();
+    test = (test != null)
+        ? test
+        : arrayType();
     test = (test != null)
         ? test
         : anyKindTest();
@@ -3870,6 +3906,13 @@ public class XQParser extends Tokenizer {
     }
     AST array = new AST(XQ.ArrayConstructor);
     do {
+      final var position = position();
+      if (attemptSymSkipWS("]")) {
+        resetTo(position);
+        break;
+      }
+      resetTo(position);
+
       AST f = new AST((attemptSkipS("="))
           ? XQ.FlattenedField
           : XQ.SequenceField);

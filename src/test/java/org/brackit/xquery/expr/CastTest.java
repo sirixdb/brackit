@@ -321,15 +321,45 @@ public class CastTest extends XQueryBaseTest {
 	}
 
 	@Test
-	public void integerTreatAsDecimal() throws Exception {
+	public void integerTreatAsDecimal() {
 		Sequence result = new XQuery("3 treat as xs:decimal").execute(ctx);
 		ResultChecker.dCheck(new Int32(3), result);
 	}
 
 	@Test
-	public void integerInstanceOfDecimal() throws Exception {
+	public void integerInstanceOfDecimal() {
 		Sequence result = new XQuery("3 instance of xs:decimal").execute(ctx);
 		ResultChecker.dCheck(Bool.TRUE, result);
+	}
+
+	@Test
+	public void elementInstanceOfElement() {
+		Sequence result = new XQuery("<element/> instance of element()").execute(ctx);
+		ResultChecker.dCheck(Bool.TRUE, result);
+	}
+
+	@Test
+	public void recordInstanceOfRecord() {
+		Sequence result = new XQuery("{\"a\":1} instance of record()").execute(ctx);
+		ResultChecker.dCheck(Bool.TRUE, result);
+	}
+
+	@Test
+	public void emptyArrayInstanceOfArray() {
+		Sequence result = new XQuery("[] instance of array()").execute(ctx);
+		ResultChecker.dCheck(Bool.TRUE, result);
+	}
+
+	@Test
+	public void arrayInstanceOfArray() {
+		Sequence result = new XQuery("[\"foobar\"] instance of array()").execute(ctx);
+		ResultChecker.dCheck(Bool.TRUE, result);
+	}
+
+	@Test
+	public void textInstanceOfElement() {
+		Sequence result = new XQuery("'Foo' instance of element()").execute(ctx);
+		ResultChecker.dCheck(Bool.FALSE, result);
 	}
 
 	@Test

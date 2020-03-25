@@ -110,21 +110,7 @@ import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Function;
 import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Type;
-import org.brackit.xquery.xdm.type.AnyItemType;
-import org.brackit.xquery.xdm.type.AnyNodeType;
-import org.brackit.xquery.xdm.type.AtomicType;
-import org.brackit.xquery.xdm.type.AttributeType;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.CommentType;
-import org.brackit.xquery.xdm.type.DocumentType;
-import org.brackit.xquery.xdm.type.ElementType;
-import org.brackit.xquery.xdm.type.ItemType;
-import org.brackit.xquery.xdm.type.NSNameWildcardTest;
-import org.brackit.xquery.xdm.type.NSWildcardNameTest;
-import org.brackit.xquery.xdm.type.NodeType;
-import org.brackit.xquery.xdm.type.PIType;
-import org.brackit.xquery.xdm.type.SequenceType;
-import org.brackit.xquery.xdm.type.TextType;
+import org.brackit.xquery.xdm.type.*;
 
 /**
  *
@@ -1146,6 +1132,10 @@ public class Compiler implements Translator {
 			return AnyItemType.ANY;
 		case XQ.AtomicOrUnionType:
 			return atomicOrUnionType(node);
+		case XQ.KindTestRecord:
+			return new RecordType();
+		case XQ.KindTestArray:
+			return new ArrayType();
 		default:
 			return kindTest(node);
 		}
