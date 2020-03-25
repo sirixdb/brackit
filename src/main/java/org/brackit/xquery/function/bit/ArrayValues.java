@@ -34,6 +34,7 @@ import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.sequence.BaseIter;
+import org.brackit.xquery.sequence.FlatteningSequence;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.util.annotation.FunctionAnnotation;
 import org.brackit.xquery.xdm.Item;
@@ -87,7 +88,11 @@ public class ArrayValues extends AbstractFunction {
             }
 
             if (index < sequences.size()) {
-              return (Item) sequences.get(index++);
+              final var sequence = sequences.get(index++);
+              if (sequence instanceof FlatteningSequence) {
+                return sequence.iterate().next();
+              }
+              return (Item) sequence;
             }
 
             return null;
