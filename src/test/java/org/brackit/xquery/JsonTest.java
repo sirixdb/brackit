@@ -27,23 +27,53 @@
  */
 package org.brackit.xquery;
 
+import org.brackit.xquery.array.DRArray;
 import org.brackit.xquery.atomic.*;
+import org.brackit.xquery.record.ArrayRecord;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Type;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 /**
  * @author Johannes Lichtenberger
  */
-public class JsonTest extends XQueryBaseTest {
-	@Test
-	public void arrayTest() {
-		final var query = "let $values := bit:array-values([\"foo\",0,true,null]) for $i in $values return $i";
-		final var resultSequence = new XQuery(query).execute(ctx);
-		ResultChecker.check(new ItemSequence(new Str("foo"), new Int32(0), new Bool(true), null), resultSequence);
-	}
+public final class JsonTest extends XQueryBaseTest {
+  @Test
+  public void simpleArrayTest() {
+    final var query = "[\"Jim\",\"John\",\"Joe\"]";
+    final var resultSequence = new XQuery(query).execute(ctx);
+  }
+
+  @Test
+  public void arrayTest() throws IOException {
+    final var query = "[\"foo\",0,true(),jn:null()]";
+
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("[\"foo\",0,true,null]", content);
+    }
+  }
+
+  @Test
+  public void arrayValuesTest() {
+    final var query = "let $values := bit:array-values([\"foo\",0,true(),jn:null()]) for $i in $values return $i";
+    final var resultSequence = new XQuery(query).execute(ctx);
+    ResultChecker.check(new ItemSequence(new Str("foo"), new Int32(0), new Bool(true), new Null()), resultSequence);
+  }
+
+  @Test
+  public void composableTest() {
+    final var query = "{\"foo\":(),\"bar\":(1,2)}";
+    final var resultSequence = new XQuery(query).execute(ctx);
+    ResultChecker.check(new ItemSequence(new ArrayRecord(new QNm[] { new QNm("foo"), new QNm("bar") },
+        new Sequence[] { null, new DRArray(new Sequence[] { new Int32(1), new Int32(2) }, 0, 2) })), resultSequence);
+  }
 }

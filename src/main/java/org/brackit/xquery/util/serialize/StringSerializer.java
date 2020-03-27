@@ -33,6 +33,7 @@ import java.io.PrintWriter;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.Null;
 import org.brackit.xquery.atomic.Numeric;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -120,8 +121,10 @@ public class StringSerializer implements Serializer {
           }
           out.write(item.toString());
           first = false;
-        } else if ((item instanceof Array) || (item instanceof Record)) {
-          json(item, printer);
+        } else if (item instanceof Array) {
+          json(item, printer, true);
+        } else if (item instanceof Record) {
+          json(item, printer, false);
         } else {
           throw new QueryException(ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
               "Serialization of item type '%s' not implemented yet.", item.itemType());
@@ -134,15 +137,15 @@ public class StringSerializer implements Serializer {
     }
   }
 
-  private void json(Sequence s, SubtreePrinter p) throws QueryException {
-    if (s == null) {
+  private void json(Sequence s, SubtreePrinter p, boolean isArrayContent) throws QueryException {
+    if (s == null || s instanceof Null) {
       out.print("null");
     } else if (s instanceof Item) {
       if (s instanceof Atomic) {
         if (s instanceof Numeric) {
           out.write(s.toString());
         } else if (((Atomic) s).type() == Type.BOOL) {
-          out.write(((Atomic) s).booleanValue()
+          out.write(s.booleanValue()
               ? "true"
               : "false");
         } else {
@@ -157,7 +160,7 @@ public class StringSerializer implements Serializer {
           if (i > 0) {
             out.append(",");
           }
-          json(a.at(i), p);
+          json(a.at(i), p, true);
         }
         out.write("]");
       } else if (s instanceof Record) {
@@ -170,7 +173,8 @@ public class StringSerializer implements Serializer {
           out.write("\"");
           out.write(r.name(i).stringValue());
           out.write("\":");
-          json(r.value(i), p);
+          final var value = r.value(i);
+          json(value, p, value instanceof Array ? true : false);
         }
         out.write("}");
       } else if (s instanceof Node<?>) {
@@ -197,7 +201,9 @@ public class StringSerializer implements Serializer {
       }
     } else {
       // serialize sequence as JSON array
-      out.write("[");
+      if (!isArrayContent) {
+        out.write("[");
+      }
       Iter it = s.iterate();
       try {
         boolean first = true;
@@ -206,13 +212,15 @@ public class StringSerializer implements Serializer {
           if (!first) {
             out.write(",");
           }
-          json(i, p);
+          json(i, p, i instanceof Array? true : false);
           first = false;
         }
       } finally {
         it.close();
       }
-      out.write("]");
+      if (!isArrayContent) {
+        out.write("]");
+      }
     }
   }
 }

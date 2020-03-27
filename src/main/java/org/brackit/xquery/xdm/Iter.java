@@ -46,25 +46,37 @@ import org.brackit.xquery.atomic.IntNumeric;
  *   ...
  * } finally {
  * 	it.close();
- * } 
+ * }
+ * </pre>
+ *
+ * Or better by using try-with-resources:
+ *
+ * <pre>
+ * try (Iter it = s.iterate()) {
+ *   ...
+ * }
  * </pre>
  * 
  * @author Sebastian Baechle
  * 
  */
-public interface Iter {
+public interface Iter extends AutoCloseable {
 	/**
 	 * Get the next item
+	 *
+	 * @throws QueryException if anything goes wrong while getting the next item
 	 */
-	public Item next() throws QueryException;
+	Item next() ;
 	
 	/**
-	 * Skip the next <code>i</code> items
+	 * Skip the next {@code i} items
+	 *
+	 * @throws QueryException if anything goes wrong while skippint the next {@code i} items
 	 */
-	public void skip(IntNumeric i) throws QueryException;
+	void skip(IntNumeric i);
 
 	/**
 	 * Close the iterator to release all resources. 
 	 */
-	public void close();
+	void close();
 }

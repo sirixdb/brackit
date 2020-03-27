@@ -27,16 +27,14 @@
  */
 package org.brackit.xquery.compiler.translator;
 
+import java.sql.Struct;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.atomic.Bool;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.atomic.*;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.XQ;
@@ -219,6 +217,8 @@ public class Compiler implements Translator {
 			return sequenceExpr(node);
 		case XQ.Str:
 			return new Str(Whitespace.normalizeXML11(node.getStringValue()));
+		case XQ.Null:
+			return new Null();
 		case XQ.Int:
 		case XQ.Dbl:
 		case XQ.Dec:
@@ -1132,10 +1132,16 @@ public class Compiler implements Translator {
 			return AnyItemType.ANY;
 		case XQ.AtomicOrUnionType:
 			return atomicOrUnionType(node);
+		case XQ.StructuredItemTest:
+			return new AnyStructuredItemType();
 		case XQ.KindTestRecord:
 			return new RecordType();
 		case XQ.KindTestArray:
 			return new ArrayType();
+		case XQ.KindTestNull:
+				return new NullType();
+		case XQ.JsonItemTest:
+			return new AnyJsonItemType();
 		default:
 			return kindTest(node);
 		}

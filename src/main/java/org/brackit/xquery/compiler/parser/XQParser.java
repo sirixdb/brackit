@@ -1917,6 +1917,21 @@ public class XQParser extends Tokenizer {
     return new AST(XQ.ItemType);
   }
 
+  private AST jsonItemType() throws TokenizerException {
+    Token la = laSkipWS("json-item");
+    if (la == null) {
+      return null;
+    }
+    Token la2 = laSkipWS(la, "(");
+    if (la2 == null) {
+      return null;
+    }
+    consume(la);
+    consume(la2);
+    consumeSkipWS(")");
+    return new AST(XQ.JsonItemTest);
+  }
+
   private AST recordType() throws TokenizerException {
     Token la = laSkipWS("record");
     if (la == null) {
@@ -1964,6 +1979,12 @@ public class XQParser extends Tokenizer {
     AST type = kindTest();
     type = (type != null)
         ? type
+        : jsonTest();
+    type = (type != null)
+        ? type
+        : structuredItemTest();
+    type = (type != null)
+        ? type
         : anyKind();
     type = (type != null)
         ? type
@@ -1975,6 +1996,32 @@ public class XQParser extends Tokenizer {
         ? type
         : parenthesizedItemType();
     return type;
+  }
+
+  private AST structuredItemTest() throws TokenizerException {
+    Token la = laSkipWS("structured-item");
+    if (la == null) {
+      return null;
+    }
+    Token la2 = laSkipWS(la, "(");
+    if (la2 == null) {
+      return null;
+    }
+    consume(la);
+    consume(la2);
+    consumeSkipWS(")");
+    return new AST(XQ.StructuredItemTest);
+  }
+
+  private AST jsonTest() throws TokenizerException {
+    AST test = jsonItemType();
+    test = (test != null)
+        ? test
+        : recordType();
+    test = (test != null)
+        ? test
+        : arrayType();
+    return test;
   }
 
   private AST functionTest() throws TokenizerException {
@@ -2579,12 +2626,6 @@ public class XQParser extends Tokenizer {
     test = (test != null)
         ? test
         : namespaceNodeTest();
-    test = (test != null)
-        ? test
-        : recordType();
-    test = (test != null)
-        ? test
-        : arrayType();
     test = (test != null)
         ? test
         : anyKindTest();
@@ -3925,7 +3966,7 @@ public class XQParser extends Tokenizer {
         } else if (attemptSymSkipWS("null")) {
           f.addChild(new AST(XQ.SequenceExpr));
         } else {
-          f.addChild(exprSingle());
+          f.addChild(expr());
         }
         array.addChild(f);
       } while (attemptSkipWS(","));

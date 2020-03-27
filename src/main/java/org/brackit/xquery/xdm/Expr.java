@@ -59,12 +59,12 @@ public interface Expr {
 	 * current context.
 	 * </p>
 	 */
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
+	Sequence evaluate(QueryContext ctx, Tuple tuple)
 			throws QueryException;
 
 	/**
 	 * Evaluates the expression as defined in {
-	 * {@link #evaluate(BrackitQueryContext, Tuple)}, but the result is ensured to be a
+	 * {@link Expr#evaluate(QueryContext, Tuple)}, but the result is ensured to be a
 	 * single {@link Item} or <code>null</code> if this expression evaluates to
 	 * the empty sequence.
 	 * 
@@ -72,18 +72,18 @@ public interface Expr {
 	 * an {@link QueryException} with
 	 * {@link ErrorCode#ERR_TYPE_INAPPROPRIATE_TYPE} must be thrown.
 	 */
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
+	Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException;
 
 	/**
 	 * Checks if this expression or any subexpression is an updating expression
 	 * according to XQuery Update Facility 1.0: 2 Extensions to XQuery 1.0
 	 */
-	public boolean isUpdating();
+	boolean isUpdating();
 
 	/**
 	 * Checks if this expression or any subexpression is an vacuous expression
 	 * according to XQuery Update Facility 1.0: 2 Extensions to XQuery 1.0
 	 */
-	public boolean isVacuous();
+	boolean isVacuous();
 }

@@ -27,12 +27,15 @@
  */
 package org.brackit.xquery.function.bit;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.FlatteningSequence;
 import org.brackit.xquery.sequence.LazySequence;
@@ -78,6 +81,7 @@ public class ArrayValues extends AbstractFunction {
       public Iter iterate() {
         return new BaseIter() {
           private List<Sequence> sequences;
+          private Deque<Item> flatteningSequences = new ArrayDeque<>();
 
           private int index;
 
@@ -85,12 +89,19 @@ public class ArrayValues extends AbstractFunction {
           public Item next() {
             if (sequences == null) {
               sequences = array.values();
+            } else if (!flatteningSequences.isEmpty()) {
+              return flatteningSequences.removeFirst();
             }
 
             if (index < sequences.size()) {
               final var sequence = sequences.get(index++);
               if (sequence instanceof FlatteningSequence) {
-                return sequence.iterate().next();
+                final var iter = sequence.iterate();
+                Item item;
+                while ((item = iter.next()) != null) {
+                  flatteningSequences.addLast(item.evaluateToItem(ctx, new TupleImpl()));
+                }
+                return flatteningSequences.removeFirst();
               }
               return (Item) sequence;
             }

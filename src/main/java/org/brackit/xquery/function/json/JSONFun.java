@@ -28,6 +28,7 @@
 package org.brackit.xquery.function.json;
 
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.module.Namespaces;
 
 /**
  * @author Sebastian Baechle
@@ -36,8 +37,11 @@ import org.brackit.xquery.atomic.QNm;
 public class JSONFun {
 	public static final String JSON_NSURI = "http://brackit.org/ns/json";
 
-	public static final String JSON_PREFIX = "json";
+	public static final String JSON_PREFIX = "jn";
 
 	public static final QNm ERR_PARSING_ERROR = new QNm(JSON_NSURI,
 			JSON_PREFIX, "BIJS0001");
+
+	public static final QNm JSON_NULL = new QNm(JSON_NSURI,
+			JSON_PREFIX, "null");
 }

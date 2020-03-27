@@ -58,7 +58,7 @@ public final class ArrayType implements ItemType {
 
   @Override
   public boolean isFunction() {
-    return true;
+    return false;
   }
 
   @Override
@@ -83,14 +83,12 @@ public final class ArrayType implements ItemType {
 
   @Override
   public boolean matches(Item item) throws QueryException {
-    // TODO subtyping??? At the moment we have Object[]-like semantics
-    return (item instanceof Array);
+    return (item.itemType() instanceof ArrayType);
   }
 
   @Override
   public boolean equals(Object obj) {
-    // TODO subtyping??? At the moment we have Object[]-like semantics
-    return (obj instanceof Array);
+    return (obj instanceof ArrayType);
   }
 
   @Override

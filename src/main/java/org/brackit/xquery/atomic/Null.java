@@ -25,74 +25,77 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm.type;
+package org.brackit.xquery.atomic;
 
+import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.json.Record;
+import org.brackit.xquery.xdm.Type;
 
 /**
- * @author Sebastian Baechle
- *
+ * @author Johannes Lichtenberger
  */
-public final class RecordType implements ItemType {
+public class Null extends AbstractAtomic {
 
-  public static final RecordType RECORD = new RecordType();
+  private final class DNull extends Null {
+    public DNull(Type type) {
+      this.type = type;
+    }
 
-  public RecordType() {}
+    private final Type type;
+
+    @Override
+    public Type type() {
+      return this.type;
+    }
+  }
 
   @Override
-  public boolean isAnyItem() {
+  public Type type() {
+    return Type.NULL;
+  }
+
+  @Override
+  public Atomic asType(Type type) {
+    return new DNull(type);
+  }
+
+  @Override
+  public Str asStr() {
+    return new Str("null");
+  }
+
+  @Override
+  public boolean booleanValue() {
     return false;
   }
 
   @Override
-  public boolean isAtomic() {
-    return false;
+  public int cmp(Atomic other) {
+    if (other instanceof Null) {
+      return 0;
+    }
+
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s' with '%s'", type(),
+        other.type());
   }
 
   @Override
-  public boolean isNode() {
-    return false;
+  public int atomicCmpInternal(Atomic atomic) {
+    return atomic instanceof Null ? 0 : -1;
   }
 
   @Override
-  public boolean isFunction() {
-    return true;
+  public int atomicCode() {
+    return Type.STRING_CODE;
   }
 
   @Override
-  public boolean isListOrUnion() {
-    return false;
+  public String stringValue() {
+    return "null";
   }
 
   @Override
-  public boolean isRecord() {
-    return true;
-  }
-
-  @Override
-  public boolean isJsonItem() {
-    return true;
-  }
-
-  @Override
-  public boolean isStructuredItem() {
-    return true;
-  }
-
-  @Override
-  public boolean matches(Item item) throws QueryException {
-    return (item.itemType() instanceof RecordType);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    return (obj instanceof RecordType);
-  }
-
-  @Override
-  public String toString() {
-    return "record()";
+  public int hashCode() {
+    return "null".hashCode();
   }
 }

@@ -27,19 +27,18 @@
  */
 package org.brackit.xquery.expr;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.array.DArray;
 import org.brackit.xquery.sequence.FlatteningSequence;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- *
  * @author Sebastian Baechle
- *
+ * @author Johannes Lichtenberger
  */
 public class SequenceExpr implements Expr {
 
@@ -104,14 +103,13 @@ public class SequenceExpr implements Expr {
                 return res;
             }
 
-            while (i < expr.length) {
-                if (expr[i++].evaluateToItem(ctx, tuple) != null) {
-                    throw new QueryException(
-                            ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
-                }
+            final var sequence = new Sequence[expr.length];
+
+            for (int j = 0, length = expr.length; j < length; j++) {
+                sequence[j] = expr[j].evaluateToItem(ctx, tuple);
             }
 
-            return res;
+            return new DArray(sequence);
         }
     }
 

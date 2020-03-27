@@ -105,6 +105,8 @@ public final class Type {
 
 	public final static int NOT_CODE = 18;
 
+	public static final int NULL_CODE = 19;
+
 	/**
 	 * xs:anyType
 	 */
@@ -322,6 +324,14 @@ public final class Type {
 			NUMERIC_CODE, false, true, false, false, new Facets(-1, -1, -1,
 					"[-+]?[0-9]+", null, WS.COLLAPSE, null, Int32.ONE, null,
 					null, -1, -1));
+
+	/**
+	 * js:null
+	 */
+	public static final Type NULL = new Type("null", ANA, true, NULL_CODE,
+			true, false, false, false, new Facets(-1, -1, -1, null, null,
+			WS.PRESERVE, null, null, null, null, -1, -1));
+
 
 	/**
 	 * xs:string

@@ -29,17 +29,16 @@ package org.brackit.xquery.xdm.type;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.json.Record;
 
 /**
  * @author Sebastian Baechle
  *
  */
-public final class RecordType implements ItemType {
+public final class NullType implements ItemType {
 
-  public static final RecordType RECORD = new RecordType();
+  public static final NullType ARRAY = new NullType();
 
-  public RecordType() {}
+  public NullType() {}
 
   @Override
   public boolean isAnyItem() {
@@ -48,7 +47,7 @@ public final class RecordType implements ItemType {
 
   @Override
   public boolean isAtomic() {
-    return false;
+    return true;
   }
 
   @Override
@@ -58,17 +57,7 @@ public final class RecordType implements ItemType {
 
   @Override
   public boolean isFunction() {
-    return true;
-  }
-
-  @Override
-  public boolean isListOrUnion() {
     return false;
-  }
-
-  @Override
-  public boolean isRecord() {
-    return true;
   }
 
   @Override
@@ -78,21 +67,31 @@ public final class RecordType implements ItemType {
 
   @Override
   public boolean isStructuredItem() {
-    return true;
+    return false;
+  }
+
+  @Override
+  public boolean isListOrUnion() {
+    return false;
+  }
+
+  @Override
+  public boolean isRecord() {
+    return false;
   }
 
   @Override
   public boolean matches(Item item) throws QueryException {
-    return (item.itemType() instanceof RecordType);
+    return (item.itemType() instanceof NullType);
   }
 
   @Override
   public boolean equals(Object obj) {
-    return (obj instanceof RecordType);
+    return (obj instanceof NullType);
   }
 
   @Override
   public String toString() {
-    return "record()";
+    return "null()";
   }
 }

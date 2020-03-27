@@ -174,6 +174,8 @@ public abstract class AbstractAnalyzer {
         test = (test != null) ? test : commentTest(kindTest);
         test = (test != null) ? test : textTest(kindTest);
         test = (test != null) ? test : namespaceNodeTest(kindTest);
+        test = (test != null) ? test : structuredItemTest(kindTest);
+        test = (test != null) ? test : jsonItemTest(kindTest);
         test = (test != null) ? test : recordTest(kindTest);
         test = (test != null) ? test : arrayTest(kindTest);
         test = (test != null) ? test : anyKindTest(kindTest);
@@ -320,6 +322,20 @@ public abstract class AbstractAnalyzer {
         throw new QueryException(
                 ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
                 "Namespace test not implemented yet");
+    }
+
+    protected ItemType structuredItemTest(AST test) throws QueryException {
+        if (test.getType() != XQ.StructuredItemTest) {
+            return null;
+        }
+        return new AnyStructuredItemType();
+    }
+
+    protected ItemType jsonItemTest(AST test) throws QueryException {
+        if (test.getType() != XQ.JsonItemTest) {
+            return null;
+        }
+        return new AnyJsonItemType();
     }
 
     protected ItemType recordTest(AST test) throws QueryException {

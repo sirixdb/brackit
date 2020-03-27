@@ -165,6 +165,12 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem imple
         return new AttributeType(getName(), Type.UNA);
       case TEXT:
         return new TextType();
+      case COMMENT:
+        return new CommentType();
+      case PROCESSING_INSTRUCTION:
+        return new PIType();
+      case DOCUMENT:
+        return new DocumentType();
       default:
         return null;
     }

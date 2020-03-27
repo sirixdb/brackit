@@ -31,10 +31,14 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.compiler.AST;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public interface Parser {
-	public AST parse(String query) throws QueryException;
+	/**
+	 * Parse the query string and generate an AST.
+	 * @param query the query string
+	 * @return the generated AST
+	 * @throws QueryException if something went wrong
+	 */
+	AST parse(String query);
 }

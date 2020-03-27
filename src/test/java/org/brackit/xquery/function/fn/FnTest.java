@@ -51,6 +51,7 @@ import org.brackit.xquery.xdm.node.NodeCollection;
 import org.junit.Before;
 import org.junit.Test;
 
+@SuppressWarnings("RedundantThrows")
 public class FnTest extends XQueryBaseTest {
 
   @Test
@@ -105,7 +106,7 @@ public class FnTest extends XQueryBaseTest {
   }
 
   @Test
-  public void fnTrue() throws Exception {
+  public void fnTrue() {
     Sequence result = new XQuery("true()").execute(ctx);
     ResultChecker.dCheck(Bool.TRUE, result);
   }

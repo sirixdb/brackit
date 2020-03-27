@@ -315,6 +315,10 @@ public final class XQ {
 	public static final int LAST = 260;
 	public static final int ALL_TIMES = 261;
 	// End temporal
+	public static final int JsonItemTest = 262;
+	public static final int StructuredItemTest = 263;
+	public static final int KindTestNull = 264;
+	public static final int Null = 265;
 
 	public static final String NAMES[] = new String[] { "XQuery",
 			"LibraryModule", "MainModule", "Prolog", "NamespaceDeclaration",
@@ -414,17 +418,21 @@ public final class XQ {
 			"End",
 			// End brackit's set-oriented extensions
 			// Begin brackit's custom array syntax
-			"ArrayAccess", "ArrayConstructor",
+			"KindTestArray", "ArrayAccess", "ArrayConstructor",
 			"SequenceField",
 			"FlattenedField",
 			// End brackit's custom array syntax
 			// Begin brackit's custom recird syntax
-			"RecordProjection", "RecordConstructor", "RecordField",
+			"KindTestRecord", "RecordProjection", "RecordConstructor", "RecordField",
 			"KeyValueField", "DerefExpr",
 			// End brackit's custom record syntax
 			// Begin temporal
 			"NEXT", "PREVIOUS", "EARLIER", "EARLIER_OR_SELF", "FUTURE", "FUTURE_OR_SELF", "FIRST", "LAST", "ALL_TIME",
 			// End temporal
+			"JsonItemTest",
+			"StructuredItemTest",
+			"KindTestNull",
+			"Null"
 	};
 
 	private XQ() {

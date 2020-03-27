@@ -39,6 +39,7 @@ import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.expr.Variable;
+import org.brackit.xquery.function.json.JSONFun;
 import org.brackit.xquery.module.Functions;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.module.Namespaces;
@@ -993,6 +994,15 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 				expr.setType(XQ.SequenceExpr);
 				expr.setValue(XQ.NAMES[XQ.SequenceExpr]);
 			}
+			return true;
+		}
+		if (name.equals(JSONFun.JSON_NULL)) {
+			if (argc != 0) {
+				throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
+						"Illegal number of parameters for function %s() : %s'",
+						name, argc);
+			}
+			expr.setType(XQ.Null);
 			return true;
 		}
 		return false;

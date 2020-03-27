@@ -295,14 +295,14 @@ public class CastTest extends XQueryBaseTest {
 	}
 
 	@Test
-	public void castStringAsUnsignedByte() throws Exception {
+	public void castStringAsUnsignedByte() {
 		Sequence result = new XQuery("'     255    ' cast as xs:unsignedByte")
 				.execute(ctx);
 		ResultChecker.dCheck(new Int32(255).asType(Type.UBYT), result);
 	}
 
 	@Test
-	public void illegalCastStringAsUnsignedByte() throws Exception {
+	public void illegalCastStringAsUnsignedByte() {
 		try {
 			Sequence result = new XQuery("'256' cast as xs:unsignedByte")
 					.execute(ctx);
@@ -314,7 +314,7 @@ public class CastTest extends XQueryBaseTest {
 	}
 
 	@Test
-	public void stringCastableAsDouble() throws Exception {
+	public void stringCastableAsDouble() {
 		Sequence result = new XQuery("'-1.000E4' castable as xs:double")
 				.execute(ctx);
 		ResultChecker.dCheck(Bool.TRUE, result);
@@ -330,43 +330,6 @@ public class CastTest extends XQueryBaseTest {
 	public void integerInstanceOfDecimal() {
 		Sequence result = new XQuery("3 instance of xs:decimal").execute(ctx);
 		ResultChecker.dCheck(Bool.TRUE, result);
-	}
-
-	@Test
-	public void elementInstanceOfElement() {
-		Sequence result = new XQuery("<element/> instance of element()").execute(ctx);
-		ResultChecker.dCheck(Bool.TRUE, result);
-	}
-
-	@Test
-	public void recordInstanceOfRecord() {
-		Sequence result = new XQuery("{\"a\":1} instance of record()").execute(ctx);
-		ResultChecker.dCheck(Bool.TRUE, result);
-	}
-
-	@Test
-	public void emptyArrayInstanceOfArray() {
-		Sequence result = new XQuery("[] instance of array()").execute(ctx);
-		ResultChecker.dCheck(Bool.TRUE, result);
-	}
-
-	@Test
-	public void arrayInstanceOfArray() {
-		Sequence result = new XQuery("[\"foobar\"] instance of array()").execute(ctx);
-		ResultChecker.dCheck(Bool.TRUE, result);
-	}
-
-	@Test
-	public void textInstanceOfElement() {
-		Sequence result = new XQuery("'Foo' instance of element()").execute(ctx);
-		ResultChecker.dCheck(Bool.FALSE, result);
-	}
-
-	@Test
-	public void stringInstanceOfDecimal() throws Exception {
-		Sequence result = new XQuery("'Foo' instance of xs:decimal")
-				.execute(ctx);
-		ResultChecker.dCheck(Bool.FALSE, result);
 	}
 
 	@Test
