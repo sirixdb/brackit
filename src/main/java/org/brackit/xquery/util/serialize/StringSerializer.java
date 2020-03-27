@@ -30,6 +30,7 @@ package org.brackit.xquery.util.serialize;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
@@ -46,7 +47,6 @@ import org.brackit.xquery.xdm.node.Node;
 
 /**
  * @author Sebastian Baechle
- *
  */
 public class StringSerializer implements Serializer {
 
@@ -91,6 +91,20 @@ public class StringSerializer implements Serializer {
     printer.setPrettyPrint(format);
     printer.setIndent(indent);
     printer.setAutoFlush(false);
+
+    try {
+      if (s instanceof Array) {
+        json(s, printer, true);
+        return;
+      } else if (s instanceof Record) {
+        json(s, printer, false);
+        return;
+      }
+    } finally {
+      printer.flush();
+      out.flush();
+    }
+
     Item item;
     try (final Iter it = s.iterate()) {
       while ((item = it.next()) != null) {
@@ -143,9 +157,7 @@ public class StringSerializer implements Serializer {
         if (s instanceof Numeric) {
           out.write(s.toString());
         } else if (((Atomic) s).type() == Type.BOOL) {
-          out.write(s.booleanValue()
-              ? "true"
-              : "false");
+          out.write(s.booleanValue() ? "true" : "false");
         } else {
           out.write("\"");
           out.write(s.toString());
@@ -210,7 +222,7 @@ public class StringSerializer implements Serializer {
           if (!first) {
             out.write(",");
           }
-          json(i, p, i instanceof Array? true : false);
+          json(i, p, i instanceof Array ? true : false);
           first = false;
         }
       } finally {

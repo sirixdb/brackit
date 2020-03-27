@@ -27,7 +27,7 @@
  */
 package org.brackit.xquery;
 
-import org.brackit.xquery.array.DRArray;
+import org.brackit.xquery.array.DArray;
 import org.brackit.xquery.atomic.*;
 import org.brackit.xquery.record.ArrayRecord;
 import org.brackit.xquery.sequence.ItemSequence;
@@ -45,21 +45,6 @@ import static org.junit.Assert.assertEquals;
  * @author Johannes Lichtenberger
  */
 public final class JsonTest extends XQueryBaseTest {
-  @Test
-  public void simpleTest() throws IOException {
-    final var query = "for $i in (1,2) return $i";
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-    }
-  }
-
-  @Test
-  public void simpleArrayTest() {
-    final var query = "[\"Jim\",\"John\",\"Joe\"]";
-    final var resultSequence = new XQuery(query).execute(ctx);
-  }
-
   @Test
   public void arrayTest() throws IOException {
     final var query = "[\"foo\",0,true(),jn:null()]";
@@ -85,9 +70,9 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void composableTest() {
-    final var query = "{\"foo\":(),\"bar\":(1,2)}";
+    final var query = "{\"foo\":jn:null(),\"bar\":(1,2)}";
     final var resultSequence = new XQuery(query).execute(ctx);
     ResultChecker.check(new ItemSequence(new ArrayRecord(new QNm[] { new QNm("foo"), new QNm("bar") },
-        new Sequence[] { null, new DRArray(new Sequence[] { new Int32(1), new Int32(2) }, 0, 2) })), resultSequence);
+        new Sequence[] { new Null(), new DArray(new Int32(1), new Int32(2)) } )), resultSequence);
   }
 }
