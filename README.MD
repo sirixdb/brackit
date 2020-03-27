@@ -165,10 +165,9 @@ Records provide an alternative to XML to represent structured data. Like with ar
 (: statically create a record with three fields named 'a', 'b' and 'c' :)
 { "a": 1, "b" : 2, "c" : 3 }
 
-(: for compliance with the JSON syntax the tokens 'true', 'false', and 'null'
-   are translated into the XML values xs:bool('true'), xs:bool('false') and empty-sequence()
+(: 'null' is a new atomic type and jn:null() creates this type, true and false are translated into the XML values xs:bool('true'), xs:bool('false').
 :)
-{ "a": true, "b" : false, "c" : null}
+{ "a": true(), "b" : false(), "c" : jn:null()}
 
 (: field names are modelled as xs:QName and may be set in double quotes,
    single quotes or completely without quotes.
