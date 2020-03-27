@@ -39,6 +39,8 @@ import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.json.Array;
+import org.brackit.xquery.xdm.json.Record;
 
 /**
  *
@@ -100,7 +102,8 @@ public class PipeExpr implements Expr {
 						if (s == null) {
 							continue;
 						}
-						if (s instanceof Item) {
+
+						if (s instanceof Item && !(s instanceof Array) && !(s instanceof Record)) {
 							return (Item) s;
 						}
 						it = s.iterate();

@@ -92,8 +92,7 @@ public class StringSerializer implements Serializer {
     printer.setIndent(indent);
     printer.setAutoFlush(false);
     Item item;
-    Iter it = s.iterate();
-    try {
+    try (final Iter it = s.iterate()) {
       while ((item = it.next()) != null) {
         if (item instanceof Node<?>) {
           Node<?> node = (Node<?>) item;
@@ -133,7 +132,6 @@ public class StringSerializer implements Serializer {
     } finally {
       printer.flush();
       out.flush();
-      it.close();
     }
   }
 

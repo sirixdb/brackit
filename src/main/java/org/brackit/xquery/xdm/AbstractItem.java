@@ -55,7 +55,7 @@ public abstract class AbstractItem extends AbstractSequence implements Item {
 	}
 
 	@Override
-	public final Iter iterate() {
+	public Iter iterate() {
 		final Item item = this;
 		return new BaseIter() {
 			boolean first = true;

@@ -46,6 +46,15 @@ import static org.junit.Assert.assertEquals;
  */
 public final class JsonTest extends XQueryBaseTest {
   @Test
+  public void simpleTest() throws IOException {
+    final var query = "for $i in (1,2) return $i";
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+    }
+  }
+
+  @Test
   public void simpleArrayTest() {
     final var query = "[\"Jim\",\"John\",\"Joe\"]";
     final var resultSequence = new XQuery(query).execute(ctx);
@@ -63,10 +72,15 @@ public final class JsonTest extends XQueryBaseTest {
   }
 
   @Test
-  public void arrayValuesTest() {
-    final var query = "let $values := bit:array-values([\"foo\",0,true(),jn:null()]) for $i in $values return $i";
+  public void arrayValuesTest() throws IOException {
+    final var query = "let $array := [\"foo\",0,true(),jn:null()]\nfor $i in $array\nreturn $i";
     final var resultSequence = new XQuery(query).execute(ctx);
     ResultChecker.check(new ItemSequence(new Str("foo"), new Int32(0), new Bool(true), new Null()), resultSequence);
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("foo 0 true null", content);
+    }
   }
 
   @Test
