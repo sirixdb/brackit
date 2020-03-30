@@ -75,4 +75,36 @@ public final class JsonTest extends XQueryBaseTest {
     ResultChecker.check(new ItemSequence(new ArrayRecord(new QNm[] { new QNm("foo"), new QNm("bar") },
         new Sequence[] { new Null(), new DArray(new Int32(1), new Int32(2)) } )), resultSequence);
   }
+
+  @Test
+  public void testObjects() throws IOException {
+    final var query = "    let $object1 := { \"Captain\" : \"Kirk\" }\n"
+        + "    let $object2 := { \"First officer\" : \"Spock\" }\n" + "    return ($object1, \" \", $object2)";
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("{\"Captain\":\"Kirk\"} {\"First officer\":\"Spock\"}", content);
+    }
+  }
+
+  @Test
+  public void testComposeObjects() throws IOException {
+    final var query = "    let $object1 := { \"Captain\" : \"Kirk\" }\n"
+        + "    let $object2 := { \"First officer\" : \"Spock\" }\n" + "    return { \"foobar\": $object1, $object2 }";
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("{\"foobar\":{\"Captain\":\"Kirk\"},\"First officer\":\"Spock\"}", content);
+    }
+  }
+
+  @Test
+  public void testComposeObjects1() throws IOException {
+    final var query = "let $r := { x:1, y:2 } return { $r, z:3 }";
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("{\"x\":1,\"y\":2,\"z\":3}", content);
+    }
+  }
 }

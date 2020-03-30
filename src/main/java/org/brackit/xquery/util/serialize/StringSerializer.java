@@ -92,17 +92,8 @@ public class StringSerializer implements Serializer {
     printer.setIndent(indent);
     printer.setAutoFlush(false);
 
-    try {
-      if (s instanceof Array) {
-        json(s, printer, true);
-        return;
-      } else if (s instanceof Record) {
-        json(s, printer, false);
-        return;
-      }
-    } finally {
-      printer.flush();
-      out.flush();
+    if (printJson(s, printer)) {
+      return;
     }
 
     Item item;
@@ -147,6 +138,28 @@ public class StringSerializer implements Serializer {
       printer.flush();
       out.flush();
     }
+  }
+
+  private boolean printJson(Sequence s, SubtreePrinter printer) {
+    if (s instanceof Array) {
+      try {
+        json(s, printer, true);
+        return true;
+      } finally {
+        printer.flush();
+        out.flush();
+      }
+    } else if (s instanceof Record) {
+      try {
+        json(s, printer, false);
+        return true;
+      } finally {
+        printer.flush();
+        out.flush();
+      }
+    }
+
+    return false;
   }
 
   private void json(Sequence s, SubtreePrinter p, boolean isArrayContent) throws QueryException {

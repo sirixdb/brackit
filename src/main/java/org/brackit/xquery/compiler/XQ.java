@@ -432,7 +432,7 @@ public final class XQ {
 			"JsonItemTest",
 			"StructuredItemTest",
 			"KindTestNull",
-			"Null"
+			"Null",
 	};
 
 	private XQ() {

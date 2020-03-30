@@ -56,7 +56,7 @@ public class XQParser extends Tokenizer {
 
   private static final String[] RESERVED_FUNC_NAMES = new String[] {"attribute", "comment", "document-node", "element",
       "empty-sequence", "function", "if", "item", "namespace-node", "node", "processing-instruction",
-      "schema-attribute", "schema-element", "switch", "text", "typeswitch"};
+      "schema-attribute", "schema-element", "switch", "text", "typeswitch, array, record"};
 
   public class IllegalNestingException extends TokenizerException {
     private final String expected;

@@ -59,4 +59,5 @@ public abstract class AbstractRecord extends AbstractItem implements Record {
 				"Effective boolean value of record items is undefined.");
 	}
 
+	
 }
