@@ -46,6 +46,18 @@ import static org.junit.Assert.assertEquals;
  */
 public final class JsonTest extends XQueryBaseTest {
   @Test
+  public void forEachInArrayTest() throws IOException {
+    final var query = "for $i in [{\"key\": 3}, {\"key\": 0}]\n" + "where $i=>key cast as xs:int = 0\n"
+        + "return $i";
+
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("{\"key\":0}", content);
+    }
+  }
+
+  @Test
   public void arrayTest() throws IOException {
     final var query = "[\"foo\",0,true(),jn:null()]";
 

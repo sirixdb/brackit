@@ -37,6 +37,7 @@ import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.json.Array;
 
 /**
  * 
@@ -95,7 +96,7 @@ public class ForBind extends Check implements Operator {
 							: (check) ? passthroughUncheck(t, local()) : null;
 					t = null;
 					return tmp;
-				} else if (s instanceof Item) {
+				} else if (s instanceof Item && !(s instanceof Array)) {
 					return emit(t, s);
 				} else {
 					it = s.iterate();
