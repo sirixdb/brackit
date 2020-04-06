@@ -4009,14 +4009,23 @@ public class XQParser extends Tokenizer {
       do {
         AST f;
         Token la;
-        if (((la = laStringSkipWS(true)) != null) || ((la = laNCNameSkipWS()) != null)) {
+        if ((((la = laStringSkipWS(true)) != null) || ((la = laNCNameSkipWS()) != null))) {
           consume(la);
           f = new AST(XQ.KeyValueField);
           f.addChild(new AST(XQ.QNm, new QNm(null, null, la.string())));
           f.addChild(recordValue());
         } else {
-          f = new AST(XQ.RecordField);
-          f.addChild(exprSingle());
+          final var key = exprSingle();
+          final var hasColon = attemptSkipWS(":");
+          if (hasColon) {
+            final var value = exprSingle();
+            f = new AST(XQ.KeyValueField);
+            f.addChild(key);
+            f.addChild(value);
+          } else {
+            f = new AST(XQ.RecordField);
+            f.addChild(key);
+          }
         }
         record.addChild(f);
       } while (attemptSkipWS(","));

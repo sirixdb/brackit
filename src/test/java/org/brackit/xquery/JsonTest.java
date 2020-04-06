@@ -32,6 +32,7 @@ import org.brackit.xquery.atomic.*;
 import org.brackit.xquery.record.ArrayRecord;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Sequence;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -46,8 +47,21 @@ import static org.junit.Assert.assertEquals;
  */
 public final class JsonTest extends XQueryBaseTest {
   @Test
+  @Ignore
+  public void forEachInRecordTest() throws IOException {
+    final var query = "let $json := {\"key\": 3, \"foo\": 0}\nfor $key in bit:fields($json) where $json=>$key = 3\n"
+        + "return { $key: $json=>$key }";
+
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("{\"key\":0}", content);
+    }
+  }
+
+  @Test
   public void forEachInArrayTest() throws IOException {
-    final var query = "for $i in [{\"key\": 3}, {\"key\": 0}]\n" + "where $i=>key cast as xs:int = 0\n"
+    final var query = "for $i in [{\"key\": 3}, {\"key\": 0}]\n" + "where $i=>key = 0\n"
         + "return $i";
 
     try (final var out = new ByteArrayOutputStream()) {

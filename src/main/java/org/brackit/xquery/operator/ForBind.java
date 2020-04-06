@@ -38,6 +38,7 @@ import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Array;
+import org.brackit.xquery.xdm.json.JsonItem;
 
 /**
  * 

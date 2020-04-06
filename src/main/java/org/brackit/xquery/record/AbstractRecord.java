@@ -30,11 +30,20 @@ package org.brackit.xquery.record;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.sequence.BaseIter;
+import org.brackit.xquery.sequence.FlatteningSequence;
 import org.brackit.xquery.xdm.AbstractItem;
+import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.Iter;
+import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Record;
 import org.brackit.xquery.xdm.type.ItemType;
 import org.brackit.xquery.xdm.type.ListOrUnionType;
 import org.brackit.xquery.xdm.type.RecordType;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.List;
 
 /**
  * @author Sebastian Baechle
@@ -59,5 +68,4 @@ public abstract class AbstractRecord extends AbstractItem implements Record {
 				"Effective boolean value of record items is undefined.");
 	}
 
-	
 }

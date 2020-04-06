@@ -87,23 +87,25 @@ public class RecordExpr implements Expr {
 	}
 
 	public static class KeyValueField extends Field {
-		final QNm name;
-		final Expr expr;
+		final Expr nameExpr;
+		final Expr valueExpr;
 
-		public KeyValueField(QNm name, Expr expr) {
-			this.name = name;
-			this.expr = expr;
+		public KeyValueField(Expr name, Expr expr) {
+			this.nameExpr = name;
+			this.valueExpr = expr;
 		}
 
 		@Override
 		public Record evaluate(QueryContext ctx, Tuple t) throws QueryException {
-			Sequence val = expr.evaluateToItem(ctx, t);
-			return new ArrayRecord(new QNm[] { name }, new Sequence[] { val });
+			Sequence names = nameExpr.evaluateToItem(ctx, t);
+			Sequence val = valueExpr.evaluateToItem(ctx, t);
+
+			return new ArrayRecord(new QNm[] { (QNm) names.get(0) }, new Sequence[] { val });
 		}
 
 		@Override
 		boolean isUpdating() {
-			return expr.isUpdating();
+			return valueExpr.isUpdating();
 		}
 	}
 
