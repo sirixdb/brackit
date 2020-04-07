@@ -3936,9 +3936,15 @@ public class XQParser extends Tokenizer {
     if (!attemptSkipWS("[[")) {
       return null;
     }
-    AST index = exprSingle();
-    consumeSkipWS("]]");
-    return index;
+    if (laSkipWS("]]") != null) {
+      AST sequence = new AST(XQ.SequenceExpr);
+      consumeSkipWS("]]");
+      return sequence;
+    } else {
+      AST index = exprSingle();
+      consumeSkipWS("]]");
+      return index;
+    }
   }
 
   private AST arrayConstructor() throws TokenizerException {

@@ -88,7 +88,7 @@ public abstract class ExprUtil implements Expr {
 			while ((item = it.next()) != null) {
 				buffer.add(item);
 			}
-			return new ItemSequence(buffer.toArray(new Item[buffer.size()]));
+			return new ItemSequence(buffer.toArray(new Item[0]));
 		} finally {
 			it.close();
 		}

@@ -67,7 +67,7 @@ public interface Sequence extends Tuple, Expr {
 	 * input to determine the actual boolean value.
 	 * </p>
 	 */
-	public boolean booleanValue() throws QueryException;
+	boolean booleanValue() throws QueryException;
 
 	/**
 	 * Checks the size of this sequence.
@@ -78,7 +78,7 @@ public interface Sequence extends Tuple, Expr {
 	 * input to determine the actual size.
 	 * </p>
 	 */
-	public IntNumeric size() throws QueryException;
+	IntNumeric size() throws QueryException;
 
 	/**
 	 * Returns the item at the given position or <code>null</code> iff
@@ -90,10 +90,10 @@ public interface Sequence extends Tuple, Expr {
 	 * input to determine the actual size.
 	 * </p>
 	 */
-	public Item get(IntNumeric pos) throws QueryException;
+	Item get(IntNumeric pos) throws QueryException;
 
 	/**
 	 * Create a stream to iterate over all items of this sequence.
 	 */
-	public Iter iterate();
+	Iter iterate();
 }

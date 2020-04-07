@@ -32,12 +32,15 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Type;
 import org.brackit.xquery.xdm.json.Array;
+
+import java.util.ArrayList;
 
 /**
  * 
@@ -66,6 +69,16 @@ public class ArrayAccessExpr implements Expr {
 					a.itemType(), Type.INR);
 		}
 		Item i = index.evaluateToItem(ctx, tuple);
+		if (i == null) {
+			final var it =  a.iterate();
+
+			final var buffer = new ArrayList<Item>(((Array) a).len());
+			Item item;
+			while ((item = it.next()) != null) {
+				buffer.add(item);
+			}
+			return new ItemSequence(buffer.toArray(new Item[0]));
+		}
 		if (!(i instanceof IntNumeric)) {
 			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
 					"Illegal operand type '%s' where '%s' is expected",

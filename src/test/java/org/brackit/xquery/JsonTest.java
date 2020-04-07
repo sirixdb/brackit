@@ -32,7 +32,6 @@ import org.brackit.xquery.atomic.*;
 import org.brackit.xquery.record.ArrayRecord;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Sequence;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -46,6 +45,28 @@ import static org.junit.Assert.assertEquals;
  * @author Johannes Lichtenberger
  */
 public final class JsonTest extends XQueryBaseTest {
+  @Test
+  public void arrayUnboxingTest() throws IOException {
+    final var query = "let $json := [\"Sunday\", \"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\"] return $json[[]]";
+
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("Sunday Monday Tuesday Wednesday Thursday Friday Saturday", content);
+    }
+  }
+
+  @Test
+  public void arraySizeTest() throws IOException {
+    final var query = "let $json := [\"mercury\",\"venus\",\"earth\",\"mars\"]\n return bit:len($json)";
+
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("4", content);
+    }
+  }
+
   @Test
   public void nestedArrayTest() throws IOException {
     final var query = "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ],\n"
