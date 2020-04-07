@@ -47,7 +47,6 @@ import static org.junit.Assert.assertEquals;
  */
 public final class JsonTest extends XQueryBaseTest {
   @Test
-  @Ignore
   public void forEachInRecordTest() throws IOException {
     final var query = "let $json := {\"key\": 3, \"foo\": 0}\nfor $key in bit:fields($json) where $json=>$key = 3\n"
         + "return { $key: $json=>$key }";
@@ -55,7 +54,7 @@ public final class JsonTest extends XQueryBaseTest {
     try (final var out = new ByteArrayOutputStream()) {
       new XQuery(query).serialize(ctx, new PrintStream(out));
       final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("{\"key\":0}", content);
+      assertEquals("{\"key\":3}", content);
     }
   }
 

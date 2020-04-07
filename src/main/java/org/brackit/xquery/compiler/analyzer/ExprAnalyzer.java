@@ -1384,9 +1384,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 			AST field = expr.getChild(i);
 			int fType = field.getType();
 			if (fType == XQ.KeyValueField) {
-				QNm name = (QNm) field.getChild(0).getValue();
-				name = expand(name, DefaultNS.EMPTY);
-				field.getChild(0).setValue(name);
+				expr(field.getChild(0));
 				expr(field.getChild(1));
 			} else if (fType == XQ.RecordField) {
 				expr(field.getChild(0));
