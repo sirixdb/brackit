@@ -46,13 +46,25 @@ import static org.junit.Assert.assertEquals;
  */
 public final class JsonTest extends XQueryBaseTest {
   @Test
-  public void arrayUnboxingTest() throws IOException {
+  public void arrayUnboxing1Test() throws IOException {
     final var query = "let $json := [\"Sunday\", \"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\"] return $json[[]]";
 
     try (final var out = new ByteArrayOutputStream()) {
       new XQuery(query).serialize(ctx, new PrintStream(out));
       final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
       assertEquals("Sunday Monday Tuesday Wednesday Thursday Friday Saturday", content);
+    }
+  }
+
+  @Test
+  public void arrayUnboxing2Test() throws IOException {
+    final var query = "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ],\n"
+        + "          [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]\n" + "        ]\n return $json[[]]";
+
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("[\"mercury\",\"venus\",\"earth\",\"mars\"][\"monday\",\"tuesday\",\"wednesday\",\"thursday\"]", content);
     }
   }
 
@@ -170,7 +182,7 @@ public final class JsonTest extends XQueryBaseTest {
   }
 
   @Test
-  public void testComposeObjects() throws IOException {
+  public void testComposeObjects1() throws IOException {
     final var query = "    let $object1 := { \"Captain\" : \"Kirk\" }\n"
         + "    let $object2 := { \"First officer\" : \"Spock\" }\n" + "    return { \"foobar\": $object1, $object2 }";
     try (final var out = new ByteArrayOutputStream()) {
@@ -181,12 +193,24 @@ public final class JsonTest extends XQueryBaseTest {
   }
 
   @Test
-  public void testComposeObjects1() throws IOException {
+  public void testComposeObjects2() throws IOException {
     final var query = "let $r := { x:1, y:2 } return { $r, z:3 }";
     try (final var out = new ByteArrayOutputStream()) {
       new XQuery(query).serialize(ctx, new PrintStream(out));
       final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
       assertEquals("{\"x\":1,\"y\":2,\"z\":3}", content);
+    }
+  }
+
+  @Test
+  public void testObjectLookup() throws IOException {
+    final var query = "let $x := { \"eyes\": \"blue\", \"hair\": \"fuchsia\" }\n"
+        + "        let $y := { \"eyes\": \"brown\", \"hair\": \"brown\" }\n"
+        + "        return { \"eyes\": $x=>eyes, \"hair\": $y=>hair }";
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("{\"eyes\":\"blue\",\"hair\":\"brown\"}", content);
     }
   }
 }
