@@ -47,8 +47,44 @@ import static org.junit.Assert.assertEquals;
  */
 public final class JsonTest extends XQueryBaseTest {
   @Test
+  public void nestedArrayTest() throws IOException {
+    final var query = "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ],\n"
+        + "          [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]\n" + "        ]\n return $json[[0]]";
+
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("[\"mercury\",\"venus\",\"earth\",\"mars\"]", content);
+    }
+  }
+
+  @Test
+  public void comletelyNestedArrayTest() throws IOException {
+    final var query = "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ],\n"
+        + "          [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]\n" + "        ]\n return $json[[1]][[1]]";
+
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("tuesday", content);
+    }
+  }
+
+  @Test
+  public void recordProjectionTest() throws IOException {
+    final var query = "let $json := {\"key\": 3, \"foo\": 0}\n"
+        + "return $json{key}";
+
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("{\"key\":3}", content);
+    }
+  }
+
+  @Test
   public void forEachInRecordTest() throws IOException {
-    final var query = "let $json := {\"key\": 3, \"foo\": 0}\nfor $key in bit:fields($json) where $json=>$key = 3\n"
+    final var query = "let $json := {\"key\": 3, \"foo\": 0}\nfor $key in bit:fields($json)\n where $json=>$key = 3\n"
         + "return { $key: $json=>$key }";
 
     try (final var out = new ByteArrayOutputStream()) {

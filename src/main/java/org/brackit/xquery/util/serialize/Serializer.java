@@ -42,7 +42,7 @@ public interface Serializer extends AutoCloseable {
    * @param s the sequence to serialize
    * @throws QueryException if anything went wrong
    */
-  public void serialize(Sequence s);
+  void serialize(Sequence s);
 
   @Override
   default void close() {}

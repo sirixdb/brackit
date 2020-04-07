@@ -68,7 +68,7 @@ public class ArrayExpr implements Expr {
 			Sequence res = expr[i].evaluate(ctx, t);
 			if (res == null) {
 				continue;
-			} else if ((!flatten[i]) || (res instanceof Item)) {
+			} else if (!(res instanceof SequenceExpr.EvalSequence) && (!flatten[i]) || (res instanceof Item)) {
 				if (pos == vals.length) {
 					vals = Arrays.copyOfRange(vals, 0,
 							((vals.length * 3) / 2) + 1);
