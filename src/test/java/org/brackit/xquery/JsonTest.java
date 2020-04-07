@@ -213,4 +213,15 @@ public final class JsonTest extends XQueryBaseTest {
       assertEquals("{\"eyes\":\"blue\",\"hair\":\"brown\"}", content);
     }
   }
+
+  @Test
+  public void testGetAllKeys() throws IOException {
+    final var query = "let $seq := (\"foo\", [ 1, 2, 3 ], { \"a\" : 1, \"b\" : 2 }, { \"a\" : 3, \"c\" : 4 })\n"
+        + "          return jn:keys($seq)";
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("a b c", content);
+    }
+  }
 }

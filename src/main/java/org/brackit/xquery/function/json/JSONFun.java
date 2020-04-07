@@ -28,7 +28,7 @@
 package org.brackit.xquery.function.json;
 
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.module.Namespaces;
+import org.brackit.xquery.module.Functions;
 
 /**
  * @author Sebastian Baechle
@@ -44,4 +44,15 @@ public class JSONFun {
 
 	public static final QNm JSON_NULL = new QNm(JSON_NSURI,
 			JSON_PREFIX, "null");
+
+	public static final Keys KEYS_FUNC = new Keys();
+
+	public static void register() {
+		// dummy function to cause static block
+		// to be executed exactly once
+	}
+
+	static {
+		Functions.predefine(KEYS_FUNC);
+	}
 }

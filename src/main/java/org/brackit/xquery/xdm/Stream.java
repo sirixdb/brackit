@@ -42,11 +42,11 @@ public interface Stream<E> extends AutoCloseable {
    * @throws DocumentException if an error occurs in this stream. If the exception is thrown, all held
    *         resources will be released and no closing is necessary.
    */
-  public E next();
+  E next();
 
   /**
    * Closes this stream releasing all held resources
    */
   @Override
-  public void close();
+  void close();
 }
