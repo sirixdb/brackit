@@ -3952,24 +3952,15 @@ public class XQParser extends Tokenizer {
       return null;
     }
     AST array = new AST(XQ.ArrayConstructor);
-
-    final var position = position();
-    final var isEmpty = attemptSymSkipWS("]");
-    resetTo(position);
-
-    if (!isEmpty) {
+    final var emptyArray = laSkipWS("]");
+    if (emptyArray == null) {
       do {
         AST f = new AST((attemptSkipS("=")) ? XQ.FlattenedField : XQ.SequenceField);
-        // for JSON-like semantics
-        // the tokens 'true' and 'false' are
-        // matched as boolean constants and
-        // not as path expressions, the token 'null'
-        // is interpreted as empty sequence
-        if (attemptSymSkipWS("true")) {
+        if (attemptSymSkipWS("true()")) {
           f.addChild(new AST(XQ.Bool, Bool.TRUE));
-        } else if (attemptSymSkipWS("false")) {
+        } else if (attemptSymSkipWS("false()")) {
           f.addChild(new AST(XQ.Bool, Bool.FALSE));
-        } else if (attemptSymSkipWS("null")) {
+        } else if (attemptSymSkipWS("jn:null()")) {
           f.addChild(new AST(XQ.SequenceExpr));
         } else {
           f.addChild(expr());
@@ -4006,12 +3997,8 @@ public class XQParser extends Tokenizer {
       return null;
     }
     AST record = new AST(XQ.RecordConstructor);
-
-    final var position = position();
-    final var isEmpty = attemptSymSkipWS("}");
-    resetTo(position);
-
-    if (!isEmpty) {
+    final var emptyRecord = laSkipWS("}");
+    if (emptyRecord == null) {
       do {
         AST f;
         Token la;
@@ -4043,16 +4030,11 @@ public class XQParser extends Tokenizer {
 
   private AST recordValue() throws TokenizerException {
     consumeSkipWS(":");
-    // for JSON-like semantics
-    // the tokens 'true' and 'false' are
-    // matched as boolean constants and
-    // not as path expressions, the token 'null'
-    // is interpreted as empty sequence
-    if (attemptSymSkipWS("true")) {
+    if (attemptSymSkipWS("true()")) {
       return new AST(XQ.Bool, Bool.TRUE);
-    } else if (attemptSymSkipWS("false")) {
+    } else if (attemptSymSkipWS("false()")) {
       return new AST(XQ.Bool, Bool.FALSE);
-    } else if (attemptSymSkipWS("null")) {
+    } else if (attemptSymSkipWS("jn:null()")) {
       return new AST(XQ.SequenceExpr);
     } else {
       return exprSingle();

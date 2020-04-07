@@ -224,4 +224,15 @@ public final class JsonTest extends XQueryBaseTest {
       assertEquals("a b c", content);
     }
   }
+
+  @Test
+  public void predicateClauseTest() throws IOException {
+    final var query = "{\"key\": 3, \"foo\": 0}[.=>key=3]";
+
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("{\"key\":3,\"foo\":0}", content);
+    }
+  }
 }
