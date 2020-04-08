@@ -184,7 +184,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testComposeObjects1() throws IOException {
     final var query = "    let $object1 := { \"Captain\" : \"Kirk\" }\n"
-        + "    let $object2 := { \"First officer\" : \"Spock\" }\n" + "    return { \"foobar\": $object1, $object2 }";
+        + "    let $object2 := { \"First officer\" : \"Spock\" }\n" + "    return {| { \"foobar\": $object1 }, $object2 |}";
     try (final var out = new ByteArrayOutputStream()) {
       new XQuery(query).serialize(ctx, new PrintStream(out));
       final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
@@ -194,6 +194,17 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void testComposeObjects2() throws IOException {
+    final var query = "    let $object1 := { \"Captain\" : \"Kirk\" }\n"
+        + "    let $object2 := { \"First officer\" : \"Spock\" }\n" + "    return {{ \"foobar\": $object1 }, $object2 }";
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("{\"foobar\":{\"Captain\":\"Kirk\"},\"First officer\":\"Spock\"}", content);
+    }
+  }
+
+  @Test
+  public void testComposeObjects3() throws IOException {
     final var query = "let $r := { \"x\":1, \"y\":2 } return {| $r, { \"z\":3 } |}";
     try (final var out = new ByteArrayOutputStream()) {
       new XQuery(query).serialize(ctx, new PrintStream(out));
@@ -203,9 +214,20 @@ public final class JsonTest extends XQueryBaseTest {
   }
 
   @Test
-  public void testComposeObjects3() throws IOException {
+  public void testComposeObjects4() throws IOException {
     final var query = "          let $object1 := { \"Captain\" : \"Kirk\" }\n"
         + "          let $object2 := { \"First officer\" : \"Spock\" }\n" + "          return {| $object1, $object2 |}";
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("{\"Captain\":\"Kirk\",\"First officer\":\"Spock\"}", content);
+    }
+  }
+
+  @Test
+  public void testComposeObjects5() throws IOException {
+    final var query = "          let $object1 := { \"Captain\" : \"Kirk\" }\n"
+        + "          let $object2 := { \"First officer\" : \"Spock\" }\n" + "          return { $object1, $object2 }";
     try (final var out = new ByteArrayOutputStream()) {
       new XQuery(query).serialize(ctx, new PrintStream(out));
       final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
@@ -248,13 +270,35 @@ public final class JsonTest extends XQueryBaseTest {
   }
 
   @Test
-  public void dynamicPairsTest() throws IOException {
+  public void dynamicPairsTest1() throws IOException {
+    final var query = "{ for $d at $i in (\"Sunday\", \"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\" ) return { $d : $i } }";
+
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("{\"Sunday\":1,\"Monday\":2,\"Tuesday\":3,\"Wednesday\":4,\"Thursday\":5,\"Friday\":6,\"Saturday\":7}", content);
+    }
+  }
+
+  @Test
+  public void dynamicPairsTest2() throws IOException {
     final var query = "{| for $i in 1 to 10 return { concat(\"Square of \", $i) : $i * $i } |}";
 
     try (final var out = new ByteArrayOutputStream()) {
       new XQuery(query).serialize(ctx, new PrintStream(out));
       final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
       assertEquals("{\"Square of 1\":1,\"Square of 2\":4,\"Square of 3\":9,\"Square of 4\":16,\"Square of 5\":25,\"Square of 6\":36,\"Square of 7\":49,\"Square of 8\":64,\"Square of 9\":81,\"Square of 10\":100}", content);
+    }
+  }
+
+  @Test
+  public void dynamicPairsTest3() throws IOException {
+    final var query = "let $a := ({\"height\": 5.2}, {\"eyes\": \"blue\"}) return {| $a |}";
+
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("{\"height\":5.2,\"eyes\":\"blue\"}", content);
     }
   }
 }
