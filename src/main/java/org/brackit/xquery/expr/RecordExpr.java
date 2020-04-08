@@ -27,8 +27,7 @@
  */
 package org.brackit.xquery.expr;
 
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.*;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
@@ -37,6 +36,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.record.ArrayRecord;
 import org.brackit.xquery.xdm.Expr;
@@ -71,13 +71,28 @@ public class RecordExpr implements Expr {
 
 		@Override
 		public Record evaluate(QueryContext ctx, Tuple t) throws QueryException {
-			Item i = expr.evaluateToItem(ctx, t);
-			if ((i != null) && (!(i instanceof Record))) {
-				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-						"Illegal item type in record constructor: %s",
-						i.itemType());
+			Sequence i = expr.evaluate(ctx, t);
+			if (i instanceof Record) {
+				return (Record) i;
+			} else {
+				final var names = new ArrayList<QNm>();
+				final var values = new ArrayList<Sequence>();
+				final var iter = i.iterate();
+				Item item;
+				while ((item = iter.next()) != null) {
+					if (!(item instanceof Record)) {
+						throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+								"Illegal item type in record constructor: %s",
+								item.itemType());
+					}
+
+					final Record record = (Record) item;
+					Collections.addAll(names, record.names().values().toArray(new QNm[0]));
+					Collections.addAll(values, record.values().values().toArray(new Sequence[0]));
+				}
+
+				return new ArrayRecord(names.toArray(new QNm[0]), values.toArray(new Sequence[0]));
 			}
-			return (Record) i;
 		}
 
 		@Override
@@ -99,6 +114,10 @@ public class RecordExpr implements Expr {
 		public Record evaluate(QueryContext ctx, Tuple t) throws QueryException {
 			Sequence names = nameExpr.evaluateToItem(ctx, t);
 			Sequence val = valueExpr.evaluateToItem(ctx, t);
+
+			if (names instanceof Str) {
+				return new ArrayRecord(new QNm[] { new QNm(((Str) names).stringValue()) }, new Sequence[] { val });
+			}
 
 			return new ArrayRecord(new QNm[] { (QNm) names.get(0) }, new Sequence[] { val });
 		}
@@ -122,7 +141,7 @@ public class RecordExpr implements Expr {
 
 	@Override
 	public Item evaluateToItem(QueryContext ctx, Tuple t) throws QueryException {
-		HashSet<QNm> dedup = new HashSet<QNm>();
+		HashSet<QNm> dedup = new HashSet<>();
 		QNm[] names = new QNm[fields.length];
 		Sequence[] vals = new Sequence[fields.length];
 		int pos = 0;

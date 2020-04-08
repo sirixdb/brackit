@@ -38,7 +38,18 @@ import org.brackit.xquery.module.StaticContext;
  *
  */
 public interface Optimizer {
-	public AST optimize(StaticContext sctx, AST ast) throws QueryException;
-	
-	public List<Stage> getStages();
+	/**
+	 * Optimize the given AST.
+ 	 * @param sctx the static context
+	 * @param ast the current AST
+	 * @return the optimized AST
+	 * @throws QueryException if anything went wrong
+	 */
+	AST optimize(StaticContext sctx, AST ast);
+
+	/**
+	 * Get all rewriting stages.
+	 * @return the stages
+	 */
+	List<Stage> getStages();
 }

@@ -36,5 +36,12 @@ import org.brackit.xquery.module.StaticContext;
  *
  */
 public interface Stage {
-	public AST rewrite(StaticContext sctx, AST ast) throws QueryException;
+	/**
+	 * Rewrite the AST.
+	 * @param sctx the static context
+	 * @param ast the current AST
+	 * @return the new AST
+	 * @throws QueryException if anything went wrong
+	 */
+	AST rewrite(StaticContext sctx, AST ast);
 }

@@ -63,7 +63,7 @@ public class DefaultOptimizer implements Optimizer {
 	protected final Map<QNm, Str> options;
 
 	public DefaultOptimizer(Map<QNm, Str> options) {
-		stages = new ArrayList<Stage>();
+		stages = new ArrayList<>();
 		stages.add(new Simplification());
 		stages.add(new Finalize());
 		this.options = options;
@@ -80,7 +80,7 @@ public class DefaultOptimizer implements Optimizer {
 	}
 
 	@Override
-	public AST optimize(StaticContext sctx, AST ast) throws QueryException {
+	public AST optimize(StaticContext sctx, AST ast) {
 		for (Stage stage : stages) {
 			ast = stage.rewrite(sctx, ast);
 		}
@@ -98,7 +98,7 @@ public class DefaultOptimizer implements Optimizer {
 	}
 
 	protected class Finalize implements Stage {
-		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
+		public AST rewrite(StaticContext sctx, AST ast) {
 			ast = new PathDDOElimination(sctx).walk(ast);
 			return ast;
 		}

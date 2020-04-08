@@ -30,6 +30,7 @@ package org.brackit.xquery.record;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.FlatteningSequence;
 import org.brackit.xquery.xdm.AbstractItem;
@@ -41,15 +42,23 @@ import org.brackit.xquery.xdm.type.ItemType;
 import org.brackit.xquery.xdm.type.ListOrUnionType;
 import org.brackit.xquery.xdm.type.RecordType;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Sebastian Baechle
  * 
  */
 public abstract class AbstractRecord extends AbstractItem implements Record {
+
+	@Override
+	public Map<QNm, Sequence> getKeyValues() {
+		final var keyValues = new HashMap<QNm, Sequence>(len());
+		for (final Sequence key : names().values()) {
+			final var name = (QNm) key;
+			keyValues.put(name, get((QNm) name));
+		}
+		return keyValues;
+	}
 
 	@Override
 	public ItemType itemType() throws QueryException {

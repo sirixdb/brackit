@@ -31,11 +31,15 @@ import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.Sequence;
 
+import java.util.Map;
+
 /**
  * @author Sebastian Baechle
  *
  */
 public interface Record extends JsonItem {
+
+  Map<QNm, Sequence> getKeyValues();
 
   Sequence get(QNm field);
 

@@ -1824,6 +1824,10 @@ public class XQParser extends Tokenizer {
       return null;
     }
     while (true) {
+      if (laSkipWS("|}") != null) {
+        return first;
+      }
+
       if ((!attemptSymSkipWS("union")) && (!attemptSkipWS("|"))) {
         return first;
       }
@@ -3078,7 +3082,7 @@ public class XQParser extends Tokenizer {
     // "uri-literal":NCNAME will be matched
     // as string literal...
     Token la = laStringSkipWS(true);
-    if ((la == null) || (la(la, ":") != null)) {
+    if (la == null) {
       return null;
     }
     consume(la);
@@ -3997,33 +4001,45 @@ public class XQParser extends Tokenizer {
       return null;
     }
     AST record = new AST(XQ.RecordConstructor);
-    final var emptyRecord = laSkipWS("}");
-    if (emptyRecord == null) {
-      do {
-        AST f;
-        Token la;
-        if ((((la = laStringSkipWS(true)) != null) || ((la = laNCNameSkipWS()) != null))) {
-          consume(la);
-          f = new AST(XQ.KeyValueField);
-          f.addChild(new AST(XQ.QNm, new QNm(null, null, la.string())));
-          f.addChild(recordValue());
-        } else {
+    final var objectConstructor = la("|");
+    if (objectConstructor != null) {
+      consume(objectConstructor);
+      final AST expr = expr();
+      if (expr.getType() == XQ.SequenceExpr) {
+        for (int i = 0, childCount = expr.getChildCount(); i < childCount; i++) {
+          final AST field = new AST(XQ.RecordField);
+          field.addChild(expr.getChild(i));
+          record.addChild(field);
+        }
+      } else {
+        final AST field = new AST(XQ.RecordField);
+        field.addChild(expr);
+        record.addChild(field);
+      }
+    } else {
+      final var emptyRecord = laSkipWS("}");
+      if (emptyRecord == null) {
+        do {
+          AST field;
           final var key = exprSingle();
           final var hasColon = attemptSkipWS(":");
           if (hasColon) {
             final var value = exprSingle();
-            f = new AST(XQ.KeyValueField);
-            f.addChild(key);
-            f.addChild(value);
+            field = new AST(XQ.KeyValueField);
+            field.addChild(key);
+            field.addChild(value);
           } else {
-            f = new AST(XQ.RecordField);
-            f.addChild(key);
+            field = new AST(XQ.RecordField);
+            field.addChild(key);
           }
-        }
-        record.addChild(f);
-      } while (attemptSkipWS(","));
+          record.addChild(field);
+        } while (attemptSkipWS(","));
+      }
     }
 
+    if (objectConstructor != null) {
+      consumeSkipWS("|");
+    }
     consumeSkipWS("}");
     return record;
   }

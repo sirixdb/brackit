@@ -194,11 +194,22 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void testComposeObjects2() throws IOException {
-    final var query = "let $r := { x:1, y:2 } return { $r, z:3 }";
+    final var query = "let $r := { \"x\":1, \"y\":2 } return {| $r, { \"z\":3 } |}";
     try (final var out = new ByteArrayOutputStream()) {
       new XQuery(query).serialize(ctx, new PrintStream(out));
       final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
       assertEquals("{\"x\":1,\"y\":2,\"z\":3}", content);
+    }
+  }
+
+  @Test
+  public void testComposeObjects3() throws IOException {
+    final var query = "          let $object1 := { \"Captain\" : \"Kirk\" }\n"
+        + "          let $object2 := { \"First officer\" : \"Spock\" }\n" + "          return {| $object1, $object2 |}";
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("{\"Captain\":\"Kirk\",\"First officer\":\"Spock\"}", content);
     }
   }
 
@@ -233,6 +244,17 @@ public final class JsonTest extends XQueryBaseTest {
       new XQuery(query).serialize(ctx, new PrintStream(out));
       final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
       assertEquals("{\"key\":3,\"foo\":0}", content);
+    }
+  }
+
+  @Test
+  public void dynamicPairsTest() throws IOException {
+    final var query = "{| for $i in 1 to 10 return { concat(\"Square of \", $i) : $i * $i } |}";
+
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("{\"Square of 1\":1,\"Square of 2\":4,\"Square of 3\":9,\"Square of 4\":16,\"Square of 5\":25,\"Square of 6\":36,\"Square of 7\":49,\"Square of 8\":64,\"Square of 9\":81,\"Square of 10\":100}", content);
     }
   }
 }
