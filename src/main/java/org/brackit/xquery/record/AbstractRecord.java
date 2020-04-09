@@ -51,16 +51,6 @@ import java.util.*;
 public abstract class AbstractRecord extends AbstractItem implements Record {
 
 	@Override
-	public Map<QNm, Sequence> getKeyValues() {
-		final var keyValues = new HashMap<QNm, Sequence>(len());
-		for (final Sequence key : names().values()) {
-			final var name = (QNm) key;
-			keyValues.put(name, get((QNm) name));
-		}
-		return keyValues;
-	}
-
-	@Override
 	public ItemType itemType() throws QueryException {
 		return RecordType.RECORD;
 	}

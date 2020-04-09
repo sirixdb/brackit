@@ -117,7 +117,7 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void forEachInRecordTest() throws IOException {
-    final var query = "let $json := {\"key\": 3, \"foo\": 0}\nfor $key in bit:fields($json)\n where $json=>$key = 3\n"
+    final var query = "let $json := {\"key\": 3, \"foo\": 0}\nfor $key in bit:fields($json)\n where $json=>$key eq 3\n"
         + "return { $key: $json=>$key }";
 
     try (final var out = new ByteArrayOutputStream()) {
@@ -129,7 +129,7 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void forEachInArrayTest() throws IOException {
-    final var query = "for $i in [{\"key\": 3}, {\"key\": 0}]\n" + "where $i=>key = 0\n"
+    final var query = "for $i in [{\"key\": 3}, {\"key\": 0}]\n" + "where $i=>key eq 0\n"
         + "return $i";
 
     try (final var out = new ByteArrayOutputStream()) {
@@ -260,7 +260,7 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void predicateClauseTest() throws IOException {
-    final var query = "{\"key\": 3, \"foo\": 0}[.=>key=3]";
+    final var query = "{\"key\": 3, \"foo\": 0}[.=>key eq 3]";
 
     try (final var out = new ByteArrayOutputStream()) {
       new XQuery(query).serialize(ctx, new PrintStream(out));
