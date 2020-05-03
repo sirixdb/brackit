@@ -48,7 +48,7 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void arrayForLoop1Test() throws IOException {
-    final var query = "let $values := [{\"key\": \"hey\"}, {\"key\": 0}]\n" + "for $i in $values\n" + "where $i=>key instance of xs:integer and $i=>key cast as xs:integer eq 0 \n return $i";
+    final var query = "let $values := [{\"key\": \"hey\"}, {\"key\": 0}]\n" + "for $i in $values\n" + "where $i=>key instance of xs:integer and $i=>key eq 0 \n return $i";
 
     try (final var out = new ByteArrayOutputStream()) {
       new XQuery(query).serialize(ctx, new PrintStream(out));
