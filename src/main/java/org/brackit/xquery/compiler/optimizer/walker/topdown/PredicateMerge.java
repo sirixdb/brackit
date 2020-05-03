@@ -50,8 +50,8 @@ public class PredicateMerge extends Walker {
 		while (out.getType() == Selection) {
 			AST predicate = select.getChild(0);
 			AST tmp = new AST(AndExpr);			
-			tmp.addChild(out.getChild(0));
 			tmp.addChild(predicate);
+			tmp.addChild(out.getChild(0));
 			out = out.getChild(1);
 			select.replaceChild(0, tmp);
 			select.replaceChild(1, out);

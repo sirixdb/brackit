@@ -45,6 +45,29 @@ import static org.junit.Assert.assertEquals;
  * @author Johannes Lichtenberger
  */
 public final class JsonTest extends XQueryBaseTest {
+
+  @Test
+  public void arrayForLoop1Test() throws IOException {
+    final var query = "let $values := [{\"key\": \"hey\"}, {\"key\": 0}]\n" + "for $i in $values\n" + "where $i=>key instance of xs:integer and $i=>key cast as xs:integer eq 0 \n return $i";
+
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("{\"key\":0}", content);
+    }
+  }
+
+  @Test
+  public void arrayForLoop2Test() throws IOException {
+    final var query = "let $values := [\"foo\",0,true(),jn:null()]\n" + "for $i in $values\n" + "return $i";
+
+    try (final var out = new ByteArrayOutputStream()) {
+      new XQuery(query).serialize(ctx, new PrintStream(out));
+      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
+      assertEquals("foo 0 true null", content);
+    }
+  }
+
   @Test
   public void arrayUnboxing1Test() throws IOException {
     final var query = "let $json := [\"Sunday\", \"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\"] return $json[[]]";
