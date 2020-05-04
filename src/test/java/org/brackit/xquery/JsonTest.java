@@ -28,7 +28,9 @@
 package org.brackit.xquery;
 
 import org.brackit.xquery.array.DArray;
-import org.brackit.xquery.atomic.*;
+import org.brackit.xquery.atomic.Int32;
+import org.brackit.xquery.atomic.Null;
+import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.record.ArrayRecord;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Sequence;
@@ -48,141 +50,93 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void arrayForLoop1Test() throws IOException {
-    final var query = "let $values := [{\"key\": \"hey\"}, {\"key\": 0}]\n" + "for $i in $values\n" + "where $i=>key instance of xs:integer and $i=>key eq 0 \n return $i";
-
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("{\"key\":0}", content);
-    }
+    final var query = "let $values := [{\"key\": \"hey\"}, {\"key\": 0}]\n" + "for $i in $values\n"
+        + "where $i=>key instance of xs:integer and $i=>key eq 0 \n return $i";
+    final var result = query(query);
+    assertEquals("{\"key\":0}", result);
   }
 
   @Test
   public void arrayForLoop2Test() throws IOException {
     final var query = "let $values := [\"foo\",0,true(),jn:null()]\n" + "for $i in $values\n" + "return $i";
-
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("foo 0 true null", content);
-    }
+    final var result = query(query);
+    assertEquals("foo 0 true null", result);
   }
 
   @Test
   public void arrayUnboxing1Test() throws IOException {
-    final var query = "let $json := [\"Sunday\", \"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\"] return $json[[]]";
-
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("Sunday Monday Tuesday Wednesday Thursday Friday Saturday", content);
-    }
+    final var query
+        = "let $json := [\"Sunday\", \"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\"] return $json[[]]";
+    final var result = query(query);
+    assertEquals("Sunday Monday Tuesday Wednesday Thursday Friday Saturday", result);
   }
 
   @Test
   public void arrayUnboxing2Test() throws IOException {
-    final var query = "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ],\n"
-        + "          [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]\n" + "        ]\n return $json[[]]";
-
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("[\"mercury\",\"venus\",\"earth\",\"mars\"][\"monday\",\"tuesday\",\"wednesday\",\"thursday\"]", content);
-    }
+    final var query
+        = "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ], [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]] return $json[[]]";
+    final var result = query(query);
+    assertEquals("[\"mercury\",\"venus\",\"earth\",\"mars\"][\"monday\",\"tuesday\",\"wednesday\",\"thursday\"]",
+        result);
   }
 
   @Test
   public void arraySizeTest() throws IOException {
     final var query = "let $json := [\"mercury\",\"venus\",\"earth\",\"mars\"]\n return bit:len($json)";
-
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("4", content);
-    }
+    final var result = query(query);
+    assertEquals("4", result);
   }
 
   @Test
   public void nestedArrayTest() throws IOException {
-    final var query = "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ],\n"
-        + "          [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]\n" + "        ]\n return $json[[0]]";
-
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("[\"mercury\",\"venus\",\"earth\",\"mars\"]", content);
-    }
+    final var query
+        = "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ], [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]] return $json[[0]]";
+    final var result = query(query);
+    assertEquals("[\"mercury\",\"venus\",\"earth\",\"mars\"]", result);
   }
 
   @Test
   public void comletelyNestedArrayTest() throws IOException {
-    final var query = "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ],\n"
-        + "          [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]\n" + "        ]\n return $json[[1]][[1]]";
-
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("tuesday", content);
-    }
+    final var query
+        = "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ], [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]] return $json[[1]][[1]]";
+    final var result = query(query);
+    assertEquals("tuesday", result);
   }
 
   @Test
   public void recordProjectionTest() throws IOException {
-    final var query = "let $json := {\"key\": 3, \"foo\": 0}\n"
-        + "return $json{key}";
-
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("{\"key\":3}", content);
-    }
+    final var query = "let $json := {\"key\": 3, \"foo\": 0} return $json{key}";
+    final var result = query(query);
+    assertEquals("{\"key\":3}", result);
   }
 
   @Test
   public void forEachInRecordTest() throws IOException {
-    final var query = "let $json := {\"key\": 3, \"foo\": 0}\nfor $key in bit:fields($json)\n where $json=>$key eq 3\n"
+    final var query = "let $json := {\"key\": 3, \"foo\": 0} for $key in bit:fields($json) where $json=>$key eq 3\n"
         + "return { $key: $json=>$key }";
-
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("{\"key\":3}", content);
-    }
+    final var result = query(query);
+    assertEquals("{\"key\":3}", result);
   }
 
   @Test
   public void forEachInArrayTest() throws IOException {
-    final var query = "for $i in [{\"key\": 3}, {\"key\": 0}]\n" + "where $i=>key eq 0\n"
-        + "return $i";
-
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("{\"key\":0}", content);
-    }
+    final var query = "for $i in [{\"key\": 3}, {\"key\": 0}] where $i=>key eq 0 return $i";
+    final var result = query(query);
+    assertEquals("{\"key\":0}", result);
   }
 
   @Test
   public void arrayTest() throws IOException {
     final var query = "[\"foo\",0,true(),jn:null()]";
-
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("[\"foo\",0,true,null]", content);
-    }
+    final var result = query(query);
+    assertEquals("[\"foo\",0,true,null]", result);
   }
 
   @Test
   public void arrayValuesTest() throws IOException {
-    final var query = "let $array := [\"foo\",0,true(),jn:null()]\nfor $i in $array\nreturn $i";
-    final var resultSequence = new XQuery(query).execute(ctx);
-    ResultChecker.check(new ItemSequence(new Str("foo"), new Int32(0), new Bool(true), new Null()), resultSequence);
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("foo 0 true null", content);
-    }
+    final var query = "let $array := [\"foo\",0,true(),jn:null()] for $i in $array return $i";
+    final var result = query(query);
+    assertEquals("foo 0 true null", result);
   }
 
   @Test
@@ -190,72 +144,55 @@ public final class JsonTest extends XQueryBaseTest {
     final var query = "{\"foo\":jn:null(),\"bar\":(1,2)}";
     final var resultSequence = new XQuery(query).execute(ctx);
     ResultChecker.check(new ItemSequence(new ArrayRecord(new QNm[] { new QNm("foo"), new QNm("bar") },
-        new Sequence[] { new Null(), new DArray(new Int32(1), new Int32(2)) } )), resultSequence);
+        new Sequence[] { new Null(), new DArray(new Int32(1), new Int32(2)) })), resultSequence);
   }
 
   @Test
   public void testObjects() throws IOException {
     final var query = "    let $object1 := { \"Captain\" : \"Kirk\" }\n"
         + "    let $object2 := { \"First officer\" : \"Spock\" }\n" + "    return ($object1, \" \", $object2)";
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("{\"Captain\":\"Kirk\"} {\"First officer\":\"Spock\"}", content);
-    }
+    final var result = query(query);
+    assertEquals("{\"Captain\":\"Kirk\"} {\"First officer\":\"Spock\"}", result);
   }
 
   @Test
   public void testComposeObjects1() throws IOException {
     final var query = "    let $object1 := { \"Captain\" : \"Kirk\" }\n"
-        + "    let $object2 := { \"First officer\" : \"Spock\" }\n" + "    return {| { \"foobar\": $object1 }, $object2 |}";
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("{\"foobar\":{\"Captain\":\"Kirk\"},\"First officer\":\"Spock\"}", content);
-    }
+        + "    let $object2 := { \"First officer\" : \"Spock\" }\n"
+        + "    return {| { \"foobar\": $object1 }, $object2 |}";
+    final var result = query(query);
+    assertEquals("{\"foobar\":{\"Captain\":\"Kirk\"},\"First officer\":\"Spock\"}", result);
   }
 
   @Test
   public void testComposeObjects2() throws IOException {
-    final var query = "    let $object1 := { \"Captain\" : \"Kirk\" }\n"
-        + "    let $object2 := { \"First officer\" : \"Spock\" }\n" + "    return {{ \"foobar\": $object1 }, $object2 }";
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("{\"foobar\":{\"Captain\":\"Kirk\"},\"First officer\":\"Spock\"}", content);
-    }
+    final var query = "let $object1 := { \"Captain\" : \"Kirk\" }\n"
+        + "let $object2 := { \"First officer\" : \"Spock\" }\n" + "return {{ \"foobar\": $object1 }, $object2 }";
+    final var result = query(query);
+    assertEquals("{\"foobar\":{\"Captain\":\"Kirk\"},\"First officer\":\"Spock\"}", result);
   }
 
   @Test
   public void testComposeObjects3() throws IOException {
     final var query = "let $r := { \"x\":1, \"y\":2 } return {| $r, { \"z\":3 } |}";
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("{\"x\":1,\"y\":2,\"z\":3}", content);
-    }
+    final var result = query(query);
+    assertEquals("{\"x\":1,\"y\":2,\"z\":3}", result);
   }
 
   @Test
   public void testComposeObjects4() throws IOException {
-    final var query = "          let $object1 := { \"Captain\" : \"Kirk\" }\n"
-        + "          let $object2 := { \"First officer\" : \"Spock\" }\n" + "          return {| $object1, $object2 |}";
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("{\"Captain\":\"Kirk\",\"First officer\":\"Spock\"}", content);
-    }
+    final var query = "let $object1 := { \"Captain\" : \"Kirk\" }\n"
+        + "let $object2 := { \"First officer\" : \"Spock\" }\n" + "return {| $object1, $object2 |}";
+    final var result = query(query);
+    assertEquals("{\"Captain\":\"Kirk\",\"First officer\":\"Spock\"}", result);
   }
 
   @Test
   public void testComposeObjects5() throws IOException {
-    final var query = "          let $object1 := { \"Captain\" : \"Kirk\" }\n"
-        + "          let $object2 := { \"First officer\" : \"Spock\" }\n" + "          return { $object1, $object2 }";
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("{\"Captain\":\"Kirk\",\"First officer\":\"Spock\"}", content);
-    }
+    final var query
+        = "let $object1 := { \"Captain\" : \"Kirk\" } let $object2 := { \"First officer\" : \"Spock\" } return { $object1, $object2 }";
+    final var result = query(query);
+    assertEquals("{\"Captain\":\"Kirk\",\"First officer\":\"Spock\"}", result);
   }
 
   @Test
@@ -263,65 +200,55 @@ public final class JsonTest extends XQueryBaseTest {
     final var query = "let $x := { \"eyes\": \"blue\", \"hair\": \"fuchsia\" }\n"
         + "        let $y := { \"eyes\": \"brown\", \"hair\": \"brown\" }\n"
         + "        return { \"eyes\": $x=>eyes, \"hair\": $y=>hair }";
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("{\"eyes\":\"blue\",\"hair\":\"brown\"}", content);
-    }
+    final var result = query(query);
+    assertEquals("{\"eyes\":\"blue\",\"hair\":\"brown\"}", result);
   }
 
   @Test
   public void testGetAllKeys() throws IOException {
-    final var query = "let $seq := (\"foo\", [ 1, 2, 3 ], { \"a\" : 1, \"b\" : 2 }, { \"a\" : 3, \"c\" : 4 })\n"
-        + "          return jn:keys($seq)";
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("a b c", content);
-    }
+    final var query
+        = "let $seq := (\"foo\", [ 1, 2, 3 ], { \"a\" : 1, \"b\" : 2 }, { \"a\" : 3, \"c\" : 4 }) return jn:keys($seq)";
+    final var result = query(query);
+    assertEquals("a b c", result);
   }
 
   @Test
   public void predicateClauseTest() throws IOException {
     final var query = "{\"key\": 3, \"foo\": 0}[.=>key eq 3]";
-
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("{\"key\":3,\"foo\":0}", content);
-    }
+    final var result = query(query);
+    assertEquals("{\"key\":3,\"foo\":0}", result);
   }
 
   @Test
   public void dynamicPairsTest1() throws IOException {
-    final var query = "{ for $d at $i in (\"Sunday\", \"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\" ) return { $d : $i } }";
-
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("{\"Sunday\":1,\"Monday\":2,\"Tuesday\":3,\"Wednesday\":4,\"Thursday\":5,\"Friday\":6,\"Saturday\":7}", content);
-    }
+    final var query
+        = "{ for $d at $i in (\"Sunday\", \"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\" ) return { $d : $i } }";
+    final var result = query(query);
+    assertEquals("{\"Sunday\":1,\"Monday\":2,\"Tuesday\":3,\"Wednesday\":4,\"Thursday\":5,\"Friday\":6,\"Saturday\":7}",
+        result);
   }
 
   @Test
   public void dynamicPairsTest2() throws IOException {
     final var query = "{| for $i in 1 to 10 return { concat(\"Square of \", $i) : $i * $i } |}";
-
-    try (final var out = new ByteArrayOutputStream()) {
-      new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("{\"Square of 1\":1,\"Square of 2\":4,\"Square of 3\":9,\"Square of 4\":16,\"Square of 5\":25,\"Square of 6\":36,\"Square of 7\":49,\"Square of 8\":64,\"Square of 9\":81,\"Square of 10\":100}", content);
-    }
+    final var result = query(query);
+    assertEquals(
+        "{\"Square of 1\":1,\"Square of 2\":4,\"Square of 3\":9,\"Square of 4\":16,\"Square of 5\":25,\"Square of 6\":36,\"Square of 7\":49,\"Square of 8\":64,\"Square of 9\":81,\"Square of 10\":100}",
+        result);
   }
 
   @Test
   public void dynamicPairsTest3() throws IOException {
     final var query = "let $a := ({\"height\": 5.2}, {\"eyes\": \"blue\"}) return {| $a |}";
+    final var result = query(query);
+    assertEquals("{\"height\":5.2,\"eyes\":\"blue\"}", result);
+  }
 
+  private String query(final String query) throws IOException {
     try (final var out = new ByteArrayOutputStream()) {
       new XQuery(query).serialize(ctx, new PrintStream(out));
       final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      assertEquals("{\"height\":5.2,\"eyes\":\"blue\"}", content);
+      return content;
     }
   }
 }
