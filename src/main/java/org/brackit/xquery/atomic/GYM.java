@@ -51,8 +51,8 @@ public class GYM extends AbstractTimeInstant {
 	}
 
 	public GYM(String str) throws QueryException {
-		short year = 0;
-		byte month = 0;
+		short year;
+		byte month;
 		DTD timezone = null;
 
 		str = Whitespace.collapseTrimOnly(str);

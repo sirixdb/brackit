@@ -48,8 +48,7 @@ public class GYE extends AbstractTimeInstant {
 	}
 
 	public GYE(String str) throws QueryException {
-		short year = 0;
-		byte month = 0;
+		short year;
 		DTD timezone = null;
 
 		str = Whitespace.collapseTrimOnly(str);

@@ -42,7 +42,7 @@ import org.brackit.xquery.xdm.Type;
 public class Dec extends AbstractNumeric implements DecNumeric {
   private final BigDecimal v;
 
-  private class DDec extends Dec {
+  private static class DDec extends Dec {
     private final Type type;
 
     public DDec(BigDecimal v, Type type) {
@@ -80,7 +80,6 @@ public class Dec extends AbstractNumeric implements DecNumeric {
   @Override
   public IntNumeric asIntNumeric() {
     try {
-      v.toBigIntegerExact();
       return new Int(v);
     } catch (ArithmeticException e) {
       return null;
@@ -129,11 +128,11 @@ public class Dec extends AbstractNumeric implements DecNumeric {
         : killTrailingZeros(s);
   }
 
-  public static void main(String[] args) throws Exception {
+  public static void main(String[] args) {
     System.out.println(new Dec(
         "0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001").toString());
 
-    System.out.println(new Dec(new BigDecimal(-0.0d)).toString());
+    System.out.println(new Dec(BigDecimal.valueOf(-0.0d)).toString());
     System.out.println(new Dec("-2300.44004000"));
     System.out.println(new Dec("40"));
     System.out.println(new Dec("40.0"));
@@ -216,7 +215,7 @@ public class Dec extends AbstractNumeric implements DecNumeric {
   @Override
   public Numeric idiv(Numeric other) throws QueryException {
     if (other instanceof DecNumeric) {
-      return idivideBigDecimal(v, other.decimalValue(), true);
+      return idivideBigDecimal(v, other.decimalValue());
     } else if (other instanceof DblNumeric) {
       return idivideDouble(v.doubleValue(), other.doubleValue());
     } else {
@@ -227,7 +226,7 @@ public class Dec extends AbstractNumeric implements DecNumeric {
   @Override
   public Numeric mod(Numeric other) throws QueryException {
     if (other instanceof DecNumeric) {
-      return modBigDecimal(v, other.decimalValue(), true);
+      return modBigDecimal(v, other.decimalValue());
     } else if (other instanceof DblNumeric) {
       return modDouble(v.doubleValue(), other.doubleValue());
     } else {
@@ -267,7 +266,7 @@ public class Dec extends AbstractNumeric implements DecNumeric {
   @Override
   public Numeric roundHalfToEven(int precision) throws QueryException {
     BigDecimal bd = v.scaleByPowerOfTen(precision);
-    bd = bd.setScale(0, BigDecimal.ROUND_HALF_EVEN);
+    bd = bd.setScale(0, RoundingMode.HALF_EVEN);
     return new Dec(bd.scaleByPowerOfTen(-precision));
   }
 }

@@ -123,16 +123,12 @@ public class Hex extends AbstractAtomic {
   @Override
   public String stringValue() {
     StringBuilder out = new StringBuilder();
-    for (int i = 0; i < bytes.length; i++) {
-      int v = bytes[i] & 255;
+    for (byte aByte : bytes) {
+      int v = aByte & 255;
       int v1 = v >>> 4;
       int v2 = v & 15;
-      char c1 = (char) (v1 < 10
-          ? v1 + 48
-          : v1 + 55);
-      char c2 = (char) (v2 < 10
-          ? v2 + 48
-          : v2 + 55);
+      char c1 = (char) (v1 < 10 ? v1 + 48 : v1 + 55);
+      char c2 = (char) (v2 < 10 ? v2 + 48 : v2 + 55);
       out.append(c1);
       out.append(c2);
     }

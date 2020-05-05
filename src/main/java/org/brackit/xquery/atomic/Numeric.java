@@ -41,41 +41,41 @@ import org.brackit.xquery.QueryException;
  * 
  */
 public interface Numeric extends Atomic {
-	public double doubleValue();
+	double doubleValue();
 
-	public float floatValue();
+	float floatValue();
 
-	public BigDecimal integerValue();
+	BigDecimal integerValue();
 
-	public BigDecimal decimalValue();
+	BigDecimal decimalValue();
 
-	public long longValue();
+	long longValue();
 
-	public int intValue();
+	int intValue();
 	
-	public IntNumeric asIntNumeric();
+	IntNumeric asIntNumeric();
 
-	public Numeric add(Numeric other) throws QueryException;
+	Numeric add(Numeric other) throws QueryException;
 
-	public Numeric subtract(Numeric other) throws QueryException;
+	Numeric subtract(Numeric other) throws QueryException;
 
-	public Numeric multiply(Numeric other) throws QueryException;
+	Numeric multiply(Numeric other) throws QueryException;
 
-	public Numeric div(Numeric other) throws QueryException;
+	Numeric div(Numeric other) throws QueryException;
 
-	public Numeric idiv(Numeric other) throws QueryException;
+	Numeric idiv(Numeric other) throws QueryException;
 
-	public Numeric mod(Numeric other) throws QueryException;
+	Numeric mod(Numeric other) throws QueryException;
 
-	public Numeric negate() throws QueryException;
+	Numeric negate() throws QueryException;
 
-	public Numeric round() throws QueryException;
+	Numeric round() throws QueryException;
 
-	public Numeric abs() throws QueryException;
+	Numeric abs() throws QueryException;
 
-	public Numeric floor() throws QueryException;
+	Numeric floor() throws QueryException;
 
-	public Numeric ceiling() throws QueryException;
+	Numeric ceiling() throws QueryException;
 
-	public Numeric roundHalfToEven(int precision) throws QueryException;
+	Numeric roundHalfToEven(int precision) throws QueryException;
 }

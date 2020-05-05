@@ -33,17 +33,17 @@ package org.brackit.xquery.atomic;
  * 
  */
 public interface Duration {
-	public short getYears();
+	short getYears();
 
-	public byte getMonths();
+	byte getMonths();
 
-	public short getDays();
+	short getDays();
 
-	public byte getHours();
+	byte getHours();
 
-	public byte getMinutes();
+	byte getMinutes();
 
-	public int getMicros();
+	int getMicros();
 
-	public boolean isNegative();
+	boolean isNegative();
 }

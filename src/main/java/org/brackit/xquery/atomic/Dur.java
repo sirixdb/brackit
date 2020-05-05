@@ -289,7 +289,7 @@ public class Dur extends AbstractDuration {
               micros += v;
             }
             sectionTerminator = (pos < length)
-                ? charArray[pos++]
+                ? charArray[pos]
                 : -1;
           } else {
             sectionTerminator = 'X';

@@ -80,7 +80,7 @@ public class B64 extends AbstractAtomic {
         bytes[size++] = (byte) b64(str, c4);
       } else {
         if (c3 != '=') {
-          bytes[size++] = (byte) b16(str, c3);
+          bytes[size] = (byte) b16(str, c3);
         }
 
         if (charPos != length) {
@@ -220,17 +220,9 @@ public class B64 extends AbstractAtomic {
   @Override
   public String stringValue() {
     StringBuilder out = new StringBuilder();
-    for (int i = 0; i < bytes.length; i++) {
-      int v = bytes[i] & 255;
-      char c = (char) (v < 26
-          ? v + 65
-          : v < 52
-              ? v - 26 + 87
-              : v < 62
-                  ? v - 52 + 48
-                  : v == 62
-                      ? '+'
-                      : '/');
+    for (byte aByte : bytes) {
+      int v = aByte & 255;
+      char c = (char) (v < 26 ? v + 65 : v < 52 ? v - 26 + 87 : v < 62 ? v - 52 + 48 : v == 62 ? '+' : '/');
       out.append(c);
     }
     return out.toString();

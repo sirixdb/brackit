@@ -58,9 +58,9 @@ public class Time extends AbstractTimeInstant {
 	}
 
 	public Time(String str) throws QueryException {
-		byte hour = 0;
-		byte minute = 0;
-		int micros = 0;
+		byte hour;
+		byte minute;
+		int micros;
 		DTD timezone = null;
 
 		str = Whitespace.collapseTrimOnly(str);
@@ -205,9 +205,8 @@ public class Time extends AbstractTimeInstant {
 
 		int seconds = micros / 1000000;
 		int remainder = (micros - (seconds * 1000000));
-		String sTmp = ((seconds < 10) ? "0" : "") + String.valueOf(seconds);
+		String sTmp = ((seconds < 10) ? "0" : "") + seconds;
 		if (remainder != 0) {
-			int cut = 1;
 			while ((remainder / 10) == 0)
 				remainder /= 10; // cut trailing zeros
 			sTmp += ":" + remainder;

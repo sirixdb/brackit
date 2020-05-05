@@ -35,19 +35,19 @@ import org.brackit.xquery.QueryException;
  * 
  */
 public interface TimeInstant extends Atomic {
-	public short getYear();
+	short getYear();
 
-	public byte getMonth();
+	byte getMonth();
 
-	public byte getDay();
+	byte getDay();
 
-	public byte getHours();
+	byte getHours();
 
-	public byte getMinutes();
+	byte getMinutes();
 
-	public int getMicros();
+	int getMicros();
 
-	public DTD getTimezone();
+	DTD getTimezone();
 
-	public TimeInstant canonicalize() throws QueryException;
+	TimeInstant canonicalize() throws QueryException;
 }

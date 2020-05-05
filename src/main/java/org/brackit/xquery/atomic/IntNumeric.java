@@ -33,5 +33,5 @@ package org.brackit.xquery.atomic;
  * 
  */
 public interface IntNumeric extends DecNumeric {
-	public IntNumeric inc();
+	IntNumeric inc();
 }

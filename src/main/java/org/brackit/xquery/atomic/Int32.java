@@ -60,7 +60,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
 
   private final int v;
 
-  private class DInt32 extends Int32 {
+  private static class DInt32 extends Int32 {
     private final Type type;
 
     public DInt32(int v, Type type) {
@@ -151,11 +151,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
   @Override
   public int cmp(Atomic other) throws QueryException {
     if (other instanceof Int32) {
-      return (v < ((Int32) other).v)
-          ? -1
-          : (v == ((Int32) other).v)
-              ? 0
-              : 1;
+      return Integer.compare(v, ((Int32) other).v);
     }
     if (other instanceof Numeric) {
       return -other.cmp(this);
@@ -167,11 +163,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
   @Override
   public int atomicCmpInternal(Atomic other) {
     if (other instanceof Int32) {
-      return (v < ((Int32) other).v)
-          ? -1
-          : (v == ((Int32) other).v)
-              ? 0
-              : 1;
+      return Integer.compare(v, ((Int32) other).v);
     }
     return -((AbstractNumeric) other).atomicCmpInternal(this);
   }
@@ -298,7 +290,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
       }
       return other.add(this);
     } else if (other instanceof DecNumeric) {
-      return idivideBigDecimal(new BigDecimal(v), other.decimalValue(), false);
+      return idivideBigDecimal(new BigDecimal(v), other.decimalValue());
     } else if (other instanceof Dbl) {
       return idivideDouble(v, other.doubleValue());
     } else {
@@ -317,7 +309,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
       }
       return other.add(this);
     } else if (other instanceof DecNumeric) {
-      return modBigDecimal(new BigDecimal(v), other.decimalValue(), false);
+      return modBigDecimal(new BigDecimal(v), other.decimalValue());
     } else if (other instanceof Dbl) {
       return modDouble(v, other.doubleValue());
     } else {

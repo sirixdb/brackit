@@ -48,7 +48,7 @@ public class GMon extends AbstractTimeInstant {
 	}
 
 	public GMon(String str) throws QueryException {
-		byte month = 0;
+		byte month;
 		DTD timezone = null;
 
 		str = Whitespace.collapseTrimOnly(str);

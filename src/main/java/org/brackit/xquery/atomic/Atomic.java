@@ -60,7 +60,7 @@ public interface Atomic extends Item, Comparable<Atomic> {
 	 *
 	 * @return the {@link Type} of this value
 	 */
-	public Type type();
+	Type type();
 
 	/**
 	 * Compares this atomic with the given one. Numeric types are expected to
@@ -75,7 +75,7 @@ public interface Atomic extends Item, Comparable<Atomic> {
 	 * If two Atomics are of a different, incomparable type, an exception with
 	 * error code {@link ErrorCode#ERR_TYPE_INAPPROPRIATE_TYPE} must be thrown.
 	 */
-	public int cmp(Atomic atomic) throws QueryException;
+	int cmp(Atomic atomic) throws QueryException;
 
 	/**
 	 * Compares this atomic with the given one. Numeric types are expected to
@@ -90,7 +90,7 @@ public interface Atomic extends Item, Comparable<Atomic> {
 	 * If two Atomics are of a different, incomparable type, an exception with
 	 * error code {@link ErrorCode#ERR_TYPE_INAPPROPRIATE_TYPE} must be thrown.
 	 */
-	public boolean eq(Atomic atomic) throws QueryException;
+	boolean eq(Atomic atomic) throws QueryException;
 
 	/**
 	 * Compares this atomic with the given one. This order is defined to be
@@ -112,39 +112,39 @@ public interface Atomic extends Item, Comparable<Atomic> {
 	 *
 	 * The result is defined as in {@link Comparable#compareTo(Object)}.
 	 */
-	public int atomicCmp(Atomic atomic);
+	int atomicCmp(Atomic atomic);
 
 	/**
 	 * Shortcut that returns the atomic code {@link Type#atomicCode()} of this
 	 * value.
 	 */
-	public int atomicCode();
+	int atomicCode();
 
 	/**
 	 * Returns the string value of this item.
 	 *
 	 * @see http://www.w3.org/TR/xquery-operators/#func-string
 	 */
-	public String stringValue();
+	String stringValue();
 
 	/**
 	 * Returns the string value of this item.
 	 *
 	 * @see http://www.w3.org/TR/xquery-operators/#func-string
 	 */
-	public Str asStr();
+	Str asStr();
 
 	/**
 	 * Returns the string value of this item as untyped atomic.
 	 *
 	 * @see http://www.w3.org/TR/xquery-operators/#func-string
 	 */
-	public Una asUna();
+	Una asUna();
 
 	/**
 	 * Returns a copy of this value of the given type. The value must be in the
 	 * value space of the target type and must not violate facets of the given
 	 * type if any.
 	 */
-	public Atomic asType(Type type) throws QueryException;
+	Atomic asType(Type type) throws QueryException;
 }

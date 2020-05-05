@@ -48,7 +48,7 @@ public class Int64 extends AbstractNumeric implements LonNumeric {
 
   private final long v;
 
-  private class DInt64 extends Int64 {
+  private static class DInt64 extends Int64 {
     private final Type type;
 
     public DInt64(long v, Type type) {
@@ -102,11 +102,7 @@ public class Int64 extends AbstractNumeric implements LonNumeric {
     if ((other instanceof IntNumeric)) {
       if (other instanceof LonNumeric) {
         long v2 = ((LonNumeric) other).longValue();
-        return (v < v2)
-            ? -1
-            : (v == v2)
-                ? 0
-                : 1;
+        return Long.compare(v, v2);
       }
       return -other.cmp(this);
     } else if (other instanceof DecNumeric) {
@@ -125,11 +121,7 @@ public class Int64 extends AbstractNumeric implements LonNumeric {
     if ((other instanceof IntNumeric)) {
       if (other instanceof LonNumeric) {
         long v2 = ((LonNumeric) other).longValue();
-        return (v < v2)
-            ? -1
-            : (v == v2)
-                ? 0
-                : 1;
+        return Long.compare(v, v2);
       }
       return -((AbstractNumeric) other).atomicCmpInternal(this);
     } else if (other instanceof DecNumeric) {
@@ -248,7 +240,7 @@ public class Int64 extends AbstractNumeric implements LonNumeric {
       }
       return other.add(this);
     } else if (other instanceof DecNumeric) {
-      return idivideBigDecimal(new BigDecimal(v), other.decimalValue(), false);
+      return idivideBigDecimal(new BigDecimal(v), other.decimalValue());
     } else if (other instanceof Dbl) {
       return idivideDouble(v, other.doubleValue());
     } else {
@@ -264,7 +256,7 @@ public class Int64 extends AbstractNumeric implements LonNumeric {
       }
       return other.add(this);
     } else if (other instanceof DecNumeric) {
-      return modBigDecimal(new BigDecimal(v), other.decimalValue(), false);
+      return modBigDecimal(new BigDecimal(v), other.decimalValue());
     } else if (other instanceof Dbl) {
       return modDouble(v, other.doubleValue());
     } else {

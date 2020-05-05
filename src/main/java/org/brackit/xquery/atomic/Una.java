@@ -41,7 +41,7 @@ public class Una extends AbstractAtomic {
 
   public final String str;
 
-  private class DUna extends Una {
+  private static class DUna extends Una {
     private final Type type;
 
     public DUna(String str, Type type) {

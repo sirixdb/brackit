@@ -38,15 +38,14 @@
 package org.brackit.xquery.atomic;
 
 import java.math.BigDecimal;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Type;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class YMD extends AbstractDuration {
   private final short years;
@@ -55,7 +54,7 @@ public class YMD extends AbstractDuration {
 
   // used to indicate negative duration
 
-  private class DYMDur extends YMD {
+  private static class DYMDur extends YMD {
     private final Type type;
 
     public DYMDur(boolean negative, short year, byte month, Type type) {
@@ -71,9 +70,7 @@ public class YMD extends AbstractDuration {
 
   public YMD(boolean negative, short years, byte months) {
     this.years = years;
-    this.months = (!negative)
-        ? months
-        : (byte) (months | 0x80);
+    this.months = (!negative) ? months : (byte) (months | 0x80);
   }
 
   public YMD(String str) throws QueryException {
@@ -102,12 +99,8 @@ public class YMD extends AbstractDuration {
     while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
       pos++;
     int end = pos;
-    int sectionTerminator = (pos < length)
-        ? charArray[pos++]
-        : -1;
-    int v = (start != end)
-        ? Integer.parseInt(str.substring(start, end))
-        : -1; // parse leading value
+    int sectionTerminator = (pos < length) ? charArray[pos++] : -1;
+    int v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1; // parse leading value
 
     if (sectionTerminator == 'Y') {
       if (v > Short.MAX_VALUE) {
@@ -121,12 +114,8 @@ public class YMD extends AbstractDuration {
       while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
         pos++;
       end = pos;
-      sectionTerminator = (pos < length)
-          ? charArray[pos++]
-          : -1;
-      v = (start != end)
-          ? Integer.parseInt(str.substring(start, end))
-          : -1;
+      sectionTerminator = (pos < length) ? charArray[pos++] : -1;
+      v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1;
     }
 
     if ((sectionTerminator == 'M') && (v > -1)) {
@@ -141,13 +130,9 @@ public class YMD extends AbstractDuration {
       months |= v;
       years = (short) newYears;
 
-      start = pos;
       while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
         pos++;
-      end = pos;
-      sectionTerminator = (pos < length)
-          ? charArray[pos++]
-          : -1;
+      sectionTerminator = (pos < length) ? charArray[pos] : -1;
     }
 
     if (sectionTerminator != -1) {
@@ -155,9 +140,7 @@ public class YMD extends AbstractDuration {
     }
 
     this.years = years;
-    this.months = (!negative)
-        ? months
-        : (byte) (months | 0x80);
+    this.months = (!negative) ? months : (byte) (months | 0x80);
   }
 
   @Override
@@ -191,9 +174,7 @@ public class YMD extends AbstractDuration {
     int sign = months & 0x80;
     int oSign = other.months & 0x80;
     if (sign != oSign) {
-      return (sign < oSign)
-          ? -1
-          : 1;
+      return (sign < oSign) ? -1 : 1;
     }
     int res = (years - other.years);
     if (res != 0) {

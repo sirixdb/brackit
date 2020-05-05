@@ -28,6 +28,8 @@
 package org.brackit.xquery.atomic;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
@@ -47,7 +49,7 @@ public class Dbl extends AbstractNumeric implements DblNumeric {
 
   public double v;
 
-  private class DDbl extends Dbl {
+  private static class DDbl extends Dbl {
     private final Type type;
 
     public DDbl(double v, Type type) {
@@ -79,17 +81,21 @@ public class Dbl extends AbstractNumeric implements DblNumeric {
       str = Whitespace.collapseTrimOnly(str);
       parsed1 = Double.parseDouble(str);
     } catch (NumberFormatException e) {
-      if (str.equals("INF")) {
-        parsed1 = Double.POSITIVE_INFINITY;
-      } else if (str.equals("-INF")) {
-        parsed1 = Double.NEGATIVE_INFINITY;
-      } else if (str.equals("NaN")) {
-        parsed1 = Double.NaN;
+      switch (str) {
+        case "INF":
+          parsed1 = Double.POSITIVE_INFINITY;
+          break;
+        case "-INF":
+          parsed1 = Double.NEGATIVE_INFINITY;
+          break;
+        case "NaN":
+          parsed1 = Double.NaN;
+          break;
+        default:
+          throw new QueryException(e, ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast %s to xs:double", str);
       }
-      throw new QueryException(e, ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast %s to xs:double", str);
     }
-    double parsed = parsed1;
-    this.v = parsed;
+    this.v = parsed1;
   }
 
   public static Dbl parse(String str) throws QueryException {
@@ -178,7 +184,7 @@ public class Dbl extends AbstractNumeric implements DblNumeric {
 
   @Override
   public BigDecimal integerValue() {
-    return new BigDecimal(Math.floor(v));
+    return BigDecimal.valueOf(Math.floor(v));
   }
 
   @Override
@@ -276,7 +282,7 @@ public class Dbl extends AbstractNumeric implements DblNumeric {
     if (Double.isInfinite(scaled)) {
       BigDecimal bd = new BigDecimal(v);
       bd = bd.scaleByPowerOfTen(precision);
-      bd = bd.setScale(0, BigDecimal.ROUND_HALF_EVEN);
+      bd = bd.setScale(0, RoundingMode.HALF_EVEN);
       bd = bd.scaleByPowerOfTen(-precision);
       return new Dbl(bd.doubleValue());
     }

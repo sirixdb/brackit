@@ -204,7 +204,7 @@ public class Int extends AbstractNumeric implements IntNumeric {
   @Override
   public Numeric idiv(Numeric other) throws QueryException {
     if (other instanceof DecNumeric) {
-      return idivideBigDecimal(v, other.decimalValue(), false);
+      return idivideBigDecimal(v, other.decimalValue());
     } else if (other instanceof DblNumeric) {
       return idivideDouble(v.doubleValue(), other.doubleValue());
     } else {
@@ -215,7 +215,7 @@ public class Int extends AbstractNumeric implements IntNumeric {
   @Override
   public Numeric mod(Numeric other) throws QueryException {
     if (other instanceof DecNumeric) {
-      return modBigDecimal(v, other.decimalValue(), false);
+      return modBigDecimal(v, other.decimalValue());
     } else if (other instanceof DblNumeric) {
       return modDouble(v.doubleValue(), other.doubleValue());
     } else {

@@ -79,7 +79,7 @@ public class AnyURI extends AbstractAtomic {
   }
 
   public static boolean isValid(String str) {
-    if ((str == null) && ((str = Whitespace.collapse(str)).isEmpty())) {
+    if (str == null || ((str = Whitespace.collapse(str)).isEmpty())) {
       return false;
     }
     try {

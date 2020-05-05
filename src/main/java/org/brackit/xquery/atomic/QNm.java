@@ -41,7 +41,7 @@ public class QNm extends AbstractAtomic {
   private final String prefix; // must be "" if not set
   private final String localName;
 
-  private class DQnm extends QNm {
+  private static class DQnm extends QNm {
     private final Type type;
 
     public DQnm(String nsURI, String prefix, String localName, Type type) {
@@ -83,9 +83,7 @@ public class QNm extends AbstractAtomic {
     this.nsURI = (nsURI == null)
         ? ""
         : nsURI;
-    this.localName = (string == null)
-        ? ""
-        : string;
+    this.localName = string;
   }
 
   public QNm(String string) {

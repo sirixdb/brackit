@@ -51,8 +51,8 @@ public class GMD extends AbstractTimeInstant {
 	}
 
 	public GMD(String str) throws QueryException {
-		byte month = 0;
-		byte day = 0;
+		byte month;
+		byte day;
 		DTD timezone = null;
 
 		str = Whitespace.collapseTrimOnly(str);

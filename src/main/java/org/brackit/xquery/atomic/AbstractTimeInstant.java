@@ -282,7 +282,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
     }
 
     short days = 0;
-    int hours = 0;
+    int hours;
     int ehour = b.getHours() + carry;
     int eyear = b.getYear();
     int emonth = b.getMonth();

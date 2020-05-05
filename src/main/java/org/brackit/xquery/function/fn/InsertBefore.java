@@ -91,8 +91,8 @@ public class InsertBefore extends AbstractFunction {
 							itIns = ins.iterate();
 						}
 
-						Item nextSeq = null;
-						Item nextIns = null;
+						Item nextSeq;
+						Item nextIns;
 
 						if (next.cmp(p) < 0) {
 							if ((nextSeq = itSeq.next()) != null) {
@@ -120,7 +120,7 @@ public class InsertBefore extends AbstractFunction {
 						itIns.close();
 					}
 				};
-			};
+			}
 		};
 	}
 

@@ -51,9 +51,9 @@ public class Date extends AbstractTimeInstant {
 	}
 
 	public Date(String str) throws QueryException {
-		short year = 0;
-		byte month = 0;
-		byte day = 0;
+		short year;
+		byte month;
+		byte day;
 		DTD timezone = null;
 
 		str = Whitespace.collapseTrimOnly(str);

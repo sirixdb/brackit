@@ -60,8 +60,8 @@ public class Counter {
 	public int cmp(IntNumeric i) {
 		if (bdv == null) {
 			if (i instanceof LonNumeric) {
-				long ov = ((LonNumeric) i).longValue();
-				return (lv < ov) ? -1 : (lv == ov) ? 0 : 1;
+				long ov = i.longValue();
+				return Long.compare(lv, ov);
 			}
 			return new BigDecimal(lv).compareTo(i.integerValue());
 		}

@@ -48,8 +48,7 @@ public class GDay extends AbstractTimeInstant {
 	}
 
 	public GDay(String str) throws QueryException {
-		byte month = 0;
-		byte day = 0;
+		byte day;
 		DTD timezone = null;
 
 		str = Whitespace.collapseTrimOnly(str);

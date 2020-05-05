@@ -245,7 +245,6 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 		if (b == 0) {
 			throw new QueryException(ErrorCode.ERR_DIVISION_BY_ZERO);
 		}
-		int r = a / b;
 		if (a % b == 0) {
 			return new Int32(a / b);
 		}
@@ -257,7 +256,6 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 		if (b == 0) {
 			throw new QueryException(ErrorCode.ERR_DIVISION_BY_ZERO);
 		}
-		long r = a / b;
 		if (a % b == 0) {
 			return new Int64(a / b);
 		}
@@ -317,8 +315,7 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 		return new Int64(a / b);
 	}
 
-	protected final Numeric idivideBigDecimal(BigDecimal a, BigDecimal b,
-			boolean isDecimal) throws QueryException {
+	protected final Numeric idivideBigDecimal(BigDecimal a, BigDecimal b) throws QueryException {
 		if (b.compareTo(BigDecimal.ZERO) == 0) {
 			throw new QueryException(ErrorCode.ERR_DIVISION_BY_ZERO);
 		}
@@ -348,8 +345,7 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 		return new Int64(a % b);
 	}
 
-	protected final Numeric modBigDecimal(BigDecimal a, BigDecimal b,
-			boolean isDecimal) throws QueryException {
+	protected final Numeric modBigDecimal(BigDecimal a, BigDecimal b) throws QueryException {
 		if (b.compareTo(BigDecimal.ZERO) == 0) {
 			throw new QueryException(ErrorCode.ERR_DIVISION_BY_ZERO);
 		}
