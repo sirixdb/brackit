@@ -131,7 +131,7 @@ Arrays can be created using an extended version of the standard JSON array synta
 (: for compliance with the JSON syntax the tokens 'true', 'false', and 'null'
    are translated into the XML values xs:bool('true'), xs:bool('false') and empty-sequence()
 :)
-[ true, false, null ]
+[ true(), false(), jn:null() ]
 
 (: is different to :)
 [ (true), (false), (null) ]
@@ -172,30 +172,30 @@ Records provide an alternative to XML to represent structured data. Like with ar
 (: field names are modelled as xs:QName and may be set in double quotes,
    single quotes or completely without quotes.
 :)
-{ a : 1, 'b' : 2, "c" : 3 }
+{ 'b' : 2, "c" : 3 }
 
 (: field values may be arbitrary expressions:)
-{ a : concat('f', 'oo') , 'b' : 1+1, c : [1,2,3] } (: yields {a : "foo", b : 2, c : [1,2,3]} :)
+{ "a" : concat('f', 'oo') , 'b' : 1+1, "c" : [1,2,3] } (: yields {"a":"foo","b":2,"c":[1,2,3]} :)
 
 (: field values are defined by key-value pairs or by an expression
    that evaluates to a record
 :)
-let $r := { x:1, y:2 } return { $r, z:3} (: yields {x : 1, y : 2, z : 3} :)
+let $r := { "x":1, "y":2 } return { $r, "z":3} (: yields {"x":1,"y":2,"z":3} :)
 
 (: fields may be selectively projected into a new record :)
-{x : 1, y : 2, z : 3}{z,y} (: yields {z : 3, y : 2} :)
+{"x": 1, "y": 2, "z": 3}{z,y} (: yields {"z":3,"y":2} :)
 
 (: values of record field can be accessed using the deref operator '=>' :)
-{ a : "hello" , b : "world" }=>b (: yields the string "world" :)
+{ "a": "hello", "b": "world" }=>b (: yields the string "world" :)
 
 (: the deref operator can be used to navigate into deeply nested record structures :)
-let $n := yval let $r := {e : {m:'mvalue', n:$n}} return $r=>e=>n/y (: yields the XML fragment yval :)
+let $n := yval let $r := {"e" : {"m":'mvalue', "n":$n}} return $r=>e=>n/y (: yields the XML fragment yval :)
 
 (: the function bit:fields() returns the field names of a record :)
-let $r := {x : 1, y : 2, z : 3} return bit:fields($r) (: yields the xs:QName array [ x, y, z ] :)
+let $r := {"x": 1, "y": 2, "z": 3} return bit:fields($r) (: yields the xs:QName array [x,y,z ] :)
 
 (: the function bit:values() returns the field values of a record :)
-let $r := {x : 1, y : 2, z : (3, 4) } return bit:values($r) (: yields the array [ 1, 2, (2,4) ] :)
+let $r := {"x": 1, "y": 2, "z": (3, 4) } return bit:values($r) (: yields the array [1,2,(2,4)] :)
 ```
 
 ### Parsing JSON
