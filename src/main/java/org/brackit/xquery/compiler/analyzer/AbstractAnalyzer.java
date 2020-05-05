@@ -100,7 +100,7 @@ public abstract class AbstractAnalyzer {
             return null;
         }
         int pos = 0;
-        AST annotationOrTest = type.getChild(pos++);
+        AST annotationOrTest = type.getChild(pos);
         while (annotationOrTest.getType() == XQ.Annotation) {
             QNm name = (QNm) annotationOrTest.getChild(0).getValue();
             // expands to default function namespace
@@ -199,13 +199,12 @@ public abstract class AbstractAnalyzer {
         if (test.getType() != XQ.KindTestElement) {
             return null;
         }
-        boolean nilled = false;
         Type type = null;
         QNm name = null;
         if (test.getChildCount() >= 1) {
             AST child = test.getChild(0);
             if (child.getType() == XQ.Wildcard) {
-                name = null;
+                // name is already null
             } else if (child.getType() == XQ.QNm) {
                 name = (QNm) child.getValue();
                 // expand and update AST
@@ -221,7 +220,6 @@ public abstract class AbstractAnalyzer {
                 type = sctx.getTypes().resolveType(typeName);
                 if (test.getChildCount() >= 3) {
                     child = test.getChild(2);
-                    nilled = (child.getType() == XQ.Nilled);
                 }
             }
         }
@@ -237,7 +235,7 @@ public abstract class AbstractAnalyzer {
         if (test.getChildCount() >= 1) {
             AST child = test.getChild(0);
             if (child.getType() == XQ.Wildcard) {
-                name = null;
+                // name already is null
             } else if (child.getType() == XQ.QNm) {
                 name = (QNm) child.getValue();
                 // expand and update AST

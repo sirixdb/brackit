@@ -89,7 +89,7 @@ public class AST {
 
 	public void setProperty(String name, Object value) {
 		if (properties == null) {
-			properties = new HashMap<String, Object>();
+			properties = new HashMap<>();
 		}
 		properties.put(name, value);
 	}

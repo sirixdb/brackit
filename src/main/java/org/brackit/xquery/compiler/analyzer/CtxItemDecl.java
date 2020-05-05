@@ -42,7 +42,6 @@ public class CtxItemDecl extends ForwardDeclaration {
 	DefaultCtxItem var;
 	AST decl;
 	AST defaultValue;
-	int ctxItemLevel;
 
 	public CtxItemDecl(Module module, DefaultCtxItem var, AST decl,
 			AST defaultValue) {

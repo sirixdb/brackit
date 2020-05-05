@@ -27,8 +27,8 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
-
 import java.util.Map;
+
 import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
@@ -46,7 +46,6 @@ import org.brackit.xquery.module.StaticContext;
 
 /**
  * @author Sebastian Baechle
- *
  */
 public class GroupByAggregates extends AggFunChecker {
 
@@ -221,12 +220,7 @@ public class GroupByAggregates extends AggFunChecker {
       protected Optimizer getOptimizer(Map<QNm, Str> options) {
         return new TopDownOptimizer(options) {
           {
-            stages.add(stages.size() - 2, new Stage() {
-              @Override
-              public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
-                return new GroupByAggregates().walk(ast);
-              }
-            });
+            stages.add(stages.size() - 2, (sctx, ast) -> new GroupByAggregates().walk(ast));
           }
         };
       }

@@ -84,7 +84,7 @@ abstract class ForwardDeclaration extends ExprAnalyzer {
 			DeclVariable dependency = (DeclVariable) module.getVariables()
 					.resolve(name);
 			if (deps == null) {
-				deps = new HashSet<Unit>();
+				deps = new HashSet<>();
 			}
 			deps.add(dependency);
 		}
@@ -105,7 +105,7 @@ abstract class ForwardDeclaration extends ExprAnalyzer {
 		Function fun = sctx.getFunctions().resolve(name, expr.getChildCount());
 		if (fun instanceof UDF) {
 			if (deps == null) {
-				deps = new HashSet<Unit>();
+				deps = new HashSet<>();
 			}
 			deps.add((UDF) fun);
 		}
@@ -126,7 +126,7 @@ abstract class ForwardDeclaration extends ExprAnalyzer {
 	protected void referContextItem() throws QueryException {
 		if (ctxItemLevel == 0) {
 			if (deps == null) {
-				deps = new HashSet<Unit>();
+				deps = new HashSet<>();
 			}
 			deps.add(module.getVariables().getDftCtxItem());
 		}

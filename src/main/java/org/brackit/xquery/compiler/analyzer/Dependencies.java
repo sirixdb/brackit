@@ -42,11 +42,15 @@ import org.brackit.xquery.atomic.QNm;
  */
 class Dependencies<E> {
 
-	Map<E, List<E>> map = new HashMap<E, List<E>>();	
+	Map<E, List<E>> map;
 	List<List<E>> cycles;
 
+	Dependencies() {
+		map = new HashMap<>();
+	}
+
 	List<List<E>> findCycles() {
-		ArrayDeque<E> path = new ArrayDeque<E>();
+		ArrayDeque<E> path = new ArrayDeque<>();
 		for (E u : map.keySet()) {
 			chase(path, u);
 		}
@@ -61,7 +65,7 @@ class Dependencies<E> {
 		path.push(u);
 		List<E> deps = map.get(u);
 		if (deps != null) {
-			List<E> copy = new ArrayList<E>(deps);
+			List<E> copy = new ArrayList<>(deps);
 			for (E dep : copy) {
 				if (chase(path, dep)) {
 					// this dep caused a cycle
@@ -75,7 +79,7 @@ class Dependencies<E> {
 	}
 
 	private void extract(ArrayDeque<E> path, E u) {
-		List<E> cycle = new LinkedList<E>();
+		List<E> cycle = new ArrayList<>();
 		for (E t : path) {
 			cycle.add(t);
 			if (t.equals(u)) {
@@ -83,7 +87,7 @@ class Dependencies<E> {
 			}
 		}
 		if (cycles == null) {
-			cycles = new LinkedList<List<E>>();
+			cycles = new ArrayList<>();
 		}
 		cycles.add(cycle);
 	}
@@ -91,7 +95,7 @@ class Dependencies<E> {
 	void dependsOn(E unit, E dependency) {
 		List<E> deps = map.get(unit);
 		if (deps == null) {
-			deps = new LinkedList<E>();
+			deps = new LinkedList<>();
 			deps.add(dependency);
 			map.put(unit, deps);
 		} else {
@@ -104,14 +108,14 @@ class Dependencies<E> {
 		}
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
 		QNm a = new QNm("a");
 		QNm b = new QNm("b");
 		QNm c = new QNm("c");
 		QNm d = new QNm("d");
 		QNm e = new QNm("e");
 
-		Dependencies<QNm> deps = new Dependencies<QNm>();
+		Dependencies<QNm> deps = new Dependencies<>();
 		deps.dependsOn(a, b);
 		deps.dependsOn(a, d);
 		deps.dependsOn(b, c);

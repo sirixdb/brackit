@@ -36,6 +36,7 @@ import static org.brackit.xquery.compiler.XQ.Selection;
 import static org.brackit.xquery.compiler.XQ.ValueCompNE;
 
 import java.util.ArrayDeque;
+import java.util.Deque;
 
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
@@ -48,7 +49,7 @@ import org.brackit.xquery.util.Cmp;
  */
 public class JoinRewriter extends ScopeWalker {
 
-	private ArrayDeque<Boolean> ordered = new ArrayDeque<Boolean>();
+	private Deque<Boolean> ordered = new ArrayDeque<>();
 	
 	public JoinRewriter(StaticContext sctx) {
 		super(sctx);
@@ -234,8 +235,8 @@ public class JoinRewriter extends ScopeWalker {
 		} else {
 			VarRef lRefs = findVarRefs(join.getChild(0));
 			VarRef[] sortedLRefs = sortVarRefs(lRefs);
-			for (int i = 0; i < sortedLRefs.length; i++) {
-				Scope s = sortedLRefs[i].var.scope;
+			for (VarRef sortedLRef : sortedLRefs) {
+				Scope s = sortedLRef.var.scope;
 				if (s.compareTo(targetScope) > 0) {
 					target = s.node.getParent();
 				}

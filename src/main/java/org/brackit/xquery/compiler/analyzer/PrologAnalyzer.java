@@ -27,9 +27,6 @@
  */
 package org.brackit.xquery.compiler.analyzer;
 
-import java.util.LinkedList;
-import java.util.List;
-
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.AnyURI;
@@ -49,6 +46,9 @@ import org.brackit.xquery.xdm.type.AnyItemType;
 import org.brackit.xquery.xdm.type.Cardinality;
 import org.brackit.xquery.xdm.type.ItemType;
 import org.brackit.xquery.xdm.type.SequenceType;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Sebastian Baechle
@@ -90,8 +90,8 @@ public class PrologAnalyzer extends AbstractAnalyzer {
 	public PrologAnalyzer(Module module, AST prolog) throws QueryException {
 		this.module = module;
 		this.sctx = module.getStaticContext();
-		this.decls = new LinkedList<ForwardDeclaration>();
-		this.imports = new LinkedList<PrologAnalyzer.Import>();
+		this.decls = new ArrayList<>();
+		this.imports = new ArrayList<>();
 		prolog(prolog);
 	}
 
@@ -154,11 +154,7 @@ public class PrologAnalyzer extends AbstractAnalyzer {
 					"Boundary-space already declared");
 		}
 		AST mode = decl.getChild(0);
-		if (mode.getType() == XQ.BoundarySpaceModePreserve) {
-			sctx.setBoundarySpaceStrip(false);
-		} else {
-			sctx.setBoundarySpaceStrip(true);
-		}
+		sctx.setBoundarySpaceStrip(mode.getType() != XQ.BoundarySpaceModePreserve);
 		declaredBoundarySpace = true;
 		return true;
 	}
@@ -200,11 +196,7 @@ public class PrologAnalyzer extends AbstractAnalyzer {
 					"Construction mode already declared");
 		}
 		AST mode = decl.getChild(0);
-		if (mode.getType() == XQ.ConstructionModePreserve) {
-			sctx.setConstructionModeStrip(false);
-		} else {
-			sctx.setConstructionModeStrip(true);
-		}
+		sctx.setConstructionModeStrip(mode.getType() != XQ.ConstructionModePreserve);
 		declaredConstructionMode = true;
 		return true;
 	}
@@ -219,11 +211,7 @@ public class PrologAnalyzer extends AbstractAnalyzer {
 					"Ordering mode already declared");
 		}
 		AST mode = decl.getChild(0);
-		if (mode.getType() == XQ.OrderingModeOrdered) {
-			sctx.setOrderingModeOrdered(true);
-		} else {
-			sctx.setOrderingModeOrdered(false);
-		}
+		sctx.setOrderingModeOrdered(mode.getType() == XQ.OrderingModeOrdered);
 		declaredOrderingMode = true;
 		return true;
 	}
@@ -496,7 +484,7 @@ public class PrologAnalyzer extends AbstractAnalyzer {
 		AST child = decl.getChild(pos++);
 		while (child.getType() == XQ.Annotation) {
 			String annotation = child.getStringValue();
-			if ((annotation == "%public") || (annotation == "%private")) {
+			if ("%public".equals(annotation) || "%private".equals(annotation)) {
 				if (declaredPrivateOrPublic) {
 					throw new QueryException(
 							ErrorCode.ERR_VAR_PRIVATE_OR_PUBLIC_ALREADY_DECLARED,
@@ -537,7 +525,7 @@ public class PrologAnalyzer extends AbstractAnalyzer {
 		if (child.getType() == XQ.ExternalVariable) {
 			external = true;
 			if (pos < decl.getChildCount()) {
-				defaultValue = decl.getChild(pos++);
+				defaultValue = decl.getChild(pos);
 			}
 		} else {
 			defaultValue = child;
@@ -643,7 +631,7 @@ public class PrologAnalyzer extends AbstractAnalyzer {
 		// result type
 		child = decl.getChild(pos++);
 		SequenceType resultType = sequenceType(child);
-		child = decl.getChild(pos++);
+		child = decl.getChild(pos);
 
 		// register function beforehand to support recursion
 		Signature signature = new Signature(resultType, pTypes);

@@ -37,14 +37,14 @@ import org.brackit.xquery.module.StaticContext;
  *
  */
 public interface Function extends Item {
-  public QNm getName();
+  QNm getName();
 
-  public Signature getSignature();
+  Signature getSignature();
 
-  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args);
+  Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args);
 
   @Override
-  public boolean isUpdating();
+  boolean isUpdating();
 
-  public boolean isBuiltIn();
+  boolean isBuiltIn();
 }

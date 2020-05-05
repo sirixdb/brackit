@@ -68,8 +68,7 @@ public class JoinGroupDemarcation extends ScopeWalker {
 		}
 
 		// locate farthest scope we can go to
-		AST parent = join.getParent();
-		AST anc = parent;
+		AST anc = join.getParent();
 		boolean reachedStopAt = false;
 		while (true) {
 			reachedStopAt = (reachedStopAt || (anc == stopAt));   

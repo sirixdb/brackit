@@ -38,14 +38,14 @@ import org.brackit.xquery.atomic.QNm;
  */
 public class VarScopes {
 	private int idSequence;
-	private Scope root = new Scope(null);
+	private final Scope root = new Scope(null);
 	private Scope current = root;
 	private Scope resolveIn = root;
 	private int level;
 
-	private class Scope {
+	private static class Scope {
 		Scope parent;
-		HashMap<QNm, Variable> mapping = new HashMap<QNm, Variable>();
+		HashMap<QNm, Variable> mapping = new HashMap<>();
 
 		Scope(Scope parent) {
 			this.parent = parent;
@@ -56,7 +56,7 @@ public class VarScopes {
 		}
 	}
 
-	public class Variable {
+	public static class Variable {
 		QNm name;
 
 		public Variable(QNm name) {
@@ -95,16 +95,16 @@ public class VarScopes {
 	}
 
 	public QNm declare(QNm name) {
-		Variable var = (level > 0) ? new Variable(new QNm(name
-				.getNamespaceURI(), name.getPrefix(), name.getLocalName() + ";"
-				+ idSequence++)) : new Variable(name);
+		Variable var = (level > 0) ? new Variable(
+				new QNm(name.getNamespaceURI(), name.getPrefix(), name.getLocalName() + ";" + idSequence++))
+				: new Variable(name);
 		current.mapping.put(name, var);
 		return var.name;
 	}
 
 	public QNm resolve(QNm name) {
 		Scope scope = resolveIn;
-		Variable var = null;
+		Variable var;
 
 		while (((var = scope.mapping.get(name)) == null)
 				&& ((scope = scope.parent) != null))

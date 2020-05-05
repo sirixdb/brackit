@@ -30,11 +30,7 @@ package org.brackit.xquery.compiler.analyzer;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
-import org.brackit.xquery.atomic.AnyURI;
-import org.brackit.xquery.atomic.Bool;
-import org.brackit.xquery.atomic.Numeric;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.atomic.*;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.XQ;
@@ -47,15 +43,7 @@ import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Function;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.type.AnyItemType;
-import org.brackit.xquery.xdm.type.AtomicType;
-import org.brackit.xquery.xdm.type.AttributeType;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.ElementType;
-import org.brackit.xquery.xdm.type.ItemType;
-import org.brackit.xquery.xdm.type.NSNameWildcardTest;
-import org.brackit.xquery.xdm.type.NSWildcardNameTest;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.xdm.type.*;
 
 /**
  * 
@@ -249,12 +237,12 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 		QNm expanded = expand(name, DefaultNS.EMPTY);
 		name = bind(expanded);
 		binding.getChild(0).setValue(name);
-		SequenceType stype;
-		if (binding.getChildCount() >= 2) {
-			stype = typeDeclaration(binding.getChild(1));
-		} else {
-			stype = new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany);
-		}
+//		SequenceType stype;
+//		if (binding.getChildCount() >= 2) {
+//			stype = typeDeclaration(binding.getChild(1));
+//		} else {
+//			stype = new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany);
+//		}
 		return expanded;
 	}
 
@@ -268,7 +256,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 		QNm expanded = expand(name, DefaultNS.EMPTY);
 		name = bind(expanded);
 		binding.getChild(0).setValue(name);
-		SequenceType stype = new SequenceType(AtomicType.INR, Cardinality.One);
+//		SequenceType stype = new SequenceType(AtomicType.INR, Cardinality.One);
 		return expanded;
 	}
 
@@ -1113,11 +1101,10 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 						&& (c.checkProperty("boundaryWS"))) {
 					cseq.deleteChild(i--);
 					merge = 0;
-					continue;
 				} else {
 					merge++;
-					continue;
 				}
+				continue;
 			}
 			if (merge > 1) {
 				StringBuilder buf = new StringBuilder();

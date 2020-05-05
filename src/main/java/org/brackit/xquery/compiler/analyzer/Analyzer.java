@@ -27,34 +27,21 @@
  */
 package org.brackit.xquery.compiler.analyzer;
 
-import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.compiler.AST;
-import org.brackit.xquery.compiler.ModuleResolver;
-import org.brackit.xquery.compiler.Target;
-import org.brackit.xquery.compiler.Unit;
-import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.compiler.*;
 import org.brackit.xquery.compiler.analyzer.PrologAnalyzer.Import;
 import org.brackit.xquery.compiler.parser.XQParser;
 import org.brackit.xquery.expr.Variable;
-import org.brackit.xquery.module.Functions;
-import org.brackit.xquery.module.LibraryModule;
-import org.brackit.xquery.module.MainModule;
 import org.brackit.xquery.module.Module;
-import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.module.Variables;
+import org.brackit.xquery.module.*;
 import org.brackit.xquery.xdm.Function;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * @author Sebastian Baechle
@@ -73,11 +60,11 @@ public class Analyzer {
 			throws QueryException {
 		this.resolver = resolver;
 		this.baseURI = baseURI;
-		this.decls = new LinkedList<ForwardDeclaration>();
-		this.modules = new LinkedList<Module>();
-		this.targets = new LinkedList<Target>();
+		this.decls = new ArrayList<>();
+		this.modules = new ArrayList<>();
+		this.targets = new ArrayList<>();
 		this.ast = ast;
-		analyze(ast);
+		analyze();
 	}
 
 	public AST getAST() {
@@ -92,7 +79,7 @@ public class Analyzer {
 		return modules;
 	}
 
-	protected void analyze(AST module) throws QueryException {
+	protected void analyze() throws QueryException {
 		module(ast.getChild(0));
 
 		// process all forward declarations
@@ -125,8 +112,8 @@ public class Analyzer {
 		// perform very simple breadth-first search
 		// to calculate set of transitive dependencies
 		// ... we should improve this when we have time ;-)
-		Set<Unit> expanded = new HashSet<Unit>();
-		ArrayDeque<Unit> pending = new ArrayDeque<Unit>();
+		Set<Unit> expanded = new HashSet<>();
+		Deque<Unit> pending = new ArrayDeque<>();
 		for (Unit dep : decl.dependsOn()) {
 			if (dep == decl.getUnit()) {
 				return true;
@@ -218,8 +205,7 @@ public class Analyzer {
 	}
 
 	private List<Module> findModules(Import i) throws QueryException {
-		List<Module> toImport = new LinkedList<Module>();
-		toImport.addAll(resolver.resolve(i.getURI(), i.getLocations()));
+		List<Module> toImport = new ArrayList<>(resolver.resolve(i.getURI(), i.getLocations()));
 		// add in-flight modules
 		for (Module inFlight : modules) {
 			String targetNS = inFlight.getTargetNS();
@@ -263,13 +249,11 @@ public class Analyzer {
 		for (Entry<QNm, Function[]> ifun : ifunMap.entrySet()) {
 			QNm name = ifun.getKey();
 			Function[] ifu = ifun.getValue();
-			for (int i = 0; i < ifu.length; i++) {
-				int argc = ifu[i].getSignature().getParams().length;
+			for (Function function : ifu) {
+				int argc = function.getSignature().getParams().length;
 				if (lfuns.resolve(name, argc) != null) {
-					throw new QueryException(
-							ErrorCode.ERR_MULTIPLE_FUNCTION_DECLARATIONS,
-							"Found multiple declarations of function %s",
-							ifu[i].getName());
+					throw new QueryException(ErrorCode.ERR_MULTIPLE_FUNCTION_DECLARATIONS,
+							"Found multiple declarations of function %s", function.getName());
 				}
 			}
 		}
