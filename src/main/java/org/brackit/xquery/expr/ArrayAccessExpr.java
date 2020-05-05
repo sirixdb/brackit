@@ -31,16 +31,15 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
+import org.brackit.xquery.array.DRArray;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.util.ExprUtil;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.xdm.*;
 import org.brackit.xquery.xdm.json.Array;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * 
@@ -90,7 +89,26 @@ public class ArrayAccessExpr implements Expr {
 	@Override
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		return ExprUtil.asItem(evaluate(ctx, tuple));
+		final var res = evaluate(ctx, tuple);
+		if ((res == null) || (res instanceof Item)) {
+			return (Item) res;
+		}
+		Sequence[] vals = new Sequence[10];
+		int pos = 0;
+		final Iter it = res.iterate();
+		try {
+			Item item;
+			while ((item = it.next()) != null) {
+				if (pos == vals.length) {
+					vals = Arrays.copyOfRange(vals, 0,
+							((vals.length * 3) / 2) + 1);
+				}
+				vals[pos++] = item;
+			}
+		} finally {
+			it.close();
+		}
+		return new DRArray(vals, 0, pos);
 	}
 
 	@Override

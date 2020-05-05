@@ -57,7 +57,7 @@ import org.brackit.xquery.module.StaticContext;
 public class TopDownOptimizer extends DefaultOptimizer {
 
 	public TopDownOptimizer(Map<QNm, Str> options) {
-		super(options, new ArrayList<Stage>());
+		super(options, new ArrayList<>());
 		stages.add(new Simplification());
 		stages.add(new Pipelining());
 		stages.add(new Reordering());

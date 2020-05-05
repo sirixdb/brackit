@@ -40,6 +40,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static org.junit.Assert.assertEquals;
 
@@ -47,6 +50,38 @@ import static org.junit.Assert.assertEquals;
  * @author Johannes Lichtenberger
  */
 public final class JsonTest extends XQueryBaseTest {
+
+  private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
+
+  @Test
+  public void nestedExpressionsTest() throws IOException {
+    final var json = Files.readString(JSON_RESOURCES.resolve("user_profiles.json"));
+    final var query = json + "=>websites[[]]=>description";
+    final var result = query(query);
+    assertEquals("[\"work\",\"tutorials\"]", result);
+  }
+
+  @Test
+  public void nestedExpressionsWithPredicateTest() throws IOException {
+    final var json = Files.readString(JSON_RESOURCES.resolve("user_profiles.json"));
+    final var query = json + "=>websites[[]][.=>description eq \"work\"]{description}";
+    final var result = query(query);
+    assertEquals("{\"description\":\"work\"}", result);
+  }
+
+  @Test
+  public void arbitraryExpressionsTest() throws IOException {
+    final var query = "{ \"a\" : concat('f', 'oo') , 'b' : 1+1, \"c\" : [1,2,3] }";
+    final var result = query(query);
+    assertEquals("{\"a\":\"foo\",\"b\":2,\"c\":[1,2,3]}", result);
+  }
+
+  @Test
+  public void singleQuotedFieldValuesTest() throws IOException {
+    final var query = "{ 'b': 2, \"c\": 3 }";
+    final var result = query(query);
+    assertEquals("{\"b\":2,\"c\":3}", result);
+  }
 
   @Test
   public void arrayForLoop1Test() throws IOException {

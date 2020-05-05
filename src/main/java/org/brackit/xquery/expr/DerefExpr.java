@@ -33,14 +33,21 @@ import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.XQuery;
+import org.brackit.xquery.array.DArray;
+import org.brackit.xquery.array.DRArray;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.json.Record;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * @author Sebastian Baechle
@@ -60,23 +67,53 @@ public class DerefExpr implements Expr {
 	public Sequence evaluate(QueryContext ctx, Tuple t) throws QueryException {
 		Sequence s = record.evaluateToItem(ctx, t);
 		for (int i = 0; i < fields.length && s != null; i++) {
-			if (!(s instanceof Record)) {
-				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-						"Context item in navigation step is not a record: %s",
-						s);
-			}
-			Record r = (Record) s;
-			Item f = fields[i].evaluateToItem(ctx, t);
-			if (f == null) {
-				return null;
-			}
-			if (f instanceof QNm) {
-				s = r.get((QNm) f);
-			} else if (f instanceof IntNumeric) {
-				s = r.value((IntNumeric) f);
+			if (s instanceof Array) {
+				final var array = ((Array) s);
+				Sequence[] vals = new Sequence[array.len()];
+				int pos = 0;
+				for (final Sequence value : array.values()) {
+					final Sequence val = value.evaluateToItem(ctx, t);
+					if (!(val instanceof Record)) {
+						throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+								"Context item in navigation step is not a record: %s",
+								s);
+					}
+					Record r = (Record) val;
+					Item f = fields[i].evaluateToItem(ctx, t);
+					if (f == null) {
+						continue;
+					}
+					if (f instanceof QNm) {
+						s = r.get((QNm) f);
+					} else if (f instanceof IntNumeric) {
+						s = r.value((IntNumeric) f);
+					} else {
+						throw new QueryException(Bits.BIT_ILLEGAL_RECORD_FIELD,
+								"Illegal record field reference: %s", f);
+					}
+
+					vals[pos] = s;
+					pos++;
+				}
+
+				return new DArray(vals);
 			} else {
-				throw new QueryException(Bits.BIT_ILLEGAL_RECORD_FIELD,
-						"Illegal record field reference: %s", f);
+				if (!(s instanceof Record)) {
+					throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+							"Context item in navigation step is not a record: %s", s);
+				}
+				Record r = (Record) s;
+				Item f = fields[i].evaluateToItem(ctx, t);
+				if (f == null) {
+					return null;
+				}
+				if (f instanceof QNm) {
+					s = r.get((QNm) f);
+				} else if (f instanceof IntNumeric) {
+					s = r.value((IntNumeric) f);
+				} else {
+					throw new QueryException(Bits.BIT_ILLEGAL_RECORD_FIELD, "Illegal record field reference: %s", f);
+				}
 			}
 		}
 		return s;
@@ -85,7 +122,26 @@ public class DerefExpr implements Expr {
 	@Override
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		return ExprUtil.asItem(evaluate(ctx, tuple));
+		final var res = evaluate(ctx, tuple);
+		if ((res == null) || (res instanceof Item)) {
+			return (Item) res;
+		}
+		Sequence[] vals = new Sequence[fields.length];
+		int pos = 0;
+		final Iter it = res.iterate();
+		try {
+			Item item;
+			while ((item = it.next()) != null) {
+				if (pos == vals.length) {
+					vals = Arrays.copyOfRange(vals, 0,
+							((vals.length * 3) / 2) + 1);
+				}
+				vals[pos++] = item;
+			}
+		} finally {
+			it.close();
+		}
+		return new DRArray(vals, 0, pos);
 	}
 
 	@Override
