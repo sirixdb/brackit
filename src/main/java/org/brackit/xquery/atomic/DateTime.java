@@ -60,12 +60,12 @@ public class DateTime extends AbstractTimeInstant {
 	}
 
 	public DateTime(String str) throws QueryException {
-		short year = 0;
-		byte month = 0;
-		byte day = 0;
-		byte hour = 0;
-		byte minute = 0;
-		int micros = 0;
+		short year;
+		byte month;
+		byte day;
+		byte hour;
+		byte minute;
+		int micros;
 		DTD timezone = null;
 
 		str = Whitespace.collapseTrimOnly(str);

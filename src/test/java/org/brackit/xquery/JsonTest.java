@@ -56,9 +56,9 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void nestedExpressionsTest() throws IOException {
     final var json = Files.readString(JSON_RESOURCES.resolve("user_profiles.json"));
-    final var query = json + "=>websites[[]]=>description";
+    final var query = json + "=>websites[[]]=>description[[]]";
     final var result = query(query);
-    assertEquals("[\"work\",\"tutorials\"]", result);
+    assertEquals("work tutorials", result);
   }
 
   @Test
