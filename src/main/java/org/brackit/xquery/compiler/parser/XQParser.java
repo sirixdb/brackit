@@ -3965,9 +3965,9 @@ public class XQParser extends Tokenizer {
         } else if (attemptSymSkipWS("false()")) {
           f.addChild(new AST(XQ.Bool, Bool.FALSE));
         } else if (attemptSymSkipWS("jn:null()")) {
-          f.addChild(new AST(XQ.SequenceExpr));
+          f.addChild(new AST(XQ.FunctionCall, new QNm("http://brackit.org/ns/json", "jn","null")));
         } else {
-          f.addChild(expr());
+          f.addChild(exprSingle());
         }
         array.addChild(f);
       } while (attemptSkipWS(","));
@@ -4051,7 +4051,7 @@ public class XQParser extends Tokenizer {
     } else if (attemptSymSkipWS("false()")) {
       return new AST(XQ.Bool, Bool.FALSE);
     } else if (attemptSymSkipWS("jn:null()")) {
-      return new AST(XQ.SequenceExpr);
+      return new AST(XQ.FunctionCall, new QNm("http://brackit.org/ns/json", "jn","null"));
     } else {
       return exprSingle();
     }

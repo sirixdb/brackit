@@ -65,28 +65,26 @@ public class ArrayExpr implements Expr {
 		Sequence[] vals = new Sequence[10];
 		int pos = 0;
 		for (int i = 0; i < expr.length; i++) {
-			Sequence res = expr[i].evaluate(ctx, t);
+			final Sequence res = expr[i].evaluate(ctx, t);
 			if (res == null) {
 				continue;
-			} else if (!(res instanceof SequenceExpr.EvalSequence) && (!flatten[i]) || (res instanceof Item)) {
+			}
+
+			if (!(res instanceof SequenceExpr.EvalSequence) && (!flatten[i]) || (res instanceof Item)) {
 				if (pos == vals.length) {
 					vals = Arrays.copyOfRange(vals, 0,
 							((vals.length * 3) / 2) + 1);
 				}
 				vals[pos++] = res;
 			} else {
-				Iter it = res.iterate();
-				try {
+				try (final Iter it = res.iterate()) {
 					Item item;
 					while ((item = it.next()) != null) {
 						if (pos == vals.length) {
-							vals = Arrays.copyOfRange(vals, 0,
-									((vals.length * 3) / 2) + 1);
+							vals = Arrays.copyOfRange(vals, 0, ((vals.length * 3) / 2) + 1);
 						}
 						vals[pos++] = item;
 					}
-				} finally {
-					it.close();
 				}
 			}
 		}
@@ -95,7 +93,7 @@ public class ArrayExpr implements Expr {
 
 	@Override
 	public boolean isUpdating() {
-		for (Expr e : this.expr) {
+		for (final Expr e : this.expr) {
 			if (e.isUpdating()) {
 				return true;
 			}
@@ -105,7 +103,7 @@ public class ArrayExpr implements Expr {
 
 	@Override
 	public boolean isVacuous() {
-		for (Expr e : this.expr) {
+		for (final Expr e : this.expr) {
 			if (!e.isVacuous()) {
 				return false;
 			}

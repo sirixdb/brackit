@@ -282,8 +282,7 @@ public final class JsonTest extends XQueryBaseTest {
   private String query(final String query) throws IOException {
     try (final var out = new ByteArrayOutputStream()) {
       new XQuery(query).serialize(ctx, new PrintStream(out));
-      final var content = new String(out.toByteArray(), StandardCharsets.UTF_8);
-      return content;
+      return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
   }
 }

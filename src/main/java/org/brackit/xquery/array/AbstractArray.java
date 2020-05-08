@@ -30,10 +30,8 @@ package org.brackit.xquery.array;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.FlatteningSequence;
-import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.xdm.AbstractItem;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -41,7 +39,6 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.type.ArrayType;
 import org.brackit.xquery.xdm.type.ItemType;
-import org.brackit.xquery.xdm.type.ListOrUnionType;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -72,7 +69,7 @@ public abstract class AbstractArray extends AbstractItem implements Array {
   public Iter iterate() {
     return new BaseIter() {
       private List<Sequence> sequences;
-      private Deque<Item> flatteningSequences = new ArrayDeque<>();
+      private final Deque<Item> flatteningSequences = new ArrayDeque<>();
 
       private int index;
 
@@ -87,12 +84,13 @@ public abstract class AbstractArray extends AbstractItem implements Array {
         if (index < sequences.size()) {
           final var sequence = sequences.get(index++);
           if (sequence instanceof FlatteningSequence) {
-            final var iter = sequence.iterate();
-            Item item;
-            while ((item = iter.next()) != null) {
-              flatteningSequences.addLast(item);
+            try (final var iter = sequence.iterate()) {
+              Item item;
+              while ((item = iter.next()) != null) {
+                flatteningSequences.addLast(item);
+              }
+              return flatteningSequences.removeFirst();
             }
-            return flatteningSequences.removeFirst();
           }
           return (Item) sequence;
         }

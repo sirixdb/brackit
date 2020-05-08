@@ -59,38 +59,39 @@ public class DRArray extends AbstractArray {
 
   @Override
   public List<Sequence> values() {
-    final List<Sequence> values = new ArrayList<Sequence>();
+    final var values = new ArrayList<Sequence>();
 
-    for (int i = 0, length = len(); i < length; i++)
+    for (int i = 0, length = len(); i < length; i++) {
       values.add(at(i));
+    }
 
     return values;
   }
 
   @Override
-  public Sequence at(IntNumeric i) throws QueryException {
+  public Sequence at(IntNumeric index) throws QueryException {
     try {
       // TODO ensure that index is not out of int range
-      int ii = start + i.intValue();
+      int ii = start + index.intValue();
       if (ii >= end) {
-        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
+        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
       }
       return (vals[ii]);
     } catch (ArrayIndexOutOfBoundsException e) {
-      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
     }
   }
 
   @Override
-  public Sequence at(int i) throws QueryException {
+  public Sequence at(int index) throws QueryException {
     try {
-      int ii = start + i;
+      int ii = start + index;
       if (ii >= end) {
-        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
+        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
       }
       return (vals[ii]);
     } catch (ArrayIndexOutOfBoundsException e) {
-      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
     }
   }
 

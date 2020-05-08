@@ -27,6 +27,8 @@
  */
 package org.brackit.xquery.array;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
@@ -49,12 +51,16 @@ public class DArray extends AbstractArray {
 
   @Override
   public List<Sequence> values() {
-    return List.of(vals);
+    return vals == null ? List.of() : Arrays.asList(vals);
   }
 
   @Override
   public Sequence at(IntNumeric i) {
     try {
+      if (vals == null) {
+        return null;
+      }
+
       // TODO ensure that index is not out of int range
       return (vals[i.intValue()]);
     } catch (ArrayIndexOutOfBoundsException e) {

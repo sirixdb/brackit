@@ -27,18 +27,12 @@
  */
 package org.brackit.xquery.expr;
 
-import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.BrackitQueryContext;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.Tuple;
-import org.brackit.xquery.XQuery;
+import org.brackit.xquery.*;
 import org.brackit.xquery.array.DArray;
 import org.brackit.xquery.array.DRArray;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
-import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -65,58 +59,69 @@ public class DerefExpr implements Expr {
 
 	@Override
 	public Sequence evaluate(QueryContext ctx, Tuple t) throws QueryException {
-		Sequence s = record.evaluateToItem(ctx, t);
-		for (int i = 0; i < fields.length && s != null; i++) {
-			if (s instanceof Array) {
-				final var array = ((Array) s);
-				Sequence[] vals = new Sequence[array.len()];
-				int pos = 0;
+		Sequence sequence = record.evaluateToItem(ctx, t);
+		for (int i = 0; i < fields.length && sequence != null; i++) {
+			if (sequence instanceof Array) {
+				final var array = ((Array) sequence);
+				final var vals = new ArrayList<Sequence>();
 				for (final Sequence value : array.values()) {
 					final Sequence val = value.evaluateToItem(ctx, t);
 					if (!(val instanceof Record)) {
-						throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-								"Context item in navigation step is not a record: %s",
-								s);
+						continue;
+//						throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+//								"Context item in navigation step is not a record: %s",
+//								s);
 					}
-					Record r = (Record) val;
-					Item f = fields[i].evaluateToItem(ctx, t);
-					if (f == null) {
+
+					Record record = (Record) val;
+					Item field = fields[i].evaluateToItem(ctx, t);
+
+					if (field == null) {
 						continue;
 					}
-					if (f instanceof QNm) {
-						s = r.get((QNm) f);
-					} else if (f instanceof IntNumeric) {
-						s = r.value((IntNumeric) f);
-					} else {
-						throw new QueryException(Bits.BIT_ILLEGAL_RECORD_FIELD,
-								"Illegal record field reference: %s", f);
+
+					final var sequenceByRecordField = getSequenceByRecordField(record, field);
+
+					if (sequenceByRecordField != null) {
+						vals.add(sequenceByRecordField);
 					}
-
-					vals[pos] = s;
-					pos++;
 				}
 
-				return new DArray(vals);
+				return new DArray(vals.toArray(new Sequence[] {}));
 			} else {
-				if (!(s instanceof Record)) {
+				if (!(sequence instanceof Record)) {
 					throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-							"Context item in navigation step is not a record: %s", s);
+							"Context item in navigation step is not a record: %s", sequence);
 				}
-				Record r = (Record) s;
-				Item f = fields[i].evaluateToItem(ctx, t);
-				if (f == null) {
+
+				final Record record = (Record) sequence;
+				final Item field = fields[i].evaluateToItem(ctx, t);
+
+				if (field == null) {
 					return null;
 				}
-				if (f instanceof QNm) {
-					s = r.get((QNm) f);
-				} else if (f instanceof IntNumeric) {
-					s = r.value((IntNumeric) f);
-				} else {
-					throw new QueryException(Bits.BIT_ILLEGAL_RECORD_FIELD, "Illegal record field reference: %s", f);
+
+				final Sequence sequenceByRecordField = getSequenceByRecordField(record, field);
+
+				if (sequenceByRecordField != null) {
+					return sequenceByRecordField;
 				}
 			}
 		}
-		return s;
+
+		return null;
+	}
+
+	private Sequence getSequenceByRecordField(Record record, Item field) {
+		Sequence sequence;
+		if (field instanceof QNm) {
+			sequence = record.get((QNm) field);
+		} else if (field instanceof IntNumeric) {
+			sequence = record.value((IntNumeric) field);
+		} else {
+			throw new QueryException(Bits.BIT_ILLEGAL_RECORD_FIELD, "Illegal record field reference: %s", field);
+		}
+		return sequence;
 	}
 
 	@Override
@@ -126,20 +131,16 @@ public class DerefExpr implements Expr {
 		if ((res == null) || (res instanceof Item)) {
 			return (Item) res;
 		}
-		Sequence[] vals = new Sequence[fields.length];
+		var vals = new Sequence[fields.length];
 		int pos = 0;
-		final Iter it = res.iterate();
-		try {
+		try (final Iter it = res.iterate()) {
 			Item item;
 			while ((item = it.next()) != null) {
 				if (pos == vals.length) {
-					vals = Arrays.copyOfRange(vals, 0,
-							((vals.length * 3) / 2) + 1);
+					vals = Arrays.copyOfRange(vals, 0, ((vals.length * 3) / 2) + 1);
 				}
 				vals[pos++] = item;
 			}
-		} finally {
-			it.close();
 		}
 		return new DRArray(vals, 0, pos);
 	}
@@ -165,7 +166,7 @@ public class DerefExpr implements Expr {
 	public String toString() {
 		StringBuilder s = new StringBuilder();
 		for (Expr f : fields) {
-			s.append("->");
+			s.append("=>");
 			s.append(f);
 		}
 		return s.toString();
@@ -174,7 +175,7 @@ public class DerefExpr implements Expr {
 	public static void main(String[] args) throws QueryException {
 		// a:1, b:2, c:3 , {x:1}, d:5,
 		new XQuery(
-				"let $n := <x><y>yval</y></x> return {e : {m:'mvalue', n:$n}}=>e=>n/y")
+				"let $n := <x><y>yval</y></x> return { \"e\" : { \"m\": \"mvalue\", \"n\":$n}}=>e=>n/y")
 				.serialize(new BrackitQueryContext(), System.out);
 	}
 }

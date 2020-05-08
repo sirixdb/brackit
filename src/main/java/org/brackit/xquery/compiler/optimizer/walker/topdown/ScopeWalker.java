@@ -392,7 +392,7 @@ public abstract class ScopeWalker extends Walker {
       if (lvars == null) {
         return Collections.emptyList();
       }
-      ArrayList<Var> bindings = new ArrayList<Var>();
+      var bindings = new ArrayList<Var>();
       for (Scope.Node n = lvars; n != null; n = n.next) {
         bindings.add(n);
       }
