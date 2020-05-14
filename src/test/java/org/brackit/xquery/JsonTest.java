@@ -54,6 +54,13 @@ public final class JsonTest extends XQueryBaseTest {
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
 
   @Test
+  public void testArray() throws IOException {
+    final var query = "{\"foo\": [\"bar\", jn:null(), 2.33],\"bar\": {\"hello\": \"world\", \"helloo\": true()},\"baz\": \"hello\",\"tada\": [{\"foo\": \"bar\"}, {\"baz\": false()}, \"boo\", {}, []]}=>foo";
+    final var result = query(query);
+    assertEquals("[\"bar\",null,2.33]", result);
+  }
+
+  @Test
   public void nestedExpressionsTest() throws IOException {
     final var json = Files.readString(JSON_RESOURCES.resolve("user_profiles.json"));
     final var query = json + "=>websites[[]]=>description[[]]";
