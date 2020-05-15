@@ -68,9 +68,6 @@ public class DerefExpr implements Expr {
 					final Sequence val = value.evaluateToItem(ctx, t);
 					if (!(val instanceof Record)) {
 						continue;
-//						throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-//								"Context item in navigation step is not a record: %s",
-//								s);
 					}
 
 					Record record = (Record) val;

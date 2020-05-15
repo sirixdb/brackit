@@ -42,6 +42,7 @@ import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Type;
 import org.brackit.xquery.xdm.json.Array;
+import org.brackit.xquery.xdm.json.JsonItem;
 import org.brackit.xquery.xdm.json.Record;
 import org.brackit.xquery.xdm.node.Node;
 
@@ -123,7 +124,11 @@ public class StringSerializer implements Serializer {
           if (!first) {
             out.write(" ");
           }
-          out.write(item.toString());
+          if (item instanceof JsonItem) {
+            json(item, printer, false);
+          } else {
+            out.write(item.toString());
+          }
           first = false;
         } else if (item instanceof Array) {
           json(item, printer, true);
@@ -131,7 +136,8 @@ public class StringSerializer implements Serializer {
           json(item, printer, false);
         } else {
           throw new QueryException(ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-              "Serialization of item type '%s' not implemented yet.", item.itemType());
+                                   "Serialization of item type '%s' not implemented yet.",
+                                   item.itemType());
         }
       }
     } finally {
@@ -171,6 +177,8 @@ public class StringSerializer implements Serializer {
           out.write(s.toString());
         } else if (((Atomic) s).type() == Type.BOOL) {
           out.write(s.booleanValue() ? "true" : "false");
+        } else if (((Atomic) s).type() == Type.NULL) {
+          out.write("null");
         } else {
           out.write("\"");
           out.write(s.toString());
@@ -220,7 +228,8 @@ public class StringSerializer implements Serializer {
         out.write("\"");
       } else {
         throw new QueryException(ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-            "Serialization of item type '%s' not implemented yet.", ((Item) s).itemType());
+                                 "Serialization of item type '%s' not implemented yet.",
+                                 ((Item) s).itemType());
       }
     } else {
       // serialize sequence as JSON array
