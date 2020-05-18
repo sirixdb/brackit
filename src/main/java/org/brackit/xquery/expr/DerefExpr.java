@@ -42,6 +42,7 @@ import org.brackit.xquery.xdm.json.Record;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Sebastian Baechle
@@ -62,27 +63,7 @@ public class DerefExpr implements Expr {
 		Sequence sequence = record.evaluateToItem(ctx, t);
 		for (int i = 0; i < fields.length && sequence != null; i++) {
 			if (sequence instanceof Array) {
-				final var array = ((Array) sequence);
-				final var vals = new ArrayList<Sequence>();
-				for (final Sequence value : array.values()) {
-					final Sequence val = value.evaluateToItem(ctx, t);
-					if (!(val instanceof Record)) {
-						continue;
-					}
-
-					Record record = (Record) val;
-					Item field = fields[i].evaluateToItem(ctx, t);
-
-					if (field == null) {
-						continue;
-					}
-
-					final var sequenceByRecordField = getSequenceByRecordField(record, field);
-
-					if (sequenceByRecordField != null) {
-						vals.add(sequenceByRecordField);
-					}
-				}
+				final List<Sequence> vals = getSequenceValues(ctx, t, (Array) sequence, fields[i]);
 
 				return new DArray(vals.toArray(new Sequence[] {}));
 			} else {
@@ -107,6 +88,37 @@ public class DerefExpr implements Expr {
 		}
 
 		return null;
+	}
+
+	private ArrayList<Sequence> getSequenceValues(QueryContext ctx, Tuple t, Array sequence, Expr field1) {
+		final var array = sequence;
+		final var vals = new ArrayList<Sequence>();
+		for (final Sequence value : array.values()) {
+			final Sequence val = value.evaluateToItem(ctx, t);
+
+			if (val instanceof Array) {
+				vals.addAll(getSequenceValues(ctx, t, (Array) val, field1));
+				continue;
+			}
+
+			if (!(val instanceof Record)) {
+				continue;
+			}
+
+			Record record = (Record) val;
+			Item field = field1.evaluateToItem(ctx, t);
+
+			if (field == null) {
+				continue;
+			}
+
+			final var sequenceByRecordField = getSequenceByRecordField(record, field);
+
+			if (sequenceByRecordField != null) {
+				vals.add(sequenceByRecordField);
+			}
+		}
+		return vals;
 	}
 
 	private Sequence getSequenceByRecordField(Record record, Item field) {

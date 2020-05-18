@@ -54,6 +54,13 @@ public final class JsonTest extends XQueryBaseTest {
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
 
   @Test
+  public void testNestedDerefsWithArrays() throws IOException {
+    final var query = "[{\"key\":0},{\"value\":[{\"key\":{\"boolean\":true()}},{\"newkey\":\"yes\"}]},{\"key\":\"hey\",\"value\":false()}]=>value=>key=>boolean[[]]";
+    final var result = query(query);
+    assertEquals("true", result);
+  }
+
+  @Test
   public void testArray() throws IOException {
     final var query = "{\"foo\": [\"bar\", jn:null(), 2.33],\"bar\": {\"hello\": \"world\", \"helloo\": true()},\"baz\": \"hello\",\"tada\": [{\"foo\": \"bar\"}, {\"baz\": false()}, \"boo\", {}, []]}=>foo";
     final var result = query(query);
