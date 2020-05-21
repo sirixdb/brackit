@@ -52,13 +52,13 @@ public class BaseResolver implements ModuleResolver {
 	protected Map<String, List<Module>> modules;
 
 	public void register(String targetNSUri, Module module) {
-		List<Module> list = null;
+		List<Module> list;
 		if (modules == null) {
-			modules = new HashMap<String, List<Module>>();
+			modules = new HashMap<>();
 		}
 		list = modules.get(targetNSUri);
 		if (list == null) {
-			list = new ArrayList<Module>(1);
+			list = new ArrayList<>(1);
 			modules.put(targetNSUri, list);
 		}
 		list.add(module);

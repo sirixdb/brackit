@@ -54,15 +54,24 @@ public final class JsonTest extends XQueryBaseTest {
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
 
   @Test
+  public void testSimpleRecord() throws IOException {
+    final var query = "{\"key\":jn:null()}";
+    final var result = query(query);
+    assertEquals("{\"key\":null}", result);
+  }
+
+  @Test
   public void testNestedDerefsWithArrays() throws IOException {
-    final var query = "[{\"key\":0},{\"value\":[{\"key\":{\"boolean\":true()}},{\"newkey\":\"yes\"}]},{\"key\":\"hey\",\"value\":false()}]=>value=>key=>boolean[[]]";
+    final var query =
+        "[{\"key\":0},{\"value\":[{\"key\":{\"boolean\":true()}},{\"newkey\":\"yes\"}]},{\"key\":\"hey\",\"value\":false()}]=>value=>key=>boolean[[]]";
     final var result = query(query);
     assertEquals("true", result);
   }
 
   @Test
   public void testArray() throws IOException {
-    final var query = "{\"foo\": [\"bar\", jn:null(), 2.33],\"bar\": {\"hello\": \"world\", \"helloo\": true()},\"baz\": \"hello\",\"tada\": [{\"foo\": \"bar\"}, {\"baz\": false()}, \"boo\", {}, []]}=>foo";
+    final var query =
+        "{\"foo\": [\"bar\", jn:null(), 2.33],\"bar\": {\"hello\": \"world\", \"helloo\": true()},\"baz\": \"hello\",\"tada\": [{\"foo\": \"bar\"}, {\"baz\": false()}, \"boo\", {}, []]}=>foo";
     final var result = query(query);
     assertEquals("[\"bar\",null,2.33]", result);
   }
@@ -114,19 +123,19 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void arrayUnboxing1Test() throws IOException {
-    final var query
-        = "let $json := [\"Sunday\", \"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\"] return $json[[]]";
+    final var query =
+        "let $json := [\"Sunday\", \"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\"] return $json[[]]";
     final var result = query(query);
     assertEquals("Sunday Monday Tuesday Wednesday Thursday Friday Saturday", result);
   }
 
   @Test
   public void arrayUnboxing2Test() throws IOException {
-    final var query
-        = "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ], [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]] return $json[[]]";
+    final var query =
+        "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ], [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]] return $json[[]]";
     final var result = query(query);
     assertEquals("[\"mercury\",\"venus\",\"earth\",\"mars\"][\"monday\",\"tuesday\",\"wednesday\",\"thursday\"]",
-        result);
+                 result);
   }
 
   @Test
@@ -138,16 +147,16 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void nestedArrayTest() throws IOException {
-    final var query
-        = "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ], [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]] return $json[[0]]";
+    final var query =
+        "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ], [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]] return $json[[0]]";
     final var result = query(query);
     assertEquals("[\"mercury\",\"venus\",\"earth\",\"mars\"]", result);
   }
 
   @Test
   public void comletelyNestedArrayTest() throws IOException {
-    final var query
-        = "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ], [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]] return $json[[1]][[1]]";
+    final var query =
+        "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ], [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]] return $json[[1]][[1]]";
     final var result = query(query);
     assertEquals("tuesday", result);
   }
@@ -193,30 +202,34 @@ public final class JsonTest extends XQueryBaseTest {
     final var query = "{\"foo\":jn:null(),\"bar\":(1,2)}";
     final var resultSequence = new XQuery(query).execute(ctx);
     ResultChecker.check(new ItemSequence(new ArrayRecord(new QNm[] { new QNm("foo"), new QNm("bar") },
-        new Sequence[] { new Null(), new DArray(new Int32(1), new Int32(2)) })), resultSequence);
+                                                         new Sequence[] { new Null(),
+                                                             new DArray(new Int32(1), new Int32(2)) })),
+                        resultSequence);
   }
 
   @Test
   public void testObjects() throws IOException {
-    final var query = "    let $object1 := { \"Captain\" : \"Kirk\" }\n"
-        + "    let $object2 := { \"First officer\" : \"Spock\" }\n" + "    return ($object1, \" \", $object2)";
+    final var query =
+        "    let $object1 := { \"Captain\" : \"Kirk\" }\n" + "    let $object2 := { \"First officer\" : \"Spock\" }\n"
+            + "    return ($object1, \" \", $object2)";
     final var result = query(query);
     assertEquals("{\"Captain\":\"Kirk\"} {\"First officer\":\"Spock\"}", result);
   }
 
   @Test
   public void testComposeObjects1() throws IOException {
-    final var query = "    let $object1 := { \"Captain\" : \"Kirk\" }\n"
-        + "    let $object2 := { \"First officer\" : \"Spock\" }\n"
-        + "    return {| { \"foobar\": $object1 }, $object2 |}";
+    final var query =
+        "    let $object1 := { \"Captain\" : \"Kirk\" }\n" + "    let $object2 := { \"First officer\" : \"Spock\" }\n"
+            + "    return {| { \"foobar\": $object1 }, $object2 |}";
     final var result = query(query);
     assertEquals("{\"foobar\":{\"Captain\":\"Kirk\"},\"First officer\":\"Spock\"}", result);
   }
 
   @Test
   public void testComposeObjects2() throws IOException {
-    final var query = "let $object1 := { \"Captain\" : \"Kirk\" }\n"
-        + "let $object2 := { \"First officer\" : \"Spock\" }\n" + "return {{ \"foobar\": $object1 }, $object2 }";
+    final var query =
+        "let $object1 := { \"Captain\" : \"Kirk\" }\n" + "let $object2 := { \"First officer\" : \"Spock\" }\n"
+            + "return {{ \"foobar\": $object1 }, $object2 }";
     final var result = query(query);
     assertEquals("{\"foobar\":{\"Captain\":\"Kirk\"},\"First officer\":\"Spock\"}", result);
   }
@@ -230,16 +243,17 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void testComposeObjects4() throws IOException {
-    final var query = "let $object1 := { \"Captain\" : \"Kirk\" }\n"
-        + "let $object2 := { \"First officer\" : \"Spock\" }\n" + "return {| $object1, $object2 |}";
+    final var query =
+        "let $object1 := { \"Captain\" : \"Kirk\" }\n" + "let $object2 := { \"First officer\" : \"Spock\" }\n"
+            + "return {| $object1, $object2 |}";
     final var result = query(query);
     assertEquals("{\"Captain\":\"Kirk\",\"First officer\":\"Spock\"}", result);
   }
 
   @Test
   public void testComposeObjects5() throws IOException {
-    final var query
-        = "let $object1 := { \"Captain\" : \"Kirk\" } let $object2 := { \"First officer\" : \"Spock\" } return { $object1, $object2 }";
+    final var query =
+        "let $object1 := { \"Captain\" : \"Kirk\" } let $object2 := { \"First officer\" : \"Spock\" } return { $object1, $object2 }";
     final var result = query(query);
     assertEquals("{\"Captain\":\"Kirk\",\"First officer\":\"Spock\"}", result);
   }
@@ -255,8 +269,8 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void testGetAllKeys() throws IOException {
-    final var query
-        = "let $seq := (\"foo\", [ 1, 2, 3 ], { \"a\" : 1, \"b\" : 2 }, { \"a\" : 3, \"c\" : 4 }) return jn:keys($seq)";
+    final var query =
+        "let $seq := (\"foo\", [ 1, 2, 3 ], { \"a\" : 1, \"b\" : 2 }, { \"a\" : 3, \"c\" : 4 }) return jn:keys($seq)";
     final var result = query(query);
     assertEquals("a b c", result);
   }
@@ -270,11 +284,11 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void dynamicPairsTest1() throws IOException {
-    final var query
-        = "{ for $d at $i in (\"Sunday\", \"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\" ) return { $d : $i } }";
+    final var query =
+        "{ for $d at $i in (\"Sunday\", \"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\" ) return { $d : $i } }";
     final var result = query(query);
     assertEquals("{\"Sunday\":1,\"Monday\":2,\"Tuesday\":3,\"Wednesday\":4,\"Thursday\":5,\"Friday\":6,\"Saturday\":7}",
-        result);
+                 result);
   }
 
   @Test

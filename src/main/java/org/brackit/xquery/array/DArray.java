@@ -27,15 +27,18 @@
  */
 package org.brackit.xquery.array;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Array;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
+import static java.util.Objects.*;
 
 /**
  * @author Sebastian Baechle
@@ -55,22 +58,35 @@ public class DArray extends AbstractArray {
   }
 
   @Override
-  public Sequence at(IntNumeric i) {
+  public Sequence at(IntNumeric index) {
     try {
       if (vals == null) {
         return null;
       }
 
-      // TODO ensure that index is not out of int range
-      return (vals[i.intValue()]);
+      checkArrayIndex(index.intValue());
+      return (vals[index.intValue()]);
     } catch (ArrayIndexOutOfBoundsException e) {
-      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
+    }
+  }
+
+  private void checkArrayIndex(int index) {
+    try {
+      checkIndex(index, vals.length);
+    } catch (final IndexOutOfBoundsException e) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
     }
   }
 
   @Override
   public Sequence at(int i) {
     try {
+      if (vals == null) {
+        return null;
+      }
+
+      checkArrayIndex(i);
       return (vals[i]);
     } catch (ArrayIndexOutOfBoundsException e) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
@@ -79,7 +95,7 @@ public class DArray extends AbstractArray {
 
   @Override
   public IntNumeric length() {
-    int l = vals.length;
+    final int l = vals.length;
     return (l <= 20)
         ? Int32.ZERO_TWO_TWENTY[l]
         : new Int32(l);
@@ -92,9 +108,12 @@ public class DArray extends AbstractArray {
 
   @Override
   public Array range(IntNumeric from, IntNumeric to) {
-    // TODO ensure that indexes are not out of int range
+    try {
+      checkFromToIndex(from.intValue(), to.intValue(), vals.length);
+    } catch (final IndexOutOfBoundsException e) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array indexes: %s", e.getMessage());
+    }
+
     return new DRArray(vals, from.intValue(), to.intValue());
   }
-
-
 }

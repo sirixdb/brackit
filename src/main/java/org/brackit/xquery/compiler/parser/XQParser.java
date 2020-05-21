@@ -4044,19 +4044,6 @@ public class XQParser extends Tokenizer {
     return record;
   }
 
-  private AST recordValue() throws TokenizerException {
-    consumeSkipWS(":");
-    if (attemptSymSkipWS("true()")) {
-      return new AST(XQ.Bool, Bool.TRUE);
-    } else if (attemptSymSkipWS("false()")) {
-      return new AST(XQ.Bool, Bool.FALSE);
-    } else if (attemptSymSkipWS("jn:null()")) {
-      return new AST(XQ.FunctionCall, new QNm("http://brackit.org/ns/json", "jn","null"));
-    } else {
-      return exprSingle();
-    }
-  }
-
   private AST[] projectionList() throws TokenizerException {
     if (!attemptSkipWS("{")) {
       return null;

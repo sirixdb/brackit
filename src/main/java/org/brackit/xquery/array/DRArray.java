@@ -36,6 +36,8 @@ import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Array;
 
+import static java.util.Objects.checkFromToIndex;
+
 /**
  * @author Sebastian Baechle
  *
@@ -71,7 +73,6 @@ public class DRArray extends AbstractArray {
   @Override
   public Sequence at(IntNumeric index) throws QueryException {
     try {
-      // TODO ensure that index is not out of int range
       int ii = start + index.intValue();
       if (ii >= end) {
         throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
@@ -110,7 +111,12 @@ public class DRArray extends AbstractArray {
 
   @Override
   public Array range(IntNumeric from, IntNumeric to) throws QueryException {
-    // TODO ensure that indexes are not out of int range
+    try {
+      checkFromToIndex(from.intValue(), to.intValue(), vals.length);
+    } catch (final IndexOutOfBoundsException e) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array indexes: %s", e.getMessage());
+    }
+
     return new DRArray(vals, start + from.intValue(), start + to.intValue());
   }
 }
