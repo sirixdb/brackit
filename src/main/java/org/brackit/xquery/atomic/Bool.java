@@ -43,7 +43,7 @@ public class Bool extends AbstractAtomic {
 
   public static final Bool TRUE = new Bool(true);
 
-  private class DBool extends Bool {
+  private static class DBool extends Bool {
     public DBool(boolean bool, Type type) {
       super(bool);
       this.type = type;
