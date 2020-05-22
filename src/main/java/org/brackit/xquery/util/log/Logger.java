@@ -41,7 +41,7 @@ public abstract class Logger {
 		TRACE(0), DEBUG(1), INFO(2), WARN(3), ERROR(4), FATAL(5);
 		public final int priority;
 
-		private Level(int prioprity) {
+		Level(int prioprity) {
 			this.priority = prioprity;
 		}
 	};
@@ -50,7 +50,7 @@ public abstract class Logger {
 		String useLog = Cfg.asString(LogFactory.class.getName(),
 				UtilLogFactory.class.getName());
 		try {
-			factory = (LogFactory) Class.forName(useLog).newInstance();
+			factory = (LogFactory) Class.forName(useLog).getDeclaredConstructor().newInstance();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
