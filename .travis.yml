@@ -1,5 +1,5 @@
 language: java
-jdk: openjdk13
+jdk: openjdk14
 
 after_success:
   - mvn deploy --settings travis-settings.xml -DskipTests=true -B
