@@ -438,7 +438,7 @@ public final class XQ {
 	private XQ() {
 	}
 
-	private static int base = 251;
+	private static int base = 265;
 
 	public static synchronized int allocate(int noOfTokens) {
 		int r = base;
