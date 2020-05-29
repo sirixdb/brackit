@@ -29,6 +29,7 @@ package org.brackit.xquery.compiler;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -184,6 +185,10 @@ public class AST {
 			children = tmp;
 		}
 		child.parent = this;
+	}
+
+	public Map<String, Object> getProperties() {
+		return Collections.unmodifiableMap(properties);
 	}
 
 	public AST getChild(int position) {
