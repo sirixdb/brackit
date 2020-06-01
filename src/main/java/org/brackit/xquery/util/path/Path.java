@@ -45,7 +45,8 @@ import org.brackit.xquery.atomic.QNm;
  */
 public final class Path<E> {
   public enum Axis {
-    PARENT(".."), SELF("."), DESC("//"), CHILD("/"), DESC_ATTRIBUTE("//@"), CHILD_ATTRIBUTE("/@");
+    PARENT(".."), SELF("."), DESC("//"), CHILD("/"), DESC_ATTRIBUTE("//@"), CHILD_ATTRIBUTE("/@"), CHILD_ARRAY("/[]"), DESC_ARRAY(
+        "//[]");
 
     private final String text;
 
@@ -86,9 +87,9 @@ public final class Path<E> {
         return false;
       }
 
-      Step<?> other = (Step<?>) obj;
+      final Step<?> other = (Step<?>) obj;
 
-      return (other.axis.equals(axis)) && ((other.value == value) || (other.value.equals(value)));
+      return other.axis.equals(axis) && (other.value == value || other.value.equals(value));
     }
 
     @Override
@@ -99,8 +100,11 @@ public final class Path<E> {
     @Override
     public String toString() {
       final String axisString = axis.getText();
-      String valueString =
-          ((value != null) ? value.toString() : ((axis == Axis.PARENT) || (axis == Axis.SELF)) ? "" : "*");
+      String valueString = value != null
+          ? value.toString()
+          : (axis == Axis.PARENT || axis == Axis.SELF || axis == Axis.CHILD_ARRAY || axis == Axis.DESC_ARRAY)
+              ? ""
+              : "*";
       return axisString + valueString;
     }
   }
@@ -170,6 +174,16 @@ public final class Path<E> {
     return this;
   }
 
+  public Path<E> childArray() {
+    path.add(new Step<>(Axis.CHILD_ARRAY, null));
+    return this;
+  }
+
+  public Path<E> descendantArray() {
+    path.add(new Step<>(Axis.DESC_ARRAY, null));
+    return this;
+  }
+
   /**
    * The semantics of this method are twofold, as one has to distinguish
    * abstract <i>path patterns</i> from absolute <i>path instances</i>: It
@@ -218,17 +232,19 @@ public final class Path<E> {
     while (pPos >= 0) {
       Axis pAxis = p[pPos].axis;
       boolean pIsAttributeStep = (pAxis == Axis.CHILD_ATTRIBUTE) || (pAxis == Axis.DESC_ATTRIBUTE);
+      boolean pIsArrayStep = (pAxis == Axis.CHILD_ARRAY) || (pAxis == Axis.DESC_ARRAY);
       boolean pIsNodeStep = (pAxis == Axis.CHILD) || (pAxis == Axis.DESC);
 
       Axis oAxis = o[oPos].axis;
       boolean oIsAttributeStep = (oAxis == Axis.CHILD_ATTRIBUTE) || (oAxis == Axis.DESC_ATTRIBUTE);
+      boolean oIsArrayStep = (oAxis == Axis.CHILD_ARRAY) || (oAxis == Axis.DESC_ARRAY);
       boolean oIsNodeStep = (oAxis == Axis.CHILD) || (oAxis == Axis.DESC);
 
-      if (!pIsNodeStep && !pIsAttributeStep) {
+      if (!pIsNodeStep && !pIsAttributeStep && !pIsArrayStep) {
         throw new PathException("Illegal pattern path: %s", this);
       }
 
-      if (!oIsAttributeStep && !oIsNodeStep) {
+      if (!oIsAttributeStep && !oIsArrayStep && !oIsNodeStep) {
         throw new PathException("Illegal path: %s", path);
       }
 
@@ -237,13 +253,14 @@ public final class Path<E> {
 
       if (((p[pPos].value == null) || o[oPos].value.equals((p[pPos].value))) && ((pAxis == oAxis) || (
           (pAxis == Axis.DESC) && (oAxis == Axis.CHILD)) || ((pAxis == Axis.DESC_ATTRIBUTE) && (oAxis
-          == Axis.CHILD_ATTRIBUTE)))) {
+          == Axis.CHILD_ATTRIBUTE)) || ((pAxis == Axis.DESC_ARRAY) && (oAxis == Axis.CHILD_ARRAY)))) {
         // System.out.println("match " + p[pPos]);
         matchTable[pPos] = oPos;
         oPos--;
         pPos--;
       } else if (pPos < pLen - 1) {
-        while ((p[pPos + 1].axis != Axis.DESC) && (p[pPos + 1].axis != Axis.DESC_ATTRIBUTE)) {
+        while (p[pPos + 1].axis != Axis.DESC && p[pPos + 1].axis != Axis.DESC_ATTRIBUTE
+            && p[pPos + 1].axis != Axis.DESC_ARRAY) {
           // backtracking
           // System.out.println("Backtracking to pPos " + (pPos + 1));
           pPos++;
@@ -269,7 +286,8 @@ public final class Path<E> {
       }
     }
 
-    boolean match = ((oPos == -1) || (p[0].axis == Axis.DESC) || (p[0].axis == Axis.DESC_ATTRIBUTE));
+    boolean match =
+        oPos == -1 || p[0].axis == Axis.DESC || p[0].axis == Axis.DESC_ATTRIBUTE || p[0].axis == Axis.DESC_ARRAY;
 
     if (match) {
       // System.out.println("MatchTable: " + Arrays.toString(matchTable));

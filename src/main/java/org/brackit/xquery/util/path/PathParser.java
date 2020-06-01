@@ -43,7 +43,7 @@ public final class PathParser extends Tokenizer {
 
     public PathParser(String s) {
         super(s);
-        p = new Path<QNm>();
+        p = new Path<>();
     }
 
     public Path<QNm> parse() throws PathException {
@@ -94,7 +94,7 @@ public final class PathParser extends Tokenizer {
             }
 
             if (namespaces == null) {
-                namespaces = new TreeMap<String, String>();
+                namespaces = new TreeMap<>();
             }
             if (namespaces.put(prefix, uri) != null) {
                 throw new PathException(
@@ -146,7 +146,15 @@ public final class PathParser extends Tokenizer {
             if (la(la, "@") != null) {
                 return false;
             }
+
             consume(la);
+
+            if ((la = la("[]")) != null) {
+                consume(la);
+                p.descendantArray();
+                return true;
+            }
+
             if (!attempt("*")) {
                 q = name();
             }
@@ -156,7 +164,15 @@ public final class PathParser extends Tokenizer {
             if (la(la, "@") != null) {
                 return false;
             }
+
             consume(la);
+
+            if ((la = la("[]")) != null) {
+                consume(la);
+                p.childArray();
+                return true;
+            }
+
             if (!attempt("*")) {
                 q = name();
             }
