@@ -251,9 +251,10 @@ public final class Path<E> {
       // System.out.print(String.format("p: %3s  o: %3s  oPos: %3s  pPos: %3s  ",
       // p[pPos], o[oPos], oPos, pPos));
 
-      if ((p[pPos].value == null || p[pPos].value.equals(o[oPos].value)) && (pAxis == oAxis || (
-          pAxis == Axis.DESC && oAxis == Axis.CHILD) || (pAxis == Axis.DESC_ATTRIBUTE && oAxis
-          == Axis.CHILD_ATTRIBUTE) || (pAxis == Axis.DESC_ARRAY && oAxis == Axis.CHILD_ARRAY))) {
+      if (((p[pPos].value == null && o[oPos].value == null) || (p[pPos].value != null
+          && p[pPos].value.equals(o[oPos].value))) && (pAxis == oAxis || (pAxis == Axis.DESC && oAxis == Axis.CHILD)
+          || (pAxis == Axis.DESC_ATTRIBUTE && oAxis == Axis.CHILD_ATTRIBUTE) || (pAxis == Axis.DESC_ARRAY
+          && oAxis == Axis.CHILD_ARRAY))) {
         // System.out.println("match " + p[pPos]);
         matchTable[pPos] = oPos;
         oPos--;
