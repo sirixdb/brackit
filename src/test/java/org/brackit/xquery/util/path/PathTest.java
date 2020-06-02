@@ -41,7 +41,7 @@ import org.junit.Test;
 public class PathTest {
 
   @Test
-  public void testJsonPathWithArray() {
+  public void testJsonPathWithArrayMatching() {
     // /paths/\/business_service_providers\/search//[]/get.
     Path<QNm> expected = (new Path<QNm>()).child(new QNm("paths"))
                                           .child(new QNm("\\/business_service_providers\\/search"))
@@ -57,6 +57,25 @@ public class PathTest {
                                           .child(new QNm("get"));
 
     assertTrue(expected.matches(toCheck));
+  }
+
+  @Test
+  public void testJsonPathWithArrayNotMatching() {
+    // /paths/\/business_service_providers\/search//[]/get.
+    Path<QNm> expected = (new Path<QNm>()).child(new QNm("paths"))
+                                          .child(new QNm("\\/business_service_providers\\/search"))
+                                          .descendantArray()
+                                          .child(new QNm("get"));
+    Path<QNm> parsed = (new PathParser(expected.toString())).parse();
+    assertEquals("Path parsed correctly", expected, parsed);
+
+    Path<QNm> toCheck = (new Path<QNm>()).child(new QNm("paths"))
+                                         .childArray()
+                                         .child(new QNm("\\/business_service_providers\\/search"))
+                                         .child(new QNm("foobar"))
+                                         .child(new QNm("get"));
+
+    assertFalse(expected.matches(toCheck));
   }
 
   @Test

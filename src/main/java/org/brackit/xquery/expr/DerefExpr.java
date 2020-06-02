@@ -33,6 +33,7 @@ import org.brackit.xquery.array.DRArray;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
+import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -63,9 +64,9 @@ public class DerefExpr implements Expr {
 		Sequence sequence = record.evaluateToItem(ctx, t);
 		for (int i = 0; i < fields.length && sequence != null; i++) {
 			if (sequence instanceof Array) {
-				final List<Sequence> vals = getSequenceValues(ctx, t, (Array) sequence, fields[i]);
+				final List<Item> vals = getSequenceValues(ctx, t, (Array) sequence, fields[i]);
 
-				return new DArray(vals.toArray(new Sequence[] {}));
+				return new ItemSequence(vals.toArray(new Item[0]));
 			} else {
 				if (!(sequence instanceof Record)) {
 					throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
@@ -90,9 +91,9 @@ public class DerefExpr implements Expr {
 		return null;
 	}
 
-	private ArrayList<Sequence> getSequenceValues(QueryContext ctx, Tuple t, Array sequence, Expr field1) {
+	private List<Item> getSequenceValues(QueryContext ctx, Tuple t, Array sequence, Expr field1) {
 		final var array = sequence;
-		final var vals = new ArrayList<Sequence>();
+		final var vals = new ArrayList<Item>();
 		for (final Sequence value : array.values()) {
 			final Sequence val = value.evaluateToItem(ctx, t);
 
@@ -115,7 +116,7 @@ public class DerefExpr implements Expr {
 			final var sequenceByRecordField = getSequenceByRecordField(record, field);
 
 			if (sequenceByRecordField != null) {
-				vals.add(sequenceByRecordField);
+				vals.add(sequenceByRecordField.evaluateToItem(ctx, t));
 			}
 		}
 		return vals;

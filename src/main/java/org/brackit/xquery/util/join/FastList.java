@@ -30,11 +30,7 @@ package org.brackit.xquery.util.join;
 import java.util.Arrays;
 
 /**
-<<<<<<< HEAD
  * Array-based variant of a list. Faster than java.util.ArrayList for our
-=======
- * Array-based variant of a list. Faster than java.util.ArrayList for out
->>>>>>> upstream/master
  * purposes, e.g., makes less error-checks.
  *
  * @author Sebastian Baechle
