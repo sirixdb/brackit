@@ -39,6 +39,7 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,6 +53,14 @@ import static org.junit.Assert.assertEquals;
 public final class JsonTest extends XQueryBaseTest {
 
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
+
+  @Test
+  public void testDerefExpr() throws IOException {
+    final URI docUri = JSON_RESOURCES.resolve("multiple-revisions.json").toUri();
+    final var query = String.format("let $result := jn:parse(io:read('%s'))=>sirix[[2]]=>revision=>tada[.=>foo=>baz = 'bar'] return $result", docUri.toString());
+    final var result = query(query);
+    assertEquals("[{\"foo\":\"bar\"},{\"baz\":false},\"boo\",{},[{\"foo\":[true,{\"baz\":\"bar\"}]}]]", result);
+  }
 
   @Test
   public void testSimpleRecord() throws IOException {

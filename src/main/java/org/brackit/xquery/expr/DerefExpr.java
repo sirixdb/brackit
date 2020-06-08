@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -46,159 +46,183 @@ import java.util.List;
 
 /**
  * @author Sebastian Baechle
- * 
  */
 public class DerefExpr implements Expr {
 
-	final Expr record;
-	final Expr[] fields;
+  final Expr record;
+  final Expr[] fields;
 
-	public DerefExpr(Expr record, Expr[] fields) {
-		this.record = record;
-		this.fields = fields;
-	}
+  public DerefExpr(Expr record, Expr[] fields) {
+    this.record = record;
+    this.fields = fields;
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple) throws QueryException {
-		final var sequence = record.evaluate(ctx, tuple);
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) throws QueryException {
+    final var sequence = record.evaluate(ctx, tuple);
 
-		for (int index = 0; index < fields.length && sequence != null; index++) {
-			final var resultSequence = processSequence(ctx, tuple, sequence, index);
+    for (int index = 0; index < fields.length && sequence != null; index++) {
+      final var resultSequence = processSequence(ctx, tuple, sequence, index);
 
-			if (resultSequence != null) {
-				return resultSequence;
-			}
-		}
+      if (resultSequence != null) {
+        return resultSequence;
+      }
+    }
 
-		return null;
-	}
+    return null;
+  }
 
-	private Sequence processSequence(QueryContext ctx, Tuple tuple, Sequence sequence, int index) {
-		if (sequence instanceof Array) {
-			return processArray(ctx, tuple, getSequenceValues(ctx, tuple, (Array) sequence, fields[index]));
-		} else if (sequence instanceof Record) {
-			return processRecord(sequence, index, ctx, tuple);
-		} else {
-			Iter s = sequence.iterate();
-			Item item = s.next();
-			if (item == null) {
-				return null;
-			}
-			return processSequence(ctx, tuple, item, index);
-		}
-	}
+  private Sequence processSequence(QueryContext ctx, Tuple tuple, Sequence sequence, int index) {
+    if (sequence instanceof Array) {
+      return processArray(ctx, tuple, getSequenceValues(ctx, tuple, (Array) sequence, fields[index]));
+    } else if (sequence instanceof Record) {
+      return processRecord(sequence, index, ctx, tuple);
+    } else if (sequence instanceof LazySequence) {
+      return processLazySequence(ctx, tuple, sequence, index);
+    } else {
+      return null;
+    }
+  }
 
-	private Sequence processArray(QueryContext ctx, Tuple tuple, List<Sequence> sequenceValues) {
-		final List<Sequence> values = sequenceValues;
+  private Sequence processLazySequence(QueryContext ctx, Tuple tuple, Sequence sequence, int index) {
+    return new LazySequence() {
+      @Override
+      public Iter iterate() {
+        Iter iter = sequence.iterate();
 
-		return new LazySequence() {
-			@Override
-			public Iter iterate() {
-				return new BaseIter() {
-					int i;
+        return new BaseIter() {
+          @Override
+          public Item next() {
+            Item item;
+            while ((item = iter.next()) != null) {
+              final var resultItem = processSequence(ctx, tuple, item, index);
+              if (resultItem != null) {
+                if (resultItem instanceof LazySequence) {
+                  processLazySequence(ctx, tuple, resultItem, index);
+                }
+                return resultItem.evaluateToItem(ctx, tuple);
+              }
+            }
+            return null;
+          }
 
-					@Override
-					public Item next() {
-						if (i < values.size()) {
-							return values.get(i++).evaluateToItem(ctx, tuple);
-						}
-						return null;
-					}
+          @Override
+          public void close() {
+          }
+        };
+      }
+    };
+  }
 
-					@Override
-					public void close() {
-					}
-				};
-			}
-		};
-	}
+  private Sequence processArray(QueryContext ctx, Tuple tuple, List<Sequence> sequenceValues) {
+    final List<Sequence> values = sequenceValues;
 
-	private Sequence processRecord(Sequence sequence, int index, QueryContext ctx, Tuple tuple) {
-		final Record record = (Record) sequence;
-		final Item field = fields[index].evaluateToItem(ctx, tuple);
+    return new LazySequence() {
+      @Override
+      public Iter iterate() {
+        return new BaseIter() {
+          int i;
 
-		if (field == null) {
-			return null;
-		}
+          @Override
+          public Item next() {
+            if (i < values.size()) {
+              return values.get(i++).evaluateToItem(ctx, tuple);
+            }
+            return null;
+          }
 
-		return getSequenceByRecordField(record, field);
-	}
+          @Override
+          public void close() {
+          }
+        };
+      }
+    };
+  }
 
-	private List<Sequence> getSequenceValues(QueryContext ctx, Tuple t, Array sequence, Expr field1) {
-		// TODO: Think about if it makes sense to get the result sequence with an iterator instead of materialize everything
+  private Sequence processRecord(Sequence sequence, int index, QueryContext ctx, Tuple tuple) {
+    final Record record = (Record) sequence;
+    final Item field = fields[index].evaluateToItem(ctx, tuple);
 
-		final var vals = new ArrayList<Sequence>();
-		for (Sequence value : sequence.values()) {
-			Sequence val = value.evaluate(ctx, t);
-			if (val instanceof Array) {
-				vals.addAll(getSequenceValues(ctx, t, (Array) val, field1));
-				continue;
-			}
-			if (!(val instanceof Record)) {
-				continue;
-			}
-			Record record = (Record) val;
-			Item field = field1.evaluateToItem(ctx, t);
-			if (field == null) {
-				continue;
-			}
-			final var sequenceByRecordField = getSequenceByRecordField(record, field);
-			if (sequenceByRecordField != null) {
-				vals.add(sequenceByRecordField);
-			}
-		}
-		return vals;
-	}
+    if (field == null) {
+      return null;
+    }
 
-	private Sequence getSequenceByRecordField(Record record, Item field) {
-		Sequence sequence;
-		if (field instanceof QNm) {
-			sequence = record.get((QNm) field);
-		} else if (field instanceof IntNumeric) {
-			sequence = record.value((IntNumeric) field);
-		} else {
-			throw new QueryException(Bits.BIT_ILLEGAL_RECORD_FIELD, "Illegal record field reference: %s", field);
-		}
-		return sequence;
-	}
+    return getSequenceByRecordField(record, field);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return ExprUtil.asItem(evaluate(ctx, tuple));
-	}
+  private List<Sequence> getSequenceValues(QueryContext ctx, Tuple t, Array sequence, Expr field1) {
+    // TODO: Think about if it makes sense to get the result sequence with an iterator instead of materialize everything
 
-	@Override
-	public boolean isUpdating() {
-		if (record.isUpdating()) {
-			return true;
-		}
-		for (Expr f : fields) {
-			if (f.isUpdating()) {
-				return true;
-			}
-		}
-		return false;
-	}
+    final var vals = new ArrayList<Sequence>();
+    for (Sequence value : sequence.values()) {
+      Sequence val = value.evaluate(ctx, t);
+      if (val instanceof Array) {
+        vals.addAll(getSequenceValues(ctx, t, (Array) val, field1));
+        continue;
+      }
+      if (!(val instanceof Record)) {
+        continue;
+      }
+      Record record = (Record) val;
+      Item field = field1.evaluateToItem(ctx, t);
+      if (field == null) {
+        continue;
+      }
+      final var sequenceByRecordField = getSequenceByRecordField(record, field);
+      if (sequenceByRecordField != null) {
+        vals.add(sequenceByRecordField);
+      }
+    }
+    return vals;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  private Sequence getSequenceByRecordField(Record record, Item field) {
+    Sequence sequence;
+    if (field instanceof QNm) {
+      sequence = record.get((QNm) field);
+    } else if (field instanceof IntNumeric) {
+      sequence = record.value((IntNumeric) field);
+    } else {
+      throw new QueryException(Bits.BIT_ILLEGAL_RECORD_FIELD, "Illegal record field reference: %s", field);
+    }
+    return sequence;
+  }
 
-	public String toString() {
-		StringBuilder s = new StringBuilder();
-		for (Expr f : fields) {
-			s.append("=>");
-			s.append(f);
-		}
-		return s.toString();
-	}
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) throws QueryException {
+    return ExprUtil.asItem(evaluate(ctx, tuple));
+  }
 
-	public static void main(String[] args) throws QueryException {
-		// a:1, b:2, c:3 , {x:1}, d:5,
-		new XQuery(
-				"let $n := <x><y>yval</y></x> return { \"e\" : { \"m\": \"mvalue\", \"n\":$n}}=>e=>n/y")
-				.serialize(new BrackitQueryContext(), System.out);
-	}
+  @Override
+  public boolean isUpdating() {
+    if (record.isUpdating()) {
+      return true;
+    }
+    for (Expr f : fields) {
+      if (f.isUpdating()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
+
+  public String toString() {
+    StringBuilder s = new StringBuilder();
+    for (Expr f : fields) {
+      s.append("=>");
+      s.append(f);
+    }
+    return s.toString();
+  }
+
+  public static void main(String[] args) throws QueryException {
+    // a:1, b:2, c:3 , {x:1}, d:5,
+    new XQuery("let $n := <x><y>yval</y></x> return { \"e\" : { \"m\": \"mvalue\", \"n\":$n}}=>e=>n/y").serialize(new BrackitQueryContext(),
+                                                                                                                  System.out);
+  }
 }
