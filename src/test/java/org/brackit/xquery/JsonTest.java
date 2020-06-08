@@ -71,6 +71,14 @@ public final class JsonTest extends XQueryBaseTest {
   }
 
   @Test
+  public void testDerefExpr3() throws IOException {
+    final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
+    final var query = json + "=>sirix[[2]]=>revision=>tada[[4]]=>foo[[1]]=>baz";
+    final var result = query(query);
+    assertEquals("bar", result);
+  }
+
+  @Test
   public void testSimpleRecord() throws IOException {
     final var query = "{\"key\":jn:null()}";
     final var result = query(query);
