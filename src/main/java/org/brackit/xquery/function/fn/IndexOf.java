@@ -94,7 +94,7 @@ public class IndexOf extends AbstractFunction {
 							it = seq.iterate();
 						}
 
-						Atomic item = null;
+						Atomic item;
 
 						while ((item = (Atomic) it.next()) != null) {
 							IntNumeric current = next;

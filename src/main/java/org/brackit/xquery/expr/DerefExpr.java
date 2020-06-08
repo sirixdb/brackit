@@ -28,12 +28,12 @@
 package org.brackit.xquery.expr;
 
 import org.brackit.xquery.*;
-import org.brackit.xquery.array.DArray;
-import org.brackit.xquery.array.DRArray;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
-import org.brackit.xquery.sequence.ItemSequence;
+import org.brackit.xquery.sequence.BaseIter;
+import org.brackit.xquery.sequence.LazySequence;
+import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
@@ -42,7 +42,6 @@ import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.json.Record;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -60,63 +59,92 @@ public class DerefExpr implements Expr {
 	}
 
 	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple t) throws QueryException {
-		Sequence sequence = record.evaluateToItem(ctx, t);
-		for (int i = 0; i < fields.length && sequence != null; i++) {
-			if (sequence instanceof Array) {
-				final List<Item> vals = getSequenceValues(ctx, t, (Array) sequence, fields[i]);
+	public Sequence evaluate(QueryContext ctx, Tuple tuple) throws QueryException {
+		final var sequence = record.evaluate(ctx, tuple);
 
-				return new ItemSequence(vals.toArray(new Item[0]));
-			} else {
-				if (!(sequence instanceof Record)) {
-					throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-							"Context item in navigation step is not a record: %s", sequence);
-				}
+		for (int index = 0; index < fields.length && sequence != null; index++) {
+			final var resultSequence = processSequence(ctx, tuple, sequence, index);
 
-				final Record record = (Record) sequence;
-				final Item field = fields[i].evaluateToItem(ctx, t);
-
-				if (field == null) {
-					return null;
-				}
-
-				final Sequence sequenceByRecordField = getSequenceByRecordField(record, field);
-
-				if (sequenceByRecordField != null) {
-					return sequenceByRecordField;
-				}
+			if (resultSequence != null) {
+				return resultSequence;
 			}
 		}
 
 		return null;
 	}
 
-	private List<Item> getSequenceValues(QueryContext ctx, Tuple t, Array sequence, Expr field1) {
-		final var array = sequence;
-		final var vals = new ArrayList<Item>();
-		for (final Sequence value : array.values()) {
-			final Sequence val = value.evaluateToItem(ctx, t);
+	private Sequence processSequence(QueryContext ctx, Tuple tuple, Sequence sequence, int index) {
+		if (sequence instanceof Array) {
+			return processArray(ctx, tuple, getSequenceValues(ctx, tuple, (Array) sequence, fields[index]));
+		} else if (sequence instanceof Record) {
+			return processRecord(sequence, index, ctx, tuple);
+		} else {
+			Iter s = sequence.iterate();
+			Item item = s.next();
+			if (item == null) {
+				return null;
+			}
+			return processSequence(ctx, tuple, item, index);
+		}
+	}
 
+	private Sequence processArray(QueryContext ctx, Tuple tuple, List<Sequence> sequenceValues) {
+		final List<Sequence> values = sequenceValues;
+
+		return new LazySequence() {
+			@Override
+			public Iter iterate() {
+				return new BaseIter() {
+					int i;
+
+					@Override
+					public Item next() {
+						if (i < values.size()) {
+							return values.get(i++).evaluateToItem(ctx, tuple);
+						}
+						return null;
+					}
+
+					@Override
+					public void close() {
+					}
+				};
+			}
+		};
+	}
+
+	private Sequence processRecord(Sequence sequence, int index, QueryContext ctx, Tuple tuple) {
+		final Record record = (Record) sequence;
+		final Item field = fields[index].evaluateToItem(ctx, tuple);
+
+		if (field == null) {
+			return null;
+		}
+
+		return getSequenceByRecordField(record, field);
+	}
+
+	private List<Sequence> getSequenceValues(QueryContext ctx, Tuple t, Array sequence, Expr field1) {
+		// TODO: Think about if it makes sense to get the result sequence with an iterator instead of materialize everything
+
+		final var vals = new ArrayList<Sequence>();
+		for (Sequence value : sequence.values()) {
+			Sequence val = value.evaluate(ctx, t);
 			if (val instanceof Array) {
 				vals.addAll(getSequenceValues(ctx, t, (Array) val, field1));
 				continue;
 			}
-
 			if (!(val instanceof Record)) {
 				continue;
 			}
-
 			Record record = (Record) val;
 			Item field = field1.evaluateToItem(ctx, t);
-
 			if (field == null) {
 				continue;
 			}
-
 			final var sequenceByRecordField = getSequenceByRecordField(record, field);
-
 			if (sequenceByRecordField != null) {
-				vals.add(sequenceByRecordField.evaluateToItem(ctx, t));
+				vals.add(sequenceByRecordField);
 			}
 		}
 		return vals;
@@ -137,22 +165,7 @@ public class DerefExpr implements Expr {
 	@Override
 	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
 			throws QueryException {
-		final var res = evaluate(ctx, tuple);
-		if ((res == null) || (res instanceof Item)) {
-			return (Item) res;
-		}
-		var vals = new Sequence[fields.length];
-		int pos = 0;
-		try (final Iter it = res.iterate()) {
-			Item item;
-			while ((item = it.next()) != null) {
-				if (pos == vals.length) {
-					vals = Arrays.copyOfRange(vals, 0, ((vals.length * 3) / 2) + 1);
-				}
-				vals[pos++] = item;
-			}
-		}
-		return new DRArray(vals, 0, pos);
+		return ExprUtil.asItem(evaluate(ctx, tuple));
 	}
 
 	@Override

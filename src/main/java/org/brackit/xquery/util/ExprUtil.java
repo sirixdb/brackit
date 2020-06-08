@@ -28,6 +28,7 @@
 package org.brackit.xquery.util;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
@@ -42,7 +43,7 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  * 
  */
-public abstract class ExprUtil implements Expr {
+public final class ExprUtil {
 	private ExprUtil() {
 	}
 
@@ -71,7 +72,7 @@ public abstract class ExprUtil implements Expr {
 		if ((res == null) || (res instanceof Item)) {
 			return res;
 		}
-		Iter it = res.iterate();
+		final var it = res.iterate();
 		try {
 			Item first = it.next();
 			if (first == null) {
@@ -81,7 +82,7 @@ public abstract class ExprUtil implements Expr {
 			if (second == null) {
 				return first;
 			}
-			ArrayList<Item> buffer = new ArrayList<Item>();
+			var buffer = new ArrayList<Item>();
 			buffer.add(first);
 			buffer.add(second);
 			Item item;

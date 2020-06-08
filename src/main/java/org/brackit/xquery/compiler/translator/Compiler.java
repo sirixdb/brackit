@@ -140,7 +140,7 @@ public class Compiler implements Translator {
   protected Expr expr(AST node, boolean disallowUpdatingExpr) throws QueryException {
     Expr expr = anyExpr(node);
 
-    if ((disallowUpdatingExpr) && (expr.isUpdating())) {
+    if (disallowUpdatingExpr && expr.isUpdating()) {
       throw new QueryException(ErrorCode.ERR_UPDATE_ILLEGAL_NESTED_UPDATE, "Illegal nested update expression");
     }
 

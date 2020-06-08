@@ -39,16 +39,16 @@ import org.brackit.xquery.module.Module;
  */
 public interface ModuleResolver {
 
-	public void register(String targetNSUri, Module module);
+	void register(String targetNSUri, Module module);
 	
-	public void unregister(String targetNSUri);
+	void unregister(String targetNSUri);
 	
 	/**
 	 * Resolve the set of modules identified by the target namespace
 	 * <code>targetNSUri</code>
 	 */
-	public List<Module> resolve(String targetNSUri, String... locationUris);
+	List<Module> resolve(String targetNSUri, String... locationUris);
 
-	public List<String> load(String uri, String[] locations)
+	List<String> load(String uri, String[] locations)
 			throws IOException;
 }

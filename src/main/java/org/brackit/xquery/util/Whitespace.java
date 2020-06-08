@@ -42,7 +42,7 @@ public class Whitespace {
 		int end = str.length();
 		int pos = 0;
 
-		char c = 0;
+		char c;
 		while ((pos < end)
 				&& ((((c = str.charAt(pos)) == '\r') || (c == '\t') || (c == '\n'))))
 			pos++;
@@ -77,7 +77,7 @@ public class Whitespace {
 		int length = str.length();
 		int end = length;
 
-		char c = 0;
+		char c;
 		while ((start < length)
 				&& ((((c = str.charAt(start))) == ' ') || (c == '\r')
 						|| (c == '\t') || (c == '\n')))
@@ -102,7 +102,7 @@ public class Whitespace {
 		int start = 0;
 
 		// trim leading and trailing WS
-		char c = 0;
+		char c;
 		while ((start < length)
 				&& ((((c = str.charAt(start))) == ' ') || (c == '\r')
 						|| (c == '\t') || (c == '\n')))
@@ -156,7 +156,7 @@ public class Whitespace {
 		int start = 0;
 
 		// trim leading and trailing WS
-		char c = 0;
+		char c;
 		while ((start < length)
 				&& ((((c = str.charAt(start))) == ' ') || (c == '\r')
 						|| (c == '\t') || (c == '\n')))
@@ -226,7 +226,7 @@ public class Whitespace {
 		int end = str.length();
 		int pos = 0;
 
-		char c = 0;
+		char c;
 		while ((pos < end) && ((c = str.charAt(pos)) != '\r')
 				&& (c != '\u0085') && (c != '\u2028'))
 			pos++;
@@ -264,7 +264,7 @@ public class Whitespace {
 		int end = str.length();
 		int pos = 0;
 
-		char c = 0;
+		char c;
 		while ((pos < end) && ((c = str.charAt(pos)) != '\r'))
 			pos++;
 

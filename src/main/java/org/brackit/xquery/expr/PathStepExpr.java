@@ -318,13 +318,7 @@ public class PathStepExpr implements Expr {
 	}
 
 	private static class DdoOrAtomicSequence extends LazySequence {
-		static final Comparator<Tuple> cmp = new Comparator<Tuple>() {
-			@Override
-			public int compare(Tuple o1, Tuple o2) {
-				int res = ((Node<?>) o1).cmp((Node<?>) o2);
-				return res;
-			}
-		};
+		static final Comparator<Tuple> cmp = (o1, o2) -> ((Node<?>) o1).cmp((Node<?>) o2);
 
 		final Sequence s;
 		// volatile fields because they are

@@ -103,9 +103,10 @@ public class PipeExpr implements Expr {
 							continue;
 						}
 
-						if (s instanceof Item) { //&& !(s instanceof Array) && !(s instanceof Record)) {
+						if (s instanceof Item) {
 							return (Item) s;
 						}
+
 						it = s.iterate();
 					}
 				}

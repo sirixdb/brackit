@@ -112,9 +112,9 @@ public abstract class PredicateExpr implements Expr {
 					while ((n = it.next()) != null) {
 						pos = pos.inc();
 
-						if (predicate((Item) n)) {
+						if (predicate(n)) {
 							// include single item in result
-							return (Item) n;
+							return n;
 						}
 					}
 					it.close();
