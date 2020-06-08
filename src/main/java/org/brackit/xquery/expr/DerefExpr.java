@@ -79,9 +79,8 @@ public class DerefExpr implements Expr {
       return processRecord(sequence, index, ctx, tuple);
     } else if (sequence instanceof LazySequence) {
       return processLazySequence(ctx, tuple, sequence, index);
-    } else {
-      return null;
     }
+    return null;
   }
 
   private Sequence processLazySequence(QueryContext ctx, Tuple tuple, Sequence sequence, int index) {
@@ -91,18 +90,45 @@ public class DerefExpr implements Expr {
         Iter iter = sequence.iterate();
 
         return new BaseIter() {
+          Iter nestedIter;
+
           @Override
           public Item next() {
+            Item item = null;
+            if (nestedIter != null) {
+              item = nextItem(nestedIter);
+            }
+            if (item == null) {
+              item = nextItem(iter);
+            }
+
+            return item;
+          }
+
+          private Item nextItem(Iter iter) {
             Item item;
             while ((item = iter.next()) != null) {
-              final var resultItem = processSequence(ctx, tuple, item, index);
-              if (resultItem != null) {
-                if (resultItem instanceof LazySequence) {
-                  processLazySequence(ctx, tuple, resultItem, index);
-                }
-                return resultItem.evaluateToItem(ctx, tuple);
+              if (iter == nestedIter) {
+                return item;
               }
+              var resultItem = processSequence(ctx, tuple, item, index);
+
+              if (resultItem == null) {
+                continue;
+              }
+
+              if (resultItem instanceof LazySequence) {
+                nestedIter = resultItem.iterate();
+                resultItem = next();
+
+                if (resultItem == null) {
+                  continue;
+                }
+              }
+
+              return resultItem.evaluateToItem(ctx, tuple);
             }
+
             return null;
           }
 
@@ -114,9 +140,7 @@ public class DerefExpr implements Expr {
     };
   }
 
-  private Sequence processArray(QueryContext ctx, Tuple tuple, List<Sequence> sequenceValues) {
-    final List<Sequence> values = sequenceValues;
-
+  private Sequence processArray(QueryContext ctx, Tuple tuple, final List<Sequence> values) {
     return new LazySequence() {
       @Override
       public Iter iterate() {

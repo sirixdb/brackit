@@ -38,6 +38,8 @@
 package org.brackit.xquery.function.json;
 
 import java.util.ArrayList;
+import java.util.List;
+
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.array.DArray;
 import org.brackit.xquery.atomic.Bool;
@@ -128,7 +130,7 @@ public class JSONParser extends Tokenizer {
 		if (attemptSkipS("]")) {
 			return new ArrayRecord(new QNm[0], new Item[0]);
 		}
-		ArrayList<Item> values = new ArrayList<Item>();
+		List<Item> values = new ArrayList<Item>();
 		do {
 			values.add(value(true));
 		} while (attemptSkipS(","));
@@ -145,8 +147,8 @@ public class JSONParser extends Tokenizer {
 			return new ArrayRecord(new QNm[0], new Item[0]);
 		}
 		int len = 0;
-		ArrayList<QNm> fields = new ArrayList<QNm>();
-		ArrayList<Item> values = new ArrayList<Item>();
+		List<QNm> fields = new ArrayList<>();
+		List<Item> values = new ArrayList<>();
 		do {
 			Str name = string();
 			if (name == null) {
@@ -219,6 +221,31 @@ public class JSONParser extends Tokenizer {
 	public static void main(String[] args) throws Exception {
 		String s = "{\"bindings\": [        {\"ircEvent\": \"PRIVMSG\", \"method\": \"newURI\", \"regex\": \"^http://.*\"},        {\"ircEvent\": \"PRIVMSG\", \"method\": \"deleteURI\", \"regex\": \"^delete.*\"},        {\"ircEvent\": \"PRIVMSG\", \"method\": \"randomURI\", \"regex\": \"^random.*\"}    ]}";
 		Item item = new JSONParser(s).parse();
+//		new StringSerializer(System.out).serialize(item);
+
+		s = "{\n" + "  \"sirix\": [\n" + "    {\n" + "      \"revisionNumber\": 1,\n" + "      \"revision\": {\n"
+				+ "        \"foo\": [\n" + "          \"bar\",\n" + "          null,\n" + "          2.33\n" + "        ],\n"
+				+ "        \"bar\": {\n" + "          \"hello\": \"world\",\n" + "          \"helloo\": true\n" + "        },\n"
+				+ "        \"baz\": \"hello\",\n" + "        \"tada\": [\n" + "          {\n" + "            \"foo\": \"bar\"\n"
+				+ "          },\n" + "          {\n" + "            \"baz\": false\n" + "          },\n"
+				+ "          \"boo\",\n" + "          {},\n" + "          []\n" + "        ]\n" + "      }\n" + "    },\n"
+				+ "    {\n" + "      \"revisionNumber\": 2,\n" + "      \"revision\": {\n" + "        \"tadaaa\": \"todooo\",\n"
+				+ "        \"foo\": [\n" + "          \"bar\",\n" + "          null,\n" + "          2.33\n" + "        ],\n"
+				+ "        \"bar\": {\n" + "          \"hello\": \"world\",\n" + "          \"helloo\": true\n" + "        },\n"
+				+ "        \"baz\": \"hello\",\n" + "        \"tada\": [\n" + "          {\n" + "            \"foo\": \"bar\"\n"
+				+ "          },\n" + "          {\n" + "            \"baz\": false\n" + "          },\n"
+				+ "          \"boo\",\n" + "          {},\n" + "          []\n" + "        ]\n" + "      }\n" + "    },\n"
+				+ "    {\n" + "      \"revisionNumber\": 3,\n" + "      \"revision\": {\n" + "        \"tadaaa\": \"todooo\",\n"
+				+ "        \"foo\": [\n" + "          \"bar\",\n" + "          null,\n" + "          2.33\n" + "        ],\n"
+				+ "        \"bar\": {\n" + "          \"hello\": \"world\",\n" + "          \"helloo\": true\n" + "        },\n"
+				+ "        \"baz\": \"hello\",\n" + "        \"tada\": [\n" + "          {\n" + "            \"foo\": \"bar\"\n"
+				+ "          },\n" + "          {\n" + "            \"baz\": false\n" + "          },\n"
+				+ "          \"boo\",\n" + "          {},\n" + "          [\n" + "            {\n"
+				+ "              \"foo\": [\n" + "                true,\n" + "                {\n"
+				+ "                  \"baz\": \"bar\"\n" + "                }\n" + "              ]\n" + "            }\n"
+				+ "          ]\n" + "        ]\n" + "      }\n" + "    }\n" + "  ]\n" + "}";
+
+		item = new JSONParser(s).parse();
 		new StringSerializer(System.out).serialize(item);
 	}
 }

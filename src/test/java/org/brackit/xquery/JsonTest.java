@@ -55,11 +55,19 @@ public final class JsonTest extends XQueryBaseTest {
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
 
   @Test
-  public void testDerefExpr() throws IOException {
-    final URI docUri = JSON_RESOURCES.resolve("multiple-revisions.json").toUri();
-    final var query = String.format("let $result := jn:parse(io:read('%s'))=>sirix[[2]]=>revision=>tada[.=>foo=>baz = 'bar'] return $result", docUri.toString());
+  public void testDerefExpr1() throws IOException {
+    final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
+    final var query = json + "=>sirix[[2]]=>revision=>tada[.=>foo=>baz = 'bar']";
     final var result = query(query);
     assertEquals("[{\"foo\":\"bar\"},{\"baz\":false},\"boo\",{},[{\"foo\":[true,{\"baz\":\"bar\"}]}]]", result);
+  }
+
+  @Test
+  public void testDerefExpr2() throws IOException {
+    final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
+    final var query = json + "=>sirix=>revision=>tada=>foo";
+    final var result = query(query);
+    assertEquals("bar bar bar [true,{\"baz\":\"bar\"}]", result);
   }
 
   @Test
@@ -143,7 +151,7 @@ public final class JsonTest extends XQueryBaseTest {
     final var query =
         "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ], [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]] return $json[[]]";
     final var result = query(query);
-    assertEquals("[\"mercury\",\"venus\",\"earth\",\"mars\"][\"monday\",\"tuesday\",\"wednesday\",\"thursday\"]",
+    assertEquals("[\"mercury\",\"venus\",\"earth\",\"mars\"] [\"monday\",\"tuesday\",\"wednesday\",\"thursday\"]",
                  result);
   }
 
@@ -222,7 +230,7 @@ public final class JsonTest extends XQueryBaseTest {
         "    let $object1 := { \"Captain\" : \"Kirk\" }\n" + "    let $object2 := { \"First officer\" : \"Spock\" }\n"
             + "    return ($object1, \" \", $object2)";
     final var result = query(query);
-    assertEquals("{\"Captain\":\"Kirk\"} {\"First officer\":\"Spock\"}", result);
+    assertEquals("{\"Captain\":\"Kirk\"}   {\"First officer\":\"Spock\"}", result);
   }
 
   @Test

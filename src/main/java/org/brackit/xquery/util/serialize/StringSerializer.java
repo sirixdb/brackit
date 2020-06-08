@@ -131,9 +131,17 @@ public class StringSerializer implements Serializer {
           }
           first = false;
         } else if (item instanceof Array) {
+          if (!first) {
+            out.write(" ");
+          }
           json(item, printer, true);
+          first = false;
         } else if (item instanceof Record) {
+          if (!first) {
+            out.write(" ");
+          }
           json(item, printer, false);
+          first = false;
         } else {
           throw new QueryException(ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
                                    "Serialization of item type '%s' not implemented yet.",
