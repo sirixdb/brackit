@@ -39,7 +39,7 @@ import org.brackit.xquery.util.Cfg;
 public class XMarkTestUnnestedJoin extends XMarkTest {
 
 	@Override
-	public void setUp() throws Exception, FileNotFoundException {
+	public void setUp() throws Exception {
 		super.setUp();
 		Cfg.set(DefaultOptimizer.UNNEST_CFG, true);
 		DefaultOptimizer.UNNEST = true;

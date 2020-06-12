@@ -21,10 +21,6 @@
  */
 package org.brackit.xquery;
 
-import static org.junit.Assert.assertEquals;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
 import org.brackit.xquery.node.d2linked.D2Node;
 import org.brackit.xquery.node.d2linked.D2NodeBuilder;
 import org.brackit.xquery.node.parser.DocumentParser;
@@ -32,6 +28,11 @@ import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.node.NodeCollection;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.PrintStream;
+import java.nio.file.Path;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test XMark queries against default context item.
@@ -42,17 +43,13 @@ import org.junit.Test;
 public abstract class XMarkTest extends XQueryBaseTest {
 
     /** XMark directory. */
-    private static final String XMARK_AUCTION = new StringBuilder(RESOURCES).append(File.separator)
-            .append("xmark").append(File.separator).append("auction.xml").toString();
+    private static final Path XMARK_AUCTION = RESOURCES.resolve("xmark").resolve("auction.xml");
 
     /** Query directory. */
-    private static final String QUERY_DIR = new StringBuilder(RESOURCES).append(File.separator)
-            .append("xmark").append(File.separator).append("queries").append(File.separator)
-            .append("orig").append(File.separator).toString();
+    private static final Path QUERY_DIR = RESOURCES.resolve("xmark").resolve("queries").resolve("orig");
 
     /** Result directory. */
-    private static final String RESULT_DIR = new StringBuilder(RESOURCES).append(File.separator)
-            .append("xmark").append(File.separator).append("results").append(File.separator).toString();
+    private static final Path RESULT_DIR = RESOURCES.resolve("xmark").resolve("results");
 
     /** Collection build from XMark auction document. */
     protected NodeCollection<?> coll;
@@ -61,7 +58,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark01() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q01.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q01.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q01.out"), buffer.toString());
     }
@@ -70,7 +67,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark02() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q02.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q02.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q02.out"), buffer.toString());
     }
@@ -79,7 +76,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark03() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q03.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q03.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q03.out"), buffer.toString());
     }
@@ -88,7 +85,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark04() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q04.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q04.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q04.out"), buffer.toString());
     }
@@ -97,7 +94,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark05() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q05.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q05.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q05.out"), buffer.toString());
     }
@@ -106,7 +103,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark06() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q06.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q06.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q06.out"), buffer.toString());
     }
@@ -115,7 +112,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark07() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q07.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q07.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q07.out"), buffer.toString());
     }
@@ -124,7 +121,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark08() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q08.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q08.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q08.out"), buffer.toString());
     }
@@ -133,7 +130,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark09() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q09.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q09.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q09.out"), buffer.toString());
     }
@@ -142,7 +139,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark10() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q10.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q10.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q10.out"), buffer.toString());
     }
@@ -151,7 +148,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark11() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q11.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q11.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q11.out"), buffer.toString());
     }
@@ -160,7 +157,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark12() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q12.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q12.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q12.out"), buffer.toString());
     }
@@ -169,7 +166,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark13() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q13.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q13.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q13.out"), buffer.toString());
     }
@@ -178,7 +175,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark14() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q14.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q14.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q14.out"), buffer.toString());
     }
@@ -187,7 +184,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark15() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q15.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q15.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q15.out"), buffer.toString());
     }
@@ -196,7 +193,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark16() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q16.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q16.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q16.out"), buffer.toString());
     }
@@ -205,7 +202,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark17() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q17.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q17.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q17.out"), buffer.toString());
     }
@@ -214,7 +211,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark18() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q18.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q18.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q18.out"), buffer.toString());
     }
@@ -223,7 +220,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark19() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q19.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q19.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q19.out"), buffer.toString());
     }
@@ -232,16 +229,16 @@ public abstract class XMarkTest extends XQueryBaseTest {
     public void xmark20() throws Exception {
         ctx.setContextItem(coll.getDocument());
         final PrintStream buffer = createBuffer();
-        final XQuery query = xquery(readQuery(QUERY_DIR, "q20.xq"));
+        final XQuery query = xquery(readFile(QUERY_DIR, "q20.xq"));
         query.serialize(ctx, buffer);
         assertEquals(readFile(RESULT_DIR, "q20.out"), buffer.toString());
     }
 
     @Override
     @Before
-    public void setUp() throws Exception, FileNotFoundException {
+    public void setUp() throws Exception {
         super.setUp();
-        final DocumentParser parser = new DocumentParser(new File(XMARK_AUCTION));
+        final DocumentParser parser = new DocumentParser(XMARK_AUCTION.toFile());
         parser.setRetainWhitespace(true);
         coll = createDoc(parser);
     }

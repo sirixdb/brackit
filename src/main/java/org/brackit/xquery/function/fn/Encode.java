@@ -28,6 +28,7 @@
 package org.brackit.xquery.function.fn;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import org.brackit.xquery.QueryContext;
@@ -124,8 +125,7 @@ public class Encode extends AbstractFunction {
 
 				if (codePoint < 0x20
 						|| codePoint > 0x7E
-						|| IRI_ILLEGAL_ASCII.contains(new Character(str
-								.charAt(i)))) {
+						|| IRI_ILLEGAL_ASCII.contains(str.charAt(i))) {
 					if (copy < i) {
 						sb.append(str.substring(copy, i));
 					}
@@ -134,7 +134,7 @@ public class Encode extends AbstractFunction {
 					String seq = String.valueOf(Character.toChars(codePoint));
 					byte[] bytes = null;
 					try {
-						bytes = seq.getBytes("UTF-8");
+						bytes = seq.getBytes(StandardCharsets.UTF_8.toString());
 					} catch (UnsupportedEncodingException e) {
 					}
 

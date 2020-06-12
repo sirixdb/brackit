@@ -27,130 +27,124 @@
  */
 package org.brackit.xquery.compiler.parser;
 
-import static org.junit.Assert.assertEquals;
-import java.io.File;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQueryBaseTest;
 import org.junit.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author Sebastian Baechle
- *
  */
 public class XQParserTest extends XQueryBaseTest {
 
-	private static final String PARSER = new StringBuilder(RESOURCES)
-	.append(File.separator).append("parser").append(File.separator).toString();
+  private static final Path PARSER = RESOURCES.resolve("parser");
 
-	@Test
-	public void emptyArray() {
-		new XQParser("[]").parse();
-	}
+  @Test
+  public void emptyArray() {
+    new XQParser("[]").parse();
+  }
 
-	@Test
-	public void emptyRecord() {
-		new XQParser("{}").parse();
-	}
+  @Test
+  public void emptyRecord() {
+    new XQParser("{}").parse();
+  }
 
-	@Test
-	public void ncname() {
-		new XQParser("declare").parse();
-	}
+  @Test
+  public void ncname() {
+    new XQParser("declare").parse();
+  }
 
-	@Test
-	public void qname() throws Exception {
-		new XQParser("declare").parse();
-	}
+  @Test
+  public void qname() {
+    new XQParser("declare").parse();
+  }
 
-	@Test
-	public void emptyElement() throws Exception {
-		new XQParser("<a/>").parse();
-	}
+  @Test
+  public void emptyElement() {
+    new XQParser("<a/>").parse();
+  }
 
-	@Test
-	public void nestedElements() throws Exception {
-		new XQParser("<a><b></b></a>").parse();
-	}
+  @Test
+  public void nestedElements() {
+    new XQParser("<a><b></b></a>").parse();
+  }
 
-	@Test
-	public void emptyElementWithAttribute() throws Exception {
-		new XQParser("<a b='a'/>").parse();
-	}
+  @Test
+  public void emptyElementWithAttribute() {
+    new XQParser("<a b='a'/>").parse();
+  }
 
-	@Test
-	public void elementWithAttribute() throws Exception {
-		new XQParser("<a b='a'></a>").parse();
-	}
+  @Test
+  public void elementWithAttribute() {
+    new XQParser("<a b='a'></a>").parse();
+  }
 
-	@Test
-	public void elementsWithComplexContent() throws Exception {
-		new XQParser("<a>1&amp;<b/>12 {'aha'}soso<c/></a>").parse();
-	}
+  @Test
+  public void elementsWithComplexContent() {
+    new XQParser("<a>1&amp;<b/>12 {'aha'}soso<c/></a>").parse();
+  }
 
-	@Test
-	public void elementWithComplexContent2() throws Exception {
-		new XQParser(
-				"string(<elem>{'a'} a {1,2,3} b <![CDATA[ b ]]> c {'a', 'b'}</elem>)")
-				.parse();
-	}
+  @Test
+  public void elementWithComplexContent2() {
+    new XQParser("string(<elem>{'a'} a {1,2,3} b <![CDATA[ b ]]> c {'a', 'b'}</elem>)").parse();
+  }
 
-	@Test
-	public void illegallyNestedElements() throws Exception {
-		try {
-			new XQParser("<a><b></a>").parse();
-		} catch (QueryException e) {
-			assertEquals("illegal error code", ErrorCode.ERR_PARSING_ERROR,
-					e.getCode());
-		}
-	}
+  @Test
+  public void illegallyNestedElements() {
+    try {
+      new XQParser("<a><b></a>").parse();
+    } catch (QueryException e) {
+      assertEquals("illegal error code", ErrorCode.ERR_PARSING_ERROR, e.getCode());
+    }
+  }
 
-	@Test
-	public void nestedForBindNameOverlap() throws Exception {
-		new XQParser("for $a in for $a in 1 return $a return $a").parse();
-	}
+  @Test
+  public void nestedForBindNameOverlap() {
+    new XQParser("for $a in for $a in 1 return $a return $a").parse();
+  }
 
-	@Test
-	public void nestedForBindRename() throws Exception {
-		new XQParser(
-				"for $a in 1 return for $a in 2 return for $a in $a return $a")
-				.parse();
-	}
+  @Test
+  public void nestedForBindRename() {
+    new XQParser("for $a in 1 return for $a in 2 return for $a in $a return $a").parse();
+  }
 
-	@Test
-	public void weirdPart2() throws Exception {
-		new XQParser(
-				"else- +-++-**-* instance  of element(*)* * * **---++div- div -div")
-				.parse();
-	}
+  @Test
+  public void weirdPart2() {
+    new XQParser("else- +-++-**-* instance  of element(*)* * * **---++div- div -div").parse();
+  }
 
-	@Test
-	public void weird() throws Exception {
-		new XQParser(readQuery(PARSER, "weird.xq")).parse();
-	}
+  @Test
+  public void weird() throws Exception {
+    new XQParser(Files.readString(PARSER.resolve("weird.xq"))).parse();
+  }
 
-	@Test
-	public void constructedAttributeWithEmptyContentSequence() throws Exception {
-		new XQParser("attribute {'foo'} {}").parse();
-	}
+  @Test
+  public void constructedAttributeWithEmptyContentSequence() {
+    new XQParser("attribute {'foo'} {}").parse();
+  }
 
-	@Test
-	public void constructedPI() throws Exception {
-		new XQParser("processing-instruction XmL {'pi'}").parse();
-	}
+  @Test
+  public void constructedPI() {
+    new XQParser("processing-instruction XmL {'pi'}").parse();
+  }
 
-	@Test
-	public void onlyWSbetweenToken() throws Exception {
-		new XQParser("for\n$\na in 1 return $a").parse();
-	}
+  @Test
+  public void onlyWSbetweenToken() {
+    new XQParser("for\n$\na in 1 return $a").parse();
+  }
 
-	@Test
-	public void parentAxis() throws Exception {
-		new XQParser("a/../b").parse();
-	}
+  @Test
+  public void parentAxis() {
+    new XQParser("a/../b").parse();
+  }
 
-	@Test
-	public void stringLiteralWithEntityReference() throws Exception {
-		new XQParser("\"a string &amp;\"").parse();
-	}
+  @Test
+  public void stringLiteralWithEntityReference() {
+    new XQParser("\"a string &amp;\"").parse();
+  }
 }

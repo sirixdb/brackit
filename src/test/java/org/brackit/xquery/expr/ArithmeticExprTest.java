@@ -41,31 +41,31 @@ import org.junit.Test;
 public class ArithmeticExprTest extends XQueryBaseTest {
 
 	@Test
-	public void add() throws Exception {
+	public void add() {
 		Sequence result = new XQuery("1 + 2").execute(ctx);
 		ResultChecker.dCheck(new Int32(3), result);
 	}
 
 	@Test
-	public void mult() throws Exception {
+	public void mult() {
 		Sequence result = new XQuery("1 * 2").execute(ctx);
 		ResultChecker.dCheck(new Int32(2), result);
 	}
 
 	@Test
-	public void multPrecedence1() throws Exception {
+	public void multPrecedence1() {
 		Sequence result = new XQuery("1 + 2 * 3").execute(ctx);
 		ResultChecker.dCheck(new Int32(7), result);
 	}
 
 	@Test
-	public void multPrecedence2() throws Exception {
+	public void multPrecedence2() {
 		Sequence result = new XQuery("1 * 2 + 3").execute(ctx);
 		ResultChecker.dCheck(new Int32(5), result);
 	}
 
 	@Test
-	public void parenthesizedPrecedence() throws Exception {
+	public void parenthesizedPrecedence() {
 		Sequence result = new XQuery("(1 + 2) * 3").execute(ctx);
 		ResultChecker.dCheck(new Int32(9), result);
 	}

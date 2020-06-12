@@ -56,11 +56,7 @@ public class BaseResolver implements ModuleResolver {
 		if (modules == null) {
 			modules = new HashMap<>();
 		}
-		list = modules.get(targetNSUri);
-		if (list == null) {
-			list = new ArrayList<>(1);
-			modules.put(targetNSUri, list);
-		}
+		list = modules.computeIfAbsent(targetNSUri, k -> new ArrayList<>(1));
 		list.add(module);
 	}
 	
@@ -70,16 +66,15 @@ public class BaseResolver implements ModuleResolver {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public List<Module> resolve(String uri, String... locUris) {
-		List<Module> list = (modules != null) ? modules.get(uri) : null;
-		return (list == null) ? Collections.EMPTY_LIST : list;
+		var list = modules == null ? null : modules.get(uri);
+		return list == null ? Collections.emptyList() : list;
 	}
 
 	@Override
 	public List<String> load(String uri, String[] locations) throws IOException {
-		List<String> loaded = new LinkedList<String>();
+		var loaded = new LinkedList<String>();
 		for (String loc : locations) {
 			String s = load(loc);
 			if (s != null) {
@@ -95,7 +90,7 @@ public class BaseResolver implements ModuleResolver {
 			InputStreamReader in = new InputStreamReader(
 					URIHandler.getInputStream(new URI(loc)));
 			CharBuffer buf = CharBuffer.allocate(1024 * 521);
-			int read = in.read(buf);
+			in.read(buf);
 			in.close();
 			s = buf.rewind().toString();
 		} catch (URISyntaxException e) {

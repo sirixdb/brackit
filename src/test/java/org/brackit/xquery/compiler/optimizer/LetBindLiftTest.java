@@ -27,14 +27,11 @@
  */
 package org.brackit.xquery.compiler.optimizer;
 
-import java.io.FileNotFoundException;
-
 import org.brackit.xquery.ResultChecker;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.XQueryBaseTest;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.Str;
-import org.brackit.xquery.compiler.optimizer.DefaultOptimizer;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Sequence;
 import org.junit.Before;
@@ -47,7 +44,7 @@ import org.junit.Test;
 public class LetBindLiftTest extends XQueryBaseTest {
 	
 	@Test
-	public void forLetWhereConditional() throws Exception {
+	public void forLetWhereConditional() {
 		Sequence res = new XQuery(
 				"for $a in (1,2,3) " +
 				"let $b := 5 " +
@@ -64,7 +61,7 @@ public class LetBindLiftTest extends XQueryBaseTest {
 	}
 	
 	@Test
-	public void orderByBatched() throws Exception {
+	public void orderByBatched() {
 		Sequence res = new XQuery(
 				"for $a in (1,2,3) " +
 				"let $c := " +
@@ -80,7 +77,7 @@ public class LetBindLiftTest extends XQueryBaseTest {
 	}
 	
 	@Test
-	public void orderBy() throws Exception {
+	public void orderBy() {
 		Sequence res = new XQuery(
 				"for $a in (7,8,9) " +
 				"let $c := " +
@@ -97,7 +94,7 @@ public class LetBindLiftTest extends XQueryBaseTest {
 
 	
 	@Test
-	public void orderBy2() throws Exception {		
+	public void orderBy2() {
 		Sequence res = new XQuery(
 				"	for $d in (3,2,1) " +
 				"	for $e in (4,5,6) " +
@@ -108,7 +105,7 @@ public class LetBindLiftTest extends XQueryBaseTest {
 	}
 	
 	@Test
-	public void doubledNestedWithOrderBy() throws Exception {
+	public void doubledNestedWithOrderBy() {
 		Sequence res = new XQuery(
 				"for $z in 1 " +
 				"let $x := " +
@@ -137,7 +134,7 @@ public class LetBindLiftTest extends XQueryBaseTest {
 	}	
 
 	@Before
-	public void setUp() throws Exception, FileNotFoundException {		
+	public void setUp() throws Exception {
 		super.setUp();
 		DefaultOptimizer.UNNEST = true;
 	}

@@ -35,6 +35,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Random;
 import org.brackit.xquery.atomic.DTD;
@@ -61,7 +63,7 @@ import org.junit.Ignore;
 public class XQueryBaseTest {
 
   /** Path to resources folder. */
-  public static final String RESOURCES = Paths.get("src", "test", "resources").toString();
+  public static final Path RESOURCES = Paths.get("src", "test", "resources");
 
   protected QueryContext ctx;
 
@@ -73,9 +75,8 @@ public class XQueryBaseTest {
     if (s == null) {
       return;
     }
-    Iter it = s.iterate();
-    Item item;
-    try {
+    try (Iter it = s.iterate()) {
+      Item item;
       while ((item = it.next()) != null) {
         System.out.print(item);
         System.out.print(" ");
@@ -83,8 +84,6 @@ public class XQueryBaseTest {
           new SubtreePrinter(System.out, false, false).print((Node<?>) item);
         }
       }
-    } finally {
-      it.close();
     }
     System.out.println();
   }
@@ -105,56 +104,21 @@ public class XQueryBaseTest {
     };
   }
 
-  protected String readQuery(String dirname, String filename) throws IOException {
-    StringBuilder query = new StringBuilder();
-    // URL url = getClass().getResource(dirname + filename);
-    // if (url == null) {
-    // throw new RuntimeException("Resource not found: " + dirname + filename);
-    // }
-    BufferedReader file = new BufferedReader(new FileReader(new File(dirname + filename)));
-    boolean first = true;
-
-    String line;
-    while ((line = file.readLine()) != null) {
-      if (!first)
-        query.append(' ');
-      query.append(line);
-      first = false;
-    }
-    file.close();
-    return query.toString();
+  protected String readFile(Path dirname, String filename) throws IOException {
+    return Files.readString(dirname.resolve(filename));
   }
 
-  protected String readFile(String dirname, String filename) throws IOException {
-    StringBuilder read = new StringBuilder();
-    // URL url = getClass().getResource(dirname + filename);
-    BufferedReader file = new BufferedReader(new FileReader(new File(dirname + filename)));
-    boolean first = true;
-
-    String line;
-    while ((line = file.readLine()) != null) {
-      if (!first)
-        read.append('\n');
-      read.append(line);
-      first = false;
-    }
-    file.close();
-    return read.toString();
-  }
-
-  protected NodeCollection<?> storeFile(String name, String document) throws Exception, FileNotFoundException {
-    // URL url = getClass().getResource(document);
-    DocumentParser parser = new DocumentParser(new File(document));// new
-                                                                   // File(url.getFile()));
+  protected NodeCollection<?> storeFile(String name, Path document) throws Exception {
+    DocumentParser parser = new DocumentParser(document.toFile());
     parser.setRetainWhitespace(true);
     return storeDocument(name, parser);
   }
 
-  protected NodeCollection<?> storeDocument(String name, String document) throws Exception {
+  protected NodeCollection<?> storeDocument(String name, String document) {
     return storeDocument(name, new DocumentParser(document));
   }
 
-  protected NodeCollection<?> storeDocument(String name, SubtreeParser parser) throws Exception {
+  protected NodeCollection<?> storeDocument(String name, SubtreeParser parser) {
     NodeCollection<?> collection = store.create(name, parser);
     return collection;
   }
@@ -173,7 +137,7 @@ public class XQueryBaseTest {
   }
 
   @Before
-  public void setUp() throws Exception, FileNotFoundException {
+  public void setUp() throws Exception {
     store = createStore();
     ctx = createContext();
 

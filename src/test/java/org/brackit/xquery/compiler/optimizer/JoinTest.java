@@ -27,8 +27,6 @@
  */
 package org.brackit.xquery.compiler.optimizer;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import org.brackit.xquery.ResultChecker;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.XQueryBaseTest;
@@ -38,6 +36,9 @@ import org.brackit.xquery.xdm.Sequence;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 /**
  * @author Sebastian Baechle
  *
@@ -45,18 +46,17 @@ import org.junit.Test;
 public class JoinTest extends XQueryBaseTest {
 
 	/** Join folder. */
-	private static final String JOIN = new StringBuilder(RESOURCES)
-			.append(File.separator).append("join").append(File.separator).toString();
+	private static final Path JOIN = RESOURCES.resolve("join");
 
 	@Test
-	public void simpleNestedFor() throws Exception {
+	public void simpleNestedFor() {
 		Sequence res = new XQuery("for $a in (1,2,3) " + "for $b in (2,3,4) "
 				+ "where $a = $b " + "return $a").execute(ctx);
 		ResultChecker.dCheck(intSequence(2, 3), res);
 	}
 
 	@Test
-	public void nestedForWithLetsInOuterFor() throws Exception {
+	public void nestedForWithLetsInOuterFor() {
 		Sequence res = new XQuery("for $w in (2,4) " + "let $x := (2 to $w) "
 				+ "for $a in (1,2,3) " + "for $b in $x " + "let $z := $a + $x[0] "
 				+ "where $a = $b " + "return $a").execute(ctx);
@@ -64,7 +64,7 @@ public class JoinTest extends XQueryBaseTest {
 	}
 
 	@Test
-	public void nestedForWithLets() throws Exception {
+	public void nestedForWithLets() {
 		Sequence res = new XQuery("let $x := (2,3,4) " + "for $a in (1,2,3) "
 				+ "let $y := 'foo'" + "for $b in $x " + "let $z := $a + $x[0] "
 				+ "where $a = $b " + "return $a").execute(ctx);
@@ -72,7 +72,7 @@ public class JoinTest extends XQueryBaseTest {
 	}
 
 	@Test
-	public void letNestedFor() throws Exception {
+	public void letNestedFor() {
 		Sequence res = new XQuery("for $a in (1,2,3) "
 				+ "let $c := for $b in (2,3,4) " + "          where $a = $b "
 				+ "          return $a " + "return $c").execute(ctx);
@@ -80,7 +80,7 @@ public class JoinTest extends XQueryBaseTest {
 	}
 
 	@Test
-	public void letNestedForWithLets() throws Exception {
+	public void letNestedForWithLets() {
 		Sequence res = new XQuery("for $w in (2,4) " + "let $x := (2 to $w) "
 				+ "for $a in (1,2,3) " + "let $y := 'foo'" + "let $c := for $b in $x "
 				+ "          let $z := $a + $x[0] " + "          where $a = $b "
@@ -89,7 +89,7 @@ public class JoinTest extends XQueryBaseTest {
 	}
 
 	@Test
-	public void fakeJoin() throws Exception {
+	public void fakeJoin() {
 		Sequence res = new XQuery("for $a in (1,2,3) " + "for $b in (2,3,4) "
 				+ "let $x := for $c in 1 " + "			where $a = $b " + "			return $c "
 				+ "return $x").execute(ctx);
@@ -98,7 +98,7 @@ public class JoinTest extends XQueryBaseTest {
 
 	@Test
 	public void simpleForFor() throws Exception {
-		String query = readQuery(JOIN, "simpleForFor.xq");
+		String query = Files.readString(JOIN.resolve("simpleForFor.xq"));
 		XQuery xq = new XQuery(query);
 		Sequence res = xq.execute(createContext());
 		ResultChecker.dCheck(intSequence(2, 3, 5), res);
@@ -106,7 +106,7 @@ public class JoinTest extends XQueryBaseTest {
 
 	@Test
 	public void forNestedFor() throws Exception {
-		String query = readQuery(JOIN, "forNestedFor.xq");
+		String query = Files.readString(JOIN.resolve("forNestedFor.xq"));
 		XQuery xq = new XQuery(query);
 		Sequence res = xq.execute(createContext());
 		ResultChecker.dCheck(intSequence(2, 3, 5), res);
@@ -114,7 +114,7 @@ public class JoinTest extends XQueryBaseTest {
 
 	@Test
 	public void forNestedFor2JoinPredicates() throws Exception {
-		String query = readQuery(JOIN, "forNestedFor2JoinPredicates.xq");
+		String query = Files.readString(JOIN.resolve("forNestedFor2JoinPredicates.xq"));
 		XQuery xq = new XQuery(query);
 		Sequence res = xq.execute(createContext());
 		ResultChecker.dCheck(intSequence(3, 4, 6), res);
@@ -122,7 +122,7 @@ public class JoinTest extends XQueryBaseTest {
 
 	@Test
 	public void forNestedForWithOutsideRef() throws Exception {
-		String query = readQuery(JOIN, "forNestedForWithOutsideRef.xq");
+		String query = Files.readString(JOIN.resolve("forNestedForWithOutsideRef.xq"));
 		XQuery xq = new XQuery(query);
 		Sequence res = xq.execute(createContext());
 		ResultChecker.dCheck(intSequence(3, 3, 4, 4, 6, 6), res);
@@ -138,7 +138,7 @@ public class JoinTest extends XQueryBaseTest {
 
 	@Override
   @Before
-	public void setUp() throws Exception, FileNotFoundException {
+	public void setUp() throws Exception {
 		super.setUp();
 		DefaultOptimizer.UNNEST = true;
 		DefaultOptimizer.JOIN_DETECTION = true;

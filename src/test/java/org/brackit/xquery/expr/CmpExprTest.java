@@ -41,13 +41,13 @@ import org.junit.Test;
 public class CmpExprTest extends XQueryBaseTest {
 
 	@Test
-	public void generalComparison() throws Exception {
+	public void generalComparison() {
 		Sequence result = new XQuery("1 > 2").execute(ctx);
 		ResultChecker.dCheck(Bool.FALSE, result);
 	}
 
 	@Test
-	public void generalComparisonNodeAndAtomics() throws Exception {
+	public void generalComparisonNodeAndAtomics() {
 		// the content must be converted to numeric double
 		Sequence result = new XQuery("(<a>12</a> < 24) and (<b>122</b> > 24)")
 				.execute(ctx);
@@ -55,13 +55,13 @@ public class CmpExprTest extends XQueryBaseTest {
 	}
 
 	@Test
-	public void valueComparison() throws Exception {
+	public void valueComparison() {
 		Sequence result = new XQuery("1 lt 2").execute(ctx);
 		ResultChecker.dCheck(Bool.TRUE, result);
 	}
 
 	@Test
-	public void compareDates() throws Exception {
+	public void compareDates() {
 		Sequence res = new XQuery(
 				"xs:date('2002-10-10+13:00') eq xs:date('2002-10-09-11:00')")
 				.execute(ctx);
@@ -69,7 +69,7 @@ public class CmpExprTest extends XQueryBaseTest {
 	}
 
 	@Test
-	public void compareDates2() throws Exception {
+	public void compareDates2() {
 		Sequence res = new XQuery(
 				"xs:date('2002-10-10+14:00') eq xs:date('2002-10-09-11:00')")
 				.execute(ctx);

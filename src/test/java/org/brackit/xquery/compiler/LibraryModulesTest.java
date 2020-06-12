@@ -71,7 +71,7 @@ public class LibraryModulesTest extends XQueryBaseTest {
 	private static final String IMPORT_BAR = "import module namespace bar=\"http://brackit.org/lib/bar\"; ";
 
 	@Test
-	public void defineModule() throws Exception {
+	public void defineModule() {
 		XQuery xq = new XQuery(FOO);
 		xq.getModule();
 		// simply rest if no error happens
@@ -139,7 +139,7 @@ public class LibraryModulesTest extends XQueryBaseTest {
 	}
 
 	@Test
-	public void importModulesInSameTargetNSWithConflict() throws Exception {
+	public void importModulesInSameTargetNSWithConflict() {
 		final BaseResolver res = new BaseResolver();
 		CompileChain chain = new CompileChain() {
 			private final ModuleResolver resolver = res;
@@ -160,17 +160,16 @@ public class LibraryModulesTest extends XQueryBaseTest {
 	}
 
 	@Test
-	public void importDirectCyclicModule() throws Exception {
+	public void importDirectCyclicModule() {
 		final BaseResolver res = new BaseResolver() {
 			@Override
-			public List<String> load(String uri, String[] locations)
-					throws IOException {
+			public List<String> load(String uri, String[] locations) {
 				if (!uri.equals("right")) {
 					return null;
 				}
-				List<String> l = new ArrayList<String>(1);
-				l.add(RIGHT);
-				return l;
+				var list = new ArrayList<String>(1);
+				list.add(RIGHT);
+				return list;
 			}
 
 		};
