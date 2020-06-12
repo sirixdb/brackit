@@ -43,7 +43,7 @@ public class NestedSequence extends FlatteningSequence {
 	}
 
 	@Override
-	protected Sequence sequence(int pos) throws QueryException {
-		return (pos < seqs.length) ? seqs[pos++] : null;
+	protected Sequence sequence(int pos) {
+		return pos < seqs.length ? seqs[pos++] : null;
 	}
 }

@@ -27,8 +27,6 @@
  */
 package org.brackit.xquery.update;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -40,88 +38,84 @@ import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.node.Node;
 
+import java.util.ArrayList;
+
 public class Transform extends ConstructedNodeBuilder implements Expr {
-    private Expr[] copyBindings;
-    private Expr modifyExpr;
-    private Expr returnExpr;
-    private boolean[] referenced;
+  private final Expr[] copyBindings;
+  private final Expr modifyExpr;
+  private final Expr returnExpr;
+  private final boolean[] referenced;
 
-    public Transform(Expr[] copyBindings, boolean[] referenced,
-            Expr modifyExpr, Expr returnExpr) {
-        this.copyBindings = copyBindings;
-        this.referenced = referenced;
-        this.modifyExpr = modifyExpr;
-        this.returnExpr = returnExpr;
-    }
+  public Transform(Expr[] copyBindings, boolean[] referenced, Expr modifyExpr, Expr returnExpr) {
+    this.copyBindings = copyBindings;
+    this.referenced = referenced;
+    this.modifyExpr = modifyExpr;
+    this.returnExpr = returnExpr;
+  }
 
-    @Override
-    public Sequence evaluate(QueryContext ctx, Tuple tuple)
-            throws QueryException {
-        return returnExpr.evaluate(ctx, copyAndModify(ctx, tuple));
-    }
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) {
+    return returnExpr.evaluate(ctx, copyAndModify(ctx, tuple));
+  }
 
-    @Override
-    public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-            throws QueryException {
-        return returnExpr.evaluateToItem(ctx, copyAndModify(ctx, tuple));
-    }
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    return returnExpr.evaluateToItem(ctx, copyAndModify(ctx, tuple));
+  }
 
-    private Tuple copyAndModify(QueryContext ctx, Tuple tuple)
-            throws QueryException {
+  private Tuple copyAndModify(QueryContext ctx, Tuple tuple) {
 
-        // backup current pending update list
-        UpdateList saved = ctx.getUpdateList();
-        UpdateList mods = new UpdateList();
-        ctx.setUpdateList(mods);
-        // create copy bindings
-        List<Node<?>> copies = new ArrayList<Node<?>>(copyBindings.length);
-        for (int i = 0; i < copyBindings.length; i++) {
-            if (referenced[i]) {
-                Item item = copyBindings[i].evaluateToItem(ctx, tuple);
-                if (item == null || !(item instanceof Node<?>)) {
-                    throw (new QueryException(
-                            ErrorCode.ERR_TRANSFORM_SOURCE_EXPRESSION_NOT_SINGLE_NODE,
-                            "Source expression must evaluate to single node."));
-                }
-                Node<?> copy = copy(ctx, (Node<?>) item);
-                copies.add(copy);
-                tuple = tuple.concat(copy);
-            }
+    // backup current pending update list
+    final UpdateList saved = ctx.getUpdateList();
+    final UpdateList mods = new UpdateList();
+    ctx.setUpdateList(mods);
+    // create copy bindings
+    var nodeCoies = new ArrayList<Node<?>>(copyBindings.length);
+    for (int i = 0; i < copyBindings.length; i++) {
+      if (referenced[i]) {
+        Item item = copyBindings[i].evaluateToItem(ctx, tuple);
+        if (!(item instanceof Node<?>)) {
+          throw (new QueryException(ErrorCode.ERR_TRANSFORM_SOURCE_EXPRESSION_NOT_SINGLE_NODE,
+                                    "Source expression must evaluate to single node."));
         }
-        // evaluate transform expression
-        modifyExpr.evaluateToItem(ctx, tuple);
-        // ensure that only copies are affected by the transformation
-        for (final UpdateOp op : mods.list()) {
-            boolean ok = false;
-            for (Node<?> copy : copies) {
-                if (copy.isAncestorOrSelfOf(op.getTarget())) {
-                    ok = true;
-                    break;
-                }
-            }
-
-            if (!ok) {
-                throw new QueryException(
-                        ErrorCode.ERR_TRANSFORM_MODIFIES_EXISTING_NODE,
-                        "Modify clause update expressions may not affect existing nodes.");
-            }
+        Node<?> copy = copy(ctx, (Node<?>) item);
+        nodeCoies.add(copy);
+        tuple = tuple.concat(copy);
+      }
+    }
+    // evaluate transform expression
+    modifyExpr.evaluateToItem(ctx, tuple);
+    // ensure that only copies are affected by the transformation
+    for (final UpdateOp op : mods.list()) {
+      boolean ok = false;
+      for (Node<?> copy : nodeCoies) {
+        if (copy.isAncestorOrSelfOf(op.getTarget())) {
+          ok = true;
+          break;
         }
-        // apply transformation
-        ctx.applyUpdates();
-        // reinstall backup of pending updates
-        ctx.setUpdateList(saved);
+      }
 
-        return tuple;
+      if (!ok) {
+        throw new QueryException(ErrorCode.ERR_TRANSFORM_MODIFIES_EXISTING_NODE,
+                                 "Modify clause update expressions may not affect existing nodes.");
+      }
     }
+    // apply transformation
+    ctx.applyUpdates();
+    // reinstall backup of pending updates
+    ctx.setUpdateList(saved);
 
-    @Override
-    public boolean isUpdating() {
-        return false;
-    }
+    return tuple;
+  }
 
-    @Override
-    public boolean isVacuous() {
-        return false;
-    }
+  @Override
+  public boolean isUpdating() {
+    return false;
+  }
+
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 
 }

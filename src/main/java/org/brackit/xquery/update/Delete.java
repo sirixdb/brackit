@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -39,66 +39,59 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class Delete implements Expr {
-	private final Expr expr;
+  private final Expr expr;
 
-	public Delete(Expr expr) {
-		this.expr = expr;
-	}
+  public Delete(Expr expr) {
+    this.expr = expr;
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return evaluateToItem(ctx, tuple);
-	}
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) {
+    return evaluateToItem(ctx, tuple);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		Sequence result = expr.evaluate(ctx, tuple);
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    Sequence result = expr.evaluate(ctx, tuple);
 
-		if (result == null) {
-			return null;
-		}
+    if (result == null) {
+      return null;
+    }
 
-		if (result instanceof Item) {
-			handleItem(ctx, (Item) result);
-			return null;
-		}
+    if (result instanceof Item) {
+      handleItem(ctx, (Item) result);
+      return null;
+    }
 
-		Iter it = result.iterate();
-		try {
-			Item item;
-			while ((item = it.next()) != null) {
-				handleItem(ctx, item);
-			}
-		} finally {
-			it.close();
-		}
+    try (Iter it = result.iterate()) {
+      Item item;
+      while ((item = it.next()) != null) {
+        handleItem(ctx, item);
+      }
+    }
 
-		return null;
-	}
+    return null;
+  }
 
-	private void handleItem(QueryContext ctx, Item item) throws QueryException {
-		if (!(item instanceof Node<?>)) {
-			throw new QueryException(
-					ErrorCode.ERR_UPDATE_DELETE_TARGET_NOT_A_NODE_SEQUENCE,
-					"Target item for delete is not a node: %s", item);
-		}
-		ctx.addPendingUpdate(new DeleteOp((Node<?>) item));
-	}
+  private void handleItem(QueryContext ctx, Item item) {
+    if (!(item instanceof Node<?>)) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_DELETE_TARGET_NOT_A_NODE_SEQUENCE,
+                               "Target item for delete is not a node: %s",
+                               item);
+    }
+    ctx.addPendingUpdate(new DeleteOp((Node<?>) item));
+  }
 
-	@Override
-	public boolean isUpdating() {
-		return true;
-	}
+  @Override
+  public boolean isUpdating() {
+    return true;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 }

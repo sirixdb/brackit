@@ -39,7 +39,7 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  * 
  */
-public class TupleImpl implements Tuple {
+public final class TupleImpl implements Tuple {
 	public static final Tuple EMPTY_TUPLE = new TupleImpl();
 
 	private final Sequence[] sequences;
@@ -57,7 +57,7 @@ public class TupleImpl implements Tuple {
 	}
 
 	@Override
-	public Tuple project(int... positions) throws QueryException {
+	public Tuple project(int... positions) {
 		Sequence[] projected = new Sequence[positions.length];
 		int targetPos = 0;
 		for (int pos : positions) {
@@ -67,7 +67,7 @@ public class TupleImpl implements Tuple {
 	}
 
 	@Override
-	public Tuple project(int start, int end) throws QueryException {
+	public Tuple project(int start, int end) {
 		if ((start < 0) || (start >= sequences.length)) {
 			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
 					start);
@@ -80,7 +80,7 @@ public class TupleImpl implements Tuple {
 	}
 
 	@Override
-	public Tuple replace(int position, Sequence s) throws QueryException {
+	public Tuple replace(int position, Sequence s) {
 		if ((position < 0) || (position >= sequences.length)) {
 			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
 					position);
@@ -91,14 +91,14 @@ public class TupleImpl implements Tuple {
 	}
 
 	@Override
-	public Tuple concat(Sequence s) throws QueryException {
+	public Tuple concat(Sequence s) {
 		Sequence[] tmp = Arrays.copyOf(sequences, sequences.length + 1);
 		tmp[sequences.length] = s;
 		return new TupleImpl(tmp);
 	}
 
 	@Override
-	public Tuple concat(Sequence[] s) throws QueryException {
+	public Tuple concat(Sequence[] s) {
 		Sequence[] tmp = Arrays.copyOf(sequences, sequences.length + s.length);
 		System.arraycopy(s, 0, tmp, sequences.length, s.length);
 		return new TupleImpl(tmp);
@@ -106,7 +106,7 @@ public class TupleImpl implements Tuple {
 	
 	@Override
 	public Tuple conreplace(Sequence con, int position, Sequence s)
-			throws QueryException {
+			{
 		int nLen = sequences.length + 1;
 		if ((position < 0) || (position >= nLen)) {
 			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
@@ -120,7 +120,7 @@ public class TupleImpl implements Tuple {
 
 	@Override
 	public Tuple conreplace(Sequence[] con, int position, Sequence s)
-			throws QueryException {
+			{
 		int nLen = sequences.length + con.length;
 		if ((position < 0) || (position >= nLen)) {
 			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
@@ -138,7 +138,7 @@ public class TupleImpl implements Tuple {
 	}
 
 	@Override
-	public Sequence get(int position) throws QueryException {
+	public Sequence get(int position) {
 		if ((position < 0) || (position >= sequences.length)) {
 			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
 					position);

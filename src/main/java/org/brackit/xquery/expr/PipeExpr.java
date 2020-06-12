@@ -43,113 +43,108 @@ import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.json.Record;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class PipeExpr implements Expr {
-	private final Operator op;
-	private final Expr expr;
+  private final Operator op;
+  private final Expr expr;
 
-	public PipeExpr(Operator op, Expr expr) {
-		this.op = op;
-		this.expr = expr;
-	}
+  public PipeExpr(Operator op, Expr expr) {
+    this.op = op;
+    this.expr = expr;
+  }
 
-	public static class PipeSequence extends LazySequence {
-		final QueryContext ctx;
-		final Operator op;
-		final Expr expr;
-		final Tuple tuple;
+  public static class PipeSequence extends LazySequence {
+    final QueryContext ctx;
+    final Operator op;
+    final Expr expr;
+    final Tuple tuple;
 
-		public PipeSequence(QueryContext ctx, Operator op, Expr expr,
-				Tuple tuple) {
-			this.ctx = ctx;
-			this.op = op;
-			this.expr = expr;
-			this.tuple = tuple;
-		}
+    public PipeSequence(QueryContext ctx, Operator op, Expr expr, Tuple tuple) {
+      this.ctx = ctx;
+      this.op = op;
+      this.expr = expr;
+      this.tuple = tuple;
+    }
 
-		@Override
-		public Iter iterate() {
-			return new BaseIter() {
-				Cursor cursor;
-				Iter it;
+    @Override
+    public Iter iterate() {
+      return new BaseIter() {
+        Cursor cursor;
+        Iter it;
 
-				@Override
-				public Item next() throws QueryException {
-					while (true) {
-						if (it != null) {
-							Item i = it.next();
-							if (i != null) {
-								return i;
-							}
-							it.close();
-							it = null;
-						} else if (cursor == null) {
-							cursor = op.create(ctx, tuple);
-							cursor.open(ctx);
-						}
+        @Override
+        public Item next() {
+          while (true) {
+            if (it != null) {
+              Item i = it.next();
+              if (i != null) {
+                return i;
+              }
+              it.close();
+              it = null;
+            } else if (cursor == null) {
+              cursor = op.create(ctx, tuple);
+              cursor.open(ctx);
+            }
 
-						Tuple t = cursor.next(ctx);
+            Tuple t = cursor.next(ctx);
 
-						if (t == null) {
-							return null;
-						}
+            if (t == null) {
+              return null;
+            }
 
-						Sequence s = expr.evaluate(ctx, t);
+            Sequence s = expr.evaluate(ctx, t);
 
-						if (s == null) {
-							continue;
-						}
+            if (s == null) {
+              continue;
+            }
 
-						if (s instanceof Item) {
-							return (Item) s;
-						}
+            if (s instanceof Item) {
+              return (Item) s;
+            }
 
-						it = s.iterate();
-					}
-				}
+            it = s.iterate();
+          }
+        }
 
-				@Override
-				public void close() {
-					if (it != null) {
-						it.close();
-					}
-					if (cursor != null) {
-						cursor.close(ctx);
-					}
-				}
-			};
-		}
-	}
+        @Override
+        public void close() {
+          if (it != null) {
+            it.close();
+          }
+          if (cursor != null) {
+            cursor.close(ctx);
+          }
+        }
+      };
+    }
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return new PipeSequence(ctx, op, expr, tuple);
-	}
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) {
+    return new PipeSequence(ctx, op, expr, tuple);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return ExprUtil.asItem(evaluate(ctx, tuple));
-	}
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    return ExprUtil.asItem(evaluate(ctx, tuple));
+  }
 
-	@Override
-	public boolean isUpdating() {
-		// TODO
-		return expr.isUpdating();
-//		return false;
-	}
+  @Override
+  public boolean isUpdating() {
+    // TODO
+    return expr.isUpdating();
+    //		return false;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 
-	@Override
+  @Override
   public String toString() {
-		return PipeExpr.class.getSimpleName();
-	}
+    return PipeExpr.class.getSimpleName();
+  }
 }

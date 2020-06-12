@@ -27,8 +27,6 @@
  */
 package org.brackit.xquery.update;
 
-import java.util.EnumSet;
-
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -36,14 +34,11 @@ import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.expr.ConstructedNodeBuilder;
 import org.brackit.xquery.update.op.ReplaceElementContentOp;
-import org.brackit.xquery.update.op.ReplaceNodeOp;
 import org.brackit.xquery.update.op.ReplaceValueOp;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.*;
 import org.brackit.xquery.xdm.node.Node;
+
+import java.util.EnumSet;
 
 /**
  * 
@@ -83,20 +78,15 @@ public class ReplaceValue extends ConstructedNodeBuilder implements Expr {
 		} else if (target instanceof Item) {
 			targetItem = (Item) target;
 		} else {
-			Iter it = target.iterate();
-			try {
+			try (Iter it = target.iterate()) {
 				targetItem = it.next();
 
 				if (targetItem == null) {
-					throw new QueryException(
-							ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
+					throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
 				}
 				if (it.next() != null) {
-					throw new QueryException(
-							ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE);
+					throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE);
 				}
-			} finally {
-				it.close();
 			}
 		}
 		if (!(targetItem instanceof Node<?>)) {
@@ -115,8 +105,7 @@ public class ReplaceValue extends ConstructedNodeBuilder implements Expr {
 		}
 
 		Sequence source = sourceExpr.evaluate(ctx, tuple);
-		String text = buildTextContent(ctx, source);
-		ReplaceNodeOp op = null;
+		String text = buildTextContent(source);
 
 		if (node.getKind() == Kind.ELEMENT) {
 			ctx.addPendingUpdate(new ReplaceElementContentOp(node, new Una(text)));

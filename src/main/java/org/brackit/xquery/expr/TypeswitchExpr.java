@@ -28,7 +28,6 @@
 package org.brackit.xquery.expr;
 
 import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
@@ -40,117 +39,102 @@ import org.brackit.xquery.xdm.type.ItemType;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 public class TypeswitchExpr implements Expr {
-    private Expr operandExpr;
-    private Expr[] caseExprs;
-    private SequenceType[] caseTypes;
-    private boolean[] varRefs;
-    private Expr defaultExpr;
-    private boolean updating;
-    private boolean vacuous;
+  private final Expr operandExpr;
+  private final Expr[] caseExprs;
+  private final SequenceType[] caseTypes;
+  private final boolean[] varRefs;
+  private final Expr defaultExpr;
+  private final boolean updating;
+  private final boolean vacuous;
 
-    public TypeswitchExpr(Expr operandExpr, Expr[] caseExprs,
-            SequenceType[] caseTypes, boolean[] varRefs, Expr defaultExpr,
-            boolean updating, boolean vacuous) {
-        this.operandExpr = operandExpr;
-        this.caseExprs = caseExprs;
-        this.caseTypes = caseTypes;
-        this.varRefs = varRefs;
-        this.defaultExpr = defaultExpr;
-        this.updating = updating;
-        this.vacuous = vacuous;
-    }
+  public TypeswitchExpr(Expr operandExpr, Expr[] caseExprs, SequenceType[] caseTypes, boolean[] varRefs,
+      Expr defaultExpr, boolean updating, boolean vacuous) {
+    this.operandExpr = operandExpr;
+    this.caseExprs = caseExprs;
+    this.caseTypes = caseTypes;
+    this.varRefs = varRefs;
+    this.defaultExpr = defaultExpr;
+    this.updating = updating;
+    this.vacuous = vacuous;
+  }
 
-    @Override
-    public Sequence evaluate(QueryContext ctx, Tuple tuple)
-            throws QueryException {
-        return evaluate(ctx, tuple, false);
-    }
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) {
+    return evaluate(ctx, tuple, false);
+  }
 
-    private Sequence evaluate(QueryContext ctx, Tuple tuple, boolean toItem)
-            throws QueryException {
-        Sequence operand = operandExpr.evaluate(ctx, tuple);
+  private Sequence evaluate(QueryContext ctx, Tuple tuple, boolean toItem) {
+    Sequence operand = operandExpr.evaluate(ctx, tuple);
 
-        for (int i = 0; i < caseExprs.length; i++) {
-            ItemType itemType = caseTypes[i].getItemType();
-            Cardinality card = caseTypes[i].getCardinality();
-            Iter it = operand.iterate();
+    for (int i = 0; i < caseExprs.length; i++) {
+      ItemType itemType = caseTypes[i].getItemType();
+      Cardinality card = caseTypes[i].getCardinality();
+      Iter it = operand.iterate();
 
-            // Test first item
-            Item item = it.next();
-            if (item == null) {
-                if (card != Cardinality.One && card != Cardinality.OneOrMany) {
-                    if (toItem) {
-                        return caseExprs[i].evaluateToItem(ctx,
-                                (varRefs[i] ? tuple.concat(operand) : tuple));
-                    } else {
-                        return caseExprs[i].evaluate(ctx, (varRefs[i] ? tuple
-                                .concat(operand) : tuple));
-                    }
-                } else {
-                    continue;
-                }
-            } else if (card == Cardinality.Zero || !itemType.matches(item)) {
-                continue;
-            }
-
-            // Test second item
-            item = it.next();
-            if (item != null
-                    && (card == Cardinality.One
-                            || card == Cardinality.ZeroOrOne || !itemType
-                            .matches(item))) {
-                continue;
-            }
-
-            if (item != null && itemType != AnyItemType.ANY) {
-                // Test following items
-                boolean match = true;
-                while ((item = it.next()) != null) {
-                    if (!itemType.matches(item)) {
-                        match = false;
-                        break;
-                    }
-                }
-
-                if (!match) {
-                    continue;
-                }
-            }
-
-            if (toItem) {
-                return caseExprs[i].evaluateToItem(ctx, (varRefs[i] ? tuple
-                        .concat(operand) : tuple));
-            } else {
-                return caseExprs[i].evaluate(ctx, (varRefs[i] ? tuple
-                        .concat(operand) : tuple));
-            }
-        }
-
-        if (toItem) {
-            return defaultExpr.evaluateToItem(ctx,
-                    (varRefs[varRefs.length - 1] ? tuple.concat(operand)
-                            : tuple));
+      // Test first item
+      Item item = it.next();
+      if (item == null) {
+        if (card != Cardinality.One && card != Cardinality.OneOrMany) {
+          if (toItem) {
+            return caseExprs[i].evaluateToItem(ctx, (varRefs[i] ? tuple.concat(operand) : tuple));
+          } else {
+            return caseExprs[i].evaluate(ctx, (varRefs[i] ? tuple.concat(operand) : tuple));
+          }
         } else {
-            return defaultExpr.evaluate(ctx,
-                    (varRefs[varRefs.length - 1] ? tuple.concat(operand)
-                            : tuple));
+          continue;
         }
+      } else if (card == Cardinality.Zero || !itemType.matches(item)) {
+        continue;
+      }
+
+      // Test second item
+      item = it.next();
+      if (item != null && (card == Cardinality.One || card == Cardinality.ZeroOrOne || !itemType.matches(item))) {
+        continue;
+      }
+
+      if (item != null && itemType != AnyItemType.ANY) {
+        // Test following items
+        boolean match = true;
+        while ((item = it.next()) != null) {
+          if (!itemType.matches(item)) {
+            match = false;
+            break;
+          }
+        }
+
+        if (!match) {
+          continue;
+        }
+      }
+
+      if (toItem) {
+        return caseExprs[i].evaluateToItem(ctx, (varRefs[i] ? tuple.concat(operand) : tuple));
+      } else {
+        return caseExprs[i].evaluate(ctx, (varRefs[i] ? tuple.concat(operand) : tuple));
+      }
     }
 
-    @Override
-    public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-            throws QueryException {
-        return (Item) evaluate(ctx, tuple, true);
+    if (toItem) {
+      return defaultExpr.evaluateToItem(ctx, (varRefs[varRefs.length - 1] ? tuple.concat(operand) : tuple));
+    } else {
+      return defaultExpr.evaluate(ctx, (varRefs[varRefs.length - 1] ? tuple.concat(operand) : tuple));
     }
+  }
 
-    @Override
-    public boolean isUpdating() {
-        return updating;
-    }
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    return (Item) evaluate(ctx, tuple, true);
+  }
 
-    @Override
-    public boolean isVacuous() {
-        return vacuous;
-    }
+  @Override
+  public boolean isUpdating() {
+    return updating;
+  }
+
+  @Override
+  public boolean isVacuous() {
+    return vacuous;
+  }
 
 }

@@ -27,17 +27,16 @@
  */
 package org.brackit.xquery.update;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.List;
-
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.update.op.OpType;
 import org.brackit.xquery.update.op.UpdateOp;
 import org.brackit.xquery.util.log.Logger;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.List;
 
 /**
  * @author Sebastian Baechle
@@ -65,8 +64,8 @@ public final class UpdateList {
     // application which is determined by their type.
     // The resulting list is then checked if some ops
     // are performed twice or more on the same target node
-    final Comparator<UpdateOp> orderByType = Comparator.comparing(UpdateOp::getType);
-    ops.sort(orderByType);
+    final var orderByTypeCmp = Comparator.comparing(UpdateOp::getType);
+    ops.sort(orderByTypeCmp);
 
     for (int i = 0, size = ops.size(); i < size; i++) {
       final var firstOperator = ops.get(i);

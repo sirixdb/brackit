@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,7 +28,6 @@
 package org.brackit.xquery.expr;
 
 import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
@@ -39,57 +38,50 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class PIExpr extends ConstructedNodeBuilder implements Expr {
-	protected final QNm name;
-	protected final Expr nameExpr;
-	protected final Expr contentExpr;
-	protected final boolean appendOnly;
+  protected final QNm name;
+  protected final Expr nameExpr;
+  protected final Expr contentExpr;
+  protected final boolean appendOnly;
 
-	public PIExpr(Expr nameExpr, Expr contentExpr, boolean appendOnly) {
-		this.nameExpr = nameExpr;
-		this.contentExpr = contentExpr;
-		this.appendOnly = appendOnly;
-		this.name = (QNm) ((nameExpr instanceof QNm) ? nameExpr : null);
-	}
+  public PIExpr(Expr nameExpr, Expr contentExpr, boolean appendOnly) {
+    this.nameExpr = nameExpr;
+    this.contentExpr = contentExpr;
+    this.appendOnly = appendOnly;
+    this.name = (QNm) ((nameExpr instanceof QNm) ? nameExpr : null);
+  }
 
-	@Override
-	public final Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return evaluateToItem(ctx, tuple);
-	}
+  @Override
+  public final Sequence evaluate(QueryContext ctx, Tuple tuple) {
+    return evaluateToItem(ctx, tuple);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		// See XQuery 3.7.3.5 Computed PI Constructors
-		QNm target = (this.name != null) ? this.name : buildPITarget(ctx,
-				nameExpr.evaluateToItem(ctx, tuple));
-		
-		Sequence sequence = contentExpr.evaluate(ctx, tuple);
-		String content = buildPIContent(sequence);
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    // See XQuery 3.7.3.5 Computed PI Constructors
+    QNm target = (this.name != null) ? this.name : buildPITarget(nameExpr.evaluateToItem(ctx, tuple));
 
-		if (appendOnly) {
-			((Node<?>) tuple.get(tuple.getSize() - 1)).append(
-					Kind.PROCESSING_INSTRUCTION, target, new Str(content));
-			return null;
-		}
+    Sequence sequence = contentExpr.evaluate(ctx, tuple);
+    String content = buildPIContent(sequence);
 
-		Node<?> attribute = ctx.getNodeFactory().pi(target,
-				new Str(content));
-		return attribute;
-	}
+    if (appendOnly) {
+      ((Node<?>) tuple.get(tuple.getSize() - 1)).append(Kind.PROCESSING_INSTRUCTION, target, new Str(content));
+      return null;
+    }
 
-	@Override
-	public boolean isUpdating() {
-		return ((nameExpr.isUpdating()) || (contentExpr.isUpdating()));
-	}
+    Node<?> attribute = ctx.getNodeFactory().pi(target, new Str(content));
+    return attribute;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isUpdating() {
+    return ((nameExpr.isUpdating()) || (contentExpr.isUpdating()));
+  }
+
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 }

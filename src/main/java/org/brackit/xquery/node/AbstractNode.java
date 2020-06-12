@@ -44,27 +44,23 @@ import org.brackit.xquery.xdm.node.Node;
 import org.brackit.xquery.xdm.type.*;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public abstract class AbstractNode<E extends Node<E>> extends AbstractItem implements Node<E> {
 
-  protected static final Kind[] mapping =
-      new Kind[] {Kind.ELEMENT, Kind.ATTRIBUTE, Kind.TEXT, Kind.DOCUMENT, Kind.COMMENT, Kind.PROCESSING_INSTRUCTION};
-
   @SuppressWarnings("unchecked")
   @Override
-  public Stream<? extends E> getPath() throws DocumentException {
+  public Stream<? extends E> getPath() {
     final Node<? extends E> node = this;
     return new Stream() {
       Node<? extends E> next = node;
 
       @Override
-      public void close() {}
+      public void close() {
+      }
 
       @Override
-      public Object next() throws DocumentException {
+      public Object next() {
         if (next == null) {
           return null;
         }
@@ -86,9 +82,7 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem imple
     if (fragmentIDA == fragmentIDB) {
       return cmpInternal((E) other);
     } else {
-      return fragmentIDA < fragmentIDB
-          ? -1
-          : 1;
+      return fragmentIDA < fragmentIDB ? -1 : 1;
     }
   }
 
@@ -96,14 +90,13 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem imple
 
   private static class AttributeFilter implements Filter<Node<?>> {
     @Override
-    public boolean filter(Node<?> node) throws DocumentException {
-      boolean check = node.getKind() == Kind.ATTRIBUTE;
-      return check;
+    public boolean filter(Node<?> node) {
+      return node.getKind() == Kind.ATTRIBUTE;
     }
   }
 
   @Override
-  public Stream<? extends E> getDescendantOrSelf() throws DocumentException {
+  public Stream<? extends E> getDescendantOrSelf() {
     return new FilteredStream<E>(getSubtree(), new AttributeFilter());
   }
 
@@ -118,12 +111,12 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem imple
   }
 
   @Override
-  public Stream<Atomic> getValues() throws DocumentException {
-    return new AtomStream<Atomic>(getValue());
+  public Stream<Atomic> getValues() {
+    return new AtomStream<>(getValue());
   }
 
   @Override
-  public Str getStrValue() throws DocumentException {
+  public Str getStrValue() {
     if ((getKind() == Kind.ELEMENT) || (getKind() == Kind.DOCUMENT)) {
       final StringBuilder buffer = new StringBuilder();
       final Stream<? extends E> scanner = getDescendantOrSelf();
@@ -157,7 +150,7 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem imple
   }
 
   @Override
-  public ItemType itemType() throws DocumentException {
+  public ItemType itemType() {
     switch (getKind()) {
       case ELEMENT:
         return new ElementType(getName(), Type.UN);
@@ -177,7 +170,7 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem imple
   }
 
   @Override
-  public Stream<? extends Node<?>> performStep(Axis axis, NodeType test) throws DocumentException {
+  public Stream<? extends Node<?>> performStep(Axis axis, NodeType test) {
     return null;
   }
 

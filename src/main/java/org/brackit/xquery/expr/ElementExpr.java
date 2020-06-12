@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -39,128 +39,120 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class ElementExpr extends ConstructedNodeBuilder implements Expr {
 
-	public static class NS {
-		private final String prefix;
-		private final String uri;
+  public static class NS {
+    private final String prefix;
+    private final String uri;
 
-		public NS(String prefix, String uri) {
-			this.prefix = prefix;
-			this.uri = uri;
-		}
+    public NS(String prefix, String uri) {
+      this.prefix = prefix;
+      this.uri = uri;
+    }
 
-		public String getPrefix() {
-			return prefix;
-		}
+    public String getPrefix() {
+      return prefix;
+    }
 
-		public String getURI() {
-			return uri;
-		}
-	}
+    public String getURI() {
+      return uri;
+    }
+  }
 
-	protected final StaticContext sctx;
-	protected final Expr nameExpr;
-	protected final NS[] namespaces;
-	protected final Expr[] contentExprs;
-	protected final boolean bind;
-	protected final boolean appendOnly;
-	protected final QNm name;
+  protected final StaticContext sctx;
+  protected final Expr nameExpr;
+  protected final NS[] namespaces;
+  protected final Expr[] contentExprs;
+  protected final boolean bind;
+  protected final boolean appendOnly;
+  protected final QNm name;
 
-	public ElementExpr(StaticContext sctx, Expr nameExpr, NS[] namespaces,
-			Expr[] contentExpr, boolean bind, boolean appendOnly) {
-		this.sctx = sctx;
-		this.nameExpr = nameExpr;
-		this.namespaces = namespaces;
-		this.contentExprs = contentExpr;
-		this.bind = bind;
-		this.appendOnly = appendOnly;
-		this.name = (QNm) ((nameExpr instanceof QNm) ? nameExpr : null);
-	}
+  public ElementExpr(StaticContext sctx, Expr nameExpr, NS[] namespaces, Expr[] contentExpr, boolean bind,
+      boolean appendOnly) {
+    this.sctx = sctx;
+    this.nameExpr = nameExpr;
+    this.namespaces = namespaces;
+    this.contentExprs = contentExpr;
+    this.bind = bind;
+    this.appendOnly = appendOnly;
+    this.name = (QNm) ((nameExpr instanceof QNm) ? nameExpr : null);
+  }
 
-	@Override
-	public final Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return evaluateToItem(ctx, tuple);
-	}
+  @Override
+  public final Sequence evaluate(QueryContext ctx, Tuple tuple) {
+    return evaluateToItem(ctx, tuple);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		// See XQuery 3.7.3.1 Computed Element Constructors
-		QNm name = (this.name != null) ? this.name : buildElementName(sctx,
-				nameExpr.evaluateToItem(ctx, tuple));
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    // See XQuery 3.7.3.1 Computed Element Constructors
+    QNm name = (this.name != null) ? this.name : buildElementName(sctx, nameExpr.evaluateToItem(ctx, tuple));
 
-		final Node<?> element;
+    final Node<?> element;
 
-		if (appendOnly) {
-			element = ((Node<?>) tuple.get(tuple.getSize() - 1)).append(
-					Kind.ELEMENT, name, null);
-		} else {
-			element = ctx.getNodeFactory().element(name);
-		}
+    if (appendOnly) {
+      element = ((Node<?>) tuple.get(tuple.getSize() - 1)).append(Kind.ELEMENT, name, null);
+    } else {
+      element = ctx.getNodeFactory().element(name);
+    }
 
-		for (NS ns : namespaces) {
-			String prefix = ns.getPrefix();
-			String uri = ns.getURI();
-			if (prefix == null) {
-				element.getScope().setDefaultNS(uri);
-			} else {
-				element.getScope().addPrefix(prefix, uri);
-			}
-		}
-		
-		String nsURI = name.getNamespaceURI();
-		String prefix = name.getPrefix();
-		if ((prefix != null) && (element.getScope().resolvePrefix(prefix) == null)) {
-			element.getScope().addPrefix(prefix, nsURI);
-		} else if ((!nsURI.isEmpty()) && (!nsURI.equals(element.getScope().defaultNS()))) {
-			element.getScope().setDefaultNS(nsURI);
-		}
+    for (NS ns : namespaces) {
+      String prefix = ns.getPrefix();
+      String uri = ns.getURI();
+      if (prefix == null) {
+        element.getScope().setDefaultNS(uri);
+      } else {
+        element.getScope().addPrefix(prefix, uri);
+      }
+    }
 
-		ContentSink sink = new ContentSink() {
-			@Override
-			public Node<?> addNode(QueryContext ctx, Node<?> node)
-					throws QueryException {
-				return element.append(node);
-			}
+    String nsURI = name.getNamespaceURI();
+    String prefix = name.getPrefix();
+    if ((prefix != null) && (element.getScope().resolvePrefix(prefix) == null)) {
+      element.getScope().addPrefix(prefix, nsURI);
+    } else if ((!nsURI.isEmpty()) && (!nsURI.equals(element.getScope().defaultNS()))) {
+      element.getScope().setDefaultNS(nsURI);
+    }
 
-			@Override
-			public Node<?> addAttribute(QueryContext ctx, Node<?> attribute)
-					throws QueryException {
-				return element.setAttribute(attribute);
-			}
-		};
+    ContentSink sink = new ContentSink() {
+      @Override
+      public Node<?> addNode(QueryContext ctx, Node<?> node) {
+        return element.append(node);
+      }
 
-		final Tuple t = bind ? tuple.concat(element) : tuple;
+      @Override
+      public Node<?> addAttribute(QueryContext ctx, Node<?> attribute) {
+        return element.setAttribute(attribute);
+      }
+    };
 
-		for (int i = 0; i < contentExprs.length; i++) {
-			Sequence content = contentExprs[i].evaluate(ctx, t);
-			buildContentSequence(ctx, sink, content);
-		}
-		return (appendOnly) ? null : element;
-	}
+    final Tuple t = bind ? tuple.concat(element) : tuple;
 
-	@Override
-	public boolean isUpdating() {
-		boolean updating = nameExpr.isUpdating();
-		int i = 0;
-		while ((!updating) && (i < contentExprs.length)) {
-			updating = contentExprs[i++].isUpdating();
-		}
-		return updating;
-	}
+    for (int i = 0; i < contentExprs.length; i++) {
+      Sequence content = contentExprs[i].evaluate(ctx, t);
+      buildContentSequence(ctx, sink, content);
+    }
+    return (appendOnly) ? null : element;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isUpdating() {
+    boolean updating = nameExpr.isUpdating();
+    int i = 0;
+    while ((!updating) && (i < contentExprs.length)) {
+      updating = contentExprs[i++].isUpdating();
+    }
+    return updating;
+  }
 
-	public String toString() {
-		return "element";
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
+
+  public String toString() {
+    return "element";
+  }
 }

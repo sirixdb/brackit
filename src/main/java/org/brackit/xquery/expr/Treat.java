@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -42,129 +42,114 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class Treat implements Expr {
-	private final Expr expr;
+  private final Expr expr;
 
-	private final SequenceType expected;
+  private final SequenceType expected;
 
-	public Treat(Expr expr, SequenceType expected) {
-		this.expr = expr;
-		this.expected = expected;
-	}
+  public Treat(Expr expr, SequenceType expected) {
+    this.expr = expr;
+    this.expected = expected;
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		try {
-			Sequence sequence = expr.evaluate(ctx, tuple);
-			final Sequence typedSequence = TypedSequence.toTypedSequence(ctx,
-					expected, sequence);
-			return new AbstractSequence() {
-				final Sequence s = typedSequence;
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) {
+    try {
+      Sequence sequence = expr.evaluate(ctx, tuple);
+      final Sequence typedSequence = TypedSequence.toTypedSequence(expected, sequence);
+      return new AbstractSequence() {
+        final Sequence s = typedSequence;
 
-				@Override
-				public IntNumeric size() throws QueryException {
-					try {
-						return s.size();
-					} catch (QueryException e) {
-						if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
-							throw new QueryException(
-									e,
-									ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE);
-						}
-						throw e;
-					}
-				}
+        @Override
+        public IntNumeric size() {
+          try {
+            return s.size();
+          } catch (QueryException e) {
+            if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
+              throw new QueryException(e, ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE);
+            }
+            throw e;
+          }
+        }
 
-				@Override
-				public Iter iterate() {
-					return new BaseIter() {
-						Iter it = s.iterate();
+        @Override
+        public Iter iterate() {
+          return new BaseIter() {
+            Iter it = s.iterate();
 
-						@Override
-						public Item next() throws QueryException {
-							try {
-								return it.next();
-							} catch (QueryException e) {
-								if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
-									throw new QueryException(
-											e,
-											ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE);
-								}
-								throw e;
-							}
-						}
+            @Override
+            public Item next() {
+              try {
+                return it.next();
+              } catch (QueryException e) {
+                if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
+                  throw new QueryException(e, ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE);
+                }
+                throw e;
+              }
+            }
 
-						@Override
-						public void close() {
-							it.close();
-						}
-					};
-				}
+            @Override
+            public void close() {
+              it.close();
+            }
+          };
+        }
 
-				@Override
-				public boolean booleanValue() throws QueryException {
-					try {
-						return s.booleanValue();
-					} catch (QueryException e) {
-						if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
-							throw new QueryException(
-									e,
-									ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE);
-						}
-						throw e;
-					}
-				}
+        @Override
+        public boolean booleanValue() {
+          try {
+            return s.booleanValue();
+          } catch (QueryException e) {
+            if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
+              throw new QueryException(e, ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE);
+            }
+            throw e;
+          }
+        }
 
-				@Override
-				public Item get(IntNumeric pos) throws QueryException {
-					try {
-						return s.get(pos);
-					} catch (QueryException e) {
-						if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
-							throw new QueryException(
-									e,
-									ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE);
-						}
-						throw e;
-					}
-				}
-			};
-		} catch (QueryException e) {
-			if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
-				throw new QueryException(e,
-						ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE);
-			}
-			throw e;
-		}
-	}
+        @Override
+        public Item get(IntNumeric pos) {
+          try {
+            return s.get(pos);
+          } catch (QueryException e) {
+            if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
+              throw new QueryException(e, ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE);
+            }
+            throw e;
+          }
+        }
+      };
+    } catch (QueryException e) {
+      if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
+        throw new QueryException(e, ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE);
+      }
+      throw e;
+    }
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		try {
-			Item item = expr.evaluateToItem(ctx, tuple);
-			return TypedSequence.toTypedItem(ctx, expected, item);
-		} catch (QueryException e) {
-			if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
-				throw new QueryException(e,
-						ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE);
-			}
-			throw e;
-		}
-	}
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    try {
+      Item item = expr.evaluateToItem(ctx, tuple);
+      return TypedSequence.toTypedItem(expected, item);
+    } catch (QueryException e) {
+      if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
+        throw new QueryException(e, ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE);
+      }
+      throw e;
+    }
+  }
 
-	@Override
-	public boolean isUpdating() {
-		return false;
-	}
+  @Override
+  public boolean isUpdating() {
+    return false;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 }

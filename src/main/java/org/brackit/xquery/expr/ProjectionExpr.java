@@ -56,12 +56,12 @@ public class ProjectionExpr implements Expr {
 	}
 
 	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple t) throws QueryException {
+	public Sequence evaluate(QueryContext ctx, Tuple t) {
 		return evaluateToItem(ctx, t);
 	}
 
 	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple t) throws QueryException {
+	public Item evaluateToItem(QueryContext ctx, Tuple t) {
 		Sequence s = record.evaluateToItem(ctx, t);
 		if (!(s instanceof Record)) {
 			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
@@ -70,7 +70,7 @@ public class ProjectionExpr implements Expr {
 		Record r = (Record) s;
 		QNm[] names = new QNm[fields.length];
 		Sequence[] vals = new Sequence[fields.length];
-		for (int i = 0; i < fields.length && s != null; i++) {
+		for (int i = 0; i < fields.length; i++) {
 			Item f = fields[i].evaluateToItem(ctx, t);
 			if (f == null) {
 				return null;
@@ -110,13 +110,13 @@ public class ProjectionExpr implements Expr {
 	public String toString() {
 		StringBuilder s = new StringBuilder();
 		for (Expr f : fields) {
-			s.append("->");
+			s.append("=>");
 			s.append(f);
 		}
 		return s.toString();
 	}
 
-	public static void main(String[] args) throws QueryException {
+	public static void main(String[] args) {
 		new XQuery(
 				"let $a:= 1 let $b:= {'b':2.0} let $n := <x><y>yval</y></x> return {a:$a, $b, c:'3'}{a,c}=>c")
 				.serialize(new BrackitQueryContext(), System.out);

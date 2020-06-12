@@ -63,14 +63,14 @@ public class NLJoin implements Operator {
 	}
 
 	@Override
-	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
+	public Cursor create(QueryContext ctx, Tuple tuple) {
 		int lSize = l.tupleWidth(tuple.getSize());
 		int pad = r.tupleWidth(tuple.getSize()) - tuple.getSize();
 		return new NLJoinCursor(l.create(ctx, tuple), lSize, pad);
 	}
 	
 	@Override
-	public Cursor create(QueryContext ctx, Tuple[] buf, int len) throws QueryException {
+	public Cursor create(QueryContext ctx, Tuple[] buf, int len) {
 		int lSize = l.tupleWidth(buf[0].getSize());
 		int pad = r.tupleWidth(buf[0].getSize()) - buf[0].getSize();
 		return new NLJoinCursor(l.create(ctx, buf, len), lSize, pad);
@@ -97,12 +97,12 @@ public class NLJoin implements Operator {
 		}
 
 		@Override
-		public void open(QueryContext ctx) throws QueryException {
+		public void open(QueryContext ctx) {
 			lc.open(ctx);
 		}
 
 		@Override
-		public Tuple next(QueryContext ctx) throws QueryException {
+		public Tuple next(QueryContext ctx) {
 			Tuple rt;
 			Sequence rKey;
 			while (true) {

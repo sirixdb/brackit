@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -41,95 +41,93 @@ import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class ArrayExpr implements Expr {
 
-	final Expr[] expr;
-	final boolean[] flatten;
+  final Expr[] expr;
+  final boolean[] flatten;
 
-	public ArrayExpr(Expr[] expr, boolean[] flatten) {
-		this.expr = expr;
-		this.flatten = flatten;
-	}
+  public ArrayExpr(Expr[] expr, boolean[] flatten) {
+    this.expr = expr;
+    this.flatten = flatten;
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple t) throws QueryException {
-		return evaluateToItem(ctx, t);
-	}
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple t) {
+    return evaluateToItem(ctx, t);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple t) throws QueryException {
-		Sequence[] vals = new Sequence[10];
-		int pos = 0;
-		for (int i = 0; i < expr.length; i++) {
-			final Sequence res = expr[i].evaluate(ctx, t);
-			if (res == null) {
-				continue;
-			}
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple t) {
+    Sequence[] vals = new Sequence[10];
+    int pos = 0;
+    for (int i = 0; i < expr.length; i++) {
+      final Sequence res = expr[i].evaluate(ctx, t);
+      if (res == null) {
+        continue;
+      }
 
-			if (!(res instanceof SequenceExpr.EvalSequence) && (!flatten[i]) || (res instanceof Item)) {
-				if (pos == vals.length) {
-					vals = Arrays.copyOfRange(vals, 0,
-							((vals.length * 3) / 2) + 1);
-				}
-				vals[pos++] = res;
-			} else {
-				try (final Iter it = res.iterate()) {
-					Item item;
-					while ((item = it.next()) != null) {
-						if (pos == vals.length) {
-							vals = Arrays.copyOfRange(vals, 0, ((vals.length * 3) / 2) + 1);
-						}
-						vals[pos++] = item;
-					}
-				}
-			}
-		}
-		return new DRArray(vals, 0, pos);
-	}
+      if (!(res instanceof SequenceExpr.EvalSequence) && !flatten[i] || res instanceof Item) {
+        if (pos == vals.length) {
+          vals = Arrays.copyOfRange(vals, 0, ((vals.length * 3) / 2) + 1);
+        }
+        vals[pos++] = res;
+      } else {
+        try (final Iter it = res.iterate()) {
+          Item item;
+          while ((item = it.next()) != null) {
+            if (pos == vals.length) {
+              vals = Arrays.copyOfRange(vals, 0, ((vals.length * 3) / 2) + 1);
+            }
+            vals[pos++] = item;
+          }
+        }
+      }
+    }
+    return new DRArray(vals, 0, pos);
+  }
 
-	@Override
-	public boolean isUpdating() {
-		for (final Expr e : this.expr) {
-			if (e.isUpdating()) {
-				return true;
-			}
-		}
-		return false;
-	}
+  @Override
+  public boolean isUpdating() {
+    for (final Expr e : this.expr) {
+      if (e.isUpdating()) {
+        return true;
+      }
+    }
+    return false;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		for (final Expr e : this.expr) {
-			if (!e.isVacuous()) {
-				return false;
-			}
-		}
-		return true;
-	}
+  @Override
+  public boolean isVacuous() {
+    for (final Expr e : this.expr) {
+      if (!e.isVacuous()) {
+        return false;
+      }
+    }
+    return true;
+  }
 
-	public String toString() {
-		StringBuilder out = new StringBuilder();
-		out.append("[");
-		boolean first = true;
-		for (int i = 0; i < expr.length; i++) {
-			if (!first) {
-				out.append(", ");
-			}
-			first = false;
-			if (flatten[i]) {
-				out.append("=");
-			}
-			out.append(expr[i].toString());
-		}
-		out.append("]");
-		return out.toString();
-	}
-	
-	public static void main(String[] args) throws QueryException {
-		new XQuery("[ 1, '2', 3, (1 > 0) cast as xs:boolean, 1.2343 + 5, =(1,2,3)  ][[4]]").serialize(new BrackitQueryContext(), System.out);
-	}
+  public String toString() {
+    StringBuilder out = new StringBuilder();
+    out.append("[");
+    boolean first = true;
+    for (int i = 0; i < expr.length; i++) {
+      if (!first) {
+        out.append(", ");
+      }
+      first = false;
+      if (flatten[i]) {
+        out.append("=");
+      }
+      out.append(expr[i].toString());
+    }
+    out.append("]");
+    return out.toString();
+  }
+
+  public static void main(String[] args) {
+    new XQuery("[ 1, '2', 3, (1 > 0) cast as xs:boolean, 1.2343 + 5, =(1,2,3)  ][[4]]").serialize(new BrackitQueryContext(),
+                                                                                                  System.out);
+  }
 }

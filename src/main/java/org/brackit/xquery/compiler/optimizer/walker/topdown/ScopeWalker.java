@@ -112,7 +112,7 @@ public abstract class ScopeWalker extends Walker {
     return table.getScopes();
   }
 
-  private final void walkInspect(AST node, boolean newScope, boolean bindOnly) {
+  private void walkInspect(AST node, boolean newScope, boolean bindOnly) {
     if (inspect(node, newScope, bindOnly)) {
       for (int i = 0; i < node.getChildCount(); i++) {
         AST child = node.getChild(i);
@@ -246,9 +246,9 @@ public abstract class ScopeWalker extends Walker {
   }
 
   protected static class Var {
-    final Scope scope;
-    final QNm var;
-    final SequenceType type;
+    public final Scope scope;
+    public final QNm var;
+    public final SequenceType type;
 
     Var(Scope scope, QNm var, SequenceType type) {
       this.scope = scope;
@@ -263,10 +263,10 @@ public abstract class ScopeWalker extends Walker {
   }
 
   protected static class VarRef {
-    final Var var;
-    final AST ref;
-    final Scope refScope;
-    VarRef next;
+    public final Var var;
+    public final AST ref;
+    public final Scope refScope;
+    public VarRef next;
 
     public VarRef(Var var, AST ref, Scope refScope) {
       this.var = var;
@@ -305,7 +305,11 @@ public abstract class ScopeWalker extends Walker {
       this.division = division;
     }
 
-    protected boolean isInPipeline() {
+    public AST getNode() {
+      return node;
+    }
+
+    public boolean isInPipeline() {
       return inPipeline;
     }
 
@@ -345,7 +349,7 @@ public abstract class ScopeWalker extends Walker {
       }
     }
 
-    protected boolean resolveLocal(QNm var) {
+    public boolean resolveLocal(QNm var) {
       for (Scope.Node n = lvars; n != null; n = n.next) {
         if (n.var.atomicCmp(var) == 0) {
           return true;
@@ -354,7 +358,7 @@ public abstract class ScopeWalker extends Walker {
       return false;
     }
 
-    protected Var resolve(QNm var) {
+    public Var resolve(QNm var) {
       for (Scope.Node n = lvars; n != null; n = n.next) {
         if (n.var.atomicCmp(var) == 0) {
           return n;
@@ -365,7 +369,7 @@ public abstract class ScopeWalker extends Walker {
           : null;
     }
 
-    protected Var get(QNm var) {
+    public Var get(QNm var) {
       for (Scope.Node n = lvars; n != null; n = n.next) {
         if (n.var.atomicCmp(var) == 0) {
           return n;
@@ -440,13 +444,13 @@ public abstract class ScopeWalker extends Walker {
     }
 
     public String numberString() {
-      String s = String.valueOf(division);
+      final StringBuilder stringBuilder = new StringBuilder(String.valueOf(division));
       Scope scope = this;
       while (scope.parent != null) {
         scope = scope.parent;
-        s = scope.division + "." + s;
+        stringBuilder.insert(0, scope.division + ".");
       }
-      return s;
+      return stringBuilder.toString();
     }
 
     public String dot() {
@@ -477,7 +481,7 @@ public abstract class ScopeWalker extends Walker {
         dt.addEdge(String.valueOf(myNo), String.valueOf(no));
         no = child.toDot(no, dt);
       }
-      return no++;
+      return no;
     }
 
     public void display() {
@@ -512,7 +516,7 @@ public abstract class ScopeWalker extends Walker {
   }
 
   protected static class BindingTable {
-    final Map<AST, Scope> scopemap = new HashMap<AST, Scope>();
+    final Map<AST, Scope> scopemap = new HashMap<>();
     final Scope rootScope;
     Scope scope;
 
@@ -578,7 +582,7 @@ public abstract class ScopeWalker extends Walker {
     }
 
     List<Var> inPipelineBindings() {
-      ArrayList<Var> bindings = new ArrayList<Var>();
+      var bindings = new ArrayList<Var>();
       Scope s = scope;
       while (s.inPipeline) {
         bindings.addAll(s.localBindings());
@@ -677,7 +681,7 @@ public abstract class ScopeWalker extends Walker {
     }
 
     int pos = 0;
-    Set<QNm> groupVars = new HashSet<QNm>();
+    final var groupVars = new HashSet<QNm>();
     while (node.getChild(pos).getType() == XQ.GroupBySpec) {
       AST varRef = node.getChild(pos).getChild(0);
       if (!bindOnly) {
@@ -687,8 +691,8 @@ public abstract class ScopeWalker extends Walker {
       pos++;
     }
 
-    AST dftAgg = node.getChild(node.getChildCount() - 2);
-    AST dftAggType = dftAgg.getChild(0);
+    final AST dftAgg = node.getChild(node.getChildCount() - 2);
+    final AST dftAggType = dftAgg.getChild(0);
     if (dftAggType.getType() != XQ.SingleAgg) {
       // groupby rebinds all non-grouped pipeline variables
       for (Var var : table.inPipelineBindings()) {
@@ -1062,12 +1066,7 @@ public abstract class ScopeWalker extends Walker {
     for (VarRef ref = varRefs; ref != null; ref = ref.next) {
       tmp[pos++] = ref;
     }
-    Arrays.sort(tmp, new Comparator<VarRef>() {
-      @Override
-      public int compare(VarRef o1, VarRef o2) {
-        return o1.var.scope.compareTo(o2.var.scope);
-      }
-    });
+    Arrays.sort(tmp, Comparator.comparing(o -> o.var.scope));
     return tmp;
   }
 

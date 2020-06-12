@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -27,9 +27,7 @@
  */
 package org.brackit.xquery.expr;
 
-import java.util.Comparator;
 import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
@@ -41,121 +39,112 @@ import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.node.Node;
 
+import java.util.Comparator;
+
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class UnionExpr implements Expr {
-	private final Expr firstExpr;
+  private final Expr firstExpr;
 
-	private final Expr secondExpr;
+  private final Expr secondExpr;
 
-	public UnionExpr(Expr firstExpr, Expr secondExpr) {
-		this.firstExpr = firstExpr;
-		this.secondExpr = secondExpr;
-	}
+  public UnionExpr(Expr firstExpr, Expr secondExpr) {
+    this.firstExpr = firstExpr;
+    this.secondExpr = secondExpr;
+  }
 
-	@Override
-	public Sequence evaluate(final QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		Sequence sequenceA = firstExpr.evaluate(ctx, tuple);
-		Sequence sequenceB = secondExpr.evaluate(ctx, tuple);
+  @Override
+  public Sequence evaluate(final QueryContext ctx, Tuple tuple) {
+    Sequence sequenceA = firstExpr.evaluate(ctx, tuple);
+    Sequence sequenceB = secondExpr.evaluate(ctx, tuple);
 
-		if ((sequenceA == null) || (sequenceB == null)) {
-			return null;
-		}
+    if ((sequenceA == null) || (sequenceB == null)) {
+      return null;
+    }
 
-		final Comparator<Tuple> comparator = new Comparator<Tuple>() {
-			@Override
-			public int compare(Tuple o1, Tuple o2) {
-				return ((Node<?>) o1).cmp((Node<?>) o2);
-			}
-		};
+    final Comparator<Tuple> comparator = (o1, o2) -> ((Node<?>) o1).cmp((Node<?>) o2);
 
-		final Sequence sortedA = new SortedNodeSequence(comparator, sequenceA,
-				true);
-		final Sequence sortedB = new SortedNodeSequence(comparator, sequenceB,
-				true);
+    final Sequence sortedA = new SortedNodeSequence(comparator, sequenceA, true);
+    final Sequence sortedB = new SortedNodeSequence(comparator, sequenceB, true);
 
-		return new LazySequence() {
-			@Override
-			public Iter iterate() {
-				return new BaseIter() {
-					Iter aIt;
-					Iter bIt;
+    return new LazySequence() {
+      @Override
+      public Iter iterate() {
+        return new BaseIter() {
+          Iter aIt;
+          Iter bIt;
 
-					Node<?> a;
-					Node<?> b;
+          Node<?> a;
+          Node<?> b;
 
-					@Override
-					public Item next() throws QueryException {
-						if (aIt == null) {
-							aIt = sortedA.iterate();
-							bIt = sortedB.iterate();
-							a = (Node<?>) aIt.next();
-							b = (Node<?>) bIt.next();
-						}
+          @Override
+          public Item next() {
+            if (aIt == null) {
+              aIt = sortedA.iterate();
+              bIt = sortedB.iterate();
+              a = (Node<?>) aIt.next();
+              b = (Node<?>) bIt.next();
+            }
 
-						while ((a != null) && (b != null)) {
-							int res = a.cmp(b);
+            while (a != null && b != null) {
+              int res = a.cmp(b);
 
-							if (res == 0) {
-								Node<?> deliver = a;
-								a = (Node<?>) aIt.next();
-								b = (Node<?>) bIt.next();
-								return deliver;
-							} else if (res < 0) {
-								Node<?> deliver = a;
-								a = (Node<?>) aIt.next();
-								return deliver;
-							} else {
-								Node<?> deliver = b;
-								b = (Node<?>) bIt.next();
-								return deliver;
-							}
-						}
-						if (a != null) {
-							Node<?> deliver = a;
-							a = (Node<?>) aIt.next();
-							return deliver;
-						}
-						if (b != null) {
-							Node<?> deliver = b;
-							b = (Node<?>) bIt.next();
-							return deliver;
-						}
+              if (res == 0) {
+                Node<?> deliver = a;
+                a = (Node<?>) aIt.next();
+                b = (Node<?>) bIt.next();
+                return deliver;
+              } else if (res < 0) {
+                Node<?> deliver = a;
+                a = (Node<?>) aIt.next();
+                return deliver;
+              } else {
+                Node<?> deliver = b;
+                b = (Node<?>) bIt.next();
+                return deliver;
+              }
+            }
+            if (a != null) {
+              Node<?> deliver = a;
+              a = (Node<?>) aIt.next();
+              return deliver;
+            }
+            if (b != null) {
+              Node<?> deliver = b;
+              b = (Node<?>) bIt.next();
+              return deliver;
+            }
 
-						return null;
-					}
+            return null;
+          }
 
-					@Override
-					public void close() {
-						if (aIt != null) {
-							aIt.close();
-						}
-						if (bIt != null) {
-							bIt.close();
-						}
-					}
-				};
-			}
-		};
-	}
+          @Override
+          public void close() {
+            if (aIt != null) {
+              aIt.close();
+            }
+            if (bIt != null) {
+              bIt.close();
+            }
+          }
+        };
+      }
+    };
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return ExprUtil.asItem(evaluate(ctx, tuple));
-	}
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    return ExprUtil.asItem(evaluate(ctx, tuple));
+  }
 
-	@Override
-	public boolean isUpdating() {
-		return ((firstExpr.isUpdating()) || (secondExpr.isUpdating()));
-	}
+  @Override
+  public boolean isUpdating() {
+    return ((firstExpr.isUpdating()) || (secondExpr.isUpdating()));
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 }

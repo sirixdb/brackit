@@ -49,7 +49,7 @@ public class FragmentHelper {
 	private Node<?> root;
 
 	public FragmentHelper() {
-		this.stack = new ArrayDeque<Node<?>>();
+		this.stack = new ArrayDeque<>();
 	}
 
 	public Node<?> getRoot() {
@@ -97,7 +97,7 @@ public class FragmentHelper {
 
 	public FragmentHelper attribute(QNm name, Atomic value)
 			throws DocumentException {
-		if ((stack.isEmpty()) || (stack.peek().getKind() != Kind.ELEMENT)) {
+		if (stack.isEmpty() || stack.peek().getKind() != Kind.ELEMENT) {
 			throw new DocumentException("No element on stack.");
 		}
 

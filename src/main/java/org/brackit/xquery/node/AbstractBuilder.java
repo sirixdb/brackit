@@ -44,7 +44,6 @@ import org.brackit.xquery.xdm.node.Node;
  */
 public abstract class AbstractBuilder<E extends Node<E>> implements
 		SubtreeListener<E>, SubtreeHandler {
-	@SuppressWarnings("unchecked")
 	private Node[] stack;
 
 	private int stackSize;
@@ -64,7 +63,7 @@ public abstract class AbstractBuilder<E extends Node<E>> implements
 	public void startMapping(String prefix, String uri) throws DocumentException {
 		if (nsMappings == null) {
 			// use tree map for space-efficiency
-			nsMappings = new TreeMap<String, String>();
+			nsMappings = new TreeMap<>();
 		}
 		nsMappings.put(prefix, uri);
 	}

@@ -28,6 +28,7 @@
 package org.brackit.xquery.node;
 
 import java.util.Arrays;
+
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.node.stream.ArrayStream;
 import org.brackit.xquery.xdm.DocumentException;
@@ -36,18 +37,17 @@ import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class ArrayCollection<E extends Node<E>> extends AbstractNodeCollection<E> {
   protected Node[] docs;
 
   public ArrayCollection(String name, E doc) {
     super(name);
-    this.docs = new Node[] {doc};
+    this.docs = new Node[] { doc };
   }
 
+  @SafeVarargs
   public ArrayCollection(String name, E... docs) {
     super(name);
     this.docs = docs;
@@ -55,7 +55,7 @@ public class ArrayCollection<E extends Node<E>> extends AbstractNodeCollection<E
 
   @SuppressWarnings("unchecked")
   @Override
-  public E getDocument() throws DocumentException {
+  public E getDocument() {
     if (docs.length == 1) {
       return (E) docs[0];
     }
@@ -64,12 +64,12 @@ public class ArrayCollection<E extends Node<E>> extends AbstractNodeCollection<E
 
   @SuppressWarnings("unchecked")
   @Override
-  public Stream<? extends E> getDocuments() throws DocumentException {
+  public Stream<? extends E> getDocuments() {
     return new ArrayStream(docs);
   }
 
   @Override
-  public E add(SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
+  public E add(SubtreeParser parser) {
     throw new OperationNotSupportedException();
   }
 
@@ -79,12 +79,12 @@ public class ArrayCollection<E extends Node<E>> extends AbstractNodeCollection<E
   }
 
   @Override
-  public void delete() throws DocumentException {
+  public void delete() {
     throw new OperationNotSupportedException();
   }
 
   @Override
-  public void remove(long documentID) throws OperationNotSupportedException, DocumentException {
+  public void remove(long documentID) {
     throw new OperationNotSupportedException();
   }
 

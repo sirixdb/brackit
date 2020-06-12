@@ -41,106 +41,91 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class AttributeExpr extends ConstructedNodeBuilder implements Expr {
-	protected final StaticContext sctx;
-	protected final Expr nameExpr;
-	protected final Expr[] valueExpr;
-	protected final boolean appendOnly;
-	protected final QNm name;
+  protected final StaticContext sctx;
+  protected final Expr nameExpr;
+  protected final Expr[] valueExpr;
+  protected final boolean appendOnly;
+  protected final QNm name;
 
-	public AttributeExpr(StaticContext sctx, Expr nameExpr, Expr[] valueExpr,
-			boolean appendOnly) {
-		this.sctx = sctx;
-		this.nameExpr = nameExpr;
-		this.valueExpr = valueExpr;
-		this.appendOnly = appendOnly;
-		this.name = (QNm) ((nameExpr instanceof QNm) ? nameExpr : null);
-	}
+  public AttributeExpr(StaticContext sctx, Expr nameExpr, Expr[] valueExpr, boolean appendOnly) {
+    this.sctx = sctx;
+    this.nameExpr = nameExpr;
+    this.valueExpr = valueExpr;
+    this.appendOnly = appendOnly;
+    this.name = (QNm) ((nameExpr instanceof QNm) ? nameExpr : null);
+  }
 
-	@Override
-	public final Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return evaluateToItem(ctx, tuple);
-	}
+  @Override
+  public final Sequence evaluate(QueryContext ctx, Tuple tuple) {
+    return evaluateToItem(ctx, tuple);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		// See XQuery 3.0 3.8.3.2 Computed Attribute Constructors
-		QNm name = (this.name != null) ? this.name : buildAttributeName(sctx,
-				nameExpr.evaluateToItem(ctx, tuple));
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    // See XQuery 3.0 3.8.3.2 Computed Attribute Constructors
+    QNm name = (this.name != null) ? this.name : buildAttributeName(sctx, nameExpr.evaluateToItem(ctx, tuple));
 
-		if ("xmlns".equals(name.getPrefix())) {
-			throw new QueryException(
-					ErrorCode.ERR_ILLEGAL_NAME_OF_CONSTRUCTED_ATTRIBUTE,
-					"Attribute name prefix must not be \"xmlns\"");
-		}
-		if ((name.getPrefix() == null) && ("xmlns".equals(name.getLocalName()))) {
-			throw new QueryException(
-					ErrorCode.ERR_ILLEGAL_NAME_OF_CONSTRUCTED_ATTRIBUTE,
-					"Attribute name must not be \"xmlns\"");
-		}
-		if ("http://www.w3.org/2000/xmlns/".equals(name.getNamespaceURI())) {
-			throw new QueryException(
-					ErrorCode.ERR_ILLEGAL_NAME_OF_CONSTRUCTED_ATTRIBUTE,
-					"Attribute name namespace URI must not be \"http://www.w3.org/2000/xmlns/\"");
-		}
-		if ("xml".equals(name.getPrefix())) {
-			if (!"http://www.w3.org/XML/1998/namespace".equals(name
-					.getNamespaceURI())) {
-				throw new QueryException(
-						ErrorCode.ERR_ILLEGAL_NAME_OF_CONSTRUCTED_ATTRIBUTE,
-						"Namespace prefix \"xml\" must be bound to namespace URI other "
-								+ "than \"http://www.w3.org/XML/1998/namespace\"");
-			}
-		} else if ("http://www.w3.org/XML/1998/namespace".equals(name
-				.getNamespaceURI())) {
-			throw new QueryException(
-					ErrorCode.ERR_ILLEGAL_NAME_OF_CONSTRUCTED_ATTRIBUTE,
-					"Namespace prefix \"xml\" must be bound to namespace URI other "
-							+ "than \"http://www.w3.org/XML/1998/namespace\"");
-		}
-		String stringValue = "";
-		for (Expr e : valueExpr) {
-			Sequence content = e.evaluate(ctx, tuple);
-			stringValue += buildAttributeContent(ctx, content);
-		}
+    if ("xmlns".equals(name.getPrefix())) {
+      throw new QueryException(ErrorCode.ERR_ILLEGAL_NAME_OF_CONSTRUCTED_ATTRIBUTE,
+                               "Attribute name prefix must not be \"xmlns\"");
+    }
+    if ((name.getPrefix() == null) && ("xmlns".equals(name.getLocalName()))) {
+      throw new QueryException(ErrorCode.ERR_ILLEGAL_NAME_OF_CONSTRUCTED_ATTRIBUTE,
+                               "Attribute name must not be \"xmlns\"");
+    }
+    if ("http://www.w3.org/2000/xmlns/".equals(name.getNamespaceURI())) {
+      throw new QueryException(ErrorCode.ERR_ILLEGAL_NAME_OF_CONSTRUCTED_ATTRIBUTE,
+                               "Attribute name namespace URI must not be \"http://www.w3.org/2000/xmlns/\"");
+    }
+    if ("xml".equals(name.getPrefix())) {
+      if (!"http://www.w3.org/XML/1998/namespace".equals(name.getNamespaceURI())) {
+        throw new QueryException(ErrorCode.ERR_ILLEGAL_NAME_OF_CONSTRUCTED_ATTRIBUTE,
+                                 "Namespace prefix \"xml\" must be bound to namespace URI other "
+                                     + "than \"http://www.w3.org/XML/1998/namespace\"");
+      }
+    } else if ("http://www.w3.org/XML/1998/namespace".equals(name.getNamespaceURI())) {
+      throw new QueryException(ErrorCode.ERR_ILLEGAL_NAME_OF_CONSTRUCTED_ATTRIBUTE,
+                               "Namespace prefix \"xml\" must be bound to namespace URI other "
+                                   + "than \"http://www.w3.org/XML/1998/namespace\"");
+    }
+    String stringValue = "";
+    for (Expr e : valueExpr) {
+      Sequence content = e.evaluate(ctx, tuple);
+      stringValue += buildAttributeContent(content);
+    }
 
-		if (appendOnly) {
-			((Node<?>) tuple.get(tuple.getSize() - 1)).setAttribute(name,
-					new Una(stringValue));
-			return null;
-		}
+    if (appendOnly) {
+      ((Node<?>) tuple.get(tuple.getSize() - 1)).setAttribute(name, new Una(stringValue));
+      return null;
+    }
 
-		Node<?> attribute = ctx.getNodeFactory().attribute(name,
-				new Str(stringValue));
-		return attribute;
-	}
+    Node<?> attribute = ctx.getNodeFactory().attribute(name, new Str(stringValue));
+    return attribute;
+  }
 
-	@Override
-	public boolean isUpdating() {
-		if (nameExpr.isUpdating()) {
-			return isUpdating();
-		}
-		for (Expr e : valueExpr) {
-			if (e.isUpdating()) {
-				return true;
-			}
-		}
-		return false;
-	}
+  @Override
+  public boolean isUpdating() {
+    if (nameExpr.isUpdating()) {
+      return isUpdating();
+    }
+    for (Expr e : valueExpr) {
+      if (e.isUpdating()) {
+        return true;
+      }
+    }
+    return false;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 
-	@Override
+  @Override
   public String toString() {
-		return "attribute";
-	}
+    return "attribute";
+  }
 }

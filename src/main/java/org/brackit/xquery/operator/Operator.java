@@ -32,14 +32,34 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 
 /**
- * 
+ * Set-oriented operators.
+ *
  * @author Sebastian Baechle
- * 
+ * @author Johannes Lichtenberger
  */
 public interface Operator {
-	Cursor create(QueryContext ctx, Tuple tuple) throws QueryException;
-	
-	Cursor create(QueryContext ctx, Tuple[] t, int len) throws QueryException;
-	
+	/**
+	 * Create a new cursor.
+	 * @param ctx the query context
+	 * @param tuple the current tuple
+	 * @return the new cursor instance
+	 * @throws QueryException if any exception occurs during the creation of the cursor
+	 */
+	Cursor create(QueryContext ctx, Tuple tuple);
+
+	/**
+	 * Create a new cursor.
+	 * @param ctx the query context
+	 * @param tuples the current tuples
+	 * @return the new cursor instance
+	 * @throws QueryException if any exception occurs during the creation of the cursor
+	 */
+	Cursor create(QueryContext ctx, Tuple[] tuples, int len);
+
+	/**
+	 * The tuple width.
+	 * @param initSize the initial size
+	 * @return the size
+	 */
 	int tupleWidth(int initSize);
 }

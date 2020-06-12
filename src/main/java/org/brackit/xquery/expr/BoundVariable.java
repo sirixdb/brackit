@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -41,73 +41,74 @@ import org.brackit.xquery.xdm.type.SequenceType;
 /**
  * Resolves references to bound variables of, e.g., for, let and quantified
  * expressions.
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public class BoundVariable extends Variable implements Reference {
-	private int pos = -1;
+  private int pos = -1;
 
-	public BoundVariable(QNm name, SequenceType type) {
-		super(name, type);
-	}
+  public BoundVariable(QNm name, SequenceType type) {
+    super(name, type);
+  }
 
-	public BoundVariable(QNm name, int pos) {
-		super(name);
-		this.pos = pos;
-	}
+  public BoundVariable(QNm name, int pos) {
+    super(name);
+    this.pos = pos;
+  }
 
-	@Override
-	public void setPos(int pos) {
-		this.pos = pos;
-	}
+  @Override
+  public void setPos(int pos) {
+    this.pos = pos;
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		Sequence s;
-		try {
-			s = tuple.get(pos);
-		} catch (QueryException e) {
-			throw new QueryException(
-					e,
-					e.getCode(),
-					"Could not resolve variable %s in tuple[%s] at position %s: %s",
-					name, tuple.getSize(), pos, tuple);
-		}
-		if (type != null) {
-			s = TypedSequence.toTypedSequence(ctx, type, s);
-		}
-		return s;
-	}
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) {
+    Sequence s;
+    try {
+      s = tuple.get(pos);
+    } catch (QueryException e) {
+      throw new QueryException(e,
+                               e.getCode(),
+                               "Could not resolve variable %s in tuple[%s] at position %s: %s",
+                               name,
+                               tuple.getSize(),
+                               pos,
+                               tuple);
+    }
+    if (type != null) {
+      s = TypedSequence.toTypedSequence(type, s);
+    }
+    return s;
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		Sequence s;
-		try {
-			s = tuple.get(pos);
-		} catch (QueryException e) {
-			throw new QueryException(
-					e,
-					e.getCode(),
-					"Could not resolve variable %s in tuple at position %s: %s",
-					name, tuple.getSize(), pos, tuple);
-		}
-		if (type != null) {
-			return TypedSequence.toTypedItem(ctx, type, s);
-		} else {
-			return ExprUtil.asItem(s);
-		}
-	}
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    Sequence s;
+    try {
+      s = tuple.get(pos);
+    } catch (QueryException e) {
+      throw new QueryException(e,
+                               e.getCode(),
+                               "Could not resolve variable %s in tuple at position %s: %s",
+                               name,
+                               tuple.getSize(),
+                               pos,
+                               tuple);
+    }
+    if (type != null) {
+      return TypedSequence.toTypedItem(type, s);
+    } else {
+      return ExprUtil.asItem(s);
+    }
+  }
 
-	@Override
-	public boolean isUpdating() {
-		return false;
-	}
+  @Override
+  public boolean isUpdating() {
+    return false;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 }

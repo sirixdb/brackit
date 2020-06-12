@@ -85,11 +85,6 @@ public class Check {
 		if (len == iterations.length) {
 			iterations = Arrays.copyOf(iterations, len + 2);
 		}
-		return new Reference() {
-			@Override
-			public void setPos(int pos) {
-				iterations[i] = pos;
-			}
-		};
+		return pos -> iterations[i] = pos;
 	}
 }

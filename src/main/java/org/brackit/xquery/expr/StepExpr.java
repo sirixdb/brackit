@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -46,172 +46,165 @@ import org.brackit.xquery.xdm.node.Node;
 import org.brackit.xquery.xdm.type.NodeType;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class StepExpr extends PredicateExpr {
-	final Accessor accessor;
-	final Expr input;
-	final NodeType test;
+  final Accessor accessor;
+  final Expr input;
+  final NodeType test;
 
-	public StepExpr(Accessor accessor, NodeType test, Expr input, Expr[] filter,
-			boolean[] bindItem, boolean[] bindPos, boolean[] bindSize) {
-		super(filter, bindItem, bindPos, bindSize);
-		this.accessor = accessor;
-		this.test = test;
-		this.input = input;
-	}
+  public StepExpr(Accessor accessor, NodeType test, Expr input, Expr[] filter, boolean[] bindItem, boolean[] bindPos,
+      boolean[] bindSize) {
+    super(filter, bindItem, bindPos, bindSize);
+    this.accessor = accessor;
+    this.test = test;
+    this.input = input;
+  }
 
-	@Override
-	public Sequence evaluate(final QueryContext ctx, final Tuple tuple)
-			throws QueryException {
-		Sequence node = input.evaluate(ctx, tuple);
+  @Override
+  public Sequence evaluate(final QueryContext ctx, final Tuple tuple) {
+    Sequence node = input.evaluate(ctx, tuple);
 
-		if (node == null) {
-			return null;
-		}
+    if (node == null) {
+      return null;
+    }
 
-		if (!(node instanceof Item)) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-					"Context item in axis step is not an item: %s", node);
-		}
-		if (!(node instanceof Node<?>)) {
-			throw new QueryException(
-					ErrorCode.ERR_PATH_STEP_CONTEXT_ITEM_IS_NOT_A_NODE,
-					"Context item in axis step is not a node: %s",
-					((Item) node).itemType());
-		}
-		Sequence s = new AxisStepSequence((Node<?>) node);
-		boolean backwardAxis = !accessor.getAxis().isForward();
-		boolean reversed = false;
+    if (!(node instanceof Item)) {
+      throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+                               "Context item in axis step is not an item: %s",
+                               node);
+    }
+    if (!(node instanceof Node<?>)) {
+      throw new QueryException(ErrorCode.ERR_PATH_STEP_CONTEXT_ITEM_IS_NOT_A_NODE,
+                               "Context item in axis step is not a node: %s",
+                               ((Item) node).itemType());
+    }
+    Sequence s = new AxisStepSequence((Node<?>) node);
+    boolean backwardAxis = !accessor.getAxis().isForward();
+    boolean reversed = false;
 
-		for (int i = 0; i < filter.length; i++) {
-			// nothing to filter
-			if (s == null) {
-				return null;
-			}
+    for (int i = 0; i < filter.length; i++) {
+      // nothing to filter
+      if (s == null) {
+        return null;
+      }
 
-			// check if the filter predicate is independent
-			// of the context item
-			if (bindCount[i] == 0) {
-				Sequence fs = filter[i].evaluate(ctx, tuple);
-				if (fs == null) {
-					return null;
-				} else if (fs instanceof Numeric) {
-					IntNumeric pos = ((Numeric) fs).asIntNumeric();
-					s = (pos != null) ? s.get(pos) : null;
-				} else {
-					Iter it = fs.iterate();
-					try {
-						Item first = it.next();
-						if ((first != null) && (it.next() == null)
-								&& (first instanceof Numeric)) {
-							IntNumeric pos = ((Numeric) first).asIntNumeric();
-							return (pos != null) ? s.get(pos) : null;
-						}
-					} finally {
-						it.close();
-					}
-					if (!fs.booleanValue()) {
-						return null;
-					}
-				}
-			} else {
-				// the filter predicate is dependent on the context item
-				if ((backwardAxis) && (!reversed) && (bindPos[i])) {
-					s = reverse(s);
-					reversed = true;
-				}
-				s = new DependentFilterSeq(ctx, tuple, s, i);
-			}
-		}
-		
-		if (reversed) {
-			s = reverse(s);
-		}
-		
-		return s;
-	}
+      // check if the filter predicate is independent
+      // of the context item
+      if (bindCount[i] == 0) {
+        Sequence fs = filter[i].evaluate(ctx, tuple);
+        if (fs == null) {
+          return null;
+        } else if (fs instanceof Numeric) {
+          IntNumeric pos = ((Numeric) fs).asIntNumeric();
+          s = (pos != null) ? s.get(pos) : null;
+        } else {
+          try (Iter it = fs.iterate()) {
+            Item first = it.next();
+            if ((first != null) && (it.next() == null) && (first instanceof Numeric)) {
+              IntNumeric pos = ((Numeric) first).asIntNumeric();
+              return (pos != null) ? s.get(pos) : null;
+            }
+          }
+          if (!fs.booleanValue()) {
+            return null;
+          }
+        }
+      } else {
+        // the filter predicate is dependent on the context item
+        if ((backwardAxis) && (!reversed) && (bindPos[i])) {
+          s = reverse(s);
+          reversed = true;
+        }
+        s = new DependentFilterSeq(ctx, tuple, s, i);
+      }
+    }
 
-	private Sequence reverse(Sequence s) throws QueryException {
-		Item[] items = new Item[s.size().intValue()];
-		Item item = null;
-		Iter iter = s.iterate();
+    if (reversed) {
+      assert s != null;
+      s = reverse(s);
+    }
 
-		int i = items.length - 1;
-		while ((item = iter.next()) != null) {
-			items[i--] = item;
-		}
+    return s;
+  }
 
-		return new ItemSequence(items);
-	}
+  private Sequence reverse(Sequence s) {
+    Item[] items = new Item[s.size().intValue()];
+    Item item;
+    Iter iter = s.iterate();
 
-	private class AxisStepSequence extends LazySequence {
-		final Node<?> n;
+    int i = items.length - 1;
+    while ((item = iter.next()) != null) {
+      items[i--] = item;
+    }
 
-		AxisStepSequence(Node<?> n) {
-			this.n = n;
-		}
+    return new ItemSequence(items);
+  }
 
-		@Override
-		public Iter iterate() {
-			return new AxisStepSequenceIter(n);
-		}
-	}
+  private class AxisStepSequence extends LazySequence {
+    final Node<?> n;
 
-	private class AxisStepSequenceIter extends BaseIter {
-		final Node<?> node;
-		Stream<? extends Node<?>> nextS;
+    AxisStepSequence(Node<?> n) {
+      this.n = n;
+    }
 
-		AxisStepSequenceIter(Node<?> node) {
-			this.node = node;
-		}
+    @Override
+    public Iter iterate() {
+      return new AxisStepSequenceIter(n);
+    }
+  }
 
-		@Override
-		public Item next() throws QueryException {
-			if (nextS == null) {
-				nextS = accessor.performStep(node, test);
-			}
-			return nextS.next();
-		}
+  private class AxisStepSequenceIter extends BaseIter {
+    final Node<?> node;
+    Stream<? extends Node<?>> nextS;
 
-		@Override
-		public void close() {
-			if (nextS != null) {
-				nextS.close();
-			}
-		}
-	}
+    AxisStepSequenceIter(Node<?> node) {
+      this.node = node;
+    }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return ExprUtil.asItem(evaluate(ctx, tuple));
-	}
+    @Override
+    public Item next() {
+      if (nextS == null) {
+        nextS = accessor.performStep(node, test);
+      }
+      return nextS.next();
+    }
 
-	@Override
-	public boolean isUpdating() {
-		if (input.isUpdating()) {
-			return true;
-		}
-		return super.isUpdating();
-	}
+    @Override
+    public void close() {
+      if (nextS != null) {
+        nextS.close();
+      }
+    }
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    return ExprUtil.asItem(evaluate(ctx, tuple));
+  }
 
-	public String toString() {
-		StringBuilder s = new StringBuilder(accessor.toString());
-		s.append("::");
-		s.append(test.toString());
-		for (int i = 0; i < filter.length; i++) {
-			s.append('[');
-			s.append(filter[i]);
-			s.append(']');
-		}
-		return s.toString();
-	}
+  @Override
+  public boolean isUpdating() {
+    if (input.isUpdating()) {
+      return true;
+    }
+    return super.isUpdating();
+  }
+
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
+
+  public String toString() {
+    StringBuilder s = new StringBuilder(accessor.toString());
+    s.append("::");
+    s.append(test.toString());
+    for (int i = 0; i < filter.length; i++) {
+      s.append('[');
+      s.append(filter[i]);
+      s.append(']');
+    }
+    return s.toString();
+  }
 }

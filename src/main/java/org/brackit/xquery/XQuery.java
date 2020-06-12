@@ -58,11 +58,11 @@ public class XQuery {
     this.module = module;
   }
 
-  public XQuery(String query) throws QueryException {
+  public XQuery(String query) {
     this.module = new CompileChain().compile(query);
   }
 
-  public XQuery(CompileChain chain, String query) throws QueryException {
+  public XQuery(CompileChain chain, String query) {
     this.module = chain.compile(query);
   }
 
@@ -70,22 +70,22 @@ public class XQuery {
     return module;
   }
 
-  public Sequence execute(QueryContext ctx) throws QueryException {
+  public Sequence execute(QueryContext ctx) {
     return run(ctx, true);
   }
 
-  public Sequence evaluate(QueryContext ctx) throws QueryException {
+  public Sequence evaluate(QueryContext ctx) {
     return run(ctx, false);
   }
 
-  private Sequence run(QueryContext ctx, boolean lazy) throws QueryException {
+  private Sequence run(QueryContext ctx, boolean lazy) {
     Expr body = module.getBody();
     if (body == null) {
       throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR, "Module does not contain a query body.");
     }
     Sequence result = body.evaluate(ctx, new TupleImpl());
 
-    if ((!lazy) || (body.isUpdating())) {
+    if (!lazy || body.isUpdating()) {
       // iterate possibly lazy result sequence to "pull-in" all pending
       // updates
       if ((result != null) && (!(result instanceof Item))) {
@@ -102,11 +102,11 @@ public class XQuery {
     return result;
   }
 
-  public void serialize(QueryContext ctx, PrintStream out) throws QueryException {
+  public void serialize(QueryContext ctx, PrintStream out) {
     serialize(ctx, new PrintWriter(out));
   }
 
-  public void serialize(QueryContext ctx, PrintWriter out) throws QueryException {
+  public void serialize(QueryContext ctx, PrintWriter out) {
     Sequence result = run(ctx, true);
     if (result == null) {
       return;
@@ -117,7 +117,7 @@ public class XQuery {
     }
   }
 
-  public void serialize(QueryContext ctx, Serializer serializer) throws QueryException {
+  public void serialize(QueryContext ctx, Serializer serializer) {
     Sequence result = run(ctx, true);
     if (result == null) {
       return;

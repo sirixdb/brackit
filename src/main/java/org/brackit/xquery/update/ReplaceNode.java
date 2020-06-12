@@ -28,6 +28,7 @@
 package org.brackit.xquery.update;
 
 import java.util.EnumSet;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -42,132 +43,119 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class ReplaceNode extends ConstructedNodeBuilder implements Expr {
-	private static final EnumSet<Kind> replaceNodeKind = EnumSet.of(
-			Kind.ELEMENT, Kind.ATTRIBUTE, Kind.TEXT, Kind.COMMENT,
-			Kind.PROCESSING_INSTRUCTION);
+  private static final EnumSet<Kind> replaceNodeKind =
+      EnumSet.of(Kind.ELEMENT, Kind.ATTRIBUTE, Kind.TEXT, Kind.COMMENT, Kind.PROCESSING_INSTRUCTION);
 
-	private static final EnumSet<Kind> allowedForReplaceNonAtt = EnumSet.of(
-			Kind.ELEMENT, Kind.TEXT, Kind.COMMENT, Kind.PROCESSING_INSTRUCTION);
+  private static final EnumSet<Kind> allowedForReplaceNonAtt =
+      EnumSet.of(Kind.ELEMENT, Kind.TEXT, Kind.COMMENT, Kind.PROCESSING_INSTRUCTION);
 
-	private final Expr sourceExpr;
+  private final Expr sourceExpr;
 
-	private final Expr targetExpr;
+  private final Expr targetExpr;
 
-	public ReplaceNode(Expr sourceExpr, Expr targetExpr) {
-		this.sourceExpr = sourceExpr;
-		this.targetExpr = targetExpr;
-	}
+  public ReplaceNode(Expr sourceExpr, Expr targetExpr) {
+    this.sourceExpr = sourceExpr;
+    this.targetExpr = targetExpr;
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return evaluateToItem(ctx, tuple);
-	}
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) {
+    return evaluateToItem(ctx, tuple);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		Sequence target = targetExpr.evaluate(ctx, tuple);
-		Item targetItem;
-		Node<?> node;
-		Node<?> parent;
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    Sequence target = targetExpr.evaluate(ctx, tuple);
+    Item targetItem;
+    Node<?> node;
+    Node<?> parent;
 
-		if (target == null) {
-			throw new QueryException(
-					ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
-		} else if (target instanceof Item) {
-			targetItem = (Item) target;
-		} else {
-			Iter it = target.iterate();
-			try {
-				targetItem = it.next();
+    if (target == null) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
+    } else if (target instanceof Item) {
+      targetItem = (Item) target;
+    } else {
+      try (Iter it = target.iterate()) {
+        targetItem = it.next();
 
-				if (targetItem == null) {
-					throw new QueryException(
-							ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
-				}
-				if (it.next() != null) {
-					throw new QueryException(
-							ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE);
-				}
-			} finally {
-				it.close();
-			}
-		}
-		if (!(targetItem instanceof Node<?>)) {
-			throw new QueryException(
-					ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
-					"Target item is atomic value %s", targetItem);
-		}
+        if (targetItem == null) {
+          throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
+        }
+        if (it.next() != null) {
+          throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE);
+        }
+      }
+    }
+    if (!(targetItem instanceof Node<?>)) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
+                               "Target item is atomic value %s",
+                               targetItem);
+    }
 
-		node = (Node<?>) targetItem;
+    node = (Node<?>) targetItem;
 
-		if (!allowedForReplaceNonAtt.contains(node.getKind())) {
-			throw new QueryException(
-					ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
-					"Target node kind %s is not allowed for replace node: %s",
-					node.getKind(), node);
-		}
+    if (!allowedForReplaceNonAtt.contains(node.getKind())) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
+                               "Target node kind %s is not allowed for replace node: %s",
+                               node.getKind(),
+                               node);
+    }
 
-		parent = node.getParent();
+    parent = node.getParent();
 
-		if (parent == null) {
-			throw new QueryException(
-					ErrorCode.ERR_UPDATE_REPLACE_TARGET_NODE_HAS_NO_PARENT);
-		}
+    if (parent == null) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NODE_HAS_NO_PARENT);
+    }
 
-		Sequence source = sourceExpr.evaluate(ctx, tuple);
-		ContentList rList = new ContentList();
-		buildContentSequence(ctx, rList, source);
-		ReplaceNodeOp op = null;
+    Sequence source = sourceExpr.evaluate(ctx, tuple);
+    ContentList rList = new ContentList();
+    buildContentSequence(ctx, rList, source);
+    ReplaceNodeOp op = null;
 
-		if (node.getKind() != Kind.ATTRIBUTE) {
-			for (Node<?> replacement : rList) {
-				if (!allowedForReplaceNonAtt.contains(replacement.getKind())) {
-					throw new QueryException(
-							ErrorCode.ERR_UPDATE_REPLACE_NODE_REPLACEMENT_NOT_A_ETCP_NODE,
-							"Cannot replace node of type %s with node of type %s",
-							node.getKind(), replacement.getKind());
-				}
-				if (op == null) {
-					op = new ReplaceNodeOp(node);
-				}
-				op.addContent(replacement);
-			}
-		} else {
-			for (Node<?> replacement : rList) {
-				if (replacement.getKind() != Kind.ATTRIBUTE) {
-					throw new QueryException(
-							ErrorCode.ERR_UPDATE_REPLACE_NODE_REPLACEMENT_NOT_AN_A_NODE,
-							"Cannot replace attribute with node of type %s",
-							replacement.getKind());
-				}
-				if (op == null) {
-					op = new ReplaceNodeOp(node);
-				}
-				op.addContent(replacement);
-			}
-		}
+    if (node.getKind() != Kind.ATTRIBUTE) {
+      for (Node<?> replacement : rList) {
+        if (!allowedForReplaceNonAtt.contains(replacement.getKind())) {
+          throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_NODE_REPLACEMENT_NOT_A_ETCP_NODE,
+                                   "Cannot replace node of type %s with node of type %s",
+                                   node.getKind(),
+                                   replacement.getKind());
+        }
+        if (op == null) {
+          op = new ReplaceNodeOp(node);
+        }
+        op.addContent(replacement);
+      }
+    } else {
+      for (Node<?> replacement : rList) {
+        if (replacement.getKind() != Kind.ATTRIBUTE) {
+          throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_NODE_REPLACEMENT_NOT_AN_A_NODE,
+                                   "Cannot replace attribute with node of type %s",
+                                   replacement.getKind());
+        }
+        if (op == null) {
+          op = new ReplaceNodeOp(node);
+        }
+        op.addContent(replacement);
+      }
+    }
 
-		if (op != null) {
-			ctx.addPendingUpdate(op);
-		}
+    if (op != null) {
+      ctx.addPendingUpdate(op);
+    }
 
-		return null;
-	}
+    return null;
+  }
 
-	@Override
-	public boolean isUpdating() {
-		return true;
-	}
+  @Override
+  public boolean isUpdating() {
+    return true;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 }

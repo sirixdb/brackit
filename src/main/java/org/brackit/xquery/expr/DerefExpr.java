@@ -58,7 +58,7 @@ public class DerefExpr implements Expr {
   }
 
   @Override
-  public Sequence evaluate(QueryContext ctx, Tuple tuple) throws QueryException {
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) {
     final var sequence = record.evaluate(ctx, tuple);
 
     for (int index = 0; index < fields.length && sequence != null; index++) {
@@ -213,7 +213,7 @@ public class DerefExpr implements Expr {
   }
 
   @Override
-  public Item evaluateToItem(QueryContext ctx, Tuple tuple) throws QueryException {
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
     return ExprUtil.asItem(evaluate(ctx, tuple));
   }
 
@@ -244,7 +244,7 @@ public class DerefExpr implements Expr {
     return s.toString();
   }
 
-  public static void main(String[] args) throws QueryException {
+  public static void main(String[] args) {
     // a:1, b:2, c:3 , {x:1}, d:5,
     new XQuery("let $n := <x><y>yval</y></x> return { \"e\" : { \"m\": \"mvalue\", \"n\":$n}}=>e=>n/y").serialize(new BrackitQueryContext(),
                                                                                                                   System.out);

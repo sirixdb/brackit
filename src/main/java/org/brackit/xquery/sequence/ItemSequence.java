@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -36,72 +36,69 @@ import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class ItemSequence extends AbstractSequence {
-	protected final Item[] items;
+  protected final Item[] items;
 
-	public ItemSequence(Item... items) {
-		this.items = items;
-	}
+  public ItemSequence(Item... items) {
+    this.items = items;
+  }
 
-	@Override
-	public boolean booleanValue() throws QueryException {
-		if (items.length == 0) {
-			return false;
-		}
-		if (items[0] instanceof Node<?>) {
-			return true;
-		}
-		if (items.length > 1) {
-			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-					"Effective boolean value is undefined "
-							+ "for sequences with two or more items "
-							+ "not starting with a node");
-		}
-		return items[0].booleanValue();
-	}
+  @Override
+  public boolean booleanValue() {
+    if (items.length == 0) {
+      return false;
+    }
+    if (items[0] instanceof Node<?>) {
+      return true;
+    }
+    if (items.length > 1) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                               "Effective boolean value is undefined " + "for sequences with two or more items "
+                                   + "not starting with a node");
+    }
+    return items[0].booleanValue();
+  }
 
-	@Override
-	public IntNumeric size() throws QueryException {
-		return new Int32(items.length);
-	}
+  @Override
+  public IntNumeric size() {
+    return new Int32(items.length);
+  }
 
-	@Override
-	public Item get(IntNumeric pos) throws QueryException {
-		if ((Int32.ZERO.cmp(pos) >= 0) || (size().cmp(pos) < 0)) {
-			return null;
-		}
-		return items[pos.intValue() - 1];
-	}
+  @Override
+  public Item get(IntNumeric pos) {
+    if ((Int32.ZERO.cmp(pos) >= 0) || (size().cmp(pos) < 0)) {
+      return null;
+    }
+    return items[pos.intValue() - 1];
+  }
 
-	@Override
-	public Iter iterate() {
-		return new BaseIter() {
-			int pos = 0;
+  @Override
+  public Iter iterate() {
+    return new BaseIter() {
+      int pos = 0;
 
-			@Override
-			public Item next() {
-				return (pos < items.length) ? items[pos++] : null;
-			}
+      @Override
+      public Item next() {
+        return (pos < items.length) ? items[pos++] : null;
+      }
 
-			@Override
-			public void close() {
-			}
-		};
-	}
+      @Override
+      public void close() {
+      }
+    };
+  }
 
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		if (items.length > 0) {
-			sb.append(items[0]);
-			for (int i = 1; i < items.length; i++) {
-				sb.append(",");
-				sb.append(items[i]);
-			}
-		}
-		return sb.toString();
-	}
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    if (items.length > 0) {
+      sb.append(items[0]);
+      for (int i = 1; i < items.length; i++) {
+        sb.append(",");
+        sb.append(items[i]);
+      }
+    }
+    return sb.toString();
+  }
 }

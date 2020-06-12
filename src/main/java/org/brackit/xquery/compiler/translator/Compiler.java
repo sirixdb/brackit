@@ -849,11 +849,11 @@ public class Compiler implements Translator {
       case XQ.GeneralCompNE:
         return new GCmpExpr(Cmp.ne, firstArg, secondArg);
       case XQ.NodeCompIs:
-        return new NodeCmpExpr(NodeCmp.is, firstArg, secondArg);
+        return new NodeCmpExpr(NodeCmp.Is, firstArg, secondArg);
       case XQ.NodeCompFollows:
-        return new NodeCmpExpr(NodeCmp.following, firstArg, secondArg);
+        return new NodeCmpExpr(NodeCmp.Following, firstArg, secondArg);
       case XQ.NodeCompPrecedes:
-        return new NodeCmpExpr(NodeCmp.preceding, firstArg, secondArg);
+        return new NodeCmpExpr(NodeCmp.Preceding, firstArg, secondArg);
       default:
         throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR, "Unexpected comparison: '%s'", cmpNode);
     }

@@ -59,7 +59,7 @@ public class OrderBy extends Check implements Operator {
 			c.close(ctx);
 		}
 
-		public Tuple next(QueryContext ctx) throws QueryException {
+		public Tuple next(QueryContext ctx) {
 			Tuple t;
 			if (sorted != null) {
 				t = sorted.next();
@@ -74,7 +74,7 @@ public class OrderBy extends Check implements Operator {
 			next = null;
 
 			// pass through
-			if ((check) && (dead(t))) {
+			if (check && dead(t)) {
 				return t;
 			}
 
@@ -93,7 +93,7 @@ public class OrderBy extends Check implements Operator {
 		}
 
 		@Override
-		public void open(QueryContext ctx) throws QueryException {
+		public void open(QueryContext ctx) {
 			c.open(ctx);
 		}
 	}
@@ -109,13 +109,13 @@ public class OrderBy extends Check implements Operator {
 	}
 
 	@Override
-	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
+	public Cursor create(QueryContext ctx, Tuple tuple) {
 		return new OrderByCursor(in.create(ctx, tuple));
 	}
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
-			throws QueryException {
+			{
 		return new OrderByCursor(in.create(ctx, buf, len));
 	}
 

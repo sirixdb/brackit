@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -45,95 +45,84 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class Rename extends ConstructedNodeBuilder implements Expr {
-	private static final EnumSet<Kind> renameNodeKind = EnumSet.of(
-			Kind.ELEMENT, Kind.ATTRIBUTE, Kind.PROCESSING_INSTRUCTION);
+  private static final EnumSet<Kind> renameNodeKind =
+      EnumSet.of(Kind.ELEMENT, Kind.ATTRIBUTE, Kind.PROCESSING_INSTRUCTION);
 
-	private final StaticContext sctx;
-	private final Expr sourceExpr;
-	private final Expr targetExpr;
+  private final StaticContext sctx;
+  private final Expr sourceExpr;
+  private final Expr targetExpr;
 
-	public Rename(StaticContext sctx, Expr sourceExpr, Expr targetExpr) {
-		this.sctx = sctx;
-		this.sourceExpr = sourceExpr;
-		this.targetExpr = targetExpr;
-	}
+  public Rename(StaticContext sctx, Expr sourceExpr, Expr targetExpr) {
+    this.sctx = sctx;
+    this.sourceExpr = sourceExpr;
+    this.targetExpr = targetExpr;
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return evaluateToItem(ctx, tuple);
-	}
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) {
+    return evaluateToItem(ctx, tuple);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		Sequence target = targetExpr.evaluate(ctx, tuple);
-		Item targetItem;
-		Node<?> node;
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    Sequence target = targetExpr.evaluate(ctx, tuple);
+    Item targetItem;
+    Node<?> node;
 
-		if (target == null) {
-			throw new QueryException(
-					ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
-		} else if (target instanceof Item) {
-			targetItem = (Item) target;
-		} else {
-			Iter it = target.iterate();
-			try {
-				targetItem = it.next();
+    if (target == null) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
+    } else if (target instanceof Item) {
+      targetItem = (Item) target;
+    } else {
+      try (Iter it = target.iterate()) {
+        targetItem = it.next();
 
-				if (targetItem == null) {
-					throw new QueryException(
-							ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
-				}
-				if (it.next() != null) {
-					throw new QueryException(
-							ErrorCode.ERR_UPDATE_RENAME_TARGET_NOT_A_EAP_NODE);
-				}
-			} finally {
-				it.close();
-			}
-		}
-		if (!(targetItem instanceof Node<?>)) {
-			throw new QueryException(
-					ErrorCode.ERR_UPDATE_RENAME_TARGET_NOT_A_EAP_NODE,
-					"Target item is atomic value %s", targetItem);
-		}
+        if (targetItem == null) {
+          throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
+        }
+        if (it.next() != null) {
+          throw new QueryException(ErrorCode.ERR_UPDATE_RENAME_TARGET_NOT_A_EAP_NODE);
+        }
+      }
+    }
+    if (!(targetItem instanceof Node<?>)) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_RENAME_TARGET_NOT_A_EAP_NODE,
+                               "Target item is atomic value %s",
+                               targetItem);
+    }
 
-		node = (Node<?>) targetItem;
+    node = (Node<?>) targetItem;
 
-		if (!renameNodeKind.contains(node.getKind())) {
-			throw new QueryException(
-					ErrorCode.ERR_UPDATE_RENAME_TARGET_NOT_A_EAP_NODE,
-					"Target node kind is not allowed for rename node: %s",
-					node.getKind());
-		}
+    if (!renameNodeKind.contains(node.getKind())) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_RENAME_TARGET_NOT_A_EAP_NODE,
+                               "Target node kind is not allowed for rename node: %s",
+                               node.getKind());
+    }
 
-		QNm name;
-		Item nameItem = sourceExpr.evaluateToItem(ctx, tuple);
-		if (node.getKind() == Kind.ELEMENT) {
-			name = buildElementName(sctx, nameItem);
-		} else if (node.getKind() == Kind.ATTRIBUTE) {
-			name = buildAttributeName(sctx, nameItem);
-		} else {
-			name = buildPITarget(ctx, nameItem);
-		}
+    QNm name;
+    Item nameItem = sourceExpr.evaluateToItem(ctx, tuple);
+    if (node.getKind() == Kind.ELEMENT) {
+      name = buildElementName(sctx, nameItem);
+    } else if (node.getKind() == Kind.ATTRIBUTE) {
+      name = buildAttributeName(sctx, nameItem);
+    } else {
+      name = buildPITarget(nameItem);
+    }
 
-		ctx.addPendingUpdate(new RenameOp(node, name));
-		return null;
-	}
+    ctx.addPendingUpdate(new RenameOp(node, name));
+    return null;
+  }
 
-	@Override
-	public boolean isUpdating() {
-		return true;
-	}
+  @Override
+  public boolean isUpdating() {
+    return true;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 }

@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -40,64 +40,56 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class InstanceOf implements Expr {
-	private final Expr expr;
+  private final Expr expr;
 
-	private final SequenceType expected;
+  private final SequenceType expected;
 
-	public InstanceOf(Expr expr, SequenceType expected) {
-		this.expr = expr;
-		this.expected = expected;
-	}
+  public InstanceOf(Expr expr, SequenceType expected) {
+    this.expr = expr;
+    this.expected = expected;
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return evaluateToItem(ctx, tuple);
-	}
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) {
+    return evaluateToItem(ctx, tuple);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		try {
-			Sequence sequence = expr.evaluate(ctx, tuple);
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    try {
+      Sequence sequence = expr.evaluate(ctx, tuple);
 
-			if (sequence instanceof Item) {
-				TypedSequence.toTypedItem(ctx, expected, (Item) sequence);
-			} else {
-				Sequence typed = TypedSequence.toTypedSequence(ctx, expected,
-						sequence);
-				
-				if (typed != null) {
-					Iter it = typed.iterate();
-					try {
-						while (it.next() != null)
-							;
-					} finally {
-						it.close();
-					}
-				}
-			}
-			return Bool.TRUE;
-		} catch (QueryException e) {
-			if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
-				return Bool.FALSE;
-			}
-			throw e;
-		}
-	}
+      if (sequence instanceof Item) {
+        TypedSequence.toTypedItem(expected, (Item) sequence);
+      } else {
+        Sequence typed = TypedSequence.toTypedSequence(expected, sequence);
 
-	@Override
-	public boolean isUpdating() {
-		return false;
-	}
+        if (typed != null) {
+          try (Iter it = typed.iterate()) {
+            while (it.next() != null)
+              ;
+          }
+        }
+      }
+      return Bool.TRUE;
+    } catch (QueryException e) {
+      if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
+        return Bool.FALSE;
+      }
+      throw e;
+    }
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isUpdating() {
+    return false;
+  }
+
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 }

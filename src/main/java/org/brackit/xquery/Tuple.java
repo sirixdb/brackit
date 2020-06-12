@@ -42,53 +42,71 @@ public interface Tuple {
 	/**
 	 * Returns the size of the tuple.
 	 */
-	public int getSize();
+	int getSize();
 
 	/**
 	 * Returns the sequence at the specified position.
+	 * 
+	 * @throws QueryException if somewthing went wrong
 	 */
-	public Sequence get(int position) throws QueryException;
+	Sequence get(int position);
 
 	/**
 	 * Returns an array representation of this tuple.
+	 * 
+	 * @throws QueryException if somewthing went wrong
 	 */
-	public Sequence[] array() throws QueryException;
+	Sequence[] array();
 
 	/**
 	 * Projects the given positions into a new tuple.
+	 * 
+	 * @throws QueryException if somewthing went wrong
 	 */
-	public Tuple project(int... positions) throws QueryException;
+	Tuple project(int... positions);
 
 	/**
 	 * Projects the given range into a new tuple.
+	 * 
+	 * @throws QueryException if somewthing went wrong
 	 */
-	public Tuple project(int start, int end) throws QueryException;
+	Tuple project(int start, int end);
 
 	/**
 	 * Create a copy where the specified position is updated with the given
 	 * sequence.
+	 * 
+	 * @throws QueryException if somewthing went wrong
 	 */
-	public Tuple replace(int position, Sequence s) throws QueryException;
+	Tuple replace(int position, Sequence s);
 
 	/**
 	 * Append the given sequence to a copy.
+	 * 
+	 * @throws QueryException if somewthing went wrong
 	 */
-	public Tuple concat(Sequence s) throws QueryException;
+	Tuple concat(Sequence s);
 
 	/**
 	 * Append the given sequences to a copy.
+	 * 
+	 * @throws QueryException if somewthing went wrong
 	 */
-	public Tuple concat(Sequence[] s) throws QueryException;
+	Tuple concat(Sequence[] s);
 	
 	/**
 	 * Append the given sequence to a copy and update the
 	 * specified position with the given sequence.
+	 * 
+	 * @throws QueryException if somewthing went wrong
 	 */
-	public Tuple conreplace(Sequence con, int position, Sequence s) throws QueryException;
+	Tuple conreplace(Sequence con, int position, Sequence s);
 	
 	/**
 	 * Append the given sequences to a copy and update the
 	 * specified position with the given sequence.
+	 * 
+	 * @throws QueryException if somewthing went wrong
 	 */
-	public Tuple conreplace(Sequence[] con, int position, Sequence s) throws QueryException;
+	Tuple conreplace(Sequence[] con, int position, Sequence s);
 }

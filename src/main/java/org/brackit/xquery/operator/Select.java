@@ -56,11 +56,11 @@ public class Select extends Check implements Operator {
 			c.close(ctx);
 		}
 
-		public Tuple next(QueryContext ctx) throws QueryException {
+		public Tuple next(QueryContext ctx) {
 			Tuple t;
 			while (((t = next) != null) || (t = c.next(ctx)) != null) {
 				next = null;
-				if ((check) && (dead(t))) {
+				if (check && dead(t)) {
 					break;
 				}
 				Sequence p = predicate.evaluate(ctx, t);
@@ -91,7 +91,7 @@ public class Select extends Check implements Operator {
 		}
 
 		@Override
-		public void open(QueryContext ctx) throws QueryException {
+		public void open(QueryContext ctx) {
 			c.open(ctx);
 		}
 	}
@@ -102,13 +102,13 @@ public class Select extends Check implements Operator {
 	}
 
 	@Override
-	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
+	public Cursor create(QueryContext ctx, Tuple tuple) {
 		return new SelectCursor(in.create(ctx, tuple));
 	}
 
 	@Override
 	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
-			throws QueryException {
+			{
 		return new SelectCursor(in.create(ctx, buf, len));
 	}
 

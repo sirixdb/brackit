@@ -27,11 +27,6 @@
  */
 package org.brackit.xquery.node;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.HashMap;
-
 import org.brackit.xquery.node.d2linked.D2NodeFactory;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
@@ -44,13 +39,19 @@ import org.brackit.xquery.xdm.node.NodeCollection;
 import org.brackit.xquery.xdm.node.NodeFactory;
 import org.brackit.xquery.xdm.node.NodeStore;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 
  * @author Sebastian Baechle
  * 
  */
 public class SimpleStore implements NodeStore {
-	private HashMap<String, NodeCollection<?>> docs = new HashMap<String, NodeCollection<?>>();
+	private final Map<String, NodeCollection<?>> docs = new HashMap<>();
 
 	@Override
 	public NodeCollection<?> create(String name) throws DocumentException {

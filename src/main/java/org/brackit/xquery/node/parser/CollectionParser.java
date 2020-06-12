@@ -50,11 +50,11 @@ public class CollectionParser implements SubtreeParser {
 	}
 	
 	public CollectionParser(SubtreeParser parser) {
-		this.parsers = new AtomStream<SubtreeParser>(parser);
+		this.parsers = new AtomStream<>(parser);
 	}
 	
 	public CollectionParser(SubtreeParser[] parsers) {
-		this.parsers = new ArrayStream<SubtreeParser>(parsers);
+		this.parsers = new ArrayStream<>(parsers);
 	}
 
 	@Override

@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -43,166 +43,161 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Type;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class RangeExpr implements Expr {
-	protected final Expr leftExpr;
-	protected final Expr rightExpr;
+  protected final Expr leftExpr;
+  protected final Expr rightExpr;
 
-	public RangeExpr(Expr leftExpr, Expr rightExpr) {
-		this.leftExpr = leftExpr;
-		this.rightExpr = rightExpr;
-	}
+  public RangeExpr(Expr leftExpr, Expr rightExpr) {
+    this.leftExpr = leftExpr;
+    this.rightExpr = rightExpr;
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		Item lItem = leftExpr.evaluateToItem(ctx, tuple);
-		Item rItem = rightExpr.evaluateToItem(ctx, tuple);
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    Item lItem = leftExpr.evaluateToItem(ctx, tuple);
+    Item rItem = rightExpr.evaluateToItem(ctx, tuple);
 
-		if ((lItem == null) || (rItem == null)) {
-			return null;
-		}
+    if ((lItem == null) || (rItem == null)) {
+      return null;
+    }
 
-		Atomic left = lItem.atomize();
-		Atomic right = rItem.atomize();
+    Atomic left = lItem.atomize();
+    Atomic right = rItem.atomize();
 
-		if (!(left instanceof IntNumeric)) {
-			left = convert(left);
-		}
+    if (!(left instanceof IntNumeric)) {
+      left = convert(left);
+    }
 
-		if (!(right instanceof IntNumeric)) {
-			right = convert(right);
-		}
+    if (!(right instanceof IntNumeric)) {
+      right = convert(right);
+    }
 
-		int comparison = left.cmp(right);
-		if (comparison > 0) {
-			return null;
-		} else if (comparison == 0) {
-			return left;
-		} else {
-			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
-		}
-	}
+    int comparison = left.cmp(right);
+    if (comparison > 0) {
+      return null;
+    } else if (comparison == 0) {
+      return left;
+    } else {
+      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
+    }
+  }
 
-	protected Atomic convert(Atomic val) throws QueryException {
-		if (val.type() == Type.UNA) {
-			val = Cast.cast(null, val, Type.INR, false);
-		} else {
-			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-					"Illegal operand type '%s' where '%s' is expected",
-					val.type(), Type.INR);
-		}
-		return val;
-	}
+  protected Atomic convert(Atomic val) {
+    if (val.type() == Type.UNA) {
+      val = Cast.cast(null, val, Type.INR, false);
+    } else {
+      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                               "Illegal operand type '%s' where '%s' is expected",
+                               val.type(),
+                               Type.INR);
+    }
+    return val;
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		Item lItem = leftExpr.evaluateToItem(ctx, tuple);
-		Item rItem = rightExpr.evaluateToItem(ctx, tuple);
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) {
+    Item lItem = leftExpr.evaluateToItem(ctx, tuple);
+    Item rItem = rightExpr.evaluateToItem(ctx, tuple);
 
-		if ((lItem == null) || (rItem == null)) {
-			return null;
-		}
+    if ((lItem == null) || (rItem == null)) {
+      return null;
+    }
 
-		Atomic left = lItem.atomize();
-		Atomic right = rItem.atomize();
+    Atomic left = lItem.atomize();
+    Atomic right = rItem.atomize();
 
-		if (!(left instanceof IntNumeric)) {
-			left = convert(left);
-		}
+    if (!(left instanceof IntNumeric)) {
+      left = convert(left);
+    }
 
-		if (!(right instanceof IntNumeric)) {
-			right = convert(right);
-		}
+    if (!(right instanceof IntNumeric)) {
+      right = convert(right);
+    }
 
-		int comparison = left.cmp(right);
-		if (comparison > 0) {
-			return null;
-		} else if (comparison == 0) {
-			return left;
-		} else {
-			final IntNumeric s = (IntNumeric) left;
-			final IntNumeric e = (IntNumeric) right;
+    int comparison = left.cmp(right);
+    if (comparison > 0) {
+      return null;
+    } else if (comparison == 0) {
+      return left;
+    } else {
+      final IntNumeric s = (IntNumeric) left;
+      final IntNumeric e = (IntNumeric) right;
 
-			return new AbstractSequence() {
-				private final IntNumeric start = s;
-				private final IntNumeric end = e;
+      return new AbstractSequence() {
+        private final IntNumeric start = s;
+        private final IntNumeric end = e;
 
-				@Override
-				public boolean booleanValue() throws QueryException {
-					if (!size().eq(Int32.ONE)) {
-						throw new QueryException(
-								ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-								"Effective boolean value is undefined "
-										+ "for sequences with two or more items "
-										+ "not starting with a node");
-					}
-					return start.booleanValue();
-				}
+        @Override
+        public boolean booleanValue() {
+          if (!size().eq(Int32.ONE)) {
+            throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                                     "Effective boolean value is undefined " + "for sequences with two or more items "
+                                         + "not starting with a node");
+          }
+          return start.booleanValue();
+        }
 
-				@Override
-				public IntNumeric size() throws QueryException {
-					return (IntNumeric) end.subtract(start).add(Int32.ONE);
-				}
+        @Override
+        public IntNumeric size() {
+          return (IntNumeric) end.subtract(start).add(Int32.ONE);
+        }
 
-				@Override
-				public Iter iterate() {
-					return new BaseIter() {
-						IntNumeric current = start;
+        @Override
+        public Iter iterate() {
+          return new BaseIter() {
+            IntNumeric current = start;
 
-						@Override
-						public void close() {
-						}
+            @Override
+            public void close() {
+            }
 
-						@Override
-						public Item next() throws QueryException {
-							if (current.cmp(e) > 0)
-								return null;
+            @Override
+            public Item next() {
+              if (current.cmp(e) > 0)
+                return null;
 
-							IntNumeric res = current;
-							current = current.inc();
-							return res;
-						}
+              IntNumeric res = current;
+              current = current.inc();
+              return res;
+            }
 
-						@Override
-						public void skip(IntNumeric i) throws QueryException {
-							if (i.cmp(Int32.ZERO) <= 0) {
-								return;
-							}
-							current = (IntNumeric) current.add(i);
-						}
-					};
-				}
+            @Override
+            public void skip(IntNumeric i) {
+              if (i.cmp(Int32.ZERO) <= 0) {
+                return;
+              }
+              current = (IntNumeric) current.add(i);
+            }
+          };
+        }
 
-				@Override
-				public Item get(IntNumeric pos) throws QueryException {
-					if (Int32.ZERO.cmp(pos) >= 0) {
-						return null;
-					}
-					if (size().cmp(pos) < 0) {
-						return null;
-					}
-					return (IntNumeric) start.add(pos).subtract(Int32.ONE);
-				}
-			};
-		}
-	}
+        @Override
+        public Item get(IntNumeric pos) {
+          if (Int32.ZERO.cmp(pos) >= 0) {
+            return null;
+          }
+          if (size().cmp(pos) < 0) {
+            return null;
+          }
+          return start.add(pos).subtract(Int32.ONE);
+        }
+      };
+    }
+  }
 
-	@Override
-	public boolean isUpdating() {
-		return ((leftExpr.isUpdating()) || (rightExpr.isUpdating()));
-	}
+  @Override
+  public boolean isUpdating() {
+    return ((leftExpr.isUpdating()) || (rightExpr.isUpdating()));
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 
-	public String toString() {
-		return "(" + leftExpr + " to " + rightExpr + ")";
-	}
+  public String toString() {
+    return "(" + leftExpr + " to " + rightExpr + ")";
+  }
 }

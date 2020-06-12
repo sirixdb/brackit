@@ -42,110 +42,107 @@ import org.brackit.xquery.xdm.Sequence;
  */
 public class SequenceExpr implements Expr {
 
-    public final class EvalSequence extends FlatteningSequence {
-        final Tuple tuple;
-        final QueryContext ctx;
-        final Sequence[] seqs;
-        int eval;
+  public final class EvalSequence extends FlatteningSequence {
+    final Tuple tuple;
+    final QueryContext ctx;
+    final Sequence[] seqs;
+    int eval;
 
-        private EvalSequence(Tuple tuple, QueryContext ctx) {
-            this.tuple = tuple;
-            this.ctx = ctx;
-            this.seqs = new Sequence[expr.length];
-        }
-
-        @Override
-        protected Sequence sequence(int pos) throws QueryException {
-            if (pos >= expr.length) {
-                return null;
-            }
-            Sequence s = seqs[pos];
-            if (s != null) {
-                return s;
-            }
-            synchronized (seqs) {
-                while ((s == null) && (eval < expr.length)) {
-                    s = seqs[pos] = expr[eval++].evaluate(ctx, tuple);
-                }
-            }
-            return s;
-        }
-    }
-
-    final Expr[] expr;
-
-    public SequenceExpr(Expr... expr) {
-        this.expr = expr;
+    private EvalSequence(Tuple tuple, QueryContext ctx) {
+      this.tuple = tuple;
+      this.ctx = ctx;
+      this.seqs = new Sequence[expr.length];
     }
 
     @Override
-    public Sequence evaluate(final QueryContext ctx, final Tuple tuple)
-            throws QueryException {
-
-        return new EvalSequence(tuple, ctx);
-    }
-
-    @Override
-    public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-            throws QueryException {
-        if (expr.length == 0) {
-            return null;
-        } else if (expr.length == 1) {
-            return expr[0].evaluateToItem(ctx, tuple);
-        } else {
-            int i = 0;
-            Item res = null;
-            while ((i < expr.length)
-                    && ((res = expr[i++].evaluateToItem(ctx, tuple)) == null))
-                ;
-
-            if (i == expr.length) {
-                return res;
-            }
-
-            final var sequence = new Sequence[expr.length];
-
-            for (int j = 0, length = expr.length; j < length; j++) {
-                sequence[j] = expr[j].evaluateToItem(ctx, tuple);
-            }
-
-            return new DArray(sequence);
+    protected Sequence sequence(int pos) {
+      if (pos >= expr.length) {
+        return null;
+      }
+      Sequence s = seqs[pos];
+      if (s != null) {
+        return s;
+      }
+      synchronized (seqs) {
+        while ((s == null) && (eval < expr.length)) {
+          s = seqs[pos] = expr[eval++].evaluate(ctx, tuple);
         }
+      }
+      return s;
     }
+  }
 
-    @Override
-    public boolean isUpdating() {
-        for (Expr e : this.expr) {
-            if (e.isUpdating()) {
-                return true;
-            }
-        }
-        return false;
+  final Expr[] expr;
+
+  public SequenceExpr(Expr... expr) {
+    this.expr = expr;
+  }
+
+  @Override
+  public Sequence evaluate(final QueryContext ctx, final Tuple tuple) {
+
+    return new EvalSequence(tuple, ctx);
+  }
+
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    if (expr.length == 0) {
+      return null;
+    } else if (expr.length == 1) {
+      return expr[0].evaluateToItem(ctx, tuple);
+    } else {
+      int i = 0;
+      Item res = null;
+      while (i < expr.length && (res = expr[i++].evaluateToItem(ctx, tuple)) == null)
+        ;
+
+      if (i == expr.length) {
+        return res;
+      }
+
+      final var sequence = new Sequence[expr.length];
+
+      for (int j = 0, length = expr.length; j < length; j++) {
+        sequence[j] = expr[j].evaluateToItem(ctx, tuple);
+      }
+
+      return new DArray(sequence);
     }
+  }
 
-    @Override
-    public boolean isVacuous() {
-        for (Expr e : this.expr) {
-            if (!e.isVacuous()) {
-                return false;
-            }
-        }
+  @Override
+  public boolean isUpdating() {
+    for (Expr e : this.expr) {
+      if (e.isUpdating()) {
         return true;
+      }
     }
+    return false;
+  }
 
-    @Override
-    public String toString() {
-        StringBuilder out = new StringBuilder();
-        out.append("(");
-        boolean first = true;
-        for (Expr e : expr) {
-            if (!first) {
-                out.append(", ");
-            }
-            first = false;
-            out.append(e.toString());
-        }
-        out.append(")");
-        return out.toString();
+  @Override
+  public boolean isVacuous() {
+    for (Expr e : this.expr) {
+      if (!e.isVacuous()) {
+        return false;
+      }
     }
+    return true;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder out = new StringBuilder();
+    out.append("(");
+    boolean first = true;
+    for (Expr e : expr) {
+      if (!first) {
+        out.append(", ");
+      }
+      first = false;
+      out.append(e.toString());
+    }
+    out.append(")");
+    return out.toString();
+  }
 }

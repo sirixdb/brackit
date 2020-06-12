@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,7 +28,6 @@
 package org.brackit.xquery.expr;
 
 import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.xdm.Expr;
@@ -36,48 +35,43 @@ import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class OrExpr implements Expr {
-	private final Expr firstExpr;
+  private final Expr firstExpr;
 
-	private final Expr secondExpr;
+  private final Expr secondExpr;
 
-	public OrExpr(Expr firstExpr, Expr secondExpr) {
-		this.firstExpr = firstExpr;
-		this.secondExpr = secondExpr;
-	}
+  public OrExpr(Expr firstExpr, Expr secondExpr) {
+    this.firstExpr = firstExpr;
+    this.secondExpr = secondExpr;
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return evaluateToItem(ctx, tuple);
-	}
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) {
+    return evaluateToItem(ctx, tuple);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		Sequence firstResult = firstExpr.evaluate(ctx, tuple);
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    Sequence firstResult = firstExpr.evaluate(ctx, tuple);
 
-		if ((firstResult != null) && (firstResult.booleanValue())) {
-			return Bool.TRUE;
-		}
+    if ((firstResult != null) && (firstResult.booleanValue())) {
+      return Bool.TRUE;
+    }
 
-		Sequence secondResult = secondExpr.evaluate(ctx, tuple);
+    Sequence secondResult = secondExpr.evaluate(ctx, tuple);
 
-		return ((secondResult != null) && (secondResult.booleanValue())) ? Bool.TRUE
-				: Bool.FALSE;
-	}
+    return ((secondResult != null) && (secondResult.booleanValue())) ? Bool.TRUE : Bool.FALSE;
+  }
 
-	@Override
-	public boolean isUpdating() {
-		return ((firstExpr.isUpdating()) || (secondExpr.isUpdating()));
-	}
+  @Override
+  public boolean isUpdating() {
+    return ((firstExpr.isUpdating()) || (secondExpr.isUpdating()));
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 }

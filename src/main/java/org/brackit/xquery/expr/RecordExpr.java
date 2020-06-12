@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -45,171 +45,165 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Record;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class RecordExpr implements Expr {
 
-	public static abstract class Field {
-		abstract Record evaluate(QueryContext ctx, Tuple t)
-				throws QueryException;
+  public static abstract class Field {
+    abstract Record evaluate(QueryContext ctx, Tuple t) throws QueryException;
 
-		abstract boolean isUpdating();
+    abstract boolean isUpdating();
 
-		boolean isVacuous() {
-			return false;
-		}
-	}
+    boolean isVacuous() {
+      return false;
+    }
+  }
 
-	public static class RecordField extends Field {
-		final Expr expr;
+  public static class RecordField extends Field {
+    final Expr expr;
 
-		public RecordField(Expr expr) {
-			this.expr = expr;
-		}
+    public RecordField(Expr expr) {
+      this.expr = expr;
+    }
 
-		@Override
-		public Record evaluate(QueryContext ctx, Tuple t) throws QueryException {
-			Sequence i = expr.evaluate(ctx, t);
-			if (i instanceof Record) {
-				return (Record) i;
-			} else {
-				final var names = new ArrayList<QNm>();
-				final var values = new ArrayList<Sequence>();
-				final var iter = i.iterate();
-				Item item;
-				while ((item = iter.next()) != null) {
-					if (!(item instanceof Record)) {
-						throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-								"Illegal item type in record constructor: %s",
-								item.itemType());
-					}
+    @Override
+    public Record evaluate(QueryContext ctx, Tuple t) {
+      Sequence i = expr.evaluate(ctx, t);
+      if (i instanceof Record) {
+        return (Record) i;
+      } else {
+        final var names = new ArrayList<QNm>();
+        final var values = new ArrayList<Sequence>();
+        final var iter = i.iterate();
+        Item item;
+        while ((item = iter.next()) != null) {
+          if (!(item instanceof Record)) {
+            throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                                     "Illegal item type in record constructor: %s",
+                                     item.itemType());
+          }
 
-					final Record record = (Record) item;
-					Collections.addAll(names, record.names().values().toArray(new QNm[0]));
-					Collections.addAll(values, record.values().values().toArray(new Sequence[0]));
-				}
+          final Record record = (Record) item;
+          Collections.addAll(names, record.names().values().toArray(new QNm[0]));
+          Collections.addAll(values, record.values().values().toArray(new Sequence[0]));
+        }
 
-				return new ArrayRecord(names.toArray(new QNm[0]), values.toArray(new Sequence[0]));
-			}
-		}
+        return new ArrayRecord(names.toArray(new QNm[0]), values.toArray(new Sequence[0]));
+      }
+    }
 
-		@Override
-		boolean isUpdating() {
-			return expr.isUpdating();
-		}
-	}
+    @Override
+    boolean isUpdating() {
+      return expr.isUpdating();
+    }
+  }
 
-	public static class KeyValueField extends Field {
-		final Expr nameExpr;
-		final Expr valueExpr;
+  public static class KeyValueField extends Field {
+    final Expr nameExpr;
+    final Expr valueExpr;
 
-		public KeyValueField(Expr name, Expr expr) {
-			this.nameExpr = name;
-			this.valueExpr = expr;
-		}
+    public KeyValueField(Expr name, Expr expr) {
+      this.nameExpr = name;
+      this.valueExpr = expr;
+    }
 
-		@Override
-		public Record evaluate(QueryContext ctx, Tuple t) throws QueryException {
-			Sequence names = nameExpr.evaluateToItem(ctx, t);
-			Sequence val = valueExpr.evaluateToItem(ctx, t);
+    @Override
+    public Record evaluate(QueryContext ctx, Tuple t) {
+      Sequence names = nameExpr.evaluateToItem(ctx, t);
+      Sequence val = valueExpr.evaluateToItem(ctx, t);
 
-			if (names instanceof Str) {
-				return new ArrayRecord(new QNm[] { new QNm(((Str) names).stringValue()) }, new Sequence[] { val });
-			}
+      if (names instanceof Str) {
+        return new ArrayRecord(new QNm[] { new QNm(((Str) names).stringValue()) }, new Sequence[] { val });
+      }
 
-			return new ArrayRecord(new QNm[] { (QNm) names.get(0) }, new Sequence[] { val });
-		}
+      return new ArrayRecord(new QNm[] { (QNm) names.get(0) }, new Sequence[] { val });
+    }
 
-		@Override
-		boolean isUpdating() {
-			return valueExpr.isUpdating();
-		}
-	}
+    @Override
+    boolean isUpdating() {
+      return valueExpr.isUpdating();
+    }
+  }
 
-	final Field[] fields;
+  final Field[] fields;
 
-	public RecordExpr(Field[] fields) {
-		this.fields = fields;
-	}
+  public RecordExpr(Field[] fields) {
+    this.fields = fields;
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple t) throws QueryException {
-		return evaluateToItem(ctx, t);
-	}
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple t) {
+    return evaluateToItem(ctx, t);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple t) throws QueryException {
-		HashSet<QNm> dedup = new HashSet<>();
-		QNm[] names = new QNm[fields.length];
-		Sequence[] vals = new Sequence[fields.length];
-		int pos = 0;
-		for (int i = 0; i < fields.length; i++) {
-			Record res = fields[i].evaluate(ctx, t);
-			for (int j = 0; j < res.len(); j++) {
-				QNm name = res.name(j);
-				if (!dedup.add(name)) {
-					throw new QueryException(Bits.BIT_DUPLICATE_RECORD_FIELD,
-							"Duplicate field name: %s", name);
-				}
-				Sequence val = res.value(j);
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple t) {
+    HashSet<QNm> dedup = new HashSet<>();
+    QNm[] names = new QNm[fields.length];
+    Sequence[] vals = new Sequence[fields.length];
+    int pos = 0;
+    for (int i = 0; i < fields.length; i++) {
+      Record res = fields[i].evaluate(ctx, t);
+      for (int j = 0; j < res.len(); j++) {
+        QNm name = res.name(j);
+        if (!dedup.add(name)) {
+          throw new QueryException(Bits.BIT_DUPLICATE_RECORD_FIELD, "Duplicate field name: %s", name);
+        }
+        Sequence val = res.value(j);
 
-				if (pos == names.length) {
-					names = Arrays.copyOfRange(names, 0,
-							((names.length * 3) / 2) + 1);
-					vals = Arrays.copyOfRange(vals, 0,
-							((vals.length * 3) / 2) + 1);
-				}
-				names[pos] = name;
-				vals[pos] = val;
-				pos++;
-			}
-		}
-		if (pos < names.length) {
-			names = Arrays.copyOfRange(names, 0, pos);
-			vals = Arrays.copyOfRange(vals, 0, pos);
-		}
-		return new ArrayRecord(names, vals);
-	}
+        if (pos == names.length) {
+          names = Arrays.copyOfRange(names, 0, ((names.length * 3) / 2) + 1);
+          vals = Arrays.copyOfRange(vals, 0, ((vals.length * 3) / 2) + 1);
+        }
+        names[pos] = name;
+        vals[pos] = val;
+        pos++;
+      }
+    }
+    if (pos < names.length) {
+      names = Arrays.copyOfRange(names, 0, pos);
+      vals = Arrays.copyOfRange(vals, 0, pos);
+    }
+    return new ArrayRecord(names, vals);
+  }
 
-	@Override
-	public boolean isUpdating() {
-		for (Field e : this.fields) {
-			if (e.isUpdating()) {
-				return true;
-			}
-		}
-		return false;
-	}
+  @Override
+  public boolean isUpdating() {
+    for (Field e : this.fields) {
+      if (e.isUpdating()) {
+        return true;
+      }
+    }
+    return false;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		for (Field e : this.fields) {
-			if (!e.isVacuous()) {
-				return false;
-			}
-		}
-		return true;
-	}
+  @Override
+  public boolean isVacuous() {
+    for (Field e : this.fields) {
+      if (!e.isVacuous()) {
+        return false;
+      }
+    }
+    return true;
+  }
 
-	public String toString() {
-		StringBuilder out = new StringBuilder();
-		out.append("[");
-		boolean first = true;
-		for (int i = 0; i < fields.length; i++) {
-			if (!first) {
-				out.append(", ");
-			}
-			first = false;
-			out.append(fields[i].toString());
-		}
-		out.append("]");
-		return out.toString();
-	}
+  public String toString() {
+    StringBuilder out = new StringBuilder();
+    out.append("[");
+    boolean first = true;
+    for (int i = 0; i < fields.length; i++) {
+      if (!first) {
+        out.append(", ");
+      }
+      first = false;
+      out.append(fields[i].toString());
+    }
+    out.append("]");
+    return out.toString();
+  }
 
-	public static void main(String[] args) throws QueryException {
-		new XQuery("{ a:1, b:2, c:3 , {x:1}, y:5, z : {foo : 'bar'}, 'aha' : 2, 'h h' : 5 }").serialize(
-				new BrackitQueryContext(), System.out);
-	}
+  public static void main(String[] args) {
+    new XQuery("{ a:1, b:2, c:3 , {x:1}, y:5, z : {foo : 'bar'}, 'aha' : 2, 'h h' : 5 }").serialize(new BrackitQueryContext(),
+                                                                                                    System.out);
+  }
 }

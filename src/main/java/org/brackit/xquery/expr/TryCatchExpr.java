@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -39,177 +39,171 @@ import org.brackit.xquery.xdm.Sequence;
 
 /**
  * @author Sebastian Baechle
- * 
  */
 public class TryCatchExpr implements Expr {
-	
-	public interface ErrorCatch {
-		public boolean matches(QNm qname);
-	}
 
-	public static class Wildcard implements ErrorCatch {
-		@Override
-		public boolean matches(QNm qname) {
-			return true;
-		}
-	}
+  public interface ErrorCatch {
+    boolean matches(QNm qname);
+  }
 
-	public static class NameWildcard implements ErrorCatch {
-		final String nsURI;
+  public static class Wildcard implements ErrorCatch {
+    @Override
+    public boolean matches(QNm qname) {
+      return true;
+    }
+  }
 
-		public NameWildcard(String nsURI) {
-			this.nsURI = nsURI;
-		}
+  public static class NameWildcard implements ErrorCatch {
+    final String nsURI;
 
-		@Override
-		public boolean matches(QNm qname) {
-			return (nsURI.equals(qname.getNamespaceURI()));
-		}
-	}
+    public NameWildcard(String nsURI) {
+      this.nsURI = nsURI;
+    }
 
-	public static class NSWildcard implements ErrorCatch {
-		final String localname;
+    @Override
+    public boolean matches(QNm qname) {
+      return (nsURI.equals(qname.getNamespaceURI()));
+    }
+  }
 
-		public NSWildcard(String localname) {
-			this.localname = localname;
-		}
+  public static class NSWildcard implements ErrorCatch {
+    final String localname;
 
-		@Override
-		public boolean matches(QNm qname) {
-			return (localname.equals(qname.getLocalName()));
-		}
-	}
+    public NSWildcard(String localname) {
+      this.localname = localname;
+    }
 
-	public static class Name implements ErrorCatch {
-		final String localname;
-		final String nsURI;
+    @Override
+    public boolean matches(QNm qname) {
+      return (localname.equals(qname.getLocalName()));
+    }
+  }
 
-		public Name(String localname, String nsURI) {
-			this.localname = localname;
-			this.nsURI = nsURI;
-		}
+  public static class Name implements ErrorCatch {
+    final String localname;
+    final String nsURI;
 
-		@Override
-		public boolean matches(QNm qname) {
-			return ((localname.equals(qname.getLocalName())) && (nsURI
-					.equals(qname.getNamespaceURI())));
-		}
-	}
+    public Name(String localname, String nsURI) {
+      this.localname = localname;
+      this.nsURI = nsURI;
+    }
 
-	final Expr expr;
-	final ErrorCatch[][] catches;
-	final Expr[] handler;
-	final boolean bindCode;
-	final boolean bindDesc;
-	final boolean bindValue;
-	final boolean bindModule;
-	final boolean bindLineNo;
-	final boolean bindColNo;
-	final int bindCount;
+    @Override
+    public boolean matches(QNm qname) {
+      return ((localname.equals(qname.getLocalName())) && (nsURI.equals(qname.getNamespaceURI())));
+    }
+  }
 
-	public TryCatchExpr(Expr expr, ErrorCatch[][] catches, Expr[] handler,
-			boolean bindCode, boolean bindDesc, boolean bindValue,
-			boolean bindModule, boolean bindLineNo, boolean bindColNo) {
-		this.expr = expr;
-		this.catches = catches;
-		this.handler = handler;
-		this.bindCode = bindCode;
-		this.bindDesc = bindDesc;
-		this.bindValue = bindValue;
-		this.bindModule = bindModule;
-		this.bindLineNo = bindLineNo;
-		this.bindColNo = bindColNo;
-		int bindCount = 0;
-		if (bindCode) {
-			bindCount++;
-		}
-		if (bindDesc) {
-			bindCount++;
-		}
-		if (bindValue) {
-			bindCount++;
-		}
-		if (bindModule) {
-			bindCount++;
-		}
-		if (bindLineNo) {
-			bindCount++;
-		}
-		if (bindColNo) {
-			bindCount++;
-		}
-		this.bindCount = bindCount;
-	}
+  final Expr expr;
+  final ErrorCatch[][] catches;
+  final Expr[] handler;
+  final boolean bindCode;
+  final boolean bindDesc;
+  final boolean bindValue;
+  final boolean bindModule;
+  final boolean bindLineNo;
+  final boolean bindColNo;
+  final int bindCount;
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		try {
-			return expr.evaluate(ctx, tuple);
-		} catch (QueryException e) {
-			for (int i = 0; i < catches.length; i++) {
-				if (catches[i].length == 0) {
-					Tuple t = bindInfo(tuple, e);
-					return handler[i].evaluate(ctx, t);
-				}
-				for (int j = 0; j < catches[i].length; j++) {
-					if (catches[i][j].matches(e.getCode())) {
-						Tuple t = bindInfo(tuple, e);
-						return handler[i].evaluate(ctx, t);
-					}
-				}
+  public TryCatchExpr(Expr expr, ErrorCatch[][] catches, Expr[] handler, boolean bindCode, boolean bindDesc,
+      boolean bindValue, boolean bindModule, boolean bindLineNo, boolean bindColNo) {
+    this.expr = expr;
+    this.catches = catches;
+    this.handler = handler;
+    this.bindCode = bindCode;
+    this.bindDesc = bindDesc;
+    this.bindValue = bindValue;
+    this.bindModule = bindModule;
+    this.bindLineNo = bindLineNo;
+    this.bindColNo = bindColNo;
+    int bindCount = 0;
+    if (bindCode) {
+      bindCount++;
+    }
+    if (bindDesc) {
+      bindCount++;
+    }
+    if (bindValue) {
+      bindCount++;
+    }
+    if (bindModule) {
+      bindCount++;
+    }
+    if (bindLineNo) {
+      bindCount++;
+    }
+    if (bindColNo) {
+      bindCount++;
+    }
+    this.bindCount = bindCount;
+  }
 
-			}
-			throw e;
-		}
-	}
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) {
+    try {
+      return expr.evaluate(ctx, tuple);
+    } catch (QueryException e) {
+      for (int i = 0; i < catches.length; i++) {
+        if (catches[i].length == 0) {
+          Tuple t = bindInfo(tuple, e);
+          return handler[i].evaluate(ctx, t);
+        }
+        for (int j = 0; j < catches[i].length; j++) {
+          if (catches[i][j].matches(e.getCode())) {
+            Tuple t = bindInfo(tuple, e);
+            return handler[i].evaluate(ctx, t);
+          }
+        }
 
-	private Tuple bindInfo(Tuple tuple, QueryException e) throws QueryException {
-		Sequence[] info = new Sequence[bindCount];
-		int pos = 0;
-		if (bindCode) {
-			info[pos++] = e.getCode();
-		}
-		if (bindDesc) {
-			info[pos++] = new Str(e.getMessage());
-		}
-		if (bindValue) {
-			info[pos++] = null;
-		}
-		if (bindModule) {
-			info[pos++] = null;
-		}
-		if (bindLineNo) {
-			info[pos++] = null;
-		}
-		if (bindColNo) {
-			info[pos++] = null;
-		}
-		Tuple t = tuple.concat(info);
-		return t;
-	}
+      }
+      throw e;
+    }
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return ExprUtil.asItem(evaluate(ctx, tuple));
-	}
+  private Tuple bindInfo(Tuple tuple, QueryException e) {
+    Sequence[] info = new Sequence[bindCount];
+    int pos = 0;
+    if (bindCode) {
+      info[pos++] = e.getCode();
+    }
+    if (bindDesc) {
+      info[pos++] = new Str(e.getMessage());
+    }
+    if (bindValue) {
+      info[pos++] = null;
+    }
+    if (bindModule) {
+      info[pos++] = null;
+    }
+    if (bindLineNo) {
+      info[pos++] = null;
+    }
+    if (bindColNo) {
+      info[pos] = null;
+    }
+    return tuple.concat(info);
+  }
 
-	@Override
-	public boolean isUpdating() {
-		if (expr.isUpdating()) {
-			return true;
-		}
-		for (Expr h : handler) {
-			if (h.isUpdating()) {
-				return true;
-			}
-		}
-		return false;
-	}
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    return ExprUtil.asItem(evaluate(ctx, tuple));
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isUpdating() {
+    if (expr.isUpdating()) {
+      return true;
+    }
+    for (Expr h : handler) {
+      if (h.isUpdating()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 }

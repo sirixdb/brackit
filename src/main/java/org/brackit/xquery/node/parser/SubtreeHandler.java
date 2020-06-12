@@ -37,33 +37,33 @@ import org.brackit.xquery.atomic.QNm;
  *
  */
 public interface SubtreeHandler {
-  public void startDocument();
+  void startDocument();
 
-  public void endDocument();
+  void endDocument();
 
-  public void text(Atomic content);
+  void text(Atomic content);
 
-  public void comment(Atomic content);
+  void comment(Atomic content);
 
-  public void processingInstruction(QNm target, Atomic content);
+  void processingInstruction(QNm target, Atomic content);
 
-  public void startMapping(String prefix, String uri);
+  void startMapping(String prefix, String uri);
 
-  public void endMapping(String prefix);
+  void endMapping(String prefix);
 
-  public void startElement(QNm name);
+  void startElement(QNm name);
 
-  public void endElement(QNm name);
+  void endElement(QNm name);
 
-  public void attribute(QNm name, Atomic value);
+  void attribute(QNm name, Atomic value);
 
-  public void begin();
+  void begin();
 
-  public void end();
+  void end();
 
-  public void fail();
+  void fail();
 
-  public void beginFragment();
+  void beginFragment();
 
-  public void endFragment();
+  void endFragment();
 }

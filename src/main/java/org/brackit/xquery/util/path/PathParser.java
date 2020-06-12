@@ -29,6 +29,7 @@ package org.brackit.xquery.util.path;
 
 import java.util.Map;
 import java.util.TreeMap;
+
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.parser.Tokenizer;
 
@@ -37,227 +38,224 @@ import org.brackit.xquery.compiler.parser.Tokenizer;
  */
 public final class PathParser extends Tokenizer {
 
-    private final Path<QNm> p;
+  private final Path<QNm> p;
 
-    private Map<String, String> namespaces;
+  private Map<String, String> namespaces;
 
-    public PathParser(String s) {
-        super(s);
-        p = new Path<>();
+  public PathParser(String s) {
+    super(s);
+    p = new Path<>();
+  }
+
+  /**
+   * Parse a path
+   * @return the path instance
+   * @throws PathException if anything went wrong
+   */
+  public Path<QNm> parse() {
+    try {
+      nsPreamble();
+      attemptS();
+      startStep();
+      while (axisStep())
+        ;
+      attributeStep();
+      consumeEOF();
+      return p;
+    } catch (TokenizerException e) {
+      throw new PathException(e, e.getMessage());
     }
+  }
 
-    public Path<QNm> parse() throws PathException {
-        try {
-            nsPreamble();
-            attemptS();
-            startStep();
-            while (axisStep())
-                ;
-            attributeStep();
-            consumeEOF();
-            return p;
-        } catch (TokenizerException e) {
-            throw new PathException(e, e.getMessage());
-        }
+  /**
+   * Allows for inlined namespace declarations of the form ( "namespace"
+   * NCNAME "=" stringLiteral ";")&#042; preceding a path expression.
+   */
+  private void nsPreamble() throws TokenizerException, PathException {
+    Token la = laSymSkipS("namespace");
+    while (la != null) {
+      consume(la);
+      String prefix;
+      String uri;
+      Token pfx = laNCNameSkipS();
+      if (pfx == null) {
+        throw new MismatchException("NCName");
+      }
+      prefix = pfx.toString();
+      consume(pfx);
+
+      if (!attemptSkipS("=")) {
+        throw new MismatchException("=");
+      }
+      attemptS();
+      Token uriToken = laString(false);
+      if (uriToken == null) {
+        throw new MismatchException("URI");
+      }
+      uri = uriToken.toString();
+      consume(uriToken);
+
+      if (!attemptSkipS(";")) {
+        throw new MismatchException(";");
+      }
+
+      if (namespaces == null) {
+        namespaces = new TreeMap<>();
+      }
+      if (namespaces.put(prefix, uri) != null) {
+        throw new PathException("Multiple declaration of namespace prefix: '%s'", prefix);
+      }
+      la = laSymSkipS("namespace");
     }
+  }
 
-    /**
-     * Allows for inlined namespace declarations of the form ( "namespace"
-     * NCNAME "=" stringLiteral ";")&#042; preceding a path expression.
-     */
-    private void nsPreamble() throws TokenizerException, PathException {
-        Token la = laSymSkipS("namespace");
-        while (la != null) {
-            consume(la);
-            String prefix;
-            String uri;
-            Token pfx = laNCNameSkipS();
-            if (pfx == null) {
-                throw new MismatchException("NCName");
-            }
-            prefix = pfx.toString();
-            consume(pfx);
-
-            if (!attemptSkipS("=")) {
-                throw new MismatchException("=");
-            }
-            attemptS();
-            Token uriToken = laString(false);
-            if (uriToken == null) {
-                throw new MismatchException("URI");
-            }
-            uri = uriToken.toString();
-            consume(uriToken);
-
-            if (!attemptSkipS(";")) {
-                throw new MismatchException(";");
-            }
-
-            if (namespaces == null) {
-                namespaces = new TreeMap<>();
-            }
-            if (namespaces.put(prefix, uri) != null) {
-                throw new PathException(
-                        "Multiple declaration of namespace prefix: '%s'",
-                        prefix);
-            }
-            la = laSymSkipS("namespace");
-        }
+  private void startStep() throws PathException {
+    if (attempt("..")) {
+      p.parent();
+    } else if (attempt(".")) {
+      p.self();
+    } else {
+      EQNameToken la = laQName();
+      if (la != null) {
+        consume(la);
+        p.self().child(expand(la.qname()));
+      }
     }
+  }
 
-    private void startStep() throws PathException {
-        if (attempt("..")) {
-            p.parent();
-        } else if (attempt(".")) {
-            p.self();
-        } else {
-            EQNameToken la = laQName();
-            if (la != null) {
-                consume(la);
-                p.self().child(expand(la.qname()));
-            }
-        }
+  private boolean axisStep() throws TokenizerException, PathException {
+    return parentStep() || selfStep() || namedStep();
+  }
+
+  private boolean parentStep() {
+    if (attempt("/..")) {
+      p.parent();
+      return true;
     }
+    return false;
+  }
 
-    private boolean axisStep() throws TokenizerException, PathException {
-        return ((parentStep()) || (selfStep()) || (namedStep()));
+  private boolean selfStep() {
+    if (attempt("/.")) {
+      p.self();
+      return true;
     }
+    return false;
+  }
 
-    private boolean parentStep() {
-        if (attempt("/..")) {
-            p.parent();
-            return true;
-        }
+  private boolean namedStep() throws TokenizerException, PathException {
+    QNm q = null;
+    Token la = la("//");
+    if (la != null) {
+      if (la(la, "@") != null) {
         return false;
-    }
+      }
 
-    private boolean selfStep() {
-        if (attempt("/.")) {
-            p.self();
-            return true;
-        }
+      consume(la);
+
+      if ((la = la("[]")) != null) {
+        consume(la);
+        p.descendantArray();
+        return true;
+      }
+
+      if (!attempt("*")) {
+        q = name();
+      }
+      p.descendant(expand(q));
+      return true;
+    } else if ((la = la("/")) != null) {
+      if (la(la, "@") != null) {
         return false;
+      }
+
+      consume(la);
+
+      if ((la = la("[]")) != null) {
+        consume(la);
+        p.childArray();
+        return true;
+      }
+
+      if (!attempt("*")) {
+        q = name();
+      }
+      p.child(expand(q));
+      return true;
+    }
+    return false;
+  }
+
+  private QNm name() throws TokenizerException {
+    final var pos = position();
+    StringBuilder pathSegmentName = new StringBuilder(scanString(position(), '/'));
+
+    while (pathSegmentName.toString().endsWith("\\")) {
+      if (pos + pathSegmentName.length() + 1 > getEnd()) {
+        break;
+      }
+      resetTo(pos + pathSegmentName.length() + 1);
+      final var segment = scanString(position(), '/');
+
+      if (segment != null) {
+        pathSegmentName.append("/");
+        pathSegmentName.append(segment);
+      }
     }
 
-    private boolean namedStep() throws TokenizerException, PathException {
-        QNm q = null;
-        Token la = la("//");
-        if (la != null) {
-            if (la(la, "@") != null) {
-                return false;
-            }
+    resetTo(pos);
 
-            consume(la);
+    final String[] prefixAndLocalName = pathSegmentName.toString().split(":");
+    final EQNameToken token;
 
-            if ((la = la("[]")) != null) {
-                consume(la);
-                p.descendantArray();
-                return true;
-            }
-
-            if (!attempt("*")) {
-                q = name();
-            }
-            p.descendant(expand(q));
-            return true;
-        } else if ((la = la("/")) != null) {
-            if (la(la, "@") != null) {
-                return false;
-            }
-
-            consume(la);
-
-            if ((la = la("[]")) != null) {
-                consume(la);
-                p.childArray();
-                return true;
-            }
-
-            if (!attempt("*")) {
-                q = name();
-            }
-            p.child(expand(q));
-            return true;
-        }
-        return false;
+    if (prefixAndLocalName.length > 1) {
+      token = new EQNameToken(pos, pos + pathSegmentName.length(), null, prefixAndLocalName[0], prefixAndLocalName[1]);
+    } else {
+      token = new EQNameToken(pos, pos + pathSegmentName.length(), null, null, pathSegmentName.toString());
     }
 
-    private QNm name() throws TokenizerException {
-        final var pos = position();
-        String pathSegmentName = scanString(position(), '/');
+    consume(token);
 
-        if (pathSegmentName == null) {
-            throw new MismatchException("Wildcard", "Name");
+    return token.qname();
+  }
+
+  private void attributeStep() throws TokenizerException, PathException {
+    QNm q = null;
+    if (attempt("//@")) {
+      if (!attempt("*")) {
+        EQNameToken la = laQName();
+        if (la == null) {
+          throw new MismatchException("Wildcard", "QName");
         }
-
-        while (pathSegmentName.endsWith("\\")) {
-            if (pos + pathSegmentName.length() + 1 > getEnd()) {
-                break;
-            }
-            resetTo(pos + pathSegmentName.length() + 1);
-            final var segment = scanString(position(), '/');
-
-            if (segment != null) {
-                pathSegmentName += "/";
-                pathSegmentName += segment;
-            }
+        consume(la);
+        q = la.qname();
+      }
+      p.descendantAttribute(expand(q));
+    } else if (attempt("/@")) {
+      if (!attempt("*")) {
+        EQNameToken la = laQName();
+        if (la == null) {
+          throw new MismatchException("Wildcard", "QName");
         }
-
-        resetTo(pos);
-
-        final String[] prefixAndLocalName  = pathSegmentName.split(":");
-        final EQNameToken token;
-
-        if (prefixAndLocalName.length > 1) {
-            token = new EQNameToken(pos, pos + pathSegmentName.length(), null, prefixAndLocalName[0], prefixAndLocalName[1]);
-        } else {
-            token = new EQNameToken(pos, pos + pathSegmentName.length(), null, null, pathSegmentName);
-        }
-
-        consume(token);
-
-        return token.qname();
+        consume(la);
+        q = la.qname();
+      }
+      p.attribute(expand(q));
     }
+  }
 
-    private void attributeStep() throws TokenizerException, PathException {
-        QNm q = null;
-        if (attempt("//@")) {
-            if (!attempt("*")) {
-                EQNameToken la = laQName();
-                if (la == null) {
-                    throw new MismatchException("Wildcard", "QName");
-                }
-                consume(la);
-                q = la.qname();
-            }
-            p.descendantAttribute(expand(q));
-        } else if (attempt("/@")) {
-            if (!attempt("*")) {
-                EQNameToken la = laQName();
-                if (la == null) {
-                    throw new MismatchException("Wildcard", "QName");
-                }
-                consume(la);
-                q = la.qname();
-            }
-            p.attribute(expand(q));
-        }
+  /**
+   * Resolves prefixed named steps like 'bit:email' against the namespace
+   * declarations in the preamble (if any).
+   */
+  private QNm expand(QNm qname) throws PathException {
+    if (namespaces == null || qname.getPrefix() == null) {
+      return qname;
     }
-
-    /**
-     * Resolves prefixed named steps like 'bit:email' against the namespace
-     * declarations in the preamble (if any).
-     *
-     */
-    private QNm expand(QNm qname) throws PathException {
-        if (namespaces == null || qname.getPrefix() == null) {
-            return qname;
-        }
-        String uri = namespaces.get(qname.getPrefix());
-        if (uri == null) {
-            throw new PathException("Undefined namespace prefix: %s",
-                    qname.getPrefix());
-        }
-        return new QNm(uri, qname.getPrefix(), qname.getLocalName());
+    String uri = namespaces.get(qname.getPrefix());
+    if (uri == null) {
+      throw new PathException("Undefined namespace prefix: %s", qname.getPrefix());
     }
+    return new QNm(uri, qname.getPrefix(), qname.getLocalName());
+  }
 }

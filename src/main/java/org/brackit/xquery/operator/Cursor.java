@@ -36,9 +36,9 @@ import org.brackit.xquery.Tuple;
  * @author Sebastian Baechle
  */
 public interface Cursor {
-	public void open(QueryContext ctx) throws QueryException;
+	void open(QueryContext ctx) throws QueryException;
 
-	public Tuple next(QueryContext ctx) throws QueryException;
+	Tuple next(QueryContext ctx) throws QueryException;
 
-	public void close(QueryContext ctx);
+	void close(QueryContext ctx);
 }

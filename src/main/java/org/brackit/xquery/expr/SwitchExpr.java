@@ -58,12 +58,12 @@ public class SwitchExpr implements Expr {
 			throws QueryException {
 		Item oi = operand.evaluateToItem(ctx, tuple);
 		Atomic oa = (oi != null) ? oi.atomize() : null;
-		for (int i = 0; i < cases.length; i++) {
-			for (int j = 0; j < cases[i].length - 1; j++) {
-				Item cij = cases[i][j].evaluateToItem(ctx, tuple);
+		for (final var aCase : cases) {
+			for (int j = 0; j < aCase.length - 1; j++) {
+				Item cij = aCase[j].evaluateToItem(ctx, tuple);
 				Atomic ca = (cij != null) ? cij.atomize() : null;
 				if (DeepEqual.deepEquals(oa, ca).booleanValue()) {
-					return cases[i][cases[i].length - 1].evaluate(ctx, tuple);
+					return aCase[aCase.length - 1].evaluate(ctx, tuple);
 				}
 			}
 		}
@@ -78,12 +78,12 @@ public class SwitchExpr implements Expr {
 
 	@Override
 	public boolean isUpdating() {
-		if ((operand.isUpdating()) || (dftValue.isUpdating())) {
+		if (operand.isUpdating() || dftValue.isUpdating()) {
 			return true;
 		}
-		for (int i = 0; i < cases.length; i++) {
-			for (int j = 0; j < cases[i].length; j++) {
-				if (cases[i][j].isUpdating()) {
+		for (final Expr[] aCase : cases) {
+			for (Expr expr : aCase) {
+				if (expr.isUpdating()) {
 					return true;
 				}
 			}
@@ -93,12 +93,12 @@ public class SwitchExpr implements Expr {
 
 	@Override
 	public boolean isVacuous() {
-		if ((operand.isVacuous()) || (dftValue.isVacuous())) {
+		if (operand.isVacuous() || dftValue.isVacuous()) {
 			return true;
 		}
-		for (int i = 0; i < cases.length; i++) {
-			for (int j = 0; j < cases[i].length; j++) {
-				if (cases[i][j].isVacuous()) {
+		for (final Expr[] aCase : cases) {
+			for (final Expr expr : aCase) {
+				if (expr.isVacuous()) {
 					return true;
 				}
 			}
