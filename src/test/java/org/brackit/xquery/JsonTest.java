@@ -34,7 +34,6 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.record.ArrayRecord;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Sequence;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -57,11 +56,18 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void insertIntoArray() throws IOException {
-    final String query =
-        """
-          insert json (1, 2, 3) into [\"foo\", true(), jn:null()] at position 2
+    final String query = """
+          insert json (1, 2, 3) into ["foo", true(), false(), jn:null()] at position 2
         """;
-    final var result = query(query);
+    query(query);
+  }
+
+  @Test
+  public void insertIntoObject() throws IOException {
+    final String query = """
+          insert json {"foo": not(true()), "baz": jn:null()} into {"bar": false()}
+        """;
+    query(query);
   }
 
   @Test
@@ -151,15 +157,23 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void arrayForLoop1Test() throws IOException {
-    final var query = "let $values := [{\"key\": \"hey\"}, {\"key\": 0}]\n" + "for $i in $values\n"
-        + "where $i=>key instance of xs:integer and $i=>key eq 0 \n return $i";
+    final var query = """
+        let $values := [{"key": "hey"}, {"key": 0}]
+        for $i in $values
+        where $i=>key instance of xs:integer and $i=>key eq 0
+        return $i
+    """;
     final var result = query(query);
     assertEquals("{\"key\":0}", result);
   }
 
   @Test
   public void arrayForLoop2Test() throws IOException {
-    final var query = "let $values := [\"foo\",0,true(),jn:null()]\n" + "for $i in $values\n" + "return $i";
+    final var query = """
+        let $values := ["foo",0,true(),jn:null()]
+        for $i in $values
+        return $i
+    """;
     final var result = query(query);
     assertEquals("foo 0 true null", result);
   }
@@ -252,27 +266,32 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void testObjects() throws IOException {
-    final var query =
-        "    let $object1 := { \"Captain\" : \"Kirk\" }\n" + "    let $object2 := { \"First officer\" : \"Spock\" }\n"
-            + "    return ($object1, \" \", $object2)";
+    final var query = """
+        let $object1 := { "Captain" : "Kirk" }
+        let $object2 := { "First officer" : "Spock" }
+        return ($object1, " ", $object2)""".indent(4);
     final var result = query(query);
     assertEquals("{\"Captain\":\"Kirk\"}   {\"First officer\":\"Spock\"}", result);
   }
 
   @Test
   public void testComposeObjects1() throws IOException {
-    final var query =
-        "    let $object1 := { \"Captain\" : \"Kirk\" }\n" + "    let $object2 := { \"First officer\" : \"Spock\" }\n"
-            + "    return {| { \"foobar\": $object1 }, $object2 |}";
+    final var query = """
+        let $object1 := { "Captain" : "Kirk" }
+        let $object2 := { "First officer" : "Spock" }
+        return {| { "foobar": $object1 }, $object2 |}
+    """;
     final var result = query(query);
     assertEquals("{\"foobar\":{\"Captain\":\"Kirk\"},\"First officer\":\"Spock\"}", result);
   }
 
   @Test
   public void testComposeObjects2() throws IOException {
-    final var query =
-        "let $object1 := { \"Captain\" : \"Kirk\" }\n" + "let $object2 := { \"First officer\" : \"Spock\" }\n"
-            + "return {{ \"foobar\": $object1 }, $object2 }";
+    final var query = """
+        let $object1 := { "Captain" : "Kirk" }
+        let $object2 := { "First officer" : "Spock" }
+        return {{ "foobar": $object1 }, $object2 }
+    """;
     final var result = query(query);
     assertEquals("{\"foobar\":{\"Captain\":\"Kirk\"},\"First officer\":\"Spock\"}", result);
   }
@@ -286,9 +305,11 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void testComposeObjects4() throws IOException {
-    final var query =
-        "let $object1 := { \"Captain\" : \"Kirk\" }\n" + "let $object2 := { \"First officer\" : \"Spock\" }\n"
-            + "return {| $object1, $object2 |}";
+    final var query = """
+        let $object1 := { "Captain" : "Kirk" }
+        let $object2 := { "First officer" : "Spock" }
+        return {| $object1, $object2 |}
+    """;
     final var result = query(query);
     assertEquals("{\"Captain\":\"Kirk\",\"First officer\":\"Spock\"}", result);
   }
@@ -303,9 +324,11 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void testObjectLookup() throws IOException {
-    final var query = "let $x := { \"eyes\": \"blue\", \"hair\": \"fuchsia\" }\n"
-        + "        let $y := { \"eyes\": \"brown\", \"hair\": \"brown\" }\n"
-        + "        return { \"eyes\": $x=>eyes, \"hair\": $y=>hair }";
+    final var query = """
+        let $x := { "eyes": "blue", "hair": "fuchsia" }
+        let $y := { "eyes": "brown", "hair": "brown" }
+        return { "eyes": $x=>eyes, "hair": $y=>hair }
+    """;
     final var result = query(query);
     assertEquals("{\"eyes\":\"blue\",\"hair\":\"brown\"}", result);
   }

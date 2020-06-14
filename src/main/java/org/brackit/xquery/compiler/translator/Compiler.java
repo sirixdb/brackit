@@ -574,7 +574,7 @@ public class Compiler implements Translator {
     int childCount = node.getChildCount();
     QNm name = (QNm) node.getValue();
 
-    if (JSONFun.JSON_PREFIX.equals(name.getPrefix()) && JSONFun.JSON_NSURI.equals(name.getNamespaceURI())
+    if (JSONFun.JSON_PREFIX.equals(name.getPrefix())
         && "null".equals(name.getLocalName())) {
       return new Null();
     }

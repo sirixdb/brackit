@@ -27,13 +27,11 @@
  */
 package org.brackit.xquery.module;
 
-import org.brackit.xquery.atomic.Null;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.ConstructorFunction;
 import org.brackit.xquery.function.fn.Collection;
 import org.brackit.xquery.function.fn.Number;
 import org.brackit.xquery.function.fn.*;
-import org.brackit.xquery.function.json.JSONFun;
 import org.brackit.xquery.util.Regex;
 import org.brackit.xquery.xdm.Function;
 import org.brackit.xquery.xdm.Signature;
@@ -45,7 +43,7 @@ import java.util.*;
 /**
  * @author Sebastian Baechle
  */
-public class Functions {
+public final class Functions {
 
   private static final Map<QNm, Function[]> predefined = new HashMap<>();
 
@@ -368,7 +366,7 @@ public class Functions {
 
     // See XQuery Functions and Operators 9.3 Functions on Boolean Values
     predefine(new BooleanValue(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "true"),
-                               true,
+                               false,
                                new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One))));
     predefine(new BooleanValue(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "false"),
                                false,
@@ -758,6 +756,13 @@ public class Functions {
       Function[] importedFuns = imported.functions.get(name);
       if (importedFuns != null) {
         availableFunctions.addAll(Arrays.asList(importedFuns));
+      }
+    }
+    if (availableFunctions.isEmpty() && name.getNamespaceURI().isEmpty()) {
+      final Function[] predefFunsInDefaultNamespace =
+          predefined.get(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, name.getLocalName()));
+      if (predefFunsInDefaultNamespace != null) {
+        availableFunctions.addAll(Arrays.asList(predefFunsInDefaultNamespace));
       }
     }
 

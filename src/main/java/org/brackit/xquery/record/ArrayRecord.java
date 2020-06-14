@@ -37,8 +37,7 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.json.Record;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Sebastian Baechle
@@ -51,27 +50,34 @@ public final class ArrayRecord extends AbstractRecord {
 	// switch to a more efficient (hash) map.
 	private final List<QNm> fields;
 	private final List<Sequence> vals;
+	private final Map<QNm, Sequence> fieldsToVals;
 
 	public ArrayRecord(QNm[] fields, Sequence[] values) {
-		this.fields = Arrays.asList(fields);
-		this.vals = Arrays.asList(values);
+		this.fields = new ArrayList<>(Arrays.asList(fields));
+		this.vals = new ArrayList<>(Arrays.asList(values));
+		this.fieldsToVals = new HashMap<>();
+
+		for (int i = 0; i < fields.length; i++) {
+			final QNm field = fields[i];
+			final Sequence value = values[i];
+			fieldsToVals.put(field, value);
+		}
 	}
 
 	@Override
 	public Record insert(QNm field, Sequence value) {
+		if (fieldsToVals.containsKey(field)) {
+			throw new QueryException(new QNm("Field already defined."));
+		}
 		fields.add(field);
 		vals.add(value);
+		fieldsToVals.put(field, value);
 		return this;
 	}
 
 	@Override
 	public Sequence get(QNm field) {
-		for (int i = 0, size = fields.size(); i < size; i++) {
-			if (fields.get(i).atomicCmp(field) == 0) {
-				return vals.get(i);
-			}
-		}
-		return null;
+		return fieldsToVals.get(field);
 	}
 
 	@Override

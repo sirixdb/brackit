@@ -32,6 +32,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.update.json.op.InsertIntoArrayOp;
+import org.brackit.xquery.update.json.op.InsertIntoRecordOp;
 import org.brackit.xquery.util.serialize.StringSerializer;
 import org.brackit.xquery.xdm.*;
 import org.brackit.xquery.xdm.json.Array;
@@ -98,15 +99,8 @@ public final class InsertJson implements Expr {
 
     final Sequence source = sourceExpr.evaluate(ctx, tuple);
 
-    if (position == -1) {
-      // record
-      if (!(targetItem instanceof Record)) {
-        throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_NOT_A_SINGLE_ED_NODE,
-                                 "Target item is atomic value %s",
-                                 targetItem);
-      }
-
-      // TODO
+    if (target instanceof Record) {
+      ctx.addPendingUpdate(new InsertIntoRecordOp((Record) targetItem, (Record) source));
     } else {
       // array
       if (!(targetItem instanceof Array)) {
@@ -116,7 +110,6 @@ public final class InsertJson implements Expr {
       }
 
       ctx.addPendingUpdate(new InsertIntoArrayOp((Array) targetItem, source, position));
-      // TODO
     }
   }
 }
