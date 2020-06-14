@@ -130,13 +130,13 @@ public class JSONParser extends Tokenizer {
 		if (attemptSkipS("]")) {
 			return new ArrayRecord(new QNm[0], new Item[0]);
 		}
-		List<Item> values = new ArrayList<Item>();
+		var values = new ArrayList<Item>();
 		do {
 			values.add(value(true));
 		} while (attemptSkipS(","));
 		consumeSkipS("]");
 
-		return new DArray(values.toArray(new Item[values.size()]));
+		return new DArray(values);
 	}
 
 	private Item object() throws TokenizerException, QueryException {

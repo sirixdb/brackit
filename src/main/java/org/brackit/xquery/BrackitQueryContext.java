@@ -81,7 +81,7 @@ public class BrackitQueryContext implements QueryContext {
 
   private Time time;
 
-  private DTD implicitTimezone = AbstractTimeInstant.LOCAL_TIMEZONE;
+  private final DTD implicitTimezone = AbstractTimeInstant.LOCAL_TIMEZONE;
 
   public BrackitQueryContext() {
     this.nodeFactory = FACTORY;
@@ -102,7 +102,7 @@ public class BrackitQueryContext implements QueryContext {
   }
 
   @Override
-  public void applyUpdates() throws QueryException {
+  public void applyUpdates() {
     if (updates != null) {
       updates.apply();
     }
@@ -121,13 +121,13 @@ public class BrackitQueryContext implements QueryContext {
   @Override
   public void bind(QNm name, Sequence sequence) {
     if (externalVars == null) {
-      externalVars = new HashMap<QNm, Sequence>(3);
+      externalVars = new HashMap<>(3);
     }
     externalVars.put(name, sequence);
   }
 
   @Override
-  public Sequence resolve(QNm name) throws QueryException {
+  public Sequence resolve(QNm name) {
     return (externalVars != null)
         ? externalVars.get(name)
         : null;
@@ -139,7 +139,7 @@ public class BrackitQueryContext implements QueryContext {
   }
 
   @Override
-  public void setContextItem(Item item) throws QueryException {
+  public void setContextItem(Item item) {
     extCtxItem = item;
     if (item != null) {
       extCtxItemType = item.itemType();

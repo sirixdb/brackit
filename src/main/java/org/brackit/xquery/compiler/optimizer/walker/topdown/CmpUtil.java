@@ -45,69 +45,36 @@ import org.brackit.xquery.util.Cmp;
 
 /**
  * @author Sebastian Baechle
- * 
+ * @author Johannes Lichtenberger
  */
-public class CmpUtil {
+public final class CmpUtil {
 	public static Cmp cmp(AST cmpNode) {
-		switch (cmpNode.getType()) {
-		case ValueCompEQ:
-			return Cmp.eq;
-		case ValueCompGE:
-			return Cmp.ge;
-		case ValueCompLE:
-			return Cmp.le;
-		case ValueCompLT:
-			return Cmp.lt;
-		case ValueCompGT:
-			return Cmp.gt;
-		case ValueCompNE:
-			return Cmp.ne;
-		case GeneralCompEQ:
-			return Cmp.eq;
-		case GeneralCompGE:
-			return Cmp.ge;
-		case GeneralCompLE:
-			return Cmp.le;
-		case GeneralCompLT:
-			return Cmp.lt;
-		case GeneralCompGT:
-			return Cmp.gt;
-		case GeneralCompNE:
-			return Cmp.ne;
-		default:
-			throw new IllegalArgumentException();
-		}
+		return switch (cmpNode.getType()) {
+			case ValueCompEQ, GeneralCompEQ -> Cmp.eq;
+			case ValueCompGE, GeneralCompGE -> Cmp.ge;
+			case ValueCompLE, GeneralCompLE -> Cmp.le;
+			case ValueCompLT, GeneralCompLT -> Cmp.lt;
+			case ValueCompGT, GeneralCompGT -> Cmp.gt;
+			case ValueCompNE, GeneralCompNE -> Cmp.ne;
+			default -> throw new IllegalArgumentException();
+		};
 	}
 
 	public static int type(Cmp cmp, boolean isGCmp) {
-		switch (cmp) {
-		case eq:
-			return (isGCmp) ? GeneralCompEQ : ValueCompEQ;
-		case ge:
-			return (isGCmp) ? GeneralCompGE : ValueCompGE;
-		case gt:
-			return (isGCmp) ? GeneralCompGT : ValueCompGT;
-		case le:
-			return (isGCmp) ? GeneralCompLE : ValueCompLE;
-		case lt:
-			return (isGCmp) ? GeneralCompLT : ValueCompLT;
-		case ne:
-			return (isGCmp) ? GeneralCompNE : ValueCompNE;
-		default:
-			return -1;
-		}
+		return switch (cmp) {
+			case eq -> (isGCmp) ? GeneralCompEQ : ValueCompEQ;
+			case ge -> (isGCmp) ? GeneralCompGE : ValueCompGE;
+			case gt -> (isGCmp) ? GeneralCompGT : ValueCompGT;
+			case le -> (isGCmp) ? GeneralCompLE : ValueCompLE;
+			case lt -> (isGCmp) ? GeneralCompLT : ValueCompLT;
+			case ne -> (isGCmp) ? GeneralCompNE : ValueCompNE;
+		};
 	}
 
 	public static boolean isGCmp(AST cmp) {
-		switch (cmp.getType()) {
-		case GeneralCompEQ:
-		case GeneralCompGE:
-		case GeneralCompGT:
-		case GeneralCompLE:
-		case GeneralCompLT:
-			return true;
-		default:
-			return false;
-		}
+		return switch (cmp.getType()) {
+			case GeneralCompEQ, GeneralCompGE, GeneralCompGT, GeneralCompLE, GeneralCompLT -> true;
+			default -> false;
+		};
 	}
 }

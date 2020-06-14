@@ -934,6 +934,11 @@ public class XQParser extends Tokenizer {
         ? expr
         : transformExpr();
     // End XQuery Update Facility 1.0
+    // Begin JSONiq Update Facility
+    expr = (expr != null)
+        ? expr
+        : insertJsonExpr();
+    // End JSONiq Update Facility
     expr = (expr != null)
         ? expr
         : orExpr();
@@ -941,6 +946,55 @@ public class XQParser extends Tokenizer {
       throw new TokenizerException("Non-expression faced: %s", paraphrase());
     }
     return expr;
+  }
+
+  // Begin JSONiq Update Factility
+  private AST insertJsonExpr() throws TokenizerException {
+    Token la = laSymSkipWS("insert");
+    if (la == null) {
+      return null;
+    }
+    Token la2 = laSymSkipWS(la, "json");
+    if (la2 == null) {
+      return null;
+    }
+    consume(la);
+    consume(la2);
+    final AST recordAst = recordConstructor();
+    if (recordAst == null) {
+      final AST exprSingle = exprSingle();
+      if (exprSingle == null) {
+        throw new TokenizerException("expr single expected");
+      }
+      if (!attemptSymSkipWS("into")) {
+        throw new MismatchException("into");
+      }
+      AST target = exprSingle();
+      if (!attemptSymSkipWS("at")) {
+        throw new MismatchException("at");
+      }
+      if (!attemptSymSkipWS("position")) {
+        throw new MismatchException("position");
+      }
+      AST position = exprSingle();
+      if (position == null) {
+        throw new IllegalStateException("No position given.");
+      }
+      AST expr = new AST(XQ.InsertJsonExpr);
+      expr.addChild(exprSingle);
+      expr.addChild(target);
+      expr.addChild(position);
+      return expr;
+    } else {
+      if (!attemptSymSkipWS("into")) {
+        throw new MismatchException("into");
+      }
+      AST target = exprSingle();
+      AST expr = new AST(XQ.InsertJsonExpr);
+      expr.addChild(recordAst);
+      expr.addChild(target);
+      return expr;
+    }
   }
 
   // Begin XQuery Update Facility 1.0

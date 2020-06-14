@@ -27,14 +27,13 @@
  */
 package org.brackit.xquery.sequence;
 
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
  * @author Sebastian Baechle
  * 
  */
-public class NestedSequence extends FlatteningSequence {
+public final class NestedSequence extends FlatteningSequence {
 
 	private final Sequence[] seqs;
 

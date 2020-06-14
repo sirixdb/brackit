@@ -35,7 +35,7 @@ import org.brackit.xquery.compiler.optimizer.walker.Walker;
  * @author Sebastian Baechle
  * 
  */
-public class LeftJoinUnnesting extends Walker {
+public final class LeftJoinUnnesting extends Walker {
 
 	@Override
 	protected AST visit(AST join) {

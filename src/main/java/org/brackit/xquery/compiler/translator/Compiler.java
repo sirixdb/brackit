@@ -42,11 +42,13 @@ import org.brackit.xquery.expr.RecordExpr.RecordField;
 import org.brackit.xquery.function.FunctionExpr;
 import org.brackit.xquery.function.UDF;
 import org.brackit.xquery.function.bit.BitFun;
+import org.brackit.xquery.function.json.JSONFun;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.operator.*;
 import org.brackit.xquery.update.*;
 import org.brackit.xquery.update.Insert.InsertType;
+import org.brackit.xquery.update.json.InsertJson;
 import org.brackit.xquery.util.Cmp;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.util.aggregator.Aggregate;
@@ -124,8 +126,8 @@ public class Compiler implements Translator {
       table.bind(params[i], types[i]);
     }
     // ensure fixed parameter positions
-    for (int i = 0; i < params.length; i++) {
-      table.resolve(params[i]);
+    for (final QNm param : params) {
+      table.resolve(param);
     }
     // compile body
     Expr body = expr(expr, !allowUpdate);
@@ -148,141 +150,92 @@ public class Compiler implements Translator {
   }
 
   protected Expr anyExpr(AST node) throws QueryException {
-    switch (node.getType()) {
-      case XQ.FlowrExpr:
-        return flowrExpr(node);
-      case XQ.QuantifiedExpr:
-        return quantifiedExpr(node);
-      case XQ.EnclosedExpr:
-      case XQ.ParenthesizedExpr:
-      case XQ.SequenceExpr:
-        return sequenceExpr(node);
-      case XQ.Str:
-        return new Str(Whitespace.normalizeXML11(node.getStringValue()));
-      case XQ.Null:
-        return new Null();
-      case XQ.Int:
-      case XQ.Dbl:
-      case XQ.Dec:
-      case XQ.QNm:
-      case XQ.AnyURI:
-      case XQ.Bool:
-        return (Atomic) node.getValue();
-      case XQ.VariableRef:
-        return variableRefExpr(node);
-      case XQ.ArithmeticExpr:
-        return arithmeticExpr(node);
-      case XQ.ComparisonExpr:
-        return comparisonExpr(node);
-      case XQ.RangeExpr:
-        return rangeExpr(node);
-      case XQ.AndExpr:
-        return andExpr(node);
-      case XQ.OrExpr:
-        return orExpr(node);
-      case XQ.CastExpr:
-        return castExpr(node);
-      case XQ.CastableExpr:
-        return castableExpr(node);
-      case XQ.TreatExpr:
-        return treatExpr(node);
-      case XQ.InstanceofExpr:
-        return instanceOfExpr(node);
-      case XQ.TypeSwitch:
-        return typeswitchExpr(node);
-      case XQ.IfExpr:
-        return ifExpr(node);
-      case XQ.SwitchExpr:
-        return switchExpr(node);
-      case XQ.FilterExpr:
-        return filterExpr(node);
-      case XQ.DirElementConstructor:
-      case XQ.CompElementConstructor:
-        return elementExpr(node);
-      case XQ.DirAttributeConstructor:
-      case XQ.CompAttributeConstructor:
-        return attributeExpr(node);
-      case XQ.DirCommentConstructor:
-      case XQ.CompCommentConstructor:
-        return commentExpr(node);
-      case XQ.CompTextConstructor:
-        return textExpr(node);
-      case XQ.CompDocumentConstructor:
-        return documentExpr(node);
-      case XQ.DirPIConstructor:
-      case XQ.CompPIConstructor:
-        return piExpr(node);
-      case XQ.FunctionCall:
-        return functionCall(node);
-      case XQ.PathExpr:
-        return pathExpr(node);
-      case XQ.StepExpr:
-        return stepExpr(node);
-      case XQ.ContextItemExpr:
-        return table.resolve(Bits.FS_DOT);
-      case XQ.InsertExpr:
-        return insertExpr(node);
-      case XQ.DeleteExpr:
-        return deleteExpr(node);
-      case XQ.ReplaceNodeExpr:
-      case XQ.ReplaceValueExpr:
-        return replaceExpr(node);
-      case XQ.RenameExpr:
-        return renameExpr(node);
-      case XQ.TransformExpr:
-        return transformExpr(node);
-      case XQ.OrderedExpr:
-      case XQ.UnorderedExpr:
-      case XQ.RecordField:
-        return anyExpr(node.getChild(0));
-      case XQ.UnionExpr:
-        return unionExpr(node);
-      case XQ.ExceptExpr:
-        return exceptExpr(node);
-      case XQ.IntersectExpr:
-        return intersectExpr(node);
-      case XQ.TryCatchExpr:
-        return tryCatchExpr(node);
-      case XQ.ExtensionExpr:
-        return extensionExpr(node);
-      case XQ.ValidateExpr:
-        throw new QueryException(ErrorCode.ERR_SCHEMA_VALIDATION_FEATURE_NOT_SUPPORTED,
-            "Schema validation feature is not supported.");
-        // BEGIN Custom array syntax extension
-      case XQ.ArrayConstructor:
-        return arrayExpr(node);
-      case XQ.ArrayAccess:
-        return arrayAccessExpr(node);
-      // END Custom array syntax extension
-      // BEGIN Custom record syntax extension
-      case XQ.RecordConstructor:
-        return recordExpr(node);
-      case XQ.DerefExpr:
-        return derefExpr(node);
-      case XQ.RecordProjection:
-        return projectionExpr(node);
-      // END Custom array syntax extension
-      default:
-        throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR, "Unexpected AST expr node '%s' of type: %s",
-            node, node.getType());
+    return switch (node.getType()) {
+      case XQ.FlowrExpr -> flowrExpr(node);
+      case XQ.QuantifiedExpr -> quantifiedExpr(node);
+      case XQ.EnclosedExpr, XQ.ParenthesizedExpr, XQ.SequenceExpr -> sequenceExpr(node);
+      case XQ.Str -> new Str(Whitespace.normalizeXML11(node.getStringValue()));
+      case XQ.Null -> new Null();
+      case XQ.Int, XQ.Dbl, XQ.Dec, XQ.QNm, XQ.AnyURI, XQ.Bool -> (Atomic) node.getValue();
+      case XQ.VariableRef -> variableRefExpr(node);
+      case XQ.ArithmeticExpr -> arithmeticExpr(node);
+      case XQ.ComparisonExpr -> comparisonExpr(node);
+      case XQ.RangeExpr -> rangeExpr(node);
+      case XQ.AndExpr -> andExpr(node);
+      case XQ.OrExpr -> orExpr(node);
+      case XQ.CastExpr -> castExpr(node);
+      case XQ.CastableExpr -> castableExpr(node);
+      case XQ.TreatExpr -> treatExpr(node);
+      case XQ.InstanceofExpr -> instanceOfExpr(node);
+      case XQ.TypeSwitch -> typeswitchExpr(node);
+      case XQ.IfExpr -> ifExpr(node);
+      case XQ.SwitchExpr -> switchExpr(node);
+      case XQ.FilterExpr -> filterExpr(node);
+      case XQ.DirElementConstructor, XQ.CompElementConstructor -> elementExpr(node);
+      case XQ.DirAttributeConstructor, XQ.CompAttributeConstructor -> attributeExpr(node);
+      case XQ.DirCommentConstructor, XQ.CompCommentConstructor -> commentExpr(node);
+      case XQ.CompTextConstructor -> textExpr(node);
+      case XQ.CompDocumentConstructor -> documentExpr(node);
+      case XQ.DirPIConstructor, XQ.CompPIConstructor -> piExpr(node);
+      case XQ.FunctionCall -> functionCall(node);
+      case XQ.PathExpr -> pathExpr(node);
+      case XQ.StepExpr -> stepExpr(node);
+      case XQ.ContextItemExpr -> table.resolve(Bits.FS_DOT);
+      case XQ.InsertExpr -> insertExpr(node);
+      case XQ.DeleteExpr -> deleteExpr(node);
+      case XQ.ReplaceNodeExpr, XQ.ReplaceValueExpr -> replaceExpr(node);
+      case XQ.RenameExpr -> renameExpr(node);
+      case XQ.TransformExpr -> transformExpr(node);
+      case XQ.OrderedExpr, XQ.UnorderedExpr, XQ.RecordField -> anyExpr(node.getChild(0));
+      case XQ.UnionExpr -> unionExpr(node);
+      case XQ.ExceptExpr -> exceptExpr(node);
+      case XQ.IntersectExpr -> intersectExpr(node);
+      case XQ.TryCatchExpr -> tryCatchExpr(node);
+      case XQ.ExtensionExpr -> extensionExpr(node);
+      case XQ.ValidateExpr -> throw new QueryException(ErrorCode.ERR_SCHEMA_VALIDATION_FEATURE_NOT_SUPPORTED,
+                                                       "Schema validation feature is not supported.");
+      case XQ.ArrayConstructor -> arrayExpr(node);
+      case XQ.ArrayAccess -> arrayAccessExpr(node);
+      case XQ.RecordConstructor -> recordExpr(node);
+      case XQ.DerefExpr -> derefExpr(node);
+      case XQ.RecordProjection -> projectionExpr(node);
+      case XQ.InsertJsonExpr -> insertJsonExpr(node);
+      default -> throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+                                          "Unexpected AST expr node '%s' of type: %s",
+                                          node,
+                                          node.getType());
+    };
+  }
+
+  private Expr insertJsonExpr(AST node) {
+    Expr sourceExpr = expr(node.getChild(0), true);
+    Expr targetExpr = expr(node.getChild(1), true);
+
+    final int position;
+    if (node.getChildCount() == 3) {
+      position = ((Int32) node.getChild(2).getValue()).intValue();
+    } else {
+      position = -1;
     }
+
+    return new InsertJson(sourceExpr, targetExpr, position);
   }
 
   protected Expr tryCatchExpr(AST node) throws QueryException {
     Expr expr = expr(node.getChild(0), true);
 
-    Binding code = table.bind((QNm) node.getChild(1).getChild(0).getValue(),
-        new SequenceType(AtomicType.QNM, Cardinality.One));
+    Binding code =
+        table.bind((QNm) node.getChild(1).getChild(0).getValue(), new SequenceType(AtomicType.QNM, Cardinality.One));
     Binding desc = table.bind((QNm) node.getChild(2).getChild(0).getValue(),
-        new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne));
+                              new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne));
     Binding value = table.bind((QNm) node.getChild(3).getChild(0).getValue(),
-        new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany));
+                               new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany));
     Binding module = table.bind((QNm) node.getChild(4).getChild(0).getValue(),
-        new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne));
+                                new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne));
     Binding lineNo = table.bind((QNm) node.getChild(5).getChild(0).getValue(),
-        new SequenceType(AtomicType.INR, Cardinality.ZeroOrOne));
+                                new SequenceType(AtomicType.INR, Cardinality.ZeroOrOne));
     Binding colNo = table.bind((QNm) node.getChild(6).getChild(0).getValue(),
-        new SequenceType(AtomicType.INR, Cardinality.ZeroOrOne));
+                               new SequenceType(AtomicType.INR, Cardinality.ZeroOrOne));
 
     int catchCount = node.getChildCount() - 7;
     TryCatchExpr.ErrorCatch[][] catches = new TryCatchExpr.ErrorCatch[catchCount][];
@@ -303,8 +256,15 @@ public class Compiler implements Translator {
       table.unbind();
     }
 
-    return new TryCatchExpr(expr, catches, handler, code.isReferenced(), desc.isReferenced(), value.isReferenced(),
-        module.isReferenced(), lineNo.isReferenced(), colNo.isReferenced());
+    return new TryCatchExpr(expr,
+                            catches,
+                            handler,
+                            code.isReferenced(),
+                            desc.isReferenced(),
+                            value.isReferenced(),
+                            module.isReferenced(),
+                            lineNo.isReferenced(),
+                            colNo.isReferenced());
   }
 
   protected TryCatchExpr.ErrorCatch tryCatchNameTest(AST child) throws QueryException {
@@ -349,8 +309,8 @@ public class Compiler implements Translator {
     AST type = node.getChild(1);
     AST aouType = type.getChild(0);
     Type targetType = resolveType((QNm) aouType.getChild(0).getValue(), true);
-    boolean allowEmptySequence = ((type.getChildCount() == 2) && (type.getChild(1).getType()
-        == XQ.CardinalityZeroOrOne));
+    boolean allowEmptySequence =
+        ((type.getChildCount() == 2) && (type.getChild(1).getType() == XQ.CardinalityZeroOrOne));
     StaticContext sctx = node.getStaticContext();
     return new Cast(sctx, expr, targetType, allowEmptySequence);
   }
@@ -360,8 +320,8 @@ public class Compiler implements Translator {
     AST type = node.getChild(1);
     AST aouType = type.getChild(0);
     Type targetType = resolveType((QNm) aouType.getChild(0).getValue(), true);
-    boolean allowEmptySequence = ((type.getChildCount() == 2) && (type.getChild(1).getType()
-        == XQ.CardinalityZeroOrOne));
+    boolean allowEmptySequence =
+        ((type.getChildCount() == 2) && (type.getChild(1).getType() == XQ.CardinalityZeroOrOne));
     StaticContext sctx = node.getStaticContext();
     return new Castable(sctx, expr, targetType, allowEmptySequence);
   }
@@ -382,7 +342,7 @@ public class Compiler implements Translator {
     Expr operandExpr = expr(node.getChild(0), false);
     if (operandExpr.isUpdating()) {
       throw (new QueryException(ErrorCode.ERR_UPDATE_ILLEGAL_NESTED_UPDATE,
-          "Operand expression of typeswitch expression must not be updating."));
+                                "Operand expression of typeswitch expression must not be updating."));
     }
 
     boolean updating = false;
@@ -410,7 +370,7 @@ public class Compiler implements Translator {
         binding = table.bind(varName, caseTypes[i]);
       }
 
-      caseExprs[i] = expr(caseNode.getChild(c++), false);
+      caseExprs[i] = expr(caseNode.getChild(c), false);
 
       if (varName != null) {
         if (binding.isReferenced()) {
@@ -461,11 +421,16 @@ public class Compiler implements Translator {
 
     if (updating && vacOrUpdate < cases + 1) {
       throw (new QueryException(ErrorCode.ERR_UPDATE_ILLEGAL_NESTED_UPDATE,
-          "One updating expression in a typeswitch case requires all branches to be updating or vacuous expressions."));
+                                "One updating expression in a typeswitch case requires all branches to be updating or vacuous expressions."));
     }
 
-    return new TypeswitchExpr(operandExpr, caseExprs, caseTypes, varRefs, defaultExpr, updating,
-        vacOrUpdate == cases + 1);
+    return new TypeswitchExpr(operandExpr,
+                              caseExprs,
+                              caseTypes,
+                              varRefs,
+                              defaultExpr,
+                              updating,
+                              vacOrUpdate == cases + 1);
   }
 
   protected Expr filterExpr(AST node) throws QueryException {
@@ -493,32 +458,21 @@ public class Compiler implements Translator {
   }
 
   protected Expr insertExpr(AST node) throws QueryException {
-    InsertType insertType;
+    final AST typeNode = node.getChild(0);
+    final InsertType insertType = switch (typeNode.getType()) {
+      case XQ.InsertInto -> InsertType.INTO;
+      case XQ.InsertBefore -> InsertType.BEFORE;
+      case XQ.InsertAfter -> InsertType.AFTER;
+      case XQ.InsertFirst -> InsertType.FIRST;
+      case XQ.InsertLast -> InsertType.LAST;
+      default -> throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+                                          "Unexpected AST expr node '%s' of type: %s",
+                                          typeNode,
+                                          typeNode.getType());
+    };
 
-    AST typeNode = node.getChild(0);
-    switch (typeNode.getType()) {
-      case XQ.InsertInto:
-        insertType = InsertType.INTO;
-        break;
-      case XQ.InsertBefore:
-        insertType = InsertType.BEFORE;
-        break;
-      case XQ.InsertAfter:
-        insertType = InsertType.AFTER;
-        break;
-      case XQ.InsertFirst:
-        insertType = InsertType.FIRST;
-        break;
-      case XQ.InsertLast:
-        insertType = InsertType.LAST;
-        break;
-      default:
-        throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR, "Unexpected AST expr node '%s' of type: %s",
-            typeNode, typeNode.getType());
-    }
-
-    Expr sourceExpr = expr(node.getChild(1), true);
-    Expr targetExpr = expr(node.getChild(2), true);
+    final Expr sourceExpr = expr(node.getChild(1), true);
+    final Expr targetExpr = expr(node.getChild(2), true);
 
     return new Insert(sourceExpr, targetExpr, insertType);
   }
@@ -542,7 +496,7 @@ public class Compiler implements Translator {
   }
 
   protected Expr transformExpr(AST node) throws QueryException {
-    AST current = null;
+    AST current;
 
     QNm varName;
     int childCount = node.getChildCount();
@@ -561,7 +515,7 @@ public class Compiler implements Translator {
 
     if (!modifyExpr.isUpdating() && !modifyExpr.isVacuous()) {
       throw (new QueryException(ErrorCode.ERR_UPDATING_OR_VACUOUS_EXPR_REQUIRED,
-          "Modify clause must not contain an expression that is non-updating and non-vacuous."));
+                                "Modify clause must not contain an expression that is non-updating and non-vacuous."));
     }
 
     Expr returnExpr = expr(node.getChild(++c), true);
@@ -577,7 +531,6 @@ public class Compiler implements Translator {
   }
 
   protected Expr quantifiedExpr(AST node) throws QueryException {
-    int childCount = node.getChildCount();
     int pos = 0;
     AST child = node.getChild(pos++);
     boolean someQuantified = (child.getType() == XQ.SomeQuantifier);
@@ -621,6 +574,11 @@ public class Compiler implements Translator {
     int childCount = node.getChildCount();
     QNm name = (QNm) node.getValue();
 
+    if (JSONFun.JSON_PREFIX.equals(name.getPrefix()) && JSONFun.JSON_NSURI.equals(name.getNamespaceURI())
+        && "null".equals(name.getLocalName())) {
+      return new Null();
+    }
+
     Function function = ctx.getFunctions().resolve(name, childCount);
     Expr[] args;
 
@@ -630,7 +588,7 @@ public class Compiler implements Translator {
         AST arg = node.getChild(i);
         if (arg.getType() == XQ.ArgumentPlaceHolder) {
           throw new QueryException(ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-              "Partial function application is not supported yet");
+                                   "Partial function application is not supported yet");
         }
         args[i] = expr(arg, true);
       }
@@ -645,11 +603,10 @@ public class Compiler implements Translator {
   }
 
   protected Expr documentExpr(AST node) throws QueryException {
-    boolean bind = false;
-    Binding binding = table.bind(Bits.FS_PARENT, SequenceType.ITEM);
-    Expr contentExpr = expr(node.getChild(0), false);
+    final Binding binding = table.bind(Bits.FS_PARENT, SequenceType.ITEM);
+    final Expr contentExpr = expr(node.getChild(0), false);
     table.unbind();
-    bind = binding.isReferenced();
+    final boolean bind = binding.isReferenced();
     return new DocumentExpr(contentExpr, bind);
   }
 
@@ -678,7 +635,7 @@ public class Compiler implements Translator {
 
     if (node.getChildCount() > 0) {
       Binding binding = table.bind(Bits.FS_PARENT, SequenceType.ITEM);
-      contentExpr = contentSequence(node.getChild(pos++));
+      contentExpr = contentSequence(node.getChild(pos));
       table.unbind();
       bind = binding.isReferenced();
     } else {
@@ -752,8 +709,8 @@ public class Compiler implements Translator {
       parent = parent.getParent();
     }
 
-    boolean parentIsConstructor = (parent.getType() == XQ.CompElementConstructor) || (parent.getType()
-        == XQ.CompDocumentConstructor);
+    boolean parentIsConstructor =
+        (parent.getType() == XQ.CompElementConstructor) || (parent.getType() == XQ.CompDocumentConstructor);
 
     if (parentIsConstructor) {
       table.resolve(Bits.FS_PARENT);
@@ -782,12 +739,12 @@ public class Compiler implements Translator {
     if (ifExpr.isUpdating()) {
       if ((!elseExpr.isUpdating()) && (!elseExpr.isVacuous())) {
         throw new QueryException(ErrorCode.ERR_UPDATE_ILLEGAL_NESTED_UPDATE,
-            "Single updating if branch is not allowed");
+                                 "Single updating if branch is not allowed");
       }
     } else if (elseExpr.isUpdating()) {
       if ((!ifExpr.isUpdating()) && (!ifExpr.isVacuous())) {
         throw new QueryException(ErrorCode.ERR_UPDATE_ILLEGAL_NESTED_UPDATE,
-            "Single updating else branch is not allowed");
+                                 "Single updating else branch is not allowed");
       }
     }
 
@@ -823,66 +780,41 @@ public class Compiler implements Translator {
     Expr firstArg = expr(node.getChild(1), true);
     Expr secondArg = expr(node.getChild(2), true);
     AST cmpNode = node.getChild(0);
-    switch (cmpNode.getType()) {
-      case XQ.ValueCompEQ:
-        return new VCmpExpr(Cmp.eq, firstArg, secondArg);
-      case XQ.ValueCompGE:
-        return new VCmpExpr(Cmp.ge, firstArg, secondArg);
-      case XQ.ValueCompLE:
-        return new VCmpExpr(Cmp.le, firstArg, secondArg);
-      case XQ.ValueCompLT:
-        return new VCmpExpr(Cmp.lt, firstArg, secondArg);
-      case XQ.ValueCompGT:
-        return new VCmpExpr(Cmp.gt, firstArg, secondArg);
-      case XQ.ValueCompNE:
-        return new VCmpExpr(Cmp.ne, firstArg, secondArg);
-      case XQ.GeneralCompEQ:
-        return new GCmpExpr(Cmp.eq, firstArg, secondArg);
-      case XQ.GeneralCompGE:
-        return new GCmpExpr(Cmp.ge, firstArg, secondArg);
-      case XQ.GeneralCompLE:
-        return new GCmpExpr(Cmp.le, firstArg, secondArg);
-      case XQ.GeneralCompLT:
-        return new GCmpExpr(Cmp.lt, firstArg, secondArg);
-      case XQ.GeneralCompGT:
-        return new GCmpExpr(Cmp.gt, firstArg, secondArg);
-      case XQ.GeneralCompNE:
-        return new GCmpExpr(Cmp.ne, firstArg, secondArg);
-      case XQ.NodeCompIs:
-        return new NodeCmpExpr(NodeCmp.Is, firstArg, secondArg);
-      case XQ.NodeCompFollows:
-        return new NodeCmpExpr(NodeCmp.Following, firstArg, secondArg);
-      case XQ.NodeCompPrecedes:
-        return new NodeCmpExpr(NodeCmp.Preceding, firstArg, secondArg);
-      default:
-        throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR, "Unexpected comparison: '%s'", cmpNode);
-    }
+    return switch (cmpNode.getType()) {
+      case XQ.ValueCompEQ -> new VCmpExpr(Cmp.eq, firstArg, secondArg);
+      case XQ.ValueCompGE -> new VCmpExpr(Cmp.ge, firstArg, secondArg);
+      case XQ.ValueCompLE -> new VCmpExpr(Cmp.le, firstArg, secondArg);
+      case XQ.ValueCompLT -> new VCmpExpr(Cmp.lt, firstArg, secondArg);
+      case XQ.ValueCompGT -> new VCmpExpr(Cmp.gt, firstArg, secondArg);
+      case XQ.ValueCompNE -> new VCmpExpr(Cmp.ne, firstArg, secondArg);
+      case XQ.GeneralCompEQ -> new GCmpExpr(Cmp.eq, firstArg, secondArg);
+      case XQ.GeneralCompGE -> new GCmpExpr(Cmp.ge, firstArg, secondArg);
+      case XQ.GeneralCompLE -> new GCmpExpr(Cmp.le, firstArg, secondArg);
+      case XQ.GeneralCompLT -> new GCmpExpr(Cmp.lt, firstArg, secondArg);
+      case XQ.GeneralCompGT -> new GCmpExpr(Cmp.gt, firstArg, secondArg);
+      case XQ.GeneralCompNE -> new GCmpExpr(Cmp.ne, firstArg, secondArg);
+      case XQ.NodeCompIs -> new NodeCmpExpr(NodeCmp.Is, firstArg, secondArg);
+      case XQ.NodeCompFollows -> new NodeCmpExpr(NodeCmp.Following, firstArg, secondArg);
+      case XQ.NodeCompPrecedes -> new NodeCmpExpr(NodeCmp.Preceding, firstArg, secondArg);
+      default -> throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+                                          "Unexpected comparison: '%s'",
+                                          cmpNode);
+    };
   }
 
   protected Expr arithmeticExpr(AST node) throws QueryException {
-    ArithmeticOp op = null;
-    switch (node.getChild(0).getType()) {
-      case XQ.AddOp:
-        op = ArithmeticOp.PLUS;
-        break;
-      case XQ.SubtractOp:
-        op = ArithmeticOp.MINUS;
-        break;
-      case XQ.MultiplyOp:
-        op = ArithmeticOp.MULT;
-        break;
-      case XQ.DivideOp:
-        op = ArithmeticOp.DIV;
-        break;
-      case XQ.IDivideOp:
-        op = ArithmeticOp.IDIV;
-        break;
-      case XQ.ModulusOp:
-        op = ArithmeticOp.MOD;
-    }
+    final ArithmeticOp op = switch (node.getChild(0).getType()) {
+      case XQ.AddOp -> ArithmeticOp.PLUS;
+      case XQ.SubtractOp -> ArithmeticOp.MINUS;
+      case XQ.MultiplyOp -> ArithmeticOp.MULT;
+      case XQ.DivideOp -> ArithmeticOp.DIV;
+      case XQ.IDivideOp -> ArithmeticOp.IDIV;
+      case XQ.ModulusOp -> ArithmeticOp.MOD;
+      default -> null;
+    };
 
-    Expr firstArg = expr(node.getChild(1), true);
-    Expr secondArg = expr(node.getChild(2), true);
+    final Expr firstArg = expr(node.getChild(1), true);
+    final Expr secondArg = expr(node.getChild(2), true);
     return new ArithmeticExpr(op, firstArg, secondArg);
   }
 
@@ -953,53 +885,32 @@ public class Compiler implements Translator {
   }
 
   protected Accessor axis(AST node) throws QueryException {
-    switch (node.getType()) {
-      case XQ.CHILD:
-        return Accessor.CHILD;
-      case XQ.DESCENDANT:
-        return Accessor.DESCENDANT;
-      case XQ.DESCENDANT_OR_SELF:
-        return Accessor.DESCENDANT_OR_SELF;
-      case XQ.ATTRIBUTE:
-        return Accessor.ATTRIBUTE;
-      case XQ.PARENT:
-        return Accessor.PARENT;
-      case XQ.ANCESTOR:
-        return Accessor.ANCESTOR;
-      case XQ.ANCESTOR_OR_SELF:
-        return Accessor.ANCESTOR_OR_SELF;
-      case XQ.FOLLOWING_SIBLING:
-        return Accessor.FOLLOWING_SIBLING;
-      case XQ.FOLLOWING:
-        return Accessor.FOLLOWING;
-      case XQ.PRECEDING:
-        return Accessor.PRECEDING;
-      case XQ.PRECEDING_SIBLING:
-        return Accessor.PRECEDING_SIBLING;
-      case XQ.SELF:
-        return Accessor.SELF;
-      case XQ.NEXT:
-        return Accessor.NEXT;
-      case XQ.PREVIOUS:
-        return Accessor.PREVIOUS;
-      case XQ.FUTURE:
-        return Accessor.FUTURE;
-      case XQ.FUTURE_OR_SELF:
-        return Accessor.FUTURE_OR_SELF;
-      case XQ.PAST:
-        return Accessor.PAST;
-      case XQ.PAST_OR_SELF:
-        return Accessor.PAST_OR_SELF;
-      case XQ.FIRST:
-        return Accessor.FIRST;
-      case XQ.LAST:
-        return Accessor.LAST;
-      case XQ.ALL_TIMES:
-        return Accessor.ALL_TIME;
-      default:
-        throw new QueryException(ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-            "Suport for document axis '%s' not implemented yet", node);
-    }
+    return switch (node.getType()) {
+      case XQ.CHILD -> Accessor.CHILD;
+      case XQ.DESCENDANT -> Accessor.DESCENDANT;
+      case XQ.DESCENDANT_OR_SELF -> Accessor.DESCENDANT_OR_SELF;
+      case XQ.ATTRIBUTE -> Accessor.ATTRIBUTE;
+      case XQ.PARENT -> Accessor.PARENT;
+      case XQ.ANCESTOR -> Accessor.ANCESTOR;
+      case XQ.ANCESTOR_OR_SELF -> Accessor.ANCESTOR_OR_SELF;
+      case XQ.FOLLOWING_SIBLING -> Accessor.FOLLOWING_SIBLING;
+      case XQ.FOLLOWING -> Accessor.FOLLOWING;
+      case XQ.PRECEDING -> Accessor.PRECEDING;
+      case XQ.PRECEDING_SIBLING -> Accessor.PRECEDING_SIBLING;
+      case XQ.SELF -> Accessor.SELF;
+      case XQ.NEXT -> Accessor.NEXT;
+      case XQ.PREVIOUS -> Accessor.PREVIOUS;
+      case XQ.FUTURE -> Accessor.FUTURE;
+      case XQ.FUTURE_OR_SELF -> Accessor.FUTURE_OR_SELF;
+      case XQ.PAST -> Accessor.PAST;
+      case XQ.PAST_OR_SELF -> Accessor.PAST_OR_SELF;
+      case XQ.FIRST -> Accessor.FIRST;
+      case XQ.LAST -> Accessor.LAST;
+      case XQ.ALL_TIMES -> Accessor.ALL_TIME;
+      default -> throw new QueryException(ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
+                                          "Suport for document axis '%s' not implemented yet",
+                                          node);
+    };
   }
 
   protected SequenceType sequenceType(AST node) throws QueryException {
@@ -1012,43 +923,28 @@ public class Compiler implements Translator {
     Cardinality cardinality = Cardinality.One;
 
     if (node.getChildCount() == 2) {
-      switch (node.getChild(1).getType()) {
-        case XQ.CardinalityOneOrMany:
-          cardinality = Cardinality.OneOrMany;
-          break;
-        case XQ.CardinalityZeroOrMany:
-          cardinality = Cardinality.ZeroOrMany;
-          break;
-        case XQ.CardinalityZeroOrOne:
-          cardinality = Cardinality.ZeroOrOne;
-          break;
-        default:
-          cardinality = Cardinality.One;
-      }
+      cardinality = switch (node.getChild(1).getType()) {
+        case XQ.CardinalityOneOrMany -> Cardinality.OneOrMany;
+        case XQ.CardinalityZeroOrMany -> Cardinality.ZeroOrMany;
+        case XQ.CardinalityZeroOrOne -> Cardinality.ZeroOrOne;
+        default -> Cardinality.One;
+      };
     }
 
     return new SequenceType(itemType, cardinality);
   }
 
   protected ItemType itemType(AST node) throws QueryException {
-    switch (node.getType()) {
-      case XQ.ItemType:
-        return AnyItemType.ANY;
-      case XQ.AtomicOrUnionType:
-        return atomicOrUnionType(node);
-      case XQ.StructuredItemTest:
-        return new AnyStructuredItemType();
-      case XQ.KindTestRecord:
-        return new RecordType();
-      case XQ.KindTestArray:
-        return new ArrayType();
-      case XQ.KindTestNull:
-        return new NullType();
-      case XQ.JsonItemTest:
-        return new AnyJsonItemType();
-      default:
-        return kindTest(node);
-    }
+    return switch (node.getType()) {
+      case XQ.ItemType -> AnyItemType.ANY;
+      case XQ.AtomicOrUnionType -> atomicOrUnionType(node);
+      case XQ.StructuredItemTest -> new AnyStructuredItemType();
+      case XQ.KindTestRecord -> new RecordType();
+      case XQ.KindTestArray -> new ArrayType();
+      case XQ.KindTestNull -> new NullType();
+      case XQ.JsonItemTest -> new AnyJsonItemType();
+      default -> kindTest(node);
+    };
   }
 
   protected ItemType atomicOrUnionType(AST node) throws QueryException {
@@ -1119,7 +1015,7 @@ public class Compiler implements Translator {
       return new AttributeType(qNameOrWildcard(child.getChild(0)));
     else
       return new AttributeType(qNameOrWildcard(child.getChild(0)),
-          resolveType((QNm) child.getChild(1).getValue(), false));
+                               resolveType((QNm) child.getChild(1).getValue(), false));
   }
 
   protected ElementType elementTest(AST child) throws QueryException {
@@ -1129,7 +1025,7 @@ public class Compiler implements Translator {
       return new ElementType(qNameOrWildcard(child.getChild(0)));
     else
       return new ElementType(qNameOrWildcard(child.getChild(0)),
-          resolveType((QNm) child.getChild(1).getValue(), false));
+                             resolveType((QNm) child.getChild(1).getValue(), false));
   }
 
   protected QNm qNameOrWildcard(AST name) throws QueryException {
@@ -1149,7 +1045,7 @@ public class Compiler implements Translator {
         return new NSWildcardNameTest((axis == Axis.ATTRIBUTE) ? Kind.ATTRIBUTE : Kind.ELEMENT, name.getStringValue());
       case XQ.NSNameWildcardTest:
         return new NSNameWildcardTest((axis == Axis.ATTRIBUTE) ? Kind.ATTRIBUTE : Kind.ELEMENT,
-            ctx.getNamespaces().resolve(name.getStringValue()));
+                                      ctx.getNamespaces().resolve(name.getStringValue()));
       default:
         if (axis != Axis.ATTRIBUTE) {
           return new ElementType((QNm) name.getValue());
@@ -1179,7 +1075,7 @@ public class Compiler implements Translator {
           for (int j = 0; j < i; j++) {
             if (!subExpr[j].isVacuous()) {
               throw new QueryException(ErrorCode.ERR_UPDATE_ILLEGAL_NESTED_UPDATE,
-                  "Illegal nested updating expression.");
+                                       "Illegal nested updating expression.");
             }
           }
         }
@@ -1194,11 +1090,11 @@ public class Compiler implements Translator {
   }
 
   protected Expr flowrExpr(AST node) throws QueryException {
-    int childCount = node.getChildCount();
-    ClauseBinding cb = flowrClause(new ClauseBinding(null, new Start()), node, 0, childCount - 2);
-    Expr returnExpr = expr(node.getChild(childCount - 1).getChild(0), false);
+    final int childCount = node.getChildCount();
+    final ClauseBinding cb = flowrClause(new ClauseBinding(null, new Start()), node, 0, childCount - 2);
+    final Expr returnExpr = expr(node.getChild(childCount - 1).getChild(0), false);
     cb.unbind();
-    Expr pipeExpr = new PipeExpr(cb.operator, returnExpr);
+    final Expr pipeExpr = new PipeExpr(cb.operator, returnExpr);
     return pipeExpr;
   }
 
@@ -1206,29 +1102,18 @@ public class Compiler implements Translator {
     ClauseBinding cb = in;
 
     while (pos <= maxPos) {
-      AST clause = node.getChild(pos++);
-      switch (clause.getType()) {
-        case XQ.ForClause:
-          cb = forClause(clause, cb);
-          break;
-        case XQ.LetClause:
-          cb = letClause(clause, cb);
-          break;
-        case XQ.WhereClause:
-          cb = whereClause(clause, cb);
-          break;
-        case XQ.OrderByClause:
-          cb = orderByClause(clause, cb);
-          break;
-        case XQ.CountClause:
-          cb = countClause(clause, cb);
-          break;
-        case XQ.GroupByClause:
-          cb = groupByClause(clause, cb);
-          break;
-        default:
-          throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR, "Unknown flowr clause type: %s", clause);
-      }
+      final AST clause = node.getChild(pos++);
+      cb = switch (clause.getType()) {
+        case XQ.ForClause -> forClause(clause, cb);
+        case XQ.LetClause -> letClause(clause, cb);
+        case XQ.WhereClause -> whereClause(clause, cb);
+        case XQ.OrderByClause -> orderByClause(clause, cb);
+        case XQ.CountClause -> countClause(clause, cb);
+        case XQ.GroupByClause -> groupByClause(clause, cb);
+        default -> throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+                                            "Unknown flowr clause type: %s",
+                                            clause);
+      };
     }
 
     return cb;
@@ -1293,7 +1178,7 @@ public class Compiler implements Translator {
     }
     int grpSpecCnt = pos;
     // collect additional aggregate bindings
-    List<AggregateBinding> bnds = new ArrayList<AggregateBinding>();
+    List<AggregateBinding> bnds = new ArrayList<>();
     while (node.getChild(pos).getType() == XQ.AggregateSpec) {
       AST aggSpec = node.getChild(pos);
       QNm var = (QNm) aggSpec.getChild(0).getValue();
@@ -1329,8 +1214,7 @@ public class Compiler implements Translator {
       table.resolve(bnd.srcVar, groupBy.aggregate(i));
     }
     // bind additional aggregates
-    for (int i = 0; i < bnds.size(); i++) {
-      AggregateBinding bnd = bnds.get(i);
+    for (final AggregateBinding bnd : bnds) {
       table.bind(bnd.aggVar, bnd.aggVarType);
       // fake binding
       table.resolve(bnd.aggVar);
@@ -1339,24 +1223,16 @@ public class Compiler implements Translator {
   }
 
   protected Aggregate aggregate(AST node) throws QueryException {
-    switch (node.getType()) {
-      case XQ.SequenceAgg:
-        return Aggregate.SEQUENCE;
-      case XQ.CountAgg:
-        return Aggregate.COUNT;
-      case XQ.SumAgg:
-        return Aggregate.SUM;
-      case XQ.AvgAgg:
-        return Aggregate.AVG;
-      case XQ.MinAgg:
-        return Aggregate.MIN;
-      case XQ.MaxAgg:
-        return Aggregate.MAX;
-      case XQ.SingleAgg:
-        return Aggregate.SINGLE;
-      default:
-        throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR, "Unknown aggregate type: %s", node);
-    }
+    return switch (node.getType()) {
+      case XQ.SequenceAgg -> Aggregate.SEQUENCE;
+      case XQ.CountAgg -> Aggregate.COUNT;
+      case XQ.SumAgg -> Aggregate.SUM;
+      case XQ.AvgAgg -> Aggregate.AVG;
+      case XQ.MinAgg -> Aggregate.MIN;
+      case XQ.MaxAgg -> Aggregate.MAX;
+      case XQ.SingleAgg -> Aggregate.SINGLE;
+      default -> throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR, "Unknown aggregate type: %s", node);
+    };
   }
 
   protected ClauseBinding whereClause(AST node, ClauseBinding in) throws QueryException {
@@ -1391,20 +1267,23 @@ public class Compiler implements Translator {
   protected ClauseBinding forClause(AST node, ClauseBinding in) throws QueryException {
     QNm posVarName = null;
     int forClausePos = 0;
-    AST forClause = node;
-    AST runVarDecl = forClause.getChild(forClausePos++);
-    QNm runVarName = (QNm) runVarDecl.getChild(0).getValue();
+    final AST forClause = node;
+    final AST runVarDecl = forClause.getChild(forClausePos++);
+    final QNm runVarName = (QNm) runVarDecl.getChild(0).getValue();
+
     SequenceType runVarType = SequenceType.ITEM_SEQUENCE;
+
     if (runVarDecl.getChildCount() == 2) {
       runVarType = sequenceType(runVarDecl.getChild(1));
     }
+
     AST posBindingOrSourceExpr = forClause.getChild(forClausePos++);
 
     if (posBindingOrSourceExpr.getType() == XQ.TypedVariableBinding) {
       posVarName = (QNm) posBindingOrSourceExpr.getChild(0).getValue();
       posBindingOrSourceExpr = forClause.getChild(forClausePos);
     }
-    Expr sourceExpr = expr(posBindingOrSourceExpr, true);
+    final Expr sourceExpr = expr(posBindingOrSourceExpr, true);
 
     final Binding runVarBinding = table.bind(runVarName, runVarType);
     final Binding posBinding = (posVarName != null) ? table.bind(posVarName, SequenceType.INTEGER) : null;
@@ -1470,8 +1349,8 @@ public class Compiler implements Translator {
   }
 
   protected Expr projectionExpr(AST node) throws QueryException {
-    Expr record = expr(node.getChild(0), true);
-    Expr[] fields = new Expr[node.getChildCount() - 1];
+    final Expr record = expr(node.getChild(0), true);
+    final Expr[] fields = new Expr[node.getChildCount() - 1];
     for (int i = 1; i < node.getChildCount(); i++) {
       fields[i - 1] = expr(node.getChild(i), true);
     }

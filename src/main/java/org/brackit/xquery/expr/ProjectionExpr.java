@@ -46,9 +46,11 @@ import org.brackit.xquery.xdm.json.Record;
  * @author Sebastian Baechle
  * 
  */
-public class ProjectionExpr implements Expr {
-	final Expr record;
-	final Expr[] fields;
+public final class ProjectionExpr implements Expr {
+
+	private final Expr record;
+
+	private final Expr[] fields;
 
 	public ProjectionExpr(Expr record, Expr[] fields) {
 		this.record = record;

@@ -43,15 +43,15 @@ import org.brackit.xquery.compiler.optimizer.walker.Walker;
  * @author Sebastian Baechle
  * 
  */
-public class TrivialLeftJoinRemoval extends Walker {
+public final class TrivialLeftJoinRemoval extends Walker {
 
 	private int checkVar;
 
 	private List<QNm> appendCheck(List<QNm> checks, QNm var) {
-		ArrayList<QNm> l = (checks == null) ? new ArrayList<QNm>()
-				: new ArrayList<QNm>(checks);
-		l.add(var);
-		return l;
+		final List<QNm> list = checks == null ? new ArrayList<>()
+				: new ArrayList<>(checks);
+		list.add(var);
+		return list;
 	}
 
 	private QNm createCheckVarName() {
@@ -60,7 +60,7 @@ public class TrivialLeftJoinRemoval extends Walker {
 
 	@Override
 	protected AST visit(AST join) {
-		if ((join.getType() != XQ.Join) || (!join.checkProperty("leftJoin"))) {
+		if (join.getType() != XQ.Join || !join.checkProperty("leftJoin")) {
 			return join;
 		}
 
@@ -122,6 +122,6 @@ public class TrivialLeftJoinRemoval extends Walker {
 	}
 
 	private boolean constTrueJoinKey(AST joinKey) {
-		return ((joinKey.getType() == XQ.Bool) && (((Bool) joinKey.getValue()).bool));
+		return joinKey.getType() == XQ.Bool && ((Bool) joinKey.getValue()).bool;
 	}
 }

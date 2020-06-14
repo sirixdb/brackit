@@ -87,17 +87,19 @@ public class Transform extends ConstructedNodeBuilder implements Expr {
     modifyExpr.evaluateToItem(ctx, tuple);
     // ensure that only copies are affected by the transformation
     for (final UpdateOp op : mods.list()) {
-      boolean ok = false;
-      for (Node<?> copy : nodeCoies) {
-        if (copy.isAncestorOrSelfOf(op.getTarget())) {
-          ok = true;
-          break;
+      if (op.getTarget() instanceof Node<?>) {
+        boolean ok = false;
+        for (Node<?> copy : nodeCoies) {
+          if (copy.isAncestorOrSelfOf((Node<?>) op.getTarget())) {
+            ok = true;
+            break;
+          }
         }
-      }
 
-      if (!ok) {
-        throw new QueryException(ErrorCode.ERR_TRANSFORM_MODIFIES_EXISTING_NODE,
-                                 "Modify clause update expressions may not affect existing nodes.");
+        if (!ok) {
+          throw new QueryException(ErrorCode.ERR_TRANSFORM_MODIFIES_EXISTING_NODE,
+                                   "Modify clause update expressions may not affect existing nodes.");
+        }
       }
     }
     // apply transformation

@@ -40,7 +40,7 @@ public class LeftJoinRemoval extends Walker {
 
 	@Override
 	protected AST visit(AST join) {
-		if ((join.getType() != XQ.Join) || (!join.checkProperty("leftJoin"))) {
+		if (join.getType() != XQ.Join || !join.checkProperty("leftJoin")) {
 			return join;
 		}
 
@@ -73,6 +73,6 @@ public class LeftJoinRemoval extends Walker {
 	}
 
 	private boolean constTrueJoinKey(AST joinKey) {
-		return ((joinKey.getType() == XQ.Bool) && (((Bool) joinKey.getValue()).bool));
+		return joinKey.getType() == XQ.Bool && ((Bool) joinKey.getValue()).bool;
 	}
 }

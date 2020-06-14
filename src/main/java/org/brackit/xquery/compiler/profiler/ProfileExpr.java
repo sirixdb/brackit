@@ -122,7 +122,7 @@ public class ProfileExpr extends ProfilingNode implements Expr {
 		@Override
 		public boolean booleanValue() throws QueryException {
 			evalBooleanValue++;
-			return (s != null) ? s.booleanValue() : false;
+			return s != null && s.booleanValue();
 		}
 
 		@Override

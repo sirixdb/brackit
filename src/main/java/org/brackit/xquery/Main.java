@@ -32,9 +32,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.util.io.URIHandler;
@@ -49,7 +52,7 @@ import org.brackit.xquery.xdm.node.NodeFactory;
 public class Main {
 
 	private static class Config {
-		HashMap<String, String> options = new HashMap<String, String>();
+		Map<String, String> options = new HashMap<>();
 
 		boolean isSet(String option) {
 			return options.containsKey(option);
@@ -76,7 +79,7 @@ public class Main {
 		}
 	}
 
-	private static List<Option> options = new ArrayList<Option>();
+	private static final List<Option> options = new ArrayList<>();
 
 	static {
 		options.add(new Option("-q",
@@ -93,16 +96,13 @@ public class Main {
 			String file = config.getValue("-f");
 			if (file != null) {
 				URI uri = new URI(file);
-				InputStream in = URIHandler.getInputStream(uri);
-				try {
+				try (InputStream in = URIHandler.getInputStream(uri)) {
 					SubtreeParser parser = new DocumentParser(in);
 					String name = uri.toURL().getFile();
 					NodeFactory<?> factory = ctx.getNodeFactory();
 					NodeCollection<?> coll = factory.collection(name, parser);
 					Node<?> doc = coll.getDocument();
 					ctx.setContextItem(doc);
-				} finally {
-					in.close();
 				}
 			}
 
@@ -152,11 +152,8 @@ public class Main {
 	}
 
 	private static String readFile(String file) throws IOException {
-		FileInputStream fin = new FileInputStream(file);
-		try {
+		try (FileInputStream fin = new FileInputStream(file)) {
 			return readString(fin);
-		} finally {
-			fin.close();
 		}
 	}
 
@@ -166,8 +163,7 @@ public class Main {
 		while ((r = in.read()) != -1) {
 			payload.write(r);
 		}
-		String string = payload.toString("UTF-8");
-		return string;
+		return payload.toString(StandardCharsets.UTF_8);
 	}
 
 	private static void printUsage() {

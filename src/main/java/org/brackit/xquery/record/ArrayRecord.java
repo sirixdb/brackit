@@ -33,43 +33,51 @@ import org.brackit.xquery.array.DArray;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Array;
+import org.brackit.xquery.xdm.json.Record;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Sebastian Baechle
- *
+ * @author Johannes Lichtenberger
  */
-public class ArrayRecord extends AbstractRecord {
-	private static final Sequence EMPTY = new ItemSequence();
+public final class ArrayRecord extends AbstractRecord {
 	// two arrays for key/value mapping
 	// if lookup costs dominate because the compiler cannot
 	// exploit positional access as alternative, we should
 	// switch to a more efficient (hash) map.
-	private final QNm[] fields;
-	private final Sequence[] vals;
+	private final List<QNm> fields;
+	private final List<Sequence> vals;
 
 	public ArrayRecord(QNm[] fields, Sequence[] values) {
-		this.fields = fields;
-		this.vals = values;
+		this.fields = Arrays.asList(fields);
+		this.vals = Arrays.asList(values);
 	}
 
 	@Override
-	public Sequence get(QNm field) throws QueryException {
-		for (int i = 0; i < fields.length; i++) {
-			if (fields[i].atomicCmp(field) == 0) {
-				return vals[i];
+	public Record insert(QNm field, Sequence value) {
+		fields.add(field);
+		vals.add(value);
+		return this;
+	}
+
+	@Override
+	public Sequence get(QNm field) {
+		for (int i = 0, size = fields.size(); i < size; i++) {
+			if (fields.get(i).atomicCmp(field) == 0) {
+				return vals.get(i);
 			}
 		}
 		return null;
 	}
 
 	@Override
-	public Sequence value(IntNumeric i) throws QueryException {
+	public Sequence value(IntNumeric i) {
 		try {
-			// TODO ensure that index is not out of int range
-			return (vals[i.intValue()]);
+			return vals.get(i.intValue());
 		} catch (ArrayIndexOutOfBoundsException e) {
 			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
 					"Invalid field index: %s", i);
@@ -77,9 +85,9 @@ public class ArrayRecord extends AbstractRecord {
 	}
 
 	@Override
-	public Sequence value(int i) throws QueryException {
+	public Sequence value(int i) {
 		try {
-			return (vals[i]);
+			return vals.get(i);
 		} catch (ArrayIndexOutOfBoundsException e) {
 			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
 					"Invalid field index: %s", i);
@@ -87,20 +95,19 @@ public class ArrayRecord extends AbstractRecord {
 	}
 
 	@Override
-	public Array names() throws QueryException {
+	public Array names() {
 		return new DArray(fields);
 	}
 
 	@Override
-	public Array values() throws QueryException {
+	public Array values() {
 		return new DArray(vals);
 	}
 
 	@Override
-	public QNm name(IntNumeric i) throws QueryException {
+	public QNm name(IntNumeric i) {
 		try {
-			// TODO ensure that index is not out of int range
-			return (fields[i.intValue()]);
+			return fields.get(i.intValue());
 		} catch (ArrayIndexOutOfBoundsException e) {
 			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
 					"Invalid field index: %s", i);
@@ -108,9 +115,9 @@ public class ArrayRecord extends AbstractRecord {
 	}
 
 	@Override
-	public QNm name(int i) throws QueryException {
+	public QNm name(int i) {
 		try {
-			return (fields[i]);
+			return fields.get(i);
 		} catch (ArrayIndexOutOfBoundsException e) {
 			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
 					"Invalid field index: %s", i);
@@ -118,13 +125,13 @@ public class ArrayRecord extends AbstractRecord {
 	}
 
 	@Override
-	public IntNumeric length() throws QueryException {
-		int l = vals.length;
-		return (l <= 20) ? Int32.ZERO_TWO_TWENTY[l] : new Int32(l);
+	public IntNumeric length() {
+		int length = vals.size();
+		return (length <= 20) ? Int32.ZERO_TWO_TWENTY[length] : new Int32(length);
 	}
 
 	@Override
-	public int len() throws QueryException {
-		return vals.length;
+	public int len() {
+		return vals.size();
 	}
 }

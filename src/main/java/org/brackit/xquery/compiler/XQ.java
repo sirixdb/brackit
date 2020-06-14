@@ -275,7 +275,7 @@ public final class XQ {
 	public static final int RenameExpr = 228;
 	public static final int TransformExpr = 229;
 	public static final int CopyVariableBinding = 230;
-	// Begin XQuery Update Facility 1.0
+	// End XQuery Update Facility 1.0
 	// Begin brackit's set-oriented extensions
 	public static final int PipeExpr = 231;
 	public static final int Selection = 232;
@@ -319,6 +319,9 @@ public final class XQ {
 	public static final int StructuredItemTest = 263;
 	public static final int KindTestNull = 264;
 	public static final int Null = 265;
+	// Begin JSONiq update expressions
+	public static final int InsertJsonExpr = 266;
+	// End JSONiq update expressions
 
 	public static final String NAMES[] = new String[] { "XQuery",
 			"LibraryModule", "MainModule", "Prolog", "NamespaceDeclaration",
@@ -433,12 +436,15 @@ public final class XQ {
 			"StructuredItemTest",
 			"KindTestNull",
 			"Null",
+			// Begin JSONiq update expressions
+			"InsertJsonExpr",
+			// End JSONiq update expressions
 	};
 
 	private XQ() {
 	}
 
-	private static int base = 266;
+	private static int base = 267;
 
 	public static synchronized int allocate(int noOfTokens) {
 		int r = base;

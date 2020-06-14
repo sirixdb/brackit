@@ -49,55 +49,55 @@ import org.brackit.xquery.atomic.QNm;
  */
 public interface StaticContext {
 
-	public static final String UNICODE_COLLATION = "http://www.w3.org/2005/xpath-functions/collation/codepoint";
+	String UNICODE_COLLATION = "http://www.w3.org/2005/xpath-functions/collation/codepoint";
 
 	/**
 	 * Returns the mapping of statically known namespaces (mapping of prefixes
 	 * to namespace URIs), the default element namespace and the default
 	 * function namespace.
 	 */
-	public Namespaces getNamespaces();
+	Namespaces getNamespaces();
 
-	public Functions getFunctions();
+	Functions getFunctions();
 
-	public Types getTypes();
+	Types getTypes();
 
-	public void setBoundarySpaceStrip(boolean strip);
+	void setBoundarySpaceStrip(boolean strip);
 
-	public boolean isBoundarySpaceStrip();
+	boolean isBoundarySpaceStrip();
 
-	public String getDefaultCollation();
+	String getDefaultCollation();
 
-	public void setDefaultCollation(String collation);
+	void setDefaultCollation(String collation);
 
-	public AnyURI getBaseURI();
+	AnyURI getBaseURI();
 
-	public void setBaseURI(AnyURI uri);
+	void setBaseURI(AnyURI uri);
 
-	public void setConstructionModeStrip(boolean strip);
+	void setConstructionModeStrip(boolean strip);
 
-	public boolean isConstructionModeStrip();
+	boolean isConstructionModeStrip();
 
-	public void setOrderingModeOrdered(boolean ordered);
+	void setOrderingModeOrdered(boolean ordered);
 
-	public boolean isOrderingModeOrdered();
+	boolean isOrderingModeOrdered();
 
-	public void setEmptyOrderGreatest(boolean greatest);
+	void setEmptyOrderGreatest(boolean greatest);
 
-	public boolean isEmptyOrderGreatest();
+	boolean isEmptyOrderGreatest();
 
-	public boolean isCopyNSPreserve();
+	boolean isCopyNSPreserve();
 
-	public void setCopyNSPreserve(boolean copyNSPreserve);
+	void setCopyNSPreserve(boolean copyNSPreserve);
 
-	public boolean isCopyNSInherit();
+	boolean isCopyNSInherit();
 
-	public void setCopyNSInherit(boolean copyNSInherit);
+	void setCopyNSInherit(boolean copyNSInherit);
 
-	public void setDefaultDecimalFormat(DecimalFormat df);
+	void setDefaultDecimalFormat(DecimalFormat df);
 
-	public void setDecimalFormat(QNm name, DecimalFormat df);
+	void setDecimalFormat(QNm name, DecimalFormat df);
 
-	public DecimalFormat getDecimalFormat(QNm name);
+	DecimalFormat getDecimalFormat(QNm name);
 
 }

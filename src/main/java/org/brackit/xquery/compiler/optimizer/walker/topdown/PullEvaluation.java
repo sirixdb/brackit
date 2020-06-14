@@ -47,10 +47,10 @@ public class PullEvaluation extends Walker {
 	private int checkVar;
 
 	private List<QNm> appendCheck(List<QNm> checks, QNm var) {
-		ArrayList<QNm> l = (checks == null) ? new ArrayList<>()
+		final List<QNm> list = (checks == null) ? new ArrayList<>()
 				: new ArrayList<>(checks);
-		l.add(var);
-		return l;
+		list.add(var);
+		return list;
 	}
 
 	private QNm createCheckVarName() {

@@ -51,7 +51,7 @@ public abstract class AbstractInsertOp implements UpdateOp {
 	}
 
 	@Override
-	public void apply() throws QueryException {
+	public void apply() {
 		for (int i = 0; i < size; i++) {
 			doInsert(target, content[i]);
 		}

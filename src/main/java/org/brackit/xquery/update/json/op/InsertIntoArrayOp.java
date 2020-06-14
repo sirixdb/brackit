@@ -1,0 +1,37 @@
+package org.brackit.xquery.update.json.op;
+
+import org.brackit.xquery.update.op.OpType;
+import org.brackit.xquery.update.op.UpdateOp;
+import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.StructuredItem;
+import org.brackit.xquery.xdm.json.Array;
+
+public final class InsertIntoArrayOp implements UpdateOp {
+
+  private final Array target;
+
+  private final Sequence source;
+
+  private final int position;
+
+  public InsertIntoArrayOp(final Array target, final Sequence source, final int position) {
+    this.target = target;
+    this.source = source;
+    this.position = position;
+  }
+
+  @Override
+  public StructuredItem getTarget() {
+    return target;
+  }
+
+  @Override
+  public void apply() {
+    target.insertAt(position, source);
+  }
+
+  @Override
+  public OpType getType() {
+    return OpType.INSERT_INTO;
+  }
+}

@@ -46,10 +46,9 @@ public class PredicateSplit extends Walker {
 		if (node.getType() != XQ.Selection) {
 			return node;
 		}
-		AST select = node;
-		AST output = select.getChild(1);
+		AST output = node.getChild(1);
 		while (true) {			
-			AST predicate = select.getChild(0);
+			AST predicate = node.getChild(0);
 
 			if (predicate.getType() != XQ.AndExpr) {
 				break;
@@ -62,8 +61,8 @@ public class PredicateSplit extends Walker {
 			newSelect.addChild(andRight);
 			newSelect.addChild(output);
 
-			select.replaceChild(0, andLeft);
-			select.replaceChild(1, newSelect);
+			node.replaceChild(0, andLeft);
+			node.replaceChild(1, newSelect);
 
 			output = newSelect;
 			snapshot();

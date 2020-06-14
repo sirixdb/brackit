@@ -25,87 +25,98 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.expr;
+package org.brackit.xquery.update.json;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.array.DArray;
-import org.brackit.xquery.atomic.IntNumeric;
-import org.brackit.xquery.sequence.ItemSequence;
+import org.brackit.xquery.update.json.op.InsertIntoArrayOp;
+import org.brackit.xquery.util.serialize.StringSerializer;
 import org.brackit.xquery.xdm.*;
 import org.brackit.xquery.xdm.json.Array;
-import org.magicwerk.brownies.collections.GapList;
+import org.brackit.xquery.xdm.json.Record;
+import org.brackit.xquery.xdm.node.Node;
 
 /**
  * @author Sebastian Baechle
- * @author Johannes Lichtenberger
  */
-public final class ArrayAccessExpr implements Expr {
-  private final Expr expr;
-  private final Expr index;
+public final class InsertJson implements Expr {
+  private final Expr sourceExpr;
 
-  public ArrayAccessExpr(Expr expr, Expr index) {
-    this.expr = expr;
-    this.index = index;
+  private final Expr targetExpr;
+
+  private final int position;
+
+  public InsertJson(Expr sourceExpr, Expr targetExpr, int position) {
+    this.sourceExpr = sourceExpr;
+    this.targetExpr = targetExpr;
+    this.position = position;
   }
 
   @Override
   public Sequence evaluate(QueryContext ctx, Tuple tuple) {
-    final Item array = expr.evaluateToItem(ctx, tuple);
-    if (array == null) {
-      return null;
-    }
-    if (!(array instanceof Array)) {
-      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                               "Illegal operand type '%s' where '%s' is expected",
-                               array.itemType(),
-                               Type.INR);
-    }
-    final Item i = index.evaluateToItem(ctx, tuple);
-    if (i == null) {
-      final var it = array.iterate();
-
-      final var buffer = new GapList<Item>(((Array) array).len());
-      Item item;
-      while ((item = it.next()) != null) {
-        buffer.add(item);
-      }
-      return new ItemSequence(buffer.toArray(new Item[0]));
-    }
-    if (!(i instanceof IntNumeric)) {
-      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                               "Illegal operand type '%s' where '%s' is expected",
-                               i.itemType(),
-                               Type.INR);
-    }
-    return ((Array) array).at((IntNumeric) i);
+    return evaluateToItem(ctx, tuple);
   }
 
   @Override
   public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
-    final var res = evaluate(ctx, tuple);
-    if (res == null || res instanceof Item) {
-      return (Item) res;
-    }
-    final var values = new GapList<Sequence>();
-    try (Iter it = res.iterate()) {
-      Item item;
-      while ((item = it.next()) != null) {
-        values.add(item);
-      }
-    }
-    return new DArray(values);
+    insertInto(ctx, tuple);
+    return null;
   }
 
   @Override
   public boolean isUpdating() {
-    return expr.isUpdating() || index.isUpdating();
+    return true;
   }
 
   @Override
   public boolean isVacuous() {
     return false;
+  }
+
+  private void insertInto(QueryContext ctx, Tuple tuple) {
+    final Sequence target = targetExpr.evaluate(ctx, tuple);
+    Item targetItem;
+
+    if (target == null) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
+    } else if (target instanceof Item) {
+      targetItem = (Item) target;
+    } else {
+      try (Iter it = target.iterate()) {
+        targetItem = it.next();
+
+        if (targetItem == null) {
+          throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
+        }
+        if (it.next() != null) {
+          throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_NOT_A_SINGLE_ED_NODE);
+        }
+      }
+    }
+
+    final Sequence source = sourceExpr.evaluate(ctx, tuple);
+
+    if (position == -1) {
+      // record
+      if (!(targetItem instanceof Record)) {
+        throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_NOT_A_SINGLE_ED_NODE,
+                                 "Target item is atomic value %s",
+                                 targetItem);
+      }
+
+      // TODO
+    } else {
+      // array
+      if (!(targetItem instanceof Array)) {
+        throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_NOT_A_SINGLE_ED_NODE,
+                                 "Target item is atomic value %s",
+                                 targetItem);
+      }
+
+      ctx.addPendingUpdate(new InsertIntoArrayOp((Array) targetItem, source, position));
+      // TODO
+    }
   }
 }

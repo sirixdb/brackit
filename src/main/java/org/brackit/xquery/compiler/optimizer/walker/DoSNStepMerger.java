@@ -57,7 +57,6 @@ public class DoSNStepMerger extends Walker {
 					newStep.addChild(nextStep.getChild(1).copyTree());
 					node.replaceChild(i, newStep);
 					node.deleteChild(i + 1);
-					child = newStep;
 
 					snapshot();
 				}

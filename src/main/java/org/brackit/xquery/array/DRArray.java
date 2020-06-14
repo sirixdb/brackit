@@ -42,21 +42,37 @@ import static java.util.Objects.checkFromToIndex;
  * @author Sebastian Baechle
  *
  */
-public class DRArray extends AbstractArray {
-  private final Sequence[] vals;
+public final class DRArray extends AbstractArray {
+  private final List<Sequence> vals;
   private final int start;
   private final int end;
 
-  public DRArray(Sequence[] vals, int start, int end) {
-    if ((start < 0) || (start > end) || (start >= vals.length)) {
+  public DRArray(List<Sequence> vals, int start, int end) {
+    if (start < 0 || start > end || start >= vals.size()) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array start index: %s", start);
     }
-    if ((end < 0) || (end > vals.length)) {
+    if (end > vals.size()) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array end index: %s", end);
     }
     this.vals = vals;
     this.start = start;
     this.end = end;
+  }
+
+  @Override
+  public Array insertAt(int index, Sequence value) {
+    if (start + index < 0 || start + index > vals.size() - 1) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
+    }
+
+    vals.add(start + index, value);
+
+    return this;
+  }
+
+  @Override
+  public Array insertAt(IntNumeric index, Sequence value) {
+    return insertAt(index.intValue(), value);
   }
 
   @Override
@@ -77,7 +93,7 @@ public class DRArray extends AbstractArray {
       if (ii >= end) {
         throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
       }
-      return (vals[ii]);
+      return vals.get(ii);
     } catch (ArrayIndexOutOfBoundsException e) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
     }
@@ -90,7 +106,7 @@ public class DRArray extends AbstractArray {
       if (ii >= end) {
         throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
       }
-      return (vals[ii]);
+      return vals.get(ii);
     } catch (ArrayIndexOutOfBoundsException e) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
     }
@@ -98,10 +114,10 @@ public class DRArray extends AbstractArray {
 
   @Override
   public IntNumeric length() throws QueryException {
-    int l = end - start;
-    return (l <= 20)
-        ? Int32.ZERO_TWO_TWENTY[l]
-        : new Int32(l);
+    int length = end - start;
+    return (length <= 20)
+        ? Int32.ZERO_TWO_TWENTY[length]
+        : new Int32(length);
   }
 
   @Override
@@ -112,7 +128,7 @@ public class DRArray extends AbstractArray {
   @Override
   public Array range(IntNumeric from, IntNumeric to) throws QueryException {
     try {
-      checkFromToIndex(from.intValue(), to.intValue(), vals.length);
+      checkFromToIndex(from.intValue(), to.intValue(), vals.size());
     } catch (final IndexOutOfBoundsException e) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array indexes: %s", e.getMessage());
     }

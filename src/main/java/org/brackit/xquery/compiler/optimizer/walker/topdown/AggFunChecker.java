@@ -36,7 +36,6 @@ import org.brackit.xquery.compiler.XQ;
 
 /**
  * @author Sebastian Baechle
- *
  */
 public abstract class AggFunChecker extends ScopeWalker {
 
@@ -58,22 +57,14 @@ public abstract class AggFunChecker extends ScopeWalker {
 	}
 
 	protected int aggFunType(int type) {
-		switch (type) {
-		case XQ.CountAgg:
-			return 0;
-		case XQ.SumAgg:
-			return 1;
-		case XQ.AvgAgg:
-			return 2;
-		case XQ.MinAgg:
-			return 3;
-		case XQ.MaxAgg:
-			return 4;
-		case XQ.SequenceAgg:
-		default:
-			throw new RuntimeException("Unexpected aggregate function type: "
-					+ type);
-		}
+		return switch (type) {
+			case XQ.CountAgg -> 0;
+			case XQ.SumAgg -> 1;
+			case XQ.AvgAgg -> 2;
+			case XQ.MinAgg -> 3;
+			case XQ.MaxAgg -> 4;
+			default -> throw new RuntimeException("Unexpected aggregate function type: " + type);
+		};
 	}
 
 }

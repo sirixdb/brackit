@@ -27,11 +27,6 @@
  */
 package org.brackit.xquery.compiler.optimizer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
@@ -41,6 +36,10 @@ import org.brackit.xquery.compiler.optimizer.walker.OrderForGroupBy;
 import org.brackit.xquery.compiler.optimizer.walker.PathDDOElimination;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.Cfg;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Sebastian Baechle
@@ -97,7 +96,7 @@ public class DefaultOptimizer implements Optimizer {
 		}
 	}
 
-	protected class Finalize implements Stage {
+	protected static class Finalize implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) {
 			ast = new PathDDOElimination(sctx).walk(ast);
 			return ast;
@@ -105,7 +104,7 @@ public class DefaultOptimizer implements Optimizer {
 	}
 
 	protected boolean enabled(QNm option) {
-		Str opt = options.get(option);
-		return ((opt != null) && Boolean.parseBoolean(opt.stringValue()));
+		final Str opt = options.get(option);
+		return opt != null && Boolean.parseBoolean(opt.stringValue());
 	}
 }

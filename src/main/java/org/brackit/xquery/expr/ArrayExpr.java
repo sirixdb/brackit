@@ -27,26 +27,26 @@
  */
 package org.brackit.xquery.expr;
 
-import java.util.Arrays;
-
 import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.XQuery;
-import org.brackit.xquery.array.DRArray;
+import org.brackit.xquery.array.DArray;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
+import org.magicwerk.brownies.collections.GapList;
 
 /**
  * @author Sebastian Baechle
+ * @author Johannes Lichtenberger
  */
-public class ArrayExpr implements Expr {
+public final class ArrayExpr implements Expr {
 
-  final Expr[] expr;
-  final boolean[] flatten;
+  private final Expr[] expr;
+
+  private final boolean[] flatten;
 
   public ArrayExpr(Expr[] expr, boolean[] flatten) {
     this.expr = expr;
@@ -60,8 +60,7 @@ public class ArrayExpr implements Expr {
 
   @Override
   public Item evaluateToItem(QueryContext ctx, Tuple t) {
-    Sequence[] vals = new Sequence[10];
-    int pos = 0;
+    final var vals = new GapList<Sequence>();
     for (int i = 0; i < expr.length; i++) {
       final Sequence res = expr[i].evaluate(ctx, t);
       if (res == null) {
@@ -69,23 +68,17 @@ public class ArrayExpr implements Expr {
       }
 
       if (!(res instanceof SequenceExpr.EvalSequence) && !flatten[i] || res instanceof Item) {
-        if (pos == vals.length) {
-          vals = Arrays.copyOfRange(vals, 0, ((vals.length * 3) / 2) + 1);
-        }
-        vals[pos++] = res;
+        vals.add(res);
       } else {
         try (final Iter it = res.iterate()) {
           Item item;
           while ((item = it.next()) != null) {
-            if (pos == vals.length) {
-              vals = Arrays.copyOfRange(vals, 0, ((vals.length * 3) / 2) + 1);
-            }
-            vals[pos++] = item;
+            vals.add(item);
           }
         }
       }
     }
-    return new DRArray(vals, 0, pos);
+    return new DArray(vals);
   }
 
   @Override

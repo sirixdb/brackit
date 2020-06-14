@@ -35,7 +35,7 @@ import org.brackit.xquery.compiler.optimizer.walker.Walker;
  * @author Sebastian Baechle
  * 
  */
-public class TopDownPipeline extends Walker {
+public final class TopDownPipeline extends Walker {
 	@Override
 	protected AST visit(AST node) {
 		if (node.getType() != XQ.FlowrExpr) {

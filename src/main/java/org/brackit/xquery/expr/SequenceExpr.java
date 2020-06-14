@@ -28,19 +28,19 @@
 package org.brackit.xquery.expr;
 
 import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.array.DArray;
 import org.brackit.xquery.sequence.FlatteningSequence;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
+import org.magicwerk.brownies.collections.GapList;
 
 /**
  * @author Sebastian Baechle
  * @author Johannes Lichtenberger
  */
-public class SequenceExpr implements Expr {
+public final class SequenceExpr implements Expr {
 
   public final class EvalSequence extends FlatteningSequence {
     final Tuple tuple;
@@ -100,10 +100,10 @@ public class SequenceExpr implements Expr {
         return res;
       }
 
-      final var sequence = new Sequence[expr.length];
+      final var sequence = new GapList<Sequence>(expr.length);
 
-      for (int j = 0, length = expr.length; j < length; j++) {
-        sequence[j] = expr[j].evaluateToItem(ctx, tuple);
+      for (final Expr value : expr) {
+        sequence.add(value.evaluateToItem(ctx, tuple));
       }
 
       return new DArray(sequence);

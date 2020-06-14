@@ -37,5 +37,5 @@ public interface Reference {
 	 * position in a tuple.
 	 * @param pos
 	 */
-	public void setPos(int pos);
+	void setPos(int pos);
 }

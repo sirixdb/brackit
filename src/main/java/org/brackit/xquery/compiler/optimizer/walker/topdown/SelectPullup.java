@@ -33,6 +33,7 @@ import static org.brackit.xquery.compiler.XQ.Selection;
 import static org.brackit.xquery.compiler.XQ.Start;
 
 import java.util.HashSet;
+import java.util.Set;
 
 import org.brackit.xquery.compiler.AST;
 
@@ -43,12 +44,12 @@ import org.brackit.xquery.compiler.AST;
  * @author Sebastian Baechle
  * 
  */
-public class SelectPullup extends ScopeWalker {
+public final class SelectPullup extends ScopeWalker {
 
 	// used to avoid repeated pull of several selects
-	// NOTE: This relies on the fact the we do not
+	// NOTE: This relies on the fact, that we do not
 	// copy nodes while reorganizing the AST
-	private HashSet<AST> moved = new HashSet<AST>();
+	private final Set<AST> moved = new HashSet<>();
 
 	@Override
 	protected AST visit(AST node) {

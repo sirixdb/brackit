@@ -148,7 +148,7 @@ public class TopDownTranslator extends Compiler {
 		}
 		int grpSpecCnt = pos;
 		// collect additional aggregate bindings
-		List<AggregateBinding> bnds = new ArrayList<AggregateBinding>();
+		List<AggregateBinding> bnds = new ArrayList<>();
 		while (node.getChild(pos).getType() == XQ.AggregateSpec) {
 			AST aggSpec = node.getChild(pos);
 			QNm var = (QNm) aggSpec.getChild(0).getValue();
@@ -184,8 +184,7 @@ public class TopDownTranslator extends Compiler {
 			table.resolve(bnd.srcVar, groupBy.aggregate(i));
 		}
 		// bind additional aggregates
-		for (int i = 0; i < bnds.size(); i++) {
-			AggregateBinding bnd = bnds.get(i);
+		for (AggregateBinding bnd : bnds) {
 			table.bind(bnd.aggVar, bnd.aggVarType);
 			// fake binding
 			table.resolve(bnd.aggVar);
@@ -289,7 +288,7 @@ public class TopDownTranslator extends Compiler {
 		Expr sourceExpr = expr(posBindingOrSourceExpr, true);
 
 		Binding posBinding = null;
-		Binding runVarBinding = table.bind(runVarName, runVarType);
+		table.bind(runVarName, runVarType);
 		// Fake binding of run variable because set-oriented processing requires
 		// the variable anyway
 		table.resolve(runVarName);
@@ -318,7 +317,7 @@ public class TopDownTranslator extends Compiler {
 			letVarType = sequenceType(letVarDecl.getChild(1));
 		}
 		Expr sourceExpr = expr(node.getChild(pos++), true);
-		Binding binding = table.bind(letVarName, letVarType);
+		table.bind(letVarName, letVarType);
 
 		// Fake binding of let variable because set-oriented processing requires
 		// the variable anyway

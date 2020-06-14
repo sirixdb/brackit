@@ -28,6 +28,7 @@
 package org.brackit.xquery.xdm.json;
 
 import java.util.List;
+
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.xdm.Sequence;
@@ -50,9 +51,27 @@ import org.brackit.xquery.xdm.Sequence;
  * </p>
  *
  * @author Sebastian Baechle
- *
  */
 public interface Array extends ListOrUnion {
+
+  /**
+   * Insert a sequence at the {@code index} position in the array.
+   *
+   * @param index the index position, where to insert the new value
+   * @param value the new value
+   * @return this array instance
+   */
+  Array insertAt(IntNumeric index, Sequence value);
+
+  /**
+   * Insert a sequence at the {@code index} position in the array.
+   *
+   * @param index the index position, where to insert the new value
+   * @param value the new value
+   * @return this array instance
+   */
+  Array insertAt(int index, Sequence value);
+
   /**
    * Returns the values.
    *

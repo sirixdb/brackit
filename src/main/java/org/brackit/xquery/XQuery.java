@@ -29,6 +29,7 @@ package org.brackit.xquery;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
+
 import org.brackit.xquery.compiler.CompileChain;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.operator.TupleImpl;
@@ -41,9 +42,7 @@ import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class XQuery {
   public static final String DEBUG_CFG = "org.brackit.xquery.debug";
@@ -86,14 +85,11 @@ public class XQuery {
     Sequence result = body.evaluate(ctx, new TupleImpl());
 
     if (!lazy || body.isUpdating()) {
-      // iterate possibly lazy result sequence to "pull-in" all pending
-      // updates
-      if ((result != null) && (!(result instanceof Item))) {
-        Iter it = result.iterate();
-        try {
-          while (it.next() != null);
-        } finally {
-          it.close();
+      // iterate possibly lazy result sequence to "pull-in" all pending updates
+      if (result != null && !(result instanceof Item)) {
+        try (Iter it = result.iterate()) {
+          while (it.next() != null) {
+          }
         }
       }
       ctx.applyUpdates();
@@ -122,10 +118,8 @@ public class XQuery {
     if (result == null) {
       return;
     }
-    try {
+    try (serializer) {
       serializer.serialize(result);
-    } finally {
-      serializer.close();
     }
   }
 

@@ -34,6 +34,7 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.record.ArrayRecord;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Sequence;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -43,6 +44,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -52,6 +54,15 @@ import static org.junit.Assert.assertEquals;
 public final class JsonTest extends XQueryBaseTest {
 
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
+
+  @Test
+  public void insertIntoArray() throws IOException {
+    final String query =
+        """
+          insert json (1, 2, 3) into [\"foo\", true(), jn:null()] at position 2
+        """;
+    final var result = query(query);
+  }
 
   @Test
   public void testDerefExpr1() throws IOException {
@@ -235,7 +246,7 @@ public final class JsonTest extends XQueryBaseTest {
     final var resultSequence = new XQuery(query).execute(ctx);
     ResultChecker.check(new ItemSequence(new ArrayRecord(new QNm[] { new QNm("foo"), new QNm("bar") },
                                                          new Sequence[] { new Null(),
-                                                             new DArray(new Int32(1), new Int32(2)) })),
+                                                             new DArray(List.of(new Int32(1), new Int32(2))) })),
                         resultSequence);
   }
 

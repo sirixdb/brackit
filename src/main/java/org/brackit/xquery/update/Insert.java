@@ -51,7 +51,7 @@ import org.brackit.xquery.xdm.node.Node;
 /**
  * @author Sebastian Baechle
  */
-public class Insert extends ConstructedNodeBuilder implements Expr {
+public final class Insert extends ConstructedNodeBuilder implements Expr {
   public enum InsertType {
     FIRST, LAST, INTO, BEFORE, AFTER
   }

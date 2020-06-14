@@ -39,6 +39,8 @@ import java.util.Map;
  */
 public interface Record extends JsonItem {
 
+  Record insert(QNm field, Sequence value);
+
   Sequence get(QNm field);
 
   Sequence value(IntNumeric index);

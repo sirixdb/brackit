@@ -27,8 +27,6 @@
  */
 package org.brackit.xquery.compiler.optimizer.walker.topdown;
 
-import java.util.Map;
-
 import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
@@ -40,14 +38,14 @@ import org.brackit.xquery.compiler.CompileChain;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.compiler.optimizer.DefaultOptimizer;
 import org.brackit.xquery.compiler.optimizer.Optimizer;
-import org.brackit.xquery.compiler.optimizer.Stage;
 import org.brackit.xquery.compiler.optimizer.TopDownOptimizer;
-import org.brackit.xquery.module.StaticContext;
+
+import java.util.Map;
 
 /**
  * @author Sebastian Baechle
  */
-public class GroupByAggregates extends AggFunChecker {
+public final class GroupByAggregates extends AggFunChecker {
 
   @Override
   protected AST visit(AST node) {
@@ -132,9 +130,7 @@ public class GroupByAggregates extends AggFunChecker {
    */
   private void introduceAggBindings(AST aggSpec, Var var, VarRef refs) {
     QNm seqAggVar = null;
-    boolean seqAggVarInUse = false;
     QNm[] aggFunVars = new QNm[aggFuns.length];
-    boolean[] funVarInUse = new boolean[aggFuns.length];
 
     // collect all pre-existing aggregate bindings for re-use
     for (int i = 1; i < aggSpec.getChildCount(); i++) {
@@ -169,7 +165,6 @@ public class GroupByAggregates extends AggFunChecker {
             // sequence aggregate binding
             replaceRef(p, aggFunVars[i]);
             isAggFun = true;
-            funVarInUse[i] = true;
             break;
           }
         }
@@ -183,7 +178,6 @@ public class GroupByAggregates extends AggFunChecker {
         }
         // change variable ref directly to sequence aggregate binding
         replaceRef(ref.ref, seqAggVar);
-        seqAggVarInUse = true;
       }
     }
 

@@ -71,14 +71,14 @@ public class TopDownOptimizer extends DefaultOptimizer {
 		stages.add(new Finalize());
 	}
 
-	private class Pipelining implements Stage {
+	private static class Pipelining implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new TopDownPipeline().walk(ast);
 			return ast;
 		}
 	}
 
-	private class Reordering implements Stage {
+	private static class Reordering implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new PredicateSplit().walk(ast);
 			ast = new SelectPullup().walk(ast);
@@ -86,14 +86,14 @@ public class TopDownOptimizer extends DefaultOptimizer {
 		}
 	}
 
-	private class JoinRecognition implements Stage {
+	private static class JoinRecognition implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new JoinRewriter(sctx).walk(ast);
 			return ast;
 		}
 	}
 
-	private class Unnest implements Stage {
+	private static class Unnest implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new LetBindToLeftJoin().walk(ast);
 			ast = new LeftJoinLifting().walk(ast);
@@ -104,7 +104,7 @@ public class TopDownOptimizer extends DefaultOptimizer {
 		}
 	}
 
-	private class FinalizePipeline implements Stage {
+	private static class FinalizePipeline implements Stage {
 		public AST rewrite(StaticContext sctx, AST ast) throws QueryException {
 			ast = new PredicateMerge().walk(ast);
 			ast = new TrivialLeftJoinRemoval().walk(ast);

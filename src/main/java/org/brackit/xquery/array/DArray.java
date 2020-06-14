@@ -33,61 +33,54 @@ import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Array;
+import org.magicwerk.brownies.collections.GapList;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
-import static java.util.Objects.*;
+import static java.util.Objects.checkFromToIndex;
 
 /**
  * @author Sebastian Baechle
- *
+ * @author Johannes Lichtenberger
  */
-public class DArray extends AbstractArray {
+public final class DArray extends AbstractArray {
 
-  private final Sequence[] vals;
+  private final List<Sequence> vals;
 
-  public DArray(Sequence... vals) {
-    this.vals = vals;
+  public DArray(List<? extends Sequence> vals) {
+    this.vals = new GapList<>(vals);
   }
 
   @Override
   public List<Sequence> values() {
-    return vals == null ? List.of() : Arrays.asList(vals);
+    return vals;
+  }
+
+  @Override
+  public Array insertAt(int index, Sequence value) {
+    if (index < 0 || index > vals.size() - 1) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
+    }
+
+    vals.add(index, value);
+
+    return this;
+  }
+
+  @Override
+  public Array insertAt(IntNumeric index, Sequence value) {
+    return insertAt(index.intValue(), value);
   }
 
   @Override
   public Sequence at(IntNumeric index) {
-    try {
-      if (vals == null) {
-        return null;
-      }
-
-      checkArrayIndex(index.intValue());
-      return (vals[index.intValue()]);
-    } catch (ArrayIndexOutOfBoundsException e) {
-      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
-    }
-  }
-
-  private void checkArrayIndex(int index) {
-    try {
-      checkIndex(index, vals.length);
-    } catch (final IndexOutOfBoundsException e) {
-      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
-    }
+    return at(index.intValue());
   }
 
   @Override
   public Sequence at(int i) {
     try {
-      if (vals == null) {
-        return null;
-      }
-
-      checkArrayIndex(i);
-      return (vals[i]);
+      return vals.get(i);
     } catch (ArrayIndexOutOfBoundsException e) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
     }
@@ -95,21 +88,21 @@ public class DArray extends AbstractArray {
 
   @Override
   public IntNumeric length() {
-    final int l = vals.length;
-    return (l <= 20)
-        ? Int32.ZERO_TWO_TWENTY[l]
-        : new Int32(l);
+    final int length = vals.size();
+    return (length <= 20)
+        ? Int32.ZERO_TWO_TWENTY[length]
+        : new Int32(length);
   }
 
   @Override
   public int len() {
-    return vals.length;
+    return vals.size();
   }
 
   @Override
   public Array range(IntNumeric from, IntNumeric to) {
     try {
-      checkFromToIndex(from.intValue(), to.intValue(), vals.length);
+      checkFromToIndex(from.intValue(), to.intValue(), vals.size());
     } catch (final IndexOutOfBoundsException e) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array indexes: %s", e.getMessage());
     }

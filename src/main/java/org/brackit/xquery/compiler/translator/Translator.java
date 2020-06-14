@@ -40,9 +40,7 @@ import org.brackit.xquery.xdm.Expr;
  * 
  */
 public interface Translator {
-	public Expr expression(Module module, StaticContext ctx, AST expr,
-			boolean allowUpdate) throws QueryException;
+	Expr expression(Module module, StaticContext ctx, AST expr, boolean allowUpdate) throws QueryException;
 
-	public Expr function(Module module, StaticContext ctx, UDF udf,
-			QNm[] params, AST expr, boolean allowUpdate) throws QueryException;
+	Expr function(Module module, StaticContext ctx, UDF udf, QNm[] params, AST expr, boolean allowUpdate) throws QueryException;
 }
