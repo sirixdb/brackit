@@ -27,7 +27,7 @@ public final class InsertIntoArrayOp implements UpdateOp {
 
   @Override
   public void apply() {
-    target.insertAt(position, source);
+    target.insert(position, source);
   }
 
   @Override

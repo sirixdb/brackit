@@ -55,6 +55,23 @@ public final class JsonTest extends XQueryBaseTest {
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
 
   @Test
+  public void renameObjectField() throws IOException {
+    final String query = """
+          let $object := {"foo": 0}
+          return rename json $object=>foo as "bar"
+        """;
+    query(query);
+  }
+
+  @Test
+  public void appendToObject() throws IOException {
+    final String query = """
+          insert json (1, 2, 3) into ["foo", true(), false(), jn:null()] at position 2
+        """;
+    query(query);
+  }
+
+  @Test
   public void insertIntoArray() throws IOException {
     final String query = """
           insert json (1, 2, 3) into ["foo", true(), false(), jn:null()] at position 2
@@ -63,9 +80,50 @@ public final class JsonTest extends XQueryBaseTest {
   }
 
   @Test
-  public void insertIntoObject() throws IOException {
+  public void insertIntoObject1() throws IOException {
     final String query = """
           insert json {"foo": not(true()), "baz": jn:null()} into {"bar": false()}
+        """;
+    query(query);
+  }
+
+  @Test
+  public void insertIntoObject2() throws IOException {
+    final String query = """
+          let $object := {"bar": false()}
+          return insert json {"foo": not(true()), "baz": jn:null()} into $object
+        """;
+    query(query);
+  }
+
+  @Test
+  public void removeFromObject() throws IOException {
+    final String query = """
+          delete json {"foo": not(true()), "baz": jn:null()}=>foo
+        """;
+    query(query);
+  }
+
+  @Test
+  public void removeFromArray() throws IOException {
+    final String query = """
+          delete json ["foo", 0, 1][[1]]
+        """;
+    query(query);
+  }
+
+  @Test
+  public void replaceObjectValue() throws IOException {
+    final String query = """
+          replace json value of {"foo": not(true()), "baz": jn:null()}=>foo with 1
+        """;
+    query(query);
+  }
+
+  @Test
+  public void replaceArrayValue() throws IOException {
+    final String query = """
+          replace json value of ["foo", 0, 1][[2]] with "bar"
         """;
     query(query);
   }

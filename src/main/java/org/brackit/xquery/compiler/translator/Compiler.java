@@ -48,7 +48,10 @@ import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.operator.*;
 import org.brackit.xquery.update.*;
 import org.brackit.xquery.update.Insert.InsertType;
+import org.brackit.xquery.update.json.DeleteJson;
 import org.brackit.xquery.update.json.InsertJson;
+import org.brackit.xquery.update.json.RenameJsonField;
+import org.brackit.xquery.update.json.ReplaceJsonValue;
 import org.brackit.xquery.util.Cmp;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.util.aggregator.Aggregate;
@@ -200,11 +203,22 @@ public class Compiler implements Translator {
       case XQ.DerefExpr -> derefExpr(node);
       case XQ.RecordProjection -> projectionExpr(node);
       case XQ.InsertJsonExpr -> insertJsonExpr(node);
+      case XQ.DeleteJsonExpr -> deleteJsonExpr(node);
+      case XQ.ReplaceJsonExpr -> replaceJsonExpr(node);
+      case XQ.RenameJsonExpr -> renameJsonExpr(node);
       default -> throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
                                           "Unexpected AST expr node '%s' of type: %s",
                                           node,
                                           node.getType());
     };
+  }
+
+  private Expr deleteJsonExpr(AST node) {
+    AST derefOrArrayIndexNode = node.getChild(0);
+    Expr targetExpr = expr(derefOrArrayIndexNode.getChild(0), true);
+    Expr fieldOrIndex = expr(derefOrArrayIndexNode.getChild(1), true);
+
+    return new DeleteJson(targetExpr, fieldOrIndex);
   }
 
   private Expr insertJsonExpr(AST node) {
@@ -219,6 +233,24 @@ public class Compiler implements Translator {
     }
 
     return new InsertJson(sourceExpr, targetExpr, position);
+  }
+
+  private Expr replaceJsonExpr(AST node) {
+    AST derefOrArrayIndexNode = node.getChild(0);
+    Expr targetExpr = expr(derefOrArrayIndexNode.getChild(0), true);
+    Expr fieldOrIndex = expr(derefOrArrayIndexNode.getChild(1), true);
+    Expr sourceExpr = expr(node.getChild(1), true);
+
+    return new ReplaceJsonValue(sourceExpr, targetExpr, fieldOrIndex);
+  }
+
+  private Expr renameJsonExpr(AST node) {
+    AST derefNode = node.getChild(0);
+    Expr targetExpr = expr(derefNode.getChild(0), true);
+    Expr oldFieldExpr = expr(derefNode.getChild(1), true);
+    Expr newFieldExpr = expr(node.getChild(1), true);
+
+    return new RenameJsonField(targetExpr, oldFieldExpr, newFieldExpr);
   }
 
   protected Expr tryCatchExpr(AST node) throws QueryException {

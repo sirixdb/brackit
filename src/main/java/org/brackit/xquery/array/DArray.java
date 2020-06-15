@@ -31,6 +31,8 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.expr.SequenceExpr;
+import org.brackit.xquery.sequence.FlatteningSequence;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Array;
 import org.magicwerk.brownies.collections.GapList;
@@ -57,8 +59,8 @@ public final class DArray extends AbstractArray {
   }
 
   @Override
-  public Array insertAt(int index, Sequence value) {
-    if (index < 0 || index > vals.size() - 1) {
+  public Array insert(int index, Sequence value) {
+    if (index < 0 || index > vals.size()) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
     }
 
@@ -68,8 +70,39 @@ public final class DArray extends AbstractArray {
   }
 
   @Override
-  public Array insertAt(IntNumeric index, Sequence value) {
-    return insertAt(index.intValue(), value);
+  public Array replaceAt(int index, Sequence value) {
+    if (index < 0 || index > vals.size() - 1) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
+    }
+
+    vals.set(index, value);
+
+    return this;
+  }
+
+  @Override
+  public Array replaceAt(IntNumeric index, Sequence value) {
+    replace(index.intValue(), value);
+    return this;
+  }
+
+  @Override
+  public Array insert(IntNumeric index, Sequence value) {
+    return insert(index.intValue(), value);
+  }
+
+  @Override
+  public Array remove(int index) {
+    if (index < 0 || index > vals.size() - 1) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
+    }
+    vals.remove(index);
+    return this;
+  }
+
+  @Override
+  public Array remove(IntNumeric index) {
+    return remove(index.intValue());
   }
 
   @Override

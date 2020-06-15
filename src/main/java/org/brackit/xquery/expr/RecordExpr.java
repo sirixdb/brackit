@@ -138,7 +138,7 @@ public class RecordExpr implements Expr {
 
   @Override
   public Item evaluateToItem(QueryContext ctx, Tuple t) {
-    HashSet<QNm> dedup = new HashSet<>();
+    Set<QNm> dedup = new HashSet<>();
     QNm[] names = new QNm[fields.length];
     Sequence[] vals = new Sequence[fields.length];
     int pos = 0;

@@ -321,9 +321,13 @@ public final class XQ {
 	public static final int Null = 265;
 	// Begin JSONiq update expressions
 	public static final int InsertJsonExpr = 266;
+	public static final int DeleteJsonExpr = 267;
+	public static final int RenameJsonExpr = 268;
+	public static final int ReplaceJsonExpr = 269;
+	public static final int AppendJsonExpr = 270;
 	// End JSONiq update expressions
 
-	public static final String NAMES[] = new String[] { "XQuery",
+	public static final String[] NAMES = new String[] { "XQuery",
 			"LibraryModule", "MainModule", "Prolog", "NamespaceDeclaration",
 			"QueryBody", "SequenceExpr", "FlowrExpr", "ForClause",
 			"AllowingEmpty", "TypedVariableBinding", "Variable", "LetClause",
@@ -438,13 +442,17 @@ public final class XQ {
 			"Null",
 			// Begin JSONiq update expressions
 			"InsertJsonExpr",
+			"DeleteJsonExpr",
+			"RenameJsonExpr",
+			"ReplaceJsonExpr",
+			"AppendJsonExpr",
 			// End JSONiq update expressions
 	};
 
 	private XQ() {
 	}
 
-	private static int base = 267;
+	private static int base = 271;
 
 	public static synchronized int allocate(int noOfTokens) {
 		int r = base;

@@ -80,7 +80,6 @@ public final class SequenceExpr implements Expr {
 
   @Override
   public Sequence evaluate(final QueryContext ctx, final Tuple tuple) {
-
     return new EvalSequence(tuple, ctx);
   }
 

@@ -36,8 +36,11 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.json.Record;
+import org.magicwerk.brownies.collections.GapList;
 
 import java.util.*;
+
+import static java.util.Objects.*;
 
 /**
  * @author Sebastian Baechle
@@ -53,8 +56,8 @@ public final class ArrayRecord extends AbstractRecord {
 	private final Map<QNm, Sequence> fieldsToVals;
 
 	public ArrayRecord(QNm[] fields, Sequence[] values) {
-		this.fields = new ArrayList<>(Arrays.asList(fields));
-		this.vals = new ArrayList<>(Arrays.asList(values));
+		this.fields = new GapList<>(Arrays.asList(fields));
+		this.vals = new GapList<>(Arrays.asList(values));
 		this.fieldsToVals = new HashMap<>();
 
 		for (int i = 0; i < fields.length; i++) {
@@ -65,6 +68,38 @@ public final class ArrayRecord extends AbstractRecord {
 	}
 
 	@Override
+	public Record replace(QNm field, Sequence value) {
+		requireNonNull(field);
+		for (int i = 0, size = fields.size(); i < size; i++) {
+			final QNm currentField = fields.get(i);
+			if (currentField.equals(field)) {
+				vals.set(i, value);
+				fieldsToVals.put(field, value);
+				break;
+			}
+		}
+		return this;
+	}
+
+	@Override
+	public Record rename(QNm field, QNm newFieldName) {
+		requireNonNull(field);
+		requireNonNull(newFieldName);
+		for (int i = 0, size = fields.size(); i < size; i++) {
+			final QNm currentField = fields.get(i);
+			if (currentField.equals(field)) {
+				fields.set(i, newFieldName);
+
+				final Sequence value = fieldsToVals.remove(field);
+				fieldsToVals.put(newFieldName, value);
+				break;
+			}
+		}
+
+		return this;
+	}
+
+	@Override
 	public Record insert(QNm field, Sequence value) {
 		if (fieldsToVals.containsKey(field)) {
 			throw new QueryException(new QNm("Field already defined."));
@@ -72,6 +107,38 @@ public final class ArrayRecord extends AbstractRecord {
 		fields.add(field);
 		vals.add(value);
 		fieldsToVals.put(field, value);
+		return this;
+	}
+
+	@Override
+	public Record remove(QNm field) {
+		int index = 0;
+		for (int i = 0, size = fields.size(); i < size; i++) {
+			final QNm currentField = fields.get(i);
+			if (field.equals(currentField)) {
+				index = i;
+				break;
+			}
+		}
+		fields.remove(index);
+		vals.remove(index);
+		fieldsToVals.remove(field);
+		return this;
+	}
+
+	@Override
+	public Record remove(IntNumeric index) {
+		return remove(index.intValue());
+	}
+
+	@Override
+	public Record remove(int index) {
+		if (index < 0 || index > vals.size() - 1) {
+			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
+		}
+		final QNm field = fields.remove(index);
+		vals.remove(index);
+		fieldsToVals.remove(field);
 		return this;
 	}
 

@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -25,48 +25,46 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm.json;
+package org.brackit.xquery.update.json.op;
 
-import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.update.op.OpType;
+import org.brackit.xquery.update.op.UpdateOp;
 import org.brackit.xquery.xdm.Sequence;
-
-import java.util.Map;
+import org.brackit.xquery.xdm.json.Array;
+import org.brackit.xquery.xdm.json.JsonItem;
+import org.brackit.xquery.xdm.json.Record;
 
 /**
+ * 
  * @author Sebastian Baechle
- *
+ * 
  */
-public interface Record extends JsonItem {
+public class ReplaceArrayValueOp implements UpdateOp {
+	private final Array target;
 
-  Record replace(QNm field, Sequence value);
+	private final int index;
 
-  Record rename(QNm field, QNm newFieldName);
+	private final Sequence value;
 
-  Record insert(QNm field, Sequence value);
+	public ReplaceArrayValueOp(Array target, int index, Sequence value) {
+		this.target = target;
+		this.index = index;
+		this.value = value;
+	}
 
-  Record remove(QNm field);
+	@Override
+	public void apply() {
+		target.replaceAt(index, value);
+	}
 
-  Record remove(IntNumeric index);
+	@Override
+	public JsonItem getTarget() {
+		return target;
+	}
 
-  Record remove(int index);
-
-  Sequence get(QNm field);
-
-  Sequence value(IntNumeric index);
-
-  Sequence value(int index);
-
-  Array names();
-
-  Array values();
-
-  QNm name(IntNumeric index);
-
-  QNm name(int index);
-
-  IntNumeric length();
-
-  int len();
-
+	@Override
+	public OpType getType() {
+		return OpType.REPLACE_VALUE;
+	}
 }

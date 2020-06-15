@@ -55,13 +55,22 @@ import org.brackit.xquery.xdm.Sequence;
 public interface Array extends ListOrUnion {
 
   /**
-   * Insert a sequence at the {@code index} position in the array.
+   * Replace a sequence at the {@code index} position in the array.
    *
-   * @param index the index position, where to insert the new value
+   * @param index the index position, where to replace with the new value
    * @param value the new value
    * @return this array instance
    */
-  Array insertAt(IntNumeric index, Sequence value);
+  Array replaceAt(IntNumeric index, Sequence value);
+
+  /**
+   * Insert a sequence at the {@code index} position in the array.
+   *
+   * @param index the index position, where to replace with the new value
+   * @param value the new value
+   * @return this array instance
+   */
+  Array replaceAt(int index, Sequence value);
 
   /**
    * Insert a sequence at the {@code index} position in the array.
@@ -70,7 +79,32 @@ public interface Array extends ListOrUnion {
    * @param value the new value
    * @return this array instance
    */
-  Array insertAt(int index, Sequence value);
+  Array insert(IntNumeric index, Sequence value);
+
+  /**
+   * Insert a sequence at the {@code index} position in the array.
+   *
+   * @param index the index position, where to insert the new value
+   * @param value the new value
+   * @return this array instance
+   */
+  Array insert(int index, Sequence value);
+
+  /**
+   * Remove the sequence at the specified index.
+   *
+   * @param index the index at which to remove the sequence
+   * @return this array instance
+   */
+  Array remove(int index);
+
+  /**
+   * Remove the sequence at the specified index.
+   *
+   * @param index the index at which to remove the sequence
+   * @return this array instance
+   */
+  Array remove(IntNumeric index);
 
   /**
    * Returns the values.

@@ -60,7 +60,24 @@ public final class DRArray extends AbstractArray {
   }
 
   @Override
-  public Array insertAt(int index, Sequence value) {
+  public Array replaceAt(IntNumeric index, Sequence value) {
+    replace(index.intValue(), value);
+    return this;
+  }
+
+  @Override
+  public Array replaceAt(int index, Sequence value) {
+    if (start + index < 0 || start + index > vals.size()) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
+    }
+
+    vals.set(start + index, value);
+
+    return this;
+  }
+
+  @Override
+  public Array insert(int index, Sequence value) {
     if (start + index < 0 || start + index > vals.size() - 1) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
     }
@@ -71,8 +88,24 @@ public final class DRArray extends AbstractArray {
   }
 
   @Override
-  public Array insertAt(IntNumeric index, Sequence value) {
-    return insertAt(index.intValue(), value);
+  public Array remove(int index) {
+    if (start + index < 0 || start + index > vals.size() - 1) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
+    }
+
+    vals.remove(start + index);
+
+    return this;
+  }
+
+  @Override
+  public Array remove(IntNumeric index) {
+    return remove(index.intValue());
+  }
+
+  @Override
+  public Array insert(IntNumeric index, Sequence value) {
+    return insert(index.intValue(), value);
   }
 
   @Override

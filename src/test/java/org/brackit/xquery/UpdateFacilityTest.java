@@ -27,7 +27,6 @@
  */
 package org.brackit.xquery;
 
-import java.io.FileNotFoundException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.atomic.Una;
@@ -52,7 +51,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
     Node<?> orig;
 
     @Test
-    public void insertInto() throws Exception {
+    public void insertInto() {
         ctx.setContextItem(doc);
         orig.getFirstChild().append(Kind.ELEMENT, new QNm("test"), null);
         new XQuery("insert node <test/> into ./a").execute(ctx);
@@ -60,7 +59,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
     }
 
     @Test
-    public void simpleDelete() throws Exception {
+    public void simpleDelete() {
         ctx.setContextItem(doc);
         new XQuery("delete node ./a/c").execute(ctx);
         orig.getFirstChild().getLastChild().delete();
@@ -68,7 +67,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
     }
 
     @Test
-    public void simpleReplaceNode() throws Exception {
+    public void simpleReplaceNode() {
         ctx.setContextItem(doc);
         new XQuery("replace node ./a/c with <d/>").execute(ctx);
         orig.getFirstChild().getLastChild()
@@ -77,7 +76,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
     }
 
     @Test
-    public void simpleRename() throws Exception {
+    public void simpleRename() {
         ctx.setContextItem(doc);
         new XQuery("rename node ./a as 'b'").execute(ctx);
         orig.getFirstChild().setName(new QNm("b"));
@@ -85,7 +84,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
     }
 
     @Test
-    public void transformTestSimple() throws QueryException {
+    public void transformTestSimple() {
         Sequence res = new XQuery(
                 "copy $n := <a att='1'><b/></a> modify delete node $n/@att return $n")
                 .execute(ctx);
@@ -95,7 +94,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
     }
 
     @Test
-    public void transformTestDeleteBoundCopy() throws QueryException {
+    public void transformTestDeleteBoundCopy() {
         // Will not result in empty sequence as nodes without parents are
         // ignored by delete operation
         Sequence res = new XQuery(
@@ -108,7 +107,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
     }
 
     @Test(expected = DocumentException.class)
-    public void transformIllegalExpression() throws QueryException {
+    public void transformIllegalExpression() {
         // Two attributes with the same name (insert applied before delete).
         new XQuery(
                 "copy $c := <x a='a'/> modify (delete node $c/@a, insert node attribute a { 'b' } into $c) return $c")
@@ -116,7 +115,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
     }
 
     @Test(expected = QueryException.class)
-    public void transformIllegalExpressionSecond() throws QueryException {
+    public void transformIllegalExpressionSecond() {
         // Two attributes with the same name (insert applied before delete).
         new XQuery(
                 "copy $c := <x a='a'/> modify (delete node $c/@a, insert node attribute a { 'b' } into $c, replace node $c/@a with attribute a { 'b' }) return $c")
@@ -124,7 +123,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
     }
 
     @Test
-    public void transformModifyFirst() throws QueryException {
+    public void transformModifyFirst() {
         Sequence res = new XQuery(
                 "copy $c := <n><a/><a/></n> modify for $a in $c//a return replace node $a with <b/> return $c")
                 .execute(ctx);
@@ -135,7 +134,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
     }
 
     @Test
-    public void transformModifySecond() throws QueryException {
+    public void transformModifySecond() {
         final String xq = "copy $foo := <foo/>" + " modify "
                 + "  for $x in ('b', 'a') " + "  order by $x "
                 + "  return insert node text { $x } into $foo return $foo";
@@ -146,7 +145,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
     }
 
     @Test
-    public void transformTestTwoCopyVars() throws QueryException {
+    public void transformTestTwoCopyVars() {
         Sequence res = new XQuery(
                 "let $f := <a att='1'><b/></a> return copy $m := $f, $n := $f, $o := $f modify delete node $n/b return ($m, $n)")
                 .execute(ctx);
@@ -160,7 +159,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
 
     @Override
     @Before
-    public void setUp() throws Exception, FileNotFoundException {
+    public void setUp() throws Exception {
         super.setUp();
         doc = ctx.getNodeFactory().build(new DocumentParser(DOCUMENT));
         orig = ctx.getNodeFactory().build(new DocumentParser(DOCUMENT));
