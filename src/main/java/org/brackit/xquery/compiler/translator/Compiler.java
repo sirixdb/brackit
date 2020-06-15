@@ -48,10 +48,7 @@ import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.operator.*;
 import org.brackit.xquery.update.*;
 import org.brackit.xquery.update.Insert.InsertType;
-import org.brackit.xquery.update.json.DeleteJson;
-import org.brackit.xquery.update.json.InsertJson;
-import org.brackit.xquery.update.json.RenameJsonField;
-import org.brackit.xquery.update.json.ReplaceJsonValue;
+import org.brackit.xquery.update.json.*;
 import org.brackit.xquery.util.Cmp;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.util.aggregator.Aggregate;
@@ -206,6 +203,7 @@ public class Compiler implements Translator {
       case XQ.DeleteJsonExpr -> deleteJsonExpr(node);
       case XQ.ReplaceJsonExpr -> replaceJsonExpr(node);
       case XQ.RenameJsonExpr -> renameJsonExpr(node);
+      case XQ.AppendJsonExpr -> appendJsonExpr(node);
       default -> throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
                                           "Unexpected AST expr node '%s' of type: %s",
                                           node,
@@ -233,6 +231,13 @@ public class Compiler implements Translator {
     }
 
     return new InsertJson(sourceExpr, targetExpr, position);
+  }
+
+  private Expr appendJsonExpr(AST node) {
+    Expr sourceExpr = expr(node.getChild(0), true);
+    Expr targetExpr = expr(node.getChild(1), true);
+
+    return new AppendJsonArrayValue(sourceExpr, targetExpr);
   }
 
   private Expr replaceJsonExpr(AST node) {

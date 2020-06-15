@@ -47,9 +47,7 @@ import org.brackit.xquery.xdm.json.JsonItem;
 import org.brackit.xquery.xdm.json.Record;
 
 /**
- * 
- * @author Sebastian Baechle
- * 
+ * @author Johannes Lichtenberger
  */
 public final class RenameJsonField extends ConstructedNodeBuilder implements Expr {
 	private final Expr oldFieldNameExpr;

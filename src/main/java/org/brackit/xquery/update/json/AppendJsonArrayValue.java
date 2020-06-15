@@ -31,29 +31,26 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.update.json.op.DeleteArrayIndexOp;
-import org.brackit.xquery.update.json.op.DeleteRecordFieldOp;
+import org.brackit.xquery.update.json.op.InsertIntoArrayOp;
+import org.brackit.xquery.update.json.op.InsertIntoRecordOp;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Array;
-import org.brackit.xquery.xdm.json.JsonItem;
 import org.brackit.xquery.xdm.json.Record;
 
 /**
- * @author Sebastian Baechle
+ * @author Johannes Lichtenberger
  */
-public final class DeleteJson implements Expr {
-  private final Expr expr;
+public final class AppendJsonArrayValue implements Expr {
+  private final Expr sourceExpr;
 
-  private final Expr fieldOrIndex;
+  private final Expr targetExpr;
 
-  public DeleteJson(Expr expr, Expr fieldOrIndex) {
-    this.expr = expr;
-    this.fieldOrIndex = fieldOrIndex;
+  public AppendJsonArrayValue(Expr sourceExpr, Expr targetExpr) {
+    this.sourceExpr = sourceExpr;
+    this.targetExpr = targetExpr;
   }
 
   @Override
@@ -63,39 +60,8 @@ public final class DeleteJson implements Expr {
 
   @Override
   public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
-    Sequence result = expr.evaluate(ctx, tuple);
-
-    if (result == null) {
-      return null;
-    }
-
-    if (result instanceof Item) {
-      handleItem(ctx, (Item) result, tuple);
-      return null;
-    }
-
-    try (Iter it = result.iterate()) {
-      Item item;
-      while ((item = it.next()) != null) {
-        handleItem(ctx, item, tuple);
-      }
-    }
-
+    insertInto(ctx, tuple);
     return null;
-  }
-
-  private void handleItem(QueryContext ctx, Item item, Tuple tuple) {
-    if (!(item instanceof JsonItem)) {
-      throw new QueryException(ErrorCode.ERR_UPDATE_DELETE_TARGET_NOT_A_NODE_SEQUENCE,
-                               "Target item for delete is not a json item: %s",
-                               item);
-    }
-    if (item instanceof Array) {
-      ctx.addPendingUpdate(new DeleteArrayIndexOp((Array) item,
-                                                  ((Int32) fieldOrIndex.evaluateToItem(ctx, tuple)).intValue()));
-    } else {
-      ctx.addPendingUpdate(new DeleteRecordFieldOp((Record) item, ((QNm) fieldOrIndex.evaluateToItem(ctx, tuple))));
-    }
   }
 
   @Override
@@ -106,5 +72,38 @@ public final class DeleteJson implements Expr {
   @Override
   public boolean isVacuous() {
     return false;
+  }
+
+  private void insertInto(QueryContext ctx, Tuple tuple) {
+    final Sequence target = targetExpr.evaluate(ctx, tuple);
+    Item targetItem;
+
+    if (target == null) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
+    } else if (target instanceof Item) {
+      targetItem = (Item) target;
+    } else {
+      try (Iter it = target.iterate()) {
+        targetItem = it.next();
+
+        if (targetItem == null) {
+          throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
+        }
+        if (it.next() != null) {
+          throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_NOT_A_SINGLE_ED_NODE);
+        }
+      }
+    }
+
+    // array
+    if (!(targetItem instanceof Array)) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_NOT_A_SINGLE_ED_NODE,
+                               "Target item is atomic value %s",
+                               targetItem);
+    }
+
+    final Sequence source = sourceExpr.evaluateToItem(ctx, tuple);
+
+    ctx.addPendingUpdate(new InsertIntoArrayOp((Array) targetItem, source, ((Array) targetItem).len()));
   }
 }

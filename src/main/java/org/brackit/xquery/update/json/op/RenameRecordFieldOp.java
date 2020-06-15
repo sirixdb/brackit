@@ -36,9 +36,7 @@ import org.brackit.xquery.xdm.json.Record;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- * 
- * @author Sebastian Baechle
- * 
+ * @author Johannes Lichtenberger
  */
 public class RenameRecordFieldOp implements UpdateOp {
 	private final Record target;

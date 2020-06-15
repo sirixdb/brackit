@@ -8,6 +8,9 @@ import org.brackit.xquery.xdm.StructuredItem;
 import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.json.Record;
 
+/**
+ * @author Johannes Lichtenberger
+ */
 public final class InsertIntoRecordOp implements UpdateOp {
 
   private final Record target;

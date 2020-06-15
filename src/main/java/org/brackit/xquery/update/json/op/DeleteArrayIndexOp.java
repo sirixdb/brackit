@@ -35,9 +35,7 @@ import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- * 
- * @author Sebastian Baechle
- * 
+ * @author Johannes Lichtenberger
  */
 public class DeleteArrayIndexOp implements UpdateOp {
 	private final Array target;

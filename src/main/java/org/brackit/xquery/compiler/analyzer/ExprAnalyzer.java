@@ -181,6 +181,10 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if (expr.getType() != XQ.AppendJsonExpr) {
       return false;
     }
+    AST src = expr.getChild(0);
+    exprSingle(src);
+    AST target = expr.getChild(1);
+    exprSingle(target);
     return true;
   }
 

@@ -64,9 +64,9 @@ public final class JsonTest extends XQueryBaseTest {
   }
 
   @Test
-  public void appendToObject() throws IOException {
+  public void appendToArray() throws IOException {
     final String query = """
-          insert json (1, 2, 3) into ["foo", true(), false(), jn:null()] at position 2
+          append json (1, 2, 3) into ["foo", true(), false(), jn:null()]
         """;
     query(query);
   }

@@ -48,9 +48,7 @@ import org.brackit.xquery.xdm.node.Node;
 import java.util.EnumSet;
 
 /**
- * 
- * @author Sebastian Baechle
- * 
+ * @author Johannes Lichtenberger
  */
 public final class ReplaceJsonValue extends ConstructedNodeBuilder implements Expr {
 	private final Expr sourceExpr;

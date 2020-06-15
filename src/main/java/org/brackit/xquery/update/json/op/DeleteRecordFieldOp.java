@@ -27,18 +27,14 @@
  */
 package org.brackit.xquery.update.json.op;
 
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.update.op.OpType;
 import org.brackit.xquery.update.op.UpdateOp;
 import org.brackit.xquery.xdm.StructuredItem;
-import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.json.Record;
 
 /**
- * 
- * @author Sebastian Baechle
- * 
+ * @author Johannes Lichtenberger
  */
 public class DeleteRecordFieldOp implements UpdateOp {
 	private final Record target;

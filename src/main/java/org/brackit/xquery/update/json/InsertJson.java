@@ -33,14 +33,15 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.update.json.op.InsertIntoArrayOp;
 import org.brackit.xquery.update.json.op.InsertIntoRecordOp;
-import org.brackit.xquery.util.serialize.StringSerializer;
-import org.brackit.xquery.xdm.*;
+import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.Iter;
+import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.json.Record;
-import org.brackit.xquery.xdm.node.Node;
 
 /**
- * @author Sebastian Baechle
+ * @author Johannes Lichtenberger
  */
 public final class InsertJson implements Expr {
   private final Expr sourceExpr;

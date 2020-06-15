@@ -36,9 +36,7 @@ import org.brackit.xquery.xdm.json.JsonItem;
 import org.brackit.xquery.xdm.json.Record;
 
 /**
- * 
- * @author Sebastian Baechle
- * 
+ * @author Johannes Lichtenberger
  */
 public class ReplaceArrayValueOp implements UpdateOp {
 	private final Array target;
