@@ -28,15 +28,14 @@
 package org.brackit.xquery.atomic;
 
 import java.util.Arrays;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Type;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class Hex extends AbstractAtomic {
   private final byte[] bytes;
@@ -82,8 +81,10 @@ public class Hex extends AbstractAtomic {
 
   @Override
   public int cmp(Atomic atomic) throws QueryException {
-    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s with '%s'", type(),
-        atomic.type());
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                             "Cannot compare '%s with '%s'",
+                             type(),
+                             atomic.type());
   }
 
   @Override
@@ -114,8 +115,10 @@ public class Hex extends AbstractAtomic {
   @Override
   public boolean eq(Atomic atomic) throws QueryException {
     if (!(atomic instanceof Hex)) {
-      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s with '%s'", type(),
-          atomic.type());
+      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                               "Cannot compare '%s with '%s'",
+                               type(),
+                               atomic.type());
     }
     return Arrays.equals(bytes, ((Hex) atomic).bytes);
   }
@@ -142,7 +145,8 @@ public class Hex extends AbstractAtomic {
 
   @Override
   public boolean booleanValue() throws QueryException {
-    throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Effective boolean value of '%s' is undefined.",
-        type());
+    throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                             "Effective boolean value of '%s' is undefined.",
+                             type());
   }
 }

@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -47,155 +47,156 @@ import org.brackit.xquery.xdm.Signature;
  * $arg2), fn:adjust-time-to-timezone($arg1), and
  * fn:adjust-time-to-timezone($arg1, $arg2), as per
  * http://www.w3.org/TR/xpath-functions/#func-adjust-dateTime-to-timezone ff.
- * 
+ *
  * @author Max Bechtold
- * 
  */
 public class AdjustToTimezone extends AbstractFunction {
-	public static enum Source {
-		DATE_TIME, DATE, TIME
-	};
+  public static enum Source {
+    DATE_TIME, DATE, TIME
+  }
 
-	private Source source;
+  ;
 
-	public AdjustToTimezone(QNm name, Source source, Signature signature) {
-		super(name, signature, true);
-		this.source = source;
-	}
+  private Source source;
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		if (args.length == 0 || args[0] == null) {
-			return null;
-		}
+  public AdjustToTimezone(QNm name, Source source, Signature signature) {
+    super(name, signature, true);
+    this.source = source;
+  }
 
-		DTD timezone;
-		if (args.length > 1) {
-			timezone = (DTD) args[1];
-			if (timezone != null
-					&& (timezone.getMinutes() != 0 || timezone.getDays() != 0 || timezone
-							.getHours() > 14)) {
-				throw (new QueryException(ErrorCode.ERR_INVALID_TIMEZONE,
-						"Invalid value for timezone."));
-			}
-		} else {
-			timezone = ctx.getImplicitTimezone();
-		}
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    if (args.length == 0 || args[0] == null) {
+      return null;
+    }
 
-		switch (source) {
-		case DATE_TIME:
-			DateTime dt = (DateTime) args[0];
-			DateTime dtNew;
+    DTD timezone;
+    if (args.length > 1) {
+      timezone = (DTD) args[1];
+      if (timezone != null && (timezone.getMinutes() != 0 || timezone.getDays() != 0 || timezone.getHours() > 14)) {
+        throw (new QueryException(ErrorCode.ERR_INVALID_TIMEZONE, "Invalid value for timezone."));
+      }
+    } else {
+      timezone = ctx.getImplicitTimezone();
+    }
 
-			if (dt.getTimezone() == null && timezone == null) {
-				dtNew = dt;
-			} else if (dt.getTimezone() == null) {
-				dtNew = new DateTime(dt.getYear(), dt.getMonth(), dt.getDay(),
-						dt.getHours(), dt.getMinutes(), dt.getMicros(),
-						timezone);
-			} else if (timezone == null) {
-				dtNew = new DateTime(dt.getYear(), dt.getMonth(), dt.getDay(),
-						dt.getHours(), dt.getMinutes(), dt.getMicros(), null);
-			} else {
-				byte old = dt.getTimezone().getHours();
-				if (dt.getTimezone().isNegative()) {
-					old *= -1;
-				}
+    switch (source) {
+      case DATE_TIME:
+        DateTime dt = (DateTime) args[0];
+        DateTime dtNew;
 
-				byte nw = timezone.getHours();
-				if (timezone.isNegative()) {
-					nw *= -1;
-				}
+        if (dt.getTimezone() == null && timezone == null) {
+          dtNew = dt;
+        } else if (dt.getTimezone() == null) {
+          dtNew = new DateTime(dt.getYear(),
+                               dt.getMonth(),
+                               dt.getDay(),
+                               dt.getHours(),
+                               dt.getMinutes(),
+                               dt.getMicros(),
+                               timezone);
+        } else if (timezone == null) {
+          dtNew = new DateTime(dt.getYear(),
+                               dt.getMonth(),
+                               dt.getDay(),
+                               dt.getHours(),
+                               dt.getMinutes(),
+                               dt.getMicros(),
+                               null);
+        } else {
+          byte old = dt.getTimezone().getHours();
+          if (dt.getTimezone().isNegative()) {
+            old *= -1;
+          }
 
-				int diff = nw - old;
-				if (diff == 0) {
-					return dt;
-				}
+          byte nw = timezone.getHours();
+          if (timezone.isNegative()) {
+            nw *= -1;
+          }
 
-				dtNew = dt.add(new DTD(diff < 0, (short) 0, (byte) Math
-						.abs(diff), (byte) 0, 0));
-				dtNew = new DateTime(dtNew.getYear(), dtNew.getMonth(), dtNew
-						.getDay(), dtNew.getHours(), dtNew.getMinutes(), dtNew
-						.getMicros(), timezone);
-			}
+          int diff = nw - old;
+          if (diff == 0) {
+            return dt;
+          }
 
-			return dtNew;
+          dtNew = dt.add(new DTD(diff < 0, (short) 0, (byte) Math.abs(diff), (byte) 0, 0));
+          dtNew = new DateTime(dtNew.getYear(),
+                               dtNew.getMonth(),
+                               dtNew.getDay(),
+                               dtNew.getHours(),
+                               dtNew.getMinutes(),
+                               dtNew.getMicros(),
+                               timezone);
+        }
 
-		case DATE:
-			Date date = (Date) args[0];
-			Date dateNew;
+        return dtNew;
 
-			if (date.getTimezone() == null && timezone == null) {
-				dateNew = date;
-			} else if (date.getTimezone() == null) {
-				dateNew = new Date(date.getYear(), date.getMonth(), date
-						.getDay(), timezone);
-			} else if (timezone == null) {
-				dateNew = new Date(date.getYear(), date.getMonth(), date
-						.getDay(), null);
-			} else {
-				byte old = date.getTimezone().getHours();
-				if (date.getTimezone().isNegative()) {
-					old *= -1;
-				}
+      case DATE:
+        Date date = (Date) args[0];
+        Date dateNew;
 
-				byte nw = timezone.getHours();
-				if (timezone.isNegative()) {
-					nw *= -1;
-				}
+        if (date.getTimezone() == null && timezone == null) {
+          dateNew = date;
+        } else if (date.getTimezone() == null) {
+          dateNew = new Date(date.getYear(), date.getMonth(), date.getDay(), timezone);
+        } else if (timezone == null) {
+          dateNew = new Date(date.getYear(), date.getMonth(), date.getDay(), null);
+        } else {
+          byte old = date.getTimezone().getHours();
+          if (date.getTimezone().isNegative()) {
+            old *= -1;
+          }
 
-				int diff = nw - old;
-				if (diff == 0) {
-					return date;
-				}
+          byte nw = timezone.getHours();
+          if (timezone.isNegative()) {
+            nw *= -1;
+          }
 
-				dateNew = date.add(new DTD(diff < 0, (short) 0, (byte) Math
-						.abs(diff), (byte) 0, 0));
-				dateNew = new Date(dateNew.getYear(), dateNew.getMonth(),
-						dateNew.getDay(), timezone);
-			}
+          int diff = nw - old;
+          if (diff == 0) {
+            return date;
+          }
 
-			return dateNew;
+          dateNew = date.add(new DTD(diff < 0, (short) 0, (byte) Math.abs(diff), (byte) 0, 0));
+          dateNew = new Date(dateNew.getYear(), dateNew.getMonth(), dateNew.getDay(), timezone);
+        }
 
-		case TIME:
-			Time time = (Time) args[0];
-			Time timeNew;
+        return dateNew;
 
-			if (time.getTimezone() == null && timezone == null) {
-				timeNew = time;
-			} else if (time.getTimezone() == null) {
-				timeNew = new Time(time.getHours(), time.getMinutes(), time
-						.getMicros(), timezone);
-			} else if (timezone == null) {
-				timeNew = new Time(time.getHours(), time.getMinutes(), time
-						.getMicros(), null);
-			} else {
-				byte old = time.getTimezone().getHours();
-				if (time.getTimezone().isNegative()) {
-					old *= -1;
-				}
+      case TIME:
+        Time time = (Time) args[0];
+        Time timeNew;
 
-				byte nw = timezone.getHours();
-				if (timezone.isNegative()) {
-					nw *= -1;
-				}
+        if (time.getTimezone() == null && timezone == null) {
+          timeNew = time;
+        } else if (time.getTimezone() == null) {
+          timeNew = new Time(time.getHours(), time.getMinutes(), time.getMicros(), timezone);
+        } else if (timezone == null) {
+          timeNew = new Time(time.getHours(), time.getMinutes(), time.getMicros(), null);
+        } else {
+          byte old = time.getTimezone().getHours();
+          if (time.getTimezone().isNegative()) {
+            old *= -1;
+          }
 
-				int diff = nw - old;
-				if (diff == 0) {
-					return time;
-				}
+          byte nw = timezone.getHours();
+          if (timezone.isNegative()) {
+            nw *= -1;
+          }
 
-				timeNew = time.add(new DTD(diff < 0, (short) 0, (byte) Math
-						.abs(diff), (byte) 0, 0));
-				timeNew = new Time(timeNew.getHours(), timeNew.getMinutes(),
-						timeNew.getMicros(), timezone);
-			}
+          int diff = nw - old;
+          if (diff == 0) {
+            return time;
+          }
 
-			return timeNew;
-		}
+          timeNew = time.add(new DTD(diff < 0, (short) 0, (byte) Math.abs(diff), (byte) 0, 0));
+          timeNew = new Time(timeNew.getHours(), timeNew.getMinutes(), timeNew.getMicros(), timezone);
+        }
 
-		return null;
-	}
+        return timeNew;
+    }
+
+    return null;
+  }
 
 }

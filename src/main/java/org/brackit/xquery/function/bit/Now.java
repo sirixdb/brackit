@@ -29,6 +29,7 @@ package org.brackit.xquery.function.bit;
 
 import java.util.Calendar;
 import java.util.TimeZone;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -46,9 +47,7 @@ import org.brackit.xquery.xdm.type.Cardinality;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
- *
  * @author Sebastian Bächle
- *
  */
 @FunctionAnnotation(description = "Returns the milliseconds since 1970/01/01.", parameters = "")
 public class Now extends AbstractFunction {
@@ -64,8 +63,7 @@ public class Now extends AbstractFunction {
   }
 
   @Override
-  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-      throws QueryException {
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
     try {
       AbstractTimeInstant dateTime = ctx.getDateTime().canonicalize();
       int millis = (dateTime.getMicros() % 1000000) / 1000;

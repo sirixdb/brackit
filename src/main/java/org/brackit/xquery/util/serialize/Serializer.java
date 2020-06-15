@@ -45,5 +45,6 @@ public interface Serializer extends AutoCloseable {
   void serialize(Sequence s);
 
   @Override
-  default void close() {}
+  default void close() {
+  }
 }

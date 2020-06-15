@@ -65,187 +65,182 @@ import org.brackit.xquery.xdm.Item;
  * </p>
  *
  * @author Sebastian Baechle
- *
  */
 public class JSONParser extends Tokenizer {
 
-	public JSONParser(String query) {
-		super(query);
-	}
+  public JSONParser(String query) {
+    super(query);
+  }
 
-	public Item parse() throws QueryException {
-		try {
-			Item i = object();
-			i = (i != null) ? i : array();
-			if (i == null) {
-				throw new QueryException(JSONFun.ERR_PARSING_ERROR,
-						"No JSON data found");
-			}
-			consumeEOF();
-			return i;
-		} catch (IllegalCharRefException e) {
-			throw new QueryException(e, JSONFun.ERR_PARSING_ERROR, e.getMessage());
-		} catch (Exception e) {
-			throw new QueryException(e, JSONFun.ERR_PARSING_ERROR, e.getMessage());
-		}
-	}
+  public Item parse() throws QueryException {
+    try {
+      Item i = object();
+      i = (i != null) ? i : array();
+      if (i == null) {
+        throw new QueryException(JSONFun.ERR_PARSING_ERROR, "No JSON data found");
+      }
+      consumeEOF();
+      return i;
+    } catch (IllegalCharRefException e) {
+      throw new QueryException(e, JSONFun.ERR_PARSING_ERROR, e.getMessage());
+    } catch (Exception e) {
+      throw new QueryException(e, JSONFun.ERR_PARSING_ERROR, e.getMessage());
+    }
+  }
 
-	protected void consumeSkipS(String token) throws TokenizerException {
-		Token la = laSkipS(token);
-		if (la == null) {
-			throw new TokenizerException("Expected '%s': '%s'", token,
-					paraphrase());
-		}
-		consume(la);
-	}
+  protected void consumeSkipS(String token) throws TokenizerException {
+    Token la = laSkipS(token);
+    if (la == null) {
+      throw new TokenizerException("Expected '%s': '%s'", token, paraphrase());
+    }
+    consume(la);
+  }
 
-	private Item value(boolean required) throws TokenizerException,
-			QueryException {
-		Item i = string();
-		i = (i != null) ? i : number();
-		i = (i != null) ? i : object();
-		i = (i != null) ? i : array();
-		i = (i != null) ? i : symbol(required);
-		return i;
-	}
+  private Item value(boolean required) throws TokenizerException, QueryException {
+    Item i = string();
+    i = (i != null) ? i : number();
+    i = (i != null) ? i : object();
+    i = (i != null) ? i : array();
+    i = (i != null) ? i : symbol(required);
+    return i;
+  }
 
-	private Item symbol(boolean required) throws TokenizerException {
-		if (attemptSkipS("true")) {
-			return Bool.TRUE;
-		} else if (attemptSkipS("false")) {
-			return Bool.FALSE;
-		} else if (attemptSkipS("null")) {
-			return null;
-		} else if (required) {
-			throw new TokenizerException("JSON value expected: %s",
-					paraphrase());
-		}
-		return null;
-	}
+  private Item symbol(boolean required) throws TokenizerException {
+    if (attemptSkipS("true")) {
+      return Bool.TRUE;
+    } else if (attemptSkipS("false")) {
+      return Bool.FALSE;
+    } else if (attemptSkipS("null")) {
+      return null;
+    } else if (required) {
+      throw new TokenizerException("JSON value expected: %s", paraphrase());
+    }
+    return null;
+  }
 
-	private Item array() throws TokenizerException, QueryException {
-		if (!attemptSkipS("[")) {
-			return null;
-		}
-		if (attemptSkipS("]")) {
-			return new ArrayRecord(new QNm[0], new Item[0]);
-		}
-		var values = new ArrayList<Item>();
-		do {
-			values.add(value(true));
-		} while (attemptSkipS(","));
-		consumeSkipS("]");
+  private Item array() throws TokenizerException, QueryException {
+    if (!attemptSkipS("[")) {
+      return null;
+    }
+    if (attemptSkipS("]")) {
+      return new ArrayRecord(new QNm[0], new Item[0]);
+    }
+    var values = new ArrayList<Item>();
+    do {
+      values.add(value(true));
+    } while (attemptSkipS(","));
+    consumeSkipS("]");
 
-		return new DArray(values);
-	}
+    return new DArray(values);
+  }
 
-	private Item object() throws TokenizerException, QueryException {
-		if (!attemptSkipS("{")) {
-			return null;
-		}
-		if (attemptSkipS("}")) {
-			return new ArrayRecord(new QNm[0], new Item[0]);
-		}
-		int len = 0;
-		List<QNm> fields = new ArrayList<>();
-		List<Item> values = new ArrayList<>();
-		do {
-			Str name = string();
-			if (name == null) {
+  private Item object() throws TokenizerException, QueryException {
+    if (!attemptSkipS("{")) {
+      return null;
+    }
+    if (attemptSkipS("}")) {
+      return new ArrayRecord(new QNm[0], new Item[0]);
+    }
+    int len = 0;
+    List<QNm> fields = new ArrayList<>();
+    List<Item> values = new ArrayList<>();
+    do {
+      Str name = string();
+      if (name == null) {
 
-			}
-			consumeSkipS(":");
-			Item value = value(true);
-			fields.add(new QNm(null, null, name.stringValue()));
-			values.add(value);
-			len++;
-		} while (attemptSkipS(","));
-		consumeSkipS("}");
+      }
+      consumeSkipS(":");
+      Item value = value(true);
+      fields.add(new QNm(null, null, name.stringValue()));
+      values.add(value);
+      len++;
+    } while (attemptSkipS(","));
+    consumeSkipS("}");
 
-		return new ArrayRecord(fields.toArray(new QNm[len]),
-				values.toArray(new Item[len]));
-	}
+    return new ArrayRecord(fields.toArray(new QNm[len]), values.toArray(new Item[len]));
+  }
 
-	private Numeric number() throws QueryException, TokenizerException {
-		Token la = laS();
-		if (la != null) {
-			Token la2 = laInteger(la, true);
-			if (la2 != null) {
-				consume(la);
-				consume(la2);
-				return Int32.parse(la2.string());
-			} else if ((la2 = laDecimal(la, true)) != null) {
-				consume(la);
-				consume(la2);
-				return new Dec(la2.string());
-			} else if ((la2 = laDouble(la, true)) != null) {
-				consume(la);
-				consume(la2);
-				return new Dbl(la2.string());
-			}
-		} else {
-			la = laInteger(true);
-			if (la != null) {
-				consume(la);
-				return Int32.parse(la.string());
-			} else if ((la = laDecimal(true)) != null) {
-				consume(la);
-				return new Dec(la.string());
-			} else if ((la = laDouble(true)) != null) {
-				consume(la);
-				return new Dbl(la.string());
-			}
-		}
-		return null;
-	}
+  private Numeric number() throws QueryException, TokenizerException {
+    Token la = laS();
+    if (la != null) {
+      Token la2 = laInteger(la, true);
+      if (la2 != null) {
+        consume(la);
+        consume(la2);
+        return Int32.parse(la2.string());
+      } else if ((la2 = laDecimal(la, true)) != null) {
+        consume(la);
+        consume(la2);
+        return new Dec(la2.string());
+      } else if ((la2 = laDouble(la, true)) != null) {
+        consume(la);
+        consume(la2);
+        return new Dbl(la2.string());
+      }
+    } else {
+      la = laInteger(true);
+      if (la != null) {
+        consume(la);
+        return Int32.parse(la.string());
+      } else if ((la = laDecimal(true)) != null) {
+        consume(la);
+        return new Dec(la.string());
+      } else if ((la = laDouble(true)) != null) {
+        consume(la);
+        return new Dbl(la.string());
+      }
+    }
+    return null;
+  }
 
-	private Str string() throws TokenizerException {
-		Token la = laS();
-		if (la != null) {
-			Token la2 = laString(la, true);
-			if (la2 != null) {
-				consume(la);
-				consume(la2);
-				return new Str(la2.string());
-			}
-		} else {
-			la = laString(true);
-			if (la != null) {
-				consume(la);
-				return new Str(la.string());
-			}
-		}
-		return null;
-	}
+  private Str string() throws TokenizerException {
+    Token la = laS();
+    if (la != null) {
+      Token la2 = laString(la, true);
+      if (la2 != null) {
+        consume(la);
+        consume(la2);
+        return new Str(la2.string());
+      }
+    } else {
+      la = laString(true);
+      if (la != null) {
+        consume(la);
+        return new Str(la.string());
+      }
+    }
+    return null;
+  }
 
-	public static void main(String[] args) throws Exception {
-		String s = "{\"bindings\": [        {\"ircEvent\": \"PRIVMSG\", \"method\": \"newURI\", \"regex\": \"^http://.*\"},        {\"ircEvent\": \"PRIVMSG\", \"method\": \"deleteURI\", \"regex\": \"^delete.*\"},        {\"ircEvent\": \"PRIVMSG\", \"method\": \"randomURI\", \"regex\": \"^random.*\"}    ]}";
-		Item item = new JSONParser(s).parse();
-//		new StringSerializer(System.out).serialize(item);
+  public static void main(String[] args) throws Exception {
+    String s =
+        "{\"bindings\": [        {\"ircEvent\": \"PRIVMSG\", \"method\": \"newURI\", \"regex\": \"^http://.*\"},        {\"ircEvent\": \"PRIVMSG\", \"method\": \"deleteURI\", \"regex\": \"^delete.*\"},        {\"ircEvent\": \"PRIVMSG\", \"method\": \"randomURI\", \"regex\": \"^random.*\"}    ]}";
+    Item item = new JSONParser(s).parse();
+    //		new StringSerializer(System.out).serialize(item);
 
-		s = "{\n" + "  \"sirix\": [\n" + "    {\n" + "      \"revisionNumber\": 1,\n" + "      \"revision\": {\n"
-				+ "        \"foo\": [\n" + "          \"bar\",\n" + "          null,\n" + "          2.33\n" + "        ],\n"
-				+ "        \"bar\": {\n" + "          \"hello\": \"world\",\n" + "          \"helloo\": true\n" + "        },\n"
-				+ "        \"baz\": \"hello\",\n" + "        \"tada\": [\n" + "          {\n" + "            \"foo\": \"bar\"\n"
-				+ "          },\n" + "          {\n" + "            \"baz\": false\n" + "          },\n"
-				+ "          \"boo\",\n" + "          {},\n" + "          []\n" + "        ]\n" + "      }\n" + "    },\n"
-				+ "    {\n" + "      \"revisionNumber\": 2,\n" + "      \"revision\": {\n" + "        \"tadaaa\": \"todooo\",\n"
-				+ "        \"foo\": [\n" + "          \"bar\",\n" + "          null,\n" + "          2.33\n" + "        ],\n"
-				+ "        \"bar\": {\n" + "          \"hello\": \"world\",\n" + "          \"helloo\": true\n" + "        },\n"
-				+ "        \"baz\": \"hello\",\n" + "        \"tada\": [\n" + "          {\n" + "            \"foo\": \"bar\"\n"
-				+ "          },\n" + "          {\n" + "            \"baz\": false\n" + "          },\n"
-				+ "          \"boo\",\n" + "          {},\n" + "          []\n" + "        ]\n" + "      }\n" + "    },\n"
-				+ "    {\n" + "      \"revisionNumber\": 3,\n" + "      \"revision\": {\n" + "        \"tadaaa\": \"todooo\",\n"
-				+ "        \"foo\": [\n" + "          \"bar\",\n" + "          null,\n" + "          2.33\n" + "        ],\n"
-				+ "        \"bar\": {\n" + "          \"hello\": \"world\",\n" + "          \"helloo\": true\n" + "        },\n"
-				+ "        \"baz\": \"hello\",\n" + "        \"tada\": [\n" + "          {\n" + "            \"foo\": \"bar\"\n"
-				+ "          },\n" + "          {\n" + "            \"baz\": false\n" + "          },\n"
-				+ "          \"boo\",\n" + "          {},\n" + "          [\n" + "            {\n"
-				+ "              \"foo\": [\n" + "                true,\n" + "                {\n"
-				+ "                  \"baz\": \"bar\"\n" + "                }\n" + "              ]\n" + "            }\n"
-				+ "          ]\n" + "        ]\n" + "      }\n" + "    }\n" + "  ]\n" + "}";
+    s = "{\n" + "  \"sirix\": [\n" + "    {\n" + "      \"revisionNumber\": 1,\n" + "      \"revision\": {\n"
+        + "        \"foo\": [\n" + "          \"bar\",\n" + "          null,\n" + "          2.33\n" + "        ],\n"
+        + "        \"bar\": {\n" + "          \"hello\": \"world\",\n" + "          \"helloo\": true\n" + "        },\n"
+        + "        \"baz\": \"hello\",\n" + "        \"tada\": [\n" + "          {\n" + "            \"foo\": \"bar\"\n"
+        + "          },\n" + "          {\n" + "            \"baz\": false\n" + "          },\n"
+        + "          \"boo\",\n" + "          {},\n" + "          []\n" + "        ]\n" + "      }\n" + "    },\n"
+        + "    {\n" + "      \"revisionNumber\": 2,\n" + "      \"revision\": {\n" + "        \"tadaaa\": \"todooo\",\n"
+        + "        \"foo\": [\n" + "          \"bar\",\n" + "          null,\n" + "          2.33\n" + "        ],\n"
+        + "        \"bar\": {\n" + "          \"hello\": \"world\",\n" + "          \"helloo\": true\n" + "        },\n"
+        + "        \"baz\": \"hello\",\n" + "        \"tada\": [\n" + "          {\n" + "            \"foo\": \"bar\"\n"
+        + "          },\n" + "          {\n" + "            \"baz\": false\n" + "          },\n"
+        + "          \"boo\",\n" + "          {},\n" + "          []\n" + "        ]\n" + "      }\n" + "    },\n"
+        + "    {\n" + "      \"revisionNumber\": 3,\n" + "      \"revision\": {\n" + "        \"tadaaa\": \"todooo\",\n"
+        + "        \"foo\": [\n" + "          \"bar\",\n" + "          null,\n" + "          2.33\n" + "        ],\n"
+        + "        \"bar\": {\n" + "          \"hello\": \"world\",\n" + "          \"helloo\": true\n" + "        },\n"
+        + "        \"baz\": \"hello\",\n" + "        \"tada\": [\n" + "          {\n" + "            \"foo\": \"bar\"\n"
+        + "          },\n" + "          {\n" + "            \"baz\": false\n" + "          },\n"
+        + "          \"boo\",\n" + "          {},\n" + "          [\n" + "            {\n"
+        + "              \"foo\": [\n" + "                true,\n" + "                {\n"
+        + "                  \"baz\": \"bar\"\n" + "                }\n" + "              ]\n" + "            }\n"
+        + "          ]\n" + "        ]\n" + "      }\n" + "    }\n" + "  ]\n" + "}";
 
-		item = new JSONParser(s).parse();
-		new StringSerializer(System.out).serialize(item);
-	}
+    item = new JSONParser(s).parse();
+    new StringSerializer(System.out).serialize(item);
+  }
 }

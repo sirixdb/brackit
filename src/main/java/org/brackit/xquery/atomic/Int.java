@@ -29,14 +29,13 @@ package org.brackit.xquery.atomic;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Type;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class Int extends AbstractNumeric implements IntNumeric {
   private final BigDecimal v;
@@ -105,8 +104,10 @@ public class Int extends AbstractNumeric implements IntNumeric {
     } else if (other instanceof FltNumeric) {
       return Float.compare(v.floatValue(), ((Numeric) other).floatValue());
     }
-    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s' with '%s'", type(),
-        other.type());
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                             "Cannot compare '%s' with '%s'",
+                             type(),
+                             other.type());
   }
 
   @Override
@@ -235,9 +236,7 @@ public class Int extends AbstractNumeric implements IntNumeric {
 
   @Override
   public Numeric abs() throws QueryException {
-    return (v.signum() >= 0)
-        ? this
-        : new Int(v.negate());
+    return (v.signum() >= 0) ? this : new Int(v.negate());
   }
 
   @Override

@@ -33,9 +33,7 @@ import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Type;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class AtomicType implements ItemType {
   /**

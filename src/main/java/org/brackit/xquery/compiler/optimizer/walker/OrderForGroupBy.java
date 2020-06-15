@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,53 +34,52 @@ import org.brackit.xquery.compiler.XQ;
 /**
  * Insert an orderBy clause in front of a groupBy clause that orders the tuple
  * stream in according to the grouping specification.
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public class OrderForGroupBy extends Walker {
 
-	@Override
-	protected AST visit(AST node) {
-		if (node.getType() != XQ.GroupByClause) {
-			return node;
-		}
+  @Override
+  protected AST visit(AST node) {
+    if (node.getType() != XQ.GroupByClause) {
+      return node;
+    }
 
-		// check if prev sibling is already the needed group by
-		AST prev = node.getParent().getChild(node.getChildIndex() - 1);
-		if (prev.getType() == XQ.OrderByClause) {
-			if (checkOrderBy(node, prev)) {
-				return node;
-			}
-		}
+    // check if prev sibling is already the needed group by
+    AST prev = node.getParent().getChild(node.getChildIndex() - 1);
+    if (prev.getType() == XQ.OrderByClause) {
+      if (checkOrderBy(node, prev)) {
+        return node;
+      }
+    }
 
-		// introduce order by
-		AST orderBy = new AST(XQ.OrderByClause);
-		for (int i = 0; i < node.getChildCount() - 1; i++) {
-			AST groupBySpec = node.getChild(i);
-			AST orderBySpec = new AST(XQ.OrderBySpec);
-			for (int j = 0; j < groupBySpec.getChildCount(); j++) {
-				orderBySpec.addChild(groupBySpec.getChild(0).copyTree());
-			}
-			orderBy.addChild(orderBySpec);
-		}
+    // introduce order by
+    AST orderBy = new AST(XQ.OrderByClause);
+    for (int i = 0; i < node.getChildCount() - 1; i++) {
+      AST groupBySpec = node.getChild(i);
+      AST orderBySpec = new AST(XQ.OrderBySpec);
+      for (int j = 0; j < groupBySpec.getChildCount(); j++) {
+        orderBySpec.addChild(groupBySpec.getChild(0).copyTree());
+      }
+      orderBy.addChild(orderBySpec);
+    }
 
-		node.setProperty("sequential", Boolean.TRUE);
-		node.getParent().insertChild(node.getChildIndex(), orderBy);
-		return orderBy;
-	}
+    node.setProperty("sequential", Boolean.TRUE);
+    node.getParent().insertChild(node.getChildIndex(), orderBy);
+    return orderBy;
+  }
 
-	private boolean checkOrderBy(AST groupBy, AST orderBy) {
-		if (groupBy.getChildCount() - 1 != orderBy.getChildCount()) {
-			return false;
-		}
-		for (int i = 0; i < groupBy.getChildCount() - 1; i++) {
-			QNm groupByVar = (QNm) groupBy.getChild(i).getChild(0).getValue();
-			QNm orderByVar = (QNm) orderBy.getChild(i).getChild(0).getValue();
-			if (!groupByVar.equals(orderByVar)) {
-				return false;
-			}
-		}
-		return true;
-	}
+  private boolean checkOrderBy(AST groupBy, AST orderBy) {
+    if (groupBy.getChildCount() - 1 != orderBy.getChildCount()) {
+      return false;
+    }
+    for (int i = 0; i < groupBy.getChildCount() - 1; i++) {
+      QNm groupByVar = (QNm) groupBy.getChild(i).getChild(0).getValue();
+      QNm orderByVar = (QNm) orderBy.getChild(i).getChild(0).getValue();
+      if (!groupByVar.equals(orderByVar)) {
+        return false;
+      }
+    }
+    return true;
+  }
 }

@@ -38,9 +38,7 @@
 package org.brackit.xquery.update.op;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public enum OpType {
   REPLACE_NODE(-1),

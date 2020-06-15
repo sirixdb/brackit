@@ -39,6 +39,7 @@ package org.brackit.xquery.util.serialize;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
+
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.parser.DefaultHandler;
@@ -46,9 +47,7 @@ import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class SubtreePrinter extends DefaultHandler {
 
@@ -89,8 +88,7 @@ public class SubtreePrinter extends DefaultHandler {
     this.printXmlHead = printXmlHead;
   }
 
-  public SubtreePrinter(final PrintWriter out, final boolean printXmlHead,
-      final boolean prettyPrint) {
+  public SubtreePrinter(final PrintWriter out, final boolean printXmlHead, final boolean prettyPrint) {
     this.out = out;
     this.printXmlHead = printXmlHead;
     this.prettyPrint = prettyPrint;
@@ -104,8 +102,7 @@ public class SubtreePrinter extends DefaultHandler {
     this(new PrintWriter(out, false), printXmlHead, false);
   }
 
-  public SubtreePrinter(final PrintStream out, final boolean printXmlHead,
-      final boolean prettyPrint) {
+  public SubtreePrinter(final PrintStream out, final boolean printXmlHead, final boolean prettyPrint) {
     this(new PrintWriter(out, false), printXmlHead, prettyPrint);
   }
 
@@ -129,7 +126,8 @@ public class SubtreePrinter extends DefaultHandler {
   }
 
   @Override
-  public void endDocument() throws DocumentException {}
+  public void endDocument() throws DocumentException {
+  }
 
   @Override
   public void end() throws DocumentException {
@@ -259,8 +257,9 @@ public class SubtreePrinter extends DefaultHandler {
 
   private void indent() {
     if (prettyPrint) {
-      for (int i = 0; i < level; i++)
+      for (int i = 0; i < level; i++) {
         out.print(indent);
+      }
     }
   }
 
@@ -325,7 +324,8 @@ public class SubtreePrinter extends DefaultHandler {
   }
 
   @Override
-  public void endMapping(final String prefix) throws DocumentException {}
+  public void endMapping(final String prefix) throws DocumentException {
+  }
 
   @Override
   public void startMapping(final String prefix, final String uri) throws DocumentException {

@@ -41,49 +41,47 @@ import org.brackit.xquery.xdm.Signature;
  * per http://www.w3.org/TR/xpath-functions/#func-translate.
  *
  * @author Max Bechtold
- *
  */
 public class StringTranslate extends AbstractFunction {
 
-	public StringTranslate(QNm name, Signature signature) {
-		super(name, signature, true);
-	}
+  public StringTranslate(QNm name, Signature signature) {
+    super(name, signature, true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		if (args[0] == null) {
-			return Str.EMPTY;
-		}
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    if (args[0] == null) {
+      return Str.EMPTY;
+    }
 
-		String str = ((Str) args[0]).stringValue();
-		String map = ((Str) args[1]).stringValue();
-		String trans = ((Str) args[2]).stringValue();
-		StringBuilder sb = new StringBuilder(str.length());
+    String str = ((Str) args[0]).stringValue();
+    String map = ((Str) args[1]).stringValue();
+    String trans = ((Str) args[2]).stringValue();
+    StringBuilder sb = new StringBuilder(str.length());
 
-		if (map.isEmpty()) {
-			return Str.EMPTY;
-		}
+    if (map.isEmpty()) {
+      return Str.EMPTY;
+    }
 
-		int copy = 0;
+    int copy = 0;
 
-		for (int i = 0; i < str.length(); i++) {
-			char c = str.charAt(i);
-			int index = map.indexOf(c);
-			if (index != -1 && index < trans.length()) {
-				if (copy < i) {
-					sb.append(str.substring(copy, i));
-				}
-				sb.append(trans.charAt(index));
-				copy = i + 1;
-			}
-		}
+    for (int i = 0; i < str.length(); i++) {
+      char c = str.charAt(i);
+      int index = map.indexOf(c);
+      if (index != -1 && index < trans.length()) {
+        if (copy < i) {
+          sb.append(str.substring(copy, i));
+        }
+        sb.append(trans.charAt(index));
+        copy = i + 1;
+      }
+    }
 
-		if (copy < str.length()) {
-			sb.append(str.substring(copy));
-		}
+    if (copy < str.length()) {
+      sb.append(str.substring(copy));
+    }
 
-		return new Str(sb.toString());
-	}
+    return new Str(sb.toString());
+  }
 
 }

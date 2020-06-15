@@ -49,6 +49,7 @@ public final class PathParser extends Tokenizer {
 
   /**
    * Parse a path
+   *
    * @return the path instance
    * @throws PathException if anything went wrong
    */

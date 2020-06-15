@@ -5,9 +5,8 @@ import org.brackit.xquery.xdm.Stream;
 /**
  * Adds temporal methods.
  *
- * @author Johannes Lichtenberger
- *
  * @param <E> the implementing class
+ * @author Johannes Lichtenberger
  */
 public interface TemporalJsonItem<E extends TemporalJsonItem<E>> extends JsonItem {
   /**

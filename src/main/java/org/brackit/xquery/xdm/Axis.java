@@ -41,148 +41,125 @@ import org.brackit.xquery.xdm.node.TemporalNode;
  *
  * @author Sebastian Baechle
  * @author Johannes Lichtenberger
- *
  */
 public enum Axis {
-	PARENT(true) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isParentOf(other);
-		}
-	},
-	CHILD(true) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isChildOf(other);
-		}
-	},
-	ANCESTOR(false) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isAncestorOf(other);
-		}
-	},
-	DESCENDANT(true) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isDescendantOf(other);
-		}
-	},
-	ANCESTOR_OR_SELF(false) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isAncestorOrSelfOf(other);
-		}
-	},
-	DESCENDANT_OR_SELF(true) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isDescendantOrSelfOf(other);
-		}
-	},
-	ATTRIBUTE(true) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isAttributeOf(other);
-		}
-	},
-	SELF(true) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isSelfOf(other);
-		}
-	},
-	FOLLOWING(true) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isFollowingOf(other);
-		}
-	},
-	FOLLOWING_SIBLING(true) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isFollowingSiblingOf(other);
-		}
-	},
-	PRECEDING(false) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isPrecedingOf(other);
-		}
-	},
-	PRECEDING_SIBLING(false) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return node.isPrecedingSiblingOf(other);
-		}
-	},
-	NEXT(true) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return ((TemporalNode<?>) node).isNextOf((TemporalNode<?>) other);
-		}
-	},
-	PREVIOUS(false) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return ((TemporalNode<?>) node).isPreviousOf((TemporalNode<?>) other);
-		}
-	},
-	FUTURE(true) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return ((TemporalNode<?>) node).isFutureOf((TemporalNode<?>) other);
-		}
-	},
-	FUTURE_OR_SELF(true) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return ((TemporalNode<?>) node).isFutureOrSelfOf((TemporalNode<?>) other);
-		}
-	},
-	PAST(false) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return ((TemporalNode<?>) node).isEarlierOf((TemporalNode<?>) other);
-		}
-	},
-	PAST_OR_SELF(false) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return ((TemporalNode<?>) node)
-					.isEarlierOrSelfOf((TemporalNode<?>) other);
-		}
-	},
-	LAST(false) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return ((TemporalNode<?>) node).isLastOf((TemporalNode<?>) other);
-		}
-	},
-	FIRST(true) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			return ((TemporalNode<?>) node).isFirstOf((TemporalNode<?>) other);
-		}
-	},
-	ALL_TIME(true) {
-		@Override
-		public boolean check(Node<?> node, Node<?> other) throws QueryException {
-			// TODO
-			return true;
-		}
-	};
+  PARENT(true) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return node.isParentOf(other);
+    }
+  }, CHILD(true) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return node.isChildOf(other);
+    }
+  }, ANCESTOR(false) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return node.isAncestorOf(other);
+    }
+  }, DESCENDANT(true) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return node.isDescendantOf(other);
+    }
+  }, ANCESTOR_OR_SELF(false) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return node.isAncestorOrSelfOf(other);
+    }
+  }, DESCENDANT_OR_SELF(true) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return node.isDescendantOrSelfOf(other);
+    }
+  }, ATTRIBUTE(true) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return node.isAttributeOf(other);
+    }
+  }, SELF(true) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return node.isSelfOf(other);
+    }
+  }, FOLLOWING(true) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return node.isFollowingOf(other);
+    }
+  }, FOLLOWING_SIBLING(true) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return node.isFollowingSiblingOf(other);
+    }
+  }, PRECEDING(false) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return node.isPrecedingOf(other);
+    }
+  }, PRECEDING_SIBLING(false) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return node.isPrecedingSiblingOf(other);
+    }
+  }, NEXT(true) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return ((TemporalNode<?>) node).isNextOf((TemporalNode<?>) other);
+    }
+  }, PREVIOUS(false) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return ((TemporalNode<?>) node).isPreviousOf((TemporalNode<?>) other);
+    }
+  }, FUTURE(true) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return ((TemporalNode<?>) node).isFutureOf((TemporalNode<?>) other);
+    }
+  }, FUTURE_OR_SELF(true) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return ((TemporalNode<?>) node).isFutureOrSelfOf((TemporalNode<?>) other);
+    }
+  }, PAST(false) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return ((TemporalNode<?>) node).isEarlierOf((TemporalNode<?>) other);
+    }
+  }, PAST_OR_SELF(false) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return ((TemporalNode<?>) node).isEarlierOrSelfOf((TemporalNode<?>) other);
+    }
+  }, LAST(false) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return ((TemporalNode<?>) node).isLastOf((TemporalNode<?>) other);
+    }
+  }, FIRST(true) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      return ((TemporalNode<?>) node).isFirstOf((TemporalNode<?>) other);
+    }
+  }, ALL_TIME(true) {
+    @Override
+    public boolean check(Node<?> node, Node<?> other) throws QueryException {
+      // TODO
+      return true;
+    }
+  };
 
-	private final boolean forward;
+  private final boolean forward;
 
-	private Axis(boolean forward) {
-		this.forward = forward;
-	}
+  private Axis(boolean forward) {
+    this.forward = forward;
+  }
 
-	public abstract boolean check(Node<?> node, Node<?> other)
-			throws QueryException;
+  public abstract boolean check(Node<?> node, Node<?> other) throws QueryException;
 
-	public boolean isForward() {
-		return forward;
-	}
+  public boolean isForward() {
+    return forward;
+  }
 }

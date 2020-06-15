@@ -34,62 +34,59 @@ import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class DocumentD2Node extends ParentD2Node {
 
-	private final D2NodeCollection collection;
+  private final D2NodeCollection collection;
 
-	public DocumentD2Node(String name) {
-		super(null, FIRST);
-		this.collection = new D2NodeCollection(name, this);
-	}
+  public DocumentD2Node(String name) {
+    super(null, FIRST);
+    this.collection = new D2NodeCollection(name, this);
+  }
 
-	public DocumentD2Node(D2NodeCollection collection) {
-		super(null, FIRST);
-		this.collection = collection;
-		collection.add(this);
-	}
+  public DocumentD2Node(D2NodeCollection collection) {
+    super(null, FIRST);
+    this.collection = collection;
+    collection.add(this);
+  }
 
-	public DocumentD2Node() {
-		super(null, FIRST);
-		this.collection = new D2NodeCollection(String.format("%s_%s_%s.xml",
-				Thread.currentThread().getName(), "noname",
-				Long.toString(System.currentTimeMillis())), this);
-	}
+  public DocumentD2Node() {
+    super(null, FIRST);
+    this.collection = new D2NodeCollection(String.format("%s_%s_%s.xml",
+                                                         Thread.currentThread().getName(),
+                                                         "noname",
+                                                         Long.toString(System.currentTimeMillis())), this);
+  }
 
-	@Override
-	public D2NodeCollection getCollection() {
-		return collection;
-	}
+  @Override
+  public D2NodeCollection getCollection() {
+    return collection;
+  }
 
-	@Override
-	public QNm getName() throws DocumentException {
-		return null;
-	}
+  @Override
+  public QNm getName() throws DocumentException {
+    return null;
+  }
 
-	@Override
-	public boolean isDocumentOf(Node<?> node) {
-		return (getKind() == Kind.DOCUMENT) && (node == this);
-	}
+  @Override
+  public boolean isDocumentOf(Node<?> node) {
+    return (getKind() == Kind.DOCUMENT) && (node == this);
+  }
 
-	@Override
-	public Kind getKind() {
-		return Kind.DOCUMENT;
-	}
+  @Override
+  public Kind getKind() {
+    return Kind.DOCUMENT;
+  }
 
-	@Override
-	public Stream<? extends D2Node> getDescendantOrSelf()
-			throws DocumentException {
-		DescendantScanner desc = new DescendantScanner(this);
-		return desc;
-	}
+  @Override
+  public Stream<? extends D2Node> getDescendantOrSelf() throws DocumentException {
+    DescendantScanner desc = new DescendantScanner(this);
+    return desc;
+  }
 
-	@Override
-	public String toString() {
-		return String.format("(type='%s', name='%s', value='%s')",
-				Kind.DOCUMENT, collection.getName(), null);
-	}
+  @Override
+  public String toString() {
+    return String.format("(type='%s', name='%s', value='%s')", Kind.DOCUMENT, collection.getName(), null);
+  }
 }

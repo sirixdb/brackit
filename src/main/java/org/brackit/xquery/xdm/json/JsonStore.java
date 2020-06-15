@@ -28,14 +28,13 @@
 package org.brackit.xquery.xdm.json;
 
 import java.nio.file.Path;
+
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.StructuredItemStore;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public interface JsonStore extends StructuredItemStore {
   @Override

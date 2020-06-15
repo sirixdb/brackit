@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -51,74 +51,71 @@ import java.util.EnumSet;
  * @author Johannes Lichtenberger
  */
 public final class ReplaceJsonValue extends ConstructedNodeBuilder implements Expr {
-	private final Expr sourceExpr;
+  private final Expr sourceExpr;
 
-	private final Expr targetExpr;
+  private final Expr targetExpr;
 
-	private final Expr recordFieldOrArrayIndex;
+  private final Expr recordFieldOrArrayIndex;
 
-	public ReplaceJsonValue(Expr sourceExpr, Expr targetExpr, Expr recordFieldOrArrayIndex) {
-		this.sourceExpr = sourceExpr;
-		this.targetExpr = targetExpr;
-		this.recordFieldOrArrayIndex = recordFieldOrArrayIndex;
-	}
+  public ReplaceJsonValue(Expr sourceExpr, Expr targetExpr, Expr recordFieldOrArrayIndex) {
+    this.sourceExpr = sourceExpr;
+    this.targetExpr = targetExpr;
+    this.recordFieldOrArrayIndex = recordFieldOrArrayIndex;
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return evaluateToItem(ctx, tuple);
-	}
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) throws QueryException {
+    return evaluateToItem(ctx, tuple);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		final Sequence target = targetExpr.evaluate(ctx, tuple);
-		final Item targetItem;
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) throws QueryException {
+    final Sequence target = targetExpr.evaluate(ctx, tuple);
+    final Item targetItem;
 
-		if (target == null) {
-			throw new QueryException(
-					ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
-		} else if (target instanceof Item) {
-			targetItem = (Item) target;
-		} else {
-			try (Iter it = target.iterate()) {
-				targetItem = it.next();
+    if (target == null) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
+    } else if (target instanceof Item) {
+      targetItem = (Item) target;
+    } else {
+      try (Iter it = target.iterate()) {
+        targetItem = it.next();
 
-				if (targetItem == null) {
-					throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
-				}
-				if (it.next() != null) {
-					throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE);
-				}
-			}
-		}
-		if (!(targetItem instanceof JsonItem)) {
-			throw new QueryException(
-					ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
-					"Target item is atomic value %s", targetItem);
-		}
+        if (targetItem == null) {
+          throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
+        }
+        if (it.next() != null) {
+          throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE);
+        }
+      }
+    }
+    if (!(targetItem instanceof JsonItem)) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
+                               "Target item is atomic value %s",
+                               targetItem);
+    }
 
-		final Sequence recordFieldOrArrayIndexSeq = recordFieldOrArrayIndex.evaluateToItem(ctx, tuple);
-		final Sequence source = sourceExpr.evaluateToItem(ctx, tuple);
+    final Sequence recordFieldOrArrayIndexSeq = recordFieldOrArrayIndex.evaluateToItem(ctx, tuple);
+    final Sequence source = sourceExpr.evaluateToItem(ctx, tuple);
 
-		if (target instanceof Array) {
-			final Int32 index = (Int32) recordFieldOrArrayIndexSeq;
-			ctx.addPendingUpdate(new ReplaceArrayValueOp((Array) target, index.intValue(), source));
-		} else {
-			final QNm field = (QNm) recordFieldOrArrayIndexSeq;
-			ctx.addPendingUpdate(new ReplaceRecordValueOp((Record) target, field, source));
-		}
+    if (target instanceof Array) {
+      final Int32 index = (Int32) recordFieldOrArrayIndexSeq;
+      ctx.addPendingUpdate(new ReplaceArrayValueOp((Array) target, index.intValue(), source));
+    } else {
+      final QNm field = (QNm) recordFieldOrArrayIndexSeq;
+      ctx.addPendingUpdate(new ReplaceRecordValueOp((Record) target, field, source));
+    }
 
-		return null;
-	}
+    return null;
+  }
 
-	@Override
-	public boolean isUpdating() {
-		return true;
-	}
+  @Override
+  public boolean isUpdating() {
+    return true;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 }

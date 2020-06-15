@@ -28,14 +28,13 @@
 package org.brackit.xquery.atomic;
 
 import java.math.BigDecimal;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Type;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class Int64 extends AbstractNumeric implements LonNumeric {
   public static final Int64 MIN_VALUE = new Int64(Long.MIN_VALUE);
@@ -87,9 +86,7 @@ public class Int64 extends AbstractNumeric implements LonNumeric {
 
   @Override
   public IntNumeric inc() {
-    return (v != Long.MAX_VALUE)
-        ? new Int64(v + 1)
-        : new Int(new BigDecimal(v).add(BigDecimal.ONE));
+    return (v != Long.MAX_VALUE) ? new Int64(v + 1) : new Int(new BigDecimal(v).add(BigDecimal.ONE));
   }
 
   @Override
@@ -112,8 +109,10 @@ public class Int64 extends AbstractNumeric implements LonNumeric {
     } else if (other instanceof Flt) {
       return Float.compare(v, ((Numeric) other).floatValue());
     }
-    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s' with '%s'", type(),
-        other.type());
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                             "Cannot compare '%s' with '%s'",
+                             type(),
+                             other.type());
   }
 
   @Override
@@ -266,9 +265,7 @@ public class Int64 extends AbstractNumeric implements LonNumeric {
 
   @Override
   public Numeric negate() throws QueryException {
-    return (v != Long.MIN_VALUE)
-        ? new Int64(-v)
-        : new Int(new BigDecimal(v).negate());
+    return (v != Long.MIN_VALUE) ? new Int64(-v) : new Int(new BigDecimal(v).negate());
   }
 
   @Override
@@ -278,11 +275,7 @@ public class Int64 extends AbstractNumeric implements LonNumeric {
 
   @Override
   public Numeric abs() throws QueryException {
-    return (v >= 0)
-        ? this
-        : (v != Long.MIN_VALUE)
-            ? new Int64(-v)
-            : new Int(new BigDecimal(v).negate());
+    return (v >= 0) ? this : (v != Long.MIN_VALUE) ? new Int64(-v) : new Int(new BigDecimal(v).negate());
   }
 
   @Override

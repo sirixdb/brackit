@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -39,62 +39,58 @@ import org.brackit.xquery.xdm.Sequence;
  */
 public class Simple {
 
-	public static void main(String[] args) {
-		try {
-			queryAndSerialize();
-			System.out.println();
-			queryAndIterate();
-		} catch (QueryException e) {
-			System.err.print("XQuery error ");
-			System.err.print(e.getCode());
-			System.err.print(": ");
-			System.err.println(e.getMessage());
-		}
-	}
+  public static void main(String[] args) {
+    try {
+      queryAndSerialize();
+      System.out.println();
+      queryAndIterate();
+    } catch (QueryException e) {
+      System.err.print("XQuery error ");
+      System.err.print(e.getCode());
+      System.err.print(": ");
+      System.err.println(e.getMessage());
+    }
+  }
 
-	private static void queryAndSerialize() throws QueryException {
-		// initialize query context
-		QueryContext ctx = new QueryContext();
+  private static void queryAndSerialize() throws QueryException {
+    // initialize query context
+    QueryContext ctx = new QueryContext();
 
-		// run query and serialize result to std out
-		System.out.println("Running query:");
-		String xq = "for $i in (1 to 4)\n" +
-		            "let $d := <no>{$i}</no>\n" +
-		            "return $d";
-		System.out.println(xq);		
-		XQuery q = new XQuery(xq);
-		q.setPrettyPrint(true);
-		q.serialize(ctx, System.out);
-		System.out.println();
-	}
+    // run query and serialize result to std out
+    System.out.println("Running query:");
+    String xq = "for $i in (1 to 4)\n" + "let $d := <no>{$i}</no>\n" + "return $d";
+    System.out.println(xq);
+    XQuery q = new XQuery(xq);
+    q.setPrettyPrint(true);
+    q.serialize(ctx, System.out);
+    System.out.println();
+  }
 
-	private static void queryAndIterate() throws QueryException {
-		// initialize query context
-		QueryContext ctx = new QueryContext();
+  private static void queryAndIterate() throws QueryException {
+    // initialize query context
+    QueryContext ctx = new QueryContext();
 
-		// run query and serialize result to std out
-		System.out.println("Running query:");
-		String xq = "for $i in (1 to 4)\n" +
-		            "let $d := <no>{$i}</no>\n" +
-		            "return $d";
-		System.out.println(xq);		
-		XQuery q = new XQuery(xq);
-		Sequence res = q.execute(ctx);
-		System.out.println("result sequence size: " + res.size());
-		Iter it = res.iterate();
-		Item i;
-		try {
-			int cnt = 0;
-			while ((i = it.next()) != null) {
-				System.out.print("Item ");
-				System.out.print(cnt++);
-				System.out.print(": ");
-				System.out.print(i.itemType());
-				System.out.print(" atomized value=");
-				System.out.println(i.atomize());
-			}
-		} finally {
-			it.close();
-		}
-	}
+    // run query and serialize result to std out
+    System.out.println("Running query:");
+    String xq = "for $i in (1 to 4)\n" + "let $d := <no>{$i}</no>\n" + "return $d";
+    System.out.println(xq);
+    XQuery q = new XQuery(xq);
+    Sequence res = q.execute(ctx);
+    System.out.println("result sequence size: " + res.size());
+    Iter it = res.iterate();
+    Item i;
+    try {
+      int cnt = 0;
+      while ((i = it.next()) != null) {
+        System.out.print("Item ");
+        System.out.print(cnt++);
+        System.out.print(": ");
+        System.out.print(i.itemType());
+        System.out.print(" atomized value=");
+        System.out.println(i.atomize());
+      }
+    } finally {
+      it.close();
+    }
+  }
 }

@@ -45,52 +45,48 @@ import org.brackit.xquery.xdm.Signature;
  * http://www.w3.org/TR/xpath-functions/#func-substring-after
  *
  * @author Max Bechtold
- *
  */
 public class SubstringRelative extends AbstractFunction {
-	private boolean before;
+  private boolean before;
 
-	public SubstringRelative(QNm name, boolean before, Signature signature) {
-		super(name, signature, true);
-		this.before = before;
-	}
+  public SubstringRelative(QNm name, boolean before, Signature signature) {
+    super(name, signature, true);
+    this.before = before;
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		if (args.length == 3) {
-			Str collation = (Str) args[2];
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    if (args.length == 3) {
+      Str collation = (Str) args[2];
 
-			if (!collation.stringValue()
-					.equals("http://www.w3.org/2005/xpath-functions/collation/codepoint")) {
-				throw new QueryException(ErrorCode.ERR_UNSUPPORTED_COLLATION,
-						"Unsupported collation: %s", collation);
-			}
-		}
+      if (!collation.stringValue().equals("http://www.w3.org/2005/xpath-functions/collation/codepoint")) {
+        throw new QueryException(ErrorCode.ERR_UNSUPPORTED_COLLATION, "Unsupported collation: %s", collation);
+      }
+    }
 
-		if (args[0] == null || args[1] == null) {
-			return Str.EMPTY;
-		}
+    if (args[0] == null || args[1] == null) {
+      return Str.EMPTY;
+    }
 
-		if (((Str) args[1]).stringValue().isEmpty()) {
-			if (before) {
-				return Str.EMPTY;
-			} else {
-				return args[0];
-			}
-		}
+    if (((Str) args[1]).stringValue().isEmpty()) {
+      if (before) {
+        return Str.EMPTY;
+      } else {
+        return args[0];
+      }
+    }
 
-		String target = ((Str) args[0]).stringValue();
-		String pattern = ((Str) args[1]).stringValue();
+    String target = ((Str) args[0]).stringValue();
+    String pattern = ((Str) args[1]).stringValue();
 
-		int pos = target.indexOf(pattern);
+    int pos = target.indexOf(pattern);
 
-		if (pos == -1) {
-			return Str.EMPTY;
-		} else if (before) {
-			return new Str(target.substring(0, pos));
-		} else {
-			return new Str(target.substring(pos + pattern.length()));
-		}
-	}
+    if (pos == -1) {
+      return Str.EMPTY;
+    } else if (before) {
+      return new Str(target.substring(0, pos));
+    } else {
+      return new Str(target.substring(pos + pattern.length()));
+    }
+  }
 }

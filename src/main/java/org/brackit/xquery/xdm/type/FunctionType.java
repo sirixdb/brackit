@@ -34,7 +34,6 @@ import org.brackit.xquery.xdm.Signature;
 
 /**
  * @author Sebastian Baechle
- *
  */
 public final class FunctionType implements ItemType {
 

@@ -28,6 +28,7 @@
 package org.brackit.xquery.node.parser;
 
 import java.util.List;
+
 import org.brackit.xquery.util.log.Logger;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
@@ -38,106 +39,99 @@ import org.brackit.xquery.xdm.node.Node;
  * Streaming {@link SubtreeProcessor} for fragments.
  *
  * @author Sebastian Baechle
- *
  */
-public class StreamSubtreeProcessor<E extends Node<E>> extends
-        SubtreeProcessor<E> {
-    private static final Logger log = Logger
-            .getLogger(StreamSubtreeProcessor.class);
+public class StreamSubtreeProcessor<E extends Node<E>> extends SubtreeProcessor<E> {
+  private static final Logger log = Logger.getLogger(StreamSubtreeProcessor.class);
 
-    private boolean displayNodeIDs;
+  private boolean displayNodeIDs;
 
-    private final Stream<? extends E> scanner;
+  private final Stream<? extends E> scanner;
 
-    public StreamSubtreeProcessor(Stream<? extends E> scanner,
-            List<SubtreeListener<? super E>> listeners) {
-        super(listeners);
-        this.scanner = scanner;
-    }
+  public StreamSubtreeProcessor(Stream<? extends E> scanner, List<SubtreeListener<? super E>> listeners) {
+    super(listeners);
+    this.scanner = scanner;
+  }
 
-    public void process() throws DocumentException {
-        try {
-            E[] stack = (E[]) new Node[10];
-            int stackSize = 0;
-            E node = null;
-            notifyBegin();
+  public void process() throws DocumentException {
+    try {
+      E[] stack = (E[]) new Node[10];
+      int stackSize = 0;
+      E node = null;
+      notifyBegin();
 
-            while ((node = scanner.next()) != null) {
-                if (stackSize == 0) {
-                    notifyBeginFragment();
-                }
-
-                // get kind of current node
-                Kind kind = node.getKind();
-                // handle closing tags and start new element if necessary
-                if (kind != Kind.ATTRIBUTE) {
-                    while ((stackSize > 0)
-                            && (!stack[stackSize - 1].isParentOf(node))) {
-                        E ancestor = stack[--stackSize];
-
-                        if (ancestor.getKind() == Kind.ELEMENT)
-                            notifyEndElement(ancestor);
-                        else
-                            notifyEndDocument();
-                    }
-                }
-
-                // call handler methods depending on node type
-                if (kind == Kind.ELEMENT) {
-                    notifyStartElement(node);
-                    if (stackSize == stack.length) {
-                        E[] newElementStack = (E[]) new Node[((stackSize * 3) / 2) + 1];
-                        System.arraycopy(stack, 0, newElementStack, 0,
-                                stackSize);
-                        stack = newElementStack;
-                    }
-                    stack[stackSize++] = node;
-                } else if (kind == Kind.ATTRIBUTE) {
-                    notifyAttribute(node);
-                } else if (kind == Kind.TEXT) {
-                    notifyText(node);
-                } else if (kind == Kind.COMMENT) {
-                    notifyComment(node);
-                } else if (kind == Kind.PROCESSING_INSTRUCTION) {
-                    notifyProcessingInstruction(node);
-                } else if (kind == Kind.DOCUMENT) {
-                    notifyBeginDocument();
-                    if (stackSize == stack.length) {
-                        E[] newElementStack = (E[]) new Node[((stackSize * 3) / 2) + 1];
-                        System.arraycopy(stack, 0, newElementStack, 0,
-                                stackSize);
-                        stack = newElementStack;
-                    }
-                    stack[stackSize++] = node;
-                }
-
-                if (stackSize == 0) {
-                    notifyEndFragment();
-                }
-            }
-
-            while (stackSize > 0) {
-                E ancestor = stack[--stackSize];
-
-                if (ancestor.getKind() == Kind.ELEMENT) {
-                    notifyEndElement(ancestor);
-                } else {
-                    notifyEndDocument();
-                }
-
-                if (stackSize == 0) {
-                    notifyEndFragment();
-                }
-            }
-
-            notifyEnd();
-        } catch (Exception e) {
-            notifyFail();
-
-            log.error(e);
-            throw new DocumentException(e);
-        } finally {
-            scanner.close();
+      while ((node = scanner.next()) != null) {
+        if (stackSize == 0) {
+          notifyBeginFragment();
         }
+
+        // get kind of current node
+        Kind kind = node.getKind();
+        // handle closing tags and start new element if necessary
+        if (kind != Kind.ATTRIBUTE) {
+          while ((stackSize > 0) && (!stack[stackSize - 1].isParentOf(node))) {
+            E ancestor = stack[--stackSize];
+
+            if (ancestor.getKind() == Kind.ELEMENT)
+              notifyEndElement(ancestor);
+            else
+              notifyEndDocument();
+          }
+        }
+
+        // call handler methods depending on node type
+        if (kind == Kind.ELEMENT) {
+          notifyStartElement(node);
+          if (stackSize == stack.length) {
+            E[] newElementStack = (E[]) new Node[((stackSize * 3) / 2) + 1];
+            System.arraycopy(stack, 0, newElementStack, 0, stackSize);
+            stack = newElementStack;
+          }
+          stack[stackSize++] = node;
+        } else if (kind == Kind.ATTRIBUTE) {
+          notifyAttribute(node);
+        } else if (kind == Kind.TEXT) {
+          notifyText(node);
+        } else if (kind == Kind.COMMENT) {
+          notifyComment(node);
+        } else if (kind == Kind.PROCESSING_INSTRUCTION) {
+          notifyProcessingInstruction(node);
+        } else if (kind == Kind.DOCUMENT) {
+          notifyBeginDocument();
+          if (stackSize == stack.length) {
+            E[] newElementStack = (E[]) new Node[((stackSize * 3) / 2) + 1];
+            System.arraycopy(stack, 0, newElementStack, 0, stackSize);
+            stack = newElementStack;
+          }
+          stack[stackSize++] = node;
+        }
+
+        if (stackSize == 0) {
+          notifyEndFragment();
+        }
+      }
+
+      while (stackSize > 0) {
+        E ancestor = stack[--stackSize];
+
+        if (ancestor.getKind() == Kind.ELEMENT) {
+          notifyEndElement(ancestor);
+        } else {
+          notifyEndDocument();
+        }
+
+        if (stackSize == 0) {
+          notifyEndFragment();
+        }
+      }
+
+      notifyEnd();
+    } catch (Exception e) {
+      notifyFail();
+
+      log.error(e);
+      throw new DocumentException(e);
+    } finally {
+      scanner.close();
     }
+  }
 }

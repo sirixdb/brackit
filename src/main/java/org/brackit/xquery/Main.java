@@ -47,141 +47,138 @@ import org.brackit.xquery.xdm.node.NodeFactory;
 
 /**
  * @author Sebastian Baechle
- *
  */
 public class Main {
 
-	private static class Config {
-		Map<String, String> options = new HashMap<>();
+  private static class Config {
+    Map<String, String> options = new HashMap<>();
 
-		boolean isSet(String option) {
-			return options.containsKey(option);
-		}
+    boolean isSet(String option) {
+      return options.containsKey(option);
+    }
 
-		String getValue(String option) {
-			return options.get(option);
-		}
+    String getValue(String option) {
+      return options.get(option);
+    }
 
-		void setOption(String option, String value) {
-			options.put(option, value);
-		}
-	}
+    void setOption(String option, String value) {
+      options.put(option, value);
+    }
+  }
 
-	private static class Option {
-		final String key;
-		final String desc;
-		final boolean hasValue;
+  private static class Option {
+    final String key;
+    final String desc;
+    final boolean hasValue;
 
-		Option(String key, String desc, boolean hasValue) {
-			this.key = key;
-			this.desc = desc;
-			this.hasValue = hasValue;
-		}
-	}
+    Option(String key, String desc, boolean hasValue) {
+      this.key = key;
+      this.desc = desc;
+      this.hasValue = hasValue;
+    }
+  }
 
-	private static final List<Option> options = new ArrayList<>();
+  private static final List<Option> options = new ArrayList<>();
 
-	static {
-		options.add(new Option("-q",
-				"query file [use '-' for stdin (default)]", true));
-		options.add(new Option("-f", "default document", true));
-		options.add(new Option("-p", "pretty print", false));
-	}
+  static {
+    options.add(new Option("-q", "query file [use '-' for stdin (default)]", true));
+    options.add(new Option("-f", "default document", true));
+    options.add(new Option("-p", "pretty print", false));
+  }
 
-	public static void main(String[] args) {
-		try {
-			Config config = parseParams(args);
-			QueryContext ctx = new BrackitQueryContext();
+  public static void main(String[] args) {
+    try {
+      Config config = parseParams(args);
+      QueryContext ctx = new BrackitQueryContext();
 
-			String file = config.getValue("-f");
-			if (file != null) {
-				URI uri = new URI(file);
-				try (InputStream in = URIHandler.getInputStream(uri)) {
-					SubtreeParser parser = new DocumentParser(in);
-					String name = uri.toURL().getFile();
-					NodeFactory<?> factory = ctx.getNodeFactory();
-					NodeCollection<?> coll = factory.collection(name, parser);
-					Node<?> doc = coll.getDocument();
-					ctx.setContextItem(doc);
-				}
-			}
+      String file = config.getValue("-f");
+      if (file != null) {
+        URI uri = new URI(file);
+        try (InputStream in = URIHandler.getInputStream(uri)) {
+          SubtreeParser parser = new DocumentParser(in);
+          String name = uri.toURL().getFile();
+          NodeFactory<?> factory = ctx.getNodeFactory();
+          NodeCollection<?> coll = factory.collection(name, parser);
+          Node<?> doc = coll.getDocument();
+          ctx.setContextItem(doc);
+        }
+      }
 
-			String query;
-			if (((config.isSet("-q")) && (!"-".equals(config.getValue("-q"))))) {
-				query = readFile(config.getValue("-q"));
-			} else {
-				query = readString(System.in);
-			}
+      String query;
+      if (((config.isSet("-q")) && (!"-".equals(config.getValue("-q"))))) {
+        query = readFile(config.getValue("-q"));
+      } else {
+        query = readString(System.in);
+      }
 
-			XQuery xq = new XQuery(query);
-			if (config.isSet("-p")) {
-				xq.prettyPrint();
-			}
-			xq.serialize(ctx, System.out);
-		} catch (QueryException e) {
-			System.out.println("Error: " + e.getMessage());
-			System.exit(-2);
-		} catch (IOException e) {
-			System.out.println("I/O Error: " + e.getMessage());
-			System.exit(-3);
-		} catch (Throwable e) {
-			System.out.println("Error: " + e.getMessage());
-			System.exit(-4);
-		}
-	}
+      XQuery xq = new XQuery(query);
+      if (config.isSet("-p")) {
+        xq.prettyPrint();
+      }
+      xq.serialize(ctx, System.out);
+    } catch (QueryException e) {
+      System.out.println("Error: " + e.getMessage());
+      System.exit(-2);
+    } catch (IOException e) {
+      System.out.println("I/O Error: " + e.getMessage());
+      System.exit(-3);
+    } catch (Throwable e) {
+      System.out.println("Error: " + e.getMessage());
+      System.exit(-4);
+    }
+  }
 
-	private static Config parseParams(String[] args) throws Exception {
-		Config config = new Config();
-		for (int i = 0; i < args.length; i++) {
-			boolean valid = false;
-			String s = args[i];
-			for (Option o : options) {
-				if (o.key.equals(s)) {
-					String val = (o.hasValue) ? args[++i] : null;
-					config.setOption(o.key, val);
-					valid = true;
-					break;
-				}
-			}
-			if (!valid) {
-				printUsage();
-				throw new Exception("Invalid parameter: " + s);
-			}
-		}
-		return config;
-	}
+  private static Config parseParams(String[] args) throws Exception {
+    Config config = new Config();
+    for (int i = 0; i < args.length; i++) {
+      boolean valid = false;
+      String s = args[i];
+      for (Option o : options) {
+        if (o.key.equals(s)) {
+          String val = (o.hasValue) ? args[++i] : null;
+          config.setOption(o.key, val);
+          valid = true;
+          break;
+        }
+      }
+      if (!valid) {
+        printUsage();
+        throw new Exception("Invalid parameter: " + s);
+      }
+    }
+    return config;
+  }
 
-	private static String readFile(String file) throws IOException {
-		try (FileInputStream fin = new FileInputStream(file)) {
-			return readString(fin);
-		}
-	}
+  private static String readFile(String file) throws IOException {
+    try (FileInputStream fin = new FileInputStream(file)) {
+      return readString(fin);
+    }
+  }
 
-	private static String readString(InputStream in) throws IOException {
-		int r;
-		ByteArrayOutputStream payload = new ByteArrayOutputStream();
-		while ((r = in.read()) != -1) {
-			payload.write(r);
-		}
-		return payload.toString(StandardCharsets.UTF_8);
-	}
+  private static String readString(InputStream in) throws IOException {
+    int r;
+    ByteArrayOutputStream payload = new ByteArrayOutputStream();
+    while ((r = in.read()) != -1) {
+      payload.write(r);
+    }
+    return payload.toString(StandardCharsets.UTF_8);
+  }
 
-	private static void printUsage() {
-		System.out.println("No query provided");
-		System.out.println(String.format("Usage: java %s [options]",
-				Main.class.getName()));
-		System.out.println("Options:");
-		for (Option o : options) {
-			System.out.print(" ");
-			System.out.print(o.key);
-			if (o.hasValue) {
-				System.out.print(" <param>\t");
-			} else {
-				System.out.print("\t\t");
-			}
-			System.out.print("- ");
-			System.out.println(o.desc);
-		}
-		System.exit(-1);
-	}
+  private static void printUsage() {
+    System.out.println("No query provided");
+    System.out.println(String.format("Usage: java %s [options]", Main.class.getName()));
+    System.out.println("Options:");
+    for (Option o : options) {
+      System.out.print(" ");
+      System.out.print(o.key);
+      if (o.hasValue) {
+        System.out.print(" <param>\t");
+      } else {
+        System.out.print("\t\t");
+      }
+      System.out.print("- ");
+      System.out.println(o.desc);
+    }
+    System.exit(-1);
+  }
 }

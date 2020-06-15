@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -32,61 +32,56 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
-public class CharacterDataImpl extends NodeImpl implements
-		org.w3c.dom.CharacterData {
-	public CharacterDataImpl(Document document, Node parent, short type,
-			String name, String value) {
-		super(document, parent, type, name, value);
-	}
+public class CharacterDataImpl extends NodeImpl implements org.w3c.dom.CharacterData {
+  public CharacterDataImpl(Document document, Node parent, short type, String name, String value) {
+    super(document, parent, type, name, value);
+  }
 
-	@Override
-	public void appendData(String arg) throws DOMException {
-		if (value == null)
-			value = arg;
-		else if (arg != null)
-			value += arg;
-	}
+  @Override
+  public void appendData(String arg) throws DOMException {
+    if (value == null)
+      value = arg;
+    else if (arg != null)
+      value += arg;
+  }
 
-	@Override
-	public void deleteData(int offset, int count) throws DOMException {
-		if ((value != null) && (count < value.length()))
-			value = value.substring(offset, offset + count);
-		else
-			throw new DOMException(DOMException.INDEX_SIZE_ERR, null);
-	}
+  @Override
+  public void deleteData(int offset, int count) throws DOMException {
+    if ((value != null) && (count < value.length()))
+      value = value.substring(offset, offset + count);
+    else
+      throw new DOMException(DOMException.INDEX_SIZE_ERR, null);
+  }
 
-	@Override
-	public String getData() throws DOMException {
-		return value;
-	}
+  @Override
+  public String getData() throws DOMException {
+    return value;
+  }
 
-	@Override
-	public int getLength() {
-		return (value != null) ? value.length() : 0;
-	}
+  @Override
+  public int getLength() {
+    return (value != null) ? value.length() : 0;
+  }
 
-	@Override
-	public void insertData(int offset, String arg) throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public void insertData(int offset, String arg) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public void replaceData(int offset, int count, String arg)
-			throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public void replaceData(int offset, int count, String arg) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public void setData(String data) throws DOMException {
-		this.value = data;
-	}
+  @Override
+  public void setData(String data) throws DOMException {
+    this.value = data;
+  }
 
-	@Override
-	public String substringData(int offset, int count) throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public String substringData(int offset, int count) throws DOMException {
+    throw new RuntimeException();
+  }
 }

@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -40,38 +40,32 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class Collection extends AbstractFunction {
-	public Collection(QNm name, Signature signature) {
-		super(name, signature, true);
-	}
+  public Collection(QNm name, Signature signature) {
+    super(name, signature, true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, final QueryContext ctx,
-			Sequence[] args) throws QueryException {
-		String name = (args.length > 0) ? ((Str) args[0]).stringValue() : null;
-		try {
-			org.brackit.xquery.xdm.node.NodeCollection<?> collection;
-			if ((name == null) || (name.isEmpty())) {
-				collection = ctx.getDefaultCollection();
+  @Override
+  public Sequence execute(StaticContext sctx, final QueryContext ctx, Sequence[] args) throws QueryException {
+    String name = (args.length > 0) ? ((Str) args[0]).stringValue() : null;
+    try {
+      org.brackit.xquery.xdm.node.NodeCollection<?> collection;
+      if ((name == null) || (name.isEmpty())) {
+        collection = ctx.getDefaultCollection();
 
-				if (collection == null) {
-					throw new QueryException(
-							ErrorCode.ERR_COLLECTION_NOT_FOUND,
-							"No default collection defined.");
-				}
+        if (collection == null) {
+          throw new QueryException(ErrorCode.ERR_COLLECTION_NOT_FOUND, "No default collection defined.");
+        }
 
-				return collection;
-			} else {
-				AnyURI uri = Doc.resolve(sctx, name);
-				return ctx.getNodeStore().lookup(uri.stringValue());
-			}
-		} catch (DocumentException e) {
-			throw new QueryException(e, ErrorCode.ERR_COLLECTION_NOT_FOUND,
-					"Collection '%s' not found.", name);
-		}
-	}
+        return collection;
+      } else {
+        AnyURI uri = Doc.resolve(sctx, name);
+        return ctx.getNodeStore().lookup(uri.stringValue());
+      }
+    } catch (DocumentException e) {
+      throw new QueryException(e, ErrorCode.ERR_COLLECTION_NOT_FOUND, "Collection '%s' not found.", name);
+    }
+  }
 }

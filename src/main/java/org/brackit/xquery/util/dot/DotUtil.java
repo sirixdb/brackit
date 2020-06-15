@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,41 +33,34 @@ import java.io.FileWriter;
 import org.brackit.xquery.util.log.Logger;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class DotUtil {
-	public static final String PLOT_TYPE = "svg";
+  public static final String PLOT_TYPE = "svg";
 
-	private static final Logger log = Logger.getLogger(DotUtil.class);
+  private static final Logger log = Logger.getLogger(DotUtil.class);
 
-	public static void drawDotToFile(String dotString, String dir, String name) {
-		String svgFile = dir + name + "." + PLOT_TYPE;
+  public static void drawDotToFile(String dotString, String dir, String name) {
+    String svgFile = dir + name + "." + PLOT_TYPE;
 
-		try {
-			File f = File.createTempFile("ast", "dot");
-			f.deleteOnExit();
+    try {
+      File f = File.createTempFile("ast", "dot");
+      f.deleteOnExit();
 
-			// Create the output file and write the dot spec to it
-			FileWriter outputStream = new FileWriter(f);
-			outputStream.write(dotString);
-			outputStream.close();
+      // Create the output file and write the dot spec to it
+      FileWriter outputStream = new FileWriter(f);
+      outputStream.write(dotString);
+      outputStream.close();
 
-			// Invoke dot to generate a .png file
-			if (log.isDebugEnabled()) {
-				log
-						.debug(String.format(
-								"Drawing AST '%s' with dot to SVG '%s'", name,
-								svgFile));
-			}
-			Process proc = Runtime.getRuntime().exec(
-					"dot -T" + PLOT_TYPE + " -o" + svgFile + " " + f);
-			proc.waitFor();
-			f.delete();
-		} catch (Exception e) {
-			log.error(String.format("Creating dot plan '%s' failed.", svgFile),
-					e);
-		}
-	}
+      // Invoke dot to generate a .png file
+      if (log.isDebugEnabled()) {
+        log.debug(String.format("Drawing AST '%s' with dot to SVG '%s'", name, svgFile));
+      }
+      Process proc = Runtime.getRuntime().exec("dot -T" + PLOT_TYPE + " -o" + svgFile + " " + f);
+      proc.waitFor();
+      f.delete();
+    } catch (Exception e) {
+      log.error(String.format("Creating dot plan '%s' failed.", svgFile), e);
+    }
+  }
 }

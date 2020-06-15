@@ -30,6 +30,7 @@ package org.brackit.xquery.function.bit;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
@@ -50,9 +51,7 @@ import org.brackit.xquery.xdm.type.Cardinality;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 @FunctionAnnotation(description = "Returns the values of the given array.", parameters = "$array")
 public class ArrayValues extends AbstractFunction {
@@ -64,8 +63,9 @@ public class ArrayValues extends AbstractFunction {
   }
 
   public ArrayValues(QNm name) {
-    super(name, new Signature(SequenceType.ITEM_SEQUENCE, new SequenceType(ArrayType.ARRAY, Cardinality.ZeroOrOne)),
-        true);
+    super(name,
+          new Signature(SequenceType.ITEM_SEQUENCE, new SequenceType(ArrayType.ARRAY, Cardinality.ZeroOrOne)),
+          true);
   }
 
   @Override
@@ -74,7 +74,6 @@ public class ArrayValues extends AbstractFunction {
 
     if (array == null)
       return null;
-
 
     return new LazySequence() {
       @Override
@@ -110,7 +109,8 @@ public class ArrayValues extends AbstractFunction {
           }
 
           @Override
-          public void close() {}
+          public void close() {
+          }
         };
       }
     };

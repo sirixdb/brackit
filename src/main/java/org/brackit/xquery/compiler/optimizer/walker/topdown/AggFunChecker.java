@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -39,32 +39,28 @@ import org.brackit.xquery.compiler.XQ;
  */
 public abstract class AggFunChecker extends ScopeWalker {
 
-	protected static final QNm FN_COUNT = new QNm(FN_NSURI, FN_PREFIX, "count");
-	protected static final QNm FN_SUM = new QNm(FN_NSURI, FN_PREFIX, "sum");
-	protected static final QNm FN_AVG = new QNm(FN_NSURI, FN_PREFIX, "avg");
-	protected static final QNm FN_MIN = new QNm(FN_NSURI, FN_PREFIX, "min");
-	protected static final QNm FN_MAX = new QNm(FN_NSURI, FN_PREFIX, "max");
-	protected static final QNm[] aggFuns = new QNm[] { FN_COUNT, FN_SUM, FN_AVG,
-				FN_MIN, FN_MAX };
-	protected static final int[] aggFunMap = new int[] { XQ.CountAgg, XQ.SumAgg,
-				XQ.AvgAgg, XQ.MinAgg, XQ.MaxAgg };
+  protected static final QNm FN_COUNT = new QNm(FN_NSURI, FN_PREFIX, "count");
+  protected static final QNm FN_SUM = new QNm(FN_NSURI, FN_PREFIX, "sum");
+  protected static final QNm FN_AVG = new QNm(FN_NSURI, FN_PREFIX, "avg");
+  protected static final QNm FN_MIN = new QNm(FN_NSURI, FN_PREFIX, "min");
+  protected static final QNm FN_MAX = new QNm(FN_NSURI, FN_PREFIX, "max");
+  protected static final QNm[] aggFuns = new QNm[] { FN_COUNT, FN_SUM, FN_AVG, FN_MIN, FN_MAX };
+  protected static final int[] aggFunMap = new int[] { XQ.CountAgg, XQ.SumAgg, XQ.AvgAgg, XQ.MinAgg, XQ.MaxAgg };
 
+  protected QNm replaceRef(AST node, QNm name) {
+    node.getParent().replaceChild(node.getChildIndex(), new AST(XQ.VariableRef, name));
+    return name;
+  }
 
-	protected QNm replaceRef(AST node, QNm name) {
-		node.getParent().replaceChild(node.getChildIndex(),
-				new AST(XQ.VariableRef, name));
-		return name;
-	}
-
-	protected int aggFunType(int type) {
-		return switch (type) {
-			case XQ.CountAgg -> 0;
-			case XQ.SumAgg -> 1;
-			case XQ.AvgAgg -> 2;
-			case XQ.MinAgg -> 3;
-			case XQ.MaxAgg -> 4;
-			default -> throw new RuntimeException("Unexpected aggregate function type: " + type);
-		};
-	}
+  protected int aggFunType(int type) {
+    return switch (type) {
+      case XQ.CountAgg -> 0;
+      case XQ.SumAgg -> 1;
+      case XQ.AvgAgg -> 2;
+      case XQ.MinAgg -> 3;
+      case XQ.MaxAgg -> 4;
+      default -> throw new RuntimeException("Unexpected aggregate function type: " + type);
+    };
+  }
 
 }

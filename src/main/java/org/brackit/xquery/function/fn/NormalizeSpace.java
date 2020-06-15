@@ -37,19 +37,15 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class NormalizeSpace extends AbstractFunction {
-	public NormalizeSpace(QNm name, Signature signature) {
-		super(name, signature, true);
-	}
+  public NormalizeSpace(QNm name, Signature signature) {
+    super(name, signature, true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		return (args[0] != null) ? new Str(((Str) args[0]).stringValue().trim())
-				: Str.EMPTY;
-	}
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    return (args[0] != null) ? new Str(((Str) args[0]).stringValue().trim()) : Str.EMPTY;
+  }
 }

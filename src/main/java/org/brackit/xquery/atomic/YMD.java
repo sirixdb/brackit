@@ -105,7 +105,8 @@ public class YMD extends AbstractDuration {
     if (sectionTerminator == 'Y') {
       if (v > Short.MAX_VALUE) {
         throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-            "Cannot cast '%s' to xs:duration: component too large", str);
+                                 "Cannot cast '%s' to xs:duration: component too large",
+                                 str);
       }
 
       years = (short) v;
@@ -124,7 +125,8 @@ public class YMD extends AbstractDuration {
 
       if (newYears > Short.MAX_VALUE) {
         throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-            "Cannot cast '%s' to xs:duration: component too large", str);
+                                 "Cannot cast '%s' to xs:duration: component too large",
+                                 str);
       }
 
       months |= v;
@@ -162,8 +164,10 @@ public class YMD extends AbstractDuration {
     // equality. It must be ensured by the caller that an appropriate
     // error is raised.
     if (!(atomic instanceof YMD)) {
-      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s with '%s'", type(),
-          atomic.type());
+      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                               "Cannot compare '%s with '%s'",
+                               type(),
+                               atomic.type());
     }
     return atomicCmpInternal(atomic);
   }

@@ -39,39 +39,34 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class MinMax extends AbstractFunction {
-	private final boolean min;
+  private final boolean min;
 
-	public MinMax(QNm name, Signature signature, boolean min) {
-		super(name, signature, true);
-		this.min = min;
-	}
+  public MinMax(QNm name, Signature signature, boolean min) {
+    super(name, signature, true);
+    this.min = min;
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx,
-			Sequence[] args) throws QueryException {
-		if (args.length == 2) {
-			Str collation = (Str) args[1];
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    if (args.length == 2) {
+      Str collation = (Str) args[1];
 
-			if (!collation.stringValue()
-					.equals("http://www.w3.org/2005/xpath-functions/collation/codepoint")) {
-				throw new QueryException(ErrorCode.ERR_UNSUPPORTED_COLLATION,
-						"Unsupported collation: %s", collation);
-			}
-		}
+      if (!collation.stringValue().equals("http://www.w3.org/2005/xpath-functions/collation/codepoint")) {
+        throw new QueryException(ErrorCode.ERR_UNSUPPORTED_COLLATION, "Unsupported collation: %s", collation);
+      }
+    }
 
-		Sequence seq = args[0];
+    Sequence seq = args[0];
 
-		if (seq == null) {
-			return null;
-		}
+    if (seq == null) {
+      return null;
+    }
 
-		MinMaxAggregator agg = new MinMaxAggregator(min);
-		agg.add(seq);
-		return agg.getAggregate();
-	}
+    MinMaxAggregator agg = new MinMaxAggregator(min);
+    agg.add(seq);
+    return agg.getAggregate();
+  }
 }

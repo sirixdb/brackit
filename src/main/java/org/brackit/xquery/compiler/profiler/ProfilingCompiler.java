@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -42,73 +42,70 @@ import org.brackit.xquery.util.dot.DotContext;
 import org.brackit.xquery.xdm.Expr;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class ProfilingCompiler extends TopDownTranslator {
 
-	public static final String PLOT_TYPE = "svg";
-	
-	private ProfilingNode parent; // used to chain expressions
+  public static final String PLOT_TYPE = "svg";
 
-	private ProfilingNode child; // used to chain operators
+  private ProfilingNode parent; // used to chain expressions
 
-	private ProfileOperator pending; // "upcoming" parent operator to
-	
-	public ProfilingCompiler(Map<QNm, Str> options) {
-		super(options);
-	}
+  private ProfilingNode child; // used to chain operators
 
-	@Override
-	protected Expr anyExpr(AST node) throws QueryException {
-		ProfileExpr profileExpr = new ProfileExpr();
-		ProfilingNode savedParent = parent;
-		parent = profileExpr;
-		Expr e = super.anyExpr(node);
-		profileExpr.setExpr(e);
-		parent = savedParent;
-		if (parent != null) {
-			parent.addChild(profileExpr);
-		}
-		return profileExpr;
-	}
+  private ProfileOperator pending; // "upcoming" parent operator to
 
-	@Override
-	protected Operator anyOp(Operator in, AST node) throws QueryException {
-		ProfileOperator profileOp = new ProfileOperator();
-		ProfilingNode savedParent = parent;
-		parent = profileOp;
-		Operator op = super.anyOp(in, node);
-		profileOp.setOp(op);
-		parent = savedParent;
-		if (parent != null) {
-			parent.addChild(profileOp);
-		}
-		return profileOp;
-	}
-	
-	public static void visualize(XQuery xq, String outputDir) {
-		DotContext dotCtx = new DotContext();
-		((ProfileExpr)((MainModule) xq.getModule()).getBody()).toDot(dotCtx);
-		createDot(outputDir, "expr", dotCtx);
-	}
+  public ProfilingCompiler(Map<QNm, Str> options) {
+    super(options);
+  }
 
-	private static void createDot(String outputDir, String name, DotContext dotCtx) {
-		try {
-			File f = File.createTempFile(name, "dot");
-			dotCtx.write(f);
+  @Override
+  protected Expr anyExpr(AST node) throws QueryException {
+    ProfileExpr profileExpr = new ProfileExpr();
+    ProfilingNode savedParent = parent;
+    parent = profileExpr;
+    Expr e = super.anyExpr(node);
+    profileExpr.setExpr(e);
+    parent = savedParent;
+    if (parent != null) {
+      parent.addChild(profileExpr);
+    }
+    return profileExpr;
+  }
 
-			f.deleteOnExit();
+  @Override
+  protected Operator anyOp(Operator in, AST node) throws QueryException {
+    ProfileOperator profileOp = new ProfileOperator();
+    ProfilingNode savedParent = parent;
+    parent = profileOp;
+    Operator op = super.anyOp(in, node);
+    profileOp.setOp(op);
+    parent = savedParent;
+    if (parent != null) {
+      parent.addChild(profileOp);
+    }
+    return profileOp;
+  }
 
-			String outfile = outputDir + "/" + name + "s." + PLOT_TYPE;
-			String command = "dot -T" + PLOT_TYPE + " -o" + outfile + " "
-					+ f;
-			Process proc = Runtime.getRuntime().exec(command);
-			proc.waitFor();
-			f.delete();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+  public static void visualize(XQuery xq, String outputDir) {
+    DotContext dotCtx = new DotContext();
+    ((ProfileExpr) ((MainModule) xq.getModule()).getBody()).toDot(dotCtx);
+    createDot(outputDir, "expr", dotCtx);
+  }
+
+  private static void createDot(String outputDir, String name, DotContext dotCtx) {
+    try {
+      File f = File.createTempFile(name, "dot");
+      dotCtx.write(f);
+
+      f.deleteOnExit();
+
+      String outfile = outputDir + "/" + name + "s." + PLOT_TYPE;
+      String command = "dot -T" + PLOT_TYPE + " -o" + outfile + " " + f;
+      Process proc = Runtime.getRuntime().exec(command);
+      proc.waitFor();
+      f.delete();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
 }

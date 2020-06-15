@@ -32,9 +32,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Type;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class Str extends AbstractAtomic {
   public static final Str EMPTY = new Str("");
@@ -94,8 +92,10 @@ public class Str extends AbstractAtomic {
     if (other instanceof AnyURI) {
       return (str.compareTo(other.stringValue()));
     }
-    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s' with '%s'", type(),
-        other.type());
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                             "Cannot compare '%s' with '%s'",
+                             type(),
+                             other.type());
   }
 
   @Override

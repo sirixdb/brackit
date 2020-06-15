@@ -111,12 +111,10 @@ import org.brackit.xquery.xdm.type.NodeType;
  * across JVM boundaries for distributed computations.
  * </p>
  *
+ * @author Sebastian Baechle
  * @see http://www.w3.org/TR/xpath-datamodel-30/
  * @see http://www.w3.org/TR/2009/CR-xquery-update-10-20090609/
  * @see http://www.w3.org/TR/xml-names11/
- *
- * @author Sebastian Baechle
- *
  */
 public interface Node<E extends Node<E>> extends StructuredItem {
   /**
@@ -324,7 +322,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @param name the new name
    * @throws OperationNotSupportedException if the operation is not supported by this type of node
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public void setName(QNm name) throws OperationNotSupportedException, DocumentException;
 
@@ -381,10 +379,9 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * documents with a schema use {@link Node#getValues()}.
    * </p>
    *
-   * @see http://www.w3.org/TR/xml-infoset/
-   *
    * @return value of this node, and <code>null</code> if this type of node has no value
    * @throws DocumentException if the operation failed
+   * @see http://www.w3.org/TR/xml-infoset/
    */
   public Atomic getValue() throws DocumentException;
 
@@ -418,7 +415,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @param value the new value
    * @throws OperationNotSupportedException if the operation is not supported by this type of node
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public void setValue(Atomic value) throws OperationNotSupportedException, DocumentException;
 
@@ -517,7 +514,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E append(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
 
@@ -526,7 +523,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E append(Node<?> child) throws OperationNotSupportedException, DocumentException;
 
@@ -535,7 +532,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E append(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
 
@@ -544,7 +541,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E prepend(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
 
@@ -553,7 +550,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E prepend(Node<?> child) throws OperationNotSupportedException, DocumentException;
 
@@ -562,7 +559,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E prepend(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
 
@@ -571,7 +568,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E insertBefore(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
 
@@ -580,7 +577,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E insertBefore(Node<?> node) throws OperationNotSupportedException, DocumentException;
 
@@ -589,7 +586,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E insertBefore(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
 
@@ -598,7 +595,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E insertAfter(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
 
@@ -607,7 +604,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E insertAfter(Node<?> node) throws OperationNotSupportedException, DocumentException;
 
@@ -616,7 +613,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E insertAfter(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
 
@@ -625,7 +622,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E setAttribute(Node<?> attribute) throws OperationNotSupportedException, DocumentException;
 
@@ -634,7 +631,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E setAttribute(QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
 
@@ -643,7 +640,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public boolean deleteAttribute(QNm name) throws OperationNotSupportedException, DocumentException;
 
@@ -672,7 +669,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E replaceWith(Node<?> node) throws OperationNotSupportedException, DocumentException;
 
@@ -681,7 +678,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E replaceWith(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
 
@@ -690,7 +687,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   public E replaceWith(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
 

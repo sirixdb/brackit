@@ -75,8 +75,10 @@ public class Null extends AbstractAtomic {
       return 0;
     }
 
-    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s' with '%s'", type(),
-        other.type());
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                             "Cannot compare '%s' with '%s'",
+                             type(),
+                             other.type());
   }
 
   @Override

@@ -46,49 +46,47 @@ import org.brackit.xquery.xdm.Signature;
  * http://www.w3.org/TR/xpath-functions/#func-string-to-codepoints
  *
  * @author Max Bechtold
- *
  */
 public class StringToCodepoints extends AbstractFunction {
-	public StringToCodepoints(QNm name, Signature signature) {
-		super(name, signature, true);
-	}
+  public StringToCodepoints(QNm name, Signature signature) {
+    super(name, signature, true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		if (args[0] == null) {
-			return null;
-		}
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    if (args[0] == null) {
+      return null;
+    }
 
-		final String subject = ((Str) args[0]).stringValue();
+    final String subject = ((Str) args[0]).stringValue();
 
-		if (subject.isEmpty()) {
-			return null;
-		}
+    if (subject.isEmpty()) {
+      return null;
+    }
 
-		return new LazySequence() {
-			final String s = subject;
+    return new LazySequence() {
+      final String s = subject;
 
-			@Override
-			public Iter iterate() {
-				return new BaseIter() {
-					int index = 0;
+      @Override
+      public Iter iterate() {
+        return new BaseIter() {
+          int index = 0;
 
-					@Override
-					public Item next() throws QueryException {
-						if (index == s.length()) {
-							return null;
-						}
+          @Override
+          public Item next() throws QueryException {
+            if (index == s.length()) {
+              return null;
+            }
 
-						return new Int32(s.codePointAt(index++));
-					}
+            return new Int32(s.codePointAt(index++));
+          }
 
-					@Override
-					public void close() {
-					}
-				};
-			}
-		};
-	}
+          @Override
+          public void close() {
+          }
+        };
+      }
+    };
+  }
 
 }

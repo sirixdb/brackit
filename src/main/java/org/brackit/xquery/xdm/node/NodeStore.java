@@ -32,9 +32,7 @@ import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.StructuredItemStore;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public interface NodeStore extends StructuredItemStore {
   @Override

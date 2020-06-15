@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -37,47 +37,45 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public abstract class AbstractModule implements Module {
 
-	// use small lists instead of maps because we assume
-	// relatively few module imports, external variables and options
-	// per module and also relatively few lookups
-	protected final List<Module> modules = new ArrayList<Module>();
-	protected final Map<QNm, Str> options = new HashMap<QNm, Str>();
-	protected final ModuleContext context = new ModuleContext();
-	protected final Variables variables = new Variables();
+  // use small lists instead of maps because we assume
+  // relatively few module imports, external variables and options
+  // per module and also relatively few lookups
+  protected final List<Module> modules = new ArrayList<Module>();
+  protected final Map<QNm, Str> options = new HashMap<QNm, Str>();
+  protected final ModuleContext context = new ModuleContext();
+  protected final Variables variables = new Variables();
 
-	@Override
-	public void importModule(Module module) {
-		modules.add(module);
-	}
-	
-	@Override
-	public Variables getVariables() {
-		return variables;
-	}
+  @Override
+  public void importModule(Module module) {
+    modules.add(module);
+  }
 
-	@Override
-	public List<Module> getImportedModules() {
-		return Collections.unmodifiableList(modules);
-	}
+  @Override
+  public Variables getVariables() {
+    return variables;
+  }
 
-	@Override
-	public void addOption(QNm name, Str value) {
-		options.put(name, value);
-	}
+  @Override
+  public List<Module> getImportedModules() {
+    return Collections.unmodifiableList(modules);
+  }
 
-	@Override
-	public Map<QNm, Str> getOptions() {
-		return Collections.unmodifiableMap(options);
-	}
+  @Override
+  public void addOption(QNm name, Str value) {
+    options.put(name, value);
+  }
 
-	@Override
-	public StaticContext getStaticContext() {
-		return context;
-	}
+  @Override
+  public Map<QNm, Str> getOptions() {
+    return Collections.unmodifiableMap(options);
+  }
+
+  @Override
+  public StaticContext getStaticContext() {
+    return context;
+  }
 }

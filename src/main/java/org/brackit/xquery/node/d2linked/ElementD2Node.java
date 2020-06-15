@@ -39,6 +39,7 @@ package org.brackit.xquery.node.d2linked;
 
 import java.util.Map;
 import java.util.TreeMap;
+
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.stream.EmptyStream;
@@ -51,9 +52,7 @@ import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public final class ElementD2Node extends ParentD2Node implements Scope {
   Map<String, String> nsMappings;
@@ -283,9 +282,7 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
     if (prefix.equals("xml")) {
       return "http://www.w3.org/XML/1998/namespace";
     }
-    return ((prefix == null) || (prefix.isEmpty()))
-        ? ""
-        : null;
+    return ((prefix == null) || (prefix.isEmpty())) ? "" : null;
   }
 
   @Override

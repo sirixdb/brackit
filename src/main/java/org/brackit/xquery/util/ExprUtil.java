@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -39,59 +39,57 @@ import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public final class ExprUtil {
-	private ExprUtil() {
-	}
+  private ExprUtil() {
+  }
 
-	public final static Item asItem(Sequence res) throws QueryException {
-		if ((res == null) || (res instanceof Item)) {
-			return (Item) res;
-		}
-		Iter s = res.iterate();
-		try {
-			Item item = s.next();
-			if (item == null) {
-				return null;
-			}
-			if (s.next() != null) {
-				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
-			}
-			return item;
-		} finally {
-			s.close();
-		}
-	}
+  public final static Item asItem(Sequence res) throws QueryException {
+    if ((res == null) || (res instanceof Item)) {
+      return (Item) res;
+    }
+    Iter s = res.iterate();
+    try {
+      Item item = s.next();
+      if (item == null) {
+        return null;
+      }
+      if (s.next() != null) {
+        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE);
+      }
+      return item;
+    } finally {
+      s.close();
+    }
+  }
 
-	public static Sequence materialize(Sequence res) throws QueryException {
-		// TODO
-		// how to decide cleverly if we should materialize or not???
-		if ((res == null) || (res instanceof Item)) {
-			return res;
-		}
-		final var it = res.iterate();
-		try {
-			Item first = it.next();
-			if (first == null) {
-				return null;
-			}
-			Item second = it.next();
-			if (second == null) {
-				return first;
-			}
-			var buffer = new ArrayList<Item>();
-			buffer.add(first);
-			buffer.add(second);
-			Item item;
-			while ((item = it.next()) != null) {
-				buffer.add(item);
-			}
-			return new ItemSequence(buffer.toArray(new Item[0]));
-		} finally {
-			it.close();
-		}
-	}
+  public static Sequence materialize(Sequence res) throws QueryException {
+    // TODO
+    // how to decide cleverly if we should materialize or not???
+    if ((res == null) || (res instanceof Item)) {
+      return res;
+    }
+    final var it = res.iterate();
+    try {
+      Item first = it.next();
+      if (first == null) {
+        return null;
+      }
+      Item second = it.next();
+      if (second == null) {
+        return first;
+      }
+      var buffer = new ArrayList<Item>();
+      buffer.add(first);
+      buffer.add(second);
+      Item item;
+      while ((item = it.next()) != null) {
+        buffer.add(item);
+      }
+      return new ItemSequence(buffer.toArray(new Item[0]));
+    } finally {
+      it.close();
+    }
+  }
 }

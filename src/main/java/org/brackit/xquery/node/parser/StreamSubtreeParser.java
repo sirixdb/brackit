@@ -29,28 +29,27 @@ package org.brackit.xquery.node.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
  * @author Sebastian Baechle
- *
  */
 public class StreamSubtreeParser implements SubtreeParser {
-	private final Stream<? extends Node<?>> stream;
+  private final Stream<? extends Node<?>> stream;
 
-	public StreamSubtreeParser(Stream<? extends Node<?>> stream) {
-		this.stream = stream;
-	}
+  public StreamSubtreeParser(Stream<? extends Node<?>> stream) {
+    this.stream = stream;
+  }
 
-	@Override
-	public void parse(SubtreeHandler handler) throws DocumentException {
-		List<SubtreeListener<Node<?>>> listener = new ArrayList<SubtreeListener<Node<?>>>();
-		listener.add(new SubtreeListener2HandlerAdapter(handler));
-		StreamSubtreeProcessor<?> processor = new StreamSubtreeProcessor(
-				stream, listener);
-		processor.process();
-	}
+  @Override
+  public void parse(SubtreeHandler handler) throws DocumentException {
+    List<SubtreeListener<Node<?>>> listener = new ArrayList<SubtreeListener<Node<?>>>();
+    listener.add(new SubtreeListener2HandlerAdapter(handler));
+    StreamSubtreeProcessor<?> processor = new StreamSubtreeProcessor(stream, listener);
+    processor.process();
+  }
 
 }

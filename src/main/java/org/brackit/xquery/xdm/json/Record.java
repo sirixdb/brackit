@@ -35,7 +35,6 @@ import java.util.Map;
 
 /**
  * @author Sebastian Baechle
- *
  */
 public interface Record extends JsonItem {
 

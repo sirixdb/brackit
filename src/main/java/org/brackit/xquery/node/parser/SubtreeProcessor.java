@@ -29,109 +29,108 @@ package org.brackit.xquery.node.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.brackit.xquery.util.log.Logger;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- *
- * @author Sebastian Baechle
- *
  * @param <E>
+ * @author Sebastian Baechle
  */
 public abstract class SubtreeProcessor<E extends Node<E>> {
-    private static final Logger log = Logger.getLogger(SubtreeProcessor.class);
+  private static final Logger log = Logger.getLogger(SubtreeProcessor.class);
 
-    private final List<SubtreeListener<? super E>> listeners;
+  private final List<SubtreeListener<? super E>> listeners;
 
-    public SubtreeProcessor(final List<SubtreeListener<? super E>> listeners) {
-        this.listeners = new ArrayList<SubtreeListener<? super E>>();
-        if (listeners != null) {
-            for (final SubtreeListener<? super E> listener : listeners) {
-                this.listeners.add(listener);
-            }
-        }
+  public SubtreeProcessor(final List<SubtreeListener<? super E>> listeners) {
+    this.listeners = new ArrayList<SubtreeListener<? super E>>();
+    if (listeners != null) {
+      for (final SubtreeListener<? super E> listener : listeners) {
+        this.listeners.add(listener);
+      }
     }
+  }
 
-    protected void notifyBegin() throws DocumentException {
-        for (SubtreeListener<? super E> listener : listeners) {
-            listener.begin();
-        }
+  protected void notifyBegin() throws DocumentException {
+    for (SubtreeListener<? super E> listener : listeners) {
+      listener.begin();
     }
+  }
 
-    protected void notifyEnd() throws DocumentException {
-        for (SubtreeListener<? super E> listener : listeners) {
-            listener.end();
-        }
+  protected void notifyEnd() throws DocumentException {
+    for (SubtreeListener<? super E> listener : listeners) {
+      listener.end();
     }
+  }
 
-    protected void notifyBeginDocument() throws DocumentException {
-        for (SubtreeListener<? super E> listener : listeners) {
-            listener.startDocument();
-        }
+  protected void notifyBeginDocument() throws DocumentException {
+    for (SubtreeListener<? super E> listener : listeners) {
+      listener.startDocument();
     }
+  }
 
-    protected void notifyEndDocument() throws DocumentException {
-        for (SubtreeListener<? super E> listener : listeners) {
-            listener.endDocument();
-        }
+  protected void notifyEndDocument() throws DocumentException {
+    for (SubtreeListener<? super E> listener : listeners) {
+      listener.endDocument();
     }
+  }
 
-    protected void notifyBeginFragment() throws DocumentException {
-        for (SubtreeListener<? super E> listener : listeners) {
-            listener.beginFragment();
-        }
+  protected void notifyBeginFragment() throws DocumentException {
+    for (SubtreeListener<? super E> listener : listeners) {
+      listener.beginFragment();
     }
+  }
 
-    protected void notifyEndFragment() throws DocumentException {
-        for (SubtreeListener<? super E> listener : listeners) {
-            listener.endFragment();
-        }
+  protected void notifyEndFragment() throws DocumentException {
+    for (SubtreeListener<? super E> listener : listeners) {
+      listener.endFragment();
     }
+  }
 
-    protected void notifyFail() {
-        for (SubtreeListener<? super E> listener : listeners) {
-            try {
-                listener.fail();
-            } catch (DocumentException e) {
-                log.error(e);
-            }
-        }
+  protected void notifyFail() {
+    for (SubtreeListener<? super E> listener : listeners) {
+      try {
+        listener.fail();
+      } catch (DocumentException e) {
+        log.error(e);
+      }
     }
+  }
 
-    protected void notifyStartElement(E node) throws DocumentException {
-        for (SubtreeListener<? super E> listener : listeners) {
-            listener.startElement(node);
-        }
+  protected void notifyStartElement(E node) throws DocumentException {
+    for (SubtreeListener<? super E> listener : listeners) {
+      listener.startElement(node);
     }
+  }
 
-    protected void notifyEndElement(E node) throws DocumentException {
-        for (SubtreeListener<? super E> listener : listeners) {
-            listener.endElement(node);
-        }
+  protected void notifyEndElement(E node) throws DocumentException {
+    for (SubtreeListener<? super E> listener : listeners) {
+      listener.endElement(node);
     }
+  }
 
-    protected void notifyAttribute(E node) throws DocumentException {
-        for (SubtreeListener<? super E> listener : listeners) {
-            listener.attribute(node);
-        }
+  protected void notifyAttribute(E node) throws DocumentException {
+    for (SubtreeListener<? super E> listener : listeners) {
+      listener.attribute(node);
     }
+  }
 
-    protected void notifyText(E node) throws DocumentException {
-        for (SubtreeListener<? super E> listener : listeners) {
-            listener.text(node);
-        }
+  protected void notifyText(E node) throws DocumentException {
+    for (SubtreeListener<? super E> listener : listeners) {
+      listener.text(node);
     }
+  }
 
-    protected void notifyComment(E node) throws DocumentException {
-        for (SubtreeListener<? super E> listener : listeners) {
-            listener.comment(node);
-        }
+  protected void notifyComment(E node) throws DocumentException {
+    for (SubtreeListener<? super E> listener : listeners) {
+      listener.comment(node);
     }
+  }
 
-    protected void notifyProcessingInstruction(E node) throws DocumentException {
-        for (SubtreeListener<? super E> listener : listeners) {
-            listener.processingInstruction(node);
-        }
+  protected void notifyProcessingInstruction(E node) throws DocumentException {
+    for (SubtreeListener<? super E> listener : listeners) {
+      listener.processingInstruction(node);
     }
+  }
 }

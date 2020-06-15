@@ -34,9 +34,7 @@ import org.brackit.xquery.xdm.StructuredItem;
 import org.brackit.xquery.xdm.Type;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public abstract class StructuredItemType implements ItemType {
 

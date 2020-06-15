@@ -34,7 +34,6 @@ import org.brackit.xquery.atomic.QNm;
  * SAX-like event handler interface for subtree traversals.
  *
  * @author Sebastian Baechle
- *
  */
 public interface SubtreeHandler {
   void startDocument();

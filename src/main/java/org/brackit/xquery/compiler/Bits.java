@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -31,39 +31,35 @@ import org.brackit.xquery.atomic.QNm;
 
 /**
  * Collection of brackit-related constants (names, error codes).
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public class Bits {
-	public static final String BIT_NSURI = "http://brackit.org/ns/bit";
+  public static final String BIT_NSURI = "http://brackit.org/ns/bit";
 
-	public static final String BIT_PREFIX = "bit";
+  public static final String BIT_PREFIX = "bit";
 
-	/*
-	 * Variables names for internal compilation processes
-	 */
-	public static final String FS_NSURI = "http://brackit.org/ns/InternalUseOnly";
+  /*
+   * Variables names for internal compilation processes
+   */
+  public static final String FS_NSURI = "http://brackit.org/ns/InternalUseOnly";
 
-	public static final String FS_PREFIX = "fs";
+  public static final String FS_PREFIX = "fs";
 
-	public static final QNm FS_DOT = new QNm(FS_NSURI, FS_PREFIX, "dot");
+  public static final QNm FS_DOT = new QNm(FS_NSURI, FS_PREFIX, "dot");
 
-	public static final QNm FS_LAST = new QNm(FS_NSURI, FS_PREFIX, "last");
+  public static final QNm FS_LAST = new QNm(FS_NSURI, FS_PREFIX, "last");
 
-	public static final QNm FS_POSITION = new QNm(FS_NSURI, FS_PREFIX,
-			"position");
+  public static final QNm FS_POSITION = new QNm(FS_NSURI, FS_PREFIX, "position");
 
-	public static final QNm FS_PARENT = new QNm(FS_NSURI, FS_PREFIX, "parent");
+  public static final QNm FS_PARENT = new QNm(FS_NSURI, FS_PREFIX, "parent");
 
-	public static final QNm FS_FOO = new QNm(FS_NSURI, FS_PREFIX, "foo");
+  public static final QNm FS_FOO = new QNm(FS_NSURI, FS_PREFIX, "foo");
 
-	/*
-	 * Error codes for runtime errors and built-in expressions.
-	 */
-	public static final QNm BIT_ILLEGAL_RECORD_FIELD = new QNm(BIT_NSURI,
-			"bit", "BIEX0001");
+  /*
+   * Error codes for runtime errors and built-in expressions.
+   */
+  public static final QNm BIT_ILLEGAL_RECORD_FIELD = new QNm(BIT_NSURI, "bit", "BIEX0001");
 
-	public static final QNm BIT_DUPLICATE_RECORD_FIELD = new QNm(BIT_NSURI,
-			"bit", "BIEX0002");
+  public static final QNm BIT_DUPLICATE_RECORD_FIELD = new QNm(BIT_NSURI, "bit", "BIEX0002");
 }

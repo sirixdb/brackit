@@ -33,12 +33,11 @@ import org.brackit.xquery.xdm.DocumentException;
  * Adapter-Interface to support any subtree source as a SAX-compatible source.
  *
  * @author Sebastian Baechle
- *
  */
 public interface SubtreeParser {
   /**
    * Parse and use a subtree handler.
-   * 
+   *
    * @param handler the handler to use
    * @throws DocumentException if something goes wrong
    */

@@ -40,10 +40,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 /**
- *
  * @author Caetano Sauer
  * @author Sebastian Baechle
- *
  */
 public class URIHandler {
 

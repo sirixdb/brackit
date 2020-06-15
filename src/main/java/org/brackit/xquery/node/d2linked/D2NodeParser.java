@@ -38,6 +38,7 @@
 package org.brackit.xquery.node.d2linked;
 
 import java.util.Map.Entry;
+
 import org.brackit.xquery.node.parser.SubtreeHandler;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.xdm.DocumentException;
@@ -45,76 +46,75 @@ import org.brackit.xquery.xdm.Kind;
 
 /**
  * @author Sebastian Baechle
-<<<<<<< HEAD
- *
-=======
- *
->>>>>>> upstream/master
+ * <<<<<<< HEAD
+ * <p>
+ * =======
+ * <p>
+ * >>>>>>> upstream/master
  */
 public class D2NodeParser implements SubtreeParser {
 
-	private final D2Node root;
+  private final D2Node root;
 
-	public D2NodeParser(D2Node root) {
-		this.root = root;
-	}
+  public D2NodeParser(D2Node root) {
+    this.root = root;
+  }
 
-	@Override
-	public void parse(SubtreeHandler handler) throws DocumentException {
-		try {
-			handler.begin();
-			handler.beginFragment();
-			traverse(handler, root);
-			handler.endFragment();
-			handler.end();
-		} catch (DocumentException e) {
-			handler.fail();
-			throw e;
-		}
-	}
+  @Override
+  public void parse(SubtreeHandler handler) throws DocumentException {
+    try {
+      handler.begin();
+      handler.beginFragment();
+      traverse(handler, root);
+      handler.endFragment();
+      handler.end();
+    } catch (DocumentException e) {
+      handler.fail();
+      throw e;
+    }
+  }
 
-	private void traverse(SubtreeHandler handler, D2Node node)
-			throws DocumentException {
-		Kind kind = node.getKind();
-		if (kind == Kind.ELEMENT) {
-			ElementD2Node elem = (ElementD2Node) node;
-			if (elem.nsMappings != null) {
-				for (Entry<String, String> ns : elem.nsMappings.entrySet()) {
-					handler.startMapping(ns.getKey(), ns.getValue());
-				}
-			}
-			handler.startElement(elem.name);
-			for (D2Node n = elem.firstAttribute; n != null; n = n.sibling) {
-				AttributeD2Node att = (AttributeD2Node) n;
-				handler.attribute(att.name, att.value);
-			}
-			for (D2Node n = elem.firstChild; n != null; n = n.sibling) {
-				traverse(handler, n);
-			}
-			handler.endElement(elem.name);
-			if (elem.nsMappings != null) {
-				for (Entry<String, String> ns : elem.nsMappings.entrySet()) {
-					handler.endMapping(ns.getKey());
-				}
-			}
-		} else if (kind == Kind.TEXT) {
-			handler.text(node.getValue());
-		} else if (kind == Kind.COMMENT) {
-			handler.comment(node.getStrValue());
-		} else if (kind == Kind.PROCESSING_INSTRUCTION) {
-			handler.processingInstruction(node.getName(), node.getStrValue());
-		} else if (kind == Kind.ATTRIBUTE) {
-			handler.attribute(node.getName(), node.getValue());
-		} else if (kind == Kind.DOCUMENT) {
-			handler.startDocument();
-			DocumentD2Node doc = (DocumentD2Node) node;
-			for (D2Node n = doc.firstChild; n != null; n = n.sibling) {
-				traverse(handler, n);
-			}
-			handler.endDocument();
-		} else {
-			throw new DocumentException("Illegal node type: %s", kind);
-		}
-	}
+  private void traverse(SubtreeHandler handler, D2Node node) throws DocumentException {
+    Kind kind = node.getKind();
+    if (kind == Kind.ELEMENT) {
+      ElementD2Node elem = (ElementD2Node) node;
+      if (elem.nsMappings != null) {
+        for (Entry<String, String> ns : elem.nsMappings.entrySet()) {
+          handler.startMapping(ns.getKey(), ns.getValue());
+        }
+      }
+      handler.startElement(elem.name);
+      for (D2Node n = elem.firstAttribute; n != null; n = n.sibling) {
+        AttributeD2Node att = (AttributeD2Node) n;
+        handler.attribute(att.name, att.value);
+      }
+      for (D2Node n = elem.firstChild; n != null; n = n.sibling) {
+        traverse(handler, n);
+      }
+      handler.endElement(elem.name);
+      if (elem.nsMappings != null) {
+        for (Entry<String, String> ns : elem.nsMappings.entrySet()) {
+          handler.endMapping(ns.getKey());
+        }
+      }
+    } else if (kind == Kind.TEXT) {
+      handler.text(node.getValue());
+    } else if (kind == Kind.COMMENT) {
+      handler.comment(node.getStrValue());
+    } else if (kind == Kind.PROCESSING_INSTRUCTION) {
+      handler.processingInstruction(node.getName(), node.getStrValue());
+    } else if (kind == Kind.ATTRIBUTE) {
+      handler.attribute(node.getName(), node.getValue());
+    } else if (kind == Kind.DOCUMENT) {
+      handler.startDocument();
+      DocumentD2Node doc = (DocumentD2Node) node;
+      for (D2Node n = doc.firstChild; n != null; n = n.sibling) {
+        traverse(handler, n);
+      }
+      handler.endDocument();
+    } else {
+      throw new DocumentException("Illegal node type: %s", kind);
+    }
+  }
 
 }

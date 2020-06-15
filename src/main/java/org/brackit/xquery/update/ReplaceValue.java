@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -41,101 +41,92 @@ import org.brackit.xquery.xdm.node.Node;
 import java.util.EnumSet;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class ReplaceValue extends ConstructedNodeBuilder implements Expr {
-	private static final EnumSet<Kind> replaceValueKind = EnumSet.of(
-			Kind.ELEMENT, Kind.ATTRIBUTE, Kind.TEXT, Kind.COMMENT,
-			Kind.PROCESSING_INSTRUCTION);
+  private static final EnumSet<Kind> replaceValueKind =
+      EnumSet.of(Kind.ELEMENT, Kind.ATTRIBUTE, Kind.TEXT, Kind.COMMENT, Kind.PROCESSING_INSTRUCTION);
 
-	private final Expr sourceExpr;
+  private final Expr sourceExpr;
 
-	private final Expr targetExpr;
+  private final Expr targetExpr;
 
-	public ReplaceValue(Expr sourceExpr, Expr targetExpr) {
-		this.sourceExpr = sourceExpr;
-		this.targetExpr = targetExpr;
-	}
+  public ReplaceValue(Expr sourceExpr, Expr targetExpr) {
+    this.sourceExpr = sourceExpr;
+    this.targetExpr = targetExpr;
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return evaluateToItem(ctx, tuple);
-	}
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) throws QueryException {
+    return evaluateToItem(ctx, tuple);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		Sequence target = targetExpr.evaluate(ctx, tuple);
-		Item targetItem;
-		Node<?> node;
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) throws QueryException {
+    Sequence target = targetExpr.evaluate(ctx, tuple);
+    Item targetItem;
+    Node<?> node;
 
-		if (target == null) {
-			throw new QueryException(
-					ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
-		} else if (target instanceof Item) {
-			targetItem = (Item) target;
-		} else {
-			try (Iter it = target.iterate()) {
-				targetItem = it.next();
+    if (target == null) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
+    } else if (target instanceof Item) {
+      targetItem = (Item) target;
+    } else {
+      try (Iter it = target.iterate()) {
+        targetItem = it.next();
 
-				if (targetItem == null) {
-					throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
-				}
-				if (it.next() != null) {
-					throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE);
-				}
-			}
-		}
-		if (!(targetItem instanceof Node<?>)) {
-			throw new QueryException(
-					ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
-					"Target item is atomic value %s", targetItem);
-		}
+        if (targetItem == null) {
+          throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
+        }
+        if (it.next() != null) {
+          throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE);
+        }
+      }
+    }
+    if (!(targetItem instanceof Node<?>)) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
+                               "Target item is atomic value %s",
+                               targetItem);
+    }
 
-		node = (Node<?>) targetItem;
+    node = (Node<?>) targetItem;
 
-		if (!replaceValueKind.contains(node.getKind())) {
-			throw new QueryException(
-					ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
-					"Target node kind %s is not allowed for replace node: %",
-					node.getKind());
-		}
+    if (!replaceValueKind.contains(node.getKind())) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
+                               "Target node kind %s is not allowed for replace node: %",
+                               node.getKind());
+    }
 
-		Sequence source = sourceExpr.evaluate(ctx, tuple);
-		String text = buildTextContent(source);
+    Sequence source = sourceExpr.evaluate(ctx, tuple);
+    String text = buildTextContent(source);
 
-		if (node.getKind() == Kind.ELEMENT) {
-			ctx.addPendingUpdate(new ReplaceElementContentOp(node, new Una(text)));
-		} else {
-			if ((text != null) && (!text.isEmpty())) {
-				if (node.getKind() == Kind.COMMENT) {
-					if ((text.contains("''")) || (text.endsWith("'"))) {
-						throw new QueryException(
-								ErrorCode.ERR_COMMENT_WOULD_CONTAIN_ILLEGAL_HYPHENS);
-					}
-				} else if (node.getKind() == Kind.PROCESSING_INSTRUCTION) {
-					if (text.contains("?>")) {
-						throw new QueryException(
-								ErrorCode.ERR_PI_WOULD_CONTAIN_ILLEGAL_STRING);
-					}
-				}
-			}
-			ctx.addPendingUpdate(new ReplaceValueOp(node, new Una(text)));
-		}
+    if (node.getKind() == Kind.ELEMENT) {
+      ctx.addPendingUpdate(new ReplaceElementContentOp(node, new Una(text)));
+    } else {
+      if ((text != null) && (!text.isEmpty())) {
+        if (node.getKind() == Kind.COMMENT) {
+          if ((text.contains("''")) || (text.endsWith("'"))) {
+            throw new QueryException(ErrorCode.ERR_COMMENT_WOULD_CONTAIN_ILLEGAL_HYPHENS);
+          }
+        } else if (node.getKind() == Kind.PROCESSING_INSTRUCTION) {
+          if (text.contains("?>")) {
+            throw new QueryException(ErrorCode.ERR_PI_WOULD_CONTAIN_ILLEGAL_STRING);
+          }
+        }
+      }
+      ctx.addPendingUpdate(new ReplaceValueOp(node, new Una(text)));
+    }
 
-		return null;
-	}
+    return null;
+  }
 
-	@Override
-	public boolean isUpdating() {
-		return true;
-	}
+  @Override
+  public boolean isUpdating() {
+    return true;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 }

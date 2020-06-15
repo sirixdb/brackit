@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.QNm;
@@ -57,7 +58,6 @@ import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * @author Sebastian Baechle
- *
  */
 public abstract class ScopeWalker extends Walker {
 
@@ -84,8 +84,9 @@ public abstract class ScopeWalker extends Walker {
     table = new BindingTable(root);
     walkInspect(root, true, false);
     if (XQuery.DEBUG) {
-      DotUtil.drawDotToFile(table.rootScope.dot(), XQuery.DEBUG_DIR,
-          getClass().getSimpleName() + "_scopes_" + (dotCount++));
+      DotUtil.drawDotToFile(table.rootScope.dot(),
+                            XQuery.DEBUG_DIR,
+                            getClass().getSimpleName() + "_scopes_" + (dotCount++));
     }
     return super.prepare(root);
   }
@@ -98,13 +99,15 @@ public abstract class ScopeWalker extends Walker {
     }
     table.reset(s);
     if (XQuery.DEBUG) {
-      DotUtil.drawDotToFile(table.rootScope.dot(), XQuery.DEBUG_DIR,
-          getClass().getSimpleName() + "_scopes_" + (dotCount) + "reset");
+      DotUtil.drawDotToFile(table.rootScope.dot(),
+                            XQuery.DEBUG_DIR,
+                            getClass().getSimpleName() + "_scopes_" + (dotCount) + "reset");
     }
     walkInspect(s.node, false, false);
     if (XQuery.DEBUG) {
-      DotUtil.drawDotToFile(table.rootScope.dot(), XQuery.DEBUG_DIR,
-          getClass().getSimpleName() + "_scopes_" + (dotCount++));
+      DotUtil.drawDotToFile(table.rootScope.dot(),
+                            XQuery.DEBUG_DIR,
+                            getClass().getSimpleName() + "_scopes_" + (dotCount++));
     }
   }
 
@@ -318,9 +321,7 @@ public abstract class ScopeWalker extends Walker {
       StringBuilder s = new StringBuilder();
       s.append(numberString());
       s.append(":");
-      s.append((node != null)
-          ? node.toString()
-          : "");
+      s.append((node != null) ? node.toString() : "");
       s.append("[");
       for (Node n = lvars; n != null; n = n.next) {
         s.append(n);
@@ -364,9 +365,7 @@ public abstract class ScopeWalker extends Walker {
           return n;
         }
       }
-      return (parent != null)
-          ? (parent.resolve(var))
-          : null;
+      return (parent != null) ? (parent.resolve(var)) : null;
     }
 
     public Var get(QNm var) {
@@ -431,9 +430,7 @@ public abstract class ScopeWalker extends Walker {
             // nodes must be in the same chain -> search
             // scan from context node to n
             if (division != other.division) {
-              return division < other.division
-                  ? -1
-                  : 1;
+              return division < other.division ? -1 : 1;
             }
           }
           lca = lca.parent;
@@ -467,9 +464,7 @@ public abstract class ScopeWalker extends Walker {
 
     private int toDot(int no, DotContext dt) {
       final int myNo = no++;
-      String label = (node != null)
-          ? node.toString()
-          : "";
+      String label = (node != null) ? node.toString() : "";
       DotNode node = dt.addNode(String.valueOf(myNo));
       node.addRow(label, null);
       node.addRow(numberString(), null);
@@ -489,7 +484,7 @@ public abstract class ScopeWalker extends Walker {
         File file = File.createTempFile("scope", ".dot");
         file.deleteOnExit();
         dot(file);
-        Runtime.getRuntime().exec(new String[] {"/usr/bin/dotty", file.getAbsolutePath()}).waitFor();
+        Runtime.getRuntime().exec(new String[] { "/usr/bin/dotty", file.getAbsolutePath() }).waitFor();
         file.delete();
       } catch (Exception e) {
         e.printStackTrace();

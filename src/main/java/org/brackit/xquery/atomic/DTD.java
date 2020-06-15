@@ -38,15 +38,14 @@
 package org.brackit.xquery.atomic;
 
 import java.math.BigDecimal;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Type;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class DTD extends AbstractDuration {
   private final short days; // no wrap to month on overflow
@@ -73,9 +72,7 @@ public class DTD extends AbstractDuration {
 
   public DTD(boolean negative, short days, byte hours, byte minutes, int micros) {
     this.days = days;
-    this.hours = (!negative)
-        ? hours
-        : (byte) (hours | 0x80);
+    this.hours = (!negative) ? hours : (byte) (hours | 0x80);
     this.minutes = minutes;
     this.micros = micros;
   }
@@ -105,17 +102,14 @@ public class DTD extends AbstractDuration {
     while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
       pos++;
     int end = pos;
-    int sectionTerminator = (pos < length)
-        ? charArray[pos++]
-        : -1;
-    int v = (start != end)
-        ? Integer.parseInt(str.substring(start, end))
-        : -1; // parse leading value
+    int sectionTerminator = (pos < length) ? charArray[pos++] : -1;
+    int v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1; // parse leading value
 
     if ((sectionTerminator == 'D') && (v > -1)) {
       if (v > Short.MAX_VALUE) {
         throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-            "Cannot cast '%s' to xs:dayTimeDuration: component too large", str);
+                                 "Cannot cast '%s' to xs:dayTimeDuration: component too large",
+                                 str);
       }
 
       days = (short) v;
@@ -124,12 +118,8 @@ public class DTD extends AbstractDuration {
       while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
         pos++;
       end = pos;
-      sectionTerminator = (pos < length)
-          ? charArray[pos++]
-          : -1;
-      v = (start != end)
-          ? Integer.parseInt(str.substring(start, end))
-          : -1;
+      sectionTerminator = (pos < length) ? charArray[pos++] : -1;
+      v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1;
     }
 
     if (sectionTerminator == 'T') {
@@ -137,12 +127,8 @@ public class DTD extends AbstractDuration {
       while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
         pos++;
       end = pos;
-      sectionTerminator = (pos < length)
-          ? charArray[pos++]
-          : -1;
-      v = (start != end)
-          ? Integer.parseInt(str.substring(start, end))
-          : -1;
+      sectionTerminator = (pos < length) ? charArray[pos++] : -1;
+      v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1;
 
       if (sectionTerminator == -1) {
         throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:dayTimeDuration", str);
@@ -154,7 +140,8 @@ public class DTD extends AbstractDuration {
 
         if (newDays > Short.MAX_VALUE) {
           throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-              "Cannot cast '%s' to xs:dayTimeDuration: component too large", str);
+                                   "Cannot cast '%s' to xs:dayTimeDuration: component too large",
+                                   str);
         }
 
         days = (short) newDays;
@@ -164,12 +151,8 @@ public class DTD extends AbstractDuration {
         while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
           pos++;
         end = pos;
-        sectionTerminator = (pos < length)
-            ? charArray[pos++]
-            : -1;
-        v = (start != end)
-            ? Integer.parseInt(str.substring(start, end))
-            : -1;
+        sectionTerminator = (pos < length) ? charArray[pos++] : -1;
+        v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1;
       }
 
       if ((sectionTerminator == 'M') && (v > -1)) {
@@ -183,7 +166,8 @@ public class DTD extends AbstractDuration {
 
         if (newDays > Short.MAX_VALUE) {
           throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-              "Cannot cast '%s' to xs:dayTimeDuration: component too large", str);
+                                   "Cannot cast '%s' to xs:dayTimeDuration: component too large",
+                                   str);
         }
 
         days = (short) newDays;
@@ -194,12 +178,8 @@ public class DTD extends AbstractDuration {
         while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
           pos++;
         end = pos;
-        sectionTerminator = (pos < length)
-            ? charArray[pos++]
-            : -1;
-        v = (start != end)
-            ? Integer.parseInt(str.substring(start, end))
-            : -1;
+        sectionTerminator = (pos < length) ? charArray[pos++] : -1;
+        v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1;
       }
 
       if (((sectionTerminator == '.') || (sectionTerminator == 'S')) && (v > -1)) {
@@ -217,7 +197,8 @@ public class DTD extends AbstractDuration {
 
         if (newDays > Short.MAX_VALUE) {
           throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-              "Cannot cast '%s' to xs:dayTimeDuration: component too large", str);
+                                   "Cannot cast '%s' to xs:dayTimeDuration: component too large",
+                                   str);
         }
 
         days = (short) newDays;
@@ -230,23 +211,18 @@ public class DTD extends AbstractDuration {
           while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
             pos++;
           end = pos;
-          sectionTerminator = (pos < length)
-              ? charArray[pos++]
-              : -1;
+          sectionTerminator = (pos < length) ? charArray[pos++] : -1;
           int l = end - start;
-          v = (start != end)
-              ? Integer.parseInt(str.substring(start, start + Math.min(l, 6)))
-              : -1; // drop nano seconds
+          v = (start != end) ? Integer.parseInt(str.substring(start, start + Math.min(l, 6))) : -1; // drop nano seconds
 
           if ((sectionTerminator == 'S') && (v > -1)) {
             if (v > 0) {
-              for (int i = 0; i < 6 - l; i++)
+              for (int i = 0; i < 6 - l; i++) {
                 v *= 10;
+              }
               micros += v;
             }
-            sectionTerminator = (pos < length)
-                ? charArray[pos++]
-                : -1;
+            sectionTerminator = (pos < length) ? charArray[pos++] : -1;
           } else {
             sectionTerminator = 'X';
           }
@@ -261,9 +237,7 @@ public class DTD extends AbstractDuration {
     }
 
     this.days = days;
-    this.hours = (!negative)
-        ? hours
-        : (byte) (hours | 0x80);
+    this.hours = (!negative) ? hours : (byte) (hours | 0x80);
     this.minutes = minutes;
     this.micros = micros;
   }
@@ -287,8 +261,10 @@ public class DTD extends AbstractDuration {
     // equality. It must be ensured by the caller that an appropriate
     // error is raised.
     if (!(atomic instanceof DTD)) {
-      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s with '%s'", type(),
-          atomic.type());
+      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                               "Cannot compare '%s with '%s'",
+                               type(),
+                               atomic.type());
     }
     return atomicCmpInternal(atomic);
   }
@@ -299,9 +275,7 @@ public class DTD extends AbstractDuration {
     int sign = hours & 0x80;
     int oSign = other.hours & 0x80;
     if (sign != oSign) {
-      return (sign < oSign)
-          ? -1
-          : 1;
+      return (sign < oSign) ? -1 : 1;
     }
     int res = (days - other.days);
     if (res != 0) {

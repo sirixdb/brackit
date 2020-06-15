@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -44,84 +44,82 @@ import org.brackit.xquery.xdm.Signature;
 /**
  * Implementation of predefined function fn:insert-before($arg1, $arg2, $arg3)
  * as per http://www.w3.org/TR/xpath-functions/#func-insert-before
- * 
+ *
  * @author Max Bechtold
- * 
  */
 public class InsertBefore extends AbstractFunction {
 
-	public InsertBefore(QNm name, Signature signature) {
-		super(name, signature, true);
-	}
+  public InsertBefore(QNm name, Signature signature) {
+    super(name, signature, true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		final Sequence s = args[0];
-		IntNumeric p = (IntNumeric) args[1];
-		final Sequence i = args[2];
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    final Sequence s = args[0];
+    IntNumeric p = (IntNumeric) args[1];
+    final Sequence i = args[2];
 
-		if (p.cmp(Int32.ONE) < 0) {
-			p = Int32.ONE;
-		}
-		final IntNumeric pos = p;
+    if (p.cmp(Int32.ONE) < 0) {
+      p = Int32.ONE;
+    }
+    final IntNumeric pos = p;
 
-		if (s == null) {
-			return i;
-		} else if (i == null) {
-			return s;
-		}
+    if (s == null) {
+      return i;
+    } else if (i == null) {
+      return s;
+    }
 
-		return new LazySequence() {
-			final Sequence seq = s;
-			final Sequence ins = i;
-			final IntNumeric p = pos;
+    return new LazySequence() {
+      final Sequence seq = s;
+      final Sequence ins = i;
+      final IntNumeric p = pos;
 
-			@Override
-			public Iter iterate() {
-				return new BaseIter() {
-					private IntNumeric next = Int32.ONE;
-					private Iter itSeq;
-					private Iter itIns;
+      @Override
+      public Iter iterate() {
+        return new BaseIter() {
+          private IntNumeric next = Int32.ONE;
+          private Iter itSeq;
+          private Iter itIns;
 
-					@Override
-					public Item next() throws QueryException {
-						if (itSeq == null) {
-							itSeq = seq.iterate();
-							itIns = ins.iterate();
-						}
+          @Override
+          public Item next() throws QueryException {
+            if (itSeq == null) {
+              itSeq = seq.iterate();
+              itIns = ins.iterate();
+            }
 
-						Item nextSeq;
-						Item nextIns;
+            Item nextSeq;
+            Item nextIns;
 
-						if (next.cmp(p) < 0) {
-							if ((nextSeq = itSeq.next()) != null) {
-								next = next.inc();
-								return nextSeq;
-							} else {
-								next = p;
-							}
-						}
+            if (next.cmp(p) < 0) {
+              if ((nextSeq = itSeq.next()) != null) {
+                next = next.inc();
+                return nextSeq;
+              } else {
+                next = p;
+              }
+            }
 
-						if (next.cmp(p) == 0) {
-							if ((nextIns = itIns.next()) != null) {
-								return nextIns;
-							} else {
-								next = next.inc().inc();
-							}
-						}
+            if (next.cmp(p) == 0) {
+              if ((nextIns = itIns.next()) != null) {
+                return nextIns;
+              } else {
+                next = next.inc().inc();
+              }
+            }
 
-						return itSeq.next();
-					}
+            return itSeq.next();
+          }
 
-					@Override
-					public void close() {
-						itSeq.close();
-						itIns.close();
-					}
-				};
-			}
-		};
-	}
+          @Override
+          public void close() {
+            itSeq.close();
+            itIns.close();
+          }
+        };
+      }
+    };
+  }
 
 }

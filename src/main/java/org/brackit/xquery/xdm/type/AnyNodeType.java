@@ -32,14 +32,13 @@ import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public final class AnyNodeType extends NodeType {
   public static final AnyNodeType ANY_NODE = new AnyNodeType();
 
-  public AnyNodeType() {}
+  public AnyNodeType() {
+  }
 
   @Override
   public boolean matches(Node<?> node) {

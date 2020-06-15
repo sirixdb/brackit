@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -35,133 +35,123 @@ import org.brackit.xquery.Tuple;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public final class TupleImpl implements Tuple {
-	public static final Tuple EMPTY_TUPLE = new TupleImpl();
+  public static final Tuple EMPTY_TUPLE = new TupleImpl();
 
-	private final Sequence[] sequences;
+  private final Sequence[] sequences;
 
-	public TupleImpl() {
-		sequences = new Sequence[0];
-	}
+  public TupleImpl() {
+    sequences = new Sequence[0];
+  }
 
-	public TupleImpl(Sequence t) {
-		sequences = new Sequence[] { t };
-	}
+  public TupleImpl(Sequence t) {
+    sequences = new Sequence[] { t };
+  }
 
-	public TupleImpl(Sequence[] t) {
-		sequences = Arrays.copyOf(t, t.length);
-	}
+  public TupleImpl(Sequence[] t) {
+    sequences = Arrays.copyOf(t, t.length);
+  }
 
-	@Override
-	public Tuple project(int... positions) {
-		Sequence[] projected = new Sequence[positions.length];
-		int targetPos = 0;
-		for (int pos : positions) {
-			projected[targetPos++] = get(pos);
-		}
-		return new TupleImpl(projected);
-	}
+  @Override
+  public Tuple project(int... positions) {
+    Sequence[] projected = new Sequence[positions.length];
+    int targetPos = 0;
+    for (int pos : positions) {
+      projected[targetPos++] = get(pos);
+    }
+    return new TupleImpl(projected);
+  }
 
-	@Override
-	public Tuple project(int start, int end) {
-		if ((start < 0) || (start >= sequences.length)) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
-					start);
-		}
-		if ((end < start) || (end >= sequences.length)) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
-					end);
-		}
-		return new TupleImpl(Arrays.copyOfRange(sequences, start, end));
-	}
+  @Override
+  public Tuple project(int start, int end) {
+    if ((start < 0) || (start >= sequences.length)) {
+      throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR, start);
+    }
+    if ((end < start) || (end >= sequences.length)) {
+      throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR, end);
+    }
+    return new TupleImpl(Arrays.copyOfRange(sequences, start, end));
+  }
 
-	@Override
-	public Tuple replace(int position, Sequence s) {
-		if ((position < 0) || (position >= sequences.length)) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
-					position);
-		}
-		Sequence[] tmp = Arrays.copyOf(sequences, sequences.length);
-		tmp[position] = s;
-		return new TupleImpl(tmp);
-	}
+  @Override
+  public Tuple replace(int position, Sequence s) {
+    if ((position < 0) || (position >= sequences.length)) {
+      throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR, position);
+    }
+    Sequence[] tmp = Arrays.copyOf(sequences, sequences.length);
+    tmp[position] = s;
+    return new TupleImpl(tmp);
+  }
 
-	@Override
-	public Tuple concat(Sequence s) {
-		Sequence[] tmp = Arrays.copyOf(sequences, sequences.length + 1);
-		tmp[sequences.length] = s;
-		return new TupleImpl(tmp);
-	}
+  @Override
+  public Tuple concat(Sequence s) {
+    Sequence[] tmp = Arrays.copyOf(sequences, sequences.length + 1);
+    tmp[sequences.length] = s;
+    return new TupleImpl(tmp);
+  }
 
-	@Override
-	public Tuple concat(Sequence[] s) {
-		Sequence[] tmp = Arrays.copyOf(sequences, sequences.length + s.length);
-		System.arraycopy(s, 0, tmp, sequences.length, s.length);
-		return new TupleImpl(tmp);
-	}
-	
-	@Override
-	public Tuple conreplace(Sequence con, int position, Sequence s)
-			{
-		int nLen = sequences.length + 1;
-		if ((position < 0) || (position >= nLen)) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
-					position);
-		}
-		Sequence[] tmp = Arrays.copyOf(sequences, nLen);
-		tmp[sequences.length] = s;
-		tmp[position] = s;
-		return new TupleImpl(tmp);
-	}
+  @Override
+  public Tuple concat(Sequence[] s) {
+    Sequence[] tmp = Arrays.copyOf(sequences, sequences.length + s.length);
+    System.arraycopy(s, 0, tmp, sequences.length, s.length);
+    return new TupleImpl(tmp);
+  }
 
-	@Override
-	public Tuple conreplace(Sequence[] con, int position, Sequence s)
-			{
-		int nLen = sequences.length + con.length;
-		if ((position < 0) || (position >= nLen)) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
-					position);
-		}
-		Sequence[] tmp = Arrays.copyOf(sequences, nLen);
-		System.arraycopy(con, 0, tmp, sequences.length, con.length);
-		tmp[position] = s;
-		return new TupleImpl(tmp);
-	}
+  @Override
+  public Tuple conreplace(Sequence con, int position, Sequence s) {
+    int nLen = sequences.length + 1;
+    if ((position < 0) || (position >= nLen)) {
+      throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR, position);
+    }
+    Sequence[] tmp = Arrays.copyOf(sequences, nLen);
+    tmp[sequences.length] = s;
+    tmp[position] = s;
+    return new TupleImpl(tmp);
+  }
 
-	@Override
-	public Sequence[] array() {
-		return sequences;
-	}
+  @Override
+  public Tuple conreplace(Sequence[] con, int position, Sequence s) {
+    int nLen = sequences.length + con.length;
+    if ((position < 0) || (position >= nLen)) {
+      throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR, position);
+    }
+    Sequence[] tmp = Arrays.copyOf(sequences, nLen);
+    System.arraycopy(con, 0, tmp, sequences.length, con.length);
+    tmp[position] = s;
+    return new TupleImpl(tmp);
+  }
 
-	@Override
-	public Sequence get(int position) {
-		if ((position < 0) || (position >= sequences.length)) {
-			throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR,
-					position);
-		}
+  @Override
+  public Sequence[] array() {
+    return sequences;
+  }
 
-		return sequences[position];
-	}
+  @Override
+  public Sequence get(int position) {
+    if ((position < 0) || (position >= sequences.length)) {
+      throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR, position);
+    }
 
-	@Override
-	public int getSize() {
-		return sequences.length;
-	}
+    return sequences[position];
+  }
 
-	public String toString() {
-		StringBuilder out = new StringBuilder();
-		out.append("[");
-		for (int i = 0; i < sequences.length; i++) {
-			if (i > 0)
-				out.append(", ");
+  @Override
+  public int getSize() {
+    return sequences.length;
+  }
 
-			out.append(sequences[i]);
-		}
-		out.append("]");
-		return out.toString();
-	}
+  public String toString() {
+    StringBuilder out = new StringBuilder();
+    out.append("[");
+    for (int i = 0; i < sequences.length; i++) {
+      if (i > 0)
+        out.append(", ");
+
+      out.append(sequences[i]);
+    }
+    out.append("]");
+    return out.toString();
+  }
 }

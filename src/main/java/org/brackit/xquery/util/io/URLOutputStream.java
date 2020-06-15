@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -36,50 +36,49 @@ import java.net.URLConnection;
 /**
  * RAII-style wrapper for {@link OutputStream OutputStreams} basing on the
  * standard {@link URLConnection}.
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public class URLOutputStream extends OutputStream {
-	private final URLConnection conn;
-	private final OutputStream out;
+  private final URLConnection conn;
+  private final OutputStream out;
 
-	public URLOutputStream(URL url) throws IOException {
-		conn = url.openConnection();
-		out = conn.getOutputStream();
-	}
+  public URLOutputStream(URL url) throws IOException {
+    conn = url.openConnection();
+    out = conn.getOutputStream();
+  }
 
-	public URLOutputStream(URL url, int timeout) throws IOException {
-		conn = url.openConnection();
-		conn.setConnectTimeout(timeout);
-		out = conn.getOutputStream();
-	}
+  public URLOutputStream(URL url, int timeout) throws IOException {
+    conn = url.openConnection();
+    conn.setConnectTimeout(timeout);
+    out = conn.getOutputStream();
+  }
 
-	@Override
-	public void write(int b) throws IOException {
-		out.write(b);
-	}
+  @Override
+  public void write(int b) throws IOException {
+    out.write(b);
+  }
 
-	@Override
-	public void write(byte[] b) throws IOException {
-		out.write(b);
-	}
+  @Override
+  public void write(byte[] b) throws IOException {
+    out.write(b);
+  }
 
-	@Override
-	public void write(byte[] b, int off, int len) throws IOException {
-		out.write(b, off, len);
-	}
+  @Override
+  public void write(byte[] b, int off, int len) throws IOException {
+    out.write(b, off, len);
+  }
 
-	@Override
-	public void flush() throws IOException {
-		out.flush();
-	}
+  @Override
+  public void flush() throws IOException {
+    out.flush();
+  }
 
-	@Override
-	public void close() throws IOException {
-		out.close();
-		if (conn instanceof HttpURLConnection) {
-			((HttpURLConnection) conn).disconnect();
-		}
-	}
+  @Override
+  public void close() throws IOException {
+    out.close();
+    if (conn instanceof HttpURLConnection) {
+      ((HttpURLConnection) conn).disconnect();
+    }
+  }
 }

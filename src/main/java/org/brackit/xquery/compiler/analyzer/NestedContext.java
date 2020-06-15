@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -37,106 +37,105 @@ import org.brackit.xquery.module.Types;
 
 /**
  * @author Sebastian Baechle
- *
  */
 public class NestedContext implements StaticContext {
-	private final StaticContext parent;	
-	private final Namespaces ns;
-	private Boolean orderingMode;
-	
-	public NestedContext(StaticContext parent) {
-		this.parent = parent;
-		this.ns = new Namespaces(parent.getNamespaces());
-	}
+  private final StaticContext parent;
+  private final Namespaces ns;
+  private Boolean orderingMode;
 
-	@Override
-	public Namespaces getNamespaces() {
-		return ns;
-	}
+  public NestedContext(StaticContext parent) {
+    this.parent = parent;
+    this.ns = new Namespaces(parent.getNamespaces());
+  }
 
-	@Override
-	public boolean isOrderingModeOrdered() {
-		return (orderingMode != null) ? orderingMode : parent.isOrderingModeOrdered();
-	}
+  @Override
+  public Namespaces getNamespaces() {
+    return ns;
+  }
 
-	@Override
-	public void setOrderingModeOrdered(boolean ordered) {
-		this.orderingMode = ordered;
-	}
+  @Override
+  public boolean isOrderingModeOrdered() {
+    return (orderingMode != null) ? orderingMode : parent.isOrderingModeOrdered();
+  }
 
-	public AnyURI getBaseURI() {
-		return parent.getBaseURI();
-	}
+  @Override
+  public void setOrderingModeOrdered(boolean ordered) {
+    this.orderingMode = ordered;
+  }
 
-	public DecimalFormat getDecimalFormat(QNm name) {
-		return parent.getDecimalFormat(name);
-	}
+  public AnyURI getBaseURI() {
+    return parent.getBaseURI();
+  }
 
-	public String getDefaultCollation() {
-		return parent.getDefaultCollation();
-	}
+  public DecimalFormat getDecimalFormat(QNm name) {
+    return parent.getDecimalFormat(name);
+  }
 
-	public Functions getFunctions() {
-		return parent.getFunctions();
-	}
+  public String getDefaultCollation() {
+    return parent.getDefaultCollation();
+  }
 
-	public Types getTypes() {
-		return parent.getTypes();
-	}
+  public Functions getFunctions() {
+    return parent.getFunctions();
+  }
 
-	public boolean isBoundarySpaceStrip() {
-		return parent.isBoundarySpaceStrip();
-	}
+  public Types getTypes() {
+    return parent.getTypes();
+  }
 
-	public boolean isConstructionModeStrip() {
-		return parent.isConstructionModeStrip();
-	}
+  public boolean isBoundarySpaceStrip() {
+    return parent.isBoundarySpaceStrip();
+  }
 
-	public boolean isCopyNSInherit() {
-		return parent.isCopyNSInherit();
-	}
+  public boolean isConstructionModeStrip() {
+    return parent.isConstructionModeStrip();
+  }
 
-	public boolean isCopyNSPreserve() {
-		return parent.isCopyNSPreserve();
-	}
+  public boolean isCopyNSInherit() {
+    return parent.isCopyNSInherit();
+  }
 
-	public boolean isEmptyOrderGreatest() {
-		return parent.isEmptyOrderGreatest();
-	}
+  public boolean isCopyNSPreserve() {
+    return parent.isCopyNSPreserve();
+  }
 
-	public void setBaseURI(AnyURI uri) {
-		parent.setBaseURI(uri);
-	}
+  public boolean isEmptyOrderGreatest() {
+    return parent.isEmptyOrderGreatest();
+  }
 
-	public void setBoundarySpaceStrip(boolean strip) {
-		parent.setBoundarySpaceStrip(strip);
-	}
+  public void setBaseURI(AnyURI uri) {
+    parent.setBaseURI(uri);
+  }
 
-	public void setConstructionModeStrip(boolean strip) {
-		parent.setConstructionModeStrip(strip);
-	}
+  public void setBoundarySpaceStrip(boolean strip) {
+    parent.setBoundarySpaceStrip(strip);
+  }
 
-	public void setCopyNSInherit(boolean copyNSInherit) {
-		parent.setCopyNSInherit(copyNSInherit);
-	}
+  public void setConstructionModeStrip(boolean strip) {
+    parent.setConstructionModeStrip(strip);
+  }
 
-	public void setCopyNSPreserve(boolean copyNSPreserve) {
-		parent.setCopyNSPreserve(copyNSPreserve);
-	}
+  public void setCopyNSInherit(boolean copyNSInherit) {
+    parent.setCopyNSInherit(copyNSInherit);
+  }
 
-	public void setDecimalFormat(QNm name, DecimalFormat df) {
-		parent.setDecimalFormat(name, df);
-	}
+  public void setCopyNSPreserve(boolean copyNSPreserve) {
+    parent.setCopyNSPreserve(copyNSPreserve);
+  }
 
-	public void setDefaultCollation(String collation) {
-		parent.setDefaultCollation(collation);
-	}
+  public void setDecimalFormat(QNm name, DecimalFormat df) {
+    parent.setDecimalFormat(name, df);
+  }
 
-	public void setDefaultDecimalFormat(DecimalFormat df) {
-		parent.setDefaultDecimalFormat(df);
-	}
+  public void setDefaultCollation(String collation) {
+    parent.setDefaultCollation(collation);
+  }
 
-	public void setEmptyOrderGreatest(boolean greatest) {
-		parent.setEmptyOrderGreatest(greatest);
-	}
+  public void setDefaultDecimalFormat(DecimalFormat df) {
+    parent.setDefaultDecimalFormat(df);
+  }
+
+  public void setEmptyOrderGreatest(boolean greatest) {
+    parent.setEmptyOrderGreatest(greatest);
+  }
 }

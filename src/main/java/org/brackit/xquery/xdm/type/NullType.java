@@ -32,13 +32,13 @@ import org.brackit.xquery.xdm.Item;
 
 /**
  * @author Sebastian Baechle
- *
  */
 public final class NullType implements ItemType {
 
   public static final NullType ARRAY = new NullType();
 
-  public NullType() {}
+  public NullType() {
+  }
 
   @Override
   public boolean isAnyItem() {

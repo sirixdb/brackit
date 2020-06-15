@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -49,44 +49,40 @@ import org.brackit.xquery.xdm.type.Cardinality;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
- * 
  * @author Henrique Valer
- * 
  */
 @FunctionAnnotation(description = "Executes the given query.", parameters = "$query")
 public class Eval extends AbstractFunction {
 
-	public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI,
-			Bits.BIT_PREFIX, "eval");
+  public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI, Bits.BIT_PREFIX, "eval");
 
-	public Eval() {
-		this(DEFAULT_NAME);
-	}
+  public Eval() {
+    this(DEFAULT_NAME);
+  }
 
-	public Eval(QNm name) {
-		super(name, new Signature(new SequenceType(AtomicType.STR,
-				Cardinality.ZeroOrOne), new SequenceType(AnyItemType.ANY,
-				Cardinality.One)), true);
-	}
+  public Eval(QNm name) {
+    super(name,
+          new Signature(new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+                        new SequenceType(AnyItemType.ANY, Cardinality.One)),
+          true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx,
-			Sequence[] args) throws QueryException {
-		try {
-			String vQuery = null;
-			if (args[0] instanceof Atomic) {
-				vQuery = ((Atomic) args[0]).stringValue();
-			} else {
-				PrintStream buf = IOUtils.createBuffer();
-				StringSerializer ser = new StringSerializer(buf);
-				ser.serialize(args[0]);
-				vQuery = buf.toString();
-			}
-			XQuery x = new XQuery(vQuery);
-			return x.execute(new BrackitQueryContext(ctx.getNodeStore()));
-		} catch (Exception e) {
-			throw new QueryException(e, BitFun.BIT_EVAL_INT_ERROR,
-					e.getMessage());
-		}
-	}
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    try {
+      String vQuery = null;
+      if (args[0] instanceof Atomic) {
+        vQuery = ((Atomic) args[0]).stringValue();
+      } else {
+        PrintStream buf = IOUtils.createBuffer();
+        StringSerializer ser = new StringSerializer(buf);
+        ser.serialize(args[0]);
+        vQuery = buf.toString();
+      }
+      XQuery x = new XQuery(vQuery);
+      return x.execute(new BrackitQueryContext(ctx.getNodeStore()));
+    } catch (Exception e) {
+      throw new QueryException(e, BitFun.BIT_EVAL_INT_ERROR, e.getMessage());
+    }
+  }
 }

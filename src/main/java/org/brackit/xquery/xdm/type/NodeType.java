@@ -35,9 +35,7 @@ import org.brackit.xquery.xdm.Type;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public abstract class NodeType extends StructuredItemType {
   @Override

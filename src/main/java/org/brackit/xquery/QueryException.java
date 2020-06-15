@@ -34,9 +34,7 @@ package org.brackit.xquery;
 import org.brackit.xquery.atomic.QNm;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class QueryException extends RuntimeException {
   private final QNm code;

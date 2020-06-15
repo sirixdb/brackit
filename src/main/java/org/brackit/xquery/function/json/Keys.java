@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -46,73 +46,69 @@ import org.brackit.xquery.xdm.type.SequenceType;
 import java.util.*;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 @FunctionAnnotation(description = "Returns an array with the field values of the given record.", parameters = "$record")
 public class Keys extends AbstractFunction {
 
-	public static final QNm DEFAULT_NAME = new QNm(JSONFun.JSON_NSURI,
-			JSONFun.JSON_PREFIX, "keys");
+  public static final QNm DEFAULT_NAME = new QNm(JSONFun.JSON_NSURI, JSONFun.JSON_PREFIX, "keys");
 
-	public Keys() {
-		this(DEFAULT_NAME);
-	}
+  public Keys() {
+    this(DEFAULT_NAME);
+  }
 
-	public Keys(QNm name) {
-		super(name, new Signature(SequenceType.ITEM_SEQUENCE, SequenceType.ITEM_SEQUENCE), true);
-	}
+  public Keys(QNm name) {
+    super(name, new Signature(SequenceType.ITEM_SEQUENCE, SequenceType.ITEM_SEQUENCE), true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx,
-			Sequence[] args) throws QueryException {
-		final var sequence = args[0];
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    final var sequence = args[0];
 
-		return new LazySequence() {
-			@Override
-			public Iter iterate() {
-				return new BaseIter() {
-					Iter s;
-					final Set<String> stringKeys = new HashSet<>();
-					final List<Item> keys = new ArrayList<>();
+    return new LazySequence() {
+      @Override
+      public Iter iterate() {
+        return new BaseIter() {
+          Iter s;
+          final Set<String> stringKeys = new HashSet<>();
+          final List<Item> keys = new ArrayList<>();
 
-					@Override
-					public Item next() {
-						if (s == null) {
-							s = sequence.iterate();
-						}
+          @Override
+          public Item next() {
+            if (s == null) {
+              s = sequence.iterate();
+            }
 
-						Item item;
-						while ((item = s.next()) != null) {
-							if (item instanceof Record) {
-								final var record = (Record) item;
-								final var nameIter = record.names().iterate();
+            Item item;
+            while ((item = s.next()) != null) {
+              if (item instanceof Record) {
+                final var record = (Record) item;
+                final var nameIter = record.names().iterate();
 
-								Item name;
-								while ((name = nameIter.next()) != null) {
-									if (stringKeys.add(name.atomize().stringValue())) {
-										keys.add(name);
-									}
-								}
-							}
-						}
+                Item name;
+                while ((name = nameIter.next()) != null) {
+                  if (stringKeys.add(name.atomize().stringValue())) {
+                    keys.add(name);
+                  }
+                }
+              }
+            }
 
-						if (!keys.isEmpty()) {
-							return keys.remove(0);
-						}
+            if (!keys.isEmpty()) {
+              return keys.remove(0);
+            }
 
-						return null;
-					}
+            return null;
+          }
 
-					@Override
-					public void close() {
-						if (s != null) {
-							s.close();
-						}
-					}
-				};
-			}
-		};
-	}
+          @Override
+          public void close() {
+            if (s != null) {
+              s.close();
+            }
+          }
+        };
+      }
+    };
+  }
 }

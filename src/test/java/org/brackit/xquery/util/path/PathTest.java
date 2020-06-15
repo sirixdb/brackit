@@ -51,10 +51,10 @@ public class PathTest {
     assertEquals("Path parsed correctly", expected, parsed);
 
     Path<QNm> toCheck = (new Path<QNm>()).child(new QNm("paths"))
-                                          .child(new QNm("\\/business_service_providers\\/search"))
-                                          .child(new QNm("foobar"))
-                                          .childArray()
-                                          .child(new QNm("get"));
+                                         .child(new QNm("\\/business_service_providers\\/search"))
+                                         .child(new QNm("foobar"))
+                                         .childArray()
+                                         .child(new QNm("get"));
 
     assertTrue(expected.matches(toCheck));
   }

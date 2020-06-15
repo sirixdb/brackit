@@ -28,15 +28,14 @@
 package org.brackit.xquery.atomic;
 
 import java.math.BigDecimal;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Type;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class Int32 extends AbstractNumeric implements LonNumeric {
   public static final Int32 MIN_VALUE = new Int32(Integer.MIN_VALUE);
@@ -54,9 +53,9 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
   public static final Int32 ONE = new Int32(1);
 
   public static final Int32[] ZERO_TWO_TWENTY =
-      new Int32[] {ZERO, ONE, new Int32(2), new Int32(3), new Int32(4), new Int32(5), new Int32(6), new Int32(7),
+      new Int32[] { ZERO, ONE, new Int32(2), new Int32(3), new Int32(4), new Int32(5), new Int32(6), new Int32(7),
           new Int32(8), new Int32(9), new Int32(10), new Int32(11), new Int32(12), new Int32(13), new Int32(14),
-          new Int32(15), new Int32(16), new Int32(17), new Int32(18), new Int32(19), new Int32(20)};
+          new Int32(15), new Int32(16), new Int32(17), new Int32(18), new Int32(19), new Int32(20) };
 
   private final int v;
 
@@ -138,9 +137,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
   public IntNumeric inc() {
     return ((v < 20) && (v > 0))
         ? ZERO_TWO_TWENTY[v + 1]
-        : (v != Integer.MAX_VALUE)
-            ? new Int32(v + 1)
-            : new Int64(((long) v) + 1);
+        : (v != Integer.MAX_VALUE) ? new Int32(v + 1) : new Int64(((long) v) + 1);
   }
 
   @Override
@@ -156,8 +153,10 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
     if (other instanceof Numeric) {
       return -other.cmp(this);
     }
-    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s' with '%s'", type(),
-        other.type());
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                             "Cannot compare '%s' with '%s'",
+                             type(),
+                             other.type());
   }
 
   @Override
@@ -319,9 +318,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
 
   @Override
   public Numeric negate() throws QueryException {
-    return (v != Integer.MIN_VALUE)
-        ? new Int32(-v)
-        : new Int64(-(long) v);
+    return (v != Integer.MIN_VALUE) ? new Int32(-v) : new Int64(-(long) v);
   }
 
   @Override
@@ -331,11 +328,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
 
   @Override
   public Numeric abs() throws QueryException {
-    return (v >= 0)
-        ? this
-        : (v != Integer.MIN_VALUE)
-            ? new Int32(-v)
-            : new Int(-(long) v);
+    return (v >= 0) ? this : (v != Integer.MIN_VALUE) ? new Int32(-v) : new Int(-(long) v);
   }
 
   @Override

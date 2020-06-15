@@ -38,6 +38,7 @@
 package org.brackit.xquery.compiler;
 
 import java.util.Map;
+
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.AnyURI;
@@ -79,7 +80,6 @@ import org.brackit.xquery.util.dot.DotUtil;
  * Compiles an {@link Module XQuery module}.
  *
  * @author Sebastian Baechle
- *
  */
 public class CompileChain {
 

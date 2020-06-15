@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,6 +28,7 @@
 package org.brackit.xquery.function.io;
 
 import java.io.IOException;
+
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
@@ -48,33 +49,30 @@ import org.brackit.xquery.xdm.type.SequenceType;
 /**
  * @author Henrique Valer
  * @author Sebastian Baechle
- * 
  */
 @FunctionAnnotation(description = "Loads a resource as plain text.", parameters = "$path")
 public class Read extends AbstractFunction {
-	public static final QNm DEFAULT_NAME = new QNm(IOFun.IO_NSURI,
-			IOFun.IO_PREFIX, "read");
+  public static final QNm DEFAULT_NAME = new QNm(IOFun.IO_NSURI, IOFun.IO_PREFIX, "read");
 
-	public Read() {
-		this(DEFAULT_NAME);
-	}
+  public Read() {
+    this(DEFAULT_NAME);
+  }
 
-	public Read(QNm name) {
-		super(name, new Signature(new SequenceType(AtomicType.STR,
-				Cardinality.One), new SequenceType(AtomicType.STR,
-				Cardinality.One)), true);
-	}
+  public Read(QNm name) {
+    super(name,
+          new Signature(new SequenceType(AtomicType.STR, Cardinality.One),
+                        new SequenceType(AtomicType.STR, Cardinality.One)),
+          true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx,
-			Sequence[] args) throws QueryException {
-		try {
-			String uri = ((Atomic) args[0]).stringValue();
-			String s = IOUtils.getStringFromInputStream(URIHandler
-					.getInputStream(uri));
-			return new Str(s);
-		} catch (IOException e) {
-			throw new QueryException(e, IOFun.IO_LOADFILE_INT_ERROR);
-		}
-	}
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    try {
+      String uri = ((Atomic) args[0]).stringValue();
+      String s = IOUtils.getStringFromInputStream(URIHandler.getInputStream(uri));
+      return new Str(s);
+    } catch (IOException e) {
+      throw new QueryException(e, IOFun.IO_LOADFILE_INT_ERROR);
+    }
+  }
 }

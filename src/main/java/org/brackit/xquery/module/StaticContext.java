@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -41,63 +41,62 @@ import org.brackit.xquery.atomic.QNm;
  * synchronize the different representations during query rewriting.
  * </p>
  * <p>
- * Solely the 
+ * Solely the
  * </p>
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public interface StaticContext {
 
-	String UNICODE_COLLATION = "http://www.w3.org/2005/xpath-functions/collation/codepoint";
+  String UNICODE_COLLATION = "http://www.w3.org/2005/xpath-functions/collation/codepoint";
 
-	/**
-	 * Returns the mapping of statically known namespaces (mapping of prefixes
-	 * to namespace URIs), the default element namespace and the default
-	 * function namespace.
-	 */
-	Namespaces getNamespaces();
+  /**
+   * Returns the mapping of statically known namespaces (mapping of prefixes
+   * to namespace URIs), the default element namespace and the default
+   * function namespace.
+   */
+  Namespaces getNamespaces();
 
-	Functions getFunctions();
+  Functions getFunctions();
 
-	Types getTypes();
+  Types getTypes();
 
-	void setBoundarySpaceStrip(boolean strip);
+  void setBoundarySpaceStrip(boolean strip);
 
-	boolean isBoundarySpaceStrip();
+  boolean isBoundarySpaceStrip();
 
-	String getDefaultCollation();
+  String getDefaultCollation();
 
-	void setDefaultCollation(String collation);
+  void setDefaultCollation(String collation);
 
-	AnyURI getBaseURI();
+  AnyURI getBaseURI();
 
-	void setBaseURI(AnyURI uri);
+  void setBaseURI(AnyURI uri);
 
-	void setConstructionModeStrip(boolean strip);
+  void setConstructionModeStrip(boolean strip);
 
-	boolean isConstructionModeStrip();
+  boolean isConstructionModeStrip();
 
-	void setOrderingModeOrdered(boolean ordered);
+  void setOrderingModeOrdered(boolean ordered);
 
-	boolean isOrderingModeOrdered();
+  boolean isOrderingModeOrdered();
 
-	void setEmptyOrderGreatest(boolean greatest);
+  void setEmptyOrderGreatest(boolean greatest);
 
-	boolean isEmptyOrderGreatest();
+  boolean isEmptyOrderGreatest();
 
-	boolean isCopyNSPreserve();
+  boolean isCopyNSPreserve();
 
-	void setCopyNSPreserve(boolean copyNSPreserve);
+  void setCopyNSPreserve(boolean copyNSPreserve);
 
-	boolean isCopyNSInherit();
+  boolean isCopyNSInherit();
 
-	void setCopyNSInherit(boolean copyNSInherit);
+  void setCopyNSInherit(boolean copyNSInherit);
 
-	void setDefaultDecimalFormat(DecimalFormat df);
+  void setDefaultDecimalFormat(DecimalFormat df);
 
-	void setDecimalFormat(QNm name, DecimalFormat df);
+  void setDecimalFormat(QNm name, DecimalFormat df);
 
-	DecimalFormat getDecimalFormat(QNm name);
+  DecimalFormat getDecimalFormat(QNm name);
 
 }

@@ -28,15 +28,14 @@
 package org.brackit.xquery.atomic;
 
 import java.util.Arrays;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Type;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class B64 extends AbstractAtomic {
   /*
@@ -64,16 +63,14 @@ public class B64 extends AbstractAtomic {
     int length = str.length();
     byte[] bytes = new byte[noOfOctets(str)];
 
-    for (int charPos = 0; charPos < length;) {
+    for (int charPos = 0; charPos < length; ) {
       char c1 = str.charAt(charPos++);
       char c2 = str.charAt(charPos++);
       char c3 = str.charAt(charPos++);
       char c4 = str.charAt(charPos++);
 
       bytes[size++] = (byte) b64(str, c1);
-      bytes[size++] = (byte) ((c3 != '=')
-          ? b64(str, c2)
-          : b04(str, c2));
+      bytes[size++] = (byte) ((c3 != '=') ? b64(str, c2) : b04(str, c2));
 
       if (c4 != '=') {
         bytes[size++] = (byte) b64(str, c3);
@@ -188,15 +185,19 @@ public class B64 extends AbstractAtomic {
 
   @Override
   public int cmp(Atomic atomic) throws QueryException {
-    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s with '%s'", type(),
-        atomic.type());
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                             "Cannot compare '%s with '%s'",
+                             type(),
+                             atomic.type());
   }
 
   @Override
   public boolean eq(Atomic atomic) throws QueryException {
     if (!(atomic instanceof B64)) {
-      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s with '%s'", type(),
-          atomic.type());
+      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                               "Cannot compare '%s with '%s'",
+                               type(),
+                               atomic.type());
     }
     return Arrays.equals(bytes, ((B64) atomic).bytes);
   }
@@ -235,8 +236,9 @@ public class B64 extends AbstractAtomic {
 
   @Override
   public boolean booleanValue() throws QueryException {
-    throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Effective boolean value of '%s' is undefined.",
-        type());
+    throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                             "Effective boolean value of '%s' is undefined.",
+                             type());
   }
 
   // public static void main(String[] args) throws QueryException

@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,61 +33,57 @@ import org.w3c.dom.DOMException;
 import org.w3c.dom.Node;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class NamedNodeMapImpl implements org.w3c.dom.NamedNodeMap {
-	private final Map<String, ? extends org.w3c.dom.Node> map;
+  private final Map<String, ? extends org.w3c.dom.Node> map;
 
-	public NamedNodeMapImpl(Map<String, ? extends org.w3c.dom.Node> map) {
-		this.map = map;
-	}
+  public NamedNodeMapImpl(Map<String, ? extends org.w3c.dom.Node> map) {
+    this.map = map;
+  }
 
-	@Override
-	public int getLength() {
-		return (map != null) ? map.size() : 0;
-	}
+  @Override
+  public int getLength() {
+    return (map != null) ? map.size() : 0;
+  }
 
-	@Override
-	public Node getNamedItem(String name) {
-		return (map != null) ? map.get(name) : null;
-	}
+  @Override
+  public Node getNamedItem(String name) {
+    return (map != null) ? map.get(name) : null;
+  }
 
-	@Override
-	public Node getNamedItemNS(String namespaceURI, String localName)
-			throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public Node getNamedItemNS(String namespaceURI, String localName) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public Node item(int index) {
-		if ((index >= 0) && (index < map.size())) {
-			String key = (String) (map.keySet().toArray())[index];
-			return map.get(key);
-		}
+  @Override
+  public Node item(int index) {
+    if ((index >= 0) && (index < map.size())) {
+      String key = (String) (map.keySet().toArray())[index];
+      return map.get(key);
+    }
 
-		return null;
-	}
+    return null;
+  }
 
-	@Override
-	public Node removeNamedItem(String name) throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public Node removeNamedItem(String name) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public Node removeNamedItemNS(String namespaceURI, String localName)
-			throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public Node removeNamedItemNS(String namespaceURI, String localName) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public Node setNamedItem(Node arg) throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public Node setNamedItem(Node arg) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public Node setNamedItemNS(Node arg) throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public Node setNamedItemNS(Node arg) throws DOMException {
+    throw new RuntimeException();
+  }
 }

@@ -32,9 +32,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Type;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class QNm extends AbstractAtomic {
   private final String nsURI; // must be "" if not set
@@ -56,22 +54,16 @@ public class QNm extends AbstractAtomic {
   }
 
   public QNm(String nsURI, String prefix, String localName) {
-    this.nsURI = (nsURI == null)
-        ? ""
-        : nsURI;
-    this.prefix = (prefix == null)
-        ? ""
-        : prefix;
-    this.localName = (localName == null)
-        ? ""
-        : localName;
+    this.nsURI = (nsURI == null) ? "" : nsURI;
+    this.prefix = (prefix == null) ? "" : prefix;
+    this.localName = (localName == null) ? "" : localName;
   }
 
   public QNm(String nsURI, String string) {
     int prefixLength = string.indexOf(":");
     if (prefixLength > -1) {
-      if ((prefixLength == 0) || (prefixLength == string.length() - 1)
-          || (string.indexOf(":", prefixLength + 1) != -1)) {
+      if ((prefixLength == 0) || (prefixLength == string.length() - 1) || (string.indexOf(":", prefixLength + 1)
+          != -1)) {
         throw new IllegalStateException("Illegal QName: " + string);
       }
 
@@ -80,18 +72,14 @@ public class QNm extends AbstractAtomic {
     } else {
       prefix = "";
     }
-    this.nsURI = (nsURI == null)
-        ? ""
-        : nsURI;
+    this.nsURI = (nsURI == null) ? "" : nsURI;
     this.localName = string;
   }
 
   public QNm(String string) {
     this.prefix = "";
     this.nsURI = "";
-    this.localName = (string == null)
-        ? ""
-        : string;
+    this.localName = (string == null) ? "" : string;
   }
 
   @Override
@@ -147,8 +135,10 @@ public class QNm extends AbstractAtomic {
       }
       return localName.compareTo(qName.localName);
     }
-    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s' with '%s'", type(),
-        other.type());
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                             "Cannot compare '%s' with '%s'",
+                             type(),
+                             other.type());
   }
 
   @Override
@@ -178,8 +168,6 @@ public class QNm extends AbstractAtomic {
 
   @Override
   public String toString() {
-    return prefix.isEmpty()
-        ? localName
-        : prefix + ":" + localName;
+    return prefix.isEmpty() ? localName : prefix + ":" + localName;
   }
 }

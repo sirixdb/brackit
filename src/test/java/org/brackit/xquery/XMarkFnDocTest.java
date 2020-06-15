@@ -40,13 +40,16 @@ import static org.junit.Assert.assertEquals;
  * Test of slightly modified XMark queries against stored documents.
  *
  * @author Sebastian Baechle
- *
  */
 public class XMarkFnDocTest extends XQueryBaseTest {
-  /** Query directory. */
+  /**
+   * Query directory.
+   */
   private static final Path QUERY_DIR = RESOURCES.resolve("xmark").resolve("queries").resolve("fndoc");
 
-  /** Result directory. */
+  /**
+   * Result directory.
+   */
   private static final Path RESULT_DIR = RESOURCES.resolve("xmark").resolve("results");
 
   @Test
@@ -213,7 +216,6 @@ public class XMarkFnDocTest extends XQueryBaseTest {
   @Before
   public void setUp() throws Exception {
     super.setUp();
-    storeFile("auction.xml",
-              RESOURCES.resolve("xmark").resolve("auction.xml"));
+    storeFile("auction.xml", RESOURCES.resolve("xmark").resolve("auction.xml"));
   }
 }

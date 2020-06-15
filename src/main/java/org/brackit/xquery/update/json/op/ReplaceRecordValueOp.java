@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -41,30 +41,30 @@ import org.brackit.xquery.xdm.node.Node;
  * @author Johannes Lichtenberger
  */
 public class ReplaceRecordValueOp implements UpdateOp {
-	private final Record target;
+  private final Record target;
 
-	private final QNm field;
+  private final QNm field;
 
-	private final Sequence value;
+  private final Sequence value;
 
-	public ReplaceRecordValueOp(Record target, QNm field, Sequence value) {
-		this.target = target;
-		this.field = field;
-		this.value = value;
-	}
+  public ReplaceRecordValueOp(Record target, QNm field, Sequence value) {
+    this.target = target;
+    this.field = field;
+    this.value = value;
+  }
 
-	@Override
-	public void apply() {
-		target.replace(field, value);
-	}
+  @Override
+  public void apply() {
+    target.replace(field, value);
+  }
 
-	@Override
-	public JsonItem getTarget() {
-		return target;
-	}
+  @Override
+  public JsonItem getTarget() {
+    return target;
+  }
 
-	@Override
-	public OpType getType() {
-		return OpType.REPLACE_VALUE;
-	}
+  @Override
+  public OpType getType() {
+    return OpType.REPLACE_VALUE;
+  }
 }

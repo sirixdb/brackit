@@ -29,6 +29,7 @@ package org.brackit.xquery;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import org.brackit.xquery.atomic.AbstractTimeInstant;
 import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.atomic.DTD;
@@ -50,9 +51,7 @@ import org.brackit.xquery.xdm.node.NodeStore;
 import org.brackit.xquery.xdm.type.ItemType;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class BrackitQueryContext implements QueryContext {
   protected static final NodeFactory<?> FACTORY = new D2NodeFactory();
@@ -128,9 +127,7 @@ public class BrackitQueryContext implements QueryContext {
 
   @Override
   public Sequence resolve(QNm name) {
-    return (externalVars != null)
-        ? externalVars.get(name)
-        : null;
+    return (externalVars != null) ? externalVars.get(name) : null;
   }
 
   @Override
@@ -178,23 +175,17 @@ public class BrackitQueryContext implements QueryContext {
 
   @Override
   public DateTime getDateTime() {
-    return (dateTime != null)
-        ? dateTime
-        : (dateTime = new DateTime(implicitTimezone));
+    return (dateTime != null) ? dateTime : (dateTime = new DateTime(implicitTimezone));
   }
 
   @Override
   public Date getDate() {
-    return (date != null)
-        ? date
-        : (date = new Date(getDateTime()));
+    return (date != null) ? date : (date = new Date(getDateTime()));
   }
 
   @Override
   public Time getTime() {
-    return (time != null)
-        ? time
-        : (time = new Time(getDateTime()));
+    return (time != null) ? time : (time = new Time(getDateTime()));
   }
 
   @Override

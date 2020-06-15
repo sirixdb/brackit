@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -47,30 +47,27 @@ import org.brackit.xquery.xdm.Signature;
  * http://www.w3.org/TR/xpath-functions/#func-replace, and
  * http://www.w3.org/TR/xpath-functions/#func-tokenize. Also note corrections in
  * http://www.w3.org/XML/2007/qt-errata/xpath-functions-errata.html.
- * 
+ *
  * @author Max Bechtold
- * 
  */
 public class RegEx extends AbstractFunction {
-	
-	private Mode mode;
 
-	public RegEx(QNm name, Mode mode, Signature signature) {
-		super(name, signature, true);
-		this.mode = mode;
-	}
+  private Mode mode;
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx,
-			Sequence[] args) throws QueryException {
-		String input = (args[0] != null ? ((Atomic) args[0]).stringValue() : "");
-		String pattern = ((Atomic) args[1]).stringValue();
-		String replacement = (mode == Mode.REPLACE) ? ((Atomic) args[2])
-				.stringValue() : null;
-		String flags = (mode == Mode.REPLACE) ? (args.length > 3 ? ((Atomic) args[3])
-				.stringValue() : null)
-				: (args.length > 2 ? ((Atomic) args[2]).stringValue() : null);
-		return Regex.match(mode, input, pattern, replacement, flags);
-	}
+  public RegEx(QNm name, Mode mode, Signature signature) {
+    super(name, signature, true);
+    this.mode = mode;
+  }
+
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    String input = (args[0] != null ? ((Atomic) args[0]).stringValue() : "");
+    String pattern = ((Atomic) args[1]).stringValue();
+    String replacement = (mode == Mode.REPLACE) ? ((Atomic) args[2]).stringValue() : null;
+    String flags = (mode == Mode.REPLACE)
+        ? (args.length > 3 ? ((Atomic) args[3]).stringValue() : null)
+        : (args.length > 2 ? ((Atomic) args[2]).stringValue() : null);
+    return Regex.match(mode, input, pattern, replacement, flags);
+  }
 
 }

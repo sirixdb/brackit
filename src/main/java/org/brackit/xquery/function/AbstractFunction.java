@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -38,73 +38,70 @@ import org.brackit.xquery.xdm.type.FunctionType;
 import org.brackit.xquery.xdm.type.ItemType;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public abstract class AbstractFunction extends AbstractItem implements Function {
-	private final QNm name;
+  private final QNm name;
 
-	private final Signature signature;
+  private final Signature signature;
 
-	private final boolean isUpdating;
+  private final boolean isUpdating;
 
-	private final boolean isBuiltIn;
+  private final boolean isBuiltIn;
 
-	public AbstractFunction(QNm name, Signature signature, boolean isBuiltIn) {
-		this.name = name;
-		this.signature = signature;
-		this.isUpdating = false;
-		this.isBuiltIn = isBuiltIn;
-	}
+  public AbstractFunction(QNm name, Signature signature, boolean isBuiltIn) {
+    this.name = name;
+    this.signature = signature;
+    this.isUpdating = false;
+    this.isBuiltIn = isBuiltIn;
+  }
 
-	public AbstractFunction(QNm name, Signature signature, boolean isBuiltIn,
-			boolean isUpating) {
-		this.name = name;
-		this.signature = signature;
-		this.isUpdating = isUpating;
-		this.isBuiltIn = isBuiltIn;
-	}
+  public AbstractFunction(QNm name, Signature signature, boolean isBuiltIn, boolean isUpating) {
+    this.name = name;
+    this.signature = signature;
+    this.isUpdating = isUpating;
+    this.isBuiltIn = isBuiltIn;
+  }
 
-	@Override
-	public final QNm getName() {
-		return name;
-	}
+  @Override
+  public final QNm getName() {
+    return name;
+  }
 
-	@Override
-	public final Signature getSignature() {
-		return signature;
-	}
+  @Override
+  public final Signature getSignature() {
+    return signature;
+  }
 
-	@Override
-	public boolean isUpdating() {
-		return isUpdating;
-	}
+  @Override
+  public boolean isUpdating() {
+    return isUpdating;
+  }
 
-	@Override
-	public boolean isBuiltIn() {
-		return isBuiltIn;
-	}
+  @Override
+  public boolean isBuiltIn() {
+    return isBuiltIn;
+  }
 
-	@Override
-	public final String toString() {
-		return name.toString() + signature;
-	}
+  @Override
+  public final String toString() {
+    return name.toString() + signature;
+  }
 
-	@Override
-	public Atomic atomize() throws QueryException {
-		throw new QueryException(ErrorCode.ERR_ITEM_HAS_NO_TYPED_VALUE,
-				"The atomized value of function items is undefined");
-	}
+  @Override
+  public Atomic atomize() throws QueryException {
+    throw new QueryException(ErrorCode.ERR_ITEM_HAS_NO_TYPED_VALUE,
+                             "The atomized value of function items is undefined");
+  }
 
-	@Override
-	public ItemType itemType() throws QueryException {
-		return new FunctionType(signature);
-	}
+  @Override
+  public ItemType itemType() throws QueryException {
+    return new FunctionType(signature);
+  }
 
-	@Override
-	public boolean booleanValue() throws QueryException {
-		throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-				"The effective boolean value of function items is undefined");
-	}
+  @Override
+  public boolean booleanValue() throws QueryException {
+    throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                             "The effective boolean value of function items is undefined");
+  }
 }

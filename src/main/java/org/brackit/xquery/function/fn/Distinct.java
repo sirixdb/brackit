@@ -30,6 +30,7 @@ package org.brackit.xquery.function.fn;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -46,73 +47,69 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class Distinct extends AbstractFunction {
-	public Distinct(QNm name, Signature signature) {
-		super(name, signature, true);
-	}
+  public Distinct(QNm name, Signature signature) {
+    super(name, signature, true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, final QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		if (args.length == 2) {
-			Str collation = (Str) args[1];
+  @Override
+  public Sequence execute(StaticContext sctx, final QueryContext ctx, Sequence[] args) throws QueryException {
+    if (args.length == 2) {
+      Str collation = (Str) args[1];
 
-			if (!collation.stringValue().equals("http://www.w3.org/2005/xpath-functions/collation/codepoint")) {
-				throw new QueryException(ErrorCode.ERR_UNSUPPORTED_COLLATION,
-						"Unsupported collation: %s", collation);
-			}
-		}
+      if (!collation.stringValue().equals("http://www.w3.org/2005/xpath-functions/collation/codepoint")) {
+        throw new QueryException(ErrorCode.ERR_UNSUPPORTED_COLLATION, "Unsupported collation: %s", collation);
+      }
+    }
 
-		final Sequence s = args[0];
+    final Sequence s = args[0];
 
-		if ((s == null) || (s instanceof Item)) {
-			return s;
-		}
+    if ((s == null) || (s instanceof Item)) {
+      return s;
+    }
 
-		return new LazySequence() {
-			final Sequence inSeq = s;
-			// volatile because it is computed
-			// on demand
-			volatile Set<Atomic> set;
+    return new LazySequence() {
+      final Sequence inSeq = s;
+      // volatile because it is computed
+      // on demand
+      volatile Set<Atomic> set;
 
-			@Override
-			public Iter iterate() {
-				return new BaseIter() {
-					Iterator<Atomic> it;
+      @Override
+      public Iter iterate() {
+        return new BaseIter() {
+          Iterator<Atomic> it;
 
-					@Override
-					public Item next() throws QueryException {
-						Set<Atomic> distinct = set; // volatile read
-						if (distinct == null) {
-							distinct = new LinkedHashSet<Atomic>();
-							Iter it = inSeq.iterate();
-							try {
-								Item runVar;
-								while ((runVar = it.next()) != null) {
-									distinct.add((Atomic) runVar);
-								}
-							} finally {
-								it.close();
-							}
-							set = distinct;
-						}
-						if (it == null) {
-							it = distinct.iterator();
-						}
+          @Override
+          public Item next() throws QueryException {
+            Set<Atomic> distinct = set; // volatile read
+            if (distinct == null) {
+              distinct = new LinkedHashSet<Atomic>();
+              Iter it = inSeq.iterate();
+              try {
+                Item runVar;
+                while ((runVar = it.next()) != null) {
+                  distinct.add((Atomic) runVar);
+                }
+              } finally {
+                it.close();
+              }
+              set = distinct;
+            }
+            if (it == null) {
+              it = distinct.iterator();
+            }
 
-						return (it.hasNext()) ? it.next() : null;
-					}
+            return (it.hasNext()) ? it.next() : null;
+          }
 
-					@Override
-					public void close() {
-						it = null;
-					}
-				};
-			}
-		};
-	}
+          @Override
+          public void close() {
+            it = null;
+          }
+        };
+      }
+    };
+  }
 }

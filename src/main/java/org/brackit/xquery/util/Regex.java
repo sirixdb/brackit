@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -49,253 +49,233 @@ import org.brackit.xquery.xdm.Sequence;
  * http://www.w3.org/TR/xpath-functions/#func-replace, and
  * http://www.w3.org/TR/xpath-functions/#func-tokenize. Also note corrections in
  * http://www.w3.org/XML/2007/qt-errata/xpath-functions-errata.html.
- * 
+ *
  * @author Max Bechtold
- * 
  */
 public class Regex {
 
-	private final static List<Character> WHITESPACE = Arrays.asList(
-			Character.toChars(0x09)[0], Character.toChars(0x0A)[0],
-			Character.toChars(0x0D)[0], Character.toChars(0x20)[0]);
+  private final static List<Character> WHITESPACE = Arrays.asList(Character.toChars(0x09)[0],
+                                                                  Character.toChars(0x0A)[0],
+                                                                  Character.toChars(0x0D)[0],
+                                                                  Character.toChars(0x20)[0]);
 
-	public static enum Mode {
-		MATCH, REPLACE, TOKENIZE
-	};
+  public static enum Mode {
+    MATCH, REPLACE, TOKENIZE
+  }
 
-	public static Sequence match(Mode mode, String input, String pattern,
-			String replace, String flags) throws QueryException {
+  ;
 
-		// parse flags
-		boolean removeWhitespace = false;
-		int flagMask = Pattern.UNIX_LINES;
-		if (flags != null) {
-			if (flags.contains("x")) {
-				removeWhitespace = true;
-				flags = flags.replace("x", "");
-			}
+  public static Sequence match(Mode mode, String input, String pattern, String replace, String flags)
+      throws QueryException {
 
-			if (flags.contains("s")) {
-				flagMask |= Pattern.DOTALL;
-				flags = flags.replace("s", "");
-			}
+    // parse flags
+    boolean removeWhitespace = false;
+    int flagMask = Pattern.UNIX_LINES;
+    if (flags != null) {
+      if (flags.contains("x")) {
+        removeWhitespace = true;
+        flags = flags.replace("x", "");
+      }
 
-			if (flags.contains("m")) {
-				flagMask |= Pattern.MULTILINE;
-				flags = flags.replace("m", "");
-			}
+      if (flags.contains("s")) {
+        flagMask |= Pattern.DOTALL;
+        flags = flags.replace("s", "");
+      }
 
-			if (flags.contains("i")) {
-				flagMask |= Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
-				flags = flags.replace("i", "");
-			}
+      if (flags.contains("m")) {
+        flagMask |= Pattern.MULTILINE;
+        flags = flags.replace("m", "");
+      }
 
-			if (!flags.isEmpty()) {
-				throw new QueryException(
-						ErrorCode.ERR_INVALID_REGULAR_EXPRESSION_FLAGS,
-						"Unknown flags specified.");
-			}
-		}
+      if (flags.contains("i")) {
+        flagMask |= Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
+        flags = flags.replace("i", "");
+      }
 
-		if (mode != Mode.MATCH && Pattern.matches(pattern, "")) {
-			throw (new QueryException(
-					ErrorCode.ERR_REGULAR_EXPRESSION_EMPTY_STRING,
-					"Pattern matches empty string."));
-		}
+      if (!flags.isEmpty()) {
+        throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION_FLAGS, "Unknown flags specified.");
+      }
+    }
 
-		if (mode == Mode.TOKENIZE && input.isEmpty()) {
-			return null;
-		}
+    if (mode != Mode.MATCH && Pattern.matches(pattern, "")) {
+      throw (new QueryException(ErrorCode.ERR_REGULAR_EXPRESSION_EMPTY_STRING, "Pattern matches empty string."));
+    }
 
-		Pattern cpattern;
-		try {
-			String regex = adaptRegEx(mode, pattern, flagMask, removeWhitespace);
-			cpattern = Pattern.compile(regex, flagMask);
-		} catch (PatternSyntaxException e) {
-			throw (new QueryException(e,
-					ErrorCode.ERR_INVALID_REGULAR_EXPRESSION));
-		}
-		Matcher matcher = cpattern.matcher(input);
+    if (mode == Mode.TOKENIZE && input.isEmpty()) {
+      return null;
+    }
 
-		switch (mode) {
-		case MATCH:
-			return new Bool(matcher.matches());
-		case REPLACE:
-			// Disallowed in replacement string: backslash or dollar sign as
-			// only character in string, or dollar sign not preceded by
-			// backslash and not followed by a digit, or backslash not
-			// preceded by backslash and not followed by a dollar sign
-			String pat = "(\\$|\\\\|.*[^\\\\]\\$\\D.*|.*[^\\\\]\\\\[^\\$].*)";
-			if (Pattern.matches(pat, replace)) {
-				throw (new QueryException(
-						ErrorCode.ERR_INVALID_REPLACEMENT_STRING,
-						"Replacement string matches makes illegal "
-								+ "use of chars '\\' or '$'."));
-			}
+    Pattern cpattern;
+    try {
+      String regex = adaptRegEx(mode, pattern, flagMask, removeWhitespace);
+      cpattern = Pattern.compile(regex, flagMask);
+    } catch (PatternSyntaxException e) {
+      throw (new QueryException(e, ErrorCode.ERR_INVALID_REGULAR_EXPRESSION));
+    }
+    Matcher matcher = cpattern.matcher(input);
 
-			StringBuffer sb = new StringBuffer();
-			while (matcher.find()) {
-				matcher.appendReplacement(sb, replace);
-			}
-			matcher.appendTail(sb);
+    switch (mode) {
+      case MATCH:
+        return new Bool(matcher.matches());
+      case REPLACE:
+        // Disallowed in replacement string: backslash or dollar sign as
+        // only character in string, or dollar sign not preceded by
+        // backslash and not followed by a digit, or backslash not
+        // preceded by backslash and not followed by a dollar sign
+        String pat = "(\\$|\\\\|.*[^\\\\]\\$\\D.*|.*[^\\\\]\\\\[^\\$].*)";
+        if (Pattern.matches(pat, replace)) {
+          throw (new QueryException(ErrorCode.ERR_INVALID_REPLACEMENT_STRING,
+                                    "Replacement string matches makes illegal " + "use of chars '\\' or '$'."));
+        }
 
-			return new Str(sb.toString());
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+          matcher.appendReplacement(sb, replace);
+        }
+        matcher.appendTail(sb);
 
-		case TOKENIZE:
-			String[] tokens = cpattern.split(input, -1);
-			Str[] items = new Str[tokens.length];
-			for (int i = 0; i < tokens.length; i++) {
-				items[i] = new Str(tokens[i]);
-			}
-			return new ItemSequence(items);
-		default:
-			return null;
-		}
-	}
+        return new Str(sb.toString());
 
-	/**
-	 * Method for adapting Java regex functions to XQuery functions
-	 * requirements. This includes pattern matching using substrings (Java
-	 * patterns are implicitly anchored at begin/end of string), error raising
-	 * for invalid back references (which Java silently skips), a more sensitive
-	 * whitespace removal (unlike Java keep whitespace in character classes),
-	 * and no support for pure, i.e. uncapturing groups. Additionally, this
-	 * method checks for dangling round and square brackets (which are not
-	 * allowed in XQuery, but treated as literals in Java).</br> This method
-	 * optionally removes all whitespace except for whitespace in character
-	 * classes, see flag 'x' in http://www.w3.org/TR/xpath-functions/#flags
-	 */
-	private static String adaptRegEx(Mode mode, String regex, int flagMask,
-			boolean removeWhitespace) throws QueryException {
-		StringBuilder sb = new StringBuilder();
-		boolean escaped = false;
-		boolean groupStart = false;
-		int completeGroups = 0;
-		int backRef = 0;
-		int charClassDepth = 0;
-		int groupDepth = 0;
+      case TOKENIZE:
+        String[] tokens = cpattern.split(input, -1);
+        Str[] items = new Str[tokens.length];
+        for (int i = 0; i < tokens.length; i++) {
+          items[i] = new Str(tokens[i]);
+        }
+        return new ItemSequence(items);
+      default:
+        return null;
+    }
+  }
 
-		for (char c : regex.toCharArray()) {
-			if (escaped) {
-				if (backRef == 0 && c == '0') {
-					throw new QueryException(
-							ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
-							"Reference to group 0 not allowed");
-				} else if (c >= '0' && c <= '9') {
-					if (charClassDepth > 0) {
-						throw new QueryException(
-								ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
-								"Back references in character class expressions"
-										+ " are disallowed.");
-					}
-					backRef = backRef * 10
-							+ Integer.parseInt(Character.toString(c));
-					continue;
-				}
-			}
+  /**
+   * Method for adapting Java regex functions to XQuery functions
+   * requirements. This includes pattern matching using substrings (Java
+   * patterns are implicitly anchored at begin/end of string), error raising
+   * for invalid back references (which Java silently skips), a more sensitive
+   * whitespace removal (unlike Java keep whitespace in character classes),
+   * and no support for pure, i.e. uncapturing groups. Additionally, this
+   * method checks for dangling round and square brackets (which are not
+   * allowed in XQuery, but treated as literals in Java).</br> This method
+   * optionally removes all whitespace except for whitespace in character
+   * classes, see flag 'x' in http://www.w3.org/TR/xpath-functions/#flags
+   */
+  private static String adaptRegEx(Mode mode, String regex, int flagMask, boolean removeWhitespace)
+      throws QueryException {
+    StringBuilder sb = new StringBuilder();
+    boolean escaped = false;
+    boolean groupStart = false;
+    int completeGroups = 0;
+    int backRef = 0;
+    int charClassDepth = 0;
+    int groupDepth = 0;
 
-			if (backRef > 0) {
-				// Check back reference that just ended
-				if (backRef > completeGroups) {
-					throw new QueryException(
-							ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
-							"Back reference to nonexisting or unfinished group.");
-				} else {
-					backRef = 0;
-					escaped = false;
-				}
-			}
+    for (char c : regex.toCharArray()) {
+      if (escaped) {
+        if (backRef == 0 && c == '0') {
+          throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, "Reference to group 0 not allowed");
+        } else if (c >= '0' && c <= '9') {
+          if (charClassDepth > 0) {
+            throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
+                                     "Back references in character class expressions" + " are disallowed.");
+          }
+          backRef = backRef * 10 + Integer.parseInt(Character.toString(c));
+          continue;
+        }
+      }
 
-			if (c == '\\' && !escaped) {
-				// Not preceded by backslash
-				escaped = true;
-				groupStart = false;
-				continue;
-			}
+      if (backRef > 0) {
+        // Check back reference that just ended
+        if (backRef > completeGroups) {
+          throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
+                                   "Back reference to nonexisting or unfinished group.");
+        } else {
+          backRef = 0;
+          escaped = false;
+        }
+      }
 
-			if (c == '(' && !escaped) {
-				groupStart = true;
-				groupDepth++;
-				escaped = false;
-				continue;
-			}
+      if (c == '\\' && !escaped) {
+        // Not preceded by backslash
+        escaped = true;
+        groupStart = false;
+        continue;
+      }
 
-			if (c == '?' && !escaped && groupStart) {
-				throw new QueryException(
-						ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
-						"Pure groups are not supported in XQuery regular expressions.");
-			} else if (c == ')' && !escaped) {
-				if (--groupDepth < 0) {
-					throw new QueryException(
-							ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
-							"Invalid sequence of brackets.");
-				}
-				completeGroups++;
-			} else if (c == '[' && !escaped) {
-				charClassDepth++;
-			} else if (c == ']' && !escaped) {
-				if (--charClassDepth < 0) {
-					throw new QueryException(
-							ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
-							"Invalid sequence of brackets.");
-				}
-			} else if (removeWhitespace) {
-				// Remove whitespace outside of character classes
-				if (charClassDepth == 0 && WHITESPACE.contains(c)) {
-					// Don't touch boolean flags
-					continue;
-				}
+      if (c == '(' && !escaped) {
+        groupStart = true;
+        groupDepth++;
+        escaped = false;
+        continue;
+      }
 
-				sb.append(c);
-			}
+      if (c == '?' && !escaped && groupStart) {
+        throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
+                                 "Pure groups are not supported in XQuery regular expressions.");
+      } else if (c == ')' && !escaped) {
+        if (--groupDepth < 0) {
+          throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, "Invalid sequence of brackets.");
+        }
+        completeGroups++;
+      } else if (c == '[' && !escaped) {
+        charClassDepth++;
+      } else if (c == ']' && !escaped) {
+        if (--charClassDepth < 0) {
+          throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, "Invalid sequence of brackets.");
+        }
+      } else if (removeWhitespace) {
+        // Remove whitespace outside of character classes
+        if (charClassDepth == 0 && WHITESPACE.contains(c)) {
+          // Don't touch boolean flags
+          continue;
+        }
 
-			groupStart = false;
-			escaped = false;
-		}
+        sb.append(c);
+      }
 
-		// Check for trailing '\' (only valid with subsequent characters)
-		if (escaped && backRef == 0) {
-			throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
-					"Trailing backslash character in pattern.");
-		}
+      groupStart = false;
+      escaped = false;
+    }
 
-		// Check back reference if that was last token in pattern
-		if (backRef > 0 && backRef > completeGroups) {
-			throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
-					"Back reference to nonexisting or unfinished group.");
-		}
+    // Check for trailing '\' (only valid with subsequent characters)
+    if (escaped && backRef == 0) {
+      throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, "Trailing backslash character in pattern.");
+    }
 
-		// Check for dangling brackets
-		if (charClassDepth != 0 || groupDepth != 0) {
-			throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
-					"Pattern contains dangling brackets.");
-		}
+    // Check back reference if that was last token in pattern
+    if (backRef > 0 && backRef > completeGroups) {
+      throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
+                               "Back reference to nonexisting or unfinished group.");
+    }
 
-		if (!removeWhitespace) {
-			sb.append(regex);
-		}
+    // Check for dangling brackets
+    if (charClassDepth != 0 || groupDepth != 0) {
+      throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, "Pattern contains dangling brackets.");
+    }
 
-		if (mode == Mode.MATCH) {
-			// Adapt for XQuery substring matching by extending pattern
-			if (sb.charAt(0) != '^'
-					|| ((flagMask & Pattern.MULTILINE) == Pattern.MULTILINE)) {
-				if ((flagMask & Pattern.DOTALL) == Pattern.DOTALL) {
-					sb.insert(0, ".*");
-				} else {
-					sb.insert(0, "(?s:.*)");
-				}
-			}
+    if (!removeWhitespace) {
+      sb.append(regex);
+    }
 
-			if (sb.charAt(sb.length() - 1) != '$'
-					|| ((flagMask & Pattern.MULTILINE) == Pattern.MULTILINE)) {
-				if ((flagMask & Pattern.DOTALL) == Pattern.DOTALL) {
-					sb.append(".*");
-				} else {
-					sb.append("(?s:.*)");
-				}
-			}
-		}
+    if (mode == Mode.MATCH) {
+      // Adapt for XQuery substring matching by extending pattern
+      if (sb.charAt(0) != '^' || ((flagMask & Pattern.MULTILINE) == Pattern.MULTILINE)) {
+        if ((flagMask & Pattern.DOTALL) == Pattern.DOTALL) {
+          sb.insert(0, ".*");
+        } else {
+          sb.insert(0, "(?s:.*)");
+        }
+      }
 
-		return sb.toString();
-	}
+      if (sb.charAt(sb.length() - 1) != '$' || ((flagMask & Pattern.MULTILINE) == Pattern.MULTILINE)) {
+        if ((flagMask & Pattern.DOTALL) == Pattern.DOTALL) {
+          sb.append(".*");
+        } else {
+          sb.append("(?s:.*)");
+        }
+      }
+    }
+
+    return sb.toString();
+  }
 }

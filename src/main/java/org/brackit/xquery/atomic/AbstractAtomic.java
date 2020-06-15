@@ -39,7 +39,6 @@ import org.brackit.xquery.xdm.type.ItemType;
  * Base class for atomic items.
  *
  * @author Sebastian Baechle
- *
  */
 public abstract class AbstractAtomic extends AbstractItem implements Atomic, InternalAtomic {
   @Override
@@ -63,9 +62,7 @@ public abstract class AbstractAtomic extends AbstractItem implements Atomic, Int
     int myCode = atomicCode();
     int oCode = atomic.atomicCode();
     if (myCode != oCode) {
-      return myCode < oCode
-          ? -1
-          : 1;
+      return myCode < oCode ? -1 : 1;
     }
     return atomicCmpInternal(atomic);
   }
@@ -84,9 +81,7 @@ public abstract class AbstractAtomic extends AbstractItem implements Atomic, Int
     int myCode = atomicCode();
     int oCode = atomic.atomicCode();
     if (myCode != oCode) {
-      return myCode < oCode
-          ? -1
-          : 1;
+      return myCode < oCode ? -1 : 1;
     }
     return atomicCmpInternal(atomic);
   }

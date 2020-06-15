@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -37,170 +37,166 @@ import org.brackit.xquery.xdm.Stream;
 /**
  * A parser that announces each top level element from the input parsers as a
  * new document.
- * 
+ *
  * @author Martin Hiller
- * 
  */
 public class CollectionParser implements SubtreeParser {
 
-	private final Stream<SubtreeParser> parsers;
+  private final Stream<SubtreeParser> parsers;
 
-	public CollectionParser(Stream<SubtreeParser> parsers) {
-		this.parsers = parsers;
-	}
-	
-	public CollectionParser(SubtreeParser parser) {
-		this.parsers = new AtomStream<>(parser);
-	}
-	
-	public CollectionParser(SubtreeParser[] parsers) {
-		this.parsers = new ArrayStream<>(parsers);
-	}
+  public CollectionParser(Stream<SubtreeParser> parsers) {
+    this.parsers = parsers;
+  }
 
-	@Override
-	public void parse(SubtreeHandler handler) throws DocumentException {
+  public CollectionParser(SubtreeParser parser) {
+    this.parsers = new AtomStream<>(parser);
+  }
 
-		CollectionHandler collHandler = new CollectionHandler(handler);
+  public CollectionParser(SubtreeParser[] parsers) {
+    this.parsers = new ArrayStream<>(parsers);
+  }
 
-		// announce begin / begin fragment
-		handler.begin();
-		SubtreeParser current = null;
-		while ((current = parsers.next()) != null) {
-			current.parse(collHandler);
-		}
-		parsers.close();
-		handler.end();
-	}
+  @Override
+  public void parse(SubtreeHandler handler) throws DocumentException {
 
-	/**
-	 * Handler class used by the CollectionParser.
-	 */
-	private class CollectionHandler implements SubtreeHandler {
+    CollectionHandler collHandler = new CollectionHandler(handler);
 
-		private final SubtreeHandler handler;
+    // announce begin / begin fragment
+    handler.begin();
+    SubtreeParser current = null;
+    while ((current = parsers.next()) != null) {
+      current.parse(collHandler);
+    }
+    parsers.close();
+    handler.end();
+  }
 
-		private int level;
+  /**
+   * Handler class used by the CollectionParser.
+   */
+  private class CollectionHandler implements SubtreeHandler {
 
-		public CollectionHandler(SubtreeHandler handler) {
-			this.handler = handler;
-			this.level = 0;
-		}
+    private final SubtreeHandler handler;
 
-		@Override
-		public void attribute(QNm name, Atomic value) throws DocumentException {
+    private int level;
 
-			if (level == 0) {
-				// attribute on top level => invalid state
-				throw new DocumentException("Attribute on top level!");
-			}
+    public CollectionHandler(SubtreeHandler handler) {
+      this.handler = handler;
+      this.level = 0;
+    }
 
-			handler.attribute(name, value);
-		}
+    @Override
+    public void attribute(QNm name, Atomic value) throws DocumentException {
 
-		@Override
-		public void begin() throws DocumentException {
-			// do not propagate local begins
-		}
+      if (level == 0) {
+        // attribute on top level => invalid state
+        throw new DocumentException("Attribute on top level!");
+      }
 
-		@Override
-		public void beginFragment() throws DocumentException {
-			handler.beginFragment();
-		}
+      handler.attribute(name, value);
+    }
 
-		@Override
-		public void comment(Atomic content) throws DocumentException {
+    @Override
+    public void begin() throws DocumentException {
+      // do not propagate local begins
+    }
 
-			if (level == 0) {
-				// comment on top level => invalid state
-				throw new DocumentException("Comment on top level!");
-			}
+    @Override
+    public void beginFragment() throws DocumentException {
+      handler.beginFragment();
+    }
 
-			handler.comment(content);
-		}
+    @Override
+    public void comment(Atomic content) throws DocumentException {
 
-		@Override
-		public void end() throws DocumentException {
-			// do not propagate local ends
-		}
+      if (level == 0) {
+        // comment on top level => invalid state
+        throw new DocumentException("Comment on top level!");
+      }
 
-		@Override
-		public void endDocument() throws DocumentException {
-			handler.endDocument();
-		}
+      handler.comment(content);
+    }
 
-		@Override
-		public void endElement(QNm name) throws DocumentException {
+    @Override
+    public void end() throws DocumentException {
+      // do not propagate local ends
+    }
 
-			handler.endElement(name);
-			level--;
+    @Override
+    public void endDocument() throws DocumentException {
+      handler.endDocument();
+    }
 
-			if (level == 0) {
-				// top level element => document ends
-				handler.endDocument();
-			}
-		}
+    @Override
+    public void endElement(QNm name) throws DocumentException {
 
-		@Override
-		public void endFragment() throws DocumentException {
-			handler.endFragment();
-		}
+      handler.endElement(name);
+      level--;
 
-		@Override
-		public void endMapping(String prefix) throws DocumentException {
-			handler.endMapping(prefix);
-		}
+      if (level == 0) {
+        // top level element => document ends
+        handler.endDocument();
+      }
+    }
 
-		@Override
-		public void fail() throws DocumentException {
-			handler.fail();
-		}
+    @Override
+    public void endFragment() throws DocumentException {
+      handler.endFragment();
+    }
 
-		@Override
-		public void processingInstruction(QNm target, Atomic content)
-				throws DocumentException {
+    @Override
+    public void endMapping(String prefix) throws DocumentException {
+      handler.endMapping(prefix);
+    }
 
-			if (level == 0) {
-				// processing instruction on top level => invalid state
-				throw new DocumentException(
-						"Processing instruction on top level!");
-			}
+    @Override
+    public void fail() throws DocumentException {
+      handler.fail();
+    }
 
-			handler.processingInstruction(target, content);
-		}
+    @Override
+    public void processingInstruction(QNm target, Atomic content) throws DocumentException {
 
-		@Override
-		public void startDocument() throws DocumentException {
-			// do not propagate local document boundaries
-			handler.startDocument();
-		}
+      if (level == 0) {
+        // processing instruction on top level => invalid state
+        throw new DocumentException("Processing instruction on top level!");
+      }
 
-		@Override
-		public void startElement(QNm name) throws DocumentException {
+      handler.processingInstruction(target, content);
+    }
 
-			if (level == 0) {
-				// top level element => announce as new document
-				handler.startDocument();
-			}
+    @Override
+    public void startDocument() throws DocumentException {
+      // do not propagate local document boundaries
+      handler.startDocument();
+    }
 
-			level++;
-			handler.startElement(name);
-		}
+    @Override
+    public void startElement(QNm name) throws DocumentException {
 
-		@Override
-		public void startMapping(String prefix, String uri)
-				throws DocumentException {
-			handler.startMapping(prefix, uri);
-		}
+      if (level == 0) {
+        // top level element => announce as new document
+        handler.startDocument();
+      }
 
-		@Override
-		public void text(Atomic content) throws DocumentException {
+      level++;
+      handler.startElement(name);
+    }
 
-			if (level == 0) {
-				// text on top level => invalid state
-				throw new DocumentException("Text on top level!");
-			}
+    @Override
+    public void startMapping(String prefix, String uri) throws DocumentException {
+      handler.startMapping(prefix, uri);
+    }
 
-			handler.text(content);
-		}
-	}
+    @Override
+    public void text(Atomic content) throws DocumentException {
+
+      if (level == 0) {
+        // text on top level => invalid state
+        throw new DocumentException("Text on top level!");
+      }
+
+      handler.text(content);
+    }
+  }
 }

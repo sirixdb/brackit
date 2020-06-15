@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -43,37 +43,33 @@ import org.brackit.xquery.xdm.type.ElementType;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
- * 
  * @author Henrique Valer
- * 
  */
 @FunctionAnnotation(description = "Creates a collection.", parameters = "$name")
 public class Create extends AbstractFunction {
 
-	public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI,
-			Bits.BIT_PREFIX, "create");
+  public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI, Bits.BIT_PREFIX, "create");
 
-	public Create() {
-		this(DEFAULT_NAME);
-	}
+  public Create() {
+    this(DEFAULT_NAME);
+  }
 
-	public Create(QNm name) {
-		super(name, new Signature(new SequenceType(ElementType.ELEMENT,
-				Cardinality.ZeroOrOne), new SequenceType(AtomicType.STR,
-				Cardinality.One)), true);
-	}
+  public Create(QNm name) {
+    super(name,
+          new Signature(new SequenceType(ElementType.ELEMENT, Cardinality.ZeroOrOne),
+                        new SequenceType(AtomicType.STR, Cardinality.One)),
+          true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx,
-			Sequence[] args) throws QueryException {
-		try {
-			String collection = ((Atomic) args[0]).stringValue();
-			ctx.getNodeStore().create(collection);
-			// TODO
-			return null;
-		} catch (Exception e) {
-			throw new QueryException(e, BitFun.BIT_CREATECOLLECTION_INT_ERROR,
-					e.getMessage());
-		}
-	}
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    try {
+      String collection = ((Atomic) args[0]).stringValue();
+      ctx.getNodeStore().create(collection);
+      // TODO
+      return null;
+    } catch (Exception e) {
+      throw new QueryException(e, BitFun.BIT_CREATECOLLECTION_INT_ERROR, e.getMessage());
+    }
+  }
 }

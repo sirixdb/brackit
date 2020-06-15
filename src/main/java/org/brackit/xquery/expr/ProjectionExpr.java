@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -44,83 +44,82 @@ import org.brackit.xquery.xdm.json.Record;
 
 /**
  * @author Sebastian Baechle
- * 
  */
 public final class ProjectionExpr implements Expr {
 
-	private final Expr record;
+  private final Expr record;
 
-	private final Expr[] fields;
+  private final Expr[] fields;
 
-	public ProjectionExpr(Expr record, Expr[] fields) {
-		this.record = record;
-		this.fields = fields;
-	}
+  public ProjectionExpr(Expr record, Expr[] fields) {
+    this.record = record;
+    this.fields = fields;
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple t) {
-		return evaluateToItem(ctx, t);
-	}
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple t) {
+    return evaluateToItem(ctx, t);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple t) {
-		Sequence s = record.evaluateToItem(ctx, t);
-		if (!(s instanceof Record)) {
-			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-					"Source expression in projection is not a record: %s", s);
-		}
-		Record r = (Record) s;
-		QNm[] names = new QNm[fields.length];
-		Sequence[] vals = new Sequence[fields.length];
-		for (int i = 0; i < fields.length; i++) {
-			Item f = fields[i].evaluateToItem(ctx, t);
-			if (f == null) {
-				return null;
-			}
-			if (f instanceof QNm) {
-				names[i] = (QNm) f;
-				vals[i] = r.get((QNm) f);
-			} else if (f instanceof IntNumeric) {
-				names[i] = r.name(i);
-				vals[i] = r.value((IntNumeric) f);
-			} else {
-				throw new QueryException(Bits.BIT_ILLEGAL_RECORD_FIELD,
-						"Illegal record field reference: %s", f);
-			}
-		}
-		return new ArrayRecord(names, vals);
-	}
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple t) {
+    Sequence s = record.evaluateToItem(ctx, t);
+    if (!(s instanceof Record)) {
+      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                               "Source expression in projection is not a record: %s",
+                               s);
+    }
+    Record r = (Record) s;
+    QNm[] names = new QNm[fields.length];
+    Sequence[] vals = new Sequence[fields.length];
+    for (int i = 0; i < fields.length; i++) {
+      Item f = fields[i].evaluateToItem(ctx, t);
+      if (f == null) {
+        return null;
+      }
+      if (f instanceof QNm) {
+        names[i] = (QNm) f;
+        vals[i] = r.get((QNm) f);
+      } else if (f instanceof IntNumeric) {
+        names[i] = r.name(i);
+        vals[i] = r.value((IntNumeric) f);
+      } else {
+        throw new QueryException(Bits.BIT_ILLEGAL_RECORD_FIELD, "Illegal record field reference: %s", f);
+      }
+    }
+    return new ArrayRecord(names, vals);
+  }
 
-	@Override
-	public boolean isUpdating() {
-		if (record.isUpdating()) {
-			return true;
-		}
-		for (Expr f : fields) {
-			if (f.isUpdating()) {
-				return true;
-			}
-		}
-		return false;
-	}
+  @Override
+  public boolean isUpdating() {
+    if (record.isUpdating()) {
+      return true;
+    }
+    for (Expr f : fields) {
+      if (f.isUpdating()) {
+        return true;
+      }
+    }
+    return false;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 
-	public String toString() {
-		StringBuilder s = new StringBuilder();
-		for (Expr f : fields) {
-			s.append("=>");
-			s.append(f);
-		}
-		return s.toString();
-	}
+  public String toString() {
+    StringBuilder s = new StringBuilder();
+    for (Expr f : fields) {
+      s.append("=>");
+      s.append(f);
+    }
+    return s.toString();
+  }
 
-	public static void main(String[] args) {
-		new XQuery(
-				"let $a:= 1 let $b:= {'b':2.0} let $n := <x><y>yval</y></x> return {a:$a, $b, c:'3'}{a,c}=>c")
-				.serialize(new BrackitQueryContext(), System.out);
-	}
+  public static void main(String[] args) {
+    new XQuery("let $a:= 1 let $b:= {'b':2.0} let $n := <x><y>yval</y></x> return {a:$a, $b, c:'3'}{a,c}=>c").serialize(
+        new BrackitQueryContext(),
+        System.out);
+  }
 }

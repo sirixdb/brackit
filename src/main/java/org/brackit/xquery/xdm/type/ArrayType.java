@@ -33,13 +33,13 @@ import org.brackit.xquery.xdm.json.Array;
 
 /**
  * @author Sebastian Baechle
- *
  */
 public final class ArrayType implements ItemType {
 
   public static final ArrayType ARRAY = new ArrayType();
 
-  public ArrayType() {}
+  public ArrayType() {
+  }
 
   @Override
   public boolean isAnyItem() {

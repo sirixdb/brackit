@@ -4,7 +4,8 @@ import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.json.JsonItem;
 
 public final class AnyStructuredItemType extends StructuredItemType {
-  public AnyStructuredItemType() {}
+  public AnyStructuredItemType() {
+  }
 
   @Override
   public boolean matches(Item item) {

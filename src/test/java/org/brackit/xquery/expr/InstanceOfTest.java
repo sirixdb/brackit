@@ -118,8 +118,7 @@ public final class InstanceOfTest extends XQueryBaseTest {
 
   @Test
   public void stringInstanceOfDecimal() throws Exception {
-    Sequence result = new XQuery("'Foo' instance of xs:decimal")
-        .execute(ctx);
+    Sequence result = new XQuery("'Foo' instance of xs:decimal").execute(ctx);
     ResultChecker.dCheck(Bool.FALSE, result);
   }
 }

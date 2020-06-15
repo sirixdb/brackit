@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -41,95 +41,97 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
 
 public class ExtractFromDateTime extends AbstractFunction {
-	public static enum Source {
-		DATE_TIME, DATE, TIME
-	};
+  public static enum Source {
+    DATE_TIME, DATE, TIME
+  }
 
-	public static enum Comp {
-		YEAR, MONTH, DAY, HOURS, MINUTES, SECONDS, TIMEZONE
-	};
+  ;
 
-	private Source source;
-	private Comp comp;
+  public static enum Comp {
+    YEAR, MONTH, DAY, HOURS, MINUTES, SECONDS, TIMEZONE
+  }
 
-	public ExtractFromDateTime(QNm name, Source source, Comp comp,
-			Signature signature) {
-		super(name, signature, true);
-		this.source = source;
-		this.comp = comp;
-	}
+  ;
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		if (args.length == 0 || args[0] == null) {
-			return null;
-		}
+  private Source source;
+  private Comp comp;
 
-		switch (source) {
-		case DATE_TIME:
-			DateTime dt = (DateTime) args[0];
+  public ExtractFromDateTime(QNm name, Source source, Comp comp, Signature signature) {
+    super(name, signature, true);
+    this.source = source;
+    this.comp = comp;
+  }
 
-			switch (comp) {
-			case YEAR:
-				return new Int32(dt.getYear());
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    if (args.length == 0 || args[0] == null) {
+      return null;
+    }
 
-			case MONTH:
-				return new Int32(dt.getMonth());
+    switch (source) {
+      case DATE_TIME:
+        DateTime dt = (DateTime) args[0];
 
-			case DAY:
-				return new Int32(dt.getDay());
+        switch (comp) {
+          case YEAR:
+            return new Int32(dt.getYear());
 
-			case HOURS:
-				return new Int32(dt.getHours());
+          case MONTH:
+            return new Int32(dt.getMonth());
 
-			case MINUTES:
-				return new Int32(dt.getMinutes());
+          case DAY:
+            return new Int32(dt.getDay());
 
-			case SECONDS:
-				return new Dbl(dt.getMicros() / 1000000.0);
+          case HOURS:
+            return new Int32(dt.getHours());
 
-			case TIMEZONE:
-				return dt.getTimezone();
-			}
+          case MINUTES:
+            return new Int32(dt.getMinutes());
 
-		case DATE:
-			Date date = (Date) args[0];
+          case SECONDS:
+            return new Dbl(dt.getMicros() / 1000000.0);
 
-			switch (comp) {
-			case YEAR:
-				return new Int32(date.getYear());
+          case TIMEZONE:
+            return dt.getTimezone();
+        }
 
-			case MONTH:
-				return new Int32(date.getMonth());
+      case DATE:
+        Date date = (Date) args[0];
 
-			case DAY:
-				return new Int32(date.getDay());
+        switch (comp) {
+          case YEAR:
+            return new Int32(date.getYear());
 
-			case TIMEZONE:
-				return date.getTimezone();
-			}
+          case MONTH:
+            return new Int32(date.getMonth());
 
-		case TIME:
-			Time time = (Time) args[0];
+          case DAY:
+            return new Int32(date.getDay());
 
-			switch (comp) {
-			case HOURS:
-				return new Int32(time.getHours());
+          case TIMEZONE:
+            return date.getTimezone();
+        }
 
-			case MINUTES:
-				return new Int32(time.getMinutes());
+      case TIME:
+        Time time = (Time) args[0];
 
-			case SECONDS:
-				return new Dbl(time.getMicros() / 1000000.0);
+        switch (comp) {
+          case HOURS:
+            return new Int32(time.getHours());
 
-			case TIMEZONE:
-				return time.getTimezone();
-			}
+          case MINUTES:
+            return new Int32(time.getMinutes());
 
-		default:
-			return null;
-		}
-	}
+          case SECONDS:
+            return new Dbl(time.getMicros() / 1000000.0);
+
+          case TIMEZONE:
+            return time.getTimezone();
+        }
+
+      default:
+        return null;
+    }
+  }
 
 }

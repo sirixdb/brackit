@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -32,133 +32,132 @@ import org.brackit.xquery.atomic.QNm;
 
 /**
  * @author Sebastian Baechle
- *
  */
 public class ModuleContext implements StaticContext {
 
-	protected final Namespaces namespaces = new Namespaces();
-	protected final Functions functions = new Functions();
-	protected final Types types = new Types();
-	protected String defaultElementNamespace = null;
-	protected boolean boundarySpaceStrip = true;
-	protected String defaultCollation = "http://www.w3.org/2005/xpath-functions/collation/codepoint";
-	protected AnyURI baseURI = null;
-	protected boolean constructionModeStrip = false;
-	protected boolean orderingModeOrdered = true;
-	protected boolean emptyOrderGreatest = false;
-	protected boolean copyNSPreserve = true;
-	protected boolean copyNSInherit = true;
+  protected final Namespaces namespaces = new Namespaces();
+  protected final Functions functions = new Functions();
+  protected final Types types = new Types();
+  protected String defaultElementNamespace = null;
+  protected boolean boundarySpaceStrip = true;
+  protected String defaultCollation = "http://www.w3.org/2005/xpath-functions/collation/codepoint";
+  protected AnyURI baseURI = null;
+  protected boolean constructionModeStrip = false;
+  protected boolean orderingModeOrdered = true;
+  protected boolean emptyOrderGreatest = false;
+  protected boolean copyNSPreserve = true;
+  protected boolean copyNSInherit = true;
 
-	public ModuleContext() {
-		super();
-	}
+  public ModuleContext() {
+    super();
+  }
 
-	@Override
-	public Namespaces getNamespaces() {
-		return namespaces;
-	}
+  @Override
+  public Namespaces getNamespaces() {
+    return namespaces;
+  }
 
-	@Override
-	public Functions getFunctions() {
-		return functions;
-	}
+  @Override
+  public Functions getFunctions() {
+    return functions;
+  }
 
-	public Types getTypes() {
-		return types;
-	}
+  public Types getTypes() {
+    return types;
+  }
 
-	@Override
-	public boolean isBoundarySpaceStrip() {
-		return boundarySpaceStrip;
-	}
+  @Override
+  public boolean isBoundarySpaceStrip() {
+    return boundarySpaceStrip;
+  }
 
-	@Override
-	public void setBoundarySpaceStrip(boolean boundaryWhitespaceStrip) {
-		this.boundarySpaceStrip = boundaryWhitespaceStrip;
-	}
+  @Override
+  public void setBoundarySpaceStrip(boolean boundaryWhitespaceStrip) {
+    this.boundarySpaceStrip = boundaryWhitespaceStrip;
+  }
 
-	@Override
-	public String getDefaultCollation() {
-		return defaultCollation;
-	}
+  @Override
+  public String getDefaultCollation() {
+    return defaultCollation;
+  }
 
-	@Override
-	public void setDefaultCollation(String defaultCollation) {
-		this.defaultCollation = defaultCollation;
-	}
+  @Override
+  public void setDefaultCollation(String defaultCollation) {
+    this.defaultCollation = defaultCollation;
+  }
 
-	@Override
-	public AnyURI getBaseURI() {
-		return baseURI;
-	}
+  @Override
+  public AnyURI getBaseURI() {
+    return baseURI;
+  }
 
-	@Override
-	public void setBaseURI(AnyURI baseURI) {
-		this.baseURI = baseURI;
-	}
+  @Override
+  public void setBaseURI(AnyURI baseURI) {
+    this.baseURI = baseURI;
+  }
 
-	@Override
-	public boolean isConstructionModeStrip() {
-		return constructionModeStrip;
-	}
+  @Override
+  public boolean isConstructionModeStrip() {
+    return constructionModeStrip;
+  }
 
-	@Override
-	public void setConstructionModeStrip(boolean constructionModeStrip) {
-		this.constructionModeStrip = constructionModeStrip;
-	}
+  @Override
+  public void setConstructionModeStrip(boolean constructionModeStrip) {
+    this.constructionModeStrip = constructionModeStrip;
+  }
 
-	@Override
-	public boolean isOrderingModeOrdered() {
-		return orderingModeOrdered;
-	}
+  @Override
+  public boolean isOrderingModeOrdered() {
+    return orderingModeOrdered;
+  }
 
-	@Override
-	public void setOrderingModeOrdered(boolean orderingModeOrdered) {
-		this.orderingModeOrdered = orderingModeOrdered;
-	}
+  @Override
+  public void setOrderingModeOrdered(boolean orderingModeOrdered) {
+    this.orderingModeOrdered = orderingModeOrdered;
+  }
 
-	@Override
-	public boolean isEmptyOrderGreatest() {
-		return emptyOrderGreatest;
-	}
+  @Override
+  public boolean isEmptyOrderGreatest() {
+    return emptyOrderGreatest;
+  }
 
-	@Override
-	public void setEmptyOrderGreatest(boolean emptyOrderGreatest) {
-		this.emptyOrderGreatest = emptyOrderGreatest;
-	}
+  @Override
+  public void setEmptyOrderGreatest(boolean emptyOrderGreatest) {
+    this.emptyOrderGreatest = emptyOrderGreatest;
+  }
 
-	public boolean isCopyNSPreserve() {
-		return copyNSPreserve;
-	}
+  public boolean isCopyNSPreserve() {
+    return copyNSPreserve;
+  }
 
-	public void setCopyNSPreserve(boolean copyNSPreserve) {
-		this.copyNSPreserve = copyNSPreserve;
-	}
+  public void setCopyNSPreserve(boolean copyNSPreserve) {
+    this.copyNSPreserve = copyNSPreserve;
+  }
 
-	public boolean isCopyNSInherit() {
-		return copyNSInherit;
-	}
+  public boolean isCopyNSInherit() {
+    return copyNSInherit;
+  }
 
-	public void setCopyNSInherit(boolean copyNSInherit) {
-		this.copyNSInherit = copyNSInherit;
-	}
+  public void setCopyNSInherit(boolean copyNSInherit) {
+    this.copyNSInherit = copyNSInherit;
+  }
 
-	@Override
-	public DecimalFormat getDecimalFormat(QNm name) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override
+  public DecimalFormat getDecimalFormat(QNm name) {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	@Override
-	public void setDecimalFormat(QNm name, DecimalFormat df) {
-		// TODO Auto-generated method stub
-		
-	}
+  @Override
+  public void setDecimalFormat(QNm name, DecimalFormat df) {
+    // TODO Auto-generated method stub
 
-	@Override
-	public void setDefaultDecimalFormat(DecimalFormat df) {
-		// TODO Auto-generated method stub
-		
-	}
+  }
+
+  @Override
+  public void setDefaultDecimalFormat(DecimalFormat df) {
+    // TODO Auto-generated method stub
+
+  }
 
 }

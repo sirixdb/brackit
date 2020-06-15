@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -35,65 +35,64 @@ import org.brackit.xquery.atomic.IntNumeric;
  * <p>
  * A sequence as defined in {@linkplain http://www.w3.org/TR/xpath-datamodel}.
  * </p>
- * 
+ *
  * <p>
  * The empty sequence is represented either as <code>null</code> when returned
  * as result from an {@link Expr Expression} or as any {@link Sequence} without
  * {@link Item Items} when it is required as input for expressions or as a query
  * result.
  * </p>
- * 
+ *
  * <p>
  * For performance reasons sequences may only be iterated and do not allow
  * direct access to specific elements.
  * </p>
- * 
+ *
  * <p>
  * Sequences must be <b>logically immutable</b>, i.e., it must be ensured that
  * concurrent access does not cause race conditions.
  * </p>
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public interface Sequence extends Tuple, Expr {
-	/**
-	 * Checks the effective boolean value of this sequence as defined in
-	 * {@linkplain http://www.w3.org/TR/xquery/#id-ebv}.
-	 * 
-	 * <p>
-	 * <b>Caution:</b><br/>
-	 * Note that this method may require to iterate over a potentially large
-	 * input to determine the actual boolean value.
-	 * </p>
-	 */
-	boolean booleanValue() throws QueryException;
+  /**
+   * Checks the effective boolean value of this sequence as defined in
+   * {@linkplain http://www.w3.org/TR/xquery/#id-ebv}.
+   *
+   * <p>
+   * <b>Caution:</b><br/>
+   * Note that this method may require to iterate over a potentially large
+   * input to determine the actual boolean value.
+   * </p>
+   */
+  boolean booleanValue() throws QueryException;
 
-	/**
-	 * Checks the size of this sequence.
-	 * 
-	 * <p>
-	 * <b>Caution:</b><br/>
-	 * Note that this method may require to iterate over a potentially large
-	 * input to determine the actual size.
-	 * </p>
-	 */
-	IntNumeric size() throws QueryException;
+  /**
+   * Checks the size of this sequence.
+   *
+   * <p>
+   * <b>Caution:</b><br/>
+   * Note that this method may require to iterate over a potentially large
+   * input to determine the actual size.
+   * </p>
+   */
+  IntNumeric size() throws QueryException;
 
-	/**
-	 * Returns the item at the given position or <code>null</code> iff
-	 * <code>pos</code> is out of range.
-	 * 
-	 * <p>
-	 * <b>Caution:</b><br/>
-	 * Note that this method may require to iterate over a potentially large
-	 * input to determine the actual size.
-	 * </p>
-	 */
-	Item get(IntNumeric pos) throws QueryException;
+  /**
+   * Returns the item at the given position or <code>null</code> iff
+   * <code>pos</code> is out of range.
+   *
+   * <p>
+   * <b>Caution:</b><br/>
+   * Note that this method may require to iterate over a potentially large
+   * input to determine the actual size.
+   * </p>
+   */
+  Item get(IntNumeric pos) throws QueryException;
 
-	/**
-	 * Create a stream to iterate over all items of this sequence.
-	 */
-	Iter iterate();
+  /**
+   * Create a stream to iterate over all items of this sequence.
+   */
+  Iter iterate();
 }

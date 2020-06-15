@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,86 +33,84 @@ import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Stream;
 
 /**
- * 
- * @author Sebastian Baechle
- * 
  * @param <E>
+ * @author Sebastian Baechle
  */
 public class ParallelCLQStream<E> implements Stream<E> {
 
-	private final Stream<? extends E> stream;
+  private final Stream<? extends E> stream;
 
-	private final ConcurrentLinkedQueue<E> queue;
+  private final ConcurrentLinkedQueue<E> queue;
 
-	private volatile boolean finished;
+  private volatile boolean finished;
 
-	private volatile DocumentException error;
+  private volatile DocumentException error;
 
-	private int outerRetry;
+  private int outerRetry;
 
-	private int innerRetry;
+  private int innerRetry;
 
-	private int takes;
+  private int takes;
 
-	public ParallelCLQStream(Stream<? extends E> stream) {
-		super();
-		this.stream = stream;
-		this.queue = new ConcurrentLinkedQueue<E>();
-		this.finished = false;
+  public ParallelCLQStream(Stream<? extends E> stream) {
+    super();
+    this.stream = stream;
+    this.queue = new ConcurrentLinkedQueue<E>();
+    this.finished = false;
 
-		final Stream<? extends E> s = stream;
+    final Stream<? extends E> s = stream;
 
-		new Thread() {
-			public void run() {
-				System.out.println("internal starting");
-				try {
-					E next;
-					while ((next = s.next()) != null) {
-						do {
-							if (queue.offer(next)) {
-								break;
-							}
-							innerRetry++;
-						} while (!finished);
-					}
-					finished = true;
-					s.close();
-				} catch (DocumentException e) {
-					error = e;
-					finished = true;
-				}
-				System.out.println("internal stopping");
-			}
-		}.start();
-	}
+    new Thread() {
+      public void run() {
+        System.out.println("internal starting");
+        try {
+          E next;
+          while ((next = s.next()) != null) {
+            do {
+              if (queue.offer(next)) {
+                break;
+              }
+              innerRetry++;
+            } while (!finished);
+          }
+          finished = true;
+          s.close();
+        } catch (DocumentException e) {
+          error = e;
+          finished = true;
+        }
+        System.out.println("internal stopping");
+      }
+    }.start();
+  }
 
-	@Override
-	public void close() {
-		finished = true;
-		System.out.println("Inner retry " + innerRetry);
-		System.out.println("Outer retry " + outerRetry);
-		System.out.println("Takes: " + takes);
-	}
+  @Override
+  public void close() {
+    finished = true;
+    System.out.println("Inner retry " + innerRetry);
+    System.out.println("Outer retry " + outerRetry);
+    System.out.println("Takes: " + takes);
+  }
 
-	@Override
-	public E next() throws DocumentException {
-		DocumentException deliverError = error; // volatile read
+  @Override
+  public E next() throws DocumentException {
+    DocumentException deliverError = error; // volatile read
 
-		if (deliverError != null) {
-			error = null;
-			throw deliverError;
-		}
+    if (deliverError != null) {
+      error = null;
+      throw deliverError;
+    }
 
-		E current;
-		do {
-			current = queue.poll();
-			if (current != null) {
-				break;
-			}
-			outerRetry++;
-		} while (!finished);
+    E current;
+    do {
+      current = queue.poll();
+      if (current != null) {
+        break;
+      }
+      outerRetry++;
+    } while (!finished);
 
-		takes++;
-		return current;
-	}
+    takes++;
+    return current;
+  }
 }

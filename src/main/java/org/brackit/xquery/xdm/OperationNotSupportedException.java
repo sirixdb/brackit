@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -30,24 +30,22 @@ package org.brackit.xquery.xdm;
 /**
  * This exception is thrown when the requested operation is not supported for a
  * node.
- * 
+ * <p>
  * This exception generally indicates a programming error leading to a misuse of
  * nodes.
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public class OperationNotSupportedException extends DocumentException {
-	public OperationNotSupportedException() {
-		super();
-	}
+  public OperationNotSupportedException() {
+    super();
+  }
 
-	public OperationNotSupportedException(String message, Object... args) {
-		super(message, args);
-	}
+  public OperationNotSupportedException(String message, Object... args) {
+    super(message, args);
+  }
 
-	public OperationNotSupportedException(Throwable cause, String message,
-			Object... args) {
-		super(cause, message, args);
-	}
+  public OperationNotSupportedException(Throwable cause, String message, Object... args) {
+    super(cause, message, args);
+  }
 }

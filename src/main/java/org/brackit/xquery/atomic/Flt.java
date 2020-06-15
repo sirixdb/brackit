@@ -28,6 +28,7 @@
 package org.brackit.xquery.atomic;
 
 import java.math.BigDecimal;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
@@ -113,9 +114,7 @@ public class Flt extends AbstractNumeric implements FltNumeric {
     }
     int i = (int) v;
     double f = v - i;
-    return (f == 0.0)
-        ? new Int32(i)
-        : null;
+    return (f == 0.0) ? new Int32(i) : null;
   }
 
   @Override
@@ -136,8 +135,10 @@ public class Flt extends AbstractNumeric implements FltNumeric {
       }
       return Double.compare(v, ((Numeric) other).doubleValue());
     }
-    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s' with '%s'", type(),
-        other.type());
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                             "Cannot compare '%s' with '%s'",
+                             type(),
+                             other.type());
   }
 
   @Override
@@ -153,16 +154,12 @@ public class Flt extends AbstractNumeric implements FltNumeric {
     if (Float.isNaN(v))
       return "NaN";
     if (Float.isInfinite(v))
-      return (v > 0)
-          ? "INF"
-          : "-INF";
+      return (v > 0) ? "INF" : "-INF";
     if (v == 0)
-      return (1 / v == 1 / 0.0f)
-          ? "0"
-          : "-0";
+      return (1 / v == 1 / 0.0f) ? "0" : "-0";
     return killTrailingZeros(((v > 0) && (v >= 1e-6) && (v < 1e6) || (-v >= 1e-6) && (-v < 1e6))
-        ? DF.format(v)
-        : SF.format(v));
+                                 ? DF.format(v)
+                                 : SF.format(v));
   }
 
   @Override
@@ -256,30 +253,22 @@ public class Flt extends AbstractNumeric implements FltNumeric {
 
   @Override
   public Numeric round() throws QueryException {
-    return ((Float.isInfinite(v)) || (v == 0) || (Float.isNaN(v)))
-        ? this
-        : new Flt(Math.round(v));
+    return ((Float.isInfinite(v)) || (v == 0) || (Float.isNaN(v))) ? this : new Flt(Math.round(v));
   }
 
   @Override
   public Numeric abs() throws QueryException {
-    return ((v == Float.POSITIVE_INFINITY) || (v >= 0) || (Float.isNaN(v)))
-        ? this
-        : new Flt(Math.abs(v));
+    return ((v == Float.POSITIVE_INFINITY) || (v >= 0) || (Float.isNaN(v))) ? this : new Flt(Math.abs(v));
   }
 
   @Override
   public Numeric ceiling() throws QueryException {
-    return ((Float.isInfinite(v)) || (v == 0) || (Float.isNaN(v)))
-        ? this
-        : new Flt((float) Math.ceil(v));
+    return ((Float.isInfinite(v)) || (v == 0) || (Float.isNaN(v))) ? this : new Flt((float) Math.ceil(v));
   }
 
   @Override
   public Numeric floor() throws QueryException {
-    return ((Float.isInfinite(v)) || (v == 0) || (Float.isNaN(v)))
-        ? this
-        : new Flt((float) Math.floor(v));
+    return ((Float.isInfinite(v)) || (v == 0) || (Float.isNaN(v))) ? this : new Flt((float) Math.floor(v));
   }
 
   @Override

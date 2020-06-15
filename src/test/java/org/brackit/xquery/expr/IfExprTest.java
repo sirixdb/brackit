@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -36,31 +36,26 @@ import org.brackit.xquery.operator.TupleImpl;
 import org.junit.Test;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class IfExprTest {
-	QueryContext ctx = new BrackitQueryContext(null);
+  QueryContext ctx = new BrackitQueryContext(null);
 
-	@Test
-	public void emptyCondition() throws Exception {
-		IfExpr expr = new IfExpr(new EmptyExpr(), Bool.TRUE, Bool.FALSE);
-		ResultChecker.dCheck(Bool.FALSE, expr.evaluate(ctx,
-				new TupleImpl()));
-	}
+  @Test
+  public void emptyCondition() throws Exception {
+    IfExpr expr = new IfExpr(new EmptyExpr(), Bool.TRUE, Bool.FALSE);
+    ResultChecker.dCheck(Bool.FALSE, expr.evaluate(ctx, new TupleImpl()));
+  }
 
-	@Test
-	public void literalTrueCondition() throws Exception {
-		IfExpr expr = new IfExpr(new Int32(1), Bool.TRUE, Bool.FALSE);
-		ResultChecker.dCheck(Bool.TRUE, expr
-				.evaluate(ctx, new TupleImpl()));
-	}
+  @Test
+  public void literalTrueCondition() throws Exception {
+    IfExpr expr = new IfExpr(new Int32(1), Bool.TRUE, Bool.FALSE);
+    ResultChecker.dCheck(Bool.TRUE, expr.evaluate(ctx, new TupleImpl()));
+  }
 
-	@Test
-	public void literalFalseCondition() throws Exception {
-		IfExpr expr = new IfExpr(new Int32(0), Bool.TRUE, Bool.FALSE);
-		ResultChecker.dCheck(Bool.FALSE, expr.evaluate(ctx,
-				new TupleImpl()));
-	}
+  @Test
+  public void literalFalseCondition() throws Exception {
+    IfExpr expr = new IfExpr(new Int32(0), Bool.TRUE, Bool.FALSE);
+    ResultChecker.dCheck(Bool.FALSE, expr.evaluate(ctx, new TupleImpl()));
+  }
 }

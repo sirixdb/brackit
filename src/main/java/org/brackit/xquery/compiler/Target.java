@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -35,50 +35,48 @@ import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.Expr;
 
 /**
- * 
  * A compilation target for a specific unit.
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public class Target {
 
-	protected final Module module;
-	protected final StaticContext sctx;
-	protected final Unit unit;
-	protected final boolean allowUpdate;
-	protected AST ast;
+  protected final Module module;
+  protected final StaticContext sctx;
+  protected final Unit unit;
+  protected final boolean allowUpdate;
+  protected AST ast;
 
-	public Target(Module module, StaticContext sctx, AST ast, Unit unit, boolean allowUpdate) {
-		this.module = module;
-		this.sctx = sctx;
-		this.ast = ast;
-		this.unit = unit;
-		this.allowUpdate = allowUpdate;
-	}
-	
-	public void optimize(Optimizer optimizer) throws QueryException {
-		ast = optimizer.optimize(sctx, ast);
-	}
-	
-	public void translate(Translator translator) throws QueryException {
-		Expr expr = translator.expression(module, sctx, ast, allowUpdate);
-		unit.setExpr(expr);
-	}
+  public Target(Module module, StaticContext sctx, AST ast, Unit unit, boolean allowUpdate) {
+    this.module = module;
+    this.sctx = sctx;
+    this.ast = ast;
+    this.unit = unit;
+    this.allowUpdate = allowUpdate;
+  }
 
-	public Module getModule() {
-		return module;
-	}
+  public void optimize(Optimizer optimizer) throws QueryException {
+    ast = optimizer.optimize(sctx, ast);
+  }
 
-	public StaticContext getStaticContext() {
-		return sctx;
-	}
+  public void translate(Translator translator) throws QueryException {
+    Expr expr = translator.expression(module, sctx, ast, allowUpdate);
+    unit.setExpr(expr);
+  }
 
-	public AST getAst() {
-		return ast;
-	}
+  public Module getModule() {
+    return module;
+  }
 
-	public boolean allowUpdate() {
-		return allowUpdate;
-	}
+  public StaticContext getStaticContext() {
+    return sctx;
+  }
+
+  public AST getAst() {
+    return ast;
+  }
+
+  public boolean allowUpdate() {
+    return allowUpdate;
+  }
 }

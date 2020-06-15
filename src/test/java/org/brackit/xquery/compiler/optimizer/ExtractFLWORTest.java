@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -40,31 +40,28 @@ import org.junit.Test;
 
 /**
  * @author Sebastian Baechle
- *
  */
 public class ExtractFLWORTest extends XQueryBaseTest {
-	
-	@Test
-	public void nestedInWhere() throws Exception {
-		Sequence res = new XQuery(
-				"for $a in (1,2,3) " +
-				"where $a > (for $b in (2,3,4) " +
-				"			return $b) " +
-				"return $a").execute(ctx);
-		ResultChecker.dCheck(new Int32(3), res);
-	}
-	
-	private Sequence intSequence(int... v) {
-		Int32[] s = new Int32[v.length];
-		for (int i = 0; i < v.length; i++) {
-			s[i] = new Int32(v[i]);
-		}
-		return new ItemSequence(s);
-	}
 
-	@Before
-	public void setUp() throws Exception, FileNotFoundException {
-		super.setUp();
-		DefaultOptimizer.UNNEST = true;
-	}
+  @Test
+  public void nestedInWhere() throws Exception {
+    Sequence res =
+        new XQuery("for $a in (1,2,3) " + "where $a > (for $b in (2,3,4) " + "			return $b) " + "return $a").execute(
+            ctx);
+    ResultChecker.dCheck(new Int32(3), res);
+  }
+
+  private Sequence intSequence(int... v) {
+    Int32[] s = new Int32[v.length];
+    for (int i = 0; i < v.length; i++) {
+      s[i] = new Int32(v[i]);
+    }
+    return new ItemSequence(s);
+  }
+
+  @Before
+  public void setUp() throws Exception, FileNotFoundException {
+    super.setUp();
+    DefaultOptimizer.UNNEST = true;
+  }
 }

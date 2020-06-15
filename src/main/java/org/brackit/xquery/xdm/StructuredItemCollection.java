@@ -30,10 +30,8 @@ package org.brackit.xquery.xdm;
 import org.brackit.xquery.atomic.AnyURI;
 
 /**
- *
- * @author Sebastian Baechle
- *
  * @param <E>
+ * @author Sebastian Baechle
  */
 public interface StructuredItemCollection<E extends StructuredItem> extends Sequence {
 

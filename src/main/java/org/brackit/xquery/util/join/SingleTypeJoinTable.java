@@ -35,79 +35,74 @@ import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class SingleTypeJoinTable {
-	protected final QueryContext ctx;
+  protected final QueryContext ctx;
 
-	protected final JoinTable table;
+  protected final JoinTable table;
 
-	public SingleTypeJoinTable(QueryContext ctx, JoinTable table) {
-		this.ctx = ctx;
-		this.table = table;
-	}
+  public SingleTypeJoinTable(QueryContext ctx, JoinTable table) {
+    this.ctx = ctx;
+    this.table = table;
+  }
 
-	protected final FastList<Sequence[]> sortAndDeduplicate(FastList<TValue> in)
-			throws QueryException {
-		in.sort();
-		FastList<Sequence[]> out = new FastList<Sequence[]>();
-		TValue p = null;
-		int inSize = in.getSize();
-		for (int i = 0; i < inSize; i++) {
-			TValue v = in.get(i);
-			if ((p == null) || (p.pos < v.pos)) {
-				out.add(v.bindings);
-			}
-			p = v;
-		}
-		return out;
-	}
+  protected final FastList<Sequence[]> sortAndDeduplicate(FastList<TValue> in) throws QueryException {
+    in.sort();
+    FastList<Sequence[]> out = new FastList<Sequence[]>();
+    TValue p = null;
+    int inSize = in.getSize();
+    for (int i = 0; i < inSize; i++) {
+      TValue v = in.get(i);
+      if ((p == null) || (p.pos < v.pos)) {
+        out.add(v.bindings);
+      }
+      p = v;
+    }
+    return out;
+  }
 
-	public final void add(Sequence keys, Sequence[] bindings, int pos)
-			throws QueryException {
-		if (keys instanceof Item) {
-			table.add(((Item) keys).atomize(), pos, bindings);
-		} else {
-			Iter it = keys.iterate();
-			try {
-				Item key;
-				while ((key = it.next()) != null) {
-					table.add(key.atomize(), pos, bindings);
-				}
-			} finally {
-				it.close();
-			}
-		}
-	}
+  public final void add(Sequence keys, Sequence[] bindings, int pos) throws QueryException {
+    if (keys instanceof Item) {
+      table.add(((Item) keys).atomize(), pos, bindings);
+    } else {
+      Iter it = keys.iterate();
+      try {
+        Item key;
+        while ((key = it.next()) != null) {
+          table.add(key.atomize(), pos, bindings);
+        }
+      } finally {
+        it.close();
+      }
+    }
+  }
 
-	public final FastList<Sequence[]> probe(Sequence keys)
-			throws QueryException {
-		if (keys == null) {
-			return FastList.emptyList();
-		}
+  public final FastList<Sequence[]> probe(Sequence keys) throws QueryException {
+    if (keys == null) {
+      return FastList.emptyList();
+    }
 
-		FastList<TValue> matches = new FastList<TValue>();
+    FastList<TValue> matches = new FastList<TValue>();
 
-		if (keys instanceof Item) {
-			table.lookup(matches, ((Item) keys).atomize());
-		} else {
-			Iter it = keys.iterate();
-			try {
-				Item key;
-				while ((key = it.next()) != null) {
-					table.lookup(matches, key.atomize());
-				}
-			} finally {
-				it.close();
-			}
-		}
+    if (keys instanceof Item) {
+      table.lookup(matches, ((Item) keys).atomize());
+    } else {
+      Iter it = keys.iterate();
+      try {
+        Item key;
+        while ((key = it.next()) != null) {
+          table.lookup(matches, key.atomize());
+        }
+      } finally {
+        it.close();
+      }
+    }
 
-		if (matches.isEmpty()) {
-			return FastList.emptyList();
-		}
+    if (matches.isEmpty()) {
+      return FastList.emptyList();
+    }
 
-		return sortAndDeduplicate(matches);
-	}
+    return sortAndDeduplicate(matches);
+  }
 }

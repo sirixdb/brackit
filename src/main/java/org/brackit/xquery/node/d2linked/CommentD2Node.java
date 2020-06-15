@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -35,74 +35,70 @@ import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public final class CommentD2Node extends D2Node {
-	private Str value;
+  private Str value;
 
-	public CommentD2Node(Atomic value) throws DocumentException {
-		this(null, FIRST, value);
-	}
+  public CommentD2Node(Atomic value) throws DocumentException {
+    this(null, FIRST, value);
+  }
 
-	CommentD2Node(ParentD2Node parent, int[] division, Atomic value) throws DocumentException {
-		super(parent, division);
-		this.value = checkValue(value);
-	}
+  CommentD2Node(ParentD2Node parent, int[] division, Atomic value) throws DocumentException {
+    super(parent, division);
+    this.value = checkValue(value);
+  }
 
-	private Str checkValue(Atomic v) throws DocumentException {
-		String s = v.stringValue();
-		if (s.contains("--")) {
-			throw new DocumentException("Character sequence \"--\" is not allowed in comment content");
-		}
-		if (s.endsWith("-")) {
-			throw new DocumentException("Comment content must not end with \"-\"");
-		}
-		return v.asStr();
-	}
+  private Str checkValue(Atomic v) throws DocumentException {
+    String s = v.stringValue();
+    if (s.contains("--")) {
+      throw new DocumentException("Character sequence \"--\" is not allowed in comment content");
+    }
+    if (s.endsWith("-")) {
+      throw new DocumentException("Comment content must not end with \"-\"");
+    }
+    return v.asStr();
+  }
 
-	public Kind getKind() {
-		return Kind.COMMENT;
-	}
+  public Kind getKind() {
+    return Kind.COMMENT;
+  }
 
-	@Override
-	public QNm getName() throws DocumentException {
-		return null;
-	}
+  @Override
+  public QNm getName() throws DocumentException {
+    return null;
+  }
 
-	@Override
-	public Atomic getValue() {
-		return value;
-	}
+  @Override
+  public Atomic getValue() {
+    return value;
+  }
 
-	@Override
-	public void setValue(Atomic value) throws OperationNotSupportedException,
-			DocumentException {
-		this.value = checkValue(value);
-	}
+  @Override
+  public void setValue(Atomic value) throws OperationNotSupportedException, DocumentException {
+    this.value = checkValue(value);
+  }
 
-	@Override
-	public D2Node getNextSibling() throws DocumentException {
-		if (parent == null) {
-			return null;
-		}
+  @Override
+  public D2Node getNextSibling() throws DocumentException {
+    if (parent == null) {
+      return null;
+    }
 
-		return parent.nextSiblingOf(this);
-	}
+    return parent.nextSiblingOf(this);
+  }
 
-	@Override
-	public D2Node getPreviousSibling() throws DocumentException {
-		if (parent == null) {
-			return null;
-		}
+  @Override
+  public D2Node getPreviousSibling() throws DocumentException {
+    if (parent == null) {
+      return null;
+    }
 
-		return parent.previousSiblingOf(this);
-	}
+    return parent.previousSiblingOf(this);
+  }
 
-	@Override
-	public String toString() {
-		return String.format("(type='%s', name='', value='%s')", Kind.COMMENT,
-				value);
-	}
+  @Override
+  public String toString() {
+    return String.format("(type='%s', name='', value='%s')", Kind.COMMENT, value);
+  }
 }

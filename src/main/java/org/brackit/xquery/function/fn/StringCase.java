@@ -28,6 +28,7 @@
 package org.brackit.xquery.function.fn;
 
 import java.util.Locale;
+
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
@@ -43,26 +44,24 @@ import org.brackit.xquery.xdm.Signature;
  * http://www.w3.org/TR/xpath-functions/#func-upper-case ff.
  *
  * @author Max Bechtold
- *
  */
 public class StringCase extends AbstractFunction {
-	private boolean upperCase;
+  private boolean upperCase;
 
-	public StringCase(QNm name, boolean upperCase, Signature signature) {
-		super(name, signature, true);
-		this.upperCase = upperCase;
-	}
+  public StringCase(QNm name, boolean upperCase, Signature signature) {
+    super(name, signature, true);
+    this.upperCase = upperCase;
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		if (args[0] == null) {
-			return Str.EMPTY;
-		} else if (upperCase) {
-			return new Str(((Str) args[0]).stringValue().toUpperCase(Locale.ENGLISH));
-		} else {
-			return new Str(((Str) args[0]).stringValue().toLowerCase(Locale.ENGLISH));
-		}
-	}
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    if (args[0] == null) {
+      return Str.EMPTY;
+    } else if (upperCase) {
+      return new Str(((Str) args[0]).stringValue().toUpperCase(Locale.ENGLISH));
+    } else {
+      return new Str(((Str) args[0]).stringValue().toLowerCase(Locale.ENGLISH));
+    }
+  }
 
 }

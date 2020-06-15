@@ -32,9 +32,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Type;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class Una extends AbstractAtomic {
   public static final Una EMPTY = new Una("");
@@ -91,8 +89,10 @@ public class Una extends AbstractAtomic {
     {
       return (str.compareTo(other.stringValue()));
     }
-    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s' with '%s'", type(),
-        other.type());
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                             "Cannot compare '%s' with '%s'",
+                             type(),
+                             other.type());
   }
 
   @Override

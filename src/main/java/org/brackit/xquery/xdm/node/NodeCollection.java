@@ -35,10 +35,8 @@ import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.StructuredItemCollection;
 
 /**
- *
- * @author Sebastian Baechle
- *
  * @param <E>
+ * @author Sebastian Baechle
  */
 public interface NodeCollection<E extends Node<E>> extends StructuredItemCollection<Node<E>> {
 
@@ -66,7 +64,7 @@ public interface NodeCollection<E extends Node<E>> extends StructuredItemCollect
    * @param parser the subtree parser
    * @return the new root node added to the collection
    * @throws OperationNotSupportedException if the operation is not supported
-   * @throws DocumentException if anything else went wrong
+   * @throws DocumentException              if anything else went wrong
    */
   public E add(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
 

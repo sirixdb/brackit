@@ -33,13 +33,13 @@ import org.brackit.xquery.xdm.json.ListOrUnion;
 
 /**
  * @author Sebastian Baechle
- *
  */
 public final class ListOrUnionType implements ItemType {
 
   public static final ListOrUnionType LIST_OR_UNION = new ListOrUnionType();
 
-  public ListOrUnionType() {}
+  public ListOrUnionType() {
+  }
 
   @Override
   public boolean isAnyItem() {

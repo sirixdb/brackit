@@ -29,6 +29,7 @@ package org.brackit.xquery.node.d2linked;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.AbstractNode;
@@ -47,7 +48,6 @@ import org.brackit.xquery.xdm.node.Node;
  * Abstract base class for memory nodes.
  *
  * @author Sebastian Baechle
- *
  */
 public abstract class D2Node extends AbstractNode<D2Node> {
   protected static final AtomicInteger ID_SEQUENCE = new AtomicInteger();
@@ -56,14 +56,14 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 
   public static final int MAX_STATIC_DIVISION = (1 + NO_ADDITIONAL_STATIC_DIVISIONS) * 2 + 1;
 
-  public static final int[] FIRST = new int[] {3};
+  public static final int[] FIRST = new int[] { 3 };
 
   private static final int[][] STATIC_DIVISIONS = new int[1 + NO_ADDITIONAL_STATIC_DIVISIONS][];
 
   static {
     STATIC_DIVISIONS[0] = FIRST;
     for (int i = 0; i < NO_ADDITIONAL_STATIC_DIVISIONS; i++) {
-      STATIC_DIVISIONS[i + 1] = new int[] {(i + 2) * 2 + 1};
+      STATIC_DIVISIONS[i + 1] = new int[] { (i + 2) * 2 + 1 };
     }
   }
 
@@ -83,9 +83,8 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   protected D2Node(ParentD2Node parent, int[] division) {
     this.parent = parent;
     this.division = division;
-    this.localFragmentID = (parent == null)
-        ? localFragmentID()
-        : parent.localFragmentID;;
+    this.localFragmentID = (parent == null) ? localFragmentID() : parent.localFragmentID;
+    ;
   }
 
   private D2Node getRoot() {
@@ -98,9 +97,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 
   @Override
   public D2NodeCollection getCollection() {
-    return (parent == null)
-        ? null
-        : getRoot().getCollection();
+    return (parent == null) ? null : getRoot().getCollection();
   }
 
   @Override
@@ -126,9 +123,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
       return 0;
     }
     if (localFragmentID != node.localFragmentID) {
-      return localFragmentID < node.localFragmentID
-          ? -1
-          : 1;
+      return localFragmentID < node.localFragmentID ? -1 : 1;
     }
     D2Node c = null;
     D2Node cp = this;
@@ -149,9 +144,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
           Kind kind = c.getKind();
           Kind nkind = lcap.getKind();
           if ((kind == Kind.ATTRIBUTE) ^ (nkind == Kind.ATTRIBUTE)) {
-            return (kind == Kind.ATTRIBUTE)
-                ? -1
-                : 1;
+            return (kind == Kind.ATTRIBUTE) ? -1 : 1;
           }
           // nodes must be in the same chain -> search
           // scan from context node to n
@@ -178,15 +171,11 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   protected final int[] siblingAfter(int[] p) {
-    return getDivision(p[0] + (((p[0] & 1) != 0)
-        ? 2
-        : 1));
+    return getDivision(p[0] + (((p[0] & 1) != 0) ? 2 : 1));
   }
 
   protected final int[] getDivision(int value) {
-    return (value <= MAX_STATIC_DIVISION)
-        ? STATIC_DIVISIONS[((value) / 2) - 1]
-        : new int[] {value};
+    return (value <= MAX_STATIC_DIVISION) ? STATIC_DIVISIONS[((value) / 2) - 1] : new int[] { value };
   }
 
   protected final int[] siblingBetween(int[] p, int[] n) {
@@ -197,8 +186,9 @@ public abstract class D2Node extends AbstractNode<D2Node> {
     for (int i = 0; i < length; i++) {
       if (n[i] != p[i]) {
         if (n[i] < p[i]) {
-          throw new IllegalArgumentException(
-              String.format("Illegal sibling divisions: %s > %s", Arrays.toString(p), Arrays.toString(n)));
+          throw new IllegalArgumentException(String.format("Illegal sibling divisions: %s > %s",
+                                                           Arrays.toString(p),
+                                                           Arrays.toString(n)));
         } else if ((p[i] & 1) == 0) // p[i] is even
         {
           if (n[i] - p[i] > 1) // e.g. p[i] == 4 and n[i] >= 6
@@ -216,11 +206,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
             // 0->3),
             // 1 (e.g. 2->3) or 2 (e.g. 3->5) respectively
             int[] r = Arrays.copyOf(p, i + 2);
-            r[i + 1] += (r[i + 1] == 0)
-                ? 3
-                : ((r[i + 1] & 1) == 0)
-                    ? 1
-                    : 2;
+            r[i + 1] += (r[i + 1] == 0) ? 3 : ((r[i + 1] & 1) == 0) ? 1 : 2;
             return r;
           }
         } else if ((n[i] & 1) == 0) // p[i] is uneven and n[i] is even
@@ -240,11 +226,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
             // 0->3),
             // 1 (e.g. 2->3) or 2 (e.g. 3->5) respectively
             int[] r = Arrays.copyOf(p, i + 2);
-            r[i + 1] += (r[i + 1] == 0)
-                ? 3
-                : ((r[i + 1] & 1) == 0)
-                    ? 1
-                    : 2;
+            r[i + 1] += (r[i + 1] == 0) ? 3 : ((r[i + 1] & 1) == 0) ? 1 : 2;
             return r;
           }
         } else // p[i] and n[i] are uneven
@@ -269,22 +251,19 @@ public abstract class D2Node extends AbstractNode<D2Node> {
         }
       }
     }
-    throw new IllegalArgumentException(
-        String.format("Illegal sibling divisions: %s and %s", Arrays.toString(p), Arrays.toString(n)));
+    throw new IllegalArgumentException(String.format("Illegal sibling divisions: %s and %s",
+                                                     Arrays.toString(p),
+                                                     Arrays.toString(n)));
   }
 
   protected final int[] siblingBefore(int[] n) {
     if (n.length == 1) {
-      return (n[0] > 3)
-          ? getDivision(n[0] - 2)
-          : new int[] {2, 3};
+      return (n[0] > 3) ? getDivision(n[0] - 2) : new int[] { 2, 3 };
     } else {
       for (int i = 0; i < n.length; i++) {
         if (n[i] > 3) {
           int[] r = Arrays.copyOf(n, i + 1);
-          r[i] -= ((r[i] & 1) == 0)
-              ? 1
-              : 2;
+          r[i] -= ((r[i] & 1) == 0) ? 1 : 2;
           return r;
         }
       }
@@ -298,9 +277,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   private int compare(int[] value1, int[] value2) {
     int length1 = value1.length;
     int length2 = value2.length;
-    int length = ((length1 <= length2)
-        ? length1
-        : length2);
+    int length = ((length1 <= length2) ? length1 : length2);
 
     int pos = -1;
     while (++pos < length) {
@@ -308,9 +285,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
       int v1 = value1[pos];
 
       if (v1 != v2) {
-        return v1 < v2
-            ? -1
-            : 1;
+        return v1 < v2 ? -1 : 1;
       }
     }
 
@@ -364,8 +339,8 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   @Override
   public boolean isDescendantOrSelfOf(Node<?> node) {
     // TODO: fix for sun's compiler bug using generics parent == node
-    return ((node != null)
-        && ((this == node) || (parent == node) || ((parent != null) && (parent.isDescendantOrSelfOf(node)))));
+    return ((node != null) && ((this == node) || (parent == node) || ((parent != null) && (parent.isDescendantOrSelfOf(
+        node)))));
   }
 
   @Override
@@ -395,8 +370,8 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 
   @Override
   public boolean isFollowingSiblingOf(Node<?> node) {
-    if ((node == null) || (parent == null) || (node == this) || (!(node instanceof D2Node))
-        || (node.getKind() == Kind.ATTRIBUTE)) {
+    if ((node == null) || (parent == null) || (node == this) || (!(node instanceof D2Node)) || (node.getKind()
+        == Kind.ATTRIBUTE)) {
       return false;
     }
     D2Node n = (D2Node) node;
@@ -428,8 +403,8 @@ public abstract class D2Node extends AbstractNode<D2Node> {
 
   @Override
   public boolean isPrecedingSiblingOf(Node<?> node) {
-    if ((node == null) || (parent == null) || (node == this) || (!(node instanceof D2Node))
-        || (node.getKind() == Kind.ATTRIBUTE)) {
+    if ((node == null) || (parent == null) || (node == this) || (!(node instanceof D2Node)) || (node.getKind()
+        == Kind.ATTRIBUTE)) {
       return false;
     }
     D2Node n = (D2Node) node;

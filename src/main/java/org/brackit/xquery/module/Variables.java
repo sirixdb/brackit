@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -44,67 +44,66 @@ import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * @author Sebastian Baechle
- * 
  */
 public class Variables {
 
-	protected final Map<QNm, Variable> vars = new TreeMap<QNm, Variable>();
-	protected final DefaultCtxItem dftItem = new DefaultCtxItem();
-	protected final DefaultCtxPos dftPos = new DefaultCtxPos(dftItem);
-	protected final DefaultCtxSize dftSize = new DefaultCtxSize(dftItem);
-	protected LinkedList<Variables> imports = new LinkedList<Variables>();
+  protected final Map<QNm, Variable> vars = new TreeMap<QNm, Variable>();
+  protected final DefaultCtxItem dftItem = new DefaultCtxItem();
+  protected final DefaultCtxPos dftPos = new DefaultCtxPos(dftItem);
+  protected final DefaultCtxSize dftSize = new DefaultCtxSize(dftItem);
+  protected LinkedList<Variables> imports = new LinkedList<Variables>();
 
-	public Variables() {
-	}
+  public Variables() {
+  }
 
-	public boolean isDeclared(QNm name) {
-		return vars.containsKey(name);
-	}
+  public boolean isDeclared(QNm name) {
+    return vars.containsKey(name);
+  }
 
-	public DefaultCtxItem getDftCtxItem() {
-		return dftItem;
-	}
+  public DefaultCtxItem getDftCtxItem() {
+    return dftItem;
+  }
 
-	public DefaultCtxPos getDftCtxPos() {
-		return dftPos;
-	}
+  public DefaultCtxPos getDftCtxPos() {
+    return dftPos;
+  }
 
-	public DefaultCtxSize getDftCtxSize() {
-		return dftSize;
-	}
+  public DefaultCtxSize getDftCtxSize() {
+    return dftSize;
+  }
 
-	public Variable resolve(QNm name) {
-		Variable var = vars.get(name);
-		if (var != null) {
-			return var;
-		} else if (name.equals(Bits.FS_DOT)) {
-			return dftItem;
-		} else if (name.equals(Bits.FS_POSITION)) {
-			return dftPos;
-		} else if (name.equals(Bits.FS_LAST)) {
-			return var;
-		}
-		for (Variables v : imports) {
-			// TODO check only public vars!
-			var = v.resolve(name);
-			if (v != null) {
-				return var;
-			}
-		}
-		return null;
-	}
+  public Variable resolve(QNm name) {
+    Variable var = vars.get(name);
+    if (var != null) {
+      return var;
+    } else if (name.equals(Bits.FS_DOT)) {
+      return dftItem;
+    } else if (name.equals(Bits.FS_POSITION)) {
+      return dftPos;
+    } else if (name.equals(Bits.FS_LAST)) {
+      return var;
+    }
+    for (Variables v : imports) {
+      // TODO check only public vars!
+      var = v.resolve(name);
+      if (v != null) {
+        return var;
+      }
+    }
+    return null;
+  }
 
-	public void importVariables(Variables variables) {
-		imports.add(variables);
-	}
+  public void importVariables(Variables variables) {
+    imports.add(variables);
+  }
 
-	public DeclVariable declare(QNm name, SequenceType type, boolean external) {
-		DeclVariable var = new DeclVariable(name, type);
-		vars.put(name, var);
-		return var;
-	}
+  public DeclVariable declare(QNm name, SequenceType type, boolean external) {
+    DeclVariable var = new DeclVariable(name, type);
+    vars.put(name, var);
+    return var;
+  }
 
-	public Collection<Variable> getDeclaredVariables() {
-		return Collections.unmodifiableCollection(vars.values());
-	}
+  public Collection<Variable> getDeclaredVariables() {
+    return Collections.unmodifiableCollection(vars.values());
+  }
 }

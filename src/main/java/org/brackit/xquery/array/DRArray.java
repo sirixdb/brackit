@@ -29,6 +29,7 @@ package org.brackit.xquery.array;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Int32;
@@ -40,7 +41,6 @@ import static java.util.Objects.checkFromToIndex;
 
 /**
  * @author Sebastian Baechle
- *
  */
 public final class DRArray extends AbstractArray {
   private final List<Sequence> vals;
@@ -148,9 +148,7 @@ public final class DRArray extends AbstractArray {
   @Override
   public IntNumeric length() throws QueryException {
     int length = end - start;
-    return (length <= 20)
-        ? Int32.ZERO_TWO_TWENTY[length]
-        : new Int32(length);
+    return (length <= 20) ? Int32.ZERO_TWO_TWENTY[length] : new Int32(length);
   }
 
   @Override

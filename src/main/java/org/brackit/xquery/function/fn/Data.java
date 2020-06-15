@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -40,52 +40,49 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class Data extends AbstractFunction {
-	public Data(QNm name, Signature signature) {
-		super(name, signature, true);
-	}
+  public Data(QNm name, Signature signature) {
+    super(name, signature, true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, final QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		final Sequence s = args[0];
+  @Override
+  public Sequence execute(StaticContext sctx, final QueryContext ctx, Sequence[] args) throws QueryException {
+    final Sequence s = args[0];
 
-		if (s == null) {
-			return null;
-		}
-		if (s instanceof Item) {
-			return ((Item) s).atomize();
-		}
+    if (s == null) {
+      return null;
+    }
+    if (s instanceof Item) {
+      return ((Item) s).atomize();
+    }
 
-		return new LazySequence() {
-			@Override
-			public Iter iterate() {
-				return new BaseIter() {
-					Iter it;
+    return new LazySequence() {
+      @Override
+      public Iter iterate() {
+        return new BaseIter() {
+          Iter it;
 
-					@Override
-					public Item next() throws QueryException {
-						if (it == null) {
-							it = s.iterate();
-						}
+          @Override
+          public Item next() throws QueryException {
+            if (it == null) {
+              it = s.iterate();
+            }
 
-						Item next = it.next();
+            Item next = it.next();
 
-						return (next != null) ? next.atomize() : null;
-					}
+            return (next != null) ? next.atomize() : null;
+          }
 
-					@Override
-					public void close() {
-						if (it != null) {
-							it.close();
-						}
-					}
-				};
-			}
-		};
-	}
+          @Override
+          public void close() {
+            if (it != null) {
+              it.close();
+            }
+          }
+        };
+      }
+    };
+  }
 }

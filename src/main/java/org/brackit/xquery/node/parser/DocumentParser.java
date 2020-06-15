@@ -34,6 +34,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+
 import org.brackit.xquery.util.Cfg;
 import org.brackit.xquery.xdm.DocumentException;
 import org.xml.sax.DTDHandler;
@@ -43,94 +44,86 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class DocumentParser implements SubtreeParser {
-	public final static String IGNORE_COMMENTS = "org.brackit.xquery.node.parser.DocumentParser.ignoreComments";
+  public final static String IGNORE_COMMENTS = "org.brackit.xquery.node.parser.DocumentParser.ignoreComments";
 
-	private final XMLReader xmlReader;
+  private final XMLReader xmlReader;
 
-	private final InputSource source;
+  private final InputSource source;
 
-	private DTDHandler dtdHandler;
+  private DTDHandler dtdHandler;
 
-	private boolean retainWhitespace;
+  private boolean retainWhitespace;
 
-	private boolean parseAsFragment;
+  private boolean parseAsFragment;
 
-	private String baseDir;
+  private String baseDir;
 
-	public DocumentParser(File xmlFile) throws DocumentException,
-			FileNotFoundException {
-		this(new InputSource(new BufferedReader(new FileReader(xmlFile))));
-		File dir = xmlFile.getParentFile();
-		if (dir != null) {
-			baseDir = dir.getAbsolutePath();
-		}
-	}
+  public DocumentParser(File xmlFile) throws DocumentException, FileNotFoundException {
+    this(new InputSource(new BufferedReader(new FileReader(xmlFile))));
+    File dir = xmlFile.getParentFile();
+    if (dir != null) {
+      baseDir = dir.getAbsolutePath();
+    }
+  }
 
-	public DocumentParser(String xmlFragment) throws DocumentException {
-		this(new InputSource(new StringReader(xmlFragment)));
-	}
+  public DocumentParser(String xmlFragment) throws DocumentException {
+    this(new InputSource(new StringReader(xmlFragment)));
+  }
 
-	public DocumentParser(InputStream in) throws DocumentException {
-		this(new InputSource(in));
-	}
+  public DocumentParser(InputStream in) throws DocumentException {
+    this(new InputSource(in));
+  }
 
-	public DocumentParser(InputSource source) throws DocumentException {
-		this.source = source;
-		try {
-			xmlReader = XMLReaderFactory.createXMLReader();
-		} catch (SAXException e) {
-			throw new DocumentException(e, "Error creating document parser.");
-		}
-	}
+  public DocumentParser(InputSource source) throws DocumentException {
+    this.source = source;
+    try {
+      xmlReader = XMLReaderFactory.createXMLReader();
+    } catch (SAXException e) {
+      throw new DocumentException(e, "Error creating document parser.");
+    }
+  }
 
-	public InputSource getSource() {
-		return source;
-	}
+  public InputSource getSource() {
+    return source;
+  }
 
-	public void setParseAsFragment(boolean parseAsFragment) {
-		this.parseAsFragment = parseAsFragment;
-	}
+  public void setParseAsFragment(boolean parseAsFragment) {
+    this.parseAsFragment = parseAsFragment;
+  }
 
-	public void setRetainWhitespace(boolean retainWhitespace) {
-		this.retainWhitespace = retainWhitespace;
-	}
+  public void setRetainWhitespace(boolean retainWhitespace) {
+    this.retainWhitespace = retainWhitespace;
+  }
 
-	@Override
-	public void parse(SubtreeHandler handler) throws DocumentException {
-		try {
-			SAX2SubtreeHandlerAdapter handlerAdapter = new SAX2SubtreeHandlerAdapter(
-					handler);
-			if (retainWhitespace) {
-				handlerAdapter.setRetainWhitespace(true);
-			}
-			if (parseAsFragment) {
-				handlerAdapter.setParseAsFragment(true);
-			}
+  @Override
+  public void parse(SubtreeHandler handler) throws DocumentException {
+    try {
+      SAX2SubtreeHandlerAdapter handlerAdapter = new SAX2SubtreeHandlerAdapter(handler);
+      if (retainWhitespace) {
+        handlerAdapter.setRetainWhitespace(true);
+      }
+      if (parseAsFragment) {
+        handlerAdapter.setParseAsFragment(true);
+      }
 
-			xmlReader.setContentHandler(handlerAdapter);
+      xmlReader.setContentHandler(handlerAdapter);
 
-			if (baseDir != null) {
-				xmlReader
-						.setEntityResolver(new RelativeEntityResolver(baseDir));
-			}
-			xmlReader.setFeature("http://xml.org/sax/features/validation",
-					false);
-//			xmlReader.setFeature(
-//					"http://xml.org/sax/features/namespace-prefixes", true);
-			if (!Cfg.asBool(IGNORE_COMMENTS, false))
-				xmlReader.setProperty(
-						"http://xml.org/sax/properties/lexical-handler",
-						handlerAdapter);
-			xmlReader.parse(source);
-		} catch (SAXException e) {
-			throw new DocumentException(e, "Error parsing document.");
-		} catch (IOException e) {
-			throw new DocumentException(e, "Error parsing document.");
-		}
-	}
+      if (baseDir != null) {
+        xmlReader.setEntityResolver(new RelativeEntityResolver(baseDir));
+      }
+      xmlReader.setFeature("http://xml.org/sax/features/validation", false);
+      //			xmlReader.setFeature(
+      //					"http://xml.org/sax/features/namespace-prefixes", true);
+      if (!Cfg.asBool(IGNORE_COMMENTS, false))
+        xmlReader.setProperty("http://xml.org/sax/properties/lexical-handler", handlerAdapter);
+      xmlReader.parse(source);
+    } catch (SAXException e) {
+      throw new DocumentException(e, "Error parsing document.");
+    } catch (IOException e) {
+      throw new DocumentException(e, "Error parsing document.");
+    }
+  }
 }

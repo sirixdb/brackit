@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,19 +28,17 @@
 package org.brackit.xquery.xdm;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public enum Kind {
-	DOCUMENT((byte) 0), ELEMENT((byte) 1), ATTRIBUTE((byte) 2), TEXT((byte) 3), PROCESSING_INSTRUCTION(
-			(byte) 4), COMMENT((byte) 5), NAMESPACE((byte) 6);
+  DOCUMENT((byte) 0), ELEMENT((byte) 1), ATTRIBUTE((byte) 2), TEXT((byte) 3), PROCESSING_INSTRUCTION((byte) 4), COMMENT(
+      (byte) 5), NAMESPACE((byte) 6);
 
-	public final byte ID;
+  public final byte ID;
 
-	public static final Kind[] map = Kind.values();
+  public static final Kind[] map = Kind.values();
 
-	private Kind(byte id) {
-		this.ID = id;
-	}
+  private Kind(byte id) {
+    this.ID = id;
+  }
 }

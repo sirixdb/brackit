@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -36,48 +36,44 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.Type;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class Types {
-	protected final Map<QNm, Type> atomicTypes = new HashMap<QNm, Type>();
+  protected final Map<QNm, Type> atomicTypes = new HashMap<QNm, Type>();
 
-	public Type resolveSchemaType(QNm name) throws QueryException {
-		// of course there's no import - we don't support imports yet ;-)
-		throw new QueryException(ErrorCode.ERR_UNDEFINED_REFERENCE,
-				"No schema import found for namespace '%s'", name
-						.getNamespaceURI());
-	}
+  public Type resolveSchemaType(QNm name) throws QueryException {
+    // of course there's no import - we don't support imports yet ;-)
+    throw new QueryException(ErrorCode.ERR_UNDEFINED_REFERENCE,
+                             "No schema import found for namespace '%s'",
+                             name.getNamespaceURI());
+  }
 
-	public Type resolveType(QNm name) throws QueryException {
-		Type type = resolveInternal(name);
-		if (type != null) {
-			return type;
-		}
-		throw new QueryException(ErrorCode.ERR_UNDEFINED_REFERENCE,
-				"Unknown type: '%s'", name);
-	}
+  public Type resolveType(QNm name) throws QueryException {
+    Type type = resolveInternal(name);
+    if (type != null) {
+      return type;
+    }
+    throw new QueryException(ErrorCode.ERR_UNDEFINED_REFERENCE, "Unknown type: '%s'", name);
+  }
 
-	public Type resolveAtomicType(QNm name) throws QueryException {
-		Type type = resolveInternal(name);
-		if (type != null) {
-			return type;
-		}
-		throw new QueryException(ErrorCode.ERR_UNKNOWN_ATOMIC_SCHEMA_TYPE,
-				"Unknown atomic schema type: '%s'", name);
-	}
+  public Type resolveAtomicType(QNm name) throws QueryException {
+    Type type = resolveInternal(name);
+    if (type != null) {
+      return type;
+    }
+    throw new QueryException(ErrorCode.ERR_UNKNOWN_ATOMIC_SCHEMA_TYPE, "Unknown atomic schema type: '%s'", name);
+  }
 
-	private Type resolveInternal(QNm name) {
-		if (Namespaces.XS_NSURI.equals(name.getNamespaceURI())) {
-			for (Type type : Type.builtInTypes) {
-				if (type.getName().getLocalName().equals(name.getLocalName())) {
-					return type;
-				}
-			}
-			return null;
-		}
+  private Type resolveInternal(QNm name) {
+    if (Namespaces.XS_NSURI.equals(name.getNamespaceURI())) {
+      for (Type type : Type.builtInTypes) {
+        if (type.getName().getLocalName().equals(name.getLocalName())) {
+          return type;
+        }
+      }
+      return null;
+    }
 
-		return atomicTypes.get(name);
-	}
+    return atomicTypes.get(name);
+  }
 }

@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -43,30 +43,28 @@ import org.brackit.xquery.xdm.Type;
 /**
  * Implementation of predefined functions fn:number() and fn:number($arg1) as
  * per http://www.w3.org/TR/xpath-functions/#func-number
- * 
+ *
  * @author Max Bechtold
- * 
  */
 public class Number extends AbstractFunction {
 
-	public Number(QNm name, Signature signature) {
-		super(name, signature, true);
-	}
+  public Number(QNm name, Signature signature) {
+    super(name, signature, true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		if (args[0] == null) {
-			return Dbl.NaN;
-		}
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    if (args[0] == null) {
+      return Dbl.NaN;
+    }
 
-		Atomic atomic = ((Item) args[0]).atomize();
+    Atomic atomic = ((Item) args[0]).atomize();
 
-		try {
-			return Cast.cast(null, atomic, Type.DBL, false);
-		} catch (QueryException e) {
-			return Dbl.NaN;
-		}
-	}
+    try {
+      return Cast.cast(null, atomic, Type.DBL, false);
+    } catch (QueryException e) {
+      return Dbl.NaN;
+    }
+  }
 
 }

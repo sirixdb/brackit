@@ -31,14 +31,13 @@ import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.json.JsonItem;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public final class AnyJsonItemType extends JsonItemType {
   public static final AnyJsonItemType ANY_JSON_ITEM = new AnyJsonItemType();
 
-  public AnyJsonItemType() {}
+  public AnyJsonItemType() {
+  }
 
   @Override
   public boolean matches(Item item) {

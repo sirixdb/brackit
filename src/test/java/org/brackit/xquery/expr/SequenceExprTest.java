@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -36,42 +36,43 @@ import org.brackit.xquery.sequence.ItemSequence;
 import org.junit.Test;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class SequenceExprTest {
-	QueryContext ctx = new BrackitQueryContext(null);
+  QueryContext ctx = new BrackitQueryContext(null);
 
-	@Test
-	public void simpleSequence() throws Exception {
-		SequenceExpr expr = new SequenceExpr(new Int32(1), new Int32(2),
-				new Int32(3));
-		ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2),
-				new Int32(3)), expr.evaluate(ctx, new TupleImpl()));
-	}
+  @Test
+  public void simpleSequence() throws Exception {
+    SequenceExpr expr = new SequenceExpr(new Int32(1), new Int32(2), new Int32(3));
+    ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2), new Int32(3)),
+                         expr.evaluate(ctx, new TupleImpl()));
+  }
 
-	@Test
-	public void emptySequence() throws Exception {
-		SequenceExpr expr = new SequenceExpr();
-		ResultChecker.dCheck(null, expr.evaluate(ctx, new TupleImpl()));
-	}
+  @Test
+  public void emptySequence() throws Exception {
+    SequenceExpr expr = new SequenceExpr();
+    ResultChecker.dCheck(null, expr.evaluate(ctx, new TupleImpl()));
+  }
 
-	@Test
-	public void simpleAndEmptySequence() throws Exception {
-		SequenceExpr expr = new SequenceExpr(new Int32(1), new SequenceExpr(),
-				new Int32(2), new Int32(3));
-		ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2),
-				new Int32(3)), expr.evaluate(ctx, new TupleImpl()));
-	}
+  @Test
+  public void simpleAndEmptySequence() throws Exception {
+    SequenceExpr expr = new SequenceExpr(new Int32(1), new SequenceExpr(), new Int32(2), new Int32(3));
+    ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2), new Int32(3)),
+                         expr.evaluate(ctx, new TupleImpl()));
+  }
 
-	@Test
-	public void nestedSequences() throws Exception {
-		SequenceExpr expr = new SequenceExpr(new Int32(1), new SequenceExpr(
-				new Int32(2), new Int32(3)), new Int32(4), new SequenceExpr(
-				new Int32(5), new Int32(6), new Int32(7)));
-		ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2),
-				new Int32(3), new Int32(4), new Int32(5), new Int32(6),
-				new Int32(7)), expr.evaluate(ctx, new TupleImpl()));
-	}
+  @Test
+  public void nestedSequences() throws Exception {
+    SequenceExpr expr = new SequenceExpr(new Int32(1),
+                                         new SequenceExpr(new Int32(2), new Int32(3)),
+                                         new Int32(4),
+                                         new SequenceExpr(new Int32(5), new Int32(6), new Int32(7)));
+    ResultChecker.dCheck(new ItemSequence(new Int32(1),
+                                          new Int32(2),
+                                          new Int32(3),
+                                          new Int32(4),
+                                          new Int32(5),
+                                          new Int32(6),
+                                          new Int32(7)), expr.evaluate(ctx, new TupleImpl()));
+  }
 }

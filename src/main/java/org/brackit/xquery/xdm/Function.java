@@ -32,9 +32,7 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.module.StaticContext;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public interface Function extends Item {
   QNm getName();

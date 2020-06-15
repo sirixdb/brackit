@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -43,50 +43,45 @@ import org.brackit.xquery.xdm.Signature;
 /**
  * Implementation of predefined function fn:codepoints-to-string($arg1) as per
  * http://www.w3.org/TR/xpath-functions/#func-codepoints-to-string
- * 
+ *
  * @author Max Bechtold
- * 
  */
 public class CodepointsToString extends AbstractFunction {
-	public CodepointsToString(QNm name, Signature signature) {
-		super(name, signature, true);
-	}
+  public CodepointsToString(QNm name, Signature signature) {
+    super(name, signature, true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		if (args[0] == null) {
-			return Str.EMPTY;
-		}
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    if (args[0] == null) {
+      return Str.EMPTY;
+    }
 
-		Iter it = args[0].iterate();
+    Iter it = args[0].iterate();
 
-		Item item = it.next();
+    Item item = it.next();
 
-		if (item == null) {
-			return Str.EMPTY;
-		}
+    if (item == null) {
+      return Str.EMPTY;
+    }
 
-		StringBuilder sb = new StringBuilder();
+    StringBuilder sb = new StringBuilder();
 
-		while (item != null) {
-			int codePoint = ((IntNumeric) item).intValue();
+    while (item != null) {
+      int codePoint = ((IntNumeric) item).intValue();
 
-			if ((codePoint < 0x20 || codePoint > 0xD7FF) && codePoint != 0x9
-					&& codePoint != 0xA && codePoint != 0xD
-					&& (codePoint < 0xE000 || codePoint > 0xFFFD)
-					&& (codePoint < 0x10000 || codePoint > 0x10FFFF)) {
-				throw new QueryException(
-						ErrorCode.ERR_CODE_POINT_NOT_VALID,
-						"Codepoint does not represent a legal XML character: %s.",
-						codePoint);
-			}
+      if ((codePoint < 0x20 || codePoint > 0xD7FF) && codePoint != 0x9 && codePoint != 0xA && codePoint != 0xD && (
+          codePoint < 0xE000 || codePoint > 0xFFFD) && (codePoint < 0x10000 || codePoint > 0x10FFFF)) {
+        throw new QueryException(ErrorCode.ERR_CODE_POINT_NOT_VALID,
+                                 "Codepoint does not represent a legal XML character: %s.",
+                                 codePoint);
+      }
 
-			sb.append(Character.toChars(codePoint)[0]);
-			item = it.next();
-		}
+      sb.append(Character.toChars(codePoint)[0]);
+      item = it.next();
+    }
 
-		return new Str(sb.toString());
-	}
+    return new Str(sb.toString());
+  }
 
 }

@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,49 +33,47 @@ import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * Abstract typed variable
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public abstract class Variable implements Expr {
-	protected final QNm name;
+  protected final QNm name;
 
-	protected final SequenceType type;
+  protected final SequenceType type;
 
-	public Variable(QNm name) {
-		this.name = name;
-		this.type = null;
-	}
+  public Variable(QNm name) {
+    this.name = name;
+    this.type = null;
+  }
 
-	public Variable(QNm name, SequenceType type) {
-		this.name = name;
-		this.type = type;
-	}
+  public Variable(QNm name, SequenceType type) {
+    this.name = name;
+    this.type = type;
+  }
 
-	public QNm getName() {
-		return name;
-	}
+  public QNm getName() {
+    return name;
+  }
 
-	public SequenceType getType() {
-		return type;
-	}
+  public SequenceType getType() {
+    return type;
+  }
 
-	@Override
-	public boolean isUpdating() {
-		return false;
-	}
+  @Override
+  public boolean isUpdating() {
+    return false;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 
-	public String toString() {
-		if ((type == null) || (type == SequenceType.ITEM_SEQUENCE)) {
-			return String.format("%s(%s)", getClass().getSimpleName(), name);
-		} else {
-			return String.format("%s(%s) of type %s", getClass()
-					.getSimpleName(), name, type);
-		}
-	}
+  public String toString() {
+    if ((type == null) || (type == SequenceType.ITEM_SEQUENCE)) {
+      return String.format("%s(%s)", getClass().getSimpleName(), name);
+    } else {
+      return String.format("%s(%s) of type %s", getClass().getSimpleName(), name, type);
+    }
+  }
 }

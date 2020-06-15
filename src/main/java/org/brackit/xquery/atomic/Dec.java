@@ -29,15 +29,14 @@ package org.brackit.xquery.atomic;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Type;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class Dec extends AbstractNumeric implements DecNumeric {
   private final BigDecimal v;
@@ -105,8 +104,10 @@ public class Dec extends AbstractNumeric implements DecNumeric {
     } else if (other instanceof FltNumeric) {
       return Float.compare(v.floatValue(), ((Numeric) other).floatValue());
     }
-    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s' with '%s'", type(),
-        other.type());
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                             "Cannot compare '%s' with '%s'",
+                             type(),
+                             other.type());
   }
 
   @Override
@@ -123,14 +124,13 @@ public class Dec extends AbstractNumeric implements DecNumeric {
   @Override
   public String stringValue() {
     String s = v.toPlainString();
-    return (v.scale() <= 0)
-        ? s
-        : killTrailingZeros(s);
+    return (v.scale() <= 0) ? s : killTrailingZeros(s);
   }
 
   public static void main(String[] args) {
     System.out.println(new Dec(
-        "0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001").toString());
+        "0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001")
+                           .toString());
 
     System.out.println(new Dec(BigDecimal.valueOf(-0.0d)).toString());
     System.out.println(new Dec("-2300.44004000"));
@@ -241,16 +241,12 @@ public class Dec extends AbstractNumeric implements DecNumeric {
 
   @Override
   public Numeric round() throws QueryException {
-    return (v.signum() >= 0)
-        ? new Dec(v.setScale(0, RoundingMode.HALF_UP))
-        : new Dec(v.setScale(0, RoundingMode.DOWN));
+    return (v.signum() >= 0) ? new Dec(v.setScale(0, RoundingMode.HALF_UP)) : new Dec(v.setScale(0, RoundingMode.DOWN));
   }
 
   @Override
   public Numeric abs() throws QueryException {
-    return (v.signum() >= 0)
-        ? this
-        : new Int(v.negate());
+    return (v.signum() >= 0) ? this : new Int(v.negate());
   }
 
   @Override

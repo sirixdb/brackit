@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,70 +33,64 @@ import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public final class PIType extends NodeType {
-	private final String piTarget;
+  private final String piTarget;
 
-	public PIType(String piTarget) {
-		this.piTarget = piTarget;
-	}
+  public PIType(String piTarget) {
+    this.piTarget = piTarget;
+  }
 
-	public PIType() {
-		this.piTarget = null;
-	}
+  public PIType() {
+    this.piTarget = null;
+  }
 
-	@Override
-	public Kind getNodeKind() {
-		return Kind.PROCESSING_INSTRUCTION;
-	}
+  @Override
+  public Kind getNodeKind() {
+    return Kind.PROCESSING_INSTRUCTION;
+  }
 
-	@Override
-	public boolean matches(Node<?> node) throws QueryException {
-		if (piTarget != null) {
-			return ((node.getKind() == Kind.PROCESSING_INSTRUCTION) && (node
-					.getName().stringValue().equals(piTarget)));
-		}
-		return (node.getKind() == Kind.PROCESSING_INSTRUCTION);
-	}
+  @Override
+  public boolean matches(Node<?> node) throws QueryException {
+    if (piTarget != null) {
+      return ((node.getKind() == Kind.PROCESSING_INSTRUCTION) && (node.getName().stringValue().equals(piTarget)));
+    }
+    return (node.getKind() == Kind.PROCESSING_INSTRUCTION);
+  }
 
-	@Override
-	public boolean matches(Item item) throws QueryException {
-		if (piTarget != null) {
-			return ((item instanceof Node<?>)
-					&& (((Node<?>) item).getKind() == Kind.PROCESSING_INSTRUCTION) && (((Node<?>) item)
-					.getName().stringValue().equals(piTarget)));
+  @Override
+  public boolean matches(Item item) throws QueryException {
+    if (piTarget != null) {
+      return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.PROCESSING_INSTRUCTION)
+          && (((Node<?>) item).getName().stringValue().equals(piTarget)));
 
-		}
-		return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.PROCESSING_INSTRUCTION));
-	}
+    }
+    return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.PROCESSING_INSTRUCTION));
+  }
 
-	@Override
-	public String toString() {
-		return (piTarget != null) ? String.format(
-				"processing-instruction(\"%s\")", piTarget)
-				: "processing-instruction()";
-	}
+  @Override
+  public String toString() {
+    return (piTarget != null) ? String.format("processing-instruction(\"%s\")", piTarget) : "processing-instruction()";
+  }
 
-	public boolean equals(Object obj) {
-		if (obj == this) {
-			return true;
-		}
-		if (!(obj instanceof PIType)) {
-			return false;
-		}
-		PIType t = (PIType) obj;
-		if (piTarget == null) {
-			if (t.piTarget != null) {
-				return false;
-			}
-		} else {
-			if ((t.piTarget == null) || (!piTarget.equals(t.piTarget))) {
-				return false;
-			}
-		}
-		return true;
-	}
+  public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
+    }
+    if (!(obj instanceof PIType)) {
+      return false;
+    }
+    PIType t = (PIType) obj;
+    if (piTarget == null) {
+      if (t.piTarget != null) {
+        return false;
+      }
+    } else {
+      if ((t.piTarget == null) || (!piTarget.equals(t.piTarget))) {
+        return false;
+      }
+    }
+    return true;
+  }
 }

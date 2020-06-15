@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -35,23 +35,22 @@ import org.brackit.xquery.xdm.Stream;
 
 /**
  * Utility class for {@link Stream Streams}.
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public class StreamUtil {
-	public static <E> List<E> asList(Stream<E> stream) throws DocumentException {
-		List<E> list = new ArrayList<E>();
+  public static <E> List<E> asList(Stream<E> stream) throws DocumentException {
+    List<E> list = new ArrayList<E>();
 
-		try {
-			E e;
-			while ((e = stream.next()) != null) {
-				list.add(e);
-			}
-		} finally {
-			stream.close();
-		}
+    try {
+      E e;
+      while ((e = stream.next()) != null) {
+        list.add(e);
+      }
+    } finally {
+      stream.close();
+    }
 
-		return list;
-	}
+    return list;
+  }
 }

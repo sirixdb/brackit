@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,6 +28,7 @@
 package org.brackit.xquery.operator;
 
 import java.util.Arrays;
+
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
@@ -40,176 +41,169 @@ import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class TableJoin extends Check implements Operator {
-	private class TableJoinCursor implements Cursor {
-		final Cursor lc;
-		final Sequence[] padding;
-		final int lSize;
-		private Tuple prev;
-		private Tuple next;
-		MultiTypeJoinTable table;
-		Atomic tgk; // grouping key of current table
-		Tuple tuple;
-		FastList<Sequence[]> it;
-		int itPos = 0;
-		int itSize = 0;
+  private class TableJoinCursor implements Cursor {
+    final Cursor lc;
+    final Sequence[] padding;
+    final int lSize;
+    private Tuple prev;
+    private Tuple next;
+    MultiTypeJoinTable table;
+    Atomic tgk; // grouping key of current table
+    Tuple tuple;
+    FastList<Sequence[]> it;
+    int itPos = 0;
+    int itSize = 0;
 
-		public TableJoinCursor(Cursor lc, int lSize, int pad) {
-			this.lc = lc;
-			this.lSize = lSize;
-			this.padding = new Sequence[pad];
-		}
+    public TableJoinCursor(Cursor lc, int lSize, int pad) {
+      this.lc = lc;
+      this.lSize = lSize;
+      this.padding = new Sequence[pad];
+    }
 
-		@Override
-		public void open(QueryContext ctx) throws QueryException {
-			lc.open(ctx);
-			it = null;
-		}
+    @Override
+    public void open(QueryContext ctx) throws QueryException {
+      lc.open(ctx);
+      it = null;
+    }
 
-		@Override
-		public void close(QueryContext ctx) {
-			lc.close(ctx);
-			it = null;
-		}
+    @Override
+    public void close(QueryContext ctx) {
+      lc.close(ctx);
+      it = null;
+    }
 
-		@Override
-		public Tuple next(QueryContext ctx) throws QueryException {
-			if ((it != null) && (itPos < itSize)) {
-				return tuple.concat(it.get(itPos++));
-			}
+    @Override
+    public Tuple next(QueryContext ctx) throws QueryException {
+      if ((it != null) && (itPos < itSize)) {
+        return tuple.concat(it.get(itPos++));
+      }
 
-			while (((tuple = next) != null) || ((tuple = lc.next(ctx)) != null)) {
-				next = null;
-				if ((check) && (dead(tuple))) {
-					prev = tuple.concat(padding);
-					return prev;
-				}
-				if (groupVar >= 0) {
-					Atomic gk = (Atomic) tuple.get(groupVar);
-					if ((tgk != null) && (tgk.atomicCmp(gk) != 0)) {
-						table = null;
-					}
-				}
-				if (table == null) {
-					buildTable(ctx, tuple);
-				}
-				final Sequence keys = (isGCmp) ? lExpr.evaluate(ctx, tuple)
-						: lExpr.evaluateToItem(ctx, tuple);
-				final FastList<Sequence[]> matches = table.probe(keys);
+      while (((tuple = next) != null) || ((tuple = lc.next(ctx)) != null)) {
+        next = null;
+        if ((check) && (dead(tuple))) {
+          prev = tuple.concat(padding);
+          return prev;
+        }
+        if (groupVar >= 0) {
+          Atomic gk = (Atomic) tuple.get(groupVar);
+          if ((tgk != null) && (tgk.atomicCmp(gk) != 0)) {
+            table = null;
+          }
+        }
+        if (table == null) {
+          buildTable(ctx, tuple);
+        }
+        final Sequence keys = (isGCmp) ? lExpr.evaluate(ctx, tuple) : lExpr.evaluateToItem(ctx, tuple);
+        final FastList<Sequence[]> matches = table.probe(keys);
 
-				it = matches;
-				itPos = 0;
-				itSize = matches.getSize();
+        it = matches;
+        itPos = 0;
+        itSize = matches.getSize();
 
-				if (itPos < itSize) {
-					prev = tuple.concat(matches.get(itPos++));
-					return prev;
-				} else if (leftJoin) {
-					if (check) {
-						// predicate is not fulfilled but we must keep
-						// lifted iteration group alive for "left-join"
-						// semantics:
-						// skip if previously returned tuple was in same
-						// iteration group
-						if ((prev != null) && (!separate(prev, tuple))) {
-							continue;
-						}
-						next = lc.next(ctx);
-						// skip if next tuple is in same iteration group
-						if ((next != null) && (!separate(tuple, next))) {
-							continue;
-						}
-						// emit "dead" tuple where "check" field is switched-off
-						// for pass-through in upstream operators
-						prev = tuple.conreplace(padding, local(), null);
-					} else {
-						prev = tuple.concat(padding);
-					}
-					return prev;
-				}
-			}
-			table = null;
-			return null;
-		}
+        if (itPos < itSize) {
+          prev = tuple.concat(matches.get(itPos++));
+          return prev;
+        } else if (leftJoin) {
+          if (check) {
+            // predicate is not fulfilled but we must keep
+            // lifted iteration group alive for "left-join"
+            // semantics:
+            // skip if previously returned tuple was in same
+            // iteration group
+            if ((prev != null) && (!separate(prev, tuple))) {
+              continue;
+            }
+            next = lc.next(ctx);
+            // skip if next tuple is in same iteration group
+            if ((next != null) && (!separate(tuple, next))) {
+              continue;
+            }
+            // emit "dead" tuple where "check" field is switched-off
+            // for pass-through in upstream operators
+            prev = tuple.conreplace(padding, local(), null);
+          } else {
+            prev = tuple.concat(padding);
+          }
+          return prev;
+        }
+      }
+      table = null;
+      return null;
+    }
 
-		protected void buildTable(QueryContext ctx, Tuple tuple)
-				throws QueryException {
-			table = new MultiTypeJoinTable(cmp, isGCmp, skipSort);
-			if (groupVar >= 0) {
-				tgk = (Atomic) tuple.get(groupVar);
-			}
-			int pos = 1;
-			Tuple t;
-			Cursor rc = r.create(ctx, tuple);
-			try {
-				rc.open(ctx);
-				while ((t = rc.next(ctx)) != null) {
-					Sequence keys = (isGCmp) ? rExpr.evaluate(ctx, t) : rExpr
-							.evaluateToItem(ctx, t);
-					if (keys != null) {
-						Sequence[] tmp = t.array();
-						Sequence[] bindings = Arrays.copyOfRange(tmp, lSize,
-								tmp.length);
-						table.add(keys, bindings, pos++);
-					}
-				}
-			} finally {
-				rc.close(ctx);
-			}
-		}
-	}
+    protected void buildTable(QueryContext ctx, Tuple tuple) throws QueryException {
+      table = new MultiTypeJoinTable(cmp, isGCmp, skipSort);
+      if (groupVar >= 0) {
+        tgk = (Atomic) tuple.get(groupVar);
+      }
+      int pos = 1;
+      Tuple t;
+      Cursor rc = r.create(ctx, tuple);
+      try {
+        rc.open(ctx);
+        while ((t = rc.next(ctx)) != null) {
+          Sequence keys = (isGCmp) ? rExpr.evaluate(ctx, t) : rExpr.evaluateToItem(ctx, t);
+          if (keys != null) {
+            Sequence[] tmp = t.array();
+            Sequence[] bindings = Arrays.copyOfRange(tmp, lSize, tmp.length);
+            table.add(keys, bindings, pos++);
+          }
+        }
+      } finally {
+        rc.close(ctx);
+      }
+    }
+  }
 
-	final Operator l;
-	final Operator r;
-	final Expr rExpr;
-	final Expr lExpr;
-	final boolean leftJoin;
-	final Cmp cmp;
-	final boolean isGCmp;
-	final boolean skipSort;
-	int groupVar = -1;
+  final Operator l;
+  final Operator r;
+  final Expr rExpr;
+  final Expr lExpr;
+  final boolean leftJoin;
+  final Cmp cmp;
+  final boolean isGCmp;
+  final boolean skipSort;
+  int groupVar = -1;
 
-	public TableJoin(Cmp cmp, boolean isGCmsp, boolean leftJoin,
-			boolean skipSort, Operator l, Expr lExpr, Operator r, Expr rExpr) {
-		this.cmp = cmp;
-		this.isGCmp = isGCmsp;
-		this.leftJoin = leftJoin;
-		this.skipSort = skipSort;
-		this.l = l;
-		this.r = r;
-		this.rExpr = rExpr;
-		this.lExpr = lExpr;
-	}
+  public TableJoin(Cmp cmp, boolean isGCmsp, boolean leftJoin, boolean skipSort, Operator l, Expr lExpr, Operator r,
+      Expr rExpr) {
+    this.cmp = cmp;
+    this.isGCmp = isGCmsp;
+    this.leftJoin = leftJoin;
+    this.skipSort = skipSort;
+    this.l = l;
+    this.r = r;
+    this.rExpr = rExpr;
+    this.lExpr = lExpr;
+  }
 
-	@Override
-	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		int lSize = l.tupleWidth(tuple.getSize());
-		int pad = r.tupleWidth(tuple.getSize()) - tuple.getSize();
-		return new TableJoinCursor(l.create(ctx, tuple), lSize, pad);
-	}
+  @Override
+  public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
+    int lSize = l.tupleWidth(tuple.getSize());
+    int pad = r.tupleWidth(tuple.getSize()) - tuple.getSize();
+    return new TableJoinCursor(l.create(ctx, tuple), lSize, pad);
+  }
 
-	@Override
-	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
-			throws QueryException {
-		int lSize = l.tupleWidth(buf[0].getSize());
-		int pad = r.tupleWidth(buf[0].getSize()) - buf[0].getSize();
-		return new TableJoinCursor(l.create(ctx, buf, len), lSize, pad);
-	}
+  @Override
+  public Cursor create(QueryContext ctx, Tuple[] buf, int len) throws QueryException {
+    int lSize = l.tupleWidth(buf[0].getSize());
+    int pad = r.tupleWidth(buf[0].getSize()) - buf[0].getSize();
+    return new TableJoinCursor(l.create(ctx, buf, len), lSize, pad);
+  }
 
-	@Override
-	public int tupleWidth(int initSize) {
-		return l.tupleWidth(initSize) + r.tupleWidth(initSize) - initSize;
-	}
+  @Override
+  public int tupleWidth(int initSize) {
+    return l.tupleWidth(initSize) + r.tupleWidth(initSize) - initSize;
+  }
 
-	public Reference group() {
-		return new Reference() {
-			public void setPos(int pos) {
-				groupVar = pos;
-			}
-		};
-	}
+  public Reference group() {
+    return new Reference() {
+      public void setPos(int pos) {
+        groupVar = pos;
+      }
+    };
+  }
 }

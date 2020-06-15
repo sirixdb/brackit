@@ -32,9 +32,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Type;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class Bool extends AbstractAtomic {
   public final boolean bool;
@@ -87,23 +85,17 @@ public class Bool extends AbstractAtomic {
   @Override
   public int cmp(Atomic other) throws QueryException {
     if (other instanceof Bool) {
-      return ((bool == ((Bool) other).bool)
-          ? 0
-          : (((Bool) other).bool)
-              ? 1
-              : -1);
+      return ((bool == ((Bool) other).bool) ? 0 : (((Bool) other).bool) ? 1 : -1);
     }
-    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s' with '%s'", type(),
-        other.type());
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                             "Cannot compare '%s' with '%s'",
+                             type(),
+                             other.type());
   }
 
   @Override
   public int atomicCmpInternal(Atomic other) {
-    return ((bool == ((Bool) other).bool)
-        ? 0
-        : (((Bool) other).bool)
-            ? 1
-            : -1);
+    return ((bool == ((Bool) other).bool) ? 0 : (((Bool) other).bool) ? 1 : -1);
   }
 
   @Override
@@ -118,8 +110,6 @@ public class Bool extends AbstractAtomic {
 
   @Override
   public int hashCode() {
-    return bool
-        ? 1231
-        : 1237;
+    return bool ? 1231 : 1237;
   }
 }

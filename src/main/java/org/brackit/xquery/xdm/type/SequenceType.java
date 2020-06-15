@@ -31,7 +31,6 @@ package org.brackit.xquery.xdm.type;
  * Type as defined in {@linkplain http://www.w3.org/TR/xquery/#dt-sequence-type}
  *
  * @author Sebastian Baechle
- *
  */
 public final class SequenceType {
   public static SequenceType EMPTY_SEQUENCE = new SequenceType(new AnyItemType(), Cardinality.Zero);

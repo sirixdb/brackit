@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -54,127 +54,121 @@ import org.brackit.xquery.xdm.type.ElementType;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
- * 
  * @author Henrique Valer
  * @author Martin Hiller
  * @author Sebastian Baechle
- * 
  */
 @FunctionAnnotation(description = "Load (external) documents into a collection. "
-		+ "If explicitly required or if the collection does not exist, "
-		+ "a new collection will be created. ", parameters = { "$name",
-		"$resources", "$create-new" })
+    + "If explicitly required or if the collection does not exist, "
+    + "a new collection will be created. ", parameters = { "$name", "$resources", "$create-new" })
 public class Load extends AbstractFunction {
 
-	public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI,
-			Bits.BIT_PREFIX, "load");
+  public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI, Bits.BIT_PREFIX, "load");
 
-	public Load(boolean createNew) {
-		this(DEFAULT_NAME, createNew);
-	}
+  public Load(boolean createNew) {
+    this(DEFAULT_NAME, createNew);
+  }
 
-	public Load(QNm name, boolean createNew) {
-		super(name, createNew ? new Signature(new SequenceType(
-				ElementType.ELEMENT, Cardinality.ZeroOrOne), new SequenceType(
-				AtomicType.STR, Cardinality.One), new SequenceType(
-				AtomicType.STR, Cardinality.ZeroOrMany)) : new Signature(
-				new SequenceType(ElementType.ELEMENT, Cardinality.ZeroOrOne),
-				new SequenceType(AtomicType.STR, Cardinality.One),
-				new SequenceType(AtomicType.STR, Cardinality.ZeroOrMany),
-				new SequenceType(AtomicType.BOOL, Cardinality.One)), true);
-	}
+  public Load(QNm name, boolean createNew) {
+    super(name,
+          createNew
+              ? new Signature(new SequenceType(ElementType.ELEMENT, Cardinality.ZeroOrOne),
+                              new SequenceType(AtomicType.STR, Cardinality.One),
+                              new SequenceType(AtomicType.STR, Cardinality.ZeroOrMany))
+              : new Signature(new SequenceType(ElementType.ELEMENT, Cardinality.ZeroOrOne),
+                              new SequenceType(AtomicType.STR, Cardinality.One),
+                              new SequenceType(AtomicType.STR, Cardinality.ZeroOrMany),
+                              new SequenceType(AtomicType.BOOL, Cardinality.One)),
+          true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx,
-			Sequence[] args) throws QueryException {
-		try {
-			boolean createNew = (args.length != 3) ? true
-					: ((Atomic) (args[2])).booleanValue();
-			String name = ((Atomic) args[0]).stringValue();
-			Sequence resources = args[1];
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    try {
+      boolean createNew = (args.length != 3) ? true : ((Atomic) (args[2])).booleanValue();
+      String name = ((Atomic) args[0]).stringValue();
+      Sequence resources = args[1];
 
-			org.brackit.xquery.xdm.node.NodeStore s = ctx.getNodeStore();
-			if (createNew) {
-				create(s, name, resources);
-			} else {
-				try {
-					NodeCollection<?> coll = s.lookup(name);
-					add(s, coll, resources);
-				} catch (DocumentException e) {
-					// collection does not exist
-					create(s, name, resources);
-				}
-			}
-			// TODO return statistics?
-			return null;
-		} catch (Exception e) {
-			throw new QueryException(e, BitFun.BIT_ADDTOCOLLECTION_INT_ERROR,
-					e.getMessage());
-		}
-	}
+      org.brackit.xquery.xdm.node.NodeStore s = ctx.getNodeStore();
+      if (createNew) {
+        create(s, name, resources);
+      } else {
+        try {
+          NodeCollection<?> coll = s.lookup(name);
+          add(s, coll, resources);
+        } catch (DocumentException e) {
+          // collection does not exist
+          create(s, name, resources);
+        }
+      }
+      // TODO return statistics?
+      return null;
+    } catch (Exception e) {
+      throw new QueryException(e, BitFun.BIT_ADDTOCOLLECTION_INT_ERROR, e.getMessage());
+    }
+  }
 
-	private void add(org.brackit.xquery.xdm.node.NodeStore store, NodeCollection<?> coll,
-			Sequence resources) throws DocumentException, IOException {
+  private void add(org.brackit.xquery.xdm.node.NodeStore store, NodeCollection<?> coll, Sequence resources)
+      throws DocumentException, IOException {
 
-		if (resources instanceof Atomic) {
-			String r = ((Atomic) resources).stringValue();
-			coll.add(new DocumentParser(URIHandler.getInputStream(r)));
-		} else {
-			ParserStream parsers = new ParserStream(resources);
-			try {
-				SubtreeParser parser;
-				while ((parser = parsers.next()) != null) {
-					coll.add(parser);
-				}
-			} finally {
-				parsers.close();
-			}
-		}
-	}
+    if (resources instanceof Atomic) {
+      String r = ((Atomic) resources).stringValue();
+      coll.add(new DocumentParser(URIHandler.getInputStream(r)));
+    } else {
+      ParserStream parsers = new ParserStream(resources);
+      try {
+        SubtreeParser parser;
+        while ((parser = parsers.next()) != null) {
+          coll.add(parser);
+        }
+      } finally {
+        parsers.close();
+      }
+    }
+  }
 
-	private void create(org.brackit.xquery.xdm.node.NodeStore store, String name,
-			Sequence resources) throws DocumentException, IOException {
-		if (resources instanceof Atomic) {
-			String r = ((Atomic) resources).stringValue();
-			store.create(name, new DocumentParser(URIHandler.getInputStream(r)));
-		} else {
-			store.create(name, new ParserStream(resources));
-		}
-	}
+  private void create(org.brackit.xquery.xdm.node.NodeStore store, String name, Sequence resources)
+      throws DocumentException, IOException {
+    if (resources instanceof Atomic) {
+      String r = ((Atomic) resources).stringValue();
+      store.create(name, new DocumentParser(URIHandler.getInputStream(r)));
+    } else {
+      store.create(name, new ParserStream(resources));
+    }
+  }
 
-	private static class ParserStream implements Stream<SubtreeParser> {
-		Iter it;
+  private static class ParserStream implements Stream<SubtreeParser> {
+    Iter it;
 
-		public ParserStream(Sequence locs) {
-			it = locs.iterate();
-		}
+    public ParserStream(Sequence locs) {
+      it = locs.iterate();
+    }
 
-		@Override
-		public SubtreeParser next() throws DocumentException {
-			try {
-				Item i = it.next();
-				if (i == null) {
-					return null;
-				}
-				if (i instanceof Atomic) {
-					String s = ((Atomic) i).stringValue();
-					return new DocumentParser(URIHandler.getInputStream(s));
-				} else {
-					throw new QueryException(
-							ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-							"Cannot create subtree parser for item of type: %s",
-							i.itemType());
-				}
-			} catch (IOException e) {
-				throw new DocumentException(e);
-			} catch (QueryException e) {
-				throw new DocumentException(e);
-			}
-		}
+    @Override
+    public SubtreeParser next() throws DocumentException {
+      try {
+        Item i = it.next();
+        if (i == null) {
+          return null;
+        }
+        if (i instanceof Atomic) {
+          String s = ((Atomic) i).stringValue();
+          return new DocumentParser(URIHandler.getInputStream(s));
+        } else {
+          throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                                   "Cannot create subtree parser for item of type: %s",
+                                   i.itemType());
+        }
+      } catch (IOException e) {
+        throw new DocumentException(e);
+      } catch (QueryException e) {
+        throw new DocumentException(e);
+      }
+    }
 
-		@Override
-		public void close() {
-			it.close();
-		}
-	}
+    @Override
+    public void close() {
+      it.close();
+    }
+  }
 }

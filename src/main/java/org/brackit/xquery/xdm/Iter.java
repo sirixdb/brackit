@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,12 +34,12 @@ import org.brackit.xquery.atomic.IntNumeric;
  * <p>
  * An {@link Iter} iterates over a sequence of {@link Item Items}.
  * </p>
- * 
+ *
  * <p>
  * One must ensure to always close an iterator, e.g., by following
  * this coding pattern:
  * </p>
- * 
+ *
  * <pre>
  * Iter it = s.iterate();
  * try {
@@ -48,7 +48,7 @@ import org.brackit.xquery.atomic.IntNumeric;
  * 	it.close();
  * }
  * </pre>
- *
+ * <p>
  * Or better by using try-with-resources:
  *
  * <pre>
@@ -56,27 +56,26 @@ import org.brackit.xquery.atomic.IntNumeric;
  *   ...
  * }
  * </pre>
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public interface Iter extends AutoCloseable {
-	/**
-	 * Get the next item
-	 *
-	 * @throws QueryException if anything goes wrong while getting the next item
-	 */
-	Item next() ;
-	
-	/**
-	 * Skip the next {@code i} items
-	 *
-	 * @throws QueryException if anything goes wrong while skippint the next {@code i} items
-	 */
-	void skip(IntNumeric i);
+  /**
+   * Get the next item
+   *
+   * @throws QueryException if anything goes wrong while getting the next item
+   */
+  Item next();
 
-	/**
-	 * Close the iterator to release all resources. 
-	 */
-	void close();
+  /**
+   * Skip the next {@code i} items
+   *
+   * @throws QueryException if anything goes wrong while skippint the next {@code i} items
+   */
+  void skip(IntNumeric i);
+
+  /**
+   * Close the iterator to release all resources.
+   */
+  void close();
 }

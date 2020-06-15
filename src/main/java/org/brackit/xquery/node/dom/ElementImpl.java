@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -37,134 +37,124 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.TypeInfo;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class ElementImpl extends NodeImpl implements org.w3c.dom.Element {
-	public ElementImpl(Document document, Node parent, String name, String value) {
-		super(document, parent, Node.ELEMENT_NODE, name, value);
-	}
+  public ElementImpl(Document document, Node parent, String name, String value) {
+    super(document, parent, Node.ELEMENT_NODE, name, value);
+  }
 
-	@Override
-	public String getAttribute(String name) {
-		String value = null;
+  @Override
+  public String getAttribute(String name) {
+    String value = null;
 
-		if (attributes != null) {
-			Attr attribute = attributes.get(name);
-			if (attribute != null) {
-				value = attribute.getValue();
-			}
-		}
+    if (attributes != null) {
+      Attr attribute = attributes.get(name);
+      if (attribute != null) {
+        value = attribute.getValue();
+      }
+    }
 
-		return value;
-	}
+    return value;
+  }
 
-	@Override
-	public String getAttributeNS(String namespaceURI, String localName)
-			throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public String getAttributeNS(String namespaceURI, String localName) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public Attr getAttributeNode(String name) {
-		return (attributes != null) ? attributes.get(name) : null;
-	}
+  @Override
+  public Attr getAttributeNode(String name) {
+    return (attributes != null) ? attributes.get(name) : null;
+  }
 
-	@Override
-	public Attr getAttributeNodeNS(String namespaceURI, String localName)
-			throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public Attr getAttributeNodeNS(String namespaceURI, String localName) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public NodeList getElementsByTagName(String name) {
-		throw new RuntimeException();
-	}
+  @Override
+  public NodeList getElementsByTagName(String name) {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public NodeList getElementsByTagNameNS(String namespaceURI, String localName)
-			throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public NodeList getElementsByTagNameNS(String namespaceURI, String localName) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public TypeInfo getSchemaTypeInfo() {
-		throw new RuntimeException();
-	}
+  @Override
+  public TypeInfo getSchemaTypeInfo() {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public String getTagName() {
-		return name;
-	}
+  @Override
+  public String getTagName() {
+    return name;
+  }
 
-	@Override
-	public boolean hasAttribute(String name) {
-		return (getAttributeNode(name) != null);
-	}
+  @Override
+  public boolean hasAttribute(String name) {
+    return (getAttributeNode(name) != null);
+  }
 
-	@Override
-	public boolean hasAttributeNS(String namespaceURI, String localName)
-			throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public boolean hasAttributeNS(String namespaceURI, String localName) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public void removeAttribute(String name) throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public void removeAttribute(String name) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public void removeAttributeNS(String namespaceURI, String localName)
-			throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public void removeAttributeNS(String namespaceURI, String localName) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public Attr removeAttributeNode(Attr oldAttr) throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public Attr removeAttributeNode(Attr oldAttr) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public void setAttribute(String name, String value) throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public void setAttribute(String name, String value) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public void setAttributeNS(String namespaceURI, String qualifiedName,
-			String value) throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public void setAttributeNS(String namespaceURI, String qualifiedName, String value) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public Attr setAttributeNode(Attr newAttr) throws DOMException {
-		if (attributes == null) {
-			attributes = new TreeMap<String, Attr>();
-		}
+  @Override
+  public Attr setAttributeNode(Attr newAttr) throws DOMException {
+    if (attributes == null) {
+      attributes = new TreeMap<String, Attr>();
+    }
 
-		return attributes.put(newAttr.getName(), newAttr);
-	}
+    return attributes.put(newAttr.getName(), newAttr);
+  }
 
-	@Override
-	public Attr setAttributeNodeNS(Attr newAttr) throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public Attr setAttributeNodeNS(Attr newAttr) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public void setIdAttribute(String name, boolean isId) throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public void setIdAttribute(String name, boolean isId) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public void setIdAttributeNS(String namespaceURI, String localName,
-			boolean isId) throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public void setIdAttributeNS(String namespaceURI, String localName, boolean isId) throws DOMException {
+    throw new RuntimeException();
+  }
 
-	@Override
-	public void setIdAttributeNode(Attr idAttr, boolean isId)
-			throws DOMException {
-		throw new RuntimeException();
-	}
+  @Override
+  public void setIdAttributeNode(Attr idAttr, boolean isId) throws DOMException {
+    throw new RuntimeException();
+  }
 
 }

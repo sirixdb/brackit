@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -46,94 +46,94 @@ import org.brackit.xquery.xdm.Type;
  * fn:hours-from-duration($arg1), fn:minutes-from-duration($arg1),
  * fn:seconds-from-duration($arg1), as per
  * http://www.w3.org/TR/xpath-functions/#func-years-from-duration ff.
- * 
+ *
  * @author Max Bechtold
- * 
  */
 public class ExtractFromDuration extends AbstractFunction {
-	public static enum Comp {
-		YEARS, MONTHS, DAYS, HOURS, MINUTES, SECONDS
-	};
+  public static enum Comp {
+    YEARS, MONTHS, DAYS, HOURS, MINUTES, SECONDS
+  }
 
-	private Comp comp;
+  ;
 
-	public ExtractFromDuration(QNm name, Comp comp, Signature signature) {
-		super(name, signature, true);
-		this.comp = comp;
-	}
+  private Comp comp;
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
+  public ExtractFromDuration(QNm name, Comp comp, Signature signature) {
+    super(name, signature, true);
+    this.comp = comp;
+  }
 
-		if (args.length == 0 || args[0] == null) {
-			return null;
-		}
-		AbstractDuration dur = (AbstractDuration) args[0];
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
 
-		int value = 0;
+    if (args.length == 0 || args[0] == null) {
+      return null;
+    }
+    AbstractDuration dur = (AbstractDuration) args[0];
 
-		switch (comp) {
-		case YEARS:
-			if (dur.type().instanceOf(Type.DTD)) {
-				return Int32.ZERO;
-			}
+    int value = 0;
 
-			value = dur.getYears();
-			break;
+    switch (comp) {
+      case YEARS:
+        if (dur.type().instanceOf(Type.DTD)) {
+          return Int32.ZERO;
+        }
 
-		case MONTHS:
-			if (dur.type().instanceOf(Type.DTD)) {
-				return Int32.ZERO;
-			}
+        value = dur.getYears();
+        break;
 
-			value = dur.getMonths();
-			break;
+      case MONTHS:
+        if (dur.type().instanceOf(Type.DTD)) {
+          return Int32.ZERO;
+        }
 
-		case DAYS:
-			if (dur.type().instanceOf(Type.YMD)) {
-				return Int32.ZERO;
-			}
+        value = dur.getMonths();
+        break;
 
-			value = dur.getDays();
-			break;
+      case DAYS:
+        if (dur.type().instanceOf(Type.YMD)) {
+          return Int32.ZERO;
+        }
 
-		case HOURS:
-			if (dur.type().instanceOf(Type.YMD)) {
-				return Int32.ZERO;
-			}
+        value = dur.getDays();
+        break;
 
-			value = dur.getHours();
-			break;
+      case HOURS:
+        if (dur.type().instanceOf(Type.YMD)) {
+          return Int32.ZERO;
+        }
 
-		case MINUTES:
-			if (dur.type().instanceOf(Type.YMD)) {
-				return Int32.ZERO;
-			}
+        value = dur.getHours();
+        break;
 
-			value = dur.getMinutes();
-			break;
+      case MINUTES:
+        if (dur.type().instanceOf(Type.YMD)) {
+          return Int32.ZERO;
+        }
 
-		case SECONDS:
-			if (dur.type().instanceOf(Type.YMD)) {
-				return new Dbl(0.0);
-			}
+        value = dur.getMinutes();
+        break;
 
-			double d = dur.getMicros() / 1000000.0;
+      case SECONDS:
+        if (dur.type().instanceOf(Type.YMD)) {
+          return new Dbl(0.0);
+        }
 
-			if (dur.isNegative()) {
-				return new Dbl(d * -1);
-			}
-			return new Dbl(d);
+        double d = dur.getMicros() / 1000000.0;
 
-		}
+        if (dur.isNegative()) {
+          return new Dbl(d * -1);
+        }
+        return new Dbl(d);
 
-		if (dur.isNegative()) {
-			return new Int32(value * -1);
-		}
+    }
 
-		return new Int32(value);
+    if (dur.isNegative()) {
+      return new Int32(value * -1);
+    }
 
-	}
+    return new Int32(value);
+
+  }
 
 }

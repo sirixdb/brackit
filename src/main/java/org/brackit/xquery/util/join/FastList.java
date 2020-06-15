@@ -34,74 +34,73 @@ import java.util.Arrays;
  * purposes, e.g., makes less error-checks.
  *
  * @author Sebastian Baechle
- *
  */
 public class FastList<E> {
 
-	public static final FastList<Object> EMPTY_LIST = new FastList<Object>(0);
+  public static final FastList<Object> EMPTY_LIST = new FastList<Object>(0);
 
-	private Object[] values;
+  private Object[] values;
 
-	private int size;
+  private int size;
 
-	public FastList(int size) {
-		values = new Object[size];
-	}
+  public FastList(int size) {
+    values = new Object[size];
+  }
 
-	public FastList() {
-		values = new Object[10];
-	}
+  public FastList() {
+    values = new Object[10];
+  }
 
-	@SuppressWarnings("unchecked")
-	public static <T> FastList<T> emptyList() {
-		return (FastList<T>) EMPTY_LIST;
-	}
+  @SuppressWarnings("unchecked")
+  public static <T> FastList<T> emptyList() {
+    return (FastList<T>) EMPTY_LIST;
+  }
 
-	public int getSize() {
-		return size;
-	}
+  public int getSize() {
+    return size;
+  }
 
-	@SuppressWarnings("unchecked")
-	public E get(int p) {
-		return (E) values[p];
-	}
+  @SuppressWarnings("unchecked")
+  public E get(int p) {
+    return (E) values[p];
+  }
 
-	public void addAll(E[] v, int off, int len) {
-		capacity(size + len);
-		System.arraycopy(v, off, values, size, len);
-	}
+  public void addAll(E[] v, int off, int len) {
+    capacity(size + len);
+    System.arraycopy(v, off, values, size, len);
+  }
 
-	public void addAllSafe(Object[] v, int off, int len) {
-		capacity(size + len);
-		System.arraycopy(v, off, values, size, len);
-	}
+  public void addAllSafe(Object[] v, int off, int len) {
+    capacity(size + len);
+    System.arraycopy(v, off, values, size, len);
+  }
 
-	private void capacity(int capacity) {
-		if (values.length < capacity) {
-			values = Arrays.copyOf(values, capacity);
-		}
-	}
+  private void capacity(int capacity) {
+    if (values.length < capacity) {
+      values = Arrays.copyOf(values, capacity);
+    }
+  }
 
-	public void sort() {
-		Arrays.sort(values, 0, size);
-	}
+  public void sort() {
+    Arrays.sort(values, 0, size);
+  }
 
-	public void add(E v) {
-		if (size == values.length) {
-			values = Arrays.copyOf(values, ((values.length * 3) / 2 + 1));
-		}
-		values[size++] = v;
-	}
+  public void add(E v) {
+    if (size == values.length) {
+      values = Arrays.copyOf(values, ((values.length * 3) / 2 + 1));
+    }
+    values[size++] = v;
+  }
 
-	public void addUnchecked(E v) {
-		values[size++] = v;
-	}
+  public void addUnchecked(E v) {
+    values[size++] = v;
+  }
 
-	public boolean isEmpty() {
-		return size == 0;
-	}
+  public boolean isEmpty() {
+    return size == 0;
+  }
 
-	public void ensureAdditional(int len) {
-		capacity(size + len);
-	}
+  public void ensureAdditional(int len) {
+    capacity(size + len);
+  }
 }

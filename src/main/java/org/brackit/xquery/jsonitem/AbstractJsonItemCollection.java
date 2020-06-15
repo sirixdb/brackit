@@ -38,10 +38,8 @@ import org.brackit.xquery.xdm.json.JsonCollection;
 import org.brackit.xquery.xdm.json.JsonItem;
 
 /**
- *
- * @author Sebastian Baechle
- *
  * @param <E>
+ * @author Sebastian Baechle
  */
 public abstract class AbstractJsonItemCollection<E extends JsonItem> extends LazySequence implements JsonCollection<E> {
   protected String name;

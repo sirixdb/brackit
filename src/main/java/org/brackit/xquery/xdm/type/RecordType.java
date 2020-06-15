@@ -33,13 +33,13 @@ import org.brackit.xquery.xdm.json.Record;
 
 /**
  * @author Sebastian Baechle
- *
  */
 public final class RecordType implements ItemType {
 
   public static final RecordType RECORD = new RecordType();
 
-  public RecordType() {}
+  public RecordType() {
+  }
 
   @Override
   public boolean isAnyItem() {

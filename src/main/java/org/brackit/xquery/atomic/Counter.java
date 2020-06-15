@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -30,41 +30,39 @@ package org.brackit.xquery.atomic;
 import java.math.BigDecimal;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class Counter {
 
-	private long lv;
-	private BigDecimal bdv;
+  private long lv;
+  private BigDecimal bdv;
 
-	public IntNumeric asIntNumeric() {
-		return (bdv == null) ? new Int64(lv) : new Int(bdv);
-	}
+  public IntNumeric asIntNumeric() {
+    return (bdv == null) ? new Int64(lv) : new Int(bdv);
+  }
 
-	public Counter inc() {
-		if (bdv == null) {
-			if (lv < Long.MAX_VALUE) {
-				lv++;
-				return this;
-			}
-			bdv = new BigDecimal(lv);
-			lv = -1;			
-		}
-		
-		bdv = bdv.add(BigDecimal.ONE);
-		return this;
-	}
+  public Counter inc() {
+    if (bdv == null) {
+      if (lv < Long.MAX_VALUE) {
+        lv++;
+        return this;
+      }
+      bdv = new BigDecimal(lv);
+      lv = -1;
+    }
 
-	public int cmp(IntNumeric i) {
-		if (bdv == null) {
-			if (i instanceof LonNumeric) {
-				long ov = i.longValue();
-				return Long.compare(lv, ov);
-			}
-			return new BigDecimal(lv).compareTo(i.integerValue());
-		}
-		return bdv.compareTo(i.integerValue());
-	}
+    bdv = bdv.add(BigDecimal.ONE);
+    return this;
+  }
+
+  public int cmp(IntNumeric i) {
+    if (bdv == null) {
+      if (i instanceof LonNumeric) {
+        long ov = i.longValue();
+        return Long.compare(lv, ov);
+      }
+      return new BigDecimal(lv).compareTo(i.integerValue());
+    }
+    return bdv.compareTo(i.integerValue());
+  }
 }

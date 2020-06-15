@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -43,68 +43,66 @@ import java.util.Map;
 
 /**
  * @author Sebastian Baechle
- * 
  */
 public class DefaultOptimizer implements Optimizer {
 
-	public static final QNm SEQUENTIAL_GROUPBY = new QNm(Bits.BIT_NSURI,
-			Bits.BIT_PREFIX, "sequential-groupby");
+  public static final QNm SEQUENTIAL_GROUPBY = new QNm(Bits.BIT_NSURI, Bits.BIT_PREFIX, "sequential-groupby");
 
-	public static final String JOIN_DETECTION_CFG = "org.brackit.xquery.joinDetection";
+  public static final String JOIN_DETECTION_CFG = "org.brackit.xquery.joinDetection";
 
-	public static final String UNNEST_CFG = "org.brackit.xquery.unnest";
+  public static final String UNNEST_CFG = "org.brackit.xquery.unnest";
 
-	public static boolean UNNEST = Cfg.asBool(UNNEST_CFG, true);
+  public static boolean UNNEST = Cfg.asBool(UNNEST_CFG, true);
 
-	public static boolean JOIN_DETECTION = Cfg.asBool(JOIN_DETECTION_CFG, true);
+  public static boolean JOIN_DETECTION = Cfg.asBool(JOIN_DETECTION_CFG, true);
 
-	protected final List<Stage> stages;
-	protected final Map<QNm, Str> options;
+  protected final List<Stage> stages;
+  protected final Map<QNm, Str> options;
 
-	public DefaultOptimizer(Map<QNm, Str> options) {
-		stages = new ArrayList<>();
-		stages.add(new Simplification());
-		stages.add(new Finalize());
-		this.options = options;
-	}
+  public DefaultOptimizer(Map<QNm, Str> options) {
+    stages = new ArrayList<>();
+    stages.add(new Simplification());
+    stages.add(new Finalize());
+    this.options = options;
+  }
 
-	protected DefaultOptimizer(Map<QNm, Str> options, List<Stage> stages) {
-		this.stages = stages;
-		this.options = options;
-	}
+  protected DefaultOptimizer(Map<QNm, Str> options, List<Stage> stages) {
+    this.stages = stages;
+    this.options = options;
+  }
 
-	@Override
-	public List<Stage> getStages() {
-		return stages;
-	}
+  @Override
+  public List<Stage> getStages() {
+    return stages;
+  }
 
-	@Override
-	public AST optimize(StaticContext sctx, AST ast) {
-		for (Stage stage : stages) {
-			ast = stage.rewrite(sctx, ast);
-		}
-		return ast;
-	}
+  @Override
+  public AST optimize(StaticContext sctx, AST ast) {
+    for (Stage stage : stages) {
+      ast = stage.rewrite(sctx, ast);
+    }
+    return ast;
+  }
 
-	protected class Simplification implements Stage {
-		public AST rewrite(StaticContext sctx, AST ast) {
-			ast = new DoSNStepMerger().walk(ast);
-			if (enabled(SEQUENTIAL_GROUPBY)) {
-				ast = new OrderForGroupBy().walk(ast);
-			}
-			return ast;
-		}
-	}
+  protected class Simplification implements Stage {
+    public AST rewrite(StaticContext sctx, AST ast) {
+      ast = new DoSNStepMerger().walk(ast);
+      if (enabled(SEQUENTIAL_GROUPBY)) {
+        ast = new OrderForGroupBy().walk(ast);
+      }
+      return ast;
+    }
+  }
 
-	protected static class Finalize implements Stage {
-		public AST rewrite(StaticContext sctx, AST ast) {
-			ast = new PathDDOElimination(sctx).walk(ast);
-			return ast;
-		}
-	}
+  protected static class Finalize implements Stage {
+    public AST rewrite(StaticContext sctx, AST ast) {
+      ast = new PathDDOElimination(sctx).walk(ast);
+      return ast;
+    }
+  }
 
-	protected boolean enabled(QNm option) {
-		final Str opt = options.get(option);
-		return opt != null && Boolean.parseBoolean(opt.stringValue());
-	}
+  protected boolean enabled(QNm option) {
+    final Str opt = options.get(option);
+    return opt != null && Boolean.parseBoolean(opt.stringValue());
+  }
 }

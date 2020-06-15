@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -41,191 +41,181 @@ import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class ProfileExpr extends ProfilingNode implements Expr {
-	private Expr e;
+  private Expr e;
 
-	private long itemTotal;
+  private long itemTotal;
 
-	private int itemCnt;
+  private int itemCnt;
 
-	private long seqTotal;
+  private long seqTotal;
 
-	private int seqCnt;
+  private int seqCnt;
 
-	private int seqIterCnt;
+  private int seqIterCnt;
 
-	private long seqIterTotal;
+  private long seqIterTotal;
 
-	private int seqDeliverCnt;
-	
-	private int seqSkipCnt;
-	
-	private long seqSkipTotal;
+  private int seqDeliverCnt;
 
-	private int evalBooleanValue;
+  private int seqSkipCnt;
 
-	private int evalSize;
-	
-	private int evalGet;
+  private long seqSkipTotal;
 
-	private class StatIter implements Iter {
-		final Iter it;
-		int delivered;
-		int skipCnt;
-		long time;
-		long skipTime;
+  private int evalBooleanValue;
 
-		StatIter(Iter it) {
-			this.it = it;
-		}
+  private int evalSize;
 
-		public Item next() throws QueryException {
-			long start = System.nanoTime();
-			Item item = it.next();
-			long end = System.nanoTime();
-			if (item != null) {
-				delivered++;
-			}
-			time += (end - start);
-			return item;
-		}
+  private int evalGet;
 
-		@Override
-		public void skip(IntNumeric i) throws QueryException {
-			long start = System.nanoTime();
-			it.skip(i);
-			long end = System.nanoTime();
-			skipTime += (end - start);
-			skipCnt++;
-		}
+  private class StatIter implements Iter {
+    final Iter it;
+    int delivered;
+    int skipCnt;
+    long time;
+    long skipTime;
 
-		public void close() {
-			it.close();
-			seqIterTotal += time;
-			seqDeliverCnt += delivered;
-			seqSkipCnt += skipCnt;
-			seqSkipTotal += skipTime;
-		}
-	}
+    StatIter(Iter it) {
+      this.it = it;
+    }
 
-	private class StatSequence extends AbstractSequence {
-		final Sequence s;
+    public Item next() throws QueryException {
+      long start = System.nanoTime();
+      Item item = it.next();
+      long end = System.nanoTime();
+      if (item != null) {
+        delivered++;
+      }
+      time += (end - start);
+      return item;
+    }
 
-		public StatSequence(Sequence s) {
-			this.s = s;
-		}
+    @Override
+    public void skip(IntNumeric i) throws QueryException {
+      long start = System.nanoTime();
+      it.skip(i);
+      long end = System.nanoTime();
+      skipTime += (end - start);
+      skipCnt++;
+    }
 
-		@Override
-		public boolean booleanValue() throws QueryException {
-			evalBooleanValue++;
-			return s != null && s.booleanValue();
-		}
+    public void close() {
+      it.close();
+      seqIterTotal += time;
+      seqDeliverCnt += delivered;
+      seqSkipCnt += skipCnt;
+      seqSkipTotal += skipTime;
+    }
+  }
 
-		@Override
-		public Iter iterate() {
-			seqIterCnt++;
-			return (s != null) ? new StatIter(s.iterate()) : new StatIter(
-					new BaseIter() {
-						@Override
-						public void close() {
-						}
+  private class StatSequence extends AbstractSequence {
+    final Sequence s;
 
-						@Override
-						public Item next() throws QueryException {
-							return null;
-						}
-					});
-		}
+    public StatSequence(Sequence s) {
+      this.s = s;
+    }
 
-		@Override
-		public IntNumeric size() throws QueryException {
-			evalSize++;
-			return (s != null) ? s.size() : Int32.ZERO;
-		}
+    @Override
+    public boolean booleanValue() throws QueryException {
+      evalBooleanValue++;
+      return s != null && s.booleanValue();
+    }
 
-		@Override
-		public Item get(IntNumeric pos) throws QueryException {
-			evalGet++;
-			return (s != null) ? s.get(pos) : null;
-		}
+    @Override
+    public Iter iterate() {
+      seqIterCnt++;
+      return (s != null) ? new StatIter(s.iterate()) : new StatIter(new BaseIter() {
+        @Override
+        public void close() {
+        }
 
-	}
+        @Override
+        public Item next() throws QueryException {
+          return null;
+        }
+      });
+    }
 
-	ProfileExpr() {
-	}
+    @Override
+    public IntNumeric size() throws QueryException {
+      evalSize++;
+      return (s != null) ? s.size() : Int32.ZERO;
+    }
 
-	void setExpr(Expr e) {
-		this.e = e;
-	}
+    @Override
+    public Item get(IntNumeric pos) throws QueryException {
+      evalGet++;
+      return (s != null) ? s.get(pos) : null;
+    }
 
-	@Override
-	protected void addFields(DotNode node) {
-		node.addRow("expression", e.toString());
-		node.addRow("eval (item)", itemCnt);
-		node.addRow("total / avg. time eval (item) [ms]", itemTotal / 1000000);
-		node.addRow("avg. time eval (item) [ms]",
-				(itemCnt > 0) ? (double) itemTotal
-						/ ((double) 1000000 * itemCnt) : -1);
-		node.addRow("eval (seq)", seqCnt);
-		node.addRow("total time eval (seq) [ms]", seqTotal / 1000000);
-		node.addRow("avg. time eval (seq) [ms]",
-				(seqCnt > 0) ? (double) seqTotal / ((double) 1000000 * seqCnt)
-						: -1);
-		node.addRow("eval bool  (seq)", evalBooleanValue);
-		node.addRow("eval size (seq)", evalSize);
-		node.addRow("eval get (seq)", evalGet);
-		node.addRow("iter (seq)", seqIterCnt);
-		node.addRow("skip (seq)", seqSkipCnt);
-		node.addRow("delivered by iter (seq)", seqDeliverCnt);
-		node.addRow("total time iter (seq) [ms]", seqIterTotal / 1000000);
-		node.addRow("avg. time iter (seq) [ms]",
-				(seqIterCnt > 0) ? (double) seqIterTotal
-						/ ((double) 1000000 * seqIterCnt) : -1);
-		node.addRow("total time skip (seq) [ms]", seqSkipTotal / 1000000);
-	}
+  }
 
-	@Override
-	protected String getName() {
-		return e.getClass().getSimpleName() + "_" + id;
-	}
+  ProfileExpr() {
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		long start = System.nanoTime();
-		Sequence s = e.evaluate(ctx, tuple);
-		long end = System.nanoTime();
-		seqTotal += (end - start);
-		seqCnt++;
-		return new StatSequence(s);
-	}
+  void setExpr(Expr e) {
+    this.e = e;
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		long start = System.nanoTime();
-		Item i = e.evaluateToItem(ctx, tuple);
-		long end = System.nanoTime();
-		itemTotal += (end - start);
-		itemCnt++;
-		return i;
-	}
+  @Override
+  protected void addFields(DotNode node) {
+    node.addRow("expression", e.toString());
+    node.addRow("eval (item)", itemCnt);
+    node.addRow("total / avg. time eval (item) [ms]", itemTotal / 1000000);
+    node.addRow("avg. time eval (item) [ms]", (itemCnt > 0) ? (double) itemTotal / ((double) 1000000 * itemCnt) : -1);
+    node.addRow("eval (seq)", seqCnt);
+    node.addRow("total time eval (seq) [ms]", seqTotal / 1000000);
+    node.addRow("avg. time eval (seq) [ms]", (seqCnt > 0) ? (double) seqTotal / ((double) 1000000 * seqCnt) : -1);
+    node.addRow("eval bool  (seq)", evalBooleanValue);
+    node.addRow("eval size (seq)", evalSize);
+    node.addRow("eval get (seq)", evalGet);
+    node.addRow("iter (seq)", seqIterCnt);
+    node.addRow("skip (seq)", seqSkipCnt);
+    node.addRow("delivered by iter (seq)", seqDeliverCnt);
+    node.addRow("total time iter (seq) [ms]", seqIterTotal / 1000000);
+    node.addRow("avg. time iter (seq) [ms]",
+                (seqIterCnt > 0) ? (double) seqIterTotal / ((double) 1000000 * seqIterCnt) : -1);
+    node.addRow("total time skip (seq) [ms]", seqSkipTotal / 1000000);
+  }
 
-	public String toString() {
-		return e.getClass().getSimpleName();
-	}
+  @Override
+  protected String getName() {
+    return e.getClass().getSimpleName() + "_" + id;
+  }
 
-	@Override
-	public boolean isUpdating() {
-		return e.isUpdating();
-	}
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) throws QueryException {
+    long start = System.nanoTime();
+    Sequence s = e.evaluate(ctx, tuple);
+    long end = System.nanoTime();
+    seqTotal += (end - start);
+    seqCnt++;
+    return new StatSequence(s);
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return e.isVacuous();
-	}
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) throws QueryException {
+    long start = System.nanoTime();
+    Item i = e.evaluateToItem(ctx, tuple);
+    long end = System.nanoTime();
+    itemTotal += (end - start);
+    itemCnt++;
+    return i;
+  }
+
+  public String toString() {
+    return e.getClass().getSimpleName();
+  }
+
+  @Override
+  public boolean isUpdating() {
+    return e.isUpdating();
+  }
+
+  @Override
+  public boolean isVacuous() {
+    return e.isVacuous();
+  }
 }

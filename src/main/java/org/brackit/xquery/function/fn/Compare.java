@@ -39,30 +39,26 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class Compare extends AbstractFunction {
-	public Compare(QNm name, Signature signature) {
-		super(name, signature, true);
-	}
+  public Compare(QNm name, Signature signature) {
+    super(name, signature, true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		if (args.length == 3) {
-			Str collation = (Str) args[2];
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    if (args.length == 3) {
+      Str collation = (Str) args[2];
 
-			if (!collation.stringValue().equals("http://www.w3.org/2005/xpath-functions/collation/codepoint")) {
-				throw new QueryException(ErrorCode.ERR_UNSUPPORTED_COLLATION,
-						"Unsupported collation: %s", collation);
-			}
-		}
+      if (!collation.stringValue().equals("http://www.w3.org/2005/xpath-functions/collation/codepoint")) {
+        throw new QueryException(ErrorCode.ERR_UNSUPPORTED_COLLATION, "Unsupported collation: %s", collation);
+      }
+    }
 
-		int res = ((args[0] != null) && (args[1] != null)) ? ((Str) args[0])
-				.cmp((Str) args[1])
-				: ((args[0] == null) ? ((args[1] == null) ? 0 : 1) : -1);
-		return (res < 0) ? Int32.N_ONE : (res == 0) ? Int32.ZERO : Int32.ONE;
-	}
+    int res = ((args[0] != null) && (args[1] != null))
+        ? ((Str) args[0]).cmp((Str) args[1])
+        : ((args[0] == null) ? ((args[1] == null) ? 0 : 1) : -1);
+    return (res < 0) ? Int32.N_ONE : (res == 0) ? Int32.ZERO : Int32.ONE;
+  }
 }

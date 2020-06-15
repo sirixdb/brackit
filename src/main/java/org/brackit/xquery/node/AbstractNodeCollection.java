@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -38,52 +38,49 @@ import org.brackit.xquery.xdm.node.Node;
 import org.brackit.xquery.xdm.node.NodeCollection;
 
 /**
- * 
- * @author Sebastian Baechle
- * 
  * @param <E>
+ * @author Sebastian Baechle
  */
-public abstract class AbstractNodeCollection<E extends Node<E>> extends
-		LazySequence implements NodeCollection<E> {
-	protected String name;
+public abstract class AbstractNodeCollection<E extends Node<E>> extends LazySequence implements NodeCollection<E> {
+  protected String name;
 
-	public AbstractNodeCollection(String name) {
-		this.name = name;
-	}
+  public AbstractNodeCollection(String name) {
+    this.name = name;
+  }
 
-	protected AbstractNodeCollection(AbstractNodeCollection<E> collection) {
-		this.name = collection.name;
-	}
+  protected AbstractNodeCollection(AbstractNodeCollection<E> collection) {
+    this.name = collection.name;
+  }
 
-	@Override
-	public String getName() {
-		return name;
-	}
+  @Override
+  public String getName() {
+    return name;
+  }
 
-	@Override
-	public AnyURI getDocumentURI() {
-		return AnyURI.fromString(name);
-	}
+  @Override
+  public AnyURI getDocumentURI() {
+    return AnyURI.fromString(name);
+  }
 
-	@Override
-	public Iter iterate() {
-		return new BaseIter() {
-			Stream<? extends Node<?>> docs;
+  @Override
+  public Iter iterate() {
+    return new BaseIter() {
+      Stream<? extends Node<?>> docs;
 
-			@Override
-			public void close() {
-				if (docs != null) {
-					docs.close();
-				}
-			}
+      @Override
+      public void close() {
+        if (docs != null) {
+          docs.close();
+        }
+      }
 
-			@Override
-			public Item next() throws QueryException {
-				if (docs == null) {
-					docs = getDocuments();
-				}
-				return docs.next();
-			}
-		};
-	}
+      @Override
+      public Item next() throws QueryException {
+        if (docs == null) {
+          docs = getDocuments();
+        }
+        return docs.next();
+      }
+    };
+  }
 }

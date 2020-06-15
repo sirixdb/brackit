@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -31,23 +31,20 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class InsertAfterOp extends AbstractInsertOp {
-	public InsertAfterOp(Node<?> target) {
-		super(target);
-	}
+  public InsertAfterOp(Node<?> target) {
+    super(target);
+  }
 
-	@Override
-	protected void doInsert(Node<?> target, Node<?> content)
-			throws QueryException {
-		target.insertAfter(content);
-	}
+  @Override
+  protected void doInsert(Node<?> target, Node<?> content) throws QueryException {
+    target.insertAfter(content);
+  }
 
-	@Override
-	public OpType getType() {
-		return OpType.INSERT_AFTER;
-	}
+  @Override
+  public OpType getType() {
+    return OpType.INSERT_AFTER;
+  }
 }

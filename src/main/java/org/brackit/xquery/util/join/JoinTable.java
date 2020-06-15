@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,100 +34,93 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public abstract class JoinTable {
-	static class TKey implements Comparable<TKey> {
-		final Atomic atomic;
+  static class TKey implements Comparable<TKey> {
+    final Atomic atomic;
 
-		TKey(Atomic atomic) {
-			this.atomic = atomic;
-		}
+    TKey(Atomic atomic) {
+      this.atomic = atomic;
+    }
 
-		@Override
-		public boolean equals(Object obj) {
-			boolean b = (obj instanceof TKey)
-					&& (((TKey) obj).atomic.atomicCmp(atomic) == 0);
-			return b;
-		}
+    @Override
+    public boolean equals(Object obj) {
+      boolean b = (obj instanceof TKey) && (((TKey) obj).atomic.atomicCmp(atomic) == 0);
+      return b;
+    }
 
-		@Override
-		public int compareTo(TKey k) {
-			return atomic.atomicCmp(k.atomic);
-		}
+    @Override
+    public int compareTo(TKey k) {
+      return atomic.atomicCmp(k.atomic);
+    }
 
-		@Override
-		public int hashCode() {
-			return atomic.hashCode();
-		}
+    @Override
+    public int hashCode() {
+      return atomic.hashCode();
+    }
 
-		@Override
-		public String toString() {
-			return atomic.toString();
-		}
-	}
+    @Override
+    public String toString() {
+      return atomic.toString();
+    }
+  }
 
-	static class TValue implements Comparable<TValue> {
-		final Sequence[] bindings;
-		final int pos;
-		TValue next; // next pointer to chain matches with different pos
+  static class TValue implements Comparable<TValue> {
+    final Sequence[] bindings;
+    final int pos;
+    TValue next; // next pointer to chain matches with different pos
 
-		TValue(Sequence[] bindings, int pos) {
-			this.bindings = bindings;
-			this.pos = pos;
-		}
+    TValue(Sequence[] bindings, int pos) {
+      this.bindings = bindings;
+      this.pos = pos;
+    }
 
-		@Override
-		public int compareTo(TValue o) {
-			return pos < o.pos ? -1 : (pos == o.pos) ? 0 : 1;
-		}
+    @Override
+    public int compareTo(TValue o) {
+      return pos < o.pos ? -1 : (pos == o.pos) ? 0 : 1;
+    }
 
-		@Override
-		public String toString() {
-			return bindings.toString() + "@" + pos;
-		}
-	}
+    @Override
+    public String toString() {
+      return bindings.toString() + "@" + pos;
+    }
+  }
 
-	static class TEntry implements Comparable<TEntry> {
-		final TKey key;
-		final TValue value;
+  static class TEntry implements Comparable<TEntry> {
+    final TKey key;
+    final TValue value;
 
-		public TEntry(TKey key, TValue value) {
-			this.key = key;
-			this.value = value;
-		}
+    public TEntry(TKey key, TValue value) {
+      this.key = key;
+      this.value = value;
+    }
 
-		@Override
-		public int compareTo(TEntry o) {
-			int res = 0;
-			return ((key == o.key) || ((res = key.compareTo(o.key)) != 0)) ? res
-					: value.compareTo(o.value);
-		}
-	}
+    @Override
+    public int compareTo(TEntry o) {
+      int res = 0;
+      return ((key == o.key) || ((res = key.compareTo(o.key)) != 0)) ? res : value.compareTo(o.value);
+    }
+  }
 
-	protected final FastList<Sequence[]> sortAndDeduplicate(FastList<TValue> in)
-			throws QueryException {
-		in.sort();
-		FastList<Sequence[]> out = new FastList<Sequence[]>();
-		TValue p = null;
-		int inSize = in.getSize();
-		for (int i = 0; i < inSize; i++) {
-			TValue v = in.get(i);
-			if ((p == null) || (p.pos < v.pos)) {
-				out.add(v.bindings);
-			}
-			p = v;
-		}
-		return out;
-	}
+  protected final FastList<Sequence[]> sortAndDeduplicate(FastList<TValue> in) throws QueryException {
+    in.sort();
+    FastList<Sequence[]> out = new FastList<Sequence[]>();
+    TValue p = null;
+    int inSize = in.getSize();
+    for (int i = 0; i < inSize; i++) {
+      TValue v = in.get(i);
+      if ((p == null) || (p.pos < v.pos)) {
+        out.add(v.bindings);
+      }
+      p = v;
+    }
+    return out;
+  }
 
-	protected abstract void add(Atomic key, int pos, Sequence[] bindings)
-			throws QueryException;
+  protected abstract void add(Atomic key, int pos, Sequence[] bindings) throws QueryException;
 
-	protected abstract void lookup(FastList<TValue> matches, Atomic key)
-			throws QueryException;
+  protected abstract void lookup(FastList<TValue> matches, Atomic key) throws QueryException;
 
-	protected abstract List<TEntry> entries();
+  protected abstract List<TEntry> entries();
 }

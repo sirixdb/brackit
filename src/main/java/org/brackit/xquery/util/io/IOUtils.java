@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -48,156 +48,149 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 
 /**
- * 
  * @author Henrique Valer
- * 
  */
 public class IOUtils {
 
-	public static PrintStream createBuffer() {
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		return new PrintStream(out) {
-			final OutputStream baos = out;
+  public static PrintStream createBuffer() {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    return new PrintStream(out) {
+      final OutputStream baos = out;
 
-			public String toString() {
-				return baos.toString();
-			}
-		};
-	}
+      public String toString() {
+        return baos.toString();
+      }
+    };
+  }
 
-	/**
-	 * Returns MD5 hash sequence for a given String input.
-	 * 
-	 * @param pInput
-	 * @return
-	 */
-	public static String getMd5(String pInput) {
-		try {
-			MessageDigest lDigest;
-			lDigest = MessageDigest.getInstance("MD5");
-			lDigest.update(pInput.getBytes());
-			BigInteger lHashInt = new BigInteger(1, lDigest.digest());
-			return String.format("%1$032X", lHashInt);
-		} catch (Exception e) {
-			return "";
-		}
+  /**
+   * Returns MD5 hash sequence for a given String input.
+   *
+   * @param pInput
+   * @return
+   */
+  public static String getMd5(String pInput) {
+    try {
+      MessageDigest lDigest;
+      lDigest = MessageDigest.getInstance("MD5");
+      lDigest.update(pInput.getBytes());
+      BigInteger lHashInt = new BigInteger(1, lDigest.digest());
+      return String.format("%1$032X", lHashInt);
+    } catch (Exception e) {
+      return "";
+    }
 
-	}
+  }
 
-	public static FileFilter nameFilter(final String pattern) {
-		return new FileFilter() {
-			final String p = pattern;
-			
-			@Override
-			public boolean accept(File pathname) {
-				return pathname.getName().matches(p);
-			}
-		};
-	}
-	
-	/**
-	 * Returns a list of files from a given folder, respecting the given filter.
-	 * The list of files is extracted recursively.
-	 * 
-	 * @param dir
-	 * @param fileFilter
-	 * @return
-	 * @throws FileNotFoundException
-	 */
-	public static List<File> getFilteredFileListing(File dir,
-			FileFilter fileFilter) throws FileNotFoundException {
-		List<File> result = new ArrayList<File>();
-		List<File> filesDirs = Arrays.asList(dir.listFiles());
+  public static FileFilter nameFilter(final String pattern) {
+    return new FileFilter() {
+      final String p = pattern;
 
-		for (File file : filesDirs) {
-			if (file != null) {
-				if (fileFilter.accept(file)) {
-					result.add(file);
-				}
-			}
-			if (file.isDirectory()) {
-				result.addAll(getFilteredFileListing(file, fileFilter));
-			}
-		}
-		return result;
-	}
+      @Override
+      public boolean accept(File pathname) {
+        return pathname.getName().matches(p);
+      }
+    };
+  }
 
-	/**
-	 * Returns a list of folders from the given folder. The list is not
-	 * recursive and removes svn folders from the result.
-	 * 
-	 * @param dir
-	 * @return
-	 * @throws FileNotFoundException
-	 */
-	public static List<File> getFoldersFileListing(File dir)
-			throws FileNotFoundException {
-		List<File> result = new ArrayList<File>();
-		List<File> filesDirs = Arrays.asList(dir.listFiles());
+  /**
+   * Returns a list of files from a given folder, respecting the given filter.
+   * The list of files is extracted recursively.
+   *
+   * @param dir
+   * @param fileFilter
+   * @return
+   * @throws FileNotFoundException
+   */
+  public static List<File> getFilteredFileListing(File dir, FileFilter fileFilter) throws FileNotFoundException {
+    List<File> result = new ArrayList<File>();
+    List<File> filesDirs = Arrays.asList(dir.listFiles());
 
-		for (File file : filesDirs) {
-			// remove svn files
-			if ((file.isDirectory()) && (!file.getName().startsWith(".svn"))) {
-				result.add(file);
-			}
-		}
-		return result;
-	}
+    for (File file : filesDirs) {
+      if (file != null) {
+        if (fileFilter.accept(file)) {
+          result.add(file);
+        }
+      }
+      if (file.isDirectory()) {
+        result.addAll(getFilteredFileListing(file, fileFilter));
+      }
+    }
+    return result;
+  }
 
-	/**
-	 * Returns the 'normalized' path from a file, i.e. the resulting path string
-	 * contains only slashes as folder separators.
-	 */
-	public static String getNormalizedPath(File f) {
-		return f.getPath().replaceAll(Pattern.quote(File.separator), "/");
-	}
+  /**
+   * Returns a list of folders from the given folder. The list is not
+   * recursive and removes svn folders from the result.
+   *
+   * @param dir
+   * @return
+   * @throws FileNotFoundException
+   */
+  public static List<File> getFoldersFileListing(File dir) throws FileNotFoundException {
+    List<File> result = new ArrayList<File>();
+    List<File> filesDirs = Arrays.asList(dir.listFiles());
 
-	/**
-	 * Return the string content of a file.
-	 */
-	public static String getStringFromFile(File pFile) throws QueryException {
-		byte[] buffer = new byte[(int) pFile.length()];
-		BufferedInputStream in = null;
-		try {
-			in = new BufferedInputStream(new FileInputStream(pFile));
-			in.read(buffer);
-		} catch (IOException e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		} finally {
-			if (in != null)
-				try {
-					in.close();
-				} catch (IOException ignored) {
-				}
-		}
-		return new String(buffer);
-	}
+    for (File file : filesDirs) {
+      // remove svn files
+      if ((file.isDirectory()) && (!file.getName().startsWith(".svn"))) {
+        result.add(file);
+      }
+    }
+    return result;
+  }
 
-	/**
-	 * Return the string content of an input stream.
-	 */
-	public static String getStringFromInputStream(InputStream in)
-			throws QueryException {
+  /**
+   * Returns the 'normalized' path from a file, i.e. the resulting path string
+   * contains only slashes as folder separators.
+   */
+  public static String getNormalizedPath(File f) {
+    return f.getPath().replaceAll(Pattern.quote(File.separator), "/");
+  }
 
-		StringBuffer out = new StringBuffer();
-		byte[] b = new byte[4096];
-		try {
-			for (int n; (n = in.read(b)) != -1;) {
-				out.append(new String(b, 0, n));
-			}
-		} catch (IOException e) {
-			throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e
-					.getMessage());
-		} finally {
-			if (in != null)
-				try {
-					in.close();
-				} catch (IOException ignored) {
-				}
-		}
+  /**
+   * Return the string content of a file.
+   */
+  public static String getStringFromFile(File pFile) throws QueryException {
+    byte[] buffer = new byte[(int) pFile.length()];
+    BufferedInputStream in = null;
+    try {
+      in = new BufferedInputStream(new FileInputStream(pFile));
+      in.read(buffer);
+    } catch (IOException e) {
+      throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e.getMessage());
+    } finally {
+      if (in != null)
+        try {
+          in.close();
+        } catch (IOException ignored) {
+        }
+    }
+    return new String(buffer);
+  }
 
-		return out.toString();
-	}
+  /**
+   * Return the string content of an input stream.
+   */
+  public static String getStringFromInputStream(InputStream in) throws QueryException {
+
+    StringBuffer out = new StringBuffer();
+    byte[] b = new byte[4096];
+    try {
+      for (int n; (n = in.read(b)) != -1; ) {
+        out.append(new String(b, 0, n));
+      }
+    } catch (IOException e) {
+      throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e.getMessage());
+    } finally {
+      if (in != null)
+        try {
+          in.close();
+        } catch (IOException ignored) {
+        }
+    }
+
+    return out.toString();
+  }
 
 }

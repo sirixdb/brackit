@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -36,38 +36,37 @@ import org.junit.Test;
 
 /**
  * @author Sebastian Baechle
- * 
  */
 public class ArithmeticExprTest extends XQueryBaseTest {
 
-	@Test
-	public void add() {
-		Sequence result = new XQuery("1 + 2").execute(ctx);
-		ResultChecker.dCheck(new Int32(3), result);
-	}
+  @Test
+  public void add() {
+    Sequence result = new XQuery("1 + 2").execute(ctx);
+    ResultChecker.dCheck(new Int32(3), result);
+  }
 
-	@Test
-	public void mult() {
-		Sequence result = new XQuery("1 * 2").execute(ctx);
-		ResultChecker.dCheck(new Int32(2), result);
-	}
+  @Test
+  public void mult() {
+    Sequence result = new XQuery("1 * 2").execute(ctx);
+    ResultChecker.dCheck(new Int32(2), result);
+  }
 
-	@Test
-	public void multPrecedence1() {
-		Sequence result = new XQuery("1 + 2 * 3").execute(ctx);
-		ResultChecker.dCheck(new Int32(7), result);
-	}
+  @Test
+  public void multPrecedence1() {
+    Sequence result = new XQuery("1 + 2 * 3").execute(ctx);
+    ResultChecker.dCheck(new Int32(7), result);
+  }
 
-	@Test
-	public void multPrecedence2() {
-		Sequence result = new XQuery("1 * 2 + 3").execute(ctx);
-		ResultChecker.dCheck(new Int32(5), result);
-	}
+  @Test
+  public void multPrecedence2() {
+    Sequence result = new XQuery("1 * 2 + 3").execute(ctx);
+    ResultChecker.dCheck(new Int32(5), result);
+  }
 
-	@Test
-	public void parenthesizedPrecedence() {
-		Sequence result = new XQuery("(1 + 2) * 3").execute(ctx);
-		ResultChecker.dCheck(new Int32(9), result);
-	}
+  @Test
+  public void parenthesizedPrecedence() {
+    Sequence result = new XQuery("(1 + 2) * 3").execute(ctx);
+    ResultChecker.dCheck(new Int32(9), result);
+  }
 
 }

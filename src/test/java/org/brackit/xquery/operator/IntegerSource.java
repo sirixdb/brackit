@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,34 +34,32 @@ import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.operator.Cursor;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class IntegerSource implements Cursor {
-	int pos = -1;
+  int pos = -1;
 
-	private Int32 values[];
+  private Int32 values[];
 
-	public IntegerSource(int... values) {
-		this.values = new Int32[values.length];
+  public IntegerSource(int... values) {
+    this.values = new Int32[values.length];
 
-		for (int i = 0; i < values.length; i++) {
-			this.values[i] = new Int32(values[i]);
-		}
-	}
+    for (int i = 0; i < values.length; i++) {
+      this.values[i] = new Int32(values[i]);
+    }
+  }
 
-	@Override
-	public void open(QueryContext ctx) throws QueryException {
-		pos = -1;
-	}
+  @Override
+  public void open(QueryContext ctx) throws QueryException {
+    pos = -1;
+  }
 
-	@Override
-	public void close(QueryContext ctx) {
-	}
+  @Override
+  public void close(QueryContext ctx) {
+  }
 
-	@Override
-	public Tuple next(QueryContext ctx) throws QueryException {
-		return (++pos < values.length) ? values[pos] : null;
-	}
+  @Override
+  public Tuple next(QueryContext ctx) throws QueryException {
+    return (++pos < values.length) ? values[pos] : null;
+  }
 }

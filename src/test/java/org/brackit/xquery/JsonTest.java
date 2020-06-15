@@ -216,11 +216,11 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayForLoop1Test() throws IOException {
     final var query = """
-        let $values := [{"key": "hey"}, {"key": 0}]
-        for $i in $values
-        where $i=>key instance of xs:integer and $i=>key eq 0
-        return $i
-    """;
+            let $values := [{"key": "hey"}, {"key": 0}]
+            for $i in $values
+            where $i=>key instance of xs:integer and $i=>key eq 0
+            return $i
+        """;
     final var result = query(query);
     assertEquals("{\"key\":0}", result);
   }
@@ -228,10 +228,10 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayForLoop2Test() throws IOException {
     final var query = """
-        let $values := ["foo",0,true(),jn:null()]
-        for $i in $values
-        return $i
-    """;
+            let $values := ["foo",0,true(),jn:null()]
+            for $i in $values
+            return $i
+        """;
     final var result = query(query);
     assertEquals("foo 0 true null", result);
   }
@@ -335,10 +335,10 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testComposeObjects1() throws IOException {
     final var query = """
-        let $object1 := { "Captain" : "Kirk" }
-        let $object2 := { "First officer" : "Spock" }
-        return {| { "foobar": $object1 }, $object2 |}
-    """;
+            let $object1 := { "Captain" : "Kirk" }
+            let $object2 := { "First officer" : "Spock" }
+            return {| { "foobar": $object1 }, $object2 |}
+        """;
     final var result = query(query);
     assertEquals("{\"foobar\":{\"Captain\":\"Kirk\"},\"First officer\":\"Spock\"}", result);
   }
@@ -346,10 +346,10 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testComposeObjects2() throws IOException {
     final var query = """
-        let $object1 := { "Captain" : "Kirk" }
-        let $object2 := { "First officer" : "Spock" }
-        return {{ "foobar": $object1 }, $object2 }
-    """;
+            let $object1 := { "Captain" : "Kirk" }
+            let $object2 := { "First officer" : "Spock" }
+            return {{ "foobar": $object1 }, $object2 }
+        """;
     final var result = query(query);
     assertEquals("{\"foobar\":{\"Captain\":\"Kirk\"},\"First officer\":\"Spock\"}", result);
   }
@@ -364,10 +364,10 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testComposeObjects4() throws IOException {
     final var query = """
-        let $object1 := { "Captain" : "Kirk" }
-        let $object2 := { "First officer" : "Spock" }
-        return {| $object1, $object2 |}
-    """;
+            let $object1 := { "Captain" : "Kirk" }
+            let $object2 := { "First officer" : "Spock" }
+            return {| $object1, $object2 |}
+        """;
     final var result = query(query);
     assertEquals("{\"Captain\":\"Kirk\",\"First officer\":\"Spock\"}", result);
   }
@@ -383,10 +383,10 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testObjectLookup() throws IOException {
     final var query = """
-        let $x := { "eyes": "blue", "hair": "fuchsia" }
-        let $y := { "eyes": "brown", "hair": "brown" }
-        return { "eyes": $x=>eyes, "hair": $y=>hair }
-    """;
+            let $x := { "eyes": "blue", "hair": "fuchsia" }
+            let $y := { "eyes": "brown", "hair": "brown" }
+            return { "eyes": $x=>eyes, "hair": $y=>hair }
+        """;
     final var result = query(query);
     assertEquals("{\"eyes\":\"blue\",\"hair\":\"brown\"}", result);
   }

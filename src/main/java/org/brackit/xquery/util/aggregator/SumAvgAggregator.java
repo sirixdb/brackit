@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -43,199 +43,201 @@ import org.brackit.xquery.xdm.Type;
 
 /**
  * Aggregator for operations with fn:sum() and fn:avg() semantics.
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public class SumAvgAggregator implements Aggregator {
-	private enum AggType {
-		NUMERIC, YMD, DTD
-	}
+  private enum AggType {
+    NUMERIC, YMD, DTD
+  }
 
-	final boolean avg;
-	final Sequence defaultValue;
-	long count;
-	Atomic sum = null;
-	AggType aggType = null;
+  final boolean avg;
+  final Sequence defaultValue;
+  long count;
+  Atomic sum = null;
+  AggType aggType = null;
 
-	public SumAvgAggregator(boolean avg, Sequence defaultValue) {
-		this.avg = avg;
-		this.defaultValue = defaultValue;
-	}
+  public SumAvgAggregator(boolean avg, Sequence defaultValue) {
+    this.avg = avg;
+    this.defaultValue = defaultValue;
+  }
 
-	@Override
-	public Sequence getAggregate() throws QueryException {
-		if (sum == null) {
-			return (avg) ? null : defaultValue;
-		}	
-		if (aggType == AggType.NUMERIC) {
-			sum = numericAggCalc((Numeric) sum, count);
-		} else if (aggType == AggType.YMD) {
-			sum = ymdAggCalc((YMD) sum, count);
-		} else if (aggType == AggType.DTD) {
-			sum = dtdAggCalc((DTD) sum, count);
-		}
-		return sum;
-	}
-	
-	@Override
-	public void clear() {
-		count = 0;
-		sum = null;
-		aggType = null;
-	}
+  @Override
+  public Sequence getAggregate() throws QueryException {
+    if (sum == null) {
+      return (avg) ? null : defaultValue;
+    }
+    if (aggType == AggType.NUMERIC) {
+      sum = numericAggCalc((Numeric) sum, count);
+    } else if (aggType == AggType.YMD) {
+      sum = ymdAggCalc((YMD) sum, count);
+    } else if (aggType == AggType.DTD) {
+      sum = dtdAggCalc((DTD) sum, count);
+    }
+    return sum;
+  }
 
-	public void add(Sequence seq) throws QueryException {
-		if (seq == null) {
-			return;
-		}
-		if (seq instanceof Item) {
-			addItem((Item) seq, (sum == null));
-		} else {
-			addSequence(seq, (sum == null));
-		}
-	}
+  @Override
+  public void clear() {
+    count = 0;
+    sum = null;
+    aggType = null;
+  }
 
-	private void addSequence(Sequence seq, boolean first) throws QueryException {
-		Item item;
-		Iter in = seq.iterate();
-		try {
-			if (first) {
-				if ((item = in.next()) != null) {
-					addItem(item, first);
-				} else {
-					return;
-				}
-			}
-			if (aggType == AggType.NUMERIC) {
-				sum = numericSum(in, (Numeric) sum);
-			} else if (aggType == AggType.YMD) {
-				sum = ymdSum(in, (YMD) sum);
-			} else if (aggType == AggType.DTD) {
-				sum = dtdSum(in, (DTD) sum);
-			}
-		} finally {
-			in.close();
-		}
-	}
+  public void add(Sequence seq) throws QueryException {
+    if (seq == null) {
+      return;
+    }
+    if (seq instanceof Item) {
+      addItem((Item) seq, (sum == null));
+    } else {
+      addSequence(seq, (sum == null));
+    }
+  }
 
-	private void addItem(Item item, boolean first) throws QueryException {
-		count++;
-		if (!first) {
-			if (aggType == AggType.NUMERIC) {
-				sum = numericSum((Numeric) sum, item);
-			} else if (aggType == AggType.YMD) {
-				sum = ymdSum((YMD) sum, item);
-			} else if (aggType == AggType.DTD) {
-				sum = dtdSum((DTD) sum, item);
-			}
-		} else {
-			sum = item.atomize();
-			Type type = sum.type();
+  private void addSequence(Sequence seq, boolean first) throws QueryException {
+    Item item;
+    Iter in = seq.iterate();
+    try {
+      if (first) {
+        if ((item = in.next()) != null) {
+          addItem(item, first);
+        } else {
+          return;
+        }
+      }
+      if (aggType == AggType.NUMERIC) {
+        sum = numericSum(in, (Numeric) sum);
+      } else if (aggType == AggType.YMD) {
+        sum = ymdSum(in, (YMD) sum);
+      } else if (aggType == AggType.DTD) {
+        sum = dtdSum(in, (DTD) sum);
+      }
+    } finally {
+      in.close();
+    }
+  }
 
-			if (type == Type.UNA) {
-				sum = Cast.cast(null, sum, Type.DBL, false);
-				type = Type.DBL;
-			}
-			if (type.isNumeric()) {
-				aggType = AggType.NUMERIC;
-			} else if (type.instanceOf(Type.YMD)) {
-				aggType = AggType.YMD;
-			} else if (type.instanceOf(Type.DTD)) {
-				aggType = AggType.DTD;
-			} else {
-				throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-						"Cannot compute sum/avg for items of type: %s", type);
-			}
-		}
-	}
+  private void addItem(Item item, boolean first) throws QueryException {
+    count++;
+    if (!first) {
+      if (aggType == AggType.NUMERIC) {
+        sum = numericSum((Numeric) sum, item);
+      } else if (aggType == AggType.YMD) {
+        sum = ymdSum((YMD) sum, item);
+      } else if (aggType == AggType.DTD) {
+        sum = dtdSum((DTD) sum, item);
+      }
+    } else {
+      sum = item.atomize();
+      Type type = sum.type();
 
-	private Atomic numericSum(Iter in, Numeric sum) throws QueryException {
-		Item item;
-		while ((item = in.next()) != null) {
-			sum = numericSum(sum, item);
-			count++;
-		}
-		return sum;
-	}
+      if (type == Type.UNA) {
+        sum = Cast.cast(null, sum, Type.DBL, false);
+        type = Type.DBL;
+      }
+      if (type.isNumeric()) {
+        aggType = AggType.NUMERIC;
+      } else if (type.instanceOf(Type.YMD)) {
+        aggType = AggType.YMD;
+      } else if (type.instanceOf(Type.DTD)) {
+        aggType = AggType.DTD;
+      } else {
+        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                                 "Cannot compute sum/avg for items of type: %s",
+                                 type);
+      }
+    }
+  }
 
-	private Numeric numericSum(Numeric sum, Item item) throws QueryException {
-		Atomic s = item.atomize();
-		Type type = s.type();
+  private Atomic numericSum(Iter in, Numeric sum) throws QueryException {
+    Item item;
+    while ((item = in.next()) != null) {
+      sum = numericSum(sum, item);
+      count++;
+    }
+    return sum;
+  }
 
-		if (type == Type.UNA) {
-			s = Cast.cast(null, s, Type.DBL, false);
-			type = Type.DBL;
-		} else if (!(s instanceof Numeric)) {
-			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-					"Incompatible types in aggregate function: %s and %s.",
-					sum, type);
-		}
+  private Numeric numericSum(Numeric sum, Item item) throws QueryException {
+    Atomic s = item.atomize();
+    Type type = s.type();
 
-		sum = sum.add((Numeric) s);
-		return sum;
-	}
+    if (type == Type.UNA) {
+      s = Cast.cast(null, s, Type.DBL, false);
+      type = Type.DBL;
+    } else if (!(s instanceof Numeric)) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                               "Incompatible types in aggregate function: %s and %s.",
+                               sum,
+                               type);
+    }
 
-	private Numeric numericAggCalc(Numeric sum, long count)
-			throws QueryException {
-		return (avg ? sum.div(new Int64(count)) : sum);
-	}
+    sum = sum.add((Numeric) s);
+    return sum;
+  }
 
-	private Atomic ymdSum(Iter in, YMD sum) throws QueryException {
-		Item item;
-		while ((item = in.next()) != null) {
-			sum = ymdSum(sum, item);
-			count++;
-		}
-		return sum;
-	}
+  private Numeric numericAggCalc(Numeric sum, long count) throws QueryException {
+    return (avg ? sum.div(new Int64(count)) : sum);
+  }
 
-	private YMD ymdSum(YMD sum, Item item) throws QueryException {
-		Atomic s = item.atomize();
-		Type type = s.type();
+  private Atomic ymdSum(Iter in, YMD sum) throws QueryException {
+    Item item;
+    while ((item = in.next()) != null) {
+      sum = ymdSum(sum, item);
+      count++;
+    }
+    return sum;
+  }
 
-		if (type == Type.UNA) {
-			s = Cast.cast(null, s, Type.YMD, false);
-		} else if (!type.instanceOf(Type.YMD)) {
-			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-					"Incompatible types in aggregate function: %s and %s.",
-					Type.YMD, type);
-		}
+  private YMD ymdSum(YMD sum, Item item) throws QueryException {
+    Atomic s = item.atomize();
+    Type type = s.type();
 
-		sum = sum.add((YMD) s);
-		return sum;
-	}
+    if (type == Type.UNA) {
+      s = Cast.cast(null, s, Type.YMD, false);
+    } else if (!type.instanceOf(Type.YMD)) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                               "Incompatible types in aggregate function: %s and %s.",
+                               Type.YMD,
+                               type);
+    }
 
-	private YMD ymdAggCalc(YMD agg, long count) throws QueryException {
-		return (avg ? agg.divide(new Dbl(count)) : agg);
-	}
+    sum = sum.add((YMD) s);
+    return sum;
+  }
 
-	private Atomic dtdSum(Iter in, DTD sum) throws QueryException {
-		Item item;
-		while ((item = in.next()) != null) {
-			sum = dtdSum(sum, item);
-			count++;
-		}
-		return sum;
-	}
+  private YMD ymdAggCalc(YMD agg, long count) throws QueryException {
+    return (avg ? agg.divide(new Dbl(count)) : agg);
+  }
 
-	private DTD dtdSum(DTD sum, Item item) throws QueryException {
-		Atomic s = item.atomize();
-		Type type = s.type();
+  private Atomic dtdSum(Iter in, DTD sum) throws QueryException {
+    Item item;
+    while ((item = in.next()) != null) {
+      sum = dtdSum(sum, item);
+      count++;
+    }
+    return sum;
+  }
 
-		if (type == Type.UNA) {
-			s = Cast.cast(null, s, Type.DTD, false);
-		} else if (!type.instanceOf(Type.DTD)) {
-			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-					"Incompatible types in aggregate function: %s and %s.",
-					Type.DTD, type);
-		}
+  private DTD dtdSum(DTD sum, Item item) throws QueryException {
+    Atomic s = item.atomize();
+    Type type = s.type();
 
-		sum = sum.add((DTD) s);
-		return sum;
-	}
+    if (type == Type.UNA) {
+      s = Cast.cast(null, s, Type.DTD, false);
+    } else if (!type.instanceOf(Type.DTD)) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                               "Incompatible types in aggregate function: %s and %s.",
+                               Type.DTD,
+                               type);
+    }
 
-	private DTD dtdAggCalc(DTD agg, long count) throws QueryException {
-		return (avg ? agg.divide(new Dbl(count)) : agg);
-	}
+    sum = sum.add((DTD) s);
+    return sum;
+  }
+
+  private DTD dtdAggCalc(DTD agg, long count) throws QueryException {
+    return (avg ? agg.divide(new Dbl(count)) : agg);
+  }
 }

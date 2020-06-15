@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -38,71 +38,67 @@ import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class SwitchExpr implements Expr {
-	final Expr operand;
-	final Expr[][] cases;
-	final Expr dftValue;
+  final Expr operand;
+  final Expr[][] cases;
+  final Expr dftValue;
 
-	public SwitchExpr(Expr operand, Expr[][] cases, Expr dftValue) {
-		this.operand = operand;
-		this.cases = cases;
-		this.dftValue = dftValue;
-	}
+  public SwitchExpr(Expr operand, Expr[][] cases, Expr dftValue) {
+    this.operand = operand;
+    this.cases = cases;
+    this.dftValue = dftValue;
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		Item oi = operand.evaluateToItem(ctx, tuple);
-		Atomic oa = (oi != null) ? oi.atomize() : null;
-		for (final var aCase : cases) {
-			for (int j = 0; j < aCase.length - 1; j++) {
-				Item cij = aCase[j].evaluateToItem(ctx, tuple);
-				Atomic ca = (cij != null) ? cij.atomize() : null;
-				if (DeepEqual.deepEquals(oa, ca).booleanValue()) {
-					return aCase[aCase.length - 1].evaluate(ctx, tuple);
-				}
-			}
-		}
-		return dftValue.evaluate(ctx, tuple);
-	}
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) throws QueryException {
+    Item oi = operand.evaluateToItem(ctx, tuple);
+    Atomic oa = (oi != null) ? oi.atomize() : null;
+    for (final var aCase : cases) {
+      for (int j = 0; j < aCase.length - 1; j++) {
+        Item cij = aCase[j].evaluateToItem(ctx, tuple);
+        Atomic ca = (cij != null) ? cij.atomize() : null;
+        if (DeepEqual.deepEquals(oa, ca).booleanValue()) {
+          return aCase[aCase.length - 1].evaluate(ctx, tuple);
+        }
+      }
+    }
+    return dftValue.evaluate(ctx, tuple);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return ExprUtil.asItem(evaluate(ctx, tuple));
-	}
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) throws QueryException {
+    return ExprUtil.asItem(evaluate(ctx, tuple));
+  }
 
-	@Override
-	public boolean isUpdating() {
-		if (operand.isUpdating() || dftValue.isUpdating()) {
-			return true;
-		}
-		for (final Expr[] aCase : cases) {
-			for (Expr expr : aCase) {
-				if (expr.isUpdating()) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+  @Override
+  public boolean isUpdating() {
+    if (operand.isUpdating() || dftValue.isUpdating()) {
+      return true;
+    }
+    for (final Expr[] aCase : cases) {
+      for (Expr expr : aCase) {
+        if (expr.isUpdating()) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		if (operand.isVacuous() || dftValue.isVacuous()) {
-			return true;
-		}
-		for (final Expr[] aCase : cases) {
-			for (final Expr expr : aCase) {
-				if (expr.isVacuous()) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    if (operand.isVacuous() || dftValue.isVacuous()) {
+      return true;
+    }
+    for (final Expr[] aCase : cases) {
+      for (final Expr expr : aCase) {
+        if (expr.isVacuous()) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 }

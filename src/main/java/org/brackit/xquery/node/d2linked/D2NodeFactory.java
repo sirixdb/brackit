@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -39,80 +39,76 @@ import org.brackit.xquery.xdm.node.NodeCollection;
 import org.brackit.xquery.xdm.node.NodeFactory;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class D2NodeFactory implements NodeFactory<D2Node> {
-	@Override
-	public D2Node attribute(QNm name, Atomic value) throws DocumentException {
-		return new AttributeD2Node(name, value);
-	}
+  @Override
+  public D2Node attribute(QNm name, Atomic value) throws DocumentException {
+    return new AttributeD2Node(name, value);
+  }
 
-	@Override
-	public D2Node comment(Str value) throws DocumentException {
-		return new CommentD2Node(value);
-	}
+  @Override
+  public D2Node comment(Str value) throws DocumentException {
+    return new CommentD2Node(value);
+  }
 
-	@Override
-	public D2Node document(Str name) throws DocumentException {
-		String s = (name != null) ? name.stringValue() : null;
-		return new DocumentD2Node(s);
-	}
+  @Override
+  public D2Node document(Str name) throws DocumentException {
+    String s = (name != null) ? name.stringValue() : null;
+    return new DocumentD2Node(s);
+  }
 
-	@Override
-	public D2Node element(QNm name) throws DocumentException {
-		return new ElementD2Node(name);
-	}
+  @Override
+  public D2Node element(QNm name) throws DocumentException {
+    return new ElementD2Node(name);
+  }
 
-	@Override
-	public D2Node pi(QNm target, Str value) throws DocumentException {
-		return new PID2Node(target, value);
-	}
+  @Override
+  public D2Node pi(QNm target, Str value) throws DocumentException {
+    return new PID2Node(target, value);
+  }
 
-	@Override
-	public D2Node text(Atomic value) throws DocumentException {
-		return new TextD2Node(value);
-	}
+  @Override
+  public D2Node text(Atomic value) throws DocumentException {
+    return new TextD2Node(value);
+  }
 
-	@Override
-	public D2Node copy(Node<?> source) throws DocumentException {
-		return build(new NavigationalSubtreeParser(source));
-	}
+  @Override
+  public D2Node copy(Node<?> source) throws DocumentException {
+    return build(new NavigationalSubtreeParser(source));
+  }
 
-	public D2Node build(SubtreeParser parser) throws DocumentException {
-		D2NodeBuilder handler = new D2NodeBuilder();
-		parser.parse(handler);
-		return handler.root();
-	}
+  public D2Node build(SubtreeParser parser) throws DocumentException {
+    D2NodeBuilder handler = new D2NodeBuilder();
+    parser.parse(handler);
+    return handler.root();
+  }
 
-	@Override
-	public NodeCollection<D2Node> collection(String name, SubtreeParser parser)
-			throws DocumentException {
-		D2NodeCollection coll = new D2NodeCollection(name);
-		D2NodeBuilder builder = new D2NodeBuilder(coll);
-		parser.parse(builder);
-		return coll;
-	}
+  @Override
+  public NodeCollection<D2Node> collection(String name, SubtreeParser parser) throws DocumentException {
+    D2NodeCollection coll = new D2NodeCollection(name);
+    D2NodeBuilder builder = new D2NodeBuilder(coll);
+    parser.parse(builder);
+    return coll;
+  }
 
-	@Override
-	public NodeCollection<D2Node> collection(String name,
-			Stream<SubtreeParser> parsers) throws DocumentException {
-		D2NodeCollection coll = new D2NodeCollection(name);
-		D2NodeBuilder builder = new D2NodeBuilder(coll);
-		try {
-			SubtreeParser parser;
-			while ((parser = parsers.next()) != null) {
-				parser.parse(builder);
-			}
-		} finally {
-			parsers.close();
-		}
-		return coll;
-	}
+  @Override
+  public NodeCollection<D2Node> collection(String name, Stream<SubtreeParser> parsers) throws DocumentException {
+    D2NodeCollection coll = new D2NodeCollection(name);
+    D2NodeBuilder builder = new D2NodeBuilder(coll);
+    try {
+      SubtreeParser parser;
+      while ((parser = parsers.next()) != null) {
+        parser.parse(builder);
+      }
+    } finally {
+      parsers.close();
+    }
+    return coll;
+  }
 
-	@Override
-	public NodeCollection<D2Node> collection(String name) throws DocumentException {
-		return new D2NodeCollection(name);
-	}
+  @Override
+  public NodeCollection<D2Node> collection(String name) throws DocumentException {
+    return new D2NodeCollection(name);
+  }
 }

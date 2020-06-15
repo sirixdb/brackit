@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,62 +33,61 @@ import org.brackit.xquery.compiler.optimizer.walker.Walker;
 
 /**
  * @author Sebastian Baechle
- * 
  */
 public final class TopDownPipeline extends Walker {
-	@Override
-	protected AST visit(AST node) {
-		if (node.getType() != XQ.FlowrExpr) {
-			return node;
-		}
+  @Override
+  protected AST visit(AST node) {
+    if (node.getType() != XQ.FlowrExpr) {
+      return node;
+    }
 
-		AST pipeExpr = new AST(XQ.PipeExpr);
-		AST start = new AST(XQ.Start);
-		start.addChild(pipeline(node, 0));
-		pipeExpr.addChild(start);
-		node.getParent().replaceChild(node.getChildIndex(), pipeExpr);
+    AST pipeExpr = new AST(XQ.PipeExpr);
+    AST start = new AST(XQ.Start);
+    start.addChild(pipeline(node, 0));
+    pipeExpr.addChild(start);
+    node.getParent().replaceChild(node.getChildIndex(), pipeExpr);
 
-		return pipeExpr;
-	}
+    return pipeExpr;
+  }
 
-	private AST pipeline(AST node, int pos) {
-		AST clause = node.getChild(pos);
-		switch (clause.getType()) {
-		case XQ.ForClause:
-			return pipelineClause(node, pos, XQ.ForBind);
-		case XQ.LetClause:
-			return pipelineClause(node, pos, XQ.LetBind);
-		case XQ.WhereClause:
-			return pipelineClause(node, pos, XQ.Selection);
-		case XQ.OrderByClause:
-			return pipelineClause(node, pos, XQ.OrderBy);
-		case XQ.CountClause:
-			return pipelineClause(node, pos, XQ.Count);
-		case XQ.GroupByClause:
-			return pipelineClause(node, pos, XQ.GroupBy);
-		case XQ.ReturnClause:
-			if (clause.getChild(0).getType() == XQ.FlowrExpr) {
-				return pipeline(clause.getChild(0), 0);
-			} else {
-				AST end = new AST(XQ.End);
-				end.addChild(clause.getChild(0).copyTree());
-				return end;
-			}
-		default:
-			throw new IllegalStateException();
-		}
-	}
+  private AST pipeline(AST node, int pos) {
+    AST clause = node.getChild(pos);
+    switch (clause.getType()) {
+      case XQ.ForClause:
+        return pipelineClause(node, pos, XQ.ForBind);
+      case XQ.LetClause:
+        return pipelineClause(node, pos, XQ.LetBind);
+      case XQ.WhereClause:
+        return pipelineClause(node, pos, XQ.Selection);
+      case XQ.OrderByClause:
+        return pipelineClause(node, pos, XQ.OrderBy);
+      case XQ.CountClause:
+        return pipelineClause(node, pos, XQ.Count);
+      case XQ.GroupByClause:
+        return pipelineClause(node, pos, XQ.GroupBy);
+      case XQ.ReturnClause:
+        if (clause.getChild(0).getType() == XQ.FlowrExpr) {
+          return pipeline(clause.getChild(0), 0);
+        } else {
+          AST end = new AST(XQ.End);
+          end.addChild(clause.getChild(0).copyTree());
+          return end;
+        }
+      default:
+        throw new IllegalStateException();
+    }
+  }
 
-	private AST pipelineClause(AST node, int pos, int opType) {
-		AST clause = node.getChild(pos);
-		AST op = new AST(opType);
-		for (int i = 0; i < clause.getChildCount(); i++) {
-			op.addChild(clause.getChild(i).copyTree());
-		}
-		AST out = pipeline(node, pos + 1);
-		if (out != null) {
-			op.addChild(out);
-		}
-		return op;
-	}
+  private AST pipelineClause(AST node, int pos, int opType) {
+    AST clause = node.getChild(pos);
+    AST op = new AST(opType);
+    for (int i = 0; i < clause.getChildCount(); i++) {
+      op.addChild(clause.getChild(i).copyTree());
+    }
+    AST out = pipeline(node, pos + 1);
+    if (out != null) {
+      op.addChild(out);
+    }
+    return op;
+  }
 }

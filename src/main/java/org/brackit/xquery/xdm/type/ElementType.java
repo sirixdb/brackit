@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,90 +34,87 @@ import org.brackit.xquery.xdm.Type;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public final class ElementType extends NodeType {
-	
-	public static final ElementType ELEMENT = new ElementType();
-	
-	private final QNm name;
-	private final Type type;
 
-	public ElementType() {
-		this.name = null;
-		this.type = null;
-	}
+  public static final ElementType ELEMENT = new ElementType();
 
-	public ElementType(QNm name) {
-		this.name = name;
-		this.type = null;
-	}
+  private final QNm name;
+  private final Type type;
 
-	public ElementType(QNm name, Type type) {
-		this.name = name;
-		this.type = type;
-	}
+  public ElementType() {
+    this.name = null;
+    this.type = null;
+  }
 
-	@Override
-	public QNm getQName() {
-		return name;
-	}
+  public ElementType(QNm name) {
+    this.name = name;
+    this.type = null;
+  }
 
-	@Override
-	public Type getType() {
-		return type;
-	}
+  public ElementType(QNm name, Type type) {
+    this.name = name;
+    this.type = type;
+  }
 
-	public boolean isWildcard() {
-		return name == null;
-	}
+  @Override
+  public QNm getQName() {
+    return name;
+  }
 
-	@Override
-	public Kind getNodeKind() {
-		return Kind.ELEMENT;
-	}
+  @Override
+  public Type getType() {
+    return type;
+  }
 
-	@Override
-	public boolean matches(Node<?> node) throws QueryException {
-		return ((node.getKind() == Kind.ELEMENT)
-				&& ((name == null) || (name.eq(node.getName()))) && ((type == null) || (node
-				.type().instanceOf(type))));
-	}
+  public boolean isWildcard() {
+    return name == null;
+  }
 
-	public String toString() {
-		return (name != null) ? (type == null) ? String.format(
-				"element(\"%s\")", name) : String.format(
-				"element(\"%s\", \"%s\")", name, type) : "element()";
-	}
+  @Override
+  public Kind getNodeKind() {
+    return Kind.ELEMENT;
+  }
 
-	public boolean equals(Object obj) {
-		if (obj == this) {
-			return true;
-		}
-		if (!(obj instanceof ElementType)) {
-			return false;
-		}
-		ElementType t = (ElementType) obj;
-		if (name == null) {
-			if (t.name != null) {
-				return false;
-			}
-		} else {
-			if ((t.name == null) || (!name.equals(t.name))) {
-				return false;
-			}
-		}
-		if (type == null) {
-			if (t.type != null) {
-				return false;
-			}
-		} else {
-			if ((t.type == null) || (!type.equals(t.type))) {
-				return false;
-			}
-		}
-		return true;
-	}
+  @Override
+  public boolean matches(Node<?> node) throws QueryException {
+    return ((node.getKind() == Kind.ELEMENT) && ((name == null) || (name.eq(node.getName()))) && ((type == null)
+        || (node.type().instanceOf(type))));
+  }
+
+  public String toString() {
+    return (name != null) ? (type == null)
+        ? String.format("element(\"%s\")", name)
+        : String.format("element(\"%s\", \"%s\")", name, type) : "element()";
+  }
+
+  public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
+    }
+    if (!(obj instanceof ElementType)) {
+      return false;
+    }
+    ElementType t = (ElementType) obj;
+    if (name == null) {
+      if (t.name != null) {
+        return false;
+      }
+    } else {
+      if ((t.name == null) || (!name.equals(t.name))) {
+        return false;
+      }
+    }
+    if (type == null) {
+      if (t.type != null) {
+        return false;
+      }
+    } else {
+      if ((t.type == null) || (!type.equals(t.type))) {
+        return false;
+      }
+    }
+    return true;
+  }
 }

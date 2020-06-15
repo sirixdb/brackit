@@ -38,41 +38,38 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class StringJoin extends AbstractFunction {
-	public StringJoin(QNm name, Signature signature) {
-		super(name, signature, true);
-	}
+  public StringJoin(QNm name, Signature signature) {
+    super(name, signature, true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		StringBuilder st = new StringBuilder();
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    StringBuilder st = new StringBuilder();
 
-		Str string;
-		String separator = (args[1] != null) ? ((Str) args[1]).stringValue() : "";
+    Str string;
+    String separator = (args[1] != null) ? ((Str) args[1]).stringValue() : "";
 
-		if (args[0] == null) {
-			return Str.EMPTY;
-		}
+    if (args[0] == null) {
+      return Str.EMPTY;
+    }
 
-		Iter s = args[0].iterate();
-		try {
-			if ((string = ((Str) s.next())) != null) {
-				st.append(string.stringValue());
+    Iter s = args[0].iterate();
+    try {
+      if ((string = ((Str) s.next())) != null) {
+        st.append(string.stringValue());
 
-				while ((string = ((Str) s.next())) != null) {
-					st.append(separator);
-					st.append(string.stringValue());
-				}
-			}
-		} finally {
-			s.close();
-		}
+        while ((string = ((Str) s.next())) != null) {
+          st.append(separator);
+          st.append(string.stringValue());
+        }
+      }
+    } finally {
+      s.close();
+    }
 
-		return new Str(st.toString());
-	}
+    return new Str(st.toString());
+  }
 }

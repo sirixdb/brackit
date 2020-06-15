@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -50,68 +50,65 @@ import org.brackit.xquery.xdm.json.Record;
  * @author Johannes Lichtenberger
  */
 public final class RenameJsonField extends ConstructedNodeBuilder implements Expr {
-	private final Expr oldFieldNameExpr;
+  private final Expr oldFieldNameExpr;
 
-	private final Expr targetExpr;
+  private final Expr targetExpr;
 
-	private final Expr newFieldNameExpr;
+  private final Expr newFieldNameExpr;
 
-	public RenameJsonField(Expr targetExpr, Expr oldFieldNameExpr, Expr newFieldNameExpr) {
-		this.targetExpr = targetExpr;
-		this.oldFieldNameExpr = oldFieldNameExpr;
-		this.newFieldNameExpr = newFieldNameExpr;
-	}
+  public RenameJsonField(Expr targetExpr, Expr oldFieldNameExpr, Expr newFieldNameExpr) {
+    this.targetExpr = targetExpr;
+    this.oldFieldNameExpr = oldFieldNameExpr;
+    this.newFieldNameExpr = newFieldNameExpr;
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return evaluateToItem(ctx, tuple);
-	}
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) throws QueryException {
+    return evaluateToItem(ctx, tuple);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		final Sequence target = targetExpr.evaluate(ctx, tuple);
-		final Item targetItem;
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) throws QueryException {
+    final Sequence target = targetExpr.evaluate(ctx, tuple);
+    final Item targetItem;
 
-		if (target == null) {
-			throw new QueryException(
-					ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
-		} else if (target instanceof Item) {
-			targetItem = (Item) target;
-		} else {
-			try (Iter it = target.iterate()) {
-				targetItem = it.next();
+    if (target == null) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
+    } else if (target instanceof Item) {
+      targetItem = (Item) target;
+    } else {
+      try (Iter it = target.iterate()) {
+        targetItem = it.next();
 
-				if (targetItem == null) {
-					throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
-				}
-				if (it.next() != null) {
-					throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE);
-				}
-			}
-		}
-		if (!(targetItem instanceof Record)) {
-			throw new QueryException(
-					ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
-					"Target item is atomic value %s", targetItem);
-		}
+        if (targetItem == null) {
+          throw new QueryException(ErrorCode.ERR_UPDATE_INSERT_TARGET_IS_EMPTY_SEQUENCE);
+        }
+        if (it.next() != null) {
+          throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE);
+        }
+      }
+    }
+    if (!(targetItem instanceof Record)) {
+      throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
+                               "Target item is atomic value %s",
+                               targetItem);
+    }
 
-		final QNm oldFieldName = (QNm) oldFieldNameExpr.evaluateToItem(ctx, tuple);
-		final QNm newFieldName = new QNm(((Str) newFieldNameExpr.evaluateToItem(ctx, tuple)).stringValue());
+    final QNm oldFieldName = (QNm) oldFieldNameExpr.evaluateToItem(ctx, tuple);
+    final QNm newFieldName = new QNm(((Str) newFieldNameExpr.evaluateToItem(ctx, tuple)).stringValue());
 
-		ctx.addPendingUpdate(new RenameRecordFieldOp((Record) target, oldFieldName, newFieldName));
+    ctx.addPendingUpdate(new RenameRecordFieldOp((Record) target, oldFieldName, newFieldName));
 
-		return null;
-	}
+    return null;
+  }
 
-	@Override
-	public boolean isUpdating() {
-		return true;
-	}
+  @Override
+  public boolean isUpdating() {
+    return true;
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 }

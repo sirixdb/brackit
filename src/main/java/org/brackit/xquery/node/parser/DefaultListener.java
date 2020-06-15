@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -31,62 +31,59 @@ import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class DefaultListener<E extends Node<?>> implements SubtreeListener<E> {
-	@Override
-	public <T extends E> void attribute(T node) throws DocumentException {
-	}
+  @Override
+  public <T extends E> void attribute(T node) throws DocumentException {
+  }
 
-	@Override
-	public void begin() throws DocumentException {
-	}
+  @Override
+  public void begin() throws DocumentException {
+  }
 
-	@Override
-	public void beginFragment() throws DocumentException {
-	}
+  @Override
+  public void beginFragment() throws DocumentException {
+  }
 
-	@Override
-	public <T extends E> void comment(T node) throws DocumentException {
-	}
+  @Override
+  public <T extends E> void comment(T node) throws DocumentException {
+  }
 
-	@Override
-	public void end() throws DocumentException {
-	}
+  @Override
+  public void end() throws DocumentException {
+  }
 
-	@Override
-	public void endDocument() throws DocumentException {
-	}
+  @Override
+  public void endDocument() throws DocumentException {
+  }
 
-	@Override
-	public <T extends E> void endElement(T node) throws DocumentException {
-	}
+  @Override
+  public <T extends E> void endElement(T node) throws DocumentException {
+  }
 
-	@Override
-	public void endFragment() throws DocumentException {
-	}
+  @Override
+  public void endFragment() throws DocumentException {
+  }
 
-	@Override
-	public void fail() throws DocumentException {
-	}
+  @Override
+  public void fail() throws DocumentException {
+  }
 
-	@Override
-	public <T extends E> void processingInstruction(T node)
-			throws DocumentException {
-	}
+  @Override
+  public <T extends E> void processingInstruction(T node) throws DocumentException {
+  }
 
-	@Override
-	public void startDocument() throws DocumentException {
-	}
+  @Override
+  public void startDocument() throws DocumentException {
+  }
 
-	@Override
-	public <T extends E> void startElement(T node) throws DocumentException {
-	}
+  @Override
+  public <T extends E> void startElement(T node) throws DocumentException {
+  }
 
-	@Override
-	public <T extends E> void text(T node) throws DocumentException {
-	}
+  @Override
+  public <T extends E> void text(T node) throws DocumentException {
+  }
 
 }

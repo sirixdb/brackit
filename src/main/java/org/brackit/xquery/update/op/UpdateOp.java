@@ -32,6 +32,7 @@ import org.brackit.xquery.xdm.StructuredItem;
 
 /**
  * Update operations used in XQuery Update Facility and JSONiq updates
+ *
  * @author Sebastian Baechle
  * @author Johannes Lichtenberger
  */

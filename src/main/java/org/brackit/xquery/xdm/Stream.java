@@ -32,7 +32,6 @@ package org.brackit.xquery.xdm;
  * sources and must be closed explicitly to release any held resources, like e.g. buffer pages.
  *
  * @author Sebastian Baechle
- *
  */
 public interface Stream<E> extends AutoCloseable {
   /**
@@ -40,7 +39,7 @@ public interface Stream<E> extends AutoCloseable {
    *
    * @return the next item or <code>null</code> if there are no more items
    * @throws DocumentException if an error occurs in this stream. If the exception is thrown, all held
-   *         resources will be released and no closing is necessary.
+   *                           resources will be released and no closing is necessary.
    */
   E next();
 

@@ -29,15 +29,14 @@ package org.brackit.xquery.atomic;
 
 import java.net.URI;
 import java.net.URL;
+
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Type;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class AnyURI extends AbstractAtomic {
   public static final AnyURI EMPTY = new AnyURI((URI) null);
@@ -111,8 +110,10 @@ public class AnyURI extends AbstractAtomic {
     if ((other instanceof AnyURI) || (other instanceof Str)) {
       return stringValue().compareTo(other.stringValue());
     }
-    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Cannot compare '%s' with '%s'", type(),
-        other.type());
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                             "Cannot compare '%s' with '%s'",
+                             type(),
+                             other.type());
   }
 
   @Override
@@ -127,9 +128,7 @@ public class AnyURI extends AbstractAtomic {
 
   @Override
   public String stringValue() {
-    return (uri != null)
-        ? uri.toString()
-        : "";
+    return (uri != null) ? uri.toString() : "";
   }
 
   public boolean isAbsolute() {
@@ -138,9 +137,7 @@ public class AnyURI extends AbstractAtomic {
 
   @Override
   public int hashCode() {
-    return (uri != null)
-        ? uri.hashCode()
-        : 0;
+    return (uri != null) ? uri.hashCode() : 0;
   }
 
   public AnyURI absolutize(AnyURI baseURI) throws QueryException {

@@ -50,71 +50,69 @@ import org.brackit.xquery.xdm.Signature;
  * http://www.w3.org/TR/xpath-functions/#func-index-of
  *
  * @author Max Bechtold
- *
  */
 public class IndexOf extends AbstractFunction {
 
-	public IndexOf(QNm name, Signature signature) {
-		super(name, signature, true);
-	}
+  public IndexOf(QNm name, Signature signature) {
+    super(name, signature, true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		if (args[0] == null) {
-			return null;
-		}
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    if (args[0] == null) {
+      return null;
+    }
 
-		if (args.length == 3) {
-			Str collation = (Str) args[2];
+    if (args.length == 3) {
+      Str collation = (Str) args[2];
 
-			if (!collation.stringValue()
-					.equals("http://www.w3.org/2005/xpath-functions/collation/codepoint")) {
-				throw new QueryException(ErrorCode.ERR_UNSUPPORTED_COLLATION,
-						"Unsupported collation: %s", collation);
-			}
-		}
+      if (!collation.stringValue().equals("http://www.w3.org/2005/xpath-functions/collation/codepoint")) {
+        throw new QueryException(ErrorCode.ERR_UNSUPPORTED_COLLATION, "Unsupported collation: %s", collation);
+      }
+    }
 
-		final Sequence s = args[0];
-		final Atomic a = ((Atomic) args[1]);
+    final Sequence s = args[0];
+    final Atomic a = ((Atomic) args[1]);
 
-		return new LazySequence() {
-			final Sequence seq = s;
-			final Atomic atomic = a;
+    return new LazySequence() {
+      final Sequence seq = s;
+      final Atomic atomic = a;
 
-			@Override
-			public Iter iterate() {
-				return new BaseIter() {
-					Iter it;
-					private IntNumeric next = Int32.ONE;
+      @Override
+      public Iter iterate() {
+        return new BaseIter() {
+          Iter it;
+          private IntNumeric next = Int32.ONE;
 
-					@Override
-					public Item next() throws QueryException {
-						if (it == null) {
-							it = seq.iterate();
-						}
+          @Override
+          public Item next() throws QueryException {
+            if (it == null) {
+              it = seq.iterate();
+            }
 
-						Atomic item;
+            Atomic item;
 
-						while ((item = (Atomic) it.next()) != null) {
-							IntNumeric current = next;
-							next = next.inc();
+            while ((item = (Atomic) it.next()) != null) {
+              IntNumeric current = next;
+              next = next.inc();
 
-							if (item.atomicCmp(atomic) == 0) {
-								return current;
-							}
-						}
+              if (item.atomicCmp(atomic) == 0) {
+                return current;
+              }
+            }
 
-						return null;
-					}
+            return null;
+          }
 
-					@Override
-					public void close() {
-						it.close();
-					}
-				};
-			};
-		};
-	}
+          @Override
+          public void close() {
+            it.close();
+          }
+        };
+      }
+
+      ;
+    };
+  }
 
 }

@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,55 +34,54 @@ import org.brackit.xquery.xdm.node.Node;
 
 /**
  * Base class for all insert operations.
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public abstract class AbstractInsertOp implements UpdateOp {
-	private final Node<?> target;
+  private final Node<?> target;
 
-	private Node<?>[] content;
+  private Node<?>[] content;
 
-	private int size;
+  private int size;
 
-	public AbstractInsertOp(Node<?> target) {
-		this.target = target;
-		this.content = new Node[1];
-	}
+  public AbstractInsertOp(Node<?> target) {
+    this.target = target;
+    this.content = new Node[1];
+  }
 
-	@Override
-	public void apply() {
-		for (int i = 0; i < size; i++) {
-			doInsert(target, content[i]);
-		}
-	}
+  @Override
+  public void apply() {
+    for (int i = 0; i < size; i++) {
+      doInsert(target, content[i]);
+    }
+  }
 
-	@Override
-	public Node<?> getTarget() {
-		return target;
-	}
+  @Override
+  public Node<?> getTarget() {
+    return target;
+  }
 
-	public void addContent(Node<?> node) {
-		if (size == content.length) {
-			content = Arrays.copyOf(content, (content.length * 3) / 2 + 1);
-		}
+  public void addContent(Node<?> node) {
+    if (size == content.length) {
+      content = Arrays.copyOf(content, (content.length * 3) / 2 + 1);
+    }
 
-		content[size++] = node;
-	}
+    content[size++] = node;
+  }
 
-	protected abstract void doInsert(Node<?> target, Node<?> content) throws QueryException;
+  protected abstract void doInsert(Node<?> target, Node<?> content) throws QueryException;
 
-	public String toString() {
-		StringBuilder out = new StringBuilder();
-		out.append(getType());
-		out.append(" {");
-		for (int i = 0; i < size; i++) {
-			if (i > 0)
-				out.append(", ");
-			out.append(content[i]);
-		}
-		out.append("} on ");
-		out.append(target);
-		return out.toString();
-	}
+  public String toString() {
+    StringBuilder out = new StringBuilder();
+    out.append(getType());
+    out.append(" {");
+    for (int i = 0; i < size; i++) {
+      if (i > 0)
+        out.append(", ");
+      out.append(content[i]);
+    }
+    out.append("} on ");
+    out.append(target);
+    return out.toString();
+  }
 }

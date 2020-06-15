@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -36,46 +36,45 @@ import org.brackit.xquery.QueryException;
  * between numeric types (xs:double, xs:float, xs:decimal and xs:integer) in
  * XQuery and defines operations on numeric values as described in "XQuery 1.0
  * and XPath 2.0 Functions and Operators: 6.2 Operators on Numeric Values".
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public interface Numeric extends Atomic {
-	double doubleValue();
+  double doubleValue();
 
-	float floatValue();
+  float floatValue();
 
-	BigDecimal integerValue();
+  BigDecimal integerValue();
 
-	BigDecimal decimalValue();
+  BigDecimal decimalValue();
 
-	long longValue();
+  long longValue();
 
-	int intValue();
-	
-	IntNumeric asIntNumeric();
+  int intValue();
 
-	Numeric add(Numeric other) throws QueryException;
+  IntNumeric asIntNumeric();
 
-	Numeric subtract(Numeric other) throws QueryException;
+  Numeric add(Numeric other) throws QueryException;
 
-	Numeric multiply(Numeric other) throws QueryException;
+  Numeric subtract(Numeric other) throws QueryException;
 
-	Numeric div(Numeric other) throws QueryException;
+  Numeric multiply(Numeric other) throws QueryException;
 
-	Numeric idiv(Numeric other) throws QueryException;
+  Numeric div(Numeric other) throws QueryException;
 
-	Numeric mod(Numeric other) throws QueryException;
+  Numeric idiv(Numeric other) throws QueryException;
 
-	Numeric negate() throws QueryException;
+  Numeric mod(Numeric other) throws QueryException;
 
-	Numeric round() throws QueryException;
+  Numeric negate() throws QueryException;
 
-	Numeric abs() throws QueryException;
+  Numeric round() throws QueryException;
 
-	Numeric floor() throws QueryException;
+  Numeric abs() throws QueryException;
 
-	Numeric ceiling() throws QueryException;
+  Numeric floor() throws QueryException;
 
-	Numeric roundHalfToEven(int precision) throws QueryException;
+  Numeric ceiling() throws QueryException;
+
+  Numeric roundHalfToEven(int precision) throws QueryException;
 }

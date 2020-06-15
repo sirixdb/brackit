@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,72 +34,67 @@ import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Sequence;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class LetBind extends Check implements Operator {
-	private final Operator in;
-	final Expr source;
-	private boolean bind = true;
+  private final Operator in;
+  final Expr source;
+  private boolean bind = true;
 
-	private class LetBindCursor implements Cursor {
-		private final Cursor c;
+  private class LetBindCursor implements Cursor {
+    private final Cursor c;
 
-		public LetBindCursor(Cursor c) {
-			this.c = c;
-		}
+    public LetBindCursor(Cursor c) {
+      this.c = c;
+    }
 
-		@Override
-		public void close(QueryContext ctx) {
-			c.close(ctx);
-		}
+    @Override
+    public void close(QueryContext ctx) {
+      c.close(ctx);
+    }
 
-		@Override
-		public Tuple next(QueryContext ctx) throws QueryException {
-			Tuple t = c.next(ctx);
+    @Override
+    public Tuple next(QueryContext ctx) throws QueryException {
+      Tuple t = c.next(ctx);
 
-			if (t == null) {
-				return null;
-			}
-			if ((check) && (dead(t))) {
-				return t.concat((Sequence) null);
-			}
+      if (t == null) {
+        return null;
+      }
+      if ((check) && (dead(t))) {
+        return t.concat((Sequence) null);
+      }
 
-			Sequence sequence = source.evaluate(ctx, t);
-			return t.concat(sequence);
-		}
+      Sequence sequence = source.evaluate(ctx, t);
+      return t.concat(sequence);
+    }
 
-		@Override
-		public void open(QueryContext ctx) throws QueryException {
-			c.open(ctx);
-		}
-	}
+    @Override
+    public void open(QueryContext ctx) throws QueryException {
+      c.open(ctx);
+    }
+  }
 
-	public LetBind(Operator in, Expr source) {
-		this.in = in;
-		this.source = source;
-	}
+  public LetBind(Operator in, Expr source) {
+    this.in = in;
+    this.source = source;
+  }
 
-	public void bind(boolean bind) {
-		this.bind = bind;
-	}
+  public void bind(boolean bind) {
+    this.bind = bind;
+  }
 
-	@Override
-	public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-		return (bind) ? new LetBindCursor(in.create(ctx, tuple)) : in.create(
-				ctx, tuple);
-	}
+  @Override
+  public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
+    return (bind) ? new LetBindCursor(in.create(ctx, tuple)) : in.create(ctx, tuple);
+  }
 
-	@Override
-	public Cursor create(QueryContext ctx, Tuple[] buf, int len)
-			throws QueryException {
-		return (bind) ? new LetBindCursor(in.create(ctx, buf, len)) : in
-				.create(ctx, buf, len);
-	}
+  @Override
+  public Cursor create(QueryContext ctx, Tuple[] buf, int len) throws QueryException {
+    return (bind) ? new LetBindCursor(in.create(ctx, buf, len)) : in.create(ctx, buf, len);
+  }
 
-	@Override
-	public int tupleWidth(int initSize) {
-		return in.tupleWidth(initSize) + (bind ? 1 : 0);
-	}
+  @Override
+  public int tupleWidth(int initSize) {
+    return in.tupleWidth(initSize) + (bind ? 1 : 0);
+  }
 }

@@ -47,164 +47,160 @@ import static java.util.Objects.*;
  * @author Johannes Lichtenberger
  */
 public final class ArrayRecord extends AbstractRecord {
-	// two arrays for key/value mapping
-	// if lookup costs dominate because the compiler cannot
-	// exploit positional access as alternative, we should
-	// switch to a more efficient (hash) map.
-	private final List<QNm> fields;
-	private final List<Sequence> vals;
-	private final Map<QNm, Sequence> fieldsToVals;
+  // two arrays for key/value mapping
+  // if lookup costs dominate because the compiler cannot
+  // exploit positional access as alternative, we should
+  // switch to a more efficient (hash) map.
+  private final List<QNm> fields;
+  private final List<Sequence> vals;
+  private final Map<QNm, Sequence> fieldsToVals;
 
-	public ArrayRecord(QNm[] fields, Sequence[] values) {
-		this.fields = new GapList<>(Arrays.asList(fields));
-		this.vals = new GapList<>(Arrays.asList(values));
-		this.fieldsToVals = new HashMap<>();
+  public ArrayRecord(QNm[] fields, Sequence[] values) {
+    this.fields = new GapList<>(Arrays.asList(fields));
+    this.vals = new GapList<>(Arrays.asList(values));
+    this.fieldsToVals = new HashMap<>();
 
-		for (int i = 0; i < fields.length; i++) {
-			final QNm field = fields[i];
-			final Sequence value = values[i];
-			fieldsToVals.put(field, value);
-		}
-	}
+    for (int i = 0; i < fields.length; i++) {
+      final QNm field = fields[i];
+      final Sequence value = values[i];
+      fieldsToVals.put(field, value);
+    }
+  }
 
-	@Override
-	public Record replace(QNm field, Sequence value) {
-		requireNonNull(field);
-		for (int i = 0, size = fields.size(); i < size; i++) {
-			final QNm currentField = fields.get(i);
-			if (currentField.equals(field)) {
-				vals.set(i, value);
-				fieldsToVals.put(field, value);
-				break;
-			}
-		}
-		return this;
-	}
+  @Override
+  public Record replace(QNm field, Sequence value) {
+    requireNonNull(field);
+    for (int i = 0, size = fields.size(); i < size; i++) {
+      final QNm currentField = fields.get(i);
+      if (currentField.equals(field)) {
+        vals.set(i, value);
+        fieldsToVals.put(field, value);
+        break;
+      }
+    }
+    return this;
+  }
 
-	@Override
-	public Record rename(QNm field, QNm newFieldName) {
-		requireNonNull(field);
-		requireNonNull(newFieldName);
-		for (int i = 0, size = fields.size(); i < size; i++) {
-			final QNm currentField = fields.get(i);
-			if (currentField.equals(field)) {
-				fields.set(i, newFieldName);
+  @Override
+  public Record rename(QNm field, QNm newFieldName) {
+    requireNonNull(field);
+    requireNonNull(newFieldName);
+    for (int i = 0, size = fields.size(); i < size; i++) {
+      final QNm currentField = fields.get(i);
+      if (currentField.equals(field)) {
+        fields.set(i, newFieldName);
 
-				final Sequence value = fieldsToVals.remove(field);
-				fieldsToVals.put(newFieldName, value);
-				break;
-			}
-		}
+        final Sequence value = fieldsToVals.remove(field);
+        fieldsToVals.put(newFieldName, value);
+        break;
+      }
+    }
 
-		return this;
-	}
+    return this;
+  }
 
-	@Override
-	public Record insert(QNm field, Sequence value) {
-		if (fieldsToVals.containsKey(field)) {
-			throw new QueryException(new QNm("Field already defined."));
-		}
-		fields.add(field);
-		vals.add(value);
-		fieldsToVals.put(field, value);
-		return this;
-	}
+  @Override
+  public Record insert(QNm field, Sequence value) {
+    if (fieldsToVals.containsKey(field)) {
+      throw new QueryException(new QNm("Field already defined."));
+    }
+    fields.add(field);
+    vals.add(value);
+    fieldsToVals.put(field, value);
+    return this;
+  }
 
-	@Override
-	public Record remove(QNm field) {
-		int index = 0;
-		for (int i = 0, size = fields.size(); i < size; i++) {
-			final QNm currentField = fields.get(i);
-			if (field.equals(currentField)) {
-				index = i;
-				break;
-			}
-		}
-		fields.remove(index);
-		vals.remove(index);
-		fieldsToVals.remove(field);
-		return this;
-	}
+  @Override
+  public Record remove(QNm field) {
+    int index = 0;
+    for (int i = 0, size = fields.size(); i < size; i++) {
+      final QNm currentField = fields.get(i);
+      if (field.equals(currentField)) {
+        index = i;
+        break;
+      }
+    }
+    fields.remove(index);
+    vals.remove(index);
+    fieldsToVals.remove(field);
+    return this;
+  }
 
-	@Override
-	public Record remove(IntNumeric index) {
-		return remove(index.intValue());
-	}
+  @Override
+  public Record remove(IntNumeric index) {
+    return remove(index.intValue());
+  }
 
-	@Override
-	public Record remove(int index) {
-		if (index < 0 || index > vals.size() - 1) {
-			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
-		}
-		final QNm field = fields.remove(index);
-		vals.remove(index);
-		fieldsToVals.remove(field);
-		return this;
-	}
+  @Override
+  public Record remove(int index) {
+    if (index < 0 || index > vals.size() - 1) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
+    }
+    final QNm field = fields.remove(index);
+    vals.remove(index);
+    fieldsToVals.remove(field);
+    return this;
+  }
 
-	@Override
-	public Sequence get(QNm field) {
-		return fieldsToVals.get(field);
-	}
+  @Override
+  public Sequence get(QNm field) {
+    return fieldsToVals.get(field);
+  }
 
-	@Override
-	public Sequence value(IntNumeric i) {
-		try {
-			return vals.get(i.intValue());
-		} catch (ArrayIndexOutOfBoundsException e) {
-			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-					"Invalid field index: %s", i);
-		}
-	}
+  @Override
+  public Sequence value(IntNumeric i) {
+    try {
+      return vals.get(i.intValue());
+    } catch (ArrayIndexOutOfBoundsException e) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid field index: %s", i);
+    }
+  }
 
-	@Override
-	public Sequence value(int i) {
-		try {
-			return vals.get(i);
-		} catch (ArrayIndexOutOfBoundsException e) {
-			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-					"Invalid field index: %s", i);
-		}
-	}
+  @Override
+  public Sequence value(int i) {
+    try {
+      return vals.get(i);
+    } catch (ArrayIndexOutOfBoundsException e) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid field index: %s", i);
+    }
+  }
 
-	@Override
-	public Array names() {
-		return new DArray(fields);
-	}
+  @Override
+  public Array names() {
+    return new DArray(fields);
+  }
 
-	@Override
-	public Array values() {
-		return new DArray(vals);
-	}
+  @Override
+  public Array values() {
+    return new DArray(vals);
+  }
 
-	@Override
-	public QNm name(IntNumeric i) {
-		try {
-			return fields.get(i.intValue());
-		} catch (ArrayIndexOutOfBoundsException e) {
-			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-					"Invalid field index: %s", i);
-		}
-	}
+  @Override
+  public QNm name(IntNumeric i) {
+    try {
+      return fields.get(i.intValue());
+    } catch (ArrayIndexOutOfBoundsException e) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid field index: %s", i);
+    }
+  }
 
-	@Override
-	public QNm name(int i) {
-		try {
-			return fields.get(i);
-		} catch (ArrayIndexOutOfBoundsException e) {
-			throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-					"Invalid field index: %s", i);
-		}
-	}
+  @Override
+  public QNm name(int i) {
+    try {
+      return fields.get(i);
+    } catch (ArrayIndexOutOfBoundsException e) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid field index: %s", i);
+    }
+  }
 
-	@Override
-	public IntNumeric length() {
-		int length = vals.size();
-		return (length <= 20) ? Int32.ZERO_TWO_TWENTY[length] : new Int32(length);
-	}
+  @Override
+  public IntNumeric length() {
+    int length = vals.size();
+    return (length <= 20) ? Int32.ZERO_TWO_TWENTY[length] : new Int32(length);
+  }
 
-	@Override
-	public int len() {
-		return vals.size();
-	}
+  @Override
+  public int len() {
+    return vals.size();
+  }
 }

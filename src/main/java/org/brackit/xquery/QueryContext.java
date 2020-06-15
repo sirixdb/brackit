@@ -17,7 +17,6 @@ import org.brackit.xquery.xdm.node.NodeFactory;
 import org.brackit.xquery.xdm.node.NodeStore;
 import org.brackit.xquery.xdm.type.ItemType;
 
-
 public interface QueryContext {
 
   void addPendingUpdate(UpdateOp op);

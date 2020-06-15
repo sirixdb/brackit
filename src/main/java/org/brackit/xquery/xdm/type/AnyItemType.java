@@ -31,14 +31,13 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Item;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public final class AnyItemType implements ItemType {
   public static final AnyItemType ANY = new AnyItemType();
 
-  public AnyItemType() {}
+  public AnyItemType() {
+  }
 
   @Override
   public boolean isAnyItem() {

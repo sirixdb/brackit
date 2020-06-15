@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -30,6 +30,7 @@ package org.brackit.xquery.function.io;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
@@ -49,61 +50,56 @@ import org.brackit.xquery.xdm.type.Cardinality;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class Readline extends AbstractFunction {
-	public static final QNm DEFAULT_NAME = new QNm(IOFun.IO_NSURI,
-			IOFun.IO_PREFIX, "readline");
+  public static final QNm DEFAULT_NAME = new QNm(IOFun.IO_NSURI, IOFun.IO_PREFIX, "readline");
 
-	public Readline() {
-		this(DEFAULT_NAME);
-	}
+  public Readline() {
+    this(DEFAULT_NAME);
+  }
 
-	public Readline(QNm name) {
-		super(name, new Signature(new SequenceType(AtomicType.STR,
-				Cardinality.ZeroOrMany), new SequenceType(AtomicType.STR,
-				Cardinality.One)), true);
-	}
+  public Readline(QNm name) {
+    super(name,
+          new Signature(new SequenceType(AtomicType.STR, Cardinality.ZeroOrMany),
+                        new SequenceType(AtomicType.STR, Cardinality.One)),
+          true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx,
-			Sequence[] args) throws QueryException {
-		final String uri = ((Atomic) args[0]).stringValue();
-		return new LazySequence() {
-			@Override
-			public Iter iterate() {
-				return new BaseIter() {
-					BufferedReader in;
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    final String uri = ((Atomic) args[0]).stringValue();
+    return new LazySequence() {
+      @Override
+      public Iter iterate() {
+        return new BaseIter() {
+          BufferedReader in;
 
-					@Override
-					public Item next() throws QueryException {
-						try {
-							if (in == null) {
-								in = new BufferedReader(new InputStreamReader(
-										URIHandler.getInputStream(uri)));
-							}
-							String line = in.readLine();
-							return (line != null) ? new Str(line) : null;
-						} catch (Exception e) {
-							throw new QueryException(e,
-									IOFun.IO_LOADFILE_INT_ERROR);
-						}
-					}
+          @Override
+          public Item next() throws QueryException {
+            try {
+              if (in == null) {
+                in = new BufferedReader(new InputStreamReader(URIHandler.getInputStream(uri)));
+              }
+              String line = in.readLine();
+              return (line != null) ? new Str(line) : null;
+            } catch (Exception e) {
+              throw new QueryException(e, IOFun.IO_LOADFILE_INT_ERROR);
+            }
+          }
 
-					@Override
-					public void close() {
-						if (in != null) {
-							try {
-								in.close();
-							} catch (IOException e) {
-								// ignore
-							}
-						}
-					}
-				};
-			}
-		};
-	}
+          @Override
+          public void close() {
+            if (in != null) {
+              try {
+                in.close();
+              } catch (IOException e) {
+                // ignore
+              }
+            }
+          }
+        };
+      }
+    };
+  }
 }

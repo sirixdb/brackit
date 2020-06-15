@@ -29,6 +29,7 @@ package org.brackit.xquery.function.io;
 
 import java.io.File;
 import java.io.FileFilter;
+
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
@@ -48,59 +49,56 @@ import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * @author Sebastian Baechle
- *
  */
 @FunctionAnnotation(description = "Lists all files in the given path. "
-		+ "The optional filter pattern is evaluated according to "
-		+ "fn:matches without additional flags, i.e., to match all"
-		+ "files in a directory ending with \".xml\" you must use \"\\.xml$\" "
-		+ "instead of a shell-like \"*.xml\"", parameters = { "$path",
-		"$pattern" })
+    + "The optional filter pattern is evaluated according to "
+    + "fn:matches without additional flags, i.e., to match all"
+    + "files in a directory ending with \".xml\" you must use \"\\.xml$\" "
+    + "instead of a shell-like \"*.xml\"", parameters = { "$path", "$pattern" })
 public class Ls extends AbstractFunction {
-	public static final QNm DEFAULT_NAME = new QNm(IOFun.IO_NSURI,
-			IOFun.IO_PREFIX, "ls");
+  public static final QNm DEFAULT_NAME = new QNm(IOFun.IO_NSURI, IOFun.IO_PREFIX, "ls");
 
-	public Ls(boolean withFilter) {
-		this(DEFAULT_NAME, withFilter);
-	}
+  public Ls(boolean withFilter) {
+    this(DEFAULT_NAME, withFilter);
+  }
 
-	public Ls(QNm name, boolean withFilter) {
-		super(name, withFilter ? (new Signature(new SequenceType(
-				AtomicType.STR, Cardinality.ZeroOrMany), new SequenceType(
-				AtomicType.STR, Cardinality.One), new SequenceType(
-				AtomicType.STR, Cardinality.ZeroOrOne))) : (new Signature(
-				new SequenceType(AtomicType.STR, Cardinality.ZeroOrMany),
-				new SequenceType(AtomicType.STR, Cardinality.One))), true);
-	}
+  public Ls(QNm name, boolean withFilter) {
+    super(name,
+          withFilter
+              ? (new Signature(new SequenceType(AtomicType.STR, Cardinality.ZeroOrMany),
+                               new SequenceType(AtomicType.STR, Cardinality.One),
+                               new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne)))
+              : (new Signature(new SequenceType(AtomicType.STR, Cardinality.ZeroOrMany),
+                               new SequenceType(AtomicType.STR, Cardinality.One))),
+          true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx,
-			Sequence[] args) throws QueryException {
-		File dir = new File(((Atomic) args[0]).stringValue());
-		FileFilter filter = null;
-		if (args.length > 1) {
-			final String pattern = ((Atomic) args[1]).stringValue();
-			filter = new FileFilter() {
-				@Override
-				public boolean accept(File pathname) {
-					try {
-						if (pattern.isEmpty()) {
-							return true;
-						}
-						Sequence match = Regex.match(Mode.MATCH,
-								pathname.getName(), pattern, null, null);
-						return match.booleanValue();
-					} catch (QueryException e) {
-						return false;
-					}
-				}
-			};
-		}
-		File[] files = dir.listFiles(filter);
-		Str[] res = new Str[files.length];
-		for (int i = 0; i < files.length; i++) {
-			res[i] = new Str(files[i].toURI().toString());
-		}
-		return new ItemSequence(res);
-	}
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    File dir = new File(((Atomic) args[0]).stringValue());
+    FileFilter filter = null;
+    if (args.length > 1) {
+      final String pattern = ((Atomic) args[1]).stringValue();
+      filter = new FileFilter() {
+        @Override
+        public boolean accept(File pathname) {
+          try {
+            if (pattern.isEmpty()) {
+              return true;
+            }
+            Sequence match = Regex.match(Mode.MATCH, pathname.getName(), pattern, null, null);
+            return match.booleanValue();
+          } catch (QueryException e) {
+            return false;
+          }
+        }
+      };
+    }
+    File[] files = dir.listFiles(filter);
+    Str[] res = new Str[files.length];
+    for (int i = 0; i < files.length; i++) {
+      res[i] = new Str(files[i].toURI().toString());
+    }
+    return new ItemSequence(res);
+  }
 }

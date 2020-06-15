@@ -42,31 +42,27 @@ import org.brackit.xquery.xdm.type.Cardinality;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
- *
  * @author Henrique Valer
- *
  */
 public class Mkdir extends AbstractFunction {
 
-	public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI,
-			Bits.BIT_PREFIX, "mkdir");
+  public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI, Bits.BIT_PREFIX, "mkdir");
 
-	public Mkdir() {
-		super(Mkdir.DEFAULT_NAME, new Signature(new SequenceType(
-				AtomicType.STR, Cardinality.One), new SequenceType(
-				AtomicType.STR, Cardinality.One)), true);
-	}
+  public Mkdir() {
+    super(Mkdir.DEFAULT_NAME,
+          new Signature(new SequenceType(AtomicType.STR, Cardinality.One),
+                        new SequenceType(AtomicType.STR, Cardinality.One)),
+          true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx,
-			Sequence[] args) throws QueryException {
-		String vDirName = ((Atomic) args[0]).stringValue();
-		try {
-			ctx.getNodeStore().makeDir(vDirName);
-			return Bool.TRUE;
-		} catch (Exception e) {
-			throw new QueryException(e, BitFun.BIT_MAKEDIRECTORY_INT_ERROR,
-					e.getMessage());
-		}
-	}
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    String vDirName = ((Atomic) args[0]).stringValue();
+    try {
+      ctx.getNodeStore().makeDir(vDirName);
+      return Bool.TRUE;
+    } catch (Exception e) {
+      throw new QueryException(e, BitFun.BIT_MAKEDIRECTORY_INT_ERROR, e.getMessage());
+    }
+  }
 }

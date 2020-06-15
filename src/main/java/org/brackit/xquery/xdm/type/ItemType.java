@@ -30,9 +30,7 @@ package org.brackit.xquery.xdm.type;
 import org.brackit.xquery.xdm.Item;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public interface ItemType {
 

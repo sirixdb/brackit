@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -32,67 +32,65 @@ import org.brackit.xquery.xdm.Stream;
 
 /**
  * Flattens out a stream of items that provide streams into a single stream.
- * 
- * @author Sebastian Baechle
- * 
+ *
  * @param <K>
  * @param <E>
+ * @author Sebastian Baechle
  */
 public abstract class FlatteningStream<K, E> implements Stream<E> {
-	private Stream<? extends K> in;
+  private Stream<? extends K> in;
 
-	private Stream<? extends E> out;
+  private Stream<? extends E> out;
 
-	private E next;
+  private E next;
 
-	public FlatteningStream(Stream<? extends K> in) {
-		super();
-		this.in = in;
-	}
+  public FlatteningStream(Stream<? extends K> in) {
+    super();
+    this.in = in;
+  }
 
-	@Override
-	public void close() {
-		if (out != null) {
-			out.close();
-			out = null;
-		}
-		if (in != null) {
-			in.close();
-			in = null;
-		}
-	}
+  @Override
+  public void close() {
+    if (out != null) {
+      out.close();
+      out = null;
+    }
+    if (in != null) {
+      in.close();
+      in = null;
+    }
+  }
 
-	@Override
-	public E next() throws DocumentException {
-		try {
-			E e;
-			while ((out == null) || ((e = out.next()) == null)) {
-				if (out != null) {
-					out.close();
-					out = null;
-				}
+  @Override
+  public E next() throws DocumentException {
+    try {
+      E e;
+      while ((out == null) || ((e = out.next()) == null)) {
+        if (out != null) {
+          out.close();
+          out = null;
+        }
 
-				if (in == null) {
-					return null;
-				}
+        if (in == null) {
+          return null;
+        }
 
-				K k;
-				if ((k = in.next()) != null) {
-					out = getOutStream(k);
-				} else {
-					in.close();
-					in = null;
-					return null;
-				}
-			}
+        K k;
+        if ((k = in.next()) != null) {
+          out = getOutStream(k);
+        } else {
+          in.close();
+          in = null;
+          return null;
+        }
+      }
 
-			return e;
-		} catch (DocumentException e) {
-			close();
-			throw e;
-		}
-	}
+      return e;
+    } catch (DocumentException e) {
+      close();
+      throw e;
+    }
+  }
 
-	protected abstract Stream<? extends E> getOutStream(K next)
-			throws DocumentException;
+  protected abstract Stream<? extends E> getOutStream(K next) throws DocumentException;
 }

@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,6 +28,7 @@
 package org.brackit.xquery.operator;
 
 import java.util.Arrays;
+
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
@@ -38,114 +39,108 @@ import org.brackit.xquery.xdm.Sequence;
 
 /**
  * @author Sebastian Baechle
- * 
  */
 public class NLJoin implements Operator {
 
-	final Operator l;
-	final Operator r;
-	final Expr rExpr;
-	final Expr lExpr;
-	final boolean leftJoin;
-	final Cmp cmp;
-	final boolean isGCmp;
+  final Operator l;
+  final Operator r;
+  final Expr rExpr;
+  final Expr lExpr;
+  final boolean leftJoin;
+  final Cmp cmp;
+  final boolean isGCmp;
 
-	public NLJoin(Operator l, Operator r, Expr lExpr, Expr rExpr, Cmp cmp,
-			boolean isGCmp, boolean leftJoin) {
-		super();
-		this.l = l;
-		this.r = r;
-		this.rExpr = rExpr;
-		this.lExpr = lExpr;
-		this.cmp = cmp;
-		this.isGCmp = isGCmp;
-		this.leftJoin = leftJoin;
-	}
+  public NLJoin(Operator l, Operator r, Expr lExpr, Expr rExpr, Cmp cmp, boolean isGCmp, boolean leftJoin) {
+    super();
+    this.l = l;
+    this.r = r;
+    this.rExpr = rExpr;
+    this.lExpr = lExpr;
+    this.cmp = cmp;
+    this.isGCmp = isGCmp;
+    this.leftJoin = leftJoin;
+  }
 
-	@Override
-	public Cursor create(QueryContext ctx, Tuple tuple) {
-		int lSize = l.tupleWidth(tuple.getSize());
-		int pad = r.tupleWidth(tuple.getSize()) - tuple.getSize();
-		return new NLJoinCursor(l.create(ctx, tuple), lSize, pad);
-	}
-	
-	@Override
-	public Cursor create(QueryContext ctx, Tuple[] buf, int len) {
-		int lSize = l.tupleWidth(buf[0].getSize());
-		int pad = r.tupleWidth(buf[0].getSize()) - buf[0].getSize();
-		return new NLJoinCursor(l.create(ctx, buf, len), lSize, pad);
-	}
+  @Override
+  public Cursor create(QueryContext ctx, Tuple tuple) {
+    int lSize = l.tupleWidth(tuple.getSize());
+    int pad = r.tupleWidth(tuple.getSize()) - tuple.getSize();
+    return new NLJoinCursor(l.create(ctx, tuple), lSize, pad);
+  }
 
-	@Override
-	public int tupleWidth(int initSize) {
-		return l.tupleWidth(initSize) + r.tupleWidth(initSize) - initSize;
-	}
+  @Override
+  public Cursor create(QueryContext ctx, Tuple[] buf, int len) {
+    int lSize = l.tupleWidth(buf[0].getSize());
+    int pad = r.tupleWidth(buf[0].getSize()) - buf[0].getSize();
+    return new NLJoinCursor(l.create(ctx, buf, len), lSize, pad);
+  }
 
-	private class NLJoinCursor implements Cursor {
-		private final Cursor lc;
-		private final int lSize;
-		private final Sequence[] padding;
-		private Tuple lt;
-		private Sequence lKey;
-		private boolean lMatch;
-		private Cursor rc;
+  @Override
+  public int tupleWidth(int initSize) {
+    return l.tupleWidth(initSize) + r.tupleWidth(initSize) - initSize;
+  }
 
-		private NLJoinCursor(Cursor lc, int lSize, int pad) {
-			this.lc = lc;
-			this.lSize = lSize;
-			this.padding = new Sequence[pad];
-		}
+  private class NLJoinCursor implements Cursor {
+    private final Cursor lc;
+    private final int lSize;
+    private final Sequence[] padding;
+    private Tuple lt;
+    private Sequence lKey;
+    private boolean lMatch;
+    private Cursor rc;
 
-		@Override
-		public void open(QueryContext ctx) {
-			lc.open(ctx);
-		}
+    private NLJoinCursor(Cursor lc, int lSize, int pad) {
+      this.lc = lc;
+      this.lSize = lSize;
+      this.padding = new Sequence[pad];
+    }
 
-		@Override
-		public Tuple next(QueryContext ctx) {
-			Tuple rt;
-			Sequence rKey;
-			while (true) {
-				if (rc == null) {
-					lt = lc.next(ctx);
-					if (lt == null) {
-						return null;
-					}
-					lMatch = false;
-					lKey = (isGCmp) ? lExpr.evaluate(ctx, lt) : lExpr
-							.evaluateToItem(ctx, lt);
-					rc = r.create(ctx, lt);
-					rc.open(ctx);
-				}
-				while ((rt = rc.next(ctx)) != null) {
-					rKey = (isGCmp) ? rExpr.evaluate(ctx, rt) : rExpr
-							.evaluateToItem(ctx, rt);
+    @Override
+    public void open(QueryContext ctx) {
+      lc.open(ctx);
+    }
 
-					boolean res = (isGCmp) ? cmp.gCmp(ctx, lKey, rKey) : cmp
-							.vCmp(ctx, (Item) lKey, (Item) rKey);
+    @Override
+    public Tuple next(QueryContext ctx) {
+      Tuple rt;
+      Sequence rKey;
+      while (true) {
+        if (rc == null) {
+          lt = lc.next(ctx);
+          if (lt == null) {
+            return null;
+          }
+          lMatch = false;
+          lKey = (isGCmp) ? lExpr.evaluate(ctx, lt) : lExpr.evaluateToItem(ctx, lt);
+          rc = r.create(ctx, lt);
+          rc.open(ctx);
+        }
+        while ((rt = rc.next(ctx)) != null) {
+          rKey = (isGCmp) ? rExpr.evaluate(ctx, rt) : rExpr.evaluateToItem(ctx, rt);
 
-					if (res) {
-						Sequence[] tmp = rt.array();
-						Sequence[] bindings = Arrays.copyOfRange(tmp, lSize,
-								tmp.length);
-						lMatch = true;
-						return lt.concat(bindings);
-					}
-				}
-				rc.close(ctx);
-				rc = null;
-				if ((leftJoin) && (!lMatch)) {
-					return lt.concat(padding);
-				}
-			}
-		}
+          boolean res = (isGCmp) ? cmp.gCmp(ctx, lKey, rKey) : cmp.vCmp(ctx, (Item) lKey, (Item) rKey);
 
-		@Override
-		public void close(QueryContext ctx) {
-			if (rc != null) {
-				rc.close(ctx);
-			}
-			lc.close(ctx);
-		}
-	}
+          if (res) {
+            Sequence[] tmp = rt.array();
+            Sequence[] bindings = Arrays.copyOfRange(tmp, lSize, tmp.length);
+            lMatch = true;
+            return lt.concat(bindings);
+          }
+        }
+        rc.close(ctx);
+        rc = null;
+        if ((leftJoin) && (!lMatch)) {
+          return lt.concat(padding);
+        }
+      }
+    }
+
+    @Override
+    public void close(QueryContext ctx) {
+      if (rc != null) {
+        rc.close(ctx);
+      }
+      lc.close(ctx);
+    }
+  }
 }

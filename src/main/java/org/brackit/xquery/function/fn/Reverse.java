@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -41,34 +41,32 @@ import org.brackit.xquery.xdm.Signature;
 /**
  * Implementation of predefined function fn:reverse($arg1) as per
  * http://www.w3.org/TR/xpath-functions/#func-reverse
- * 
+ *
  * @author Max Bechtold
- * 
  */
 public class Reverse extends AbstractFunction {
 
-	public Reverse(QNm name, Signature signature) {
-		super(name, signature, true);
-	}
+  public Reverse(QNm name, Signature signature) {
+    super(name, signature, true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		Sequence s = args[0];
-		if (s == null) {
-			return null;
-		}
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    Sequence s = args[0];
+    if (s == null) {
+      return null;
+    }
 
-		Item[] items = new Item[s.size().intValue()];
-		Item item = null;
-		Iter iter = s.iterate();
+    Item[] items = new Item[s.size().intValue()];
+    Item item = null;
+    Iter iter = s.iterate();
 
-		int i = items.length - 1;
-		while ((item = iter.next()) != null) {
-			items[i--] = item;
-		}
+    int i = items.length - 1;
+    while ((item = iter.next()) != null) {
+      items[i--] = item;
+    }
 
-		return new ItemSequence(items);
-	}
+    return new ItemSequence(items);
+  }
 
 }

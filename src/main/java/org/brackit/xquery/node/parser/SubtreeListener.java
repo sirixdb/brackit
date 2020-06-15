@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -32,35 +32,33 @@ import org.brackit.xquery.xdm.node.Node;
 
 /**
  * SAX-like handler-interface for documents.
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public interface SubtreeListener<E extends Node<?>> {
-	public void startDocument() throws DocumentException;
+  public void startDocument() throws DocumentException;
 
-	public void endDocument() throws DocumentException;
+  public void endDocument() throws DocumentException;
 
-	public <T extends E> void text(T node) throws DocumentException;
+  public <T extends E> void text(T node) throws DocumentException;
 
-	public <T extends E> void comment(T node) throws DocumentException;
+  public <T extends E> void comment(T node) throws DocumentException;
 
-	public <T extends E> void processingInstruction(T node)
-			throws DocumentException;
+  public <T extends E> void processingInstruction(T node) throws DocumentException;
 
-	public <T extends E> void startElement(T node) throws DocumentException;
+  public <T extends E> void startElement(T node) throws DocumentException;
 
-	public <T extends E> void endElement(T node) throws DocumentException;
+  public <T extends E> void endElement(T node) throws DocumentException;
 
-	public <T extends E> void attribute(T node) throws DocumentException;
+  public <T extends E> void attribute(T node) throws DocumentException;
 
-	public void begin() throws DocumentException;
+  public void begin() throws DocumentException;
 
-	public void beginFragment() throws DocumentException;
+  public void beginFragment() throws DocumentException;
 
-	public void endFragment() throws DocumentException;
+  public void endFragment() throws DocumentException;
 
-	public void end() throws DocumentException;
+  public void end() throws DocumentException;
 
-	public void fail() throws DocumentException;
+  public void fail() throws DocumentException;
 }

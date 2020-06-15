@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -32,88 +32,85 @@ import java.util.HashMap;
 import org.brackit.xquery.atomic.QNm;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class VarScopes {
-	private int idSequence;
-	private final Scope root = new Scope(null);
-	private Scope current = root;
-	private Scope resolveIn = root;
-	private int level;
+  private int idSequence;
+  private final Scope root = new Scope(null);
+  private Scope current = root;
+  private Scope resolveIn = root;
+  private int level;
 
-	private static class Scope {
-		Scope parent;
-		HashMap<QNm, Variable> mapping = new HashMap<>();
+  private static class Scope {
+    Scope parent;
+    HashMap<QNm, Variable> mapping = new HashMap<>();
 
-		Scope(Scope parent) {
-			this.parent = parent;
-		}
+    Scope(Scope parent) {
+      this.parent = parent;
+    }
 
-		public String toString() {
-			return mapping.toString();
-		}
-	}
+    public String toString() {
+      return mapping.toString();
+    }
+  }
 
-	public static class Variable {
-		QNm name;
+  public static class Variable {
+    QNm name;
 
-		public Variable(QNm name) {
-			this.name = name;
-		}
+    public Variable(QNm name) {
+      this.name = name;
+    }
 
-		public String toString() {
-			return name.toString();
-		}
-	}
+    public String toString() {
+      return name.toString();
+    }
+  }
 
-	public int scopeCount() {
-		return level;
-	}
+  public int scopeCount() {
+    return level;
+  }
 
-	public void openScope() {
-		level++;
-		current = new Scope(current);
-	}
+  public void openScope() {
+    level++;
+    current = new Scope(current);
+  }
 
-	public void offerScope() {
-		resolveIn = current;
-	}
+  public void offerScope() {
+    resolveIn = current;
+  }
 
-	public void closeScope() {
-		if (level == 0) {
-			throw new RuntimeException();
-		}
-		level--;
-		current = current.parent;
-		resolveIn = current;
-	}
-	
-	public boolean check(QNm name) {
-		return current.mapping.containsKey(name);
-	}
+  public void closeScope() {
+    if (level == 0) {
+      throw new RuntimeException();
+    }
+    level--;
+    current = current.parent;
+    resolveIn = current;
+  }
 
-	public QNm declare(QNm name) {
-		Variable var = (level > 0) ? new Variable(
-				new QNm(name.getNamespaceURI(), name.getPrefix(), name.getLocalName() + ";" + idSequence++))
-				: new Variable(name);
-		current.mapping.put(name, var);
-		return var.name;
-	}
+  public boolean check(QNm name) {
+    return current.mapping.containsKey(name);
+  }
 
-	public QNm resolve(QNm name) {
-		Scope scope = resolveIn;
-		Variable var;
+  public QNm declare(QNm name) {
+    Variable var = (level > 0) ? new Variable(new QNm(name.getNamespaceURI(),
+                                                      name.getPrefix(),
+                                                      name.getLocalName() + ";" + idSequence++)) : new Variable(name);
+    current.mapping.put(name, var);
+    return var.name;
+  }
 
-		while (((var = scope.mapping.get(name)) == null)
-				&& ((scope = scope.parent) != null))
-			;
+  public QNm resolve(QNm name) {
+    Scope scope = resolveIn;
+    Variable var;
 
-		if (var == null) {
-			return null;
-		}
+    while (((var = scope.mapping.get(name)) == null) && ((scope = scope.parent) != null))
+      ;
 
-		return var.name;
-	}
+    if (var == null) {
+      return null;
+    }
+
+    return var.name;
+  }
 }

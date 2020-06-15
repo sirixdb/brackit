@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -35,44 +35,43 @@ import org.brackit.xquery.xdm.Sequence;
 
 /**
  * Aggregator for sequence concatenation
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public class SequenceAggregator implements Aggregator {
-	private Sequence[] buf = new Sequence[5];
-	private int len;
+  private Sequence[] buf = new Sequence[5];
+  private int len;
 
-	@Override
-	public void add(Sequence s) throws QueryException {
-		if (s == null) {
-			return;
-		}
-		if (len == buf.length) {
-			buf = Arrays.copyOf(buf, ((buf.length * 3) / 2 + 1));
-		}
-		buf[len++] = s;
-	}
+  @Override
+  public void add(Sequence s) throws QueryException {
+    if (s == null) {
+      return;
+    }
+    if (len == buf.length) {
+      buf = Arrays.copyOf(buf, ((buf.length * 3) / 2 + 1));
+    }
+    buf[len++] = s;
+  }
 
-	@Override
-	public Sequence getAggregate() {
-		if (len == 0) {
-			return null;
-		}
-		if (len == 1) {
-			return buf[0];
-		}
-		if (buf.length != len) {
-			buf = Arrays.copyOf(buf, len);
-		}
-		return new NestedSequence(buf);
-	}
+  @Override
+  public Sequence getAggregate() {
+    if (len == 0) {
+      return null;
+    }
+    if (len == 1) {
+      return buf[0];
+    }
+    if (buf.length != len) {
+      buf = Arrays.copyOf(buf, len);
+    }
+    return new NestedSequence(buf);
+  }
 
-	@Override
-	public void clear() {
-		if (len > 1) {
-			buf = new Sequence[5];
-		}
-		len = 0;
-	}
+  @Override
+  public void clear() {
+    if (len > 1) {
+      buf = new Sequence[5];
+    }
+    len = 0;
+  }
 }

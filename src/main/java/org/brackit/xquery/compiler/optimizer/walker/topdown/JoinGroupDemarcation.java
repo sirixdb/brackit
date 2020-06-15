@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -36,70 +36,69 @@ import org.brackit.xquery.compiler.XQ;
 
 /**
  * @author Sebastian Baechle
- * 
  */
 public class JoinGroupDemarcation extends ScopeWalker {
 
-	private int tableJoinGroupVar;
+  private int tableJoinGroupVar;
 
-	private QNm createGroupVarName() {
-		return new QNm("_joingroup;" + (tableJoinGroupVar++));
-	}
+  private QNm createGroupVarName() {
+    return new QNm("_joingroup;" + (tableJoinGroupVar++));
+  }
 
-	@Override
-	protected AST visit(AST join) {
-		if ((join.getType() != XQ.Join) || (join.getProperty("group") != null)) {
-			return join;
-		}
+  @Override
+  protected AST visit(AST join) {
+    if ((join.getType() != XQ.Join) || (join.getProperty("group") != null)) {
+      return join;
+    }
 
-		// find closest scope from which
-		// right input is independent of
-		VarRef refs = findVarRefs(join.getChild(1));
-		Scope[] scopes = sortScopes(refs);
-		Scope local = findScope(join);
+    // find closest scope from which
+    // right input is independent of
+    VarRef refs = findVarRefs(join.getChild(1));
+    Scope[] scopes = sortScopes(refs);
+    Scope local = findScope(join);
 
-		AST stopAt = null;
-		for (int i = scopes.length - 1; i >= 0; i--) {
-			Scope scope = scopes[i];
-			if (scope.compareTo(local) < 0) {
-				stopAt = scope.node;
-				break;
-			}
-		}
+    AST stopAt = null;
+    for (int i = scopes.length - 1; i >= 0; i--) {
+      Scope scope = scopes[i];
+      if (scope.compareTo(local) < 0) {
+        stopAt = scope.node;
+        break;
+      }
+    }
 
-		// locate farthest scope we can go to
-		AST anc = join.getParent();
-		boolean reachedStopAt = false;
-		while (true) {
-			reachedStopAt = (reachedStopAt || (anc == stopAt));   
-			if (anc.getType() == XQ.Start) {
-				if (anc.getParent().getType() != XQ.Join) {
-					return join;
-				}
-				anc = anc.getParent().getParent();
-			} else if (anc.getType() == XQ.LetBind) {
-				// let-bindings are "static" within an iteration;
-				// we may safely increase the scope
-				anc = anc.getParent();	
-			} else if (reachedStopAt) {
-				break;
-			} else {
-				anc = anc.getParent();
-			}
-		}
+    // locate farthest scope we can go to
+    AST anc = join.getParent();
+    boolean reachedStopAt = false;
+    while (true) {
+      reachedStopAt = (reachedStopAt || (anc == stopAt));
+      if (anc.getType() == XQ.Start) {
+        if (anc.getParent().getType() != XQ.Join) {
+          return join;
+        }
+        anc = anc.getParent().getParent();
+      } else if (anc.getType() == XQ.LetBind) {
+        // let-bindings are "static" within an iteration;
+        // we may safely increase the scope
+        anc = anc.getParent();
+      } else if (reachedStopAt) {
+        break;
+      } else {
+        anc = anc.getParent();
+      }
+    }
 
-		// prepend an artificial count for
-		// marking the join group boundaries
-		QNm joingroupVar = createGroupVarName();
-		join.setProperty("group", joingroupVar);
+    // prepend an artificial count for
+    // marking the join group boundaries
+    QNm joingroupVar = createGroupVarName();
+    join.setProperty("group", joingroupVar);
 
-		AST count = new AST(XQ.Count);
-		AST runVarBinding = new AST(TypedVariableBinding);
-		runVarBinding.addChild(new AST(Variable, joingroupVar));
-		count.addChild(runVarBinding);
-		count.addChild(anc.getLastChild().copyTree());
-		anc.replaceChild(anc.getChildCount() - 1, count);
-		refreshScopes(anc, true);
-		return anc;
-	}
+    AST count = new AST(XQ.Count);
+    AST runVarBinding = new AST(TypedVariableBinding);
+    runVarBinding.addChild(new AST(Variable, joingroupVar));
+    count.addChild(runVarBinding);
+    count.addChild(anc.getLastChild().copyTree());
+    anc.replaceChild(anc.getChildCount() - 1, count);
+    refreshScopes(anc, true);
+    return anc;
+  }
 }

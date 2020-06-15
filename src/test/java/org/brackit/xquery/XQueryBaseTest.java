@@ -39,6 +39,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Random;
+
 import org.brackit.xquery.atomic.DTD;
 import org.brackit.xquery.node.SimpleStore;
 import org.brackit.xquery.node.parser.DocumentParser;
@@ -55,14 +56,14 @@ import org.junit.Before;
 import org.junit.Ignore;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 @Ignore
 public class XQueryBaseTest {
 
-  /** Path to resources folder. */
+  /**
+   * Path to resources folder.
+   */
   public static final Path RESOURCES = Paths.get("src", "test", "resources");
 
   protected QueryContext ctx;

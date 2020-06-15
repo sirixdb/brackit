@@ -38,40 +38,35 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class Substring extends AbstractFunction {
-	public Substring(QNm name, Signature signature) {
-		super(name, signature, true);
-	}
+  public Substring(QNm name, Signature signature) {
+    super(name, signature, true);
+  }
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		if (args[0] == null) {
-			return Str.EMPTY;
-		}
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    if (args[0] == null) {
+      return Str.EMPTY;
+    }
 
-		String string = ((Str) args[0]).stringValue();
-		double start = ((Numeric) args[1]).round().doubleValue();
-		double end = (args.length == 3) ? ((Numeric) args[2]).round()
-				.doubleValue() : string.length();
+    String string = ((Str) args[0]).stringValue();
+    double start = ((Numeric) args[1]).round().doubleValue();
+    double end = (args.length == 3) ? ((Numeric) args[2]).round().doubleValue() : string.length();
 
-		if ((Double.isNaN(start))
-				|| (Double.isNaN(end))
-				|| ((start == Double.NEGATIVE_INFINITY) && (end == Double.POSITIVE_INFINITY))) {
-			return Str.EMPTY;
-		}
+    if ((Double.isNaN(start)) || (Double.isNaN(end)) || ((start == Double.NEGATIVE_INFINITY) && (end
+        == Double.POSITIVE_INFINITY))) {
+      return Str.EMPTY;
+    }
 
-		int startPos = (int) Math.max(start, 1) - 1;
-		int endPos = (int) Math.min(start + end - 1, string.length());
+    int startPos = (int) Math.max(start, 1) - 1;
+    int endPos = (int) Math.min(start + end - 1, string.length());
 
-		if ((endPos <= startPos) || (endPos - startPos <= 0)) {
-			return Str.EMPTY;
-		}
+    if ((endPos <= startPos) || (endPos - startPos <= 0)) {
+      return Str.EMPTY;
+    }
 
-		return new Str(string.substring(startPos, endPos));
-	}
+    return new Str(string.substring(startPos, endPos));
+  }
 }

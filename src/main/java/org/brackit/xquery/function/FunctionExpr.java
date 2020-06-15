@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -48,102 +48,91 @@ import org.brackit.xquery.xdm.type.ItemType;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class FunctionExpr implements Expr {
-	private final StaticContext sctx;
-	private final Function function;
-	private final Expr[] exprs;
-	private final boolean builtin;
-	private final SequenceType dftCtxType;
+  private final StaticContext sctx;
+  private final Function function;
+  private final Expr[] exprs;
+  private final boolean builtin;
+  private final SequenceType dftCtxType;
 
-	public FunctionExpr(StaticContext sctx, Function function, Expr... exprs)
-			throws QueryException {
-		this.sctx = sctx;
-		this.function = function;
-		this.exprs = exprs;
-		this.builtin = function.isBuiltIn();
-		ItemType dftCtxItemType = function.getSignature().defaultCtxItemType();
-		if (dftCtxItemType != null) {
-			this.dftCtxType = new SequenceType(dftCtxItemType, Cardinality.One);
-		} else {
-			this.dftCtxType = null;
-		}
-	}
+  public FunctionExpr(StaticContext sctx, Function function, Expr... exprs) throws QueryException {
+    this.sctx = sctx;
+    this.function = function;
+    this.exprs = exprs;
+    this.builtin = function.isBuiltIn();
+    ItemType dftCtxItemType = function.getSignature().defaultCtxItemType();
+    if (dftCtxItemType != null) {
+      this.dftCtxType = new SequenceType(dftCtxItemType, Cardinality.One);
+    } else {
+      this.dftCtxType = null;
+    }
+  }
 
-	public Signature getSignature() {
-		return function.getSignature();
-	}
+  public Signature getSignature() {
+    return function.getSignature();
+  }
 
-	@Override
-	public Sequence evaluate(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		Sequence res;
-		Sequence[] args;
+  @Override
+  public Sequence evaluate(QueryContext ctx, Tuple tuple) throws QueryException {
+    Sequence res;
+    Sequence[] args;
 
-		if (dftCtxType != null) {
-			Item ctxItem = exprs[0].evaluateToItem(ctx, tuple);
-			FunctionConversionSequence.asTypedSequence(dftCtxType, ctxItem,
-					builtin);
-			args = new Sequence[] { ctxItem };
-		} else {
-			SequenceType[] params = function.getSignature().getParams();
-			args = new Sequence[exprs.length];
+    if (dftCtxType != null) {
+      Item ctxItem = exprs[0].evaluateToItem(ctx, tuple);
+      FunctionConversionSequence.asTypedSequence(dftCtxType, ctxItem, builtin);
+      args = new Sequence[] { ctxItem };
+    } else {
+      SequenceType[] params = function.getSignature().getParams();
+      args = new Sequence[exprs.length];
 
-			for (int i = 0; i < exprs.length; i++) {
-				SequenceType sType = (i < params.length) ? params[i]
-						: params[params.length - 1];
-				if (sType.getCardinality().many()) {
-					args[i] = exprs[i].evaluate(ctx, tuple);
-					if (!(sType.getItemType().isAnyItem())) {
-						args[i] = FunctionConversionSequence.asTypedSequence(
-								sType, args[i], builtin);
-					}
-				} else {
-					args[i] = exprs[i].evaluateToItem(ctx, tuple);
-					args[i] = FunctionConversionSequence.asTypedSequence(sType,
-							args[i], builtin);
-				}
-			}
-		}
+      for (int i = 0; i < exprs.length; i++) {
+        SequenceType sType = (i < params.length) ? params[i] : params[params.length - 1];
+        if (sType.getCardinality().many()) {
+          args[i] = exprs[i].evaluate(ctx, tuple);
+          if (!(sType.getItemType().isAnyItem())) {
+            args[i] = FunctionConversionSequence.asTypedSequence(sType, args[i], builtin);
+          }
+        } else {
+          args[i] = exprs[i].evaluateToItem(ctx, tuple);
+          args[i] = FunctionConversionSequence.asTypedSequence(sType, args[i], builtin);
+        }
+      }
+    }
 
-		try {
-			res = function.execute(sctx, ctx, args);
-		} catch (StackOverflowError e) {
-			throw new QueryException(
-					e,
-					ErrorCode.BIT_DYN_RT_STACK_OVERFLOW,
-					"Execution of function '%s' was aborted because of too deep recursion.",
-					function.getName());
-		}
-		if (function.isBuiltIn()) {
-			return res;
-		}
-		res = FunctionConversionSequence.asTypedSequence(function
-				.getSignature().getResultType(), res, builtin);
+    try {
+      res = function.execute(sctx, ctx, args);
+    } catch (StackOverflowError e) {
+      throw new QueryException(e,
+                               ErrorCode.BIT_DYN_RT_STACK_OVERFLOW,
+                               "Execution of function '%s' was aborted because of too deep recursion.",
+                               function.getName());
+    }
+    if (function.isBuiltIn()) {
+      return res;
+    }
+    res = FunctionConversionSequence.asTypedSequence(function.getSignature().getResultType(), res, builtin);
 
-		return ExprUtil.materialize(res);
-	}
+    return ExprUtil.materialize(res);
+  }
 
-	@Override
-	public Item evaluateToItem(QueryContext ctx, Tuple tuple)
-			throws QueryException {
-		return ExprUtil.asItem(evaluate(ctx, tuple));
-	}
+  @Override
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) throws QueryException {
+    return ExprUtil.asItem(evaluate(ctx, tuple));
+  }
 
-	@Override
-	public boolean isUpdating() {
-		return function.isUpdating();
-	}
+  @Override
+  public boolean isUpdating() {
+    return function.isUpdating();
+  }
 
-	@Override
-	public boolean isVacuous() {
-		return false;
-	}
+  @Override
+  public boolean isVacuous() {
+    return false;
+  }
 
-	public String toString() {
-		return function.toString();
-	}
+  public String toString() {
+    return function.toString();
+  }
 }

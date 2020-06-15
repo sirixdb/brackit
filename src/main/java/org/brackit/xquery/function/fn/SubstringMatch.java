@@ -39,54 +39,51 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
 
 /**
- *
  * @author Sebastian Baechle
- *
  */
 public class SubstringMatch extends AbstractFunction {
-	public enum Mode {
-		CONTAINS, STARTS_WITH, ENDS_WITH
-	};
+  public enum Mode {
+    CONTAINS, STARTS_WITH, ENDS_WITH
+  }
 
-	private final Mode mode;
+  ;
 
-	public SubstringMatch(QNm name, Mode mode, Signature signature) {
-		super(name, signature, true);
-		this.mode = mode;
-	}
+  private final Mode mode;
 
-	@Override
-	public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args)
-			throws QueryException {
-		if (args.length == 3) {
-			Str collation = (Str) args[2];
+  public SubstringMatch(QNm name, Mode mode, Signature signature) {
+    super(name, signature, true);
+    this.mode = mode;
+  }
 
-			if (!collation.stringValue()
-					.equals("http://www.w3.org/2005/xpath-functions/collation/codepoint")) {
-				throw new QueryException(ErrorCode.ERR_UNSUPPORTED_COLLATION,
-						"Unsupported collation: %s", collation);
-			}
-		}
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+    if (args.length == 3) {
+      Str collation = (Str) args[2];
 
-		String str = (args[0] != null) ? ((Str) args[0]).stringValue() : "";
-		String pattern = (args[1] != null) ? ((Str) args[1]).stringValue() : "";
+      if (!collation.stringValue().equals("http://www.w3.org/2005/xpath-functions/collation/codepoint")) {
+        throw new QueryException(ErrorCode.ERR_UNSUPPORTED_COLLATION, "Unsupported collation: %s", collation);
+      }
+    }
 
-		if (pattern.isEmpty()) {
-			return Bool.TRUE;
-		}
-		if (str.isEmpty()) {
-			return Bool.FALSE;
-		}
+    String str = (args[0] != null) ? ((Str) args[0]).stringValue() : "";
+    String pattern = (args[1] != null) ? ((Str) args[1]).stringValue() : "";
 
-		switch (mode) {
-		case CONTAINS:
-			return (str.contains(pattern)) ? Bool.TRUE : Bool.FALSE;
-		case STARTS_WITH:
-			return (str.startsWith(pattern)) ? Bool.TRUE : Bool.FALSE;
-		case ENDS_WITH:
-			return (str.endsWith(pattern)) ? Bool.TRUE : Bool.FALSE;
-		default:
-			throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR);
-		}
-	}
+    if (pattern.isEmpty()) {
+      return Bool.TRUE;
+    }
+    if (str.isEmpty()) {
+      return Bool.FALSE;
+    }
+
+    switch (mode) {
+      case CONTAINS:
+        return (str.contains(pattern)) ? Bool.TRUE : Bool.FALSE;
+      case STARTS_WITH:
+        return (str.startsWith(pattern)) ? Bool.TRUE : Bool.FALSE;
+      case ENDS_WITH:
+        return (str.endsWith(pattern)) ? Bool.TRUE : Bool.FALSE;
+      default:
+        throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR);
+    }
+  }
 }

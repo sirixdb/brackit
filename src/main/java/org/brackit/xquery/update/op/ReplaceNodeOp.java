@@ -38,6 +38,7 @@
 package org.brackit.xquery.update.op;
 
 import java.util.Arrays;
+
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
@@ -48,7 +49,6 @@ import org.brackit.xquery.xdm.node.Node;
  * Base class for all insert operations.
  *
  * @author Sebastian Baechle
- *
  */
 public class ReplaceNodeOp implements UpdateOp {
   private final Node<?> target;

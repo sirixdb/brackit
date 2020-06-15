@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,129 +33,126 @@ import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.xdm.Type;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class GDay extends AbstractTimeInstant {
-	private final byte day;
+  private final byte day;
 
-	private final DTD timezone;
+  private final DTD timezone;
 
-	public GDay(byte day, DTD timezone) {
-		this.day = day;
-		this.timezone = timezone;
-	}
+  public GDay(byte day, DTD timezone) {
+    this.day = day;
+    this.timezone = timezone;
+  }
 
-	public GDay(String str) throws QueryException {
-		byte day;
-		DTD timezone = null;
+  public GDay(String str) throws QueryException {
+    byte day;
+    DTD timezone = null;
 
-		str = Whitespace.collapseTrimOnly(str);
-		char[] charArray = str.toCharArray();
-		int pos = 0;
-		int length = charArray.length;
+    str = Whitespace.collapseTrimOnly(str);
+    char[] charArray = str.toCharArray();
+    int pos = 0;
+    int length = charArray.length;
 
-		// consume '---'
-		if ((pos + 2 >= length) || (charArray[pos++] != '-')
-				|| (charArray[pos++] != '-') || (charArray[pos++] != '-')) {
-			throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-					"Cannot cast '%s' to xs:gDay", str);
-		}
+    // consume '---'
+    if ((pos + 2 >= length) || (charArray[pos++] != '-') || (charArray[pos++] != '-') || (charArray[pos++] != '-')) {
+      throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:gDay", str);
+    }
 
-		// parse day
-		int start = pos;
-		while ((pos < length) && ('0' <= charArray[pos])
-				&& (charArray[pos] <= '9'))
-			pos++;
-		int end = pos;
-		int v = (end - start == 2) ? Integer
-				.parseInt(str.substring(start, end)) : -1;
-		if ((v < 1) || (v > 31)) {
-			throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-					"Cannot cast '%s' to xs:gDay: illegal day", str);
-		}
-		day = (byte) v;
+    // parse day
+    int start = pos;
+    while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+      pos++;
+    int end = pos;
+    int v = (end - start == 2) ? Integer.parseInt(str.substring(start, end)) : -1;
+    if ((v < 1) || (v > 31)) {
+      throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:gDay: illegal day", str);
+    }
+    day = (byte) v;
 
-		if (pos < length) {
-			timezone = parseTimezone(str, charArray, pos, length);
-		}
+    if (pos < length) {
+      timezone = parseTimezone(str, charArray, pos, length);
+    }
 
-		this.day = day;
-		this.timezone = timezone;
-	}
+    this.day = day;
+    this.timezone = timezone;
+  }
 
-	@Override
-	public int atomicCode() {
-		return Type.GDAY_CODE;
-	}
+  @Override
+  public int atomicCode() {
+    return Type.GDAY_CODE;
+  }
 
-	@Override
-	protected AbstractTimeInstant create(short year, byte month, byte day,
-			byte hours, byte minutes, int micros, DTD timezone) {
-		return new GDay(day, timezone);
-	}
+  @Override
+  protected AbstractTimeInstant create(short year, byte month, byte day, byte hours, byte minutes, int micros,
+      DTD timezone) {
+    return new GDay(day, timezone);
+  }
 
-	@Override
-	public byte getDay() {
-		return day;
-	}
+  @Override
+  public byte getDay() {
+    return day;
+  }
 
-	@Override
-	public byte getHours() {
-		return 0;
-	}
+  @Override
+  public byte getHours() {
+    return 0;
+  }
 
-	@Override
-	public byte getMinutes() {
-		return 0;
-	}
+  @Override
+  public byte getMinutes() {
+    return 0;
+  }
 
-	@Override
-	public byte getMonth() {
-		return 0;
-	}
+  @Override
+  public byte getMonth() {
+    return 0;
+  }
 
-	@Override
-	public int getMicros() {
-		return 0;
-	}
+  @Override
+  public int getMicros() {
+    return 0;
+  }
 
-	@Override
-	public DTD getTimezone() {
-		return timezone;
-	}
+  @Override
+  public DTD getTimezone() {
+    return timezone;
+  }
 
-	@Override
-	public short getYear() {
-		return 0;
-	}
+  @Override
+  public short getYear() {
+    return 0;
+  }
 
-	@Override
-	public int cmp(Atomic atomic) throws QueryException {
-		throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-				"Cannot compare '%s with '%s'", type(), atomic.type());
-	}
+  @Override
+  public int cmp(Atomic atomic) throws QueryException {
+    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                             "Cannot compare '%s with '%s'",
+                             type(),
+                             atomic.type());
+  }
 
-	@Override
-	public boolean eq(Atomic atomic) throws QueryException {
-		if (!(atomic instanceof GDay)) {
-			throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-					"Cannot compare '%s with '%s'", type(), atomic.type());
-		}
-		return (cmp((GDay) atomic) == 0);
-	}
+  @Override
+  public boolean eq(Atomic atomic) throws QueryException {
+    if (!(atomic instanceof GDay)) {
+      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                               "Cannot compare '%s with '%s'",
+                               type(),
+                               atomic.type());
+    }
+    return (cmp((GDay) atomic) == 0);
+  }
 
-	@Override
-	public String stringValue() {
-		String dTmp = ((day < 10) ? "0" : "") + day;
-		String tzTmp = timezoneString();
+  @Override
+  public String stringValue() {
+    String dTmp = ((day < 10) ? "0" : "") + day;
+    String tzTmp = timezoneString();
 
-		return String.format("---%s%s", dTmp, tzTmp);
-	}
+    return String.format("---%s%s", dTmp, tzTmp);
+  }
 
-	@Override
-	public Type type() {
-		return Type.GDAY;
-	}
+  @Override
+  public Type type() {
+    return Type.GDAY;
+  }
 }

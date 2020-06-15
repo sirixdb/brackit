@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -31,106 +31,106 @@ import org.brackit.xquery.util.Cfg;
 
 /**
  * Log wrapper with subset of Logger interface from log4j
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public abstract class Logger {
 
-	public enum Level {
-		TRACE(0), DEBUG(1), INFO(2), WARN(3), ERROR(4), FATAL(5);
-		public final int priority;
+  public enum Level {
+    TRACE(0), DEBUG(1), INFO(2), WARN(3), ERROR(4), FATAL(5);
+    public final int priority;
 
-		Level(int prioprity) {
-			this.priority = prioprity;
-		}
-	};
+    Level(int prioprity) {
+      this.priority = prioprity;
+    }
+  }
 
-	static {
-		String useLog = Cfg.asString(LogFactory.class.getName(),
-				UtilLogFactory.class.getName());
-		try {
-			factory = (LogFactory) Class.forName(useLog).getDeclaredConstructor().newInstance();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+  ;
 
-	private static LogFactory factory;
+  static {
+    String useLog = Cfg.asString(LogFactory.class.getName(), UtilLogFactory.class.getName());
+    try {
+      factory = (LogFactory) Class.forName(useLog).getDeclaredConstructor().newInstance();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
 
-	public static Logger getRootLogger() {
-		return factory.getRootLogger();
-	}
-	
-	public static Logger getLogger(String name) {
-		return factory.getLogger(name);
-	}
+  private static LogFactory factory;
 
-	public static Logger getLogger(Class<?> cls) {
-		return getLogger(cls.getName());
-	}
+  public static Logger getRootLogger() {
+    return factory.getRootLogger();
+  }
 
-	public abstract void setLevel(Level level);
+  public static Logger getLogger(String name) {
+    return factory.getLogger(name);
+  }
 
-	public abstract Level getLevel();
+  public static Logger getLogger(Class<?> cls) {
+    return getLogger(cls.getName());
+  }
 
-	public abstract boolean isTraceEnabled();
+  public abstract void setLevel(Level level);
 
-	public abstract boolean isDebugEnabled();
+  public abstract Level getLevel();
 
-	public abstract boolean isInfoEnabled();
+  public abstract boolean isTraceEnabled();
 
-	public abstract void log(Level fatal, Object msg, Throwable t);
+  public abstract boolean isDebugEnabled();
 
-	public abstract void log(Level fatal, Object msg);
-	
-	public abstract String getName();
+  public abstract boolean isInfoEnabled();
 
-	public void trace(Object msg) {
-		log(Level.TRACE, msg);
-	}
+  public abstract void log(Level fatal, Object msg, Throwable t);
 
-	public void trace(Object msg, Throwable t) {
-		log(Level.TRACE, msg, t);
-	}
+  public abstract void log(Level fatal, Object msg);
 
-	public void debug(Object msg) {
-		log(Level.DEBUG, msg);
-	}
+  public abstract String getName();
 
-	public void debug(Object msg, Throwable t) {
-		log(Level.DEBUG, msg, t);
-	}
+  public void trace(Object msg) {
+    log(Level.TRACE, msg);
+  }
 
-	public void info(Object msg) {
-		log(Level.INFO, msg);
-	}
+  public void trace(Object msg, Throwable t) {
+    log(Level.TRACE, msg, t);
+  }
 
-	public void info(Object msg, Throwable t) {
-		log(Level.INFO, msg, t);
-	}
+  public void debug(Object msg) {
+    log(Level.DEBUG, msg);
+  }
 
-	public void warn(Object msg) {
-		log(Level.WARN, msg);
-	}
+  public void debug(Object msg, Throwable t) {
+    log(Level.DEBUG, msg, t);
+  }
 
-	public void warn(Object msg, Throwable t) {
-		log(Level.WARN, msg, t);
-	}
+  public void info(Object msg) {
+    log(Level.INFO, msg);
+  }
 
-	public void error(Object msg) {
-		log(Level.ERROR, msg);
-	}
+  public void info(Object msg, Throwable t) {
+    log(Level.INFO, msg, t);
+  }
 
-	public void error(Object msg, Throwable t) {
-		log(Level.ERROR, msg, t);
-	}
+  public void warn(Object msg) {
+    log(Level.WARN, msg);
+  }
 
-	public void fatal(Object msg) {
-		log(Level.FATAL, msg);
-	}
+  public void warn(Object msg, Throwable t) {
+    log(Level.WARN, msg, t);
+  }
 
-	public void fatal(Object msg, Throwable t) {
-		log(Level.FATAL, msg, t);
-	}
+  public void error(Object msg) {
+    log(Level.ERROR, msg);
+  }
+
+  public void error(Object msg, Throwable t) {
+    log(Level.ERROR, msg, t);
+  }
+
+  public void fatal(Object msg) {
+    log(Level.FATAL, msg);
+  }
+
+  public void fatal(Object msg, Throwable t) {
+    log(Level.FATAL, msg, t);
+  }
 }

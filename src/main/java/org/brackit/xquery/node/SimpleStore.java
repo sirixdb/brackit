@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -46,67 +46,63 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 
  * @author Sebastian Baechle
- * 
  */
 public class SimpleStore implements NodeStore {
-	private final Map<String, NodeCollection<?>> docs = new HashMap<>();
+  private final Map<String, NodeCollection<?>> docs = new HashMap<>();
 
-	@Override
-	public NodeCollection<?> create(String name) throws DocumentException {
-		NodeCollection<?> coll = getNodeFactory().collection(name);
-		docs.put(name, coll);
-		return coll;
-	}
+  @Override
+  public NodeCollection<?> create(String name) throws DocumentException {
+    NodeCollection<?> coll = getNodeFactory().collection(name);
+    docs.put(name, coll);
+    return coll;
+  }
 
-	@Override
-	public NodeCollection<?> create(String name, SubtreeParser parser)
-			throws DocumentException {
-		NodeCollection<?> coll = getNodeFactory().collection(name, parser);
-		docs.put(name, coll);
-		return coll;
-	}
+  @Override
+  public NodeCollection<?> create(String name, SubtreeParser parser) throws DocumentException {
+    NodeCollection<?> coll = getNodeFactory().collection(name, parser);
+    docs.put(name, coll);
+    return coll;
+  }
 
-	@Override
-	public NodeCollection<?> create(String name, Stream<SubtreeParser> parsers)
-			throws DocumentException {
-		NodeCollection<?> coll = getNodeFactory().collection(name, parsers);
-		docs.put(name, coll);
-		return coll;
-	}
+  @Override
+  public NodeCollection<?> create(String name, Stream<SubtreeParser> parsers) throws DocumentException {
+    NodeCollection<?> coll = getNodeFactory().collection(name, parsers);
+    docs.put(name, coll);
+    return coll;
+  }
 
-	@Override
-	public void drop(String name) throws DocumentException {
-		if (docs.remove(name) == null) {
-			throw new DocumentException("Collection %s not found", name);
-		}
-	}
+  @Override
+  public void drop(String name) throws DocumentException {
+    if (docs.remove(name) == null) {
+      throw new DocumentException("Collection %s not found", name);
+    }
+  }
 
-	@Override
-	public NodeCollection<?> lookup(String name) throws DocumentException {
-		NodeCollection<?> coll = docs.get(name);
-		if (coll != null) {
-			return coll;
-		}
-		try {
-			InputStream in = URIHandler.getInputStream(URI.create(name));
-			DocumentParser p = new DocumentParser(in);
-			Node<?> doc = getNodeFactory().build(p);
-			coll = doc.getCollection();
-			docs.put(name, coll);
-			return coll;
-		} catch (IOException e) {
-			throw new DocumentException(e, "Collection %s not found", name);
-		}
-	}
+  @Override
+  public NodeCollection<?> lookup(String name) throws DocumentException {
+    NodeCollection<?> coll = docs.get(name);
+    if (coll != null) {
+      return coll;
+    }
+    try {
+      InputStream in = URIHandler.getInputStream(URI.create(name));
+      DocumentParser p = new DocumentParser(in);
+      Node<?> doc = getNodeFactory().build(p);
+      coll = doc.getCollection();
+      docs.put(name, coll);
+      return coll;
+    } catch (IOException e) {
+      throw new DocumentException(e, "Collection %s not found", name);
+    }
+  }
 
-	protected NodeFactory<?> getNodeFactory() {
-		return new D2NodeFactory();
-	}
+  protected NodeFactory<?> getNodeFactory() {
+    return new D2NodeFactory();
+  }
 
-	@Override
-	public void makeDir(String path) throws DocumentException {
-		throw new OperationNotSupportedException();
-	}
+  @Override
+  public void makeDir(String path) throws DocumentException {
+    throw new OperationNotSupportedException();
+  }
 }

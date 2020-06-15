@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -43,44 +43,43 @@ import org.brackit.xquery.xdm.node.Node;
 /**
  * A Stream of SubtreeParsers that delivers one SubtreeParser for each item in
  * the sequence.
- * 
+ *
  * @author Martin Hiller
- * 
  */
 public class ParserStream implements Stream<SubtreeParser> {
-	Iter it;
+  Iter it;
 
-	public ParserStream(Sequence locs) {
-		it = locs.iterate();
-	}
+  public ParserStream(Sequence locs) {
+    it = locs.iterate();
+  }
 
-	@Override
-	public SubtreeParser next() throws DocumentException {
-		try {
-			Item i = it.next();
-			if (i == null) {
-				return null;
-			}
-			if (i instanceof Atomic) {
-				String s = ((Atomic) i).stringValue();
-				return new DocumentParser(URIHandler.getInputStream(s));
-			} else if (i instanceof Node<?>) {
-				Node<?> n = (Node<?>) i;
-				return new StreamSubtreeParser(n.getSubtree());
-			} else {
-				throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-						"Cannot create subtree parser for item of type: %s",
-						i.itemType());
-			}
-		} catch (IOException e) {
-			throw new DocumentException(e);
-		} catch (QueryException e) {
-			throw new DocumentException(e);
-		}
-	}
+  @Override
+  public SubtreeParser next() throws DocumentException {
+    try {
+      Item i = it.next();
+      if (i == null) {
+        return null;
+      }
+      if (i instanceof Atomic) {
+        String s = ((Atomic) i).stringValue();
+        return new DocumentParser(URIHandler.getInputStream(s));
+      } else if (i instanceof Node<?>) {
+        Node<?> n = (Node<?>) i;
+        return new StreamSubtreeParser(n.getSubtree());
+      } else {
+        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                                 "Cannot create subtree parser for item of type: %s",
+                                 i.itemType());
+      }
+    } catch (IOException e) {
+      throw new DocumentException(e);
+    } catch (QueryException e) {
+      throw new DocumentException(e);
+    }
+  }
 
-	@Override
-	public void close() {
-		it.close();
-	}
+  @Override
+  public void close() {
+    it.close();
+  }
 }
