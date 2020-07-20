@@ -88,8 +88,6 @@ public final class UpdateList {
       }
       op.apply();
     });
-
-    ops.clear();
   }
 
   private void checkCompatibility(final UpdateOp op1, final UpdateOp op2) throws QueryException {
