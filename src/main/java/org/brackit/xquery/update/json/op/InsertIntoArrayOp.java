@@ -30,7 +30,11 @@ public final class InsertIntoArrayOp implements UpdateOp {
 
   @Override
   public void apply() {
-    target.insert(position, source);
+    if (position == -1) {
+      target.append(source);
+    } else {
+      target.insert(position, source);
+    }
   }
 
   @Override

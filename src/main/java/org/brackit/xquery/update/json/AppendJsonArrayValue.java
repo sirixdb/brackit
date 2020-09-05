@@ -104,6 +104,6 @@ public final class AppendJsonArrayValue implements Expr {
 
     final Sequence source = sourceExpr.evaluateToItem(ctx, tuple);
 
-    ctx.addPendingUpdate(new InsertIntoArrayOp((Array) targetItem, source, ((Array) targetItem).len()));
+    ctx.addPendingUpdate(new InsertIntoArrayOp((Array) targetItem, source, -1));
   }
 }
