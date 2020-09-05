@@ -91,6 +91,13 @@ public interface Array extends ListOrUnion {
   Array insert(int index, Sequence value);
 
   /**
+   * Append a sequence.
+   * @param value the sequence to append
+   * @return this array instance
+   */
+  Array append(Sequence value);
+
+  /**
    * Remove the sequence at the specified index.
    *
    * @param index the index at which to remove the sequence

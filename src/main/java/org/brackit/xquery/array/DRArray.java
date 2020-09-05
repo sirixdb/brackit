@@ -88,6 +88,13 @@ public final class DRArray extends AbstractArray {
   }
 
   @Override
+  public Array append(Sequence value) {
+    vals.add(value);
+
+    return this;
+  }
+
+  @Override
   public Array remove(int index) {
     if (start + index < 0 || start + index > vals.size() - 1) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);

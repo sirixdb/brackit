@@ -70,6 +70,13 @@ public final class DArray extends AbstractArray {
   }
 
   @Override
+  public Array append(Sequence value) {
+    vals.add(value);
+
+    return this;
+  }
+
+  @Override
   public Array replaceAt(int index, Sequence value) {
     if (index < 0 || index > vals.size() - 1) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
