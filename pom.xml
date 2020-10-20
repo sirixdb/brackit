@@ -91,7 +91,11 @@
                 <version>3.8.1</version>
                 <configuration>
                     <release>15</release>
-                    <compilerArgs>--enable-preview</compilerArgs>
+                    <compilerArgs>
+                        <arg>--enable-preview</arg>
+                    </compilerArgs>
+                    <source>15</source>
+                    <target>15</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -114,15 +118,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
                 <version>3.3</version>
-                <configuration>
-                    <reportPlugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-javadoc-plugin</artifactId>
-                            <doclint>none</doclint>
-                        </plugin>
-                    </reportPlugins>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -142,11 +137,6 @@
             <version>4.13.1</version>
             <type>jar</type>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.magicwerk</groupId>
-            <artifactId>brownies-collections</artifactId>
-            <version>0.9.13</version>
         </dependency>
         <dependency>
             <groupId>org.magicwerk</groupId>
