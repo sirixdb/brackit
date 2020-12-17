@@ -28,6 +28,7 @@
 package org.brackit.xquery.expr;
 
 import org.brackit.xquery.*;
+import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
@@ -206,6 +207,8 @@ public class DerefExpr implements Expr {
       sequence = record.get((QNm) field);
     } else if (field instanceof IntNumeric) {
       sequence = record.value((IntNumeric) field);
+    } else if (field instanceof Atomic) {
+      sequence = record.get(new QNm(((Atomic) field).asStr().toString()));
     } else {
       throw new QueryException(Bits.BIT_ILLEGAL_RECORD_FIELD, "Illegal record field reference: %s", field);
     }

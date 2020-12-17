@@ -33,8 +33,10 @@ import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.XQuery;
+import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.record.ArrayRecord;
 import org.brackit.xquery.xdm.Expr;
@@ -83,6 +85,10 @@ public final class ProjectionExpr implements Expr {
       } else if (f instanceof IntNumeric) {
         names[i] = r.name(i);
         vals[i] = r.value((IntNumeric) f);
+      } else if (f instanceof Atomic) {
+        final QNm name = new QNm(((Atomic) f).asStr().toString());
+        names[i] = name;
+        vals[i] = r.get(name);
       } else {
         throw new QueryException(Bits.BIT_ILLEGAL_RECORD_FIELD, "Illegal record field reference: %s", f);
       }
