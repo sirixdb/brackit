@@ -33,6 +33,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.update.json.op.DeleteArrayIndexOp;
 import org.brackit.xquery.update.json.op.DeleteRecordFieldOp;
 import org.brackit.xquery.xdm.Expr;
@@ -94,7 +95,13 @@ public final class DeleteJson implements Expr {
       ctx.addPendingUpdate(new DeleteArrayIndexOp((Array) item,
                                                   ((Int32) fieldOrIndex.evaluateToItem(ctx, tuple)).intValue()));
     } else {
-      ctx.addPendingUpdate(new DeleteRecordFieldOp((Record) item, ((QNm) fieldOrIndex.evaluateToItem(ctx, tuple))));
+      final Item evaluatedItem = fieldOrIndex.evaluateToItem(ctx, tuple);
+
+      if (evaluatedItem instanceof QNm qNm) {
+        ctx.addPendingUpdate(new DeleteRecordFieldOp((Record) item, qNm));
+      } else if (evaluatedItem instanceof Str) {
+        ctx.addPendingUpdate(new DeleteRecordFieldOp((Record) item, new QNm(evaluatedItem.toString())));
+      }
     }
   }
 

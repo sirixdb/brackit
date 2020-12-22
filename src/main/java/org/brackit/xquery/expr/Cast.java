@@ -112,7 +112,7 @@ public class Cast implements Expr {
     Atomic atomic = item.atomize();
     Type source = atomic.type();
 
-    if ((source == target) || (target == Type.ANA)) {
+    if (target == Type.ANA) {
       // identity cast
       // (diagonal in casting matrix)
       return atomic;
@@ -206,9 +206,7 @@ public class Cast implements Expr {
    */
   private static Atomic castPrimitiveToPrimitive(StaticContext sctx, Atomic atomic, Type source, Type target) {
     // Compare with columns in cast
-    if (target == source) {
-      return atomic;
-    } else if (target == Type.UNA) {
+    if (target == Type.UNA) {
       return new Una(atomic.stringValue());
     } else if (target == Type.STR) {
       return new Str(atomic.stringValue());
@@ -323,6 +321,9 @@ public class Cast implements Expr {
       TimeInstant ti = (TimeInstant) atomic;
       return new GDay(ti.getDay(), ti.getTimezone());
     }
+    if (source == target) {
+      return atomic;
+    }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
   }
 
@@ -333,6 +334,9 @@ public class Cast implements Expr {
     if ((source == Type.DATI) || (source == Type.DATE)) {
       TimeInstant ti = (TimeInstant) atomic;
       return new GMD(ti.getMonth(), ti.getDay(), ti.getTimezone());
+    }
+    if (source == target) {
+      return atomic;
     }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
   }
@@ -345,6 +349,9 @@ public class Cast implements Expr {
       TimeInstant ti = (TimeInstant) atomic;
       return new GMon(ti.getMonth(), ti.getTimezone());
     }
+    if (source == target) {
+      return atomic;
+    }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
   }
 
@@ -355,6 +362,9 @@ public class Cast implements Expr {
     if ((source == Type.DATI) || (source == Type.DATE)) {
       TimeInstant ti = (TimeInstant) atomic;
       return new GYM(ti.getYear(), ti.getMonth(), ti.getTimezone());
+    }
+    if (source == target) {
+      return atomic;
     }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
   }
@@ -367,6 +377,9 @@ public class Cast implements Expr {
       TimeInstant ti = (TimeInstant) atomic;
       return new GYE(ti.getYear(), ti.getTimezone());
     }
+    if (source == target) {
+      return atomic;
+    }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
   }
 
@@ -378,6 +391,9 @@ public class Cast implements Expr {
       Date d = (Date) atomic;
       return new DateTime(d.getYear(), d.getMonth(), d.getDay(), (byte) 0, (byte) 0, (byte) 0, d.getTimezone());
     }
+    if (source == target) {
+      return atomic;
+    }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
   }
 
@@ -387,6 +403,9 @@ public class Cast implements Expr {
     }
     if (source == Type.DATI) {
       return new Date((DateTime) atomic);
+    }
+    if (source == target) {
+      return atomic;
     }
 
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
@@ -398,6 +417,9 @@ public class Cast implements Expr {
     }
     if (source == Type.DATI) {
       return new Time((DateTime) atomic);
+    }
+    if (source == target) {
+      return atomic;
     }
 
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
@@ -418,6 +440,8 @@ public class Cast implements Expr {
                      dtd.getHours(),
                      dtd.getMinutes(),
                      dtd.getMicros());
+    } else if (source == target) {
+      return atomic;
     }
 
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
@@ -432,6 +456,8 @@ public class Cast implements Expr {
     } else if (source == Type.DTD) {
       DTD dtd = (DTD) atomic;
       return new YMD(dtd.isNegative(), (short) 0, (byte) 0);
+    } else if (source == target) {
+      return atomic;
     }
 
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
@@ -447,6 +473,8 @@ public class Cast implements Expr {
     } else if (source == Type.YMD) {
       YMD ymd = (YMD) atomic;
       return new DTD(ymd.isNegative(), (short) 0, (byte) 0, (byte) 0, 0);
+    } else if (source == target) {
+      return atomic;
     }
 
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
@@ -462,6 +490,9 @@ public class Cast implements Expr {
     if (source == Type.BOOL) {
       return new Dbl(((Bool) atomic).bool ? 1d : 0d);
     }
+    if (source == target) {
+      return atomic;
+    }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
   }
 
@@ -474,6 +505,9 @@ public class Cast implements Expr {
     }
     if (source == Type.BOOL) {
       return new Flt(((Bool) atomic).bool ? 1f : 0f);
+    }
+    if (source == target) {
+      return atomic;
     }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
   }
@@ -502,6 +536,9 @@ public class Cast implements Expr {
     if (source == Type.BOOL) {
       return new Dec(((Bool) atomic).bool ? BigDecimal.ONE : BigDecimal.ZERO);
     }
+    if (source == target) {
+      return atomic;
+    }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
   }
 
@@ -522,6 +559,9 @@ public class Cast implements Expr {
     if (source == Type.BOOL) {
       return (((Bool) atomic).bool) ? Int32.ONE : Int32.ZERO;
     }
+    if (source == target) {
+      return atomic;
+    }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
   }
 
@@ -540,12 +580,18 @@ public class Cast implements Expr {
       double d = ((Numeric) atomic).doubleValue();
       return new Bool(((d == Double.NaN) || (d == 0)) ? false : true);
     }
+    if (source == target) {
+      return atomic;
+    }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
   }
 
   private static Atomic primitiveToAnyURI(Atomic atomic, Type source, Type target) {
     if ((source == Type.UNA) || (source == Type.STR)) {
       return new AnyURI(atomic.stringValue());
+    }
+    if (source == target) {
+      return atomic;
     }
 
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
@@ -558,6 +604,9 @@ public class Cast implements Expr {
     if (source == Type.B64) {
       return new Hex(((B64) atomic).getBytes());
     }
+    if (source == target) {
+      return atomic;
+    }
 
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
   }
@@ -568,6 +617,9 @@ public class Cast implements Expr {
     }
     if (source == Type.HEX) {
       return new B64(((Hex) atomic).getBytes());
+    }
+    if (source == target) {
+      return atomic;
     }
 
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
