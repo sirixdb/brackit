@@ -90,21 +90,15 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <release>16</release>
-                    <compilerArgs>
-                        <arg>--enable-preview</arg>
-                    </compilerArgs>
-                    <source>16</source>
-                    <target>16</target>
+                    <release>17</release>
+                    <source>17</source>
+                    <target>17</target>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M4</version>
-                <configuration>
-                    <argLine>--enable-preview</argLine>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
