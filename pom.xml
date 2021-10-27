@@ -8,7 +8,7 @@
     </parent>
     <groupId>io.sirix</groupId>
     <artifactId>brackit</artifactId>
-    <version>0.1.7</version>
+    <version>0.1.8-SNAPSHOT</version>
     <name>Brackit Engine</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
