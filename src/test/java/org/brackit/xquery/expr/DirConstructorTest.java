@@ -39,6 +39,7 @@ import org.brackit.xquery.xdm.Kind;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.node.Node;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -262,6 +263,7 @@ public class DirConstructorTest extends XQueryBaseTest {
     Assert.assertEquals("serialized result differs", "<a>     abc</a>", buf.toString());
   }
 
+  @Ignore
   @Test
   public void boundarySpace6() throws Exception {
     PrintStream buf = createBuffer();
