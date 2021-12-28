@@ -196,6 +196,7 @@ public class Compiler implements Translator {
                                                        "Schema validation feature is not supported.");
       case XQ.ArrayConstructor -> arrayExpr(node);
       case XQ.ArrayAccess -> arrayAccessExpr(node);
+      case XQ.ArrayIndexSlice -> arrayIndexSliceExpr(node);
       case XQ.RecordConstructor -> recordExpr(node);
       case XQ.DerefExpr -> derefExpr(node);
       case XQ.RecordProjection -> projectionExpr(node);
@@ -204,6 +205,7 @@ public class Compiler implements Translator {
       case XQ.ReplaceJsonExpr -> replaceJsonExpr(node);
       case XQ.RenameJsonExpr -> renameJsonExpr(node);
       case XQ.AppendJsonExpr -> appendJsonExpr(node);
+      case XQ.EmptySequenceType -> new EmptyExpr();
       default -> throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
                                           "Unexpected AST expr node '%s' of type: %s",
                                           node,
@@ -1344,6 +1346,13 @@ public class Compiler implements Translator {
     Expr expr = expr(node.getChild(0), true);
     Expr index = expr(node.getChild(1), true);
     return new ArrayAccessExpr(expr, index);
+  }
+
+  protected Expr arrayIndexSliceExpr(AST node) throws QueryException {
+    Expr expr = expr(node.getChild(0), true);
+    Expr firstIndex = expr(node.getChild(1), true);
+    Expr secondIndex = expr(node.getChild(2), true);
+    return new ArrayIndexSliceExpr(expr, firstIndex, secondIndex);
   }
 
   protected Expr arrayExpr(AST node) throws QueryException {

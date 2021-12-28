@@ -294,36 +294,37 @@ public final class XQ {
   public static final int ArrayConstructor = 244;
   public static final int SequenceField = 245;
   public static final int FlattenedField = 246;
+  public static final int ArrayIndexSlice = 247;
   // End brackit's custom array syntax
   // Begin brackit's custom record syntax
-  public static final int KindTestRecord = 247;
-  public static final int RecordProjection = 248;
-  public static final int RecordConstructor = 249;
-  public static final int RecordField = 250;
-  public static final int KeyValueField = 251;
-  public static final int DerefExpr = 252;
+  public static final int KindTestRecord = 248;
+  public static final int RecordProjection = 249;
+  public static final int RecordConstructor = 250;
+  public static final int RecordField = 251;
+  public static final int KeyValueField = 252;
+  public static final int DerefExpr = 253;
   // End brackit's custom array syntax
   // Begin temporal
-  public static final int NEXT = 253;
-  public static final int PREVIOUS = 254;
-  public static final int FUTURE = 255;
-  public static final int FUTURE_OR_SELF = 256;
-  public static final int PAST = 257;
-  public static final int PAST_OR_SELF = 258;
-  public static final int FIRST = 259;
-  public static final int LAST = 260;
-  public static final int ALL_TIMES = 261;
+  public static final int NEXT = 254;
+  public static final int PREVIOUS = 255;
+  public static final int FUTURE = 256;
+  public static final int FUTURE_OR_SELF = 257;
+  public static final int PAST = 258;
+  public static final int PAST_OR_SELF = 259;
+  public static final int FIRST = 260;
+  public static final int LAST = 261;
+  public static final int ALL_TIMES = 262;
   // End temporal
-  public static final int JsonItemTest = 262;
-  public static final int StructuredItemTest = 263;
-  public static final int KindTestNull = 264;
-  public static final int Null = 265;
+  public static final int JsonItemTest = 263;
+  public static final int StructuredItemTest = 264;
+  public static final int KindTestNull = 265;
+  public static final int Null = 266;
   // Begin JSONiq update expressions
-  public static final int InsertJsonExpr = 266;
-  public static final int DeleteJsonExpr = 267;
-  public static final int RenameJsonExpr = 268;
-  public static final int ReplaceJsonExpr = 269;
-  public static final int AppendJsonExpr = 270;
+  public static final int InsertJsonExpr = 267;
+  public static final int DeleteJsonExpr = 268;
+  public static final int RenameJsonExpr = 269;
+  public static final int ReplaceJsonExpr = 270;
+  public static final int AppendJsonExpr = 271;
   // End JSONiq update expressions
 
   public static final String[] NAMES =
@@ -377,7 +378,7 @@ public final class XQ {
           "End",
           // End brackit's set-oriented extensions
           // Begin brackit's custom array syntax
-          "KindTestArray", "ArrayAccess", "ArrayConstructor", "SequenceField", "FlattenedField",
+          "KindTestArray", "ArrayAccess", "ArrayConstructor", "SequenceField", "FlattenedField", "ArrayIndexSlice",
           // End brackit's custom array syntax
           // Begin brackit's custom recird syntax
           "KindTestRecord", "RecordProjection", "RecordConstructor", "RecordField", "KeyValueField", "DerefExpr",
@@ -394,7 +395,7 @@ public final class XQ {
   private XQ() {
   }
 
-  private static int base = 271;
+  private static int base = 272;
 
   public static synchronized int allocate(int noOfTokens) {
     int r = base;

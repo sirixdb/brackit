@@ -859,6 +859,14 @@ public class ExprAnalyzer extends AbstractAnalyzer {
       exprSingle(expr.getChild(1));
       return true;
     }
+    if (expr.getType() == XQ.ArrayIndexSlice) {
+      expr(expr.getChild(0));
+      exprSingle(expr.getChild(1));
+      if (expr.getChildCount() == 3) {
+        exprSingle(expr.getChild(2));
+      }
+      return true;
+    }
     // END Custom array syntax extension
     // BEGIN Custom record syntax extension
     if (expr.getType() == XQ.RecordProjection) {

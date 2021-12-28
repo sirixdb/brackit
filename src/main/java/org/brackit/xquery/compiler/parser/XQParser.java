@@ -2995,10 +2995,15 @@ public class XQParser extends Tokenizer {
       // BEGIN Custom array syntax extension
       AST index = index();
       if (index != null) {
-        AST arrayAccess = new AST(XQ.ArrayAccess);
-        arrayAccess.addChild(expr);
-        arrayAccess.addChild(index);
-        expr = arrayAccess;
+        if (index.getType() != XQ.ArrayIndexSlice) {
+          AST arrayAccess = new AST(XQ.ArrayAccess);
+          arrayAccess.addChild(expr);
+          arrayAccess.addChild(index);
+          expr = arrayAccess;
+        } else {
+          index.insertChild(0, expr);
+          expr = index;
+        }
         continue;
       }
       // END Custom array syntax extension
@@ -3874,9 +3879,42 @@ public class XQParser extends Tokenizer {
       consumeSkipWS("]]");
       return sequence;
     } else {
-      AST index = exprSingle();
-      consumeSkipWS("]]");
-      return index;
+      if (laSkipWS(":") != null) {
+        consumeSkipWS(":");
+        if (attemptSkipWS("]]")) {
+          AST arraySlice = new AST(XQ.ArrayIndexSlice);
+          arraySlice.addChild(new AST(XQ.EmptySequenceType));
+          arraySlice.addChild(new AST(XQ.EmptySequenceType));
+          return arraySlice;
+        } else {
+          AST secondIndex = exprSingle();
+          AST arraySlice = new AST(XQ.ArrayIndexSlice);
+          arraySlice.addChild(new AST(XQ.EmptySequenceType));
+          arraySlice.addChild(secondIndex);
+          consumeSkipWS("]]");
+          return arraySlice;
+        }
+      } else {
+        AST index = exprSingle();
+        if (laSkipWS(":") != null) {
+          consumeSkipWS(":");
+          if (attemptSkipWS("]]")) {
+            AST arraySlice = new AST(XQ.ArrayIndexSlice);
+            arraySlice.addChild(index);
+            arraySlice.addChild(new AST(XQ.EmptySequenceType));
+            return arraySlice;
+          } else {
+            AST secondIndex = exprSingle();
+            AST arraySlice = new AST(XQ.ArrayIndexSlice);
+            arraySlice.addChild(index);
+            arraySlice.addChild(secondIndex);
+            consumeSkipWS("]]");
+            return arraySlice;
+          }
+        }
+        consumeSkipWS("]]");
+        return index;
+      }
     }
   }
 

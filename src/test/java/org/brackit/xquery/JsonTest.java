@@ -55,6 +55,47 @@ public final class JsonTest extends XQueryBaseTest {
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
 
   @Test
+  public void arrayIndex() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0},"bar",{"baz":true()}]
+          return $array[[1]]
+        """;
+    final var result = query(query);
+    assertEquals("bar", result);
+  }
+
+
+  @Test
+  public void arrayIndexSlice1() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[0:1]]
+        """;
+    final var result = query(query);
+    assertEquals("[{\"foo\":0}]", result);
+  }
+
+  @Test
+  public void arrayIndexSlice2() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0},"bar",{"baz":true()}]
+          return $array[[1:]]
+        """;
+    final var result = query(query);
+    assertEquals("[\"bar\",{\"baz\":true}]", result);
+  }
+
+  @Test
+  public void arrayIndexSlice3() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0},"bar",{"baz":true()}]
+          return $array[[:2]]
+        """;
+    final var result = query(query);
+    assertEquals("[{\"foo\":0},\"bar\"]", result);
+  }
+
+  @Test
   public void renameObjectField() throws IOException {
     final String query = """
           let $object := {"foo": 0}
@@ -434,7 +475,7 @@ public final class JsonTest extends XQueryBaseTest {
   private String query(final String query) throws IOException {
     try (final var out = new ByteArrayOutputStream()) {
       new XQuery(query).serialize(ctx, new PrintStream(out));
-      return new String(out.toByteArray(), StandardCharsets.UTF_8);
+      return out.toString(StandardCharsets.UTF_8);
     }
   }
 }
