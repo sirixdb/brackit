@@ -33,7 +33,6 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.array.DArray;
 import org.brackit.xquery.atomic.IntNumeric;
-import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.*;
 import org.brackit.xquery.xdm.json.Array;
 import org.magicwerk.brownies.collections.GapList;
@@ -46,11 +45,13 @@ public final class ArrayIndexSliceExpr implements Expr {
   private final Expr expr;
   private final Expr firstIndex;
   private final Expr secondIndex;
+  private final Expr increment;
 
-  public ArrayIndexSliceExpr(Expr expr, Expr firstIndex, Expr secondIndex) {
+  public ArrayIndexSliceExpr(Expr expr, Expr firstIndex, Expr secondIndex, Expr increment) {
     this.expr = expr;
     this.firstIndex = firstIndex;
     this.secondIndex = secondIndex;
+    this.increment = increment;
   }
 
   @Override
@@ -67,10 +68,25 @@ public final class ArrayIndexSliceExpr implements Expr {
     }
     final Item firstItem = firstIndex.evaluateToItem(ctx, tuple);
     final Item secondItem = secondIndex.evaluateToItem(ctx, tuple);
+    final Item incrementItem = increment.evaluateToItem(ctx, tuple);
+
+    if (incrementItem != null && !(incrementItem instanceof IntNumeric)) {
+      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                               "Illegal operand type '%s' where '%s' is expected",
+                               incrementItem.itemType(),
+                               Type.INR);
+    }
+
+    final int increment;
+    if (incrementItem == null) {
+      increment = 1;
+    } else {
+      increment = ((IntNumeric) incrementItem).intValue();
+    }
 
     if (firstItem == null) {
       if (secondItem == null) {
-        return getAllItemsFromArray(array);
+        return getAllItemsFromArray(array, increment);
       } else {
         if (!(secondItem instanceof IntNumeric)) {
           throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
@@ -84,8 +100,14 @@ public final class ArrayIndexSliceExpr implements Expr {
         final var buffer = new GapList<Item>(((Array) array).len());
         Item item;
         int i = 0;
+        boolean first = true;
         while ((item = it.next()) != null && i < upperBoundIndex) {
-          buffer.add(item);
+          if (first) {
+            first = false;
+            buffer.add(item);
+          } else if ((i % increment) == 0) {
+            buffer.add(item);
+          }
           i++;
         }
         return new DArray(buffer);
@@ -97,18 +119,19 @@ public final class ArrayIndexSliceExpr implements Expr {
                                firstItem.itemType(),
                                Type.INR);
     }
+
     if (secondItem == null) {
       final int lowerBoundIndex = ((IntNumeric) firstItem).intValue();
       final int upperBoundIndex = ((Array) array).len();
-      return getArrayItemSliceSequence(array, lowerBoundIndex, upperBoundIndex);
+      return getArrayItemSliceSequence(array, lowerBoundIndex, upperBoundIndex, increment);
     }
 
     final int lowerBoundIndex = ((IntNumeric) firstItem).intValue();
     final int upperBoundIndex = ((IntNumeric) secondItem).intValue();
-    return getArrayItemSliceSequence(array, lowerBoundIndex, upperBoundIndex);
+    return getArrayItemSliceSequence(array, lowerBoundIndex, upperBoundIndex, increment);
   }
 
-  private Array getArrayItemSliceSequence(Item array, int lowerBoundIndex, int upperBoundIndex) {
+  private Array getArrayItemSliceSequence(Item array, int lowerBoundIndex, int upperBoundIndex, int increment) {
     final var it = array.iterate();
 
     int i = 0;
@@ -118,20 +141,34 @@ public final class ArrayIndexSliceExpr implements Expr {
 
     Item item;
     final var buffer = new GapList<Item>(((Array) array).len());
+    boolean first = true;
     while ((item = it.next()) != null && i < upperBoundIndex) {
-      buffer.add(item);
+      if (first) {
+        first = false;
+        buffer.add(item);
+      } else if ((i % increment) == 0) {
+        buffer.add(item);
+      }
       i++;
     }
     return new DArray(buffer);
   }
 
-  private Array getAllItemsFromArray(Item array) {
+  private Array getAllItemsFromArray(Item array, int increment) {
     final var it = array.iterate();
 
     final var buffer = new GapList<Item>(((Array) array).len());
     Item item;
+    int i = 0;
+    boolean first = true;
     while ((item = it.next()) != null) {
-      buffer.add(item);
+      if (first) {
+        first = false;
+        buffer.add(item);
+      } else if ((i % increment) == 0) {
+        buffer.add(item);
+      }
+      i++;
     }
     return new DArray(buffer);
   }

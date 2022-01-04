@@ -1352,7 +1352,8 @@ public class Compiler implements Translator {
     Expr expr = expr(node.getChild(0), true);
     Expr firstIndex = expr(node.getChild(1), true);
     Expr secondIndex = expr(node.getChild(2), true);
-    return new ArrayIndexSliceExpr(expr, firstIndex, secondIndex);
+    Expr increment = expr(node.getChild(3), true);
+    return new ArrayIndexSliceExpr(expr, firstIndex, secondIndex, increment);
   }
 
   protected Expr arrayExpr(AST node) throws QueryException {
