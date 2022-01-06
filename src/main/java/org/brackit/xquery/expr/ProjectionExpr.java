@@ -36,13 +36,12 @@ import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.Bits;
-import org.brackit.xquery.record.ArrayRecord;
+import org.brackit.xquery.record.ArrayObject;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.json.Record;
+import org.brackit.xquery.xdm.json.Object;
 
 /**
  * @author Sebastian Baechle
@@ -66,12 +65,12 @@ public final class ProjectionExpr implements Expr {
   @Override
   public Item evaluateToItem(QueryContext ctx, Tuple t) {
     Sequence s = record.evaluateToItem(ctx, t);
-    if (!(s instanceof Record)) {
+    if (!(s instanceof Object)) {
       throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                "Source expression in projection is not a record: %s",
                                s);
     }
-    Record r = (Record) s;
+    Object r = (Object) s;
     QNm[] names = new QNm[fields.length];
     Sequence[] vals = new Sequence[fields.length];
     for (int i = 0; i < fields.length; i++) {
@@ -93,7 +92,7 @@ public final class ProjectionExpr implements Expr {
         throw new QueryException(Bits.BIT_ILLEGAL_RECORD_FIELD, "Illegal record field reference: %s", f);
       }
     }
-    return new ArrayRecord(names, vals);
+    return new ArrayObject(names, vals);
   }
 
   @Override

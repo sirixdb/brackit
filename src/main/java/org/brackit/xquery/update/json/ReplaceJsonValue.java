@@ -33,19 +33,13 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.expr.ConstructedNodeBuilder;
 import org.brackit.xquery.update.json.op.ReplaceArrayValueOp;
 import org.brackit.xquery.update.json.op.ReplaceRecordValueOp;
-import org.brackit.xquery.update.op.ReplaceElementContentOp;
-import org.brackit.xquery.update.op.ReplaceValueOp;
 import org.brackit.xquery.xdm.*;
 import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.json.JsonItem;
-import org.brackit.xquery.xdm.json.Record;
-import org.brackit.xquery.xdm.node.Node;
-
-import java.util.EnumSet;
+import org.brackit.xquery.xdm.json.Object;
 
 /**
  * @author Johannes Lichtenberger
@@ -103,7 +97,7 @@ public final class ReplaceJsonValue extends ConstructedNodeBuilder implements Ex
       ctx.addPendingUpdate(new ReplaceArrayValueOp((Array) target, index.intValue(), source));
     } else {
       final QNm field = (QNm) recordFieldOrArrayIndexSeq;
-      ctx.addPendingUpdate(new ReplaceRecordValueOp((Record) target, field, source));
+      ctx.addPendingUpdate(new ReplaceRecordValueOp((Object) target, field, source));
     }
 
     return null;

@@ -71,12 +71,12 @@ public final class NullType implements ItemType {
   }
 
   @Override
-  public boolean isListOrUnion() {
+  public boolean isArray() {
     return false;
   }
 
   @Override
-  public boolean isRecord() {
+  public boolean isObject() {
     return false;
   }
 

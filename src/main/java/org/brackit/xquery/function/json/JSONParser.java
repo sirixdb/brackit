@@ -42,15 +42,9 @@ import java.util.List;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.array.DArray;
-import org.brackit.xquery.atomic.Bool;
-import org.brackit.xquery.atomic.Dbl;
-import org.brackit.xquery.atomic.Dec;
-import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.Numeric;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.atomic.*;
 import org.brackit.xquery.compiler.parser.Tokenizer;
-import org.brackit.xquery.record.ArrayRecord;
+import org.brackit.xquery.record.ArrayObject;
 import org.brackit.xquery.util.serialize.StringSerializer;
 import org.brackit.xquery.xdm.Item;
 
@@ -76,13 +70,16 @@ public class JSONParser extends Tokenizer {
     try {
       Item i = object();
       i = (i != null) ? i : array();
+
       if (i == null) {
-        throw new QueryException(JSONFun.ERR_PARSING_ERROR, "No JSON data found");
+        i = value(true);
+
+        if (i == null) {
+          throw new QueryException(JSONFun.ERR_PARSING_ERROR, "No JSON data found");
+        }
       }
       consumeEOF();
       return i;
-    } catch (IllegalCharRefException e) {
-      throw new QueryException(e, JSONFun.ERR_PARSING_ERROR, e.getMessage());
     } catch (Exception e) {
       throw new QueryException(e, JSONFun.ERR_PARSING_ERROR, e.getMessage());
     }
@@ -111,7 +108,7 @@ public class JSONParser extends Tokenizer {
     } else if (attemptSkipS("false")) {
       return Bool.FALSE;
     } else if (attemptSkipS("null")) {
-      return null;
+      return new Null();
     } else if (required) {
       throw new TokenizerException("JSON value expected: %s", paraphrase());
     }
@@ -123,7 +120,7 @@ public class JSONParser extends Tokenizer {
       return null;
     }
     if (attemptSkipS("]")) {
-      return new ArrayRecord(new QNm[0], new Item[0]);
+      return new DArray(List.of());
     }
     var values = new ArrayList<Item>();
     do {
@@ -139,16 +136,13 @@ public class JSONParser extends Tokenizer {
       return null;
     }
     if (attemptSkipS("}")) {
-      return new ArrayRecord(new QNm[0], new Item[0]);
+      return new ArrayObject(new QNm[0], new Item[0]);
     }
     int len = 0;
-    List<QNm> fields = new ArrayList<>();
-    List<Item> values = new ArrayList<>();
+    final var fields = new ArrayList<QNm>();
+    final var values = new ArrayList<Item>();
     do {
-      Str name = string();
-      if (name == null) {
-
-      }
+      final Str name = string();
       consumeSkipS(":");
       Item value = value(true);
       fields.add(new QNm(null, null, name.stringValue()));
@@ -157,7 +151,7 @@ public class JSONParser extends Tokenizer {
     } while (attemptSkipS(","));
     consumeSkipS("}");
 
-    return new ArrayRecord(fields.toArray(new QNm[len]), values.toArray(new Item[len]));
+    return new ArrayObject(fields.toArray(new QNm[len]), values.toArray(new Item[len]));
   }
 
   private Numeric number() throws QueryException, TokenizerException {
@@ -216,29 +210,9 @@ public class JSONParser extends Tokenizer {
     String s =
         "{\"bindings\": [        {\"ircEvent\": \"PRIVMSG\", \"method\": \"newURI\", \"regex\": \"^http://.*\"},        {\"ircEvent\": \"PRIVMSG\", \"method\": \"deleteURI\", \"regex\": \"^delete.*\"},        {\"ircEvent\": \"PRIVMSG\", \"method\": \"randomURI\", \"regex\": \"^random.*\"}    ]}";
     Item item = new JSONParser(s).parse();
-    //		new StringSerializer(System.out).serialize(item);
+    new StringSerializer(System.out).serialize(item);
 
-    s = "{\n" + "  \"sirix\": [\n" + "    {\n" + "      \"revisionNumber\": 1,\n" + "      \"revision\": {\n"
-        + "        \"foo\": [\n" + "          \"bar\",\n" + "          null,\n" + "          2.33\n" + "        ],\n"
-        + "        \"bar\": {\n" + "          \"hello\": \"world\",\n" + "          \"helloo\": true\n" + "        },\n"
-        + "        \"baz\": \"hello\",\n" + "        \"tada\": [\n" + "          {\n" + "            \"foo\": \"bar\"\n"
-        + "          },\n" + "          {\n" + "            \"baz\": false\n" + "          },\n"
-        + "          \"boo\",\n" + "          {},\n" + "          []\n" + "        ]\n" + "      }\n" + "    },\n"
-        + "    {\n" + "      \"revisionNumber\": 2,\n" + "      \"revision\": {\n" + "        \"tadaaa\": \"todooo\",\n"
-        + "        \"foo\": [\n" + "          \"bar\",\n" + "          null,\n" + "          2.33\n" + "        ],\n"
-        + "        \"bar\": {\n" + "          \"hello\": \"world\",\n" + "          \"helloo\": true\n" + "        },\n"
-        + "        \"baz\": \"hello\",\n" + "        \"tada\": [\n" + "          {\n" + "            \"foo\": \"bar\"\n"
-        + "          },\n" + "          {\n" + "            \"baz\": false\n" + "          },\n"
-        + "          \"boo\",\n" + "          {},\n" + "          []\n" + "        ]\n" + "      }\n" + "    },\n"
-        + "    {\n" + "      \"revisionNumber\": 3,\n" + "      \"revision\": {\n" + "        \"tadaaa\": \"todooo\",\n"
-        + "        \"foo\": [\n" + "          \"bar\",\n" + "          null,\n" + "          2.33\n" + "        ],\n"
-        + "        \"bar\": {\n" + "          \"hello\": \"world\",\n" + "          \"helloo\": true\n" + "        },\n"
-        + "        \"baz\": \"hello\",\n" + "        \"tada\": [\n" + "          {\n" + "            \"foo\": \"bar\"\n"
-        + "          },\n" + "          {\n" + "            \"baz\": false\n" + "          },\n"
-        + "          \"boo\",\n" + "          {},\n" + "          [\n" + "            {\n"
-        + "              \"foo\": [\n" + "                true,\n" + "                {\n"
-        + "                  \"baz\": \"bar\"\n" + "                }\n" + "              ]\n" + "            }\n"
-        + "          ]\n" + "        ]\n" + "      }\n" + "    }\n" + "  ]\n" + "}";
+    s = "[]";
 
     item = new JSONParser(s).parse();
     new StringSerializer(System.out).serialize(item);

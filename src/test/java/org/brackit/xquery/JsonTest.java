@@ -31,7 +31,7 @@ import org.brackit.xquery.array.DArray;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.Null;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.record.ArrayRecord;
+import org.brackit.xquery.record.ArrayObject;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Sequence;
 import org.junit.Test;
@@ -55,6 +55,41 @@ public final class JsonTest extends XQueryBaseTest {
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
 
   @Test
+  public void join() throws IOException {
+    final String query = """
+        let $stores :=
+        [
+          { "store number" : 1, "state" : "MA" },
+          { "store number" : 2, "state" : "MA" },
+          { "store number" : 3, "state" : "CA" },
+          { "store number" : 4, "state" : "CA" }
+        ]
+        let $sales := [
+           { "product" : "broiler", "store number" : 1, "quantity" : 20  },
+           { "product" : "toaster", "store number" : 2, "quantity" : 100 },
+           { "product" : "toaster", "store number" : 2, "quantity" : 50 },
+           { "product" : "toaster", "store number" : 3, "quantity" : 50 },
+           { "product" : "blender", "store number" : 3, "quantity" : 100 },
+           { "product" : "blender", "store number" : 3, "quantity" : 150 },
+           { "product" : "socks", "store number" : 1, "quantity" : 500 },
+           { "product" : "socks", "store number" : 2, "quantity" : 10 },
+           { "product" : "shirt", "store number" : 3, "quantity" : 10 }
+        ]
+        let $join :=
+          for $store in $stores, $sale in $sales
+          where $store=>"store number" = $sale=>"store number"
+          return {
+            "nb" : $store=>"store number",
+            "state" : $store=>state,
+            "sold" : $sale=>product
+          }
+        return [$join]
+        """;
+    final var result = query(query);
+    assertEquals(Files.readString(JSON_RESOURCES.resolve("joinresult.json")), result);
+  }
+
+  @Test
   public void arrayIndex() throws IOException {
     final String query = """
           let $array := [{"foo": 0},"bar",{"baz":true()}]
@@ -63,7 +98,6 @@ public final class JsonTest extends XQueryBaseTest {
     final var result = query(query);
     assertEquals("bar", result);
   }
-
 
   @Test
   public void arrayIndexSlice1() throws IOException {
@@ -133,6 +167,31 @@ public final class JsonTest extends XQueryBaseTest {
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0},\"bar\"]", result);
+  }
+
+  @Test
+  public void jsonParserEmptyArray() throws IOException {
+    final String query = """
+          jn:parse('[]')
+        """;
+    final var result = query(query);
+    assertEquals("[]", result);
+  }
+
+  @Test
+  public void jsonParserEmptyRecord() throws IOException {
+    final String query = """
+          jn:parse('{}')
+        """;
+    final var result = query(query);
+    assertEquals("{}", result);
+  }
+
+  @Test
+  public void jsonParserNull() throws IOException {
+    final String query = "jn:parse('null')";
+    final var result = query(query);
+    assertEquals("null", result);
   }
 
   @Test
@@ -397,7 +456,7 @@ public final class JsonTest extends XQueryBaseTest {
   public void composableTest() {
     final var query = "{\"foo\":jn:null(),\"bar\":(1,2)}";
     final var resultSequence = new XQuery(query).execute(ctx);
-    ResultChecker.check(new ItemSequence(new ArrayRecord(new QNm[] { new QNm("foo"), new QNm("bar") },
+    ResultChecker.check(new ItemSequence(new ArrayObject(new QNm[] { new QNm("foo"), new QNm("bar") },
                                                          new Sequence[] { new Null(),
                                                              new DArray(List.of(new Int32(1), new Int32(2))) })),
                         resultSequence);

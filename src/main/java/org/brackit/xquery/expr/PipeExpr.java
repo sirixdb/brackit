@@ -28,7 +28,6 @@
 package org.brackit.xquery.expr;
 
 import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.operator.Cursor;
 import org.brackit.xquery.operator.Operator;
@@ -39,8 +38,6 @@ import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.json.Array;
-import org.brackit.xquery.xdm.json.Record;
 
 /**
  * @author Sebastian Baechle

@@ -44,9 +44,9 @@ public interface ItemType {
 
   boolean isFunction();
 
-  boolean isListOrUnion();
+  boolean isArray();
 
-  boolean isRecord();
+  boolean isObject();
 
   boolean isJsonItem();
 

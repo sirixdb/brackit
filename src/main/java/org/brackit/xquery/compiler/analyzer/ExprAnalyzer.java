@@ -869,7 +869,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     }
     // END Custom array syntax extension
     // BEGIN Custom record syntax extension
-    if (expr.getType() == XQ.RecordProjection) {
+    if (expr.getType() == XQ.ObjectProjection) {
       expr(expr.getChild(0));
       for (int i = 1; i < expr.getChildCount(); i++) {
         exprSingle(expr.getChild(i));
@@ -1406,7 +1406,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 
   // BEGIN Custom record syntax extension
   protected boolean recordConstructor(AST expr) throws QueryException {
-    if (expr.getType() != XQ.RecordConstructor) {
+    if (expr.getType() != XQ.ObjectConstructor) {
       return false;
     }
     for (int i = 0; i < expr.getChildCount(); i++) {
@@ -1415,7 +1415,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
       if (fType == XQ.KeyValueField) {
         expr(field.getChild(0));
         expr(field.getChild(1));
-      } else if (fType == XQ.RecordField) {
+      } else if (fType == XQ.ObjectField) {
         expr(field.getChild(0));
       } else {
         throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR, "Invalid record field type: %s", fType);

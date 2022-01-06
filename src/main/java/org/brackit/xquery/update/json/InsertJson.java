@@ -38,7 +38,7 @@ import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Array;
-import org.brackit.xquery.xdm.json.Record;
+import org.brackit.xquery.xdm.json.Object;
 
 /**
  * @author Johannes Lichtenberger
@@ -100,8 +100,8 @@ public final class InsertJson implements Expr {
 
     final Sequence source = sourceExpr.evaluateToItem(ctx, tuple);
 
-    if (target instanceof Record) {
-      ctx.addPendingUpdate(new InsertIntoRecordOp((Record) targetItem, (Record) source));
+    if (target instanceof Object) {
+      ctx.addPendingUpdate(new InsertIntoRecordOp((Object) targetItem, (Object) source));
     } else {
       // array
       if (!(targetItem instanceof Array)) {

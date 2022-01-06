@@ -27,25 +27,23 @@
  */
 package org.brackit.xquery.update.json.op;
 
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.update.op.OpType;
 import org.brackit.xquery.update.op.UpdateOp;
 import org.brackit.xquery.xdm.json.JsonItem;
-import org.brackit.xquery.xdm.json.Record;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.xdm.json.Object;
 
 /**
  * @author Johannes Lichtenberger
  */
 public class RenameRecordFieldOp implements UpdateOp {
-  private final Record target;
+  private final Object target;
 
   private final QNm name;
 
   private final QNm newFieldName;
 
-  public RenameRecordFieldOp(Record target, QNm name, QNm newFieldName) {
+  public RenameRecordFieldOp(Object target, QNm name, QNm newFieldName) {
     this.target = target;
     this.name = name;
     this.newFieldName = newFieldName;

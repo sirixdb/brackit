@@ -296,14 +296,14 @@ public final class XQ {
   public static final int FlattenedField = 246;
   public static final int ArrayIndexSlice = 247;
   // End brackit's custom array syntax
-  // Begin brackit's custom record syntax
-  public static final int KindTestRecord = 248;
-  public static final int RecordProjection = 249;
-  public static final int RecordConstructor = 250;
-  public static final int RecordField = 251;
+  // Begin brackit's custom object syntax
+  public static final int KindTestObject = 248;
+  public static final int ObjectProjection = 249;
+  public static final int ObjectConstructor = 250;
+  public static final int ObjectField = 251;
   public static final int KeyValueField = 252;
   public static final int DerefExpr = 253;
-  // End brackit's custom array syntax
+  // End brackit's custom object syntax
   // Begin temporal
   public static final int NEXT = 254;
   public static final int PREVIOUS = 255;

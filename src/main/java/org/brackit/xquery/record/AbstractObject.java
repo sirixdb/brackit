@@ -25,76 +25,35 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm.type;
+package org.brackit.xquery.record;
 
+import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.json.ListOrUnion;
+import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.xdm.AbstractItem;
+import org.brackit.xquery.xdm.json.Object;
+import org.brackit.xquery.xdm.type.ItemType;
+import org.brackit.xquery.xdm.type.ObjectType;
 
 /**
  * @author Sebastian Baechle
  */
-public final class ListOrUnionType implements ItemType {
+public abstract class AbstractObject extends AbstractItem implements Object {
 
-  public static final ListOrUnionType LIST_OR_UNION = new ListOrUnionType();
-
-  public ListOrUnionType() {
+  @Override
+  public ItemType itemType() throws QueryException {
+    return ObjectType.OBJECT;
   }
 
   @Override
-  public boolean isAnyItem() {
-    return false;
+  public Atomic atomize() throws QueryException {
+    throw new QueryException(ErrorCode.ERR_ITEM_HAS_NO_TYPED_VALUE, "The atomized value of record items is undefined");
   }
 
   @Override
-  public boolean isAtomic() {
-    return false;
+  public boolean booleanValue() throws QueryException {
+    throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                             "Effective boolean value of record items is undefined.");
   }
 
-  @Override
-  public boolean isJsonItem() {
-    return true;
-  }
-
-  @Override
-  public boolean isStructuredItem() {
-    return true;
-  }
-
-  @Override
-  public boolean isNode() {
-    return false;
-  }
-
-  @Override
-  public boolean isFunction() {
-    return true;
-  }
-
-  @Override
-  public boolean isListOrUnion() {
-    return true;
-  }
-
-  @Override
-  public boolean isRecord() {
-    return false;
-  }
-
-  @Override
-  public boolean matches(Item item) throws QueryException {
-    // TODO subtyping??? At the moment we have Object[]-like semantics
-    return (item instanceof ListOrUnion);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    // TODO subtyping??? At the moment we have Object[]-like semantics
-    return (obj instanceof ListOrUnionType);
-  }
-
-  @Override
-  public String toString() {
-    return "listOrUnion()";
-  }
 }

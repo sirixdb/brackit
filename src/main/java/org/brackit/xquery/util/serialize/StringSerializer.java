@@ -43,7 +43,7 @@ import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Type;
 import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.json.JsonItem;
-import org.brackit.xquery.xdm.json.Record;
+import org.brackit.xquery.xdm.json.Object;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
@@ -136,7 +136,7 @@ public class StringSerializer implements Serializer {
           }
           json(item, printer, true);
           first = false;
-        } else if (item instanceof Record) {
+        } else if (item instanceof Object) {
           if (!first) {
             out.write(" ");
           }
@@ -163,7 +163,7 @@ public class StringSerializer implements Serializer {
         printer.flush();
         out.flush();
       }
-    } else if (s instanceof Record) {
+    } else if (s instanceof Object) {
       try {
         json(s, printer, false);
         return true;
@@ -202,8 +202,8 @@ public class StringSerializer implements Serializer {
           json(a.at(i), p, true);
         }
         out.write("]");
-      } else if (s instanceof Record) {
-        Record r = (Record) s;
+      } else if (s instanceof Object) {
+        Object r = (Object) s;
         out.write("{");
         for (int i = 0; i < r.len(); i++) {
           if (i > 0) {

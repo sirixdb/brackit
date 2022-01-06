@@ -328,10 +328,10 @@ public abstract class AbstractAnalyzer {
   }
 
   protected ItemType recordTest(AST test) throws QueryException {
-    if (test.getType() != XQ.KindTestRecord) {
+    if (test.getType() != XQ.KindTestObject) {
       return null;
     }
-    return new RecordType();
+    return new ObjectType();
   }
 
   protected ItemType arrayTest(AST test) throws QueryException {

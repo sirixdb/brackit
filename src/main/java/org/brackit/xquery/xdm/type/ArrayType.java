@@ -27,9 +27,7 @@
  */
 package org.brackit.xquery.xdm.type;
 
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.json.Array;
 
 /**
  * @author Sebastian Baechle
@@ -72,23 +70,23 @@ public final class ArrayType implements ItemType {
   }
 
   @Override
-  public boolean isListOrUnion() {
+  public boolean isArray() {
     return true;
   }
 
   @Override
-  public boolean isRecord() {
+  public boolean isObject() {
     return false;
   }
 
   @Override
-  public boolean matches(Item item) throws QueryException {
-    return (item.itemType() instanceof ArrayType);
+  public boolean matches(Item item) {
+    return item.itemType() instanceof ArrayType;
   }
 
   @Override
   public boolean equals(Object obj) {
-    return (obj instanceof ArrayType);
+    return obj instanceof ArrayType;
   }
 
   @Override

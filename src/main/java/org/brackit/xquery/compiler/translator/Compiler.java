@@ -36,9 +36,9 @@ import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.expr.*;
 import org.brackit.xquery.expr.ArithmeticExpr.ArithmeticOp;
 import org.brackit.xquery.expr.NodeCmpExpr.NodeCmp;
-import org.brackit.xquery.expr.RecordExpr.Field;
-import org.brackit.xquery.expr.RecordExpr.KeyValueField;
-import org.brackit.xquery.expr.RecordExpr.RecordField;
+import org.brackit.xquery.expr.ObjectExpr.Field;
+import org.brackit.xquery.expr.ObjectExpr.KeyValueField;
+import org.brackit.xquery.expr.ObjectExpr.ObjectField;
 import org.brackit.xquery.function.FunctionExpr;
 import org.brackit.xquery.function.UDF;
 import org.brackit.xquery.function.bit.BitFun;
@@ -186,7 +186,7 @@ public class Compiler implements Translator {
       case XQ.ReplaceNodeExpr, XQ.ReplaceValueExpr -> replaceExpr(node);
       case XQ.RenameExpr -> renameExpr(node);
       case XQ.TransformExpr -> transformExpr(node);
-      case XQ.OrderedExpr, XQ.UnorderedExpr, XQ.RecordField -> anyExpr(node.getChild(0));
+      case XQ.OrderedExpr, XQ.UnorderedExpr, XQ.ObjectField -> anyExpr(node.getChild(0));
       case XQ.UnionExpr -> unionExpr(node);
       case XQ.ExceptExpr -> exceptExpr(node);
       case XQ.IntersectExpr -> intersectExpr(node);
@@ -197,9 +197,9 @@ public class Compiler implements Translator {
       case XQ.ArrayConstructor -> arrayExpr(node);
       case XQ.ArrayAccess -> arrayAccessExpr(node);
       case XQ.ArrayIndexSlice -> arrayIndexSliceExpr(node);
-      case XQ.RecordConstructor -> recordExpr(node);
+      case XQ.ObjectConstructor -> recordExpr(node);
       case XQ.DerefExpr -> derefExpr(node);
-      case XQ.RecordProjection -> projectionExpr(node);
+      case XQ.ObjectProjection -> projectionExpr(node);
       case XQ.InsertJsonExpr -> insertJsonExpr(node);
       case XQ.DeleteJsonExpr -> deleteJsonExpr(node);
       case XQ.ReplaceJsonExpr -> replaceJsonExpr(node);
@@ -977,7 +977,7 @@ public class Compiler implements Translator {
       case XQ.ItemType -> AnyItemType.ANY;
       case XQ.AtomicOrUnionType -> atomicOrUnionType(node);
       case XQ.StructuredItemTest -> new AnyStructuredItemType();
-      case XQ.KindTestRecord -> new RecordType();
+      case XQ.KindTestObject -> new ObjectType();
       case XQ.KindTestArray -> new ArrayType();
       case XQ.KindTestNull -> new NullType();
       case XQ.JsonItemTest -> new AnyJsonItemType();
@@ -1379,10 +1379,10 @@ public class Compiler implements Translator {
       if (field.getType() == XQ.KeyValueField) {
         fields[i] = new KeyValueField(expr(field.getChild(0), true), expr(field.getChild(1), true));
       } else {
-        fields[i] = new RecordField(expr(field, true));
+        fields[i] = new ObjectField(expr(field, true));
       }
     }
-    return new RecordExpr(fields);
+    return new ObjectExpr(fields);
   }
 
   protected Expr derefExpr(AST node) throws QueryException {

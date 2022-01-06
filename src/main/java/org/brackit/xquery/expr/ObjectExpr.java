@@ -38,19 +38,19 @@ import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.Bits;
-import org.brackit.xquery.record.ArrayRecord;
+import org.brackit.xquery.record.ArrayObject;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.json.Record;
+import org.brackit.xquery.xdm.json.Object;
 
 /**
  * @author Sebastian Baechle
  */
-public class RecordExpr implements Expr {
+public class ObjectExpr implements Expr {
 
   public static abstract class Field {
-    abstract Record evaluate(QueryContext ctx, Tuple t) throws QueryException;
+    abstract Object evaluate(QueryContext ctx, Tuple t) throws QueryException;
 
     abstract boolean isUpdating();
 
@@ -59,36 +59,36 @@ public class RecordExpr implements Expr {
     }
   }
 
-  public static class RecordField extends Field {
+  public static class ObjectField extends Field {
     final Expr expr;
 
-    public RecordField(Expr expr) {
+    public ObjectField(Expr expr) {
       this.expr = expr;
     }
 
     @Override
-    public Record evaluate(QueryContext ctx, Tuple t) {
+    public Object evaluate(QueryContext ctx, Tuple t) {
       Sequence i = expr.evaluate(ctx, t);
-      if (i instanceof Record) {
-        return (Record) i;
+      if (i instanceof Object) {
+        return (Object) i;
       } else {
         final var names = new ArrayList<QNm>();
         final var values = new ArrayList<Sequence>();
         final var iter = i.iterate();
         Item item;
         while ((item = iter.next()) != null) {
-          if (!(item instanceof Record)) {
+          if (!(item instanceof Object)) {
             throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                      "Illegal item type in record constructor: %s",
                                      item.itemType());
           }
 
-          final Record record = (Record) item;
+          final Object record = (Object) item;
           Collections.addAll(names, record.names().values().toArray(new QNm[0]));
           Collections.addAll(values, record.values().values().toArray(new Sequence[0]));
         }
 
-        return new ArrayRecord(names.toArray(new QNm[0]), values.toArray(new Sequence[0]));
+        return new ArrayObject(names.toArray(new QNm[0]), values.toArray(new Sequence[0]));
       }
     }
 
@@ -108,15 +108,15 @@ public class RecordExpr implements Expr {
     }
 
     @Override
-    public Record evaluate(QueryContext ctx, Tuple t) {
+    public Object evaluate(QueryContext ctx, Tuple t) {
       Sequence names = nameExpr.evaluateToItem(ctx, t);
       Sequence val = valueExpr.evaluateToItem(ctx, t);
 
       if (names instanceof Str) {
-        return new ArrayRecord(new QNm[] { new QNm(((Str) names).stringValue()) }, new Sequence[] { val });
+        return new ArrayObject(new QNm[] { new QNm(((Str) names).stringValue()) }, new Sequence[] { val });
       }
 
-      return new ArrayRecord(new QNm[] { (QNm) names.get(0) }, new Sequence[] { val });
+      return new ArrayObject(new QNm[] { (QNm) names.get(0) }, new Sequence[] { val });
     }
 
     @Override
@@ -127,7 +127,7 @@ public class RecordExpr implements Expr {
 
   final Field[] fields;
 
-  public RecordExpr(Field[] fields) {
+  public ObjectExpr(Field[] fields) {
     this.fields = fields;
   }
 
@@ -143,7 +143,7 @@ public class RecordExpr implements Expr {
     Sequence[] vals = new Sequence[fields.length];
     int pos = 0;
     for (int i = 0; i < fields.length; i++) {
-      Record res = fields[i].evaluate(ctx, t);
+      Object res = fields[i].evaluate(ctx, t);
       for (int j = 0; j < res.len(); j++) {
         QNm name = res.name(j);
         if (!dedup.add(name)) {
@@ -164,7 +164,7 @@ public class RecordExpr implements Expr {
       names = Arrays.copyOfRange(names, 0, pos);
       vals = Arrays.copyOfRange(vals, 0, pos);
     }
-    return new ArrayRecord(names, vals);
+    return new ArrayObject(names, vals);
   }
 
   @Override

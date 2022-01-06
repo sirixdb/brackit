@@ -36,10 +36,10 @@ import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.annotation.FunctionAnnotation;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.json.Record;
+import org.brackit.xquery.xdm.json.Object;
 import org.brackit.xquery.xdm.type.ArrayType;
 import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.RecordType;
+import org.brackit.xquery.xdm.type.ObjectType;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
@@ -57,13 +57,13 @@ public class Values extends AbstractFunction {
   public Values(QNm name) {
     super(name,
           new Signature(new SequenceType(ArrayType.ARRAY, Cardinality.One),
-                        new SequenceType(RecordType.RECORD, Cardinality.ZeroOrOne)),
+                        new SequenceType(ObjectType.OBJECT, Cardinality.ZeroOrOne)),
           true);
   }
 
   @Override
   public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
-    Record r = (Record) args[0];
+    Object r = (Object) args[0];
     return (r == null) ? null : r.values();
   }
 }

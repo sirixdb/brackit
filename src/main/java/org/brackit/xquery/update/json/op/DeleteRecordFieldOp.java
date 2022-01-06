@@ -31,17 +31,17 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.update.op.OpType;
 import org.brackit.xquery.update.op.UpdateOp;
 import org.brackit.xquery.xdm.StructuredItem;
-import org.brackit.xquery.xdm.json.Record;
+import org.brackit.xquery.xdm.json.Object;
 
 /**
  * @author Johannes Lichtenberger
  */
 public class DeleteRecordFieldOp implements UpdateOp {
-  private final Record target;
+  private final Object target;
 
   private final QNm field;
 
-  public DeleteRecordFieldOp(Record target, QNm field) {
+  public DeleteRecordFieldOp(Object target, QNm field) {
     this.target = target;
     this.field = field;
   }

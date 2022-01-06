@@ -31,24 +31,22 @@ import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.xdm.Sequence;
 
-import java.util.Map;
-
 /**
  * @author Sebastian Baechle
  */
-public interface Record extends JsonItem {
+public interface Object extends JsonItem {
 
-  Record replace(QNm field, Sequence value);
+  Object replace(QNm field, Sequence value);
 
-  Record rename(QNm field, QNm newFieldName);
+  Object rename(QNm field, QNm newFieldName);
 
-  Record insert(QNm field, Sequence value);
+  Object insert(QNm field, Sequence value);
 
-  Record remove(QNm field);
+  Object remove(QNm field);
 
-  Record remove(IntNumeric index);
+  Object remove(IntNumeric index);
 
-  Record remove(int index);
+  Object remove(int index);
 
   Sequence get(QNm field);
 

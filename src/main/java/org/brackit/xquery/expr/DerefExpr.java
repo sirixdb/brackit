@@ -40,7 +40,7 @@ import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Array;
-import org.brackit.xquery.xdm.json.Record;
+import org.brackit.xquery.xdm.json.Object;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,7 +76,7 @@ public class DerefExpr implements Expr {
   private Sequence processSequence(QueryContext ctx, Tuple tuple, Sequence sequence, int index) {
     if (sequence instanceof Array) {
       return processArray(ctx, tuple, getSequenceValues(ctx, tuple, (Array) sequence, fields[index]));
-    } else if (sequence instanceof Record) {
+    } else if (sequence instanceof Object) {
       return processRecord(sequence, index, ctx, tuple);
     } else if (sequence instanceof LazySequence) {
       return processLazySequence(ctx, tuple, sequence, index);
@@ -165,7 +165,7 @@ public class DerefExpr implements Expr {
   }
 
   private Sequence processRecord(Sequence sequence, int index, QueryContext ctx, Tuple tuple) {
-    final Record record = (Record) sequence;
+    final Object record = (Object) sequence;
     final Item field = fields[index].evaluateToItem(ctx, tuple);
 
     if (field == null) {
@@ -185,10 +185,10 @@ public class DerefExpr implements Expr {
         vals.addAll(getSequenceValues(ctx, t, (Array) val, field1));
         continue;
       }
-      if (!(val instanceof Record)) {
+      if (!(val instanceof Object)) {
         continue;
       }
-      Record record = (Record) val;
+      Object record = (Object) val;
       Item field = field1.evaluateToItem(ctx, t);
       if (field == null) {
         continue;
@@ -201,7 +201,7 @@ public class DerefExpr implements Expr {
     return vals;
   }
 
-  private Sequence getSequenceByRecordField(Record record, Item field) {
+  private Sequence getSequenceByRecordField(Object record, Item field) {
     Sequence sequence;
     if (field instanceof QNm) {
       sequence = record.get((QNm) field);

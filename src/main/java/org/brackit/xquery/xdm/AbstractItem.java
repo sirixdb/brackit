@@ -59,7 +59,7 @@ public abstract class AbstractItem extends AbstractSequence implements Item {
     return new BaseIter() {
       boolean first = true;
 
-      public final Item next() throws QueryException {
+      public Item next() throws QueryException {
         if (!first)
           return null;
 

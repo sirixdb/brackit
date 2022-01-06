@@ -30,17 +30,13 @@ package org.brackit.xquery.function.json;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.util.annotation.FunctionAnnotation;
 import org.brackit.xquery.xdm.*;
-import org.brackit.xquery.xdm.json.Record;
-import org.brackit.xquery.xdm.type.ArrayType;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.RecordType;
+import org.brackit.xquery.xdm.json.Object;
 import org.brackit.xquery.xdm.type.SequenceType;
 
 import java.util.*;
@@ -81,8 +77,8 @@ public class Keys extends AbstractFunction {
 
             Item item;
             while ((item = s.next()) != null) {
-              if (item instanceof Record) {
-                final var record = (Record) item;
+              if (item instanceof Object) {
+                final var record = (Object) item;
                 final var nameIter = record.names().iterate();
 
                 Item name;

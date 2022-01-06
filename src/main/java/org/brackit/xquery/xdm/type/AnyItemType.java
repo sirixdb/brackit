@@ -70,12 +70,12 @@ public final class AnyItemType implements ItemType {
   }
 
   @Override
-  public boolean isListOrUnion() {
+  public boolean isArray() {
     return true;
   }
 
   @Override
-  public boolean isRecord() {
+  public boolean isObject() {
     return true;
   }
 

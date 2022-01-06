@@ -25,44 +25,72 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.record;
+package org.brackit.xquery.xdm.type;
 
-import org.brackit.xquery.ErrorCode;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.sequence.BaseIter;
-import org.brackit.xquery.sequence.FlatteningSequence;
-import org.brackit.xquery.xdm.AbstractItem;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.json.Record;
-import org.brackit.xquery.xdm.type.ItemType;
-import org.brackit.xquery.xdm.type.ListOrUnionType;
-import org.brackit.xquery.xdm.type.RecordType;
-
-import java.util.*;
 
 /**
  * @author Sebastian Baechle
  */
-public abstract class AbstractRecord extends AbstractItem implements Record {
+public final class ObjectType implements ItemType {
 
-  @Override
-  public ItemType itemType() throws QueryException {
-    return RecordType.RECORD;
+  public static final ObjectType OBJECT = new ObjectType();
+
+  public ObjectType() {
   }
 
   @Override
-  public Atomic atomize() throws QueryException {
-    throw new QueryException(ErrorCode.ERR_ITEM_HAS_NO_TYPED_VALUE, "The atomized value of record items is undefined");
+  public boolean isAnyItem() {
+    return false;
   }
 
   @Override
-  public boolean booleanValue() throws QueryException {
-    throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-                             "Effective boolean value of record items is undefined.");
+  public boolean isAtomic() {
+    return false;
   }
 
+  @Override
+  public boolean isNode() {
+    return false;
+  }
+
+  @Override
+  public boolean isFunction() {
+    return true;
+  }
+
+  @Override
+  public boolean isArray() {
+    return false;
+  }
+
+  @Override
+  public boolean isObject() {
+    return true;
+  }
+
+  @Override
+  public boolean isJsonItem() {
+    return true;
+  }
+
+  @Override
+  public boolean isStructuredItem() {
+    return true;
+  }
+
+  @Override
+  public boolean matches(Item item) {
+    return item.itemType() instanceof ObjectType;
+  }
+
+  @Override
+  public boolean equals(java.lang.Object obj) {
+    return (obj instanceof ObjectType);
+  }
+
+  @Override
+  public String toString() {
+    return "object()";
+  }
 }

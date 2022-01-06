@@ -27,27 +27,24 @@
  */
 package org.brackit.xquery.update.json.op;
 
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.update.op.OpType;
 import org.brackit.xquery.update.op.UpdateOp;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.JsonItem;
-import org.brackit.xquery.xdm.json.Record;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.xdm.json.Object;
 
 /**
  * @author Johannes Lichtenberger
  */
 public class ReplaceRecordValueOp implements UpdateOp {
-  private final Record target;
+  private final Object target;
 
   private final QNm field;
 
   private final Sequence value;
 
-  public ReplaceRecordValueOp(Record target, QNm field, Sequence value) {
+  public ReplaceRecordValueOp(Object target, QNm field, Sequence value) {
     this.target = target;
     this.field = field;
     this.value = value;

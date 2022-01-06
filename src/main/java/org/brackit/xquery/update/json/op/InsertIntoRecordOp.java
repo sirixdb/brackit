@@ -6,18 +6,18 @@ import org.brackit.xquery.update.op.UpdateOp;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.StructuredItem;
 import org.brackit.xquery.xdm.json.Array;
-import org.brackit.xquery.xdm.json.Record;
+import org.brackit.xquery.xdm.json.Object;
 
 /**
  * @author Johannes Lichtenberger
  */
 public final class InsertIntoRecordOp implements UpdateOp {
 
-  private final Record target;
+  private final Object target;
 
-  private final Record source;
+  private final Object source;
 
-  public InsertIntoRecordOp(final Record target, final Record source) {
+  public InsertIntoRecordOp(final Object target, final Object source) {
     this.target = target;
     this.source = source;
   }

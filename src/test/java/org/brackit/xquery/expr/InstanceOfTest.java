@@ -15,8 +15,8 @@ public final class InstanceOfTest extends XQueryBaseTest {
   }
 
   @Test
-  public void recordInstanceOfRecord() {
-    Sequence result = new XQuery("{\"a\":1} instance of record()").execute(ctx);
+  public void objectInstanceOfObject() {
+    Sequence result = new XQuery("{\"a\":1} instance of object()").execute(ctx);
     ResultChecker.dCheck(Bool.TRUE, result);
   }
 

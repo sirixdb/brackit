@@ -32,7 +32,6 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.update.op.OpType;
 import org.brackit.xquery.update.op.UpdateOp;
 import org.brackit.xquery.util.log.Logger;
-import org.brackit.xquery.xdm.json.Array;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -100,11 +99,11 @@ public final class UpdateList {
         }
         break;
       case REPLACE_NODE:
-        if (op1.getTarget().itemType().isRecord() && op2.getTarget().itemType().isRecord()) {
+        if (op1.getTarget().itemType().isObject() && op2.getTarget().itemType().isObject()) {
           return;
         }
 
-        if (op1.getTarget().itemType().isListOrUnion() && op2.getTarget().itemType().isListOrUnion()) {
+        if (op1.getTarget().itemType().isArray() && op2.getTarget().itemType().isArray()) {
           return;
         }
 
@@ -114,11 +113,11 @@ public final class UpdateList {
         }
         break;
       case REPLACE_VALUE:
-        if (op1.getTarget().itemType().isRecord() && op2.getTarget().itemType().isRecord()) {
+        if (op1.getTarget().itemType().isObject() && op2.getTarget().itemType().isObject()) {
           return;
         }
 
-        if (op1.getTarget().itemType().isListOrUnion() && op2.getTarget().itemType().isListOrUnion()) {
+        if (op1.getTarget().itemType().isArray() && op2.getTarget().itemType().isArray()) {
           return;
         }
 

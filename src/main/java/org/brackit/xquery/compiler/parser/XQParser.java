@@ -54,7 +54,7 @@ public class XQParser extends Tokenizer {
   private static final String[] RESERVED_FUNC_NAMES =
       new String[] { "attribute", "comment", "document-node", "element", "empty-sequence", "function", "if", "item",
           "namespace-node", "node", "processing-instruction", "schema-attribute", "schema-element", "switch", "text",
-          "typeswitch, array, record" };
+          "typeswitch, array, object" };
 
   public class IllegalNestingException extends TokenizerException {
     private final String expected;
@@ -2023,8 +2023,8 @@ public class XQParser extends Tokenizer {
     return new AST(XQ.JsonItemTest);
   }
 
-  private AST recordType() throws TokenizerException {
-    Token la = laSkipWS("record");
+  private AST objectType() throws TokenizerException {
+    Token la = laSkipWS("object");
     if (la == null) {
       return null;
     }
@@ -2035,7 +2035,7 @@ public class XQParser extends Tokenizer {
     consume(la);
     consume(la2);
     consumeSkipWS(")");
-    return new AST(XQ.KindTestRecord);
+    return new AST(XQ.KindTestObject);
   }
 
   private AST arrayType() throws TokenizerException {
@@ -2094,7 +2094,7 @@ public class XQParser extends Tokenizer {
 
   private AST jsonTest() throws TokenizerException {
     AST test = jsonItemType();
-    test = (test != null) ? test : recordType();
+    test = (test != null) ? test : objectType();
     test = (test != null) ? test : arrayType();
     return test;
   }
@@ -2435,7 +2435,7 @@ public class XQParser extends Tokenizer {
     return axisStep();
   }
 
-  // END Custom record syntax
+  // END Custom object syntax
 
   private AST axisStep() throws TokenizerException {
     AST[] step = forwardStep();
@@ -2981,7 +2981,7 @@ public class XQParser extends Tokenizer {
       return null;
     }
     while (true) {
-      // BEGIN Custom record deref extension
+      // BEGIN Custom object deref extension
       AST deref = derefStep();
       if (deref != null) {
         AST derefExpr = new AST(XQ.DerefExpr);
@@ -2990,7 +2990,7 @@ public class XQParser extends Tokenizer {
         expr = derefExpr;
         continue;
       }
-      // END Custom record deref extension
+      // END Custom object deref extension
 
       // BEGIN Custom array syntax extension
       AST index = index();
@@ -3007,16 +3007,16 @@ public class XQParser extends Tokenizer {
         continue;
       }
       // END Custom array syntax extension
-      // BEGIN Custom record syntax
+      // BEGIN Custom object syntax
       AST[] projectionList = projectionList();
       if ((projectionList != null) && (projectionList.length > 0)) {
-        AST projectionExpr = new AST(XQ.RecordProjection);
+        AST projectionExpr = new AST(XQ.ObjectProjection);
         projectionExpr.addChild(expr);
         projectionExpr.addChildren(projectionList);
         expr = projectionExpr;
         continue;
       }
-      // END Custom record syntax
+      // END Custom object syntax
       AST predicate = predicate();
       if (predicate != null) {
         AST filterExpr = new AST(XQ.FilterExpr);
@@ -3026,7 +3026,7 @@ public class XQParser extends Tokenizer {
         continue;
       }
       AST[] argumentList = argumentList();
-      if ((argumentList != null) && (argumentList.length > 0)) {
+      if (argumentList != null && argumentList.length > 0) {
         AST dynFuncCallExpr = new AST(XQ.DynamicFunctionCallExpr);
         dynFuncCallExpr.addChild(expr);
         dynFuncCallExpr.addChildren(argumentList);
@@ -3194,9 +3194,9 @@ public class XQParser extends Tokenizer {
     // BEGIN Custom array syntax
     con = (con != null) ? con : arrayConstructor();
     // END Custom array syntax
-    // BEGIN Custom record syntax
-    con = (con != null) ? con : recordConstructor();
-    // END Custom record syntax
+    // BEGIN Custom object syntax
+    con = (con != null) ? con : objectConstructor();
+    // END Custom object syntax
     return con;
   }
 
@@ -3964,7 +3964,7 @@ public class XQParser extends Tokenizer {
 
   // END Custom array syntax
 
-  // BEGIN Custom record syntax
+  // BEGIN Custom object syntax
   private AST derefStep() throws TokenizerException {
     if (!attemptSkipS("=>")) {
       return null;
@@ -3981,29 +3981,29 @@ public class XQParser extends Tokenizer {
     return stepExpr();
   }
 
-  private AST recordConstructor() throws TokenizerException {
+  private AST objectConstructor() throws TokenizerException {
     if (!attemptSkipWS("{")) {
       return null;
     }
-    AST record = new AST(XQ.RecordConstructor);
+    AST object = new AST(XQ.ObjectConstructor);
     final var objectConstructor = la("|");
     if (objectConstructor != null) {
       consume(objectConstructor);
       final AST expr = expr();
       if (expr.getType() == XQ.SequenceExpr) {
         for (int i = 0, childCount = expr.getChildCount(); i < childCount; i++) {
-          final AST field = new AST(XQ.RecordField);
+          final AST field = new AST(XQ.ObjectField);
           field.addChild(expr.getChild(i));
-          record.addChild(field);
+          object.addChild(field);
         }
       } else {
-        final AST field = new AST(XQ.RecordField);
+        final AST field = new AST(XQ.ObjectField);
         field.addChild(expr);
-        record.addChild(field);
+        object.addChild(field);
       }
     } else {
-      final var emptyRecord = laSkipWS("}");
-      if (emptyRecord == null) {
+      final var emptyObject = laSkipWS("}");
+      if (emptyObject == null) {
         do {
           AST field;
           final var key = exprSingle();
@@ -4014,10 +4014,10 @@ public class XQParser extends Tokenizer {
             field.addChild(key);
             field.addChild(value);
           } else {
-            field = new AST(XQ.RecordField);
+            field = new AST(XQ.ObjectField);
             field.addChild(key);
           }
-          record.addChild(field);
+          object.addChild(field);
         } while (attemptSkipWS(","));
       }
     }
@@ -4026,7 +4026,7 @@ public class XQParser extends Tokenizer {
       consumeSkipWS("|");
     }
     consumeSkipWS("}");
-    return record;
+    return object;
   }
 
   private AST[] projectionList() throws TokenizerException {
@@ -4051,7 +4051,7 @@ public class XQParser extends Tokenizer {
     return args;
   }
 
-  // END Custom record syntax
+  // END Custom object syntax
 
   // Begin Custom scripting syntax
   private AST assignmentClause() throws TokenizerException {

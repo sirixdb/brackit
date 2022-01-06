@@ -42,7 +42,7 @@ import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.json.JsonItem;
-import org.brackit.xquery.xdm.json.Record;
+import org.brackit.xquery.xdm.json.Object;
 
 /**
  * @author Sebastian Baechle
@@ -98,9 +98,9 @@ public final class DeleteJson implements Expr {
       final Item evaluatedItem = fieldOrIndex.evaluateToItem(ctx, tuple);
 
       if (evaluatedItem instanceof QNm qNm) {
-        ctx.addPendingUpdate(new DeleteRecordFieldOp((Record) item, qNm));
+        ctx.addPendingUpdate(new DeleteRecordFieldOp((Object) item, qNm));
       } else if (evaluatedItem instanceof Str) {
-        ctx.addPendingUpdate(new DeleteRecordFieldOp((Record) item, new QNm(evaluatedItem.toString())));
+        ctx.addPendingUpdate(new DeleteRecordFieldOp((Object) item, new QNm(evaluatedItem.toString())));
       }
     }
   }

@@ -46,7 +46,7 @@ import org.brackit.xquery.xdm.OperationNotSupportedException;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.json.Array;
-import org.brackit.xquery.xdm.json.Record;
+import org.brackit.xquery.xdm.json.Object;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
@@ -144,7 +144,7 @@ public class ResultChecker {
 
               if (eItem instanceof Node<?>) {
                 compareNode(eItem, rItem, nodeIdentity);
-              } else if (eItem instanceof Record) {
+              } else if (eItem instanceof Object) {
                 compareRecord(eItem, rItem);
               } else if (eItem instanceof Array) {
                 compareArray(eItem, rItem);
@@ -202,9 +202,9 @@ public class ResultChecker {
   }
 
   private static void compareRecord(Item eItem, Item rItem) throws DocumentException {
-    assertTrue("Result item is record", rItem instanceof Record);
-    Record eNode = (Record) eItem;
-    Record rNode = (Record) rItem;
+    assertTrue("Result item is record", rItem instanceof Object);
+    Object eNode = (Object) eItem;
+    Object rNode = (Object) rItem;
 
     assertEquals(eNode.size(), rNode.size());
 

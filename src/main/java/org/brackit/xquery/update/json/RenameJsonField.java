@@ -31,20 +31,15 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.expr.ConstructedNodeBuilder;
 import org.brackit.xquery.update.json.op.RenameRecordFieldOp;
-import org.brackit.xquery.update.json.op.ReplaceArrayValueOp;
-import org.brackit.xquery.update.json.op.ReplaceRecordValueOp;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.json.Array;
-import org.brackit.xquery.xdm.json.JsonItem;
-import org.brackit.xquery.xdm.json.Record;
+import org.brackit.xquery.xdm.json.Object;
 
 /**
  * @author Johannes Lichtenberger
@@ -88,7 +83,7 @@ public final class RenameJsonField extends ConstructedNodeBuilder implements Exp
         }
       }
     }
-    if (!(targetItem instanceof Record)) {
+    if (!(targetItem instanceof Object)) {
       throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
                                "Target item is atomic value %s",
                                targetItem);
@@ -97,7 +92,7 @@ public final class RenameJsonField extends ConstructedNodeBuilder implements Exp
     final QNm oldFieldName = (QNm) oldFieldNameExpr.evaluateToItem(ctx, tuple);
     final QNm newFieldName = new QNm(((Str) newFieldNameExpr.evaluateToItem(ctx, tuple)).stringValue());
 
-    ctx.addPendingUpdate(new RenameRecordFieldOp((Record) target, oldFieldName, newFieldName));
+    ctx.addPendingUpdate(new RenameRecordFieldOp((Object) target, oldFieldName, newFieldName));
 
     return null;
   }
