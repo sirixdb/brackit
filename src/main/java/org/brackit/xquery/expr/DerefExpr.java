@@ -50,17 +50,17 @@ import java.util.List;
  */
 public class DerefExpr implements Expr {
 
-  final Expr record;
+  final Expr object;
   final Expr[] fields;
 
   public DerefExpr(Expr record, Expr[] fields) {
-    this.record = record;
+    this.object = record;
     this.fields = fields;
   }
 
   @Override
   public Sequence evaluate(QueryContext ctx, Tuple tuple) {
-    final var sequence = record.evaluate(ctx, tuple);
+    final var sequence = object.evaluate(ctx, tuple);
 
     for (int index = 0; index < fields.length && sequence != null; index++) {
       final var resultSequence = processSequence(ctx, tuple, sequence, index);
@@ -77,7 +77,7 @@ public class DerefExpr implements Expr {
     if (sequence instanceof Array) {
       return processArray(ctx, tuple, getSequenceValues(ctx, tuple, (Array) sequence, fields[index]));
     } else if (sequence instanceof Object) {
-      return processRecord(sequence, index, ctx, tuple);
+      return processObject(sequence, index, ctx, tuple);
     } else if (sequence instanceof LazySequence) {
       return processLazySequence(ctx, tuple, sequence, index);
     }
@@ -164,7 +164,7 @@ public class DerefExpr implements Expr {
     };
   }
 
-  private Sequence processRecord(Sequence sequence, int index, QueryContext ctx, Tuple tuple) {
+  private Sequence processObject(Sequence sequence, int index, QueryContext ctx, Tuple tuple) {
     final Object record = (Object) sequence;
     final Item field = fields[index].evaluateToItem(ctx, tuple);
 
@@ -185,15 +185,14 @@ public class DerefExpr implements Expr {
         vals.addAll(getSequenceValues(ctx, t, (Array) val, field1));
         continue;
       }
-      if (!(val instanceof Object)) {
+      if (!(val instanceof Object object)) {
         continue;
       }
-      Object record = (Object) val;
       Item field = field1.evaluateToItem(ctx, t);
       if (field == null) {
         continue;
       }
-      final var sequenceByRecordField = getSequenceByRecordField(record, field);
+      final var sequenceByRecordField = getSequenceByRecordField(object, field);
       if (sequenceByRecordField != null) {
         vals.add(sequenceByRecordField);
       }
@@ -222,11 +221,11 @@ public class DerefExpr implements Expr {
 
   @Override
   public boolean isUpdating() {
-    if (record.isUpdating()) {
+    if (object.isUpdating()) {
       return true;
     }
-    for (Expr f : fields) {
-      if (f.isUpdating()) {
+    for (final Expr field : fields) {
+      if (field.isUpdating()) {
         return true;
       }
     }
@@ -245,11 +244,5 @@ public class DerefExpr implements Expr {
       s.append(f);
     }
     return s.toString();
-  }
-
-  public static void main(String[] args) {
-    // a:1, b:2, c:3 , {x:1}, d:5,
-    new XQuery("let $n := <x><y>yval</y></x> return { \"e\" : { \"m\": \"mvalue\", \"n\":$n}}=>e=>n/y").serialize(new BrackitQueryContext(),
-                                                                                                                  System.out);
   }
 }

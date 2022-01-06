@@ -168,7 +168,7 @@ public abstract class AbstractAnalyzer {
     test = (test != null) ? test : namespaceNodeTest(kindTest);
     test = (test != null) ? test : structuredItemTest(kindTest);
     test = (test != null) ? test : jsonItemTest(kindTest);
-    test = (test != null) ? test : recordTest(kindTest);
+    test = (test != null) ? test : objectTest(kindTest);
     test = (test != null) ? test : arrayTest(kindTest);
     test = (test != null) ? test : anyKindTest(kindTest);
     return test;
@@ -327,7 +327,7 @@ public abstract class AbstractAnalyzer {
     return new AnyJsonItemType();
   }
 
-  protected ItemType recordTest(AST test) throws QueryException {
+  protected ItemType objectTest(AST test) throws QueryException {
     if (test.getType() != XQ.KindTestObject) {
       return null;
     }

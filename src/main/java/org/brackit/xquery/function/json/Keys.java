@@ -58,7 +58,7 @@ public class Keys extends AbstractFunction {
   }
 
   @Override
-  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) {
     final var sequence = args[0];
 
     return new LazySequence() {
@@ -77,9 +77,8 @@ public class Keys extends AbstractFunction {
 
             Item item;
             while ((item = s.next()) != null) {
-              if (item instanceof Object) {
-                final var record = (Object) item;
-                final var nameIter = record.names().iterate();
+              if (item instanceof Object object) {
+                final var nameIter = object.names().iterate();
 
                 Item name;
                 while ((name = nameIter.next()) != null) {

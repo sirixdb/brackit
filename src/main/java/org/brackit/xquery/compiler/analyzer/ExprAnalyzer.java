@@ -285,7 +285,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
         }
         throw e;
       }
-      child = clause.getChild(pos++);
+      child = clause.getChild(pos);
     }
     exprSingle(child);
     offerScope();
@@ -868,7 +868,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
       return true;
     }
     // END Custom array syntax extension
-    // BEGIN Custom record syntax extension
+    // BEGIN Custom object syntax extension
     if (expr.getType() == XQ.ObjectProjection) {
       expr(expr.getChild(0));
       for (int i = 1; i < expr.getChildCount(); i++) {
@@ -876,7 +876,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
       }
       return true;
     }
-    // END Custom record syntax extension
+    // END Custom object syntax extension
     if (expr.getType() == XQ.FilterExpr) {
       expr(expr.getChild(0));
       openContextItemScope();
@@ -1077,11 +1077,11 @@ public class ExprAnalyzer extends AbstractAnalyzer {
       return true;
     }
     // END Custom array syntax extension
-    // BEGIN Custom record syntax extension
-    if (recordConstructor(expr)) {
+    // BEGIN Custom object syntax extension
+    if (objectConstructor(expr)) {
       return true;
     }
-    // END Custom record syntax extension
+    // END Custom object syntax extension
     return false;
   }
 
@@ -1404,8 +1404,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 
   // END Custom array syntax extension
 
-  // BEGIN Custom record syntax extension
-  protected boolean recordConstructor(AST expr) throws QueryException {
+  // BEGIN Custom object syntax extension
+  protected boolean objectConstructor(AST expr) throws QueryException {
     if (expr.getType() != XQ.ObjectConstructor) {
       return false;
     }
@@ -1437,7 +1437,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     return true;
   }
 
-  // END Custom record syntax extension
+  // END Custom object syntax extension
 
   protected boolean numericLiteral(AST literal) throws QueryException {
     return (integerLiteral(literal) || decimalLiteral(literal) || (doubleLiteral(literal)));
