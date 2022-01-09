@@ -220,6 +220,17 @@ public final class JsonTest extends XQueryBaseTest {
   }
 
   @Test
+  public void arrayIndexSlice1WithIncrement12() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[1::]]
+        """;
+    final var result = query(query);
+    assertEquals("[\"bar\",{\"baz\":true}]", result);
+  }
+
+
+  @Test
   public void arrayIndexSlice2() throws IOException {
     final String query = """
           let $array := [{"foo": 0},"bar",{"baz":true()}]
