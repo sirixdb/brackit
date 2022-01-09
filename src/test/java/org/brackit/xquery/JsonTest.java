@@ -150,6 +150,76 @@ public final class JsonTest extends XQueryBaseTest {
   }
 
   @Test
+  public void arrayIndexSlice1WithIncrement5() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[:3:3]]
+        """;
+    final var result = query(query);
+    assertEquals("[{\"foo\":0}]", result);
+  }
+
+  @Test
+  public void arrayIndexSlice1WithIncrement6() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[::1]]
+        """;
+    final var result = query(query);
+    assertEquals("[{\"foo\":0},\"bar\",{\"baz\":true}]", result);
+  }
+
+  @Test
+  public void arrayIndexSlice1WithIncrement7() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[::2]]
+        """;
+    final var result = query(query);
+    assertEquals("[{\"foo\":0},{\"baz\":true}]", result);
+  }
+
+  @Test
+  public void arrayIndexSlice1WithIncrement8() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[::3]]
+        """;
+    final var result = query(query);
+    assertEquals("[{\"foo\":0}]", result);
+  }
+
+  @Test
+  public void arrayIndexSlice1WithIncrement9() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[1::3]]
+        """;
+    final var result = query(query);
+    assertEquals("[\"bar\"]", result);
+  }
+
+  @Test
+  public void arrayIndexSlice1WithIncrement10() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[:1:3]]
+        """;
+    final var result = query(query);
+    assertEquals("[{\"foo\":0}]", result);
+  }
+
+  @Test
+  public void arrayIndexSlice1WithIncrement11() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[::]]
+        """;
+    final var result = query(query);
+    assertEquals("[{\"foo\":0},\"bar\",{\"baz\":true}]", result);
+  }
+
+  @Test
   public void arrayIndexSlice2() throws IOException {
     final String query = """
           let $array := [{"foo": 0},"bar",{"baz":true()}]

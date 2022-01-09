@@ -3879,8 +3879,7 @@ public class XQParser extends Tokenizer {
       consumeSkipWS("]]");
       return sequence;
     } else {
-      if (laSkipWS(":") != null) {
-        consumeSkipWS(":");
+      if (attemptSkipWS(":")) {
         if (attemptSkipWS("]]")) {
           AST arraySlice = new AST(XQ.ArrayIndexSlice);
           arraySlice.addChild(new AST(XQ.EmptySequenceType));
@@ -3888,46 +3887,69 @@ public class XQParser extends Tokenizer {
           arraySlice.addChild(new AST(XQ.EmptySequenceType));
           return arraySlice;
         } else {
-          AST secondIndex = exprSingle();
           AST arraySlice = new AST(XQ.ArrayIndexSlice);
           arraySlice.addChild(new AST(XQ.EmptySequenceType));
-          arraySlice.addChild(secondIndex);
+
+          final AST secondIndex;
           if (attemptSkipWS(":")) {
-            AST increment = exprSingle();
-            arraySlice.addChild(increment);
+            secondIndex = new AST(XQ.EmptySequenceType);
           } else {
-            arraySlice.addChild(new AST(XQ.EmptySequenceType));
+            secondIndex = exprSingle();
           }
-          consumeSkipWS("]]");
+
+          arraySlice.addChild(secondIndex);
+
+          final AST thirdIndex;
+          if ((attemptSkipWS(":") && attemptSkipWS("]]")) || attemptSkipWS("]]")) {
+            thirdIndex = new AST(XQ.EmptySequenceType);
+          } else {
+            thirdIndex = exprSingle();
+          }
+
+          arraySlice.addChild(thirdIndex);
+
+          if (thirdIndex.getType() != XQ.EmptySequenceType) {
+            consumeSkipWS("]]");
+          }
+
           return arraySlice;
         }
       } else {
         AST index = exprSingle();
-        if (laSkipWS(":") != null) {
-          consumeSkipWS(":");
+        if (attemptSkipWS(":")) {
           if (attemptSkipWS("]]")) {
             AST arraySlice = new AST(XQ.ArrayIndexSlice);
             arraySlice.addChild(index);
             arraySlice.addChild(new AST(XQ.EmptySequenceType));
-            if (attemptSkipWS(":")) {
-              AST increment = exprSingle();
-              arraySlice.addChild(increment);
-            } else {
-              arraySlice.addChild(new AST(XQ.EmptySequenceType));
-            }
+            arraySlice.addChild(new AST(XQ.EmptySequenceType));
+
             return arraySlice;
           } else {
-            AST secondIndex = exprSingle();
             AST arraySlice = new AST(XQ.ArrayIndexSlice);
             arraySlice.addChild(index);
-            arraySlice.addChild(secondIndex);
+
+            final AST secondIndex;
             if (attemptSkipWS(":")) {
-              AST increment = exprSingle();
-              arraySlice.addChild(increment);
+              secondIndex = new AST(XQ.EmptySequenceType);
             } else {
-              arraySlice.addChild(new AST(XQ.EmptySequenceType));
+              secondIndex = exprSingle();
             }
-            consumeSkipWS("]]");
+
+            arraySlice.addChild(secondIndex);
+
+            final AST thirdIndex;
+            if ((attemptSkipWS(":") && attemptSkipWS("]]")) || attemptSkipWS("]]")) {
+              thirdIndex = new AST(XQ.EmptySequenceType);
+            } else {
+              thirdIndex = exprSingle();
+            }
+
+            arraySlice.addChild(thirdIndex);
+
+            if (thirdIndex.getType() != XQ.EmptySequenceType) {
+              consumeSkipWS("]]");
+            }
+
             return arraySlice;
           }
         }

@@ -76,26 +76,16 @@ public class DeepEqual extends AbstractFunction {
       if (b == null) {
         return Bool.TRUE;
       }
-      Iter it = b.iterate();
-      try {
-        return (it.next() == null) ? Bool.TRUE : Bool.FALSE;
-      } finally {
-        it.close();
+      try (final Iter it = b.iterate()) {
+        return it.next() == null ? Bool.TRUE : Bool.FALSE;
       }
     } else if (b == null) {
-      Iter it = a.iterate();
-      try {
-        return (it.next() == null) ? Bool.TRUE : Bool.FALSE;
-      } finally {
-        it.close();
+      try (final Iter it = a.iterate()) {
+        return it.next() == null ? Bool.TRUE : Bool.FALSE;
       }
     }
 
-    Iter aIt = a.iterate();
-    boolean res;
-    Iter bIt = null;
-    try {
-      bIt = b.iterate();
+    try (final Iter aIt = a.iterate(); final Iter bIt = b.iterate()) {
       Item aItem;
       Item bItem;
       while ((aItem = aIt.next()) != null) {
@@ -104,16 +94,11 @@ public class DeepEqual extends AbstractFunction {
           return Bool.FALSE;
         }
       }
-      return ((bIt.next() == null) ? Bool.TRUE : Bool.FALSE);
-    } finally {
-      aIt.close();
-      if (bIt != null) {
-        bIt.close();
-      }
+      return bIt.next() == null ? Bool.TRUE : Bool.FALSE;
     }
   }
 
-  private static boolean deepEquals(Item a, Item b) throws QueryException {
+  private static boolean deepEquals(Item a, Item b) {
     if ((a == null)) {
       return (b == null);
     }
@@ -137,7 +122,7 @@ public class DeepEqual extends AbstractFunction {
     }
   }
 
-  private static boolean nodeDeepEquals(Node<?> a, Node<?> b) throws DocumentException, QueryException {
+  private static boolean nodeDeepEquals(Node<?> a, Node<?> b) {
     Kind aKind = a.getKind();
     if (aKind != b.getKind()) {
       return false;
@@ -161,8 +146,8 @@ public class DeepEqual extends AbstractFunction {
       // value
       return (a.getName().equals(b.getName())) && (a.getValue().equals(b.getValue()));
     }
-    if ((aKind == Kind.TEXT) || (aKind == Kind.COMMENT)) {
-      return (a.getValue().equals(b.getValue()));
+    if (aKind == Kind.TEXT || aKind == Kind.COMMENT) {
+      return a.getValue().equals(b.getValue());
     }
     if (aKind == Kind.DOCUMENT) {
       return childrenDeepEqual(a, b);
@@ -173,7 +158,7 @@ public class DeepEqual extends AbstractFunction {
     throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR, "Unexpected node kind: '%s'", aKind);
   }
 
-  private static boolean childrenDeepEqual(Node<?> a, Node<?> b) throws DocumentException, QueryException {
+  private static boolean childrenDeepEqual(Node<?> a, Node<?> b) {
     Node<?> aChild = a.getFirstChild();
     Node<?> bChild = b.getFirstChild();
 
