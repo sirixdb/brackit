@@ -93,10 +93,11 @@ echo "count(doc('http://example.org/foo.xml')//bar)" | java -jar brackit-x.y.z.j
 Running XQuery embedded in a Java program requires only a few lines of code:
 
 ```Java
-String query =
-    "for $i in (1 to 4)"
-  + "let $d := {$i}"
-  + "return $d";
+String query = """
+    for $i in (1 to 4)
+    let $d := {$i}
+    return $d
+    """;
 
 // initialize a query context
 QueryContext ctx = new QueryContext();
@@ -128,8 +129,7 @@ Arrays can be created using an extended version of the standard JSON array synta
 (: statically create an array with 3 elements of different types: 1, 2.0, "3" :)
 [ 1, 2.0, "3" ]
 
-(: for compliance with the JSON syntax the tokens 'true', 'false', and 'null'
-   are translated into the XML values xs:bool('true'), xs:bool('false') and empty-sequence()
+(: for compliance with the JSON syntax we have to use functions to create the values 'true', 'false', and 'null'. They are translated into the XML values xs:bool('true'), xs:bool('false') and an atomic null value.
 :)
 [ true(), false(), jn:null() ]
 
@@ -157,9 +157,9 @@ let $a := [ "Jim", "John", "Joe" ] return $a[[1]] (: yields the string "John" :)
 bit:len([ 1, 2, ]) (: yields 2 :)
 ```
 
-### Records
+### Objects 
 
-Records provide an alternative to XML to represent structured data. Like with arrays we support an extended version of the standard JSON object syntax:
+Objects provide an alternative to XML to represent structured data. Like with arrays we support an extended version of the standard JSON object syntax:
 
 ```XQuery
 (: statically create a record with three fields named 'a', 'b' and 'c' :)
