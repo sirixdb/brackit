@@ -233,12 +233,121 @@ public final class JsonTest extends XQueryBaseTest {
   public void arrayIndexSlice1WithIncrement13() throws IOException {
     final String query = """
           let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[::-1]]
+        """;
+    final var result = query(query);
+    assertEquals("[{\"baz\":true},\"bar\",{\"foo\":0}]", result);
+  }
+
+  @Test
+  public void arrayIndexSlice1WithIncrement14() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[:-3:-1]]
+        """;
+    final var result = query(query);
+    assertEquals("[{\"baz\":true},\"bar\"]", result);
+  }
+
+  @Test
+  public void arrayIndexSlice1WithIncrement15() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[:-4:-1]]
+        """;
+    final var result = query(query);
+    assertEquals("[{\"baz\":true},\"bar\",{\"foo\":0}]", result);
+  }
+
+  @Test
+  public void arrayIndexSlice1WithIncrement16() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[:-5:-1]]
+        """;
+    final var result = query(query);
+    assertEquals("[{\"baz\":true},\"bar\",{\"foo\":0}]", result);
+  }
+
+  @Test
+  public void arrayIndexSlice1WithIncrement17() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[:-5:-2]]
+        """;
+    final var result = query(query);
+    assertEquals("[{\"baz\":true},{\"foo\":0}]", result);
+  }
+
+  @Test
+  public void arrayIndexSlice1WithIncrement18() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[-1:-5:-2]]
+        """;
+    final var result = query(query);
+    assertEquals("[{\"baz\":true},{\"foo\":0}]", result);
+  }
+
+  @Test
+  public void arrayIndexSlice1WithIncrement19() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[-2:-5:-2]]
+        """;
+    final var result = query(query);
+    assertEquals("[\"bar\"]", result);
+  }
+
+  @Test
+  public void arrayIndexSlice1WithIncrement20() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[-2:0:-2]]
+        """;
+    final var result = query(query);
+    assertEquals("[\"bar\"]", result);
+  }
+
+  @Test
+  public void allItemsInArray() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
           return $array[[:]]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0},\"bar\",{\"baz\":true}]", result);
   }
 
+  @Test
+  public void emptyArrayIndexSlice1() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[2:2]]
+        """;
+    final var result = query(query);
+    assertEquals("[]", result);
+  }
+
+  @Test
+  public void emptyArrayIndexSlice2() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[3:2]]
+        """;
+    final var result = query(query);
+    assertEquals("[]", result);
+  }
+
+  @Test
+  public void emptyArrayIndexSlice3() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[4:2]]
+        """;
+    final var result = query(query);
+    assertEquals("[]", result);
+  }
 
   @Test
   public void arrayIndexSlice2() throws IOException {

@@ -33,6 +33,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.array.DArray;
 import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.*;
 import org.brackit.xquery.xdm.json.Array;
 import org.magicwerk.brownies.collections.GapList;
@@ -45,93 +46,120 @@ public final class ArrayIndexSliceExpr implements Expr {
   private final Expr expr;
   private final Expr firstIndex;
   private final Expr secondIndex;
-  private final Expr increment;
+  private final Expr step;
 
   public ArrayIndexSliceExpr(Expr expr, Expr firstIndex, Expr secondIndex, Expr increment) {
     this.expr = expr;
     this.firstIndex = firstIndex;
     this.secondIndex = secondIndex;
-    this.increment = increment;
+    this.step = increment;
   }
 
   @Override
   public Sequence evaluate(QueryContext ctx, Tuple tuple) {
-    final Item array = expr.evaluateToItem(ctx, tuple);
-    if (array == null) {
+    final Item arrayItem = expr.evaluateToItem(ctx, tuple);
+    if (arrayItem == null) {
       return null;
     }
-    if (!(array instanceof Array)) {
+    if (!(arrayItem instanceof Array array)) {
       throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                "Illegal operand type '%s' where '%s' is expected",
-                               array.itemType(),
+                               arrayItem.itemType(),
                                Type.INR);
     }
-    final Item firstItem = firstIndex.evaluateToItem(ctx, tuple);
-    final Item secondItem = secondIndex.evaluateToItem(ctx, tuple);
-    final Item incrementItem = increment.evaluateToItem(ctx, tuple);
+    final Item lowerBoundItem = firstIndex.evaluateToItem(ctx, tuple);
+    final Item upperBoundItem = secondIndex.evaluateToItem(ctx, tuple);
+    final Item stepItem = step.evaluateToItem(ctx, tuple);
 
-    if (incrementItem != null && !(incrementItem instanceof IntNumeric)) {
+    if (stepItem != null && !(stepItem instanceof IntNumeric)) {
       throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                "Illegal operand type '%s' where '%s' is expected",
-                               incrementItem.itemType(),
+                               stepItem.itemType(),
                                Type.INR);
     }
 
-    final int increment;
-    if (incrementItem == null) {
-      increment = 1;
+    final int step;
+    if (stepItem == null) {
+      step = 1;
     } else {
-      increment = ((IntNumeric) incrementItem).intValue();
+      step = ((IntNumeric) stepItem).intValue();
     }
 
-    if (firstItem == null) {
-      if (secondItem == null) {
-        return getAllItemsFromArray(array, increment);
+    if (lowerBoundItem == null) {
+      if (upperBoundItem == null) {
+        if (step > 0) {
+          return getAllItemsFromArray(array, step);
+        } else {
+          return getAllItemsFromArrayReversed(array, step);
+        }
       } else {
-        if (!(secondItem instanceof IntNumeric)) {
+        if (!(upperBoundItem instanceof IntNumeric)) {
           throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                    "Illegal operand type '%s' where '%s' is expected",
-                                   secondItem.itemType(),
+                                   upperBoundItem.itemType(),
                                    Type.INR);
         }
-        final int upperBoundIndex = ((IntNumeric) secondItem).intValue();
-        final var it = array.iterate();
 
-        final var buffer = new GapList<Item>(((Array) array).len());
-        Item item;
-        int i = 0;
-        boolean first = true;
-        while ((item = it.next()) != null && i < upperBoundIndex) {
-          if (first) {
-            first = false;
-            buffer.add(item);
-          } else if ((i % increment) == 0) {
+        final int upperBoundIndexInt = ((IntNumeric) upperBoundItem).intValue();
+        final int upperBoundIndex = upperBoundIndexInt >= 0 ? upperBoundIndexInt : array.len() + upperBoundIndexInt;
+
+        if (step > 0) {
+          final var it = array.iterate();
+
+          final var buffer = new GapList<Item>(array.len());
+          Item item;
+          int i = 0;
+          boolean first = true;
+          while ((item = it.next()) != null && i < upperBoundIndex) {
+            if (first) {
+              first = false;
+              buffer.add(item);
+            } else if ((i % step) == 0) {
+              buffer.add(item);
+            }
+            i++;
+          }
+          return new DArray(buffer);
+        } else {
+          final var buffer = new GapList<Item>(array.len());
+          for (int i = array.len() - 1; i != upperBoundIndex && i != -1; i = i + step) {
+            final var item = ExprUtil.asItem(array.at(i));
             buffer.add(item);
           }
-          i++;
+          return new DArray(buffer);
         }
-        return new DArray(buffer);
       }
     }
-    if (!(firstItem instanceof IntNumeric)) {
+    if (!(lowerBoundItem instanceof IntNumeric)) {
       throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                "Illegal operand type '%s' where '%s' is expected",
-                               firstItem.itemType(),
+                               lowerBoundItem.itemType(),
                                Type.INR);
     }
 
-    if (secondItem == null) {
-      final int lowerBoundIndex = ((IntNumeric) firstItem).intValue();
-      final int upperBoundIndex = ((Array) array).len();
-      return getArrayItemSliceSequence(array, lowerBoundIndex, upperBoundIndex, increment);
+    final int lowerBoundIndexInt = ((IntNumeric) lowerBoundItem).intValue();
+    final int lowerBoundIndex = lowerBoundIndexInt >= 0 ? lowerBoundIndexInt : array.len() + lowerBoundIndexInt;
+
+    if (upperBoundItem == null) {
+      final int upperBoundIndex = array.len();
+      return getArrayItemSlice(array, step, lowerBoundIndex, upperBoundIndex);
     }
 
-    final int lowerBoundIndex = ((IntNumeric) firstItem).intValue();
-    final int upperBoundIndex = ((IntNumeric) secondItem).intValue();
-    return getArrayItemSliceSequence(array, lowerBoundIndex, upperBoundIndex, increment);
+    final int upperBoundIndexInt = ((IntNumeric) upperBoundItem).intValue();
+    final int upperBoundIndex = upperBoundIndexInt >= 0 ? upperBoundIndexInt : array.len() + upperBoundIndexInt;
+    return getArrayItemSlice(array, step, lowerBoundIndex, upperBoundIndex);
   }
 
-  private Array getArrayItemSliceSequence(Item array, int lowerBoundIndex, int upperBoundIndex, int increment) {
+  private Sequence getArrayItemSlice(Array array, int step, int lowerBoundIndex, int upperBoundIndex) {
+    if (step > 0) {
+      return getArrayItemSliceSequence(array, lowerBoundIndex, upperBoundIndex, step);
+    } else {
+
+      return getArrayItemSliceSequenceReversed(array, lowerBoundIndex, upperBoundIndex, step);
+    }
+  }
+
+  private Array getArrayItemSliceSequence(Array array, int lowerBoundIndex, int upperBoundIndex, int step) {
     final var it = array.iterate();
 
     int i = 0;
@@ -140,13 +168,13 @@ public final class ArrayIndexSliceExpr implements Expr {
     }
 
     Item item;
-    final var buffer = new GapList<Item>(((Array) array).len());
+    final var buffer = new GapList<Item>(array.len());
     boolean first = true;
     while ((item = it.next()) != null && i < upperBoundIndex) {
       if (first) {
         first = false;
         buffer.add(item);
-      } else if ((i % increment) == 0) {
+      } else if ((i % step) == 0) {
         buffer.add(item);
       }
       i++;
@@ -154,10 +182,19 @@ public final class ArrayIndexSliceExpr implements Expr {
     return new DArray(buffer);
   }
 
-  private Array getAllItemsFromArray(Item array, int increment) {
+  private Array getArrayItemSliceSequenceReversed(Array array, int lowerBoundIndex, int upperBoundIndex, int step) {
+    final var buffer = new GapList<Item>(array.len());
+    for (int i = lowerBoundIndex; i != upperBoundIndex && i != -1; i = i + step) {
+      final var item = ExprUtil.asItem(array.at(i));
+      buffer.add(item);
+    }
+    return new DArray(buffer);
+  }
+
+  private Array getAllItemsFromArray(Array array, int step) {
     final var it = array.iterate();
 
-    final var buffer = new GapList<Item>(((Array) array).len());
+    final var buffer = new GapList<Item>(array.len());
     Item item;
     int i = 0;
     boolean first = true;
@@ -165,10 +202,19 @@ public final class ArrayIndexSliceExpr implements Expr {
       if (first) {
         first = false;
         buffer.add(item);
-      } else if ((i % increment) == 0) {
+      } else if ((i % step) == 0) {
         buffer.add(item);
       }
       i++;
+    }
+    return new DArray(buffer);
+  }
+
+  private Array getAllItemsFromArrayReversed(Array array, int step) {
+    final var buffer = new GapList<Item>(array.len());
+    for (int i = array.len() - 1; i != -1; i = i + step) {
+      final var item = ExprUtil.asItem(array.at(i));
+      buffer.add(item);
     }
     return new DArray(buffer);
   }
