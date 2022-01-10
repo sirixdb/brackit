@@ -38,6 +38,8 @@ import org.brackit.xquery.xdm.*;
 import org.brackit.xquery.xdm.json.Array;
 import org.magicwerk.brownies.collections.GapList;
 
+import java.util.List;
+
 /**
  * @author Sebastian Baechle
  * @author Johannes Lichtenberger
@@ -122,7 +124,7 @@ public final class ArrayIndexSliceExpr implements Expr {
           return new DArray(buffer);
         } else {
           final var buffer = new GapList<Item>(array.len());
-          for (int i = array.len() - 1; i != upperBoundIndex && i != -1; i = i + step) {
+          for (int i = array.len() - 1; i > upperBoundIndex && i != -1; i = i + step) {
             final var item = ExprUtil.asItem(array.at(i));
             buffer.add(item);
           }
@@ -141,7 +143,7 @@ public final class ArrayIndexSliceExpr implements Expr {
     final int lowerBoundIndex = lowerBoundIndexInt >= 0 ? lowerBoundIndexInt : array.len() + lowerBoundIndexInt;
 
     if (upperBoundItem == null) {
-      final int upperBoundIndex = array.len();
+      final int upperBoundIndex = step >= 0 ? array.len() : -1;
       return getArrayItemSlice(array, step, lowerBoundIndex, upperBoundIndex);
     }
 
@@ -154,7 +156,6 @@ public final class ArrayIndexSliceExpr implements Expr {
     if (step > 0) {
       return getArrayItemSliceSequence(array, lowerBoundIndex, upperBoundIndex, step);
     } else {
-
       return getArrayItemSliceSequenceReversed(array, lowerBoundIndex, upperBoundIndex, step);
     }
   }
@@ -184,7 +185,8 @@ public final class ArrayIndexSliceExpr implements Expr {
 
   private Array getArrayItemSliceSequenceReversed(Array array, int lowerBoundIndex, int upperBoundIndex, int step) {
     final var buffer = new GapList<Item>(array.len());
-    for (int i = lowerBoundIndex; i != upperBoundIndex && i != -1; i = i + step) {
+
+    for (int i = lowerBoundIndex; i > upperBoundIndex && i != -1; i = i + step) {
       final var item = ExprUtil.asItem(array.at(i));
       buffer.add(item);
     }
