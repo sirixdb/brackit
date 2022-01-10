@@ -2,6 +2,8 @@
 
 Brackit is a flexible XQuery-based query engine developed during Dr. Sebastian Bächles time as a PhD student at the TU Kaiserslautern in the context of their research in the field of query processing for semi-structured data. The system features a fast runtime and a flexible compiler backend, which is, e.g., able to rewrite queries for optimized join processing and efficient aggregation operations.
 
+Lately Johannes Lichtenberger has emerged Brackit with a lot of optional temporal enhancements for temporal data stores as SirixDB. Furthermore JSON is now a first-class citizen and Brackit supports a slightly different syntax, but the same data model as JSONiq as well as all update primitives described in the JSONiq specification. Brackit also supports Python-like array slices.
+
 [![Build Status](https://travis-ci.org/sirixdb/brackit.svg?branch=master)](https://travis-ci.org/sirixdb/brackit)
 
 ## Feature
