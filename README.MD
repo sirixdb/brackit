@@ -4,11 +4,11 @@ Brackit is a flexible XQuery-based query engine developed during my time as PhD 
 
 [![Build Status](https://travis-ci.org/sirixdb/brackit.svg?branch=master)](https://travis-ci.org/sirixdb/brackit)
 
-## Features
+## Feature
 
 At the moment we support XQuery 1.0 including library module support, the XQuery Update Facility 1.0 and some features of XQuery 3.0 like the new FLWOR clauses group by and count.
 
-As a speciality, Brackit comes with extensions to work natively with JSON-style arrays and records. Another extension allows you to use a special statement syntax for writing XQuery programs in a script-like style.
+As a speciality, Brackit comes with extensions to work natively with JSON-style arrays and objects mostly as in JSONiq, also supporting all the update statements of JSONiq. Furthermore array index slices as in Python are supported. Another extension allows you to use a special statement syntax for writing XQuery programs in a script-like style.
 
 ## Installation
 
