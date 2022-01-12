@@ -8,7 +8,7 @@ Lately Johannes Lichtenberger has emerged Brackit with a lot of optional tempora
 
 ## Feature
 
-At the moment we support XQuery 1.0 including library module support, the XQuery Update Facility 1.0 and some features of XQuery 3.0 like the new FLWOR clauses group by and count.
+At the moment we support XQuery 1.0 including library module support, the XQuery Update Facility 1.0 and some features of XQuery 3.0 like the FLWOR clauses group by and count.
 
 As a speciality, Brackit comes with extensions to work natively with JSON-style arrays and objects mostly as in JSONiq, also supporting all the update statements of JSONiq. Furthermore array index slices as in Python are supported. Another extension allows you to use a special statement syntax for writing XQuery programs in a script-like style.
 
