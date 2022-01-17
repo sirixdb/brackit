@@ -2992,6 +2992,17 @@ public class XQParser extends Tokenizer {
       }
       // END Custom object deref extension
 
+      // BEGIN Custom object deref extension
+      AST derefDescendant = derefDescendantStep();
+      if (derefDescendant != null) {
+        AST derefExpr = new AST(XQ.DerefDescendantExpr);
+        derefExpr.addChild(expr);
+        derefExpr.addChild(deref);
+        expr = derefExpr;
+        continue;
+      }
+      // END Custom object deref extension
+
       // BEGIN Custom array syntax extension
       AST index = index();
       if (index != null) {
@@ -3026,7 +3037,7 @@ public class XQParser extends Tokenizer {
         continue;
       }
       AST[] argumentList = argumentList();
-      if (argumentList != null && argumentList.length > 0) {
+      if (argumentList != null) {
         AST dynFuncCallExpr = new AST(XQ.DynamicFunctionCallExpr);
         dynFuncCallExpr.addChild(expr);
         dynFuncCallExpr.addChildren(argumentList);
@@ -3871,6 +3882,9 @@ public class XQParser extends Tokenizer {
 
   // BEGIN Custom array syntax
   private AST index() throws TokenizerException {
+    if (attemptSkipWS("[]")) {
+      return new AST(XQ.SequenceExpr);
+    }
     if (!attemptSkipWS("[[")) {
       return null;
     }
@@ -3989,6 +4003,22 @@ public class XQParser extends Tokenizer {
   // BEGIN Custom object syntax
   private AST derefStep() throws TokenizerException {
     if (!attemptSkipS("=>")) {
+      return null;
+    }
+    Token la = laStringSkipWS(true);
+    EQNameToken la2;
+    if (la != null) {
+      consume(la);
+      return new AST(XQ.QNm, new QNm(null, null, la.string()));
+    } else if ((la2 = laEQNameSkipWS(true)) != null) {
+      consume(la2);
+      return new AST(XQ.QNm, la2.qname());
+    }
+    return stepExpr();
+  }
+
+  private AST derefDescendantStep() throws TokenizerException {
+    if (!attemptSkipS("==>")) {
       return null;
     }
     Token la = laStringSkipWS(true);

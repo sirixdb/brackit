@@ -696,7 +696,7 @@ public final class Type {
                                                       -1));
 
   /**
-   * js:null
+   * jn:null
    */
   public static final Type NULL = new Type("null",
                                            ANA,

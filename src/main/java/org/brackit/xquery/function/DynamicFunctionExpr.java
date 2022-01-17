@@ -1,6 +1,6 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
+ * Copyright (c) 2011-2022, Brackit Project Team <info@brackit.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,8 +25,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.expr;
+package org.brackit.xquery.function;
 
+import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
@@ -34,68 +35,94 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
+import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.json.Object;
+import org.magicwerk.brownies.collections.GapList;
 
-import java.util.ArrayList;
+import javax.management.Query;
 
 /**
- * @author Sebastian Baechle
+ * @author Johannes Lichtenberger
  */
-public class DerefExpr implements Expr {
+public class DynamicFunctionExpr implements Expr {
+  private final StaticContext sctx;
+  private final Expr function;
+  private final Expr[] arguments;
 
-  final Expr object;
-  final Expr field;
-
-  public DerefExpr(Expr object, Expr field) {
-    this.object = object;
-    this.field = field;
+  public DynamicFunctionExpr(StaticContext sctx, Expr function, Expr... exprs) {
+    this.sctx = sctx;
+    this.function = function;
+    this.arguments = exprs;
   }
 
   @Override
   public Sequence evaluate(QueryContext ctx, Tuple tuple) {
-    Sequence sequence = object.evaluate(ctx, tuple);
+    final var functionItem = function.evaluateToItem(ctx, tuple);
 
-    if (sequence instanceof ItemSequence itemSequence) {
-      final var values = new ArrayList<Item>();
-      final Iter iter = itemSequence.iterate();
-      Item item;
-      while ((item = iter.next()) != null ) {
-        if (!(item instanceof Object object)) {
-          continue;
-        }
+    if (functionItem instanceof Array array) {
+      if (arguments.length == 0) {
+        final var it = array.iterate();
 
-        Item itemField = field.evaluateToItem(ctx, tuple);
-        if (itemField == null) {
-          continue;
+        final var buffer = new GapList<Item>(array.len());
+        Item item;
+        while ((item = it.next()) != null) {
+          buffer.add(item);
         }
-
-        final var sequenceByRecordField = getSequenceByRecordField(object, itemField);
-        if (sequenceByRecordField != null) {
-          values.add(sequenceByRecordField.evaluateToItem(ctx, tuple));
-        }
+        return new ItemSequence(buffer.toArray(new Item[0]));
       }
 
-      return new ItemSequence(values.toArray(new Item[0]));
+      if (arguments.length == 1) {
+        final var indexItem = arguments[0].evaluateToItem(ctx, tuple);
+
+        if (!(indexItem instanceof IntNumeric)) {
+          throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                                   "Illegal operand type '%s' where '%s' is expected",
+                                   indexItem.itemType(),
+                                   Type.INR);
+        }
+
+        final int index = ((IntNumeric) indexItem).intValue();
+
+        return array.at(index);
+      }
+
+      // TODO / FIXME
+      throw new QueryException(new QNm(""));
     }
 
-    if (!(sequence instanceof Object object)) {
-      return null;
+    if (functionItem instanceof Object object) {
+      if (arguments.length == 0) {
+        final var names = object.names();
+        final var buffer = new GapList<Item>(names.len());
+
+        for (int i = 0; i < names.len(); i++) {
+          buffer.add(names.at(i).evaluateToItem(ctx, tuple));
+        }
+
+        return new ItemSequence(buffer.toArray(new Item[0]));
+      }
+
+      if (arguments.length == 1) {
+        final var fieldItem = arguments[0].evaluateToItem(ctx, tuple);
+
+        return getSequenceByObjectField(object, fieldItem);
+      }
+
+      // TODO / FIXME
+      throw new QueryException(new QNm(""));
     }
 
-    Item itemField = field.evaluateToItem(ctx, tuple);
-    if (itemField == null) {
-      return null;
-    }
-    return getSequenceByRecordField(object, itemField);
+    return null;
   }
 
-  private Sequence getSequenceByRecordField(Object object, Item itemField) {
+  private Sequence getSequenceByObjectField(Object object, Item itemField) {
     if (itemField instanceof QNm qNmField) {
       return object.get(qNmField);
     } else if (itemField instanceof IntNumeric intNumericField) {
@@ -108,19 +135,13 @@ public class DerefExpr implements Expr {
   }
 
   @Override
-  public Item evaluateToItem(QueryContext ctx, Tuple tuple) throws QueryException {
+  public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
     return ExprUtil.asItem(evaluate(ctx, tuple));
   }
 
   @Override
   public boolean isUpdating() {
-    if (object.isUpdating()) {
-      return true;
-    }
-    if (field.isUpdating()) {
-      return true;
-    }
-    return false;
+    return function.isUpdating();
   }
 
   @Override
@@ -129,6 +150,6 @@ public class DerefExpr implements Expr {
   }
 
   public String toString() {
-    return "=>" + field;
+    return function.toString();
   }
 }

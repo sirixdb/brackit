@@ -31,9 +31,10 @@ import org.brackit.xquery.array.DArray;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.Null;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.record.ArrayObject;
+import org.brackit.xquery.object.ArrayObject;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Sequence;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -89,6 +90,62 @@ public final class JsonTest extends XQueryBaseTest {
     assertEquals(Files.readString(JSON_RESOURCES.resolve("joinresult.json")), result);
   }
 
+  @Ignore
+  @Test
+  public void testDynamicFunction() throws IOException {
+    final String query = """
+xquery version "3.0";
+declare namespace db="http://sirix.io/xquery/db";
+declare function db:map($func, $list) {
+    for $item in $list return $func($item)
+};
+let $fun := function($x) { $x * $x }
+return db:map($fun, 1 to 5)
+        """;
+    final var result = query(query);
+    assertEquals("{\"foo\":0} bar {\"baz\":true}", result);
+  }
+
+  @Test
+  public void arrayUnboxing1() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0},"bar",{"baz":true()}]
+          return $array()
+        """;
+    final var result = query(query);
+    assertEquals("{\"foo\":0} bar {\"baz\":true}", result);
+  }
+
+  @Test
+  public void objectUnboxing() throws IOException {
+    final String query = """
+          let $object := {"foo": 0, "bar": true(), "baz":"tada"}
+          return $object()
+        """;
+    final var result = query(query);
+    assertEquals("foo bar baz", result);
+  }
+
+  @Test
+  public void objectLookup() throws IOException {
+    final String query = """
+          let $object := {"foo": 0, "bar": true(), "baz":"tada"}
+          return $object("foo")
+        """;
+    final var result = query(query);
+    assertEquals("0", result);
+  }
+
+  @Test
+  public void arrayLookup() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0},"bar",{"baz":true()}]
+          return $array(0)
+        """;
+    final var result = query(query);
+    assertEquals("{\"foo\":0}", result);
+  }
+
   @Test
   public void arrayIndex() throws IOException {
     final String query = """
@@ -97,6 +154,26 @@ public final class JsonTest extends XQueryBaseTest {
         """;
     final var result = query(query);
     assertEquals("bar", result);
+  }
+
+  @Test
+  public void arrayUnboxing2() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[]
+        """;
+    final var result = query(query);
+    assertEquals("{\"foo\":0} bar {\"baz\":true}", result);
+  }
+
+  @Test
+  public void arrayUnboxing3() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          return $array[[]]
+        """;
+    final var result = query(query);
+    assertEquals("{\"foo\":0} bar {\"baz\":true}", result);
   }
 
   @Test
@@ -518,10 +595,19 @@ public final class JsonTest extends XQueryBaseTest {
     query(query);
   }
 
+  @Ignore
+  @Test
+  public void testDescendantDerefExpr() throws IOException {
+    final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
+    final var query = json + "==>revision=>tada[.=>foo=>baz = 'bar']";
+    final var result = query(query);
+    assertEquals("[{\"foo\":\"bar\"},{\"baz\":false},\"boo\",{},[{\"foo\":[true,{\"baz\":\"bar\"}]}]]", result);
+  }
+
   @Test
   public void testDerefExpr1() throws IOException {
     final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
-    final var query = json + "=>sirix[[2]]=>revision=>tada[.=>foo=>baz = 'bar']";
+    final var query = json + "=>sirix[[2]]=>revision=>tada[.[][]=>foo[]=>baz eq 'bar']";
     final var result = query(query);
     assertEquals("[{\"foo\":\"bar\"},{\"baz\":false},\"boo\",{},[{\"foo\":[true,{\"baz\":\"bar\"}]}]]", result);
   }
@@ -529,9 +615,9 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testDerefExpr2() throws IOException {
     final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
-    final var query = json + "=>sirix=>revision=>tada=>foo";
+    final var query = json + "=>sirix[]=>revision=>tada[]=>foo";
     final var result = query(query);
-    assertEquals("bar bar bar [true,{\"baz\":\"bar\"}]", result);
+    assertEquals("bar bar bar", result);
   }
 
   @Test
@@ -547,7 +633,15 @@ public final class JsonTest extends XQueryBaseTest {
     final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
     final var query = json + "=>sirix[[2]]=>revision=>tada[[4]]=>foo[[1]]=>baz";
     final var result = query(query);
-    assertEquals("bar", result);
+    assertEquals("", result);
+  }
+
+  @Test
+  public void testDerefExpr5() throws IOException {
+    final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
+    final var query = json + "=>sirix[[2]]=>revision=>tada[[4]][[0]]=>foo[]";
+    final var result = query(query);
+    assertEquals("true {\"baz\":\"bar\"}", result);
   }
 
   @Test
@@ -560,7 +654,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testNestedDerefsWithArrays() throws IOException {
     final var query =
-        "[{\"key\":0},{\"value\":[{\"key\":{\"boolean\":true()}},{\"newkey\":\"yes\"}]},{\"key\":\"hey\",\"value\":false()}]=>value=>key=>boolean";
+        "[{\"key\":0},{\"value\":[{\"key\":{\"boolean\":true()}},{\"newkey\":\"yes\"}]},{\"key\":\"hey\",\"value\":false()}][]=>value[]=>key=>boolean";
     final var result = query(query);
     assertEquals("true", result);
   }
@@ -576,7 +670,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void nestedExpressionsTest() throws IOException {
     final var json = Files.readString(JSON_RESOURCES.resolve("user_profiles.json"));
-    final var query = json + "=>websites=>description";
+    final var query = json + "=>websites[]=>description";
     final var result = query(query);
     assertEquals("work tutorials", result);
   }

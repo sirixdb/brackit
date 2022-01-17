@@ -27,22 +27,14 @@
  */
 package org.brackit.xquery.function;
 
-import java.util.ArrayList;
-
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.sequence.FunctionConversionSequence;
-import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.util.ExprUtil;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Function;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.xdm.*;
 import org.brackit.xquery.xdm.type.Cardinality;
 import org.brackit.xquery.xdm.type.ItemType;
 import org.brackit.xquery.xdm.type.SequenceType;

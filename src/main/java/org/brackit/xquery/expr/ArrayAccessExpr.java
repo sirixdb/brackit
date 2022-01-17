@@ -33,10 +33,17 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.array.DArray;
 import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.ItemSequence;
+import org.brackit.xquery.sequence.LazySequence;
+import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.*;
 import org.brackit.xquery.xdm.json.Array;
+import org.brackit.xquery.xdm.type.ArrayType;
 import org.magicwerk.brownies.collections.GapList;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Sebastian Baechle
@@ -53,21 +60,55 @@ public final class ArrayAccessExpr implements Expr {
 
   @Override
   public Sequence evaluate(QueryContext ctx, Tuple tuple) {
-    final Item array = expr.evaluateToItem(ctx, tuple);
-    if (array == null) {
+    final Sequence sequence = expr.evaluate(ctx, tuple);
+    if (sequence == null) {
       return null;
     }
-    if (!(array instanceof Array)) {
+
+    if (sequence instanceof ItemSequence itemSequence) {
+      final var values = new ArrayList<Sequence>();
+      final Iter iter = itemSequence.iterate();
+      Item currItem;
+      while ((currItem = iter.next()) != null) {
+        if (!(currItem instanceof Array array)) {
+          continue;
+        }
+        final Item i = index.evaluateToItem(ctx, tuple);
+        if (i == null) {
+          final var it = array.iterate();
+
+          Item item;
+          while ((item = it.next()) != null) {
+            values.add(item);
+          }
+        } else {
+          if (!(i instanceof IntNumeric)) {
+            throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                                     "Illegal operand type '%s' where '%s' is expected",
+                                     i.itemType(),
+                                     Type.INR);
+          }
+          values.add(array.at((IntNumeric) i));
+        }
+      }
+
+      return new ItemSequence(values.toArray(new Item[0]));
+    }
+
+    final var currItem = ExprUtil.asItem(sequence);
+
+    if (!(currItem instanceof Array array)) {
       throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                "Illegal operand type '%s' where '%s' is expected",
-                               array.itemType(),
-                               Type.INR);
+                               currItem.itemType(),
+                               ArrayType.ARRAY);
     }
+
     final Item i = index.evaluateToItem(ctx, tuple);
     if (i == null) {
       final var it = array.iterate();
 
-      final var buffer = new GapList<Item>(((Array) array).len());
+      final var buffer = new GapList<Item>(array.len());
       Item item;
       while ((item = it.next()) != null) {
         buffer.add(item);
@@ -80,23 +121,47 @@ public final class ArrayAccessExpr implements Expr {
                                i.itemType(),
                                Type.INR);
     }
-    return ((Array) array).at((IntNumeric) i);
+    return ((Array) sequence).at((IntNumeric) i);
+  }
+
+  private Sequence processItemSequence(QueryContext ctx, Tuple tuple, final List<Sequence> values) {
+    return new LazySequence() {
+      @Override
+      public Iter iterate() {
+        return new BaseIter() {
+          int i;
+
+          @Override
+          public Item next() {
+            if (i < values.size()) {
+              return values.get(i++).evaluateToItem(ctx, tuple);
+            }
+            return null;
+          }
+
+          @Override
+          public void close() {
+          }
+        };
+      }
+    };
   }
 
   @Override
   public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
-    final var res = evaluate(ctx, tuple);
-    if (res == null || res instanceof Item) {
-      return (Item) res;
-    }
-    final var values = new GapList<Sequence>();
-    try (Iter it = res.iterate()) {
-      Item item;
-      while ((item = it.next()) != null) {
-        values.add(item);
-      }
-    }
-    return new DArray(values);
+    return ExprUtil.asItem(evaluate(ctx, tuple));
+    //    final var res = evaluate(ctx, tuple);
+    //    if (res == null || res instanceof Item) {
+    //      return (Item) res;
+    //    }
+    //    final var values = new GapList<Sequence>();
+    //    try (Iter it = res.iterate()) {
+    //      Item item;
+    //      while ((item = it.next()) != null) {
+    //        values.add(item);
+    //      }
+    //    }
+    //    return new DArray(values);
   }
 
   @Override

@@ -59,7 +59,7 @@ public class Bits {
   /*
    * Error codes for runtime errors and built-in expressions.
    */
-  public static final QNm BIT_ILLEGAL_RECORD_FIELD = new QNm(BIT_NSURI, "bit", "BIEX0001");
+  public static final QNm BIT_ILLEGAL_OBJECT_FIELD = new QNm(BIT_NSURI, "bit", "BIEX0001");
 
-  public static final QNm BIT_DUPLICATE_RECORD_FIELD = new QNm(BIT_NSURI, "bit", "BIEX0002");
+  public static final QNm BIT_DUPLICATE_OBJECT_FIELD = new QNm(BIT_NSURI, "bit", "BIEX0002");
 }

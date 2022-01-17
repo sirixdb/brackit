@@ -135,10 +135,11 @@ public final class SequenceExpr implements Expr {
     out.append("(");
     boolean first = true;
     for (Expr e : expr) {
-      if (!first) {
+      if (first) {
+        first = false;
+      } else {
         out.append(", ");
       }
-      first = false;
       out.append(e.toString());
     }
     out.append(")");

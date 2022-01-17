@@ -38,7 +38,7 @@ import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.Bits;
-import org.brackit.xquery.record.ArrayObject;
+import org.brackit.xquery.object.ArrayObject;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
@@ -79,13 +79,13 @@ public class ObjectExpr implements Expr {
         while ((item = iter.next()) != null) {
           if (!(item instanceof Object)) {
             throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                     "Illegal item type in record constructor: %s",
+                                     "Illegal item type in object constructor: %s",
                                      item.itemType());
           }
 
-          final Object record = (Object) item;
-          Collections.addAll(names, record.names().values().toArray(new QNm[0]));
-          Collections.addAll(values, record.values().values().toArray(new Sequence[0]));
+          final Object object = (Object) item;
+          Collections.addAll(names, object.names().values().toArray(new QNm[0]));
+          Collections.addAll(values, object.values().values().toArray(new Sequence[0]));
         }
 
         return new ArrayObject(names.toArray(new QNm[0]), values.toArray(new Sequence[0]));
@@ -147,7 +147,7 @@ public class ObjectExpr implements Expr {
       for (int j = 0; j < res.len(); j++) {
         QNm name = res.name(j);
         if (!dedup.add(name)) {
-          throw new QueryException(Bits.BIT_DUPLICATE_RECORD_FIELD, "Duplicate field name: %s", name);
+          throw new QueryException(Bits.BIT_DUPLICATE_OBJECT_FIELD, "Duplicate field name: %s", name);
         }
         Sequence val = res.value(j);
 

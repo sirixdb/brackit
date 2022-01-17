@@ -39,6 +39,7 @@ import org.brackit.xquery.expr.NodeCmpExpr.NodeCmp;
 import org.brackit.xquery.expr.ObjectExpr.Field;
 import org.brackit.xquery.expr.ObjectExpr.KeyValueField;
 import org.brackit.xquery.expr.ObjectExpr.ObjectField;
+import org.brackit.xquery.function.DynamicFunctionExpr;
 import org.brackit.xquery.function.FunctionExpr;
 import org.brackit.xquery.function.UDF;
 import org.brackit.xquery.function.bit.BitFun;
@@ -178,6 +179,7 @@ public class Compiler implements Translator {
       case XQ.CompDocumentConstructor -> documentExpr(node);
       case XQ.DirPIConstructor, XQ.CompPIConstructor -> piExpr(node);
       case XQ.FunctionCall -> functionCall(node);
+      case XQ.DynamicFunctionCallExpr -> dynamicFunctionCall(node);
       case XQ.PathExpr -> pathExpr(node);
       case XQ.StepExpr -> stepExpr(node);
       case XQ.ContextItemExpr -> table.resolve(Bits.FS_DOT);
@@ -197,8 +199,9 @@ public class Compiler implements Translator {
       case XQ.ArrayConstructor -> arrayExpr(node);
       case XQ.ArrayAccess -> arrayAccessExpr(node);
       case XQ.ArrayIndexSlice -> arrayIndexSliceExpr(node);
-      case XQ.ObjectConstructor -> recordExpr(node);
+      case XQ.ObjectConstructor -> objectExpr(node);
       case XQ.DerefExpr -> derefExpr(node);
+      case XQ.DerefDescendantExpr -> derefDescendantExpr(node);
       case XQ.ObjectProjection -> projectionExpr(node);
       case XQ.InsertJsonExpr -> insertJsonExpr(node);
       case XQ.DeleteJsonExpr -> deleteJsonExpr(node);
@@ -211,6 +214,16 @@ public class Compiler implements Translator {
                                           node,
                                           node.getType());
     };
+  }
+
+  private Expr dynamicFunctionCall(AST node) {
+    final StaticContext sctx = node.getStaticContext();
+    final Expr functionExpr = expr(node.getChild(0), true);
+    final Expr[] argumentsExpr = new Expr[node.getChildCount() - 1];
+    for (int i = 1; i < node.getChildCount(); i++) {
+      argumentsExpr[i - 1] = expr(node.getChild(i), true);
+    }
+    return new DynamicFunctionExpr(sctx, functionExpr, argumentsExpr);
   }
 
   private Expr deleteJsonExpr(AST node) {
@@ -1370,8 +1383,8 @@ public class Compiler implements Translator {
 
   // END Custom array syntax extension
 
-  // BEGIN Custom record syntax extension
-  protected Expr recordExpr(AST node) throws QueryException {
+  // BEGIN Custom object syntax extension
+  protected Expr objectExpr(AST node) throws QueryException {
     int cnt = node.getChildCount();
     Field[] fields = new Field[cnt];
     for (int i = 0; i < cnt; i++) {
@@ -1386,12 +1399,18 @@ public class Compiler implements Translator {
   }
 
   protected Expr derefExpr(AST node) throws QueryException {
-    Expr record = expr(node.getChild(0), true);
+    Expr object = expr(node.getChild(0), true);
+    Expr field = expr(node.getChild(1), true);
+    return new DerefExpr(object, field);
+  }
+
+  protected Expr derefDescendantExpr(AST node) throws QueryException {
+    Expr object = expr(node.getChild(0), true);
     Expr[] fields = new Expr[node.getChildCount() - 1];
     for (int i = 1; i < node.getChildCount(); i++) {
       fields[i - 1] = expr(node.getChild(i), true);
     }
-    return new DerefExpr(record, fields);
+    return new DerefDescendantExpr(object, fields);
   }
 
   protected Expr projectionExpr(AST node) throws QueryException {
@@ -1402,5 +1421,5 @@ public class Compiler implements Translator {
     }
     return new ProjectionExpr(record, fields);
   }
-  // END Custom record syntax extension
+  // END Custom object syntax extension
 }

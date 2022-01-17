@@ -37,7 +37,7 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
-import org.brackit.xquery.record.ArrayObject;
+import org.brackit.xquery.object.ArrayObject;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
@@ -89,7 +89,7 @@ public final class ProjectionExpr implements Expr {
         names[i] = name;
         vals[i] = r.get(name);
       } else {
-        throw new QueryException(Bits.BIT_ILLEGAL_RECORD_FIELD, "Illegal record field reference: %s", f);
+        throw new QueryException(Bits.BIT_ILLEGAL_OBJECT_FIELD, "Illegal record field reference: %s", f);
       }
     }
     return new ArrayObject(names, vals);

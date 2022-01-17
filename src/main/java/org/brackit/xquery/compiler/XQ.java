@@ -303,28 +303,29 @@ public final class XQ {
   public static final int ObjectField = 251;
   public static final int KeyValueField = 252;
   public static final int DerefExpr = 253;
+  public static final int DerefDescendantExpr = 254;
   // End brackit's custom object syntax
   // Begin temporal
-  public static final int NEXT = 254;
-  public static final int PREVIOUS = 255;
-  public static final int FUTURE = 256;
-  public static final int FUTURE_OR_SELF = 257;
-  public static final int PAST = 258;
-  public static final int PAST_OR_SELF = 259;
-  public static final int FIRST = 260;
-  public static final int LAST = 261;
-  public static final int ALL_TIMES = 262;
+  public static final int NEXT = 255;
+  public static final int PREVIOUS = 256;
+  public static final int FUTURE = 257;
+  public static final int FUTURE_OR_SELF = 258;
+  public static final int PAST = 259;
+  public static final int PAST_OR_SELF = 260;
+  public static final int FIRST = 261;
+  public static final int LAST = 262;
+  public static final int ALL_TIMES = 263;
   // End temporal
-  public static final int JsonItemTest = 263;
-  public static final int StructuredItemTest = 264;
-  public static final int KindTestNull = 265;
-  public static final int Null = 266;
+  public static final int JsonItemTest = 264;
+  public static final int StructuredItemTest = 265;
+  public static final int KindTestNull = 266;
+  public static final int Null = 267;
   // Begin JSONiq update expressions
-  public static final int InsertJsonExpr = 267;
-  public static final int DeleteJsonExpr = 268;
-  public static final int RenameJsonExpr = 269;
-  public static final int ReplaceJsonExpr = 270;
-  public static final int AppendJsonExpr = 271;
+  public static final int InsertJsonExpr = 268;
+  public static final int DeleteJsonExpr = 269;
+  public static final int RenameJsonExpr = 270;
+  public static final int ReplaceJsonExpr = 271;
+  public static final int AppendJsonExpr = 272;
   // End JSONiq update expressions
 
   public static final String[] NAMES =
@@ -381,7 +382,7 @@ public final class XQ {
           "KindTestArray", "ArrayAccess", "ArrayConstructor", "SequenceField", "FlattenedField", "ArrayIndexSlice",
           // End brackit's custom array syntax
           // Begin brackit's custom recird syntax
-          "KindTestRecord", "RecordProjection", "RecordConstructor", "RecordField", "KeyValueField", "DerefExpr",
+          "KindTestRecord", "RecordProjection", "RecordConstructor", "RecordField", "KeyValueField", "DerefExpr", "DerefDescendantExpr",
           // End brackit's custom record syntax
           // Begin temporal
           "NEXT", "PREVIOUS", "EARLIER", "EARLIER_OR_SELF", "FUTURE", "FUTURE_OR_SELF", "FIRST", "LAST", "ALL_TIME",
