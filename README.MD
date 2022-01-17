@@ -1,14 +1,16 @@
 # Welcome to Brackit!
 
-Brackit is a flexible XQuery-based query engine developed during my time as PhD student at the TU Kaiserslautern (Dr. Sebastian Bächle) in the context of our research in the field of query processing for semi-structured data. The system features a fast runtime and a flexible compiler backend, which is , e.g., able to rewrite queries for optimized join processing and efficient aggregation operations.
+Brackit is a flexible XQuery-based query engine developed during Dr. Sebastian Bächles time as a PhD student at the TU Kaiserslautern in the context of their research in the field of query processing for semi-structured data. The system features a fast runtime and a flexible compiler backend, which is, e.g., able to rewrite queries for optimized join processing and efficient aggregation operations.
+
+Lately Johannes Lichtenberger has emerged Brackit with a lot of optional temporal enhancements for temporal data stores as SirixDB. Furthermore JSON is now a first-class citizen and Brackit supports a slightly different syntax, but the same data model as JSONiq as well as all update primitives described in the JSONiq specification. Brackit also supports Python-like array slices.
 
 [![Build Status](https://travis-ci.org/sirixdb/brackit.svg?branch=master)](https://travis-ci.org/sirixdb/brackit)
 
-## Features
+## Feature
 
-At the moment we support XQuery 1.0 including library module support, the XQuery Update Facility 1.0 and some features of XQuery 3.0 like the new FLWOR clauses group by and count.
+At the moment we support XQuery 1.0 including library module support, the XQuery Update Facility 1.0 and some features of XQuery 3.0 like the FLWOR clauses group by and count.
 
-As a speciality, Brackit comes with extensions to work natively with JSON-style arrays and records. Another extension allows you to use a special statement syntax for writing XQuery programs in a script-like style.
+As a speciality, Brackit comes with extensions to work natively with JSON-style arrays and objects mostly as in JSONiq, also supporting all the update statements of JSONiq. Furthermore array index slices as in Python are supported. Another extension allows you to use a special statement syntax for writing XQuery programs in a script-like style.
 
 ## Installation
 
@@ -93,10 +95,11 @@ echo "count(doc('http://example.org/foo.xml')//bar)" | java -jar brackit-x.y.z.j
 Running XQuery embedded in a Java program requires only a few lines of code:
 
 ```Java
-String query =
-    "for $i in (1 to 4)"
-  + "let $d := {$i}"
-  + "return $d";
+String query = """
+    for $i in (1 to 4)
+    let $d := {$i}
+    return $d
+    """;
 
 // initialize a query context
 QueryContext ctx = new QueryContext();
@@ -128,8 +131,7 @@ Arrays can be created using an extended version of the standard JSON array synta
 (: statically create an array with 3 elements of different types: 1, 2.0, "3" :)
 [ 1, 2.0, "3" ]
 
-(: for compliance with the JSON syntax the tokens 'true', 'false', and 'null'
-   are translated into the XML values xs:bool('true'), xs:bool('false') and empty-sequence()
+(: for compliance with the JSON syntax we have to use functions to create the values 'true', 'false', and 'null'. They are translated into the XML values xs:bool('true'), xs:bool('false') and an atomic null value.
 :)
 [ true(), false(), jn:null() ]
 
@@ -157,9 +159,9 @@ let $a := [ "Jim", "John", "Joe" ] return $a[[1]] (: yields the string "John" :)
 bit:len([ 1, 2, ]) (: yields 2 :)
 ```
 
-### Records
+### Objects 
 
-Records provide an alternative to XML to represent structured data. Like with arrays we support an extended version of the standard JSON object syntax:
+Objects provide an alternative to XML to represent structured data. Like with arrays we support an extended version of the standard JSON object syntax:
 
 ```XQuery
 (: statically create a record with three fields named 'a', 'b' and 'c' :)
