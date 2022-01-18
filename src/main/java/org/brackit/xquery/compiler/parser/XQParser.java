@@ -884,18 +884,9 @@ public class XQParser extends Tokenizer {
   // End Custom scripting syntax
 
   private AST exprSingle() throws TokenizerException {
-    if (jsoniqBooleanAndNullLiterals) {
-      // for JSON-like semantics the tokens 'true' and 'false' are matched as boolean constants and not as
-      // path expressions, the token 'null' is interpreted as js:null
-      if (attemptSymSkipWS("true")) {
-        attemptSymSkipWS("()");
-        return new AST(XQ.Bool, Bool.TRUE);
-      } else if (attemptSymSkipWS("false")) {
-        attemptSymSkipWS("()");
-        return new AST(XQ.Bool, Bool.FALSE);
-      } else if (attemptSymSkipWS("null")) {
-        return new AST(XQ.Null);
-      }
+    final AST jsonLiteralExpr = jsonLiteralExpr();
+    if (jsonLiteralExpr != null) {
+      return jsonLiteralExpr;
     }
 
     AST expr = flowrExpr();
@@ -923,6 +914,23 @@ public class XQParser extends Tokenizer {
       throw new TokenizerException("Non-expression faced: %s", paraphrase());
     }
     return expr;
+  }
+
+  private AST jsonLiteralExpr() {
+    if (jsoniqBooleanAndNullLiterals) {
+      // for JSON-like semantics the tokens 'true' and 'false' are matched as boolean constants and not as
+      // path expressions, the token 'null' is interpreted as js:null
+      if (attemptSymSkipWS("true")) {
+        attemptSymSkipWS("()");
+        return new AST(XQ.Bool, Bool.TRUE);
+      } else if (attemptSymSkipWS("false")) {
+        attemptSymSkipWS("()");
+        return new AST(XQ.Bool, Bool.FALSE);
+      } else if (attemptSymSkipWS("null")) {
+        return new AST(XQ.Null);
+      }
+    }
+    return null;
   }
 
   // Begin JSONiq Update Facility
