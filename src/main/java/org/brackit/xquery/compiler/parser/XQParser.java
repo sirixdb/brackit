@@ -82,6 +82,8 @@ public class XQParser extends Tokenizer {
     }
   }
 
+  private boolean jsoniqBooleanAndNullLiterals = true;
+
   private String version;
 
   /**
@@ -802,8 +804,16 @@ public class XQParser extends Tokenizer {
     consume(la);
     consume(la2);
     AST decl = new AST(XQ.OptionDeclaration);
-    decl.addChild(eqnameLiteral(false, true));
-    decl.addChild(stringLiteral(false, true));
+
+    final AST eqnameLiteral = eqnameLiteral(false, true);
+    final AST stringLiteral = stringLiteral(false, true);
+    decl.addChild(eqnameLiteral);
+    decl.addChild(stringLiteral);
+
+    if ("jn:jsoniq-boolean-and-null-literals".equals(eqnameLiteral.getStringValue())) {
+      jsoniqBooleanAndNullLiterals = Boolean.valueOf(stringLiteral.getStringValue());
+    }
+
     return decl;
   }
 
@@ -874,6 +884,20 @@ public class XQParser extends Tokenizer {
   // End Custom scripting syntax
 
   private AST exprSingle() throws TokenizerException {
+    if (jsoniqBooleanAndNullLiterals) {
+      // for JSON-like semantics the tokens 'true' and 'false' are matched as boolean constants and not as
+      // path expressions, the token 'null' is interpreted as js:null
+      if (attemptSymSkipWS("true")) {
+        attemptSymSkipWS("()");
+        return new AST(XQ.Bool, Bool.TRUE);
+      } else if (attemptSymSkipWS("false")) {
+        attemptSymSkipWS("()");
+        return new AST(XQ.Bool, Bool.FALSE);
+      } else if (attemptSymSkipWS("null")) {
+        return new AST(XQ.Null);
+      }
+    }
+
     AST expr = flowrExpr();
     expr = (expr != null) ? expr : quantifiedExpr();
     expr = (expr != null) ? expr : switchExpr();
@@ -2885,6 +2909,7 @@ public class XQParser extends Tokenizer {
     if (test == null) {
       return null;
     }
+
     AST nameTest = new AST(XQ.NameTest);
     nameTest.addChild(test);
     return nameTest;

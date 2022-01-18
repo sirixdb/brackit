@@ -107,6 +107,15 @@ return db:map($fun, 1 to 5)
   }
 
   @Test
+  public void testObjectWithNullAndBooleans() throws IOException {
+    final String query = """
+          {"foo":null,"tada":"bar","bar":true,"baz":false}
+        """;
+    final var result = query(query);
+    assertEquals("{\"foo\":null,\"tada\":\"bar\",\"bar\":true,\"baz\":false}", result);
+  }
+
+  @Test
   public void arrayUnboxing1() throws IOException {
     final String query = """
           let $array := [{"foo": 0},"bar",{"baz":true()}]
