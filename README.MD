@@ -135,10 +135,13 @@ Arrays can be created using an extended version of the standard JSON array synta
 :)
 [ true(), false(), jn:null() ]
 
+(: as that's cumbersome per default Brackit will parse the tokens 'true', 'false' to the XDM boolean values and 'null' to the new type js:null. :)
+[ true, false, null ]
+
 (: is different to :)
-[ (true), (false), (null) ]
+[ (./true), (./false), (./null) ]
 (: where each field is initialized as the result of a path expression
-   starting from the current context item, e,g., './true'
+   starting from the current context item, e,g., './true'.
 :)
 
 (: dynamically create an array by evaluating some expressions: :)
