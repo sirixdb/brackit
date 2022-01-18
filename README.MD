@@ -159,7 +159,7 @@ Arrays can be created using an extended version of the standard JSON array synta
 let $a := [ "Jim", "John", "Joe" ] return $a[[1]] (: yields the string "John" :)
 
 (: the function bit:len() returns the length of an array :)
-bit:len([ 1, 2, ]) (: yields 2 :)
+bit:len([ 1, 2 ]) (: yields 2 :)
 ```
 
 ### Objects 
