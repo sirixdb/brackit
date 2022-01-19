@@ -2,13 +2,18 @@ name: Build & test
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
+      - '[0-9]+.[0-9]+'
   pull_request:
-    branches: [ master ]
-
+    branches:
+      - master
+      - '[0-9]+.[0-9]+'
+  schedule:
+    - cron: '0 4 * * *'
+    
 jobs:
-  build:
-
+  Test:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,5 +24,24 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
+    - name: Test with Maven
+      run: mvn clean test
+
+  Deploy:
+    name: Deploy to OSSRH and Docker Hub
+    if: ${{ github.repository_owner == 'sirixdb' && (github.event_name == 'push' || github.event_name == 'schedule') }}
+    needs: Test
+    runs-on: ubuntu-latest
+    env:
+      SONATYPE_NEXUS_USERNAME: ${{ secrets.SONATYPE_NEXUS_USERNAME }}
+      SONATYPE_NEXUS_PASSWORD: ${{ secrets.SONATYPE_NEXUS_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+      - name: Maven deploy
+        run: mvn deploy
