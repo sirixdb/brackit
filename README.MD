@@ -2,7 +2,7 @@
 
 Brackit is a flexible XQuery-based query engine developed during Dr. Sebastian Bächles time as a PhD student at the TU Kaiserslautern in the context of their research in the field of query processing for semi-structured data. The system features a fast runtime and a flexible compiler backend, which is, e.g., able to rewrite queries for optimized join processing and efficient aggregation operations.
 
-Lately Johannes Lichtenberger has emerged Brackit with a lot of optional temporal enhancements for temporal data stores as SirixDB. Furthermore JSON is now a first-class citizen and Brackit supports a slightly different syntax, but the same data model as JSONiq as well as all update primitives described in the JSONiq specification. Brackit also supports Python-like array slices.
+Lately, Johannes Lichtenberger has added many optional temporal enhancements for temporal data stores such as SirixDB. Furthermore, JSON is now a first-class citizen. Brackit supports a slightly different syntax but the same data model as JSONiq and all update primitives described in the JSONiq specification. Brackit also supports Python-like array slices.
 
 [![Build Status](https://travis-ci.org/sirixdb/brackit.svg?branch=master)](https://travis-ci.org/sirixdb/brackit)
 
@@ -113,7 +113,7 @@ xq.setPrettyPrint(true);
 // run the query and write the result to System.out
 xq.serialize(ctx, System.out);
 ```
-## JSON Extension (Beta)
+## JSON
 
 Brackit features a seamless integration of JSON-like objects and arrays directly at the language level.
 
@@ -160,6 +160,22 @@ let $a := [ "Jim", "John", "Joe" ] return $a[[1]] (: yields the string "John" :)
 
 (: the function bit:len() returns the length of an array :)
 bit:len([ 1, 2 ]) (: yields 2 :)
+
+(: array slices are supported as for instance (as in Python) :)
+let $a := ["Jim", "John", "Joe" ] return $a[[0:2]] (: yields ["Jim", "John"] :)
+
+(: array slices with a step operator :)
+let $a := ["Jim", "John", "Joe" ] return $a[[0:2:-1]] (: yields ["John", "Jim"] :)
+
+let $a := [{"foo": 0}, "bar", {"baz":true}] return $a[[::2]] (: yields [{"foo":0},{"baz:true}] :)
+
+(: array unboxing :)
+let $a := ["Jim", "John", "Joe"] return $a[] (: yields the sequence "Jim" "John" "Joe" :)
+
+(: the unboxing is made implicitly in for-loops :)
+let $a := ["Jim", "John", "Joe]
+for $value in $a
+return $value (: yields the same as above :)
 ```
 
 ### Objects 
@@ -174,13 +190,12 @@ Objects provide an alternative to XML to represent structured data. Like with ar
 :)
 { "a": true(), "b" : false(), "c" : jn:null()}
 
-(: field names are modelled as xs:QName and may be set in double quotes,
-   single quotes or completely without quotes.
-:)
-{ 'b' : 2, "c" : 3 }
+or simply
+
+{ "a": true, "b": false, "c": null}
 
 (: field values may be arbitrary expressions:)
-{ "a" : concat('f', 'oo') , 'b' : 1+1, "c" : [1,2,3] } (: yields {"a":"foo","b":2,"c":[1,2,3]} :)
+{ "a" : concat('f', 'oo') , "b" : 1+1, "c" : [1,2,3] } (: yields {"a":"foo","b":2,"c":[1,2,3]} :)
 
 (: field values are defined by key-value pairs or by an expression
    that evaluates to a record
@@ -190,11 +205,19 @@ let $r := { "x":1, "y":2 } return { $r, "z":3} (: yields {"x":1,"y":2,"z":3} :)
 (: fields may be selectively projected into a new record :)
 {"x": 1, "y": 2, "z": 3}{z,y} (: yields {"z":3,"y":2} :)
 
-(: values of record field can be accessed using the deref operator '=>' :)
+(: values of object fields can be accessed using the deref operator '=>' :)
 { "a": "hello", "b": "world" }=>b (: yields the string "world" :)
 
-(: the deref operator can be used to navigate into deeply nested record structures :)
+(: the deref operator can be used to navigate into deeply nested object structures :)
 let $n := yval let $r := {"e" : {"m":'mvalue', "n":$n}} return $r=>e=>n/y (: yields the XML fragment yval :)
+
+(: the deref operator can be used to navigate into deeply nested object structures in combination with the array unboxing operator for instance :)
+(: note, that here the expression "[]" is unboxing the array and a sequence of items is evaluated for the next deref operator :)
+(: the deref operator thus either get's a sequence input or an object as the left operand :)
+let $r := {"e": {"m": [{"n":"o"}, true, null, {"n": "bar"}] }, "n":"m"}} return $r=>e=>m[]=>n (: yields "o" "bar" :)
+
+(: to only retrieve the first item/value in the array you can use an index :)
+let $r := {"e": {"m": [{"n":"o"}, true, null, {"n": "bar"}] }, "n":"m"}} return $r=>e=>m[[0]]=>n (: yields "o" :)
 
 (: the function bit:fields() returns the field names of a record :)
 let $r := {"x": 1, "y": 2, "z": 3} return bit:fields($r) (: yields the xs:QName array [x,y,z ] :)
@@ -202,6 +225,8 @@ let $r := {"x": 1, "y": 2, "z": 3} return bit:fields($r) (: yields the xs:QName 
 (: the function bit:values() returns the field values of a record :)
 let $r := {"x": 1, "y": 2, "z": (3, 4) } return bit:values($r) (: yields the array [1,2,(2,4)] :)
 ```
+
+
 
 ### Parsing JSON
 
