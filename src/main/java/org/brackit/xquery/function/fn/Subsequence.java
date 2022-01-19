@@ -112,9 +112,6 @@ public class Subsequence extends AbstractFunction {
           }
         };
       }
-
-      ;
     };
   }
-
 }
