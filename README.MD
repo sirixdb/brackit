@@ -198,11 +198,11 @@ or simply
 { "a" : concat('f', 'oo') , "b" : 1+1, "c" : [1,2,3] } (: yields {"a":"foo","b":2,"c":[1,2,3]} :)
 
 (: field values are defined by key-value pairs or by an expression
-   that evaluates to a record
+   that evaluates to an object
 :)
 let $r := { "x":1, "y":2 } return { $r, "z":3} (: yields {"x":1,"y":2,"z":3} :)
 
-(: fields may be selectively projected into a new record :)
+(: fields may be selectively projected into a new object :)
 {"x": 1, "y": 2, "z": 3}{z,y} (: yields {"z":3,"y":2} :)
 
 (: values of object fields can be accessed using the deref operator '=>' :)
@@ -219,10 +219,10 @@ let $r := {"e": {"m": [{"n":"o"}, true, null, {"n": "bar"}] }, "n":"m"}} return 
 (: to only retrieve the first item/value in the array you can use an index :)
 let $r := {"e": {"m": [{"n":"o"}, true, null, {"n": "bar"}] }, "n":"m"}} return $r=>e=>m[[0]]=>n (: yields "o" :)
 
-(: the function bit:fields() returns the field names of a record :)
+(: the function bit:fields() returns the field names of an object :)
 let $r := {"x": 1, "y": 2, "z": 3} return bit:fields($r) (: yields the xs:QName array [x,y,z ] :)
 
-(: the function bit:values() returns the field values of a record :)
+(: the function bit:values() returns the field values of an object :)
 let $r := {"x": 1, "y": 2, "z": (3, 4) } return bit:values($r) (: yields the array [1,2,(2,4)] :)
 ```
 
