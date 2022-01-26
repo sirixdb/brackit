@@ -44,4 +44,4 @@ jobs:
           distribution: 'adopt'
           java-version: '17'
       - name: Maven deploy
-        run: mvn deploy
+        run: mvn clean deploy
