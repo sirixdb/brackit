@@ -232,7 +232,7 @@ let $r := {"x": 1, "y": 2, "z": (3, 4) } return bit:values($r) (: yields the arr
 
 Brackit supports all defined update statements in the JSONiq specification. It makes sense to implement these in a data store backend as for instance in SirixDB. 
 
-```
+```XQuery
 (: rename a field in an object :)
 let $object := {"foo": 0}
 return rename json $object=>foo as "bar"  (: renames the field foo of the object to bar :)
