@@ -31,7 +31,6 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.array.DArray;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.ItemSequence;
@@ -40,10 +39,6 @@ import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.*;
 import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.type.ArrayType;
-import org.magicwerk.brownies.collections.GapList;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author Sebastian Baechle
@@ -66,33 +61,11 @@ public final class ArrayAccessExpr implements Expr {
     }
 
     if (sequence instanceof ItemSequence itemSequence) {
-      final var values = new ArrayList<Sequence>();
-      final Iter iter = itemSequence.iterate();
-      Item currItem;
-      while ((currItem = iter.next()) != null) {
-        if (!(currItem instanceof Array array)) {
-          continue;
-        }
-        final Item i = index.evaluateToItem(ctx, tuple);
-        if (i == null) {
-          final var it = array.iterate();
+      return getLazySequence(ctx, tuple, itemSequence.iterate());
+    }
 
-          Item item;
-          while ((item = it.next()) != null) {
-            values.add(item);
-          }
-        } else {
-          if (!(i instanceof IntNumeric)) {
-            throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                     "Illegal operand type '%s' where '%s' is expected",
-                                     i.itemType(),
-                                     Type.INR);
-          }
-          values.add(array.at((IntNumeric) i));
-        }
-      }
-
-      return new ItemSequence(values.toArray(new Item[0]));
+    if (sequence instanceof LazySequence lazySequence) {
+      return getLazySequence(ctx, tuple, lazySequence.iterate());
     }
 
     final var currItem = ExprUtil.asItem(sequence);
@@ -105,16 +78,11 @@ public final class ArrayAccessExpr implements Expr {
     }
 
     final Item i = index.evaluateToItem(ctx, tuple);
-    if (i == null) {
-      final var it = array.iterate();
 
-      final var buffer = new GapList<Item>(array.len());
-      Item item;
-      while ((item = it.next()) != null) {
-        buffer.add(item);
-      }
-      return new ItemSequence(buffer.toArray(new Item[0]));
+    if (i == null) {
+      return getLazySequence(ctx, tuple, array);
     }
+
     if (!(i instanceof IntNumeric)) {
       throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                "Illegal operand type '%s' where '%s' is expected",
@@ -124,19 +92,63 @@ public final class ArrayAccessExpr implements Expr {
     return ((Array) sequence).at((IntNumeric) i);
   }
 
-  private Sequence processItemSequence(QueryContext ctx, Tuple tuple, final List<Sequence> values) {
+  private LazySequence getLazySequence(final QueryContext ctx, final Tuple tuple, final Iter iter) {
     return new LazySequence() {
       @Override
       public Iter iterate() {
         return new BaseIter() {
-          int i;
+          Iter nestedIter;
 
           @Override
           public Item next() {
-            if (i < values.size()) {
-              return values.get(i++).evaluateToItem(ctx, tuple);
+            Item item;
+
+            if (nestedIter != null) {
+              if ((item = nestedIter.next()) != null) {
+                return item;
+              }
+            }
+
+            while ((item = iter.next()) != null) {
+              if (!(item instanceof Array array)) {
+                continue;
+              }
+              final Item i = index.evaluateToItem(ctx, tuple);
+              if (i == null) {
+                nestedIter = getLazySequence(ctx, tuple, array).iterate();
+
+                return nestedIter.next();
+              } else {
+                if (!(i instanceof IntNumeric)) {
+                  throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                                           "Illegal operand type '%s' where '%s' is expected",
+                                           i.itemType(),
+                                           Type.INR);
+                }
+                return array.at((IntNumeric) i).evaluateToItem(ctx, tuple);
+              }
             }
             return null;
+          }
+
+          @Override
+          public void close() {
+          }
+        };
+      }
+    };
+  }
+
+  private LazySequence getLazySequence(final QueryContext ctx, final Tuple tuple, final Array array) {
+    return new LazySequence() {
+      @Override
+      public Iter iterate() {
+        return new BaseIter() {
+          int i = 0;
+
+          @Override
+          public Item next() {
+            return i < array.len() ? array.at(i++).evaluateToItem(ctx, tuple) : null;
           }
 
           @Override
@@ -150,18 +162,6 @@ public final class ArrayAccessExpr implements Expr {
   @Override
   public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
     return ExprUtil.asItem(evaluate(ctx, tuple));
-    //    final var res = evaluate(ctx, tuple);
-    //    if (res == null || res instanceof Item) {
-    //      return (Item) res;
-    //    }
-    //    final var values = new GapList<Sequence>();
-    //    try (Iter it = res.iterate()) {
-    //      Item item;
-    //      while ((item = it.next()) != null) {
-    //        values.add(item);
-    //      }
-    //    }
-    //    return new DArray(values);
   }
 
   @Override

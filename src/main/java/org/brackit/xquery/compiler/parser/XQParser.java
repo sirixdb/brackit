@@ -3013,6 +3013,7 @@ public class XQParser extends Tokenizer {
     if (expr == null) {
       return null;
     }
+
     while (true) {
       // BEGIN Custom object deref extension
       AST deref = derefStep();
@@ -3025,7 +3026,7 @@ public class XQParser extends Tokenizer {
       }
       // END Custom object deref extension
 
-      // BEGIN Custom object deref extension
+      // BEGIN Custom object deref descendant extension
       AST derefDescendant = derefDescendantStep();
       if (derefDescendant != null) {
         AST derefExpr = new AST(XQ.DerefDescendantExpr);
@@ -3034,7 +3035,7 @@ public class XQParser extends Tokenizer {
         expr = derefExpr;
         continue;
       }
-      // END Custom object deref extension
+      // END Custom object deref descendant extension
 
       // BEGIN Custom array syntax extension
       AST index = index();

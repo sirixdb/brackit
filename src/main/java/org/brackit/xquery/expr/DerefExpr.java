@@ -34,7 +34,9 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
+import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.ItemSequence;
+import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
@@ -62,26 +64,11 @@ public class DerefExpr implements Expr {
     Sequence sequence = object.evaluate(ctx, tuple);
 
     if (sequence instanceof ItemSequence itemSequence) {
-      final var values = new ArrayList<Item>();
-      final Iter iter = itemSequence.iterate();
-      Item item;
-      while ((item = iter.next()) != null ) {
-        if (!(item instanceof Object object)) {
-          continue;
-        }
+      return getLazySequence(ctx, tuple, itemSequence.iterate());
+    }
 
-        Item itemField = field.evaluateToItem(ctx, tuple);
-        if (itemField == null) {
-          continue;
-        }
-
-        final var sequenceByRecordField = getSequenceByRecordField(object, itemField);
-        if (sequenceByRecordField != null) {
-          values.add(sequenceByRecordField.evaluateToItem(ctx, tuple));
-        }
-      }
-
-      return new ItemSequence(values.toArray(new Item[0]));
+    if (sequence instanceof LazySequence lazySequence) {
+      return getLazySequence(ctx, tuple, lazySequence.iterate());
     }
 
     if (!(sequence instanceof Object object)) {
@@ -93,6 +80,40 @@ public class DerefExpr implements Expr {
       return null;
     }
     return getSequenceByRecordField(object, itemField);
+  }
+
+  private LazySequence getLazySequence(final QueryContext ctx, final Tuple tuple, final Iter iter) {
+    return new LazySequence() {
+      @Override
+      public Iter iterate() {
+        return new BaseIter() {
+          @Override
+          public Item next() {
+            Item item;
+            while ((item = iter.next()) != null) {
+              if (!(item instanceof Object object)) {
+                continue;
+              }
+
+              Item itemField = field.evaluateToItem(ctx, tuple);
+              if (itemField == null) {
+                continue;
+              }
+
+              final var sequenceByRecordField = getSequenceByRecordField(object, itemField);
+              if (sequenceByRecordField != null) {
+                return sequenceByRecordField.evaluateToItem(ctx, tuple);
+              }
+            }
+            return null;
+          }
+
+          @Override
+          public void close() {
+          }
+        };
+      }
+    };
   }
 
   private Sequence getSequenceByRecordField(Object object, Item itemField) {

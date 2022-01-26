@@ -614,6 +614,14 @@ return db:map($fun, 1 to 5)
   }
 
   @Test
+  public void testDerefExpr() throws IOException {
+    final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
+    final var query = json + "=>sirix[]=>revision=>tada[.[[4]][]=>foo[[0]] = true()]";
+    final var result = query(query);
+    assertEquals("[{\"foo\":\"bar\"},{\"baz\":false},\"boo\",{},[{\"foo\":[true,{\"baz\":\"bar\"}]}]]", result);
+  }
+
+  @Test
   public void testDerefExpr1() throws IOException {
     final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
     final var query = json + "=>sirix[[2]]=>revision=>tada[.[][]=>foo[]=>baz eq 'bar']";
