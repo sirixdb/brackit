@@ -41,10 +41,12 @@ jobs:
       - name: Install JDK
         uses: actions/setup-java@v2
         with:
-          distribution: 'adopt'
+          distribution: 'temurin'
           java-version: '17'
           server-id: ossrh
+          server-username: SONATYPE_NEXUS_USERNAME
+          server-password: SONATYPE_NEXUS_PASSWORD
       - name: Maven deploy
-        run: mvn deploy -s settings.xml -DskipTests -B
+        run: mvn deploy -DskipTests --batch-mode
         
         
