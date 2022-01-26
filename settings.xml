@@ -2,7 +2,7 @@
     <server>
         <!-- Maven Central Deployment -->
         <id>ossrh</id>
-        <username>${env.SONATYPE_USERNAME}</username>
-        <password>${env.SONATYPE_PASSWORD}</password>
+        <username>${env.SONATYPE_NEXUS_USERNAME}</username>
+        <password>${env.SONATYPE_NEXUS_PASSWORD}</password>
     </server>
 </servers>
