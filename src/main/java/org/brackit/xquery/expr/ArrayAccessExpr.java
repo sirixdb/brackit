@@ -77,19 +77,31 @@ public final class ArrayAccessExpr implements Expr {
                                ArrayType.ARRAY);
     }
 
-    final Item i = index.evaluateToItem(ctx, tuple);
+    final Item itemIndex = index.evaluateToItem(ctx, tuple);
 
-    if (i == null) {
+    if (itemIndex == null) {
       return getLazySequence(ctx, tuple, array);
     }
 
-    if (!(i instanceof IntNumeric)) {
+    if (!(itemIndex instanceof IntNumeric numericIndex)) {
       throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                "Illegal operand type '%s' where '%s' is expected",
-                               i.itemType(),
+                               itemIndex.itemType(),
                                Type.INR);
     }
-    return ((Array) sequence).at((IntNumeric) i);
+
+    if (numericIndex.intValue() < 0) {
+      final int index = array.len() + numericIndex.intValue();
+
+      if (index < 0) {
+        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                                 "Illegal negative index: " + index);
+      }
+
+      return array.at(array.len() + numericIndex.intValue());
+    }
+
+    return array.at(numericIndex);
   }
 
   private LazySequence getLazySequence(final QueryContext ctx, final Tuple tuple, final Iter iter) {
