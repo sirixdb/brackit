@@ -43,5 +43,6 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: '17'
+          server-id: ossrh
       - name: Maven deploy
         run: mvn clean deploy
