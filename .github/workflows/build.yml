@@ -26,7 +26,7 @@ jobs:
     - name: Test with Maven
       run: mvn clean test
 
-  Deploy:
+  publish:
     name: Deploy to OSSRH and Docker Hub
     if: ${{ github.repository_owner == 'sirixdb' && (github.event_name == 'push' || github.event_name == 'schedule') }}
     needs: Test
@@ -43,7 +43,7 @@ jobs:
           server-username: SONATYPE_NEXUS_USERNAME
           server-password: SONATYPE_NEXUS_PASSWORD
       - name: Maven deploy
-        run: mvn deploy -DskipTests --batch-mode
+        run: mvn --batch-mode deploy -DskipTests 
         env:
           SONATYPE_NEXUS_USERNAME: ${{ secrets.SONATYPE_NEXUS_USERNAME }}
           SONATYPE_NEXUS_PASSWORD: ${{ secrets.SONATYPE_NEXUS_PASSWORD }}
