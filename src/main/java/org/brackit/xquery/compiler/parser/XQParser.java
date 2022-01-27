@@ -3043,13 +3043,10 @@ public class XQParser extends Tokenizer {
         if (index.getType() != XQ.ArrayIndexSlice) {
           AST arrayAccess = new AST(XQ.ArrayAccess);
           arrayAccess.addChild(expr);
-          if (index.getType() == XQ.ArithmeticExpr) {
-            final var indexChild = index.getChild(2);
-
-            if (index.getChild(1).getValue() instanceof Int32 int32Index && int32Index.intValue() == -1
-                && index.getChild(2).getValue() instanceof Int32 int32Index2 && int32Index2.intValue() > 0) {
-              index = new AST(XQ.Int, new Int32(-1 * ((Int32) indexChild.getValue()).intValue()));
-            }
+          if (index.getType() == XQ.ArithmeticExpr && index.getChild(1).getValue() instanceof Int32 int32Index
+              && int32Index.intValue() == -1 && index.getChild(2).getValue() instanceof Int32 int32Index2
+              && int32Index2.intValue() > 0) {
+            index = new AST(XQ.Int, new Int32(-1 * int32Index2.intValue()));
           }
           arrayAccess.addChild(index);
           expr = arrayAccess;
