@@ -108,8 +108,8 @@ public class Doc extends AbstractFunction {
                                    name);
         }
 
-        if (collection instanceof TemporalNodeCollection<?>) {
-          document = ((TemporalNodeCollection<?>) collection).getDocument(revision);
+        if (collection instanceof TemporalNodeCollection<?> temporalNodeCollection) {
+          document = temporalNodeCollection.getDocument(revision);
         } else {
           document = collection.getDocument();
         }

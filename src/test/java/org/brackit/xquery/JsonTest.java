@@ -588,7 +588,7 @@ return db:map($fun, 1 to 5)
   @Test
   public void insertIntoObject1() throws IOException {
     final String query = """
-          insert json {"foo": not(true()), "baz": jn:null()} into {"bar": false()}
+          insert json {"foo": not(true), "baz": null} into {"bar": false}
         """;
     query(query);
   }
