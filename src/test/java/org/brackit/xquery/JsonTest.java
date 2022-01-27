@@ -196,6 +196,16 @@ return db:map($fun, 1 to 5)
   }
 
   @Test
+  public void negativeArrayIndex3() throws IOException {
+    final String query = """
+          let $array := [{"foo": 0},"bar",{"baz":true}]
+          return $array[[-1*-1]]
+        """;
+    final var result = query(query);
+    assertEquals("bar", result);
+  }
+
+  @Test
   public void arrayUnboxing2() throws IOException {
     final String query = """
           let $array := [{"foo": 0}, "bar", {"baz": true()}]
