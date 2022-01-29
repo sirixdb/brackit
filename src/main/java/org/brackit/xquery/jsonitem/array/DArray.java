@@ -25,10 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.array;
-
-import java.util.ArrayList;
-import java.util.List;
+package org.brackit.xquery.jsonitem.array;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
@@ -36,53 +33,36 @@ import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Array;
+import org.magicwerk.brownies.collections.GapList;
+
+import java.util.List;
 
 import static java.util.Objects.checkFromToIndex;
 
 /**
  * @author Sebastian Baechle
+ * @author Johannes Lichtenberger
  */
-public final class DRArray extends AbstractArray {
+public final class DArray extends AbstractArray {
+
   private final List<Sequence> vals;
-  private final int start;
-  private final int end;
 
-  public DRArray(List<Sequence> vals, int start, int end) {
-    if (start < 0 || start > end || start >= vals.size()) {
-      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array start index: %s", start);
-    }
-    if (end > vals.size()) {
-      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array end index: %s", end);
-    }
-    this.vals = vals;
-    this.start = start;
-    this.end = end;
+  public DArray(List<? extends Sequence> vals) {
+    this.vals = new GapList<>(vals);
   }
 
   @Override
-  public Array replaceAt(IntNumeric index, Sequence value) {
-    replace(index.intValue(), value);
-    return this;
-  }
-
-  @Override
-  public Array replaceAt(int index, Sequence value) {
-    if (start + index < 0 || start + index > vals.size()) {
-      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
-    }
-
-    vals.set(start + index, value);
-
-    return this;
+  public List<Sequence> values() {
+    return vals;
   }
 
   @Override
   public Array insert(int index, Sequence value) {
-    if (start + index < 0 || start + index > vals.size() - 1) {
+    if (index < 0 || index > vals.size()) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
     }
 
-    vals.add(start + index, value);
+    vals.add(index, value);
 
     return this;
   }
@@ -95,13 +75,33 @@ public final class DRArray extends AbstractArray {
   }
 
   @Override
-  public Array remove(int index) {
-    if (start + index < 0 || start + index > vals.size() - 1) {
+  public Array replaceAt(int index, Sequence value) {
+    if (index < 0 || index > vals.size() - 1) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
     }
 
-    vals.remove(start + index);
+    vals.set(index, value);
 
+    return this;
+  }
+
+  @Override
+  public Array replaceAt(IntNumeric index, Sequence value) {
+    replace(index.intValue(), value);
+    return this;
+  }
+
+  @Override
+  public Array insert(IntNumeric index, Sequence value) {
+    return insert(index.intValue(), value);
+  }
+
+  @Override
+  public Array remove(int index) {
+    if (index < 0 || index > vals.size() - 1) {
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
+    }
+    vals.remove(index);
     return this;
   }
 
@@ -111,66 +111,38 @@ public final class DRArray extends AbstractArray {
   }
 
   @Override
-  public Array insert(IntNumeric index, Sequence value) {
-    return insert(index.intValue(), value);
+  public Sequence at(IntNumeric index) {
+    return at(index.intValue());
   }
 
   @Override
-  public List<Sequence> values() {
-    final var values = new ArrayList<Sequence>();
-
-    for (int i = 0, length = len(); i < length; i++) {
-      values.add(at(i));
-    }
-
-    return values;
-  }
-
-  @Override
-  public Sequence at(IntNumeric index) throws QueryException {
+  public Sequence at(int i) {
     try {
-      int ii = start + index.intValue();
-      if (ii >= end) {
-        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
-      }
-      return vals.get(ii);
+      return vals.get(i);
     } catch (ArrayIndexOutOfBoundsException e) {
-      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
+      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
     }
   }
 
   @Override
-  public Sequence at(int index) throws QueryException {
-    try {
-      int ii = start + index;
-      if (ii >= end) {
-        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
-      }
-      return vals.get(ii);
-    } catch (ArrayIndexOutOfBoundsException e) {
-      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
-    }
-  }
-
-  @Override
-  public IntNumeric length() throws QueryException {
-    int length = end - start;
+  public IntNumeric length() {
+    final int length = vals.size();
     return (length <= 20) ? Int32.ZERO_TWO_TWENTY[length] : new Int32(length);
   }
 
   @Override
-  public int len() throws QueryException {
-    return end - start;
+  public int len() {
+    return vals.size();
   }
 
   @Override
-  public Array range(IntNumeric from, IntNumeric to) throws QueryException {
+  public Array range(IntNumeric from, IntNumeric to) {
     try {
       checkFromToIndex(from.intValue(), to.intValue(), vals.size());
     } catch (final IndexOutOfBoundsException e) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array indexes: %s", e.getMessage());
     }
 
-    return new DRArray(vals, start + from.intValue(), start + to.intValue());
+    return new DRArray(vals, from.intValue(), to.intValue());
   }
 }

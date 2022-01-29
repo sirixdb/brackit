@@ -31,7 +31,7 @@ import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.XQuery;
-import org.brackit.xquery.array.DArray;
+import org.brackit.xquery.jsonitem.array.DArray;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;

@@ -131,13 +131,16 @@ public final class ArrayAccessExpr implements Expr {
 
                 return nestedIter.next();
               } else {
-                if (!(i instanceof IntNumeric)) {
+                if (!(i instanceof IntNumeric intNumeric)) {
                   throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                            "Illegal operand type '%s' where '%s' is expected",
                                            i.itemType(),
                                            Type.INR);
                 }
-                return array.at((IntNumeric) i).evaluateToItem(ctx, tuple);
+
+                final var index = intNumeric.intValue() >= 0 ? intNumeric.intValue() : array.len() + intNumeric.intValue();
+
+                return array.at(index).evaluateToItem(ctx, tuple);
               }
             }
             return null;

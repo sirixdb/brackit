@@ -25,24 +25,53 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.node.d2linked;
+package org.brackit.xquery.compiler.optimizer.walker;
 
-import org.brackit.xquery.node.AxisTest;
-import org.brackit.xquery.node.SimpleNodeStore;
-import org.brackit.xquery.xdm.node.NodeFactory;
-import org.brackit.xquery.xdm.node.NodeStore;
+import org.brackit.xquery.compiler.AST;
+import org.brackit.xquery.compiler.XQ;
 
 /**
- * @author Sebastian Baechle
+ * Merge descendant-or-self::node/child::X to descendant::X
+ *
+ * @author Johannes Lichtenberger
  */
-public class D2NodeAxisTest extends AxisTest {
+public class ArithmeticExpressionRewriter extends Walker {
   @Override
-  protected NodeStore createStore() throws Exception {
-    return new SimpleNodeStore() {
-      @Override
-      protected NodeFactory<?> getNodeFactory() {
-        return new D2NodeFactory();
+  protected AST visit(AST node) {
+    if (node.getType() != XQ.PathExpr) {
+      return node;
+    }
+
+    for (int i = 0; i < node.getChildCount(); i++) {
+      AST child = node.getChild(i);
+      if ((isDescendantOrSelfNodeStepWithoutPredicate(child)) && (i + 1 < node.getChildCount())) {
+        AST nextStep = node.getChild(i + 1);
+
+        if (isChildStepWithoutPredicate(nextStep)) {
+          AST newStep = new AST(XQ.StepExpr);
+          AST axis = new AST(XQ.AxisSpec);
+          axis.addChild(new AST(XQ.DESCENDANT));
+          newStep.addChild(axis);
+          newStep.addChild(nextStep.getChild(1).copyTree());
+          node.replaceChild(i, newStep);
+          node.deleteChild(i + 1);
+
+          snapshot();
+        }
       }
-    };
+    }
+
+    return node;
+  }
+
+  private boolean isChildStepWithoutPredicate(AST child) {
+    return ((child.getType() == XQ.StepExpr) && (child.getChild(0).getType() == XQ.AxisSpec) && (
+        child.getChild(0).getChild(0).getType() == XQ.CHILD) && (child.getChildCount() == 2)); // no predicate
+  }
+
+  private boolean isDescendantOrSelfNodeStepWithoutPredicate(AST child) {
+    return ((child.getType() == XQ.StepExpr) && (child.getChild(0).getType() == XQ.AxisSpec) && (
+        child.getChild(0).getChild(0).getType() == XQ.DESCENDANT_OR_SELF) && (child.getChild(1).getType()
+        == XQ.KindTestAnyKind) && (child.getChildCount() == 2)); // no predicate
   }
 }

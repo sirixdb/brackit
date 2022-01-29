@@ -31,14 +31,12 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.array.DArray;
+import org.brackit.xquery.jsonitem.array.DArray;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.util.ExprUtil;
 import org.brackit.xquery.xdm.*;
 import org.brackit.xquery.xdm.json.Array;
 import org.magicwerk.brownies.collections.GapList;
-
-import java.util.List;
 
 /**
  * @author Sebastian Baechle

@@ -25,82 +25,35 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.array;
+package org.brackit.xquery.jsonitem.object;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.sequence.BaseIter;
-import org.brackit.xquery.sequence.FlatteningSequence;
 import org.brackit.xquery.xdm.AbstractItem;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.json.Array;
-import org.brackit.xquery.xdm.type.ArrayType;
+import org.brackit.xquery.xdm.json.Object;
 import org.brackit.xquery.xdm.type.ItemType;
-
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.List;
+import org.brackit.xquery.xdm.type.ObjectType;
 
 /**
  * @author Sebastian Baechle
  */
-public abstract class AbstractArray extends AbstractItem implements Array {
+public abstract class AbstractObject extends AbstractItem implements Object {
 
   @Override
   public ItemType itemType() throws QueryException {
-    return ArrayType.ARRAY;
+    return ObjectType.OBJECT;
   }
 
   @Override
   public Atomic atomize() throws QueryException {
-    throw new QueryException(ErrorCode.ERR_ITEM_HAS_NO_TYPED_VALUE, "The atomized value of array items is undefined");
+    throw new QueryException(ErrorCode.ERR_ITEM_HAS_NO_TYPED_VALUE, "The atomized value of record items is undefined");
   }
 
   @Override
   public boolean booleanValue() throws QueryException {
     throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-                             "Effective boolean value of array items is undefined.");
+                             "Effective boolean value of record items is undefined.");
   }
 
-  @Override
-  public Iter iterate() {
-    return new BaseIter() {
-      private List<Sequence> sequences;
-      private final Deque<Item> flatteningSequences = new ArrayDeque<>();
-
-      private int index;
-
-      @Override
-      public Item next() {
-        if (sequences == null) {
-          sequences = values();
-        } else if (!flatteningSequences.isEmpty()) {
-          return flatteningSequences.removeFirst();
-        }
-
-        if (index < sequences.size()) {
-          final var sequence = sequences.get(index++);
-          if (sequence instanceof FlatteningSequence) {
-            try (final var iter = sequence.iterate()) {
-              Item item;
-              while ((item = iter.next()) != null) {
-                flatteningSequences.addLast(item);
-              }
-              return flatteningSequences.removeFirst();
-            }
-          }
-          return (Item) sequence;
-        }
-
-        return null;
-      }
-
-      @Override
-      public void close() {
-      }
-    };
-  }
 }

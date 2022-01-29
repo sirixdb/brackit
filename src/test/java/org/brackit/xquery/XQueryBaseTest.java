@@ -27,11 +27,7 @@
  */
 package org.brackit.xquery;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -41,7 +37,7 @@ import java.nio.file.Paths;
 import java.util.Random;
 
 import org.brackit.xquery.atomic.DTD;
-import org.brackit.xquery.node.SimpleStore;
+import org.brackit.xquery.node.SimpleNodeStore;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.util.serialize.SubtreePrinter;
@@ -125,7 +121,7 @@ public class XQueryBaseTest {
   }
 
   protected NodeStore createStore() throws Exception {
-    return new SimpleStore();
+    return new SimpleNodeStore();
   }
 
   protected QueryContext createContext() throws Exception {

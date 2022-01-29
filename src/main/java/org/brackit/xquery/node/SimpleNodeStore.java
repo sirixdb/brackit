@@ -48,7 +48,7 @@ import java.util.Map;
 /**
  * @author Sebastian Baechle
  */
-public class SimpleStore implements NodeStore {
+public class SimpleNodeStore implements NodeStore {
   private final Map<String, NodeCollection<?>> docs = new HashMap<>();
 
   @Override

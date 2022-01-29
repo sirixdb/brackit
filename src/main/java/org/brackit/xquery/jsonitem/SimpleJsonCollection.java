@@ -1,6 +1,6 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
+ * Copyright (c) 2011-2022, Brackit Project Team <info@brackit.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,57 +25,57 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.xdm.json;
+
+
+package org.brackit.xquery.jsonitem;
+
+import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.json.JsonItem;
 
 import java.nio.file.Path;
 
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.OperationNotSupportedException;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.StructuredItem;
-import org.brackit.xquery.xdm.StructuredItemCollection;
-
 /**
- * @param <E>
- * @author Sebastian Baechle
+ * @author Johannes Lichtenberger
  */
-public interface JsonCollection<E extends StructuredItem> extends StructuredItemCollection<E> {
+// TODO: Implement methods
+public final class SimpleJsonCollection extends AbstractJsonItemCollection<JsonItem> {
+  public SimpleJsonCollection(String name) {
+    super(name);
+  }
 
   @Override
-  String getName();
+  public void delete() throws DocumentException {
+
+  }
 
   @Override
-  void delete() throws DocumentException;
+  public void remove(long documentID) {
+
+  }
 
   @Override
-  void remove(long documentID);
+  public JsonItem getDocument() {
+    return null;
+  }
 
   @Override
-  E getDocument();
+  public Stream<? extends JsonItem> getDocuments() {
+    return null;
+  }
 
   @Override
-  Stream<? extends E> getDocuments();
-
-  /**
-   * Add a file to the JSON collection.
-   *
-   * @param file the file to add to the collection
-   * @return the JSON root
-   * @throws OperationNotSupportedException if the operation is not supported
-   * @throws DocumentException              if anything else went wrong.
-   */
-  E add(Path file);
-
-  /**
-   * Add a file to the JSON collection.
-   *
-   * @param json the JSON string to add to the collection
-   * @return the JSON root
-   * @throws OperationNotSupportedException if the operation is not supported
-   * @throws DocumentException              if anything else went wrong.
-   */
-  E add(String json);
+  public JsonItem add(Path file) {
+    return null;
+  }
 
   @Override
-  public long getDocumentCount();
+  public JsonItem add(String json) {
+    return null;
+  }
+
+  @Override
+  public long getDocumentCount() {
+    return 0;
+  }
 }

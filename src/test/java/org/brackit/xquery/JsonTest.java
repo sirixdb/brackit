@@ -27,11 +27,11 @@
  */
 package org.brackit.xquery;
 
-import org.brackit.xquery.array.DArray;
+import org.brackit.xquery.jsonitem.array.DArray;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.Null;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.object.ArrayObject;
+import org.brackit.xquery.jsonitem.object.ArrayObject;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Sequence;
 import org.junit.Ignore;
@@ -54,6 +54,20 @@ import static org.junit.Assert.assertEquals;
 public final class JsonTest extends XQueryBaseTest {
 
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
+
+  @Test
+  public void ddd() throws IOException {
+    final String query = """
+        let $array := [true,false,"true",{"foo":["tada",{"baz":["yes","no",null],"bar": null, "foobar":"text"},{"baz":true}]}]
+        let $sequence := $array[]=>foo[[1]]{baz,foobar}
+        let $resultArray := for $item in bit:values($sequence)
+                            where $item instance of array()
+                            return $item
+        return $resultArray
+        """;
+    final var result = query(query);
+    assertEquals("[\"yes\",\"no\",null]", result);
+  }
 
   @Test
   public void join() throws IOException {
@@ -203,6 +217,24 @@ return db:map($fun, 1 to 5)
         """;
     final var result = query(query);
     assertEquals("bar", result);
+  }
+
+  @Test
+  public void spreadOperator() throws IOException {
+    final String query = """
+          [=(1 to 5)]
+        """;
+    final var result = query(query);
+    assertEquals("[1,2,3,4,5]", result);
+  }
+
+  @Test
+  public void derefExprWithNegativeArrayIndexExpr() throws IOException {
+    final String query = """
+          [true,false,"true",{"foo":["tada",{"baz":"yes"},{"baz":true}]}][]=>foo[[-1]]=>baz
+        """;
+    final var result = query(query);
+    assertEquals("true", result);
   }
 
   @Test
@@ -642,6 +674,16 @@ return db:map($fun, 1 to 5)
           replace json value of ["foo", 0, 1][[2]] with "bar"
         """;
     query(query);
+  }
+
+  @Test
+  public void testNegativeArrayIndex() throws IOException {
+    final var query = """
+          let $array := [true,false,"true",{"foo":["tada",{"baz":"yes"},{"baz":true}]}]
+          return $array[]=>foo[[-1]]=>baz
+        """;
+    final var result = query(query);
+    assertEquals("true", result);
   }
 
   @Ignore

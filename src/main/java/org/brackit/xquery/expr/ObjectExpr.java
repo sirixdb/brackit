@@ -38,7 +38,7 @@ import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.Bits;
-import org.brackit.xquery.object.ArrayObject;
+import org.brackit.xquery.jsonitem.object.ArrayObject;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;

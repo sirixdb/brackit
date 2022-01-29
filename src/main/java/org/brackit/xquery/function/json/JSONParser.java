@@ -41,10 +41,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.array.DArray;
+import org.brackit.xquery.jsonitem.array.DArray;
 import org.brackit.xquery.atomic.*;
 import org.brackit.xquery.compiler.parser.Tokenizer;
-import org.brackit.xquery.object.ArrayObject;
+import org.brackit.xquery.jsonitem.object.ArrayObject;
 import org.brackit.xquery.util.serialize.StringSerializer;
 import org.brackit.xquery.xdm.Item;
 

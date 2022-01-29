@@ -37,7 +37,7 @@ import org.brackit.xquery.atomic.Date;
 import org.brackit.xquery.atomic.DateTime;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Time;
-import org.brackit.xquery.node.SimpleStore;
+import org.brackit.xquery.node.SimpleNodeStore;
 import org.brackit.xquery.node.d2linked.D2NodeFactory;
 import org.brackit.xquery.update.UpdateList;
 import org.brackit.xquery.update.op.UpdateOp;
@@ -84,7 +84,7 @@ public class BrackitQueryContext implements QueryContext {
 
   public BrackitQueryContext() {
     this.nodeFactory = FACTORY;
-    this.nodeStore = new SimpleStore();
+    this.nodeStore = new SimpleNodeStore();
   }
 
   public BrackitQueryContext(NodeStore store) {
