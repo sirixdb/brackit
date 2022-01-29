@@ -39,8 +39,7 @@ import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.node.Node;
 
 /**
- * Abstract base for all constructed nodes that may have children
- * <<<<<<< HEAD
+ * Abstract base for all constructed nodes that may have children.
  *
  * @author Sebastian Baechle
  */
