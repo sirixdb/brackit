@@ -36,18 +36,18 @@ import org.brackit.xquery.xdm.StructuredItemStore;
  */
 public interface NodeStore extends StructuredItemStore {
   @Override
-  public NodeCollection<?> lookup(String name);
+  NodeCollection<?> lookup(String name);
 
   @Override
-  public NodeCollection<?> create(String name);
+  NodeCollection<?> create(String name);
 
-  public NodeCollection<?> create(String name, SubtreeParser parser);
+  NodeCollection<?> create(String name, SubtreeParser parser);
 
-  public NodeCollection<?> create(String name, Stream<SubtreeParser> parsers);
-
-  @Override
-  public void drop(String name);
+  NodeCollection<?> create(String name, Stream<SubtreeParser> parsers);
 
   @Override
-  public void makeDir(String path);
+  void drop(String name);
+
+  @Override
+  void makeDir(String path);
 }

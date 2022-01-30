@@ -56,7 +56,7 @@ import org.brackit.xquery.xdm.node.TemporalNodeCollection;
  * @author Johannes Lichtenberger
  */
 public class Doc extends AbstractFunction {
-  private boolean retrieve;
+  private final boolean retrieve;
 
   public Doc(final QNm name, final boolean retrieve, final Signature signature) {
     super(name, signature, true);
