@@ -1,6 +1,6 @@
 # Welcome to Brackit!
 
-Brackit is a flexible JSONiq for XQuery-based query engine developed during Dr. Sebastian Bächles time as a PhD student at the TU Kaiserslautern in the context of their research in the field of query processing for semi-structured data. The system features a fast runtime and a flexible compiler backend, which is, e.g., able to rewrite queries for optimized join processing and efficient aggregation operations.
+Brackit is a flexible JSONiq for XQuery-based query processor developed during Dr. Sebastian Bächles time as a PhD student at the TU Kaiserslautern in the context of their research in the field of query processing for semi-structured data. The system features a fast runtime and a flexible compiler backend, which is, e.g., able to rewrite queries for optimized join processing and efficient aggregation operations. It's either usable as an in-memory ad-hoc query engine or as the query engine of a data store. The data store itself can add sophisticated optimizations in different stages of the query processor. Thus, Brackit already bundles common optimizations and a data store can add further optimizations for instance for index matching.
 
 Lately, Johannes Lichtenberger has added many optional temporal enhancements for temporal data stores such as SirixDB. Furthermore, JSON is now a first-class citizen. Brackit supports a slightly different syntax but the same data model as JSONiq and all update primitives described in the JSONiq specification. Brackit also supports Python-like array slices.
 
