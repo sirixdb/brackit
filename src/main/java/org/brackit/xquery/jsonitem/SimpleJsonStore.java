@@ -57,22 +57,12 @@ public final class SimpleJsonStore implements JsonStore {
   }
 
   @Override
-  public JsonCollection<?> create(String collName, String optResName, Path path) {
-    return null;
-  }
-
-  @Override
   public JsonCollection<?> createFromPaths(String name, Stream<Path> parsers) {
     return null;
   }
 
   @Override
   public JsonCollection<?> create(String name, String json) {
-    return null;
-  }
-
-  @Override
-  public JsonCollection<?> create(String collName, String optResName, String json) {
     return null;
   }
 
