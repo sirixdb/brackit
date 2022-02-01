@@ -39,7 +39,7 @@ import org.junit.Test;
  * @author Sebastian Baechle
  */
 public class IfExprTest {
-  QueryContext ctx = new BrackitQueryContext(null);
+  QueryContext ctx = new BrackitQueryContext(null, null);
 
   @Test
   public void emptyCondition() throws Exception {

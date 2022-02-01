@@ -29,53 +29,76 @@
 
 package org.brackit.xquery.jsonitem;
 
+import org.brackit.xquery.function.json.JSONParser;
+import org.brackit.xquery.node.stream.ArrayStream;
 import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.xdm.OperationNotSupportedException;
 import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.json.JsonItem;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 
 /**
  * @author Johannes Lichtenberger
  */
 // TODO: Implement methods
 public final class SimpleJsonCollection extends AbstractJsonItemCollection<JsonItem> {
-  public SimpleJsonCollection(String name) {
+  private JsonItem[] docs;
+  public SimpleJsonCollection(String name, JsonItem doc) {
     super(name);
+    this.docs = new JsonItem[] { doc };
+  }
+
+  public SimpleJsonCollection(String name, JsonItem... docs) {
+    super(name);
+    this.docs = docs;
   }
 
   @Override
   public void delete() throws DocumentException {
-
+    throw new OperationNotSupportedException();
   }
 
   @Override
   public void remove(long documentID) {
-
+    throw new OperationNotSupportedException();
   }
 
   @Override
   public JsonItem getDocument() {
-    return null;
+    if (docs.length == 1) {
+      return docs[0];
+    }
+    throw new DocumentException("Illegal access to non-singular collection");
   }
 
   @Override
   public Stream<? extends JsonItem> getDocuments() {
-    return null;
+    return new ArrayStream<>(docs);
   }
 
   @Override
   public JsonItem add(Path file) {
-    return null;
+    throw new OperationNotSupportedException();
   }
 
   @Override
   public JsonItem add(String json) {
-    return null;
+    final var doc = (JsonItem) new JSONParser(json).parse();
+    this.docs = Arrays.copyOf(docs, docs.length + 1);
+    this.docs[docs.length - 1] = doc;
+    return doc;
+  }
+
+  public JsonItem add(JsonItem json) {
+    this.docs = Arrays.copyOf(docs, docs.length + 1);
+    this.docs[docs.length - 1] = json;
+    return json;
   }
 
   @Override
   public long getDocumentCount() {
-    return 0;
+    return docs.length;
   }
 }

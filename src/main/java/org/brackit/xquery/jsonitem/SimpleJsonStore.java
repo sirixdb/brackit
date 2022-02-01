@@ -31,53 +31,102 @@
 package org.brackit.xquery.jsonitem;
 
 import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.function.json.JSONParser;
+import org.brackit.xquery.util.io.URIHandler;
+import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.xdm.OperationNotSupportedException;
 import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.json.JsonCollection;
+import org.brackit.xquery.xdm.json.JsonItem;
 import org.brackit.xquery.xdm.json.JsonStore;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Johannes Lichtenberger
  */
 public final class SimpleJsonStore implements JsonStore {
+  private final Map<String, JsonCollection<?>> docs = new HashMap<>();
   @Override
   public JsonCollection<?> lookup(String name) {
-    return null;
+    JsonCollection<?> coll = docs.get(name);
+    if (coll != null) {
+      return coll;
+    }
+    try {
+      InputStream in = URIHandler.getInputStream(URI.create(name));
+      coll = create(name, new String(in.readAllBytes(), StandardCharsets.UTF_8));
+      return coll;
+    } catch (IOException e) {
+      throw new DocumentException(e, "Collection %s not found", name);
+    }
   }
 
   @Override
   public JsonCollection<?> create(String name) {
-    return null;
+    return create(name, name);
   }
 
   @Override
   public JsonCollection<?> create(String name, Path path) {
-    return null;
+    return create(name, path.toUri().toString());
   }
 
   @Override
-  public JsonCollection<?> createFromPaths(String name, Stream<Path> parsers) {
-    return null;
+  public JsonCollection<?> createFromPaths(String name, Stream<Path> paths) {
+    ArrayList<JsonItem> jsonDocs = new ArrayList<>();
+    try (paths) {
+      Path path;
+      while ((path = paths.next()) != null) {
+        try {
+          InputStream in = URIHandler.getInputStream(path.toUri());
+          jsonDocs.add((JsonItem) new JSONParser(new String(in.readAllBytes(), StandardCharsets.UTF_8)).parse());
+        } catch (IOException e) {
+          throw new DocumentException(e, "Collection %s not found", name);
+        }
+      }
+    }
+    var coll = new SimpleJsonCollection(name, jsonDocs.toArray(new JsonItem[0]));
+    docs.put(name, coll);
+    return coll;
   }
 
   @Override
   public JsonCollection<?> create(String name, String json) {
-    return null;
+    JsonItem doc = (JsonItem) new JSONParser(json).parse();
+    var coll = new SimpleJsonCollection(name, doc);
+    docs.put(name, coll);
+    return coll;
   }
 
   @Override
-  public JsonCollection<?> createFromJsonStrings(String name, Stream<Str> json) {
-    return null;
+  public JsonCollection<?> createFromJsonStrings(String name, Stream<Str> jsons) {
+    ArrayList<JsonItem> jsonDocs = new ArrayList<>();
+    try (jsons) {
+      Str json;
+      while ((json = jsons.next()) != null) {
+        jsonDocs.add((JsonItem) new JSONParser(json.stringValue()).parse());
+      }
+    }
+    var coll = new SimpleJsonCollection(name, jsonDocs.toArray(new JsonItem[0]));
+    docs.put(name, coll);
+    return coll;
   }
 
   @Override
   public void drop(String name) {
-
+    docs.remove(name);
   }
 
   @Override
   public void makeDir(String path) {
-
+    throw new OperationNotSupportedException();
   }
 }
