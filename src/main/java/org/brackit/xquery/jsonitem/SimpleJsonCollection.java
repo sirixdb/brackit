@@ -44,7 +44,7 @@ import java.util.Arrays;
  */
 // TODO: Implement methods
 public final class SimpleJsonCollection extends AbstractJsonItemCollection<JsonItem> {
-  protected JsonItem[] docs;
+  private JsonItem[] docs;
   public SimpleJsonCollection(String name, JsonItem doc) {
     super(name);
     this.docs = new JsonItem[] { doc };
@@ -57,23 +57,25 @@ public final class SimpleJsonCollection extends AbstractJsonItemCollection<JsonI
 
   @Override
   public void delete() throws DocumentException {
-
+    throw new OperationNotSupportedException();
   }
 
   @Override
   public void remove(long documentID) {
-
+    throw new OperationNotSupportedException();
   }
 
   @Override
   public JsonItem getDocument() {
-    return null;
+    if (docs.length == 1) {
+      return docs[0];
+    }
+    throw new DocumentException("Illegal access to non-singular collection");
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public Stream<? extends JsonItem> getDocuments() {
-    return new ArrayStream(docs);
+    return new ArrayStream<>(docs);
   }
 
   @Override

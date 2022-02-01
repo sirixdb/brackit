@@ -39,7 +39,7 @@ import org.junit.Test;
  * @author Sebastian Baechle
  */
 public class SequenceExprTest {
-  QueryContext ctx = new BrackitQueryContext(null);
+  QueryContext ctx = new BrackitQueryContext(null, null);
 
   @Test
   public void simpleSequence() throws Exception {

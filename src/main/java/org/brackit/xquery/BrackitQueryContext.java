@@ -37,6 +37,7 @@ import org.brackit.xquery.atomic.Date;
 import org.brackit.xquery.atomic.DateTime;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Time;
+import org.brackit.xquery.jsonitem.SimpleJsonStore;
 import org.brackit.xquery.node.SimpleNodeStore;
 import org.brackit.xquery.node.d2linked.D2NodeFactory;
 import org.brackit.xquery.update.UpdateList;
@@ -62,6 +63,8 @@ public class BrackitQueryContext implements QueryContext {
 
   private final NodeStore nodeStore;
 
+  private final JsonStore jsonStore;
+
   private UpdateList updates;
 
   private Item extCtxItem;
@@ -85,11 +88,25 @@ public class BrackitQueryContext implements QueryContext {
   public BrackitQueryContext() {
     this.nodeFactory = FACTORY;
     this.nodeStore = new SimpleNodeStore();
+    this.jsonStore = new SimpleJsonStore();
   }
 
   public BrackitQueryContext(NodeStore store) {
     this.nodeFactory = FACTORY;
     this.nodeStore = store;
+    this.jsonStore = new SimpleJsonStore();
+  }
+
+  public BrackitQueryContext(JsonStore store) {
+    this.nodeFactory = FACTORY;
+    this.nodeStore = new SimpleNodeStore();
+    this.jsonStore = store;
+  }
+
+  public BrackitQueryContext(NodeStore nodeStore, JsonStore jsonStore) {
+    this.nodeFactory = FACTORY;
+    this.nodeStore = nodeStore;
+    this.jsonStore = jsonStore;
   }
 
   @Override
@@ -210,6 +227,6 @@ public class BrackitQueryContext implements QueryContext {
 
   @Override
   public JsonStore getJsonItemStore() {
-    return null;
+    return jsonStore;
   }
 }
