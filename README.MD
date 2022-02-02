@@ -5,7 +5,7 @@ Brackit is a flexible JSONiq for XQuery-based query processor developed during D
 Lately, Johannes Lichtenberger has added many optional temporal enhancements for temporal data stores such as SirixDB. Furthermore, JSON is now a first-class citizen. Brackit supports a slightly different syntax but the same data model as JSONiq and all update primitives described in the JSONiq specification. Brackit also supports Python-like array slices.
 
 ## Community
-We have a [Discord server](https://discord.gg/v2teUra7).
+We have a [Discord server](https://discord.gg/AstddxGxjP).
 
 ## Feature
 
