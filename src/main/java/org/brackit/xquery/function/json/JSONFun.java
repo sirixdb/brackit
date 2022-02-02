@@ -29,6 +29,8 @@ package org.brackit.xquery.function.json;
 
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.module.Functions;
+import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.xdm.type.*;
 
 /**
  * @author Sebastian Baechle
@@ -44,12 +46,29 @@ public class JSONFun {
 
   public static final Keys KEYS_FUNC = new Keys();
 
+  public static final Doc DOC_FUNC = new Doc(new QNm(JSONFun.JSON_NSURI, JSONFun.JSON_PREFIX, "doc"),
+          true,
+          new Signature(new SequenceType(AnyJsonItemType.ANY_JSON_ITEM, Cardinality.ZeroOrOne),
+                  new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne)));
+  public static final Doc DOC_FUNC_2 = new Doc(new QNm(JSONFun.JSON_NSURI, JSONFun.JSON_PREFIX, "doc"),
+          true,
+          new Signature(new SequenceType(DocumentType.DOC, Cardinality.ZeroOrOne),
+                  new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+                  new SequenceType(AtomicType.INT, Cardinality.ZeroOrOne)));
+  public static final Doc DOC_AVAILABLE_FUNC = new Doc(new QNm(JSONFun.JSON_NSURI, JSONFun.JSON_PREFIX, "doc-available"),
+          false,
+          new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
+                  new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne)));
+
   public static void register() {
-    // dummy function to cause static block
-    // to be executed exactly once
+      // dummy function to cause static block
+      // to be executed exactly once
   }
 
   static {
     Functions.predefine(KEYS_FUNC);
+    Functions.predefine(DOC_FUNC);
+    Functions.predefine(DOC_FUNC_2);
+    Functions.predefine(DOC_AVAILABLE_FUNC);
   }
 }
