@@ -157,31 +157,37 @@ public class JSONParser extends Tokenizer {
   private Numeric number() throws QueryException, TokenizerException {
     Token la = laS();
     if (la != null) {
-      Token la2 = laInteger(la, true);
+      consume(la);
+      Token minus = laSkipWS("-");
+      if (minus != null) {
+        consume(minus);
+      }
+      Token la2 = laInteger(true);
       if (la2 != null) {
-        consume(la);
         consume(la2);
-        return Int32.parse(la2.string());
-      } else if ((la2 = laDecimal(la, true)) != null) {
-        consume(la);
+        return Int32.parse(minus == null ? la2.string() : "-" + la2.string());
+      } else if ((la2 = laDecimal( true)) != null) {
         consume(la2);
-        return new Dec(la2.string());
-      } else if ((la2 = laDouble(la, true)) != null) {
-        consume(la);
+        return new Dec(minus == null ? la2.string() : "-" + la2.string());
+      } else if ((la2 = laDouble( true)) != null) {
         consume(la2);
-        return new Dbl(la2.string());
+        return new Dbl(minus == null ? la2.string() : "-" + la2.string());
       }
     } else {
+      Token minus = laSkipWS("-");
+      if (minus != null) {
+        consume(minus);
+      }
       la = laInteger(true);
       if (la != null) {
         consume(la);
-        return Int32.parse(la.string());
+        return Int32.parse(minus == null ? la.string() : "-" + la.string());
       } else if ((la = laDecimal(true)) != null) {
         consume(la);
-        return new Dec(la.string());
+        return new Dec(minus == null ? la.string() : "-" + la.string());
       } else if ((la = laDouble(true)) != null) {
         consume(la);
-        return new Dbl(la.string());
+        return new Dbl(minus == null ? la.string() : "-" + la.string());
       }
     }
     return null;

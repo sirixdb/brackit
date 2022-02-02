@@ -245,6 +245,25 @@ public final class PathParser extends Tokenizer {
     }
   }
 
+  protected String scanString(int pos, char escapeChar) {
+    int e = pos;
+    int s = e;
+    int len = 0;
+    char c;
+    while (e < getEnd()) {
+      c = getInput()[e++];
+      if (c == escapeChar) {
+        break;
+      } else {
+        len++;
+      }
+    }
+    if (len == 0) {
+      return null;
+    }
+    return new String(getInput(), s, len);
+  }
+
   /**
    * Resolves prefixed named steps like 'bit:email' against the namespace
    * declarations in the preamble (if any).

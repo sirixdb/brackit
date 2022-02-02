@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.util.path.PathParser.*;
 
 /**
  * General purpose representation of a path or a path expression.

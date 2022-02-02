@@ -840,7 +840,7 @@ public class Tokenizer {
     return laString(token.end, cond);
   }
 
-  private Token laString(int pos, boolean cond) throws TokenizerException {
+  protected Token laString(int pos, boolean cond) throws TokenizerException {
     Token begin = la(pos, "'");
     if (begin != null) {
       String s = scanAposStringLiteral(begin.end, cond);
@@ -1096,7 +1096,66 @@ public class Tokenizer {
     return new String(input, s, len);
   }
 
-  private String scanPredefEntityRef(int pos, boolean cond) throws TokenizerException {
+  private String scanJsonPredefCharRef(int pos, boolean cond) throws TokenizerException {
+    int e = pos;
+    if (e + 1 >= end) {
+      return null;
+    }
+    if ((input[e++] != '\\')) {
+      return null;
+    }
+    if (input[e] == '\\') {
+      lastScanEnd = pos + 2;
+      return "\\\\";
+    }
+
+    if (input[e] == '/') {
+      lastScanEnd = pos + 2;
+      return "\\/";
+    }
+
+    if (input[e] == '"') {
+      lastScanEnd = pos + 2;
+      return "\\\"";
+    }
+
+    if (input[e] == '\'') {
+      lastScanEnd = pos + 2;
+      return "\\'";
+    }
+
+    if (input[e] == 'b') {
+      lastScanEnd = pos + 2;
+      return "\\b";
+    }
+
+    if (input[e] == 'f') {
+      lastScanEnd = pos + 2;
+      return "\\f";
+    }
+
+    if (input[e] == 'n') {
+      lastScanEnd = pos + 2;
+      return "\\n";
+    }
+
+    if (input[e] == 'r') {
+      lastScanEnd = pos + 2;
+      return "\\r";
+    }
+
+    if (input[e] == 't') {
+      lastScanEnd = pos + 2;
+      return "\\t";
+    }
+
+    //		if (cond) {
+    //			return null;
+    //		}
+    throw new TokenizerException("Illegal JSONPredefinedCharRef '%s': %s", new String(input, pos, 2), paraphrase());
+  }
+
+  protected String scanPredefEntityRef(int pos, boolean cond) throws TokenizerException {
     int e = pos;
     if (e + 1 >= end) {
       return null;
@@ -1135,13 +1194,60 @@ public class Tokenizer {
         return "\"";
       }
     }
+
     //		if (cond) {
     //			return null;
     //		}
     throw new TokenizerException("Illegal PredefinedEntityRef '%s': %s", new String(input, pos, 6), paraphrase());
   }
 
-  private String scanCharRef(int pos, boolean cond) throws TokenizerException {
+  private String scanJsonCharRef(int pos, boolean cond) throws TokenizerException {
+    int e = pos;
+    if (e + 1 >= end) {
+      return null;
+    }
+    if ((input[e++] != '\\') || (input[e++] != 'u')) {
+      return null;
+    }
+    if (end - e <= 3) {
+      String charRef = new String(input, pos, Math.min(4, end - pos));
+      throw new TokenizerException("Illegal Unicode character reference '%s' %s: '%s'", charRef, paraphrase());
+    }
+    int len = 0;
+    int s = e;
+    char c;
+    int radix = 10;
+    while (e < end && len < 4) {
+      c = input[e++];
+      if (!((('0' <= c) && (c <= '9')))) {
+        if ((c != ';') || (len == 0)) {
+          return null;
+        }
+        break;
+      }
+      len++;
+    }
+    String tmp = new String(input, s, len);
+    BigInteger charRef;
+    try {
+      charRef = new BigInteger(tmp, radix);
+    } catch (NumberFormatException e1) {
+      //			if (cond) {
+      //				return null;
+      //			}
+      throw new TokenizerException("Illegal Unicode character reference '%s' %s: '%s'", tmp, paraphrase());
+    }
+    if ((charRef.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0) || (!XMLChar.isChar(charRef.intValue()))) {
+      //			if (cond) {
+      //				return null;
+      //			}
+      throw new IllegalCharRefException(tmp);
+    }
+    lastScanEnd = s + len + 1;
+    return String.valueOf(charRef.intValue());
+  }
+
+  protected String scanCharRef(int pos, boolean cond) throws TokenizerException {
     int e = pos;
     if (e + 1 >= end) {
       return null;
@@ -1207,14 +1313,18 @@ public class Tokenizer {
     return end;
   }
 
-  protected String scanString(int pos, char escapeChar) {
+  protected char[] getInput() {
+    return input;
+  }
+
+  protected String scanString(int pos, char escapeChar, boolean isXml) {
     int e = pos;
     int s = e;
     int len = 0;
     char c;
     while (e < end) {
       c = input[e++];
-      if ((c == escapeChar) || (c == '&')) {
+      if ((c == escapeChar) || (isXml && c == '&') || (!isXml && c == '\\')) {
         break;
       } else {
         len++;
@@ -1235,7 +1345,7 @@ public class Tokenizer {
       String s = scanPredefEntityRef(spos, cond);
       s = (s != null) ? s : scanCharRef(spos, cond);
       s = (s != null) ? s : scanEscape(spos, '\'', "'");
-      s = (s != null) ? s : scanString(spos, '\'');
+      s = (s != null) ? s : scanString(spos, '\'', true);
       if (s != null) {
         buf.append(s);
         spos = lastScanEnd;
@@ -1251,10 +1361,10 @@ public class Tokenizer {
     StringBuilder buf = new StringBuilder();
     int spos = pos;
     while (true) {
-      String s = scanPredefEntityRef(spos, cond);
-      s = (s != null) ? s : scanCharRef(spos, cond);
+      String s = scanJsonPredefCharRef(spos, cond);
+      s = (s != null) ? s : scanJsonCharRef(spos, cond);
       s = (s != null) ? s : scanEscape(spos, '"', "\"");
-      s = (s != null) ? s : scanString(spos, '"');
+      s = (s != null) ? s : scanString(spos, '"', false);
       if (s != null) {
         buf.append(s);
         spos = lastScanEnd;
@@ -1265,7 +1375,7 @@ public class Tokenizer {
     return buf.toString();
   }
 
-  private String scanEscape(int pos, char escapeChar, String escapeString) {
+  protected String scanEscape(int pos, char escapeChar, String escapeString) {
     int s = pos;
     int e = s;
     if ((end - e < 2) || ((input[e++] != escapeChar) || (input[e++] != escapeChar))) {

@@ -27,7 +27,9 @@
  */
 package org.brackit.xquery.compiler.parser;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
@@ -1825,8 +1827,28 @@ public class XQParser extends Tokenizer {
     }
   }
 
-  private AST comparisonExpr() throws TokenizerException {
+  private AST stringConcatExpr() throws TokenizerException {
     AST first = rangeExpr();
+    if (first == null) {
+      return first;
+    }
+    final List<AST> concatAsts = new ArrayList<>();
+    concatAsts.add(first);
+    while (attemptSymSkipWS("||")) {
+      concatAsts.add(rangeExpr());
+    }
+
+    if (concatAsts.size() == 1) {
+      return first;
+    }
+
+    final var stringConcatExpr = new AST(XQ.StringConcatExpr);
+    stringConcatExpr.addChildren(concatAsts.toArray(new AST[0]));
+    return stringConcatExpr;
+  }
+
+  private AST comparisonExpr() throws TokenizerException {
+    AST first = stringConcatExpr();
     if (first == null) {
       return null;
     }
@@ -1947,15 +1969,33 @@ public class XQParser extends Tokenizer {
         return first;
       }
 
-      if ((!attemptSymSkipWS("union")) && (!attemptSkipWS("|"))) {
-        return first;
+      if (laSymSkipWS("union") != null) {
+        consumeSkipWS("union");
+        first = createUnionAstNode(first);
+      } else {
+        final var token = laSymSkipWS("|");
+        if (token == null) {
+          return first;
+        } else {
+          if (laSymSkipWS(token, "|") != null) {
+            return first;
+          } else {
+            consumeSkipWS("|");
+            first = createUnionAstNode(first);
+          }
+        }
       }
-      AST second = intersectExpr();
-      AST expr = new AST(XQ.UnionExpr);
-      expr.addChild(first);
-      expr.addChild(second);
-      first = expr;
+
+      return first;
     }
+  }
+
+  private AST createUnionAstNode(AST first) throws TokenizerException {
+    AST second = intersectExpr();
+    AST expr = new AST(XQ.UnionExpr);
+    expr.addChild(first);
+    expr.addChild(second);
+    return expr;
   }
 
   private AST intersectExpr() throws TokenizerException {

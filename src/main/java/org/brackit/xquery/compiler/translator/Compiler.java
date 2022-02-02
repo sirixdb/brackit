@@ -209,11 +209,20 @@ public class Compiler implements Translator {
       case XQ.RenameJsonExpr -> renameJsonExpr(node);
       case XQ.AppendJsonExpr -> appendJsonExpr(node);
       case XQ.EmptySequenceType -> new EmptyExpr();
+      case XQ.StringConcatExpr -> stringConcatExpr(node);
       default -> throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
                                           "Unexpected AST expr node '%s' of type: %s",
                                           node,
                                           node.getType());
     };
+  }
+
+  private Expr stringConcatExpr(AST node) {
+    final Expr[] stringsToConcatExprs = new Expr[node.getChildCount()];
+    for (int i = 0; i < node.getChildCount(); i++) {
+      stringsToConcatExprs[i] = expr(node.getChild(i), true);
+    }
+    return new StringConcatExpr(stringsToConcatExprs);
   }
 
   private Expr dynamicFunctionCall(AST node) {

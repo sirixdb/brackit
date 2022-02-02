@@ -56,6 +56,15 @@ public final class JsonTest extends XQueryBaseTest {
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
 
   @Test
+  public void ampersandInFieldAndValue() throws IOException {
+    final String query = """
+        {"bar & baz":"foo & bar"}
+        """;
+    final var result = query(query);
+    assertEquals("{\"bar & baz\":\"foo & bar\"}", result);
+  }
+
+  @Test
   public void ddd() throws IOException {
     final String query = """
         let $array := [true,false,"true",{"foo":["tada",{"baz":["yes","no",null],"bar": null, "foobar":"text"},{"baz":true}]}]
@@ -584,6 +593,24 @@ return db:map($fun, 1 to 5)
         """;
     final var result = query(query);
     assertEquals("[]", result);
+  }
+
+  @Test
+  public void jsonParserNegativeNumber() throws IOException {
+    final String query = """
+          jn:parse('[ 1, -1,    1.1,  -2.5]')
+        """;
+    final var result = query(query);
+    assertEquals("[1,-1,1.1,-2.5]", result);
+  }
+
+  @Test
+  public void concatExpr() throws IOException {
+    final String query = """
+         1 || 2 || 'foobar'
+        """;
+    final var result = query(query);
+    assertEquals("12foobar", result);
   }
 
   @Test
