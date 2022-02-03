@@ -640,10 +640,20 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 
   protected boolean comparisonExpr(AST expr) throws QueryException {
     if (expr.getType() != XQ.ComparisonExpr) {
-      return rangeExpr(expr);
+      return stringConcatExpr(expr);
     }
     comparisonExpr(expr.getChild(1));
-    rangeExpr(expr.getChild(2));
+    stringConcatExpr(expr.getChild(2));
+    return true;
+  }
+
+  protected boolean stringConcatExpr(AST expr) throws QueryException {
+    if (expr.getType() != XQ.StringConcatExpr) {
+      return rangeExpr(expr);
+    }
+    for (int i = 0; i < expr.getChildCount(); i++) {
+      rangeExpr(expr.getChild(i));
+    }
     return true;
   }
 

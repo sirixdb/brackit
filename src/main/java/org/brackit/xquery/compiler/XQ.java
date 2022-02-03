@@ -381,9 +381,9 @@ public final class XQ {
           // Begin brackit's custom array syntax
           "KindTestArray", "ArrayAccess", "ArrayConstructor", "SequenceField", "FlattenedField", "ArrayIndexSlice",
           // End brackit's custom array syntax
-          // Begin brackit's custom recird syntax
-          "KindTestRecord", "RecordProjection", "RecordConstructor", "RecordField", "KeyValueField", "DerefExpr", "DerefDescendantExpr",
-          // End brackit's custom record syntax
+          // Begin brackit's custom object syntax
+          "KindTestObject", "ObjectProjection", "ObjectConstructor", "ObjectField", "KeyValueField", "DerefExpr", "DerefDescendantExpr",
+          // End brackit's custom object syntax
           // Begin temporal
           "NEXT", "PREVIOUS", "EARLIER", "EARLIER_OR_SELF", "FUTURE", "FUTURE_OR_SELF", "FIRST", "LAST", "ALL_TIME",
           // End temporal

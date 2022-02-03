@@ -587,6 +587,18 @@ return db:map($fun, 1 to 5)
   }
 
   @Test
+  public void objectConstructorWithConcatExpr() throws IOException {
+    final String query = """
+          {|
+            for $i in 1 to 3
+            return { "foo" || $i : $i }
+          |}
+        """;
+    final var result = query(query);
+    assertEquals("{\"foo1\":1,\"foo2\":2,\"foo3\":3}", result);
+  }
+
+  @Test
   public void jsonParserEmptyArray() throws IOException {
     final String query = """
           jn:parse('[]')
