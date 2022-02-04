@@ -5,9 +5,61 @@ Brackit is a flexible JSONiq for XQuery-based query processor developed during D
 Lately, Johannes Lichtenberger has added many optional temporal enhancements for temporal data stores such as SirixDB. Furthermore, JSON is now a first-class citizen. Brackit supports a slightly different syntax but the same data model as JSONiq and all update primitives described in the JSONiq specification. Brackit also supports Python-like array slices.
 
 ## Community
-We have a [Discord server](https://discord.gg/AstddxGxjP).
+We have a [Discord server](https://discord.gg/AstddxGxjP), where we'd welcome everyone who's interested in the project.
 
-## Feature
+## Getting started
+
+### [Download ZIP](https://github.com/sirixdb/brackit/archive/master.zip) or Git Clone
+
+```
+git clone https://github.com/sirixdb/brackit.git
+```
+
+or use the following dependencies in your Maven or Gradle project.
+
+**SirixDB uses Java 17, thus you need an up-to-date Gradle (if you want to work on SirixDB) and an IDE (for instance IntelliJ or Eclipse).**
+
+## Maven / Gradle
+At this stage of development, you should use the latest SNAPSHOT artifacts from [the OSS snapshot repository](https://oss.sonatype.org/content/repositories/snapshots/io/sirix/brackit/) to get the most recent changes. You should use the most recent Maven/Gradle versions as we'll update to the newest Java versions.
+
+Just add the following repository section to your POM or build.gradle file:
+```xml
+<repository>
+  <id>sonatype-nexus-snapshots</id>
+  <name>Sonatype Nexus Snapshots</name>
+  <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+  <releases>
+    <enabled>false</enabled>
+  </releases>
+  <snapshots>
+    <enabled>true</enabled>
+  </snapshots>
+</repository>
+```
+```groovy
+repository {
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots/"
+        mavenContent {
+            snapshotsOnly()
+        }
+    }
+}
+```
+
+```xml
+<dependency>
+  <groupId>io.sirix</groupId>
+  <artifactId>brackit</artifactId>
+  <version>0.1.10-SNAPSHOT</version>
+</dependency>
+```
+```groovy
+compile group:'io.sirix', name:'brackit', version:'0.1.10-SNAPSHOT'
+```
+
+## Features
+Brackit is a query engine, which either could be used by different storage/database backends whereas common optimizations are shared as for instance set-oriented processing and hash-joins of FLOWR-clauses. Furthermore, in-memory stores for both processing XML and JSON are supported, thus brackit can simply be used as an in-memory query processor for ad-hoc analysis.
 
 At the moment we support XQuery 1.0 including library module support, the XQuery Update Facility 1.0 and some features of XQuery 3.0 like the FLWOR clauses group by and count.
 
