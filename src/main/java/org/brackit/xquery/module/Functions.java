@@ -804,11 +804,12 @@ public final class Functions {
 
     if (funs == null) {
       funs = new Function[] { function };
-      functions.put(function.getName(), funs);
     } else {
       funs = Arrays.copyOf(funs, funs.length + 1);
       funs[funs.length - 1] = function;
     }
+
+    functions.put(function.getName(), funs);
   }
 
   public void importFunctions(Functions functions) {

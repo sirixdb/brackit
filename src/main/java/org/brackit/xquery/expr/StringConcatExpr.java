@@ -55,7 +55,10 @@ public class StringConcatExpr implements Expr {
     final StringBuilder stringBuilder = new StringBuilder();
     for (final Expr expr : exprs) {
       final var item = expr.evaluateToItem(ctx, tuple);
-      stringBuilder.append(item.atomize().asStr());
+
+      if (item != null) {
+        stringBuilder.append(item.atomize().asStr());
+      }
     }
 
     return new Str(stringBuilder.toString());
