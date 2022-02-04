@@ -5,7 +5,23 @@ Brackit is a flexible JSONiq for XQuery-based query processor developed during D
 Lately, Johannes Lichtenberger has added many optional temporal enhancements for temporal data stores such as SirixDB. Furthermore, JSON is now a first-class citizen. Brackit supports a slightly different syntax but the same data model as JSONiq and all update primitives described in the JSONiq specification. Brackit also supports Python-like array slices.
 
 ## Community
-We have a [Discord server](https://discord.gg/AstddxGxjP), where we'd welcome everyone who's interested in the project.
+We have a [Discord server](https://discord.gg/AstddxGxjP), where we'd welcome everyone who's interested in the project. **As the project started at a university (TU - Kaiserslautern under supervision of Dr. Dr. Theo Härder we'd be happy if it would be used as a research project again, too as there's still a lot of stuff to research.)**
+
+## Publications
+- Ph.D thesis of Dr. Sebastian Bächle:
+[Separating Key Concerns in Query Processing - Set Orientation, Physical Data Independence, and Parallelism](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/Dissertation-Baechle.pdf)
+
+- Sebastian Bächle and Caetano Sauer:
+[Unleashing XQuery for Data-independent Programming](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2014/Unleash.2014.pdf)
+
+- Henrique Valer, Caetano Sauer and Theo Härder:
+[XQuery Processing over NoSQL Stores](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/ValerGvD2013.pdf)
+
+- Caetano Sauer, Sebastian Bächle and Theo Härder:
+[Versatile XQuery Processing in MapReduce](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/ADBIS.2013.final.pdf)
+
+- Caetano Sauer, Sebastian Bächle and Theo Härder:
+[BrackitMR: Flexible XQuery Processing in MapReduce](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/WAIM2013.pdf)
 
 ## Getting started
 
