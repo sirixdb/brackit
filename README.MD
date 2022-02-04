@@ -17,7 +17,7 @@ git clone https://github.com/sirixdb/brackit.git
 
 or use the following dependencies in your Maven or Gradle project.
 
-**Brackit uses Java 17, thus you need an up-to-date Gradle (if you want to work on SirixDB) and an IDE (for instance IntelliJ or Eclipse).**
+**Brackit uses Java 17, thus you need an up-to-date Gradle (if you want to work on Brackit) and an IDE (for instance IntelliJ or Eclipse).**
 
 ## Maven / Gradle
 At this stage of development, you should use the latest SNAPSHOT artifacts from [the OSS snapshot repository](https://oss.sonatype.org/content/repositories/snapshots/io/sirix/brackit/) to get the most recent changes. You should use the most recent Maven/Gradle versions as we'll update to the newest Java versions.
