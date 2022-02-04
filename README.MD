@@ -7,9 +7,11 @@ Lately, Johannes Lichtenberger has added many optional temporal enhancements for
 [Here's](https://github.com/sirixdb/brackit/blob/master/mission.md) a more detailed document about the vision and overall mission of Brackit.
 
 ## Community
-We have a [Discord server](https://discord.gg/AstddxGxjP), where we'd welcome everyone who's interested in the project. **As the project started at a university (TU - Kaiserslautern under supervision of Dr. Dr. Theo Härder we'd be happy if it would be used as a research project again, too as there's a wide field of topics for future research and improvements.)**
+We have a [Discord server](https://discord.gg/AstddxGxjP), where we'd welcome everyone who's interested in the project.
 
 ## Publications
+As the project started at a university (TU - Kaiserslautern under supervision of Dr. Dr. Theo Härder we'd be happy if it would be used as a research project again, too as there's a wide field of topics for future research and improvements.)
+
 - Ph.D thesis of Dr. Sebastian Bächle:
 [Separating Key Concerns in Query Processing - Set Orientation, Physical Data Independence, and Parallelism](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/Dissertation-Baechle.pdf)
 
