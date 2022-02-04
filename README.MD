@@ -5,7 +5,25 @@ Brackit is a flexible JSONiq for XQuery-based query processor developed during D
 Lately, Johannes Lichtenberger has added many optional temporal enhancements for temporal data stores such as SirixDB. Furthermore, JSON is now a first-class citizen. Brackit supports a slightly different syntax but the same data model as JSONiq and all update primitives described in the JSONiq specification. Brackit also supports Python-like array slices.
 
 ## Community
-We have a [Discord server](https://discord.gg/AstddxGxjP).
+We have a [Discord server](https://discord.gg/AstddxGxjP), where we'd welcome everyone who's interested in the project.
+
+## Maven / Gradle
+At this stage of development, you should use the latest SNAPSHOT artifacts from [the OSS snapshot repository](https://oss.sonatype.org/content/repositories/snapshots/io/sirix/) to get the most recent changes. You should use the most recent Maven/Gradle versions as we'll update to the newest Java versions.
+
+
+
+We currently deploy to the sonatype oss snapshot repository. 
+
+```xml
+<dependency>
+  <groupId>io.sirix</groupId>
+  <artifactId>brackit</artifactId>
+  <version>0.1.10-SNAPSHOT</version>
+</dependency>
+```
+```groovy
+compile group:'io.sirix', name:'brackit', version:'0.1.10-SNAPSHOT'
+```
 
 ## Feature
 
