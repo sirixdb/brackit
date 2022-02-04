@@ -58,7 +58,8 @@ repository {
 compile group:'io.sirix', name:'brackit', version:'0.1.10-SNAPSHOT'
 ```
 
-## Feature
+## Features
+Brackit is a query engine, which either could be used by different storage/database backends whereas common optimizations are shared as for instance set-oriented processing and hash-joins of FLOWR-clauses. Furthermore, in-memory stores for both processing XML and JSON are supported, thus brackit can simply be used as an in-memory query processor for ad-hoc analysis.
 
 At the moment we support XQuery 1.0 including library module support, the XQuery Update Facility 1.0 and some features of XQuery 3.0 like the FLWOR clauses group by and count.
 
