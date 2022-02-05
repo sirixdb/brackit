@@ -1,4 +1,4 @@
-## Mission
+## Mission (from TU Kaiserslautern)
 Data management systems serve two purposes: a) storing and manipulating persistent data and b) querying and analyzing it. While the former is highly sensitive to size, shape and further characteristics of the actual data, the latter embodies an aspect commonly present across all types of data management systems: primitives to transform, filter, combine and aggregate large amounts of data.
 
 Despite numerous research efforts in the field of query algebras and generalized query compilers, this commonality is still not exploited in a widely-applicable compilation and evaluation infrastructure. One factor might be the wish to tailor the compilation process for a specialized data storage and workload, another one might be the undisputed complexity of getting a decently running system out of the elaborate formalisms. Fact is that most systems are still implemented from scratch, although it costs enormous effort to re-implement query algorithms and to transfer the experience of decades in query compilation and optimization to each new system.
