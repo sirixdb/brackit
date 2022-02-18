@@ -81,7 +81,8 @@ public class Main {
   private static final List<Option> options = new ArrayList<>();
 
   static {
-    options.add(new Option("-q", "query file [use '-' for stdin (default)]", true));
+    options.add(new Option("-qf", "query file [use '-' for stdin (default)]", true));
+    options.add(new Option("-q", "query string", true));
     options.add(new Option("-f", "default document", true));
     options.add(new Option("-p", "pretty print", false));
   }
@@ -105,8 +106,10 @@ public class Main {
       }
 
       String query;
-      if (((config.isSet("-q")) && (!"-".equals(config.getValue("-q"))))) {
-        query = readFile(config.getValue("-q"));
+      if (((config.isSet("-qf")) && (!"-".equals(config.getValue("-qf"))))) {
+        query = readFile(config.getValue("-qf"));
+      } else if (config.isSet("-q")) {
+        query = config.getValue("-q");
       } else {
         query = readString(System.in);
       }

@@ -628,6 +628,27 @@ return db:map($fun, 1 to 5)
   }
 
   @Test
+  public void remoteUrl() throws IOException {
+    final String query = """
+        let $logs := jn:doc('https://raw.githubusercontent.com/sirixdb/brackit/master/logs.json')[]
+        let $total-count := count($logs)
+                
+        return for $log in $logs
+            let $status := $log=>status
+            group by $status
+            order by count($log) descending
+            return {
+                xs:string($status): {
+                    "count": count($log),
+                    "fraction": count($log) div $total-count[1]
+                }
+            }
+        """.stripIndent();
+    final var result = query(query);
+    assertEquals("{\"200\":{\"count\":409,\"fraction\":0.818}} {\"404\":{\"count\":56,\"fraction\":0.112}} {\"500\":{\"count\":35,\"fraction\":0.07}}", result);
+  }
+
+  @Test
   public void jsonParserEmptyArray() throws IOException {
     final String query = """
           jn:parse('[]')

@@ -83,7 +83,7 @@ public final class RenameJsonField extends ConstructedNodeBuilder implements Exp
         }
       }
     }
-    if (!(targetItem instanceof Object)) {
+    if (!(targetItem instanceof Object objectItem)) {
       throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
                                "Target item is atomic value %s",
                                targetItem);
@@ -92,7 +92,7 @@ public final class RenameJsonField extends ConstructedNodeBuilder implements Exp
     final QNm oldFieldName = (QNm) oldFieldNameExpr.evaluateToItem(ctx, tuple);
     final QNm newFieldName = new QNm(((Str) newFieldNameExpr.evaluateToItem(ctx, tuple)).stringValue());
 
-    ctx.addPendingUpdate(new RenameRecordFieldOp((Object) target, oldFieldName, newFieldName));
+    ctx.addPendingUpdate(new RenameRecordFieldOp(objectItem, oldFieldName, newFieldName));
 
     return null;
   }
