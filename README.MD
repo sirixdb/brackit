@@ -4,8 +4,28 @@ Brackit is a flexible JSONiq for XQuery-based query processor developed during D
 
 Lately, Johannes Lichtenberger has added many optional temporal enhancements for temporal data stores such as SirixDB. Furthermore, JSON is now a first-class citizen. Brackit supports a slightly different syntax but the same data model as JSONiq and all update primitives described in the JSONiq specification. Brackit also supports Python-like array slices.
 
+[Here's](https://github.com/sirixdb/brackit/blob/master/mission.md) a more detailed document about the vision and overall mission of Brackit.
+
 ## Community
 We have a [Discord server](https://discord.gg/AstddxGxjP), where we'd welcome everyone who's interested in the project.
+
+## Publications
+As the project started at a university (TU - Kaiserslautern under supervision of Dr. Dr. Theo Härder we'd be happy if it would be used as a research project again, too as there's a wide field of topics for future research and improvements.)
+
+- Ph.D thesis of Dr. Sebastian Bächle:
+[Separating Key Concerns in Query Processing - Set Orientation, Physical Data Independence, and Parallelism](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/Dissertation-Baechle.pdf)
+
+- Sebastian Bächle and Caetano Sauer:
+[Unleashing XQuery for Data-independent Programming](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2014/Unleash.2014.pdf)
+
+- Henrique Valer, Caetano Sauer and Theo Härder:
+[XQuery Processing over NoSQL Stores](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/ValerGvD2013.pdf)
+
+- Caetano Sauer, Sebastian Bächle and Theo Härder:
+[Versatile XQuery Processing in MapReduce](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/ADBIS.2013.final.pdf)
+
+- Caetano Sauer, Sebastian Bächle and Theo Härder:
+[BrackitMR: Flexible XQuery Processing in MapReduce](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/WAIM2013.pdf)
 
 ## Getting started
 
@@ -17,7 +37,7 @@ git clone https://github.com/sirixdb/brackit.git
 
 or use the following dependencies in your Maven or Gradle project.
 
-**SirixDB uses Java 17, thus you need an up-to-date Gradle (if you want to work on SirixDB) and an IDE (for instance IntelliJ or Eclipse).**
+**Brackit uses Java 17, thus you need an up-to-date Gradle (if you want to work on Brackit) and an IDE (for instance IntelliJ or Eclipse).**
 
 ## Maven / Gradle
 At this stage of development, you should use the latest SNAPSHOT artifacts from [the OSS snapshot repository](https://oss.sonatype.org/content/repositories/snapshots/io/sirix/brackit/) to get the most recent changes. You should use the most recent Maven/Gradle versions as we'll update to the newest Java versions.
@@ -59,11 +79,15 @@ compile group:'io.sirix', name:'brackit', version:'0.1.10-SNAPSHOT'
 ```
 
 ## Features
-Brackit is a query engine, which either could be used by different storage/database backends whereas common optimizations are shared as for instance set-oriented processing and hash-joins of FLOWR-clauses. Furthermore, in-memory stores for both processing XML and JSON are supported, thus brackit can simply be used as an in-memory query processor for ad-hoc analysis.
+Brackit is a query engine, which either could be used by different storage/database backends whereas common optimizations are shared as for instance set-oriented processing and hash-joins of FLWOR-clauses. Furthermore, in-memory stores for both processing XML and JSON are supported, thus brackit can simply be used as an in-memory query processor for ad-hoc analysis.
 
 At the moment we support XQuery 1.0 including library module support, the XQuery Update Facility 1.0 and some features of XQuery 3.0 like the FLWOR clauses group by and count.
 
 As a speciality, Brackit comes with extensions to work natively with JSON-style arrays and objects mostly as in JSONiq, also supporting all the update statements of JSONiq. Furthermore array index slices as in Python are supported. Another extension allows you to use a special statement syntax for writing query programs in a script-like style.
+
+## Yupiter Notebook / Tutorial
+We're currently working on a [tutorial](https://colab.research.google.com/drive/19eC-UfJVm_gCjY--koOWN50sgiFa5hSC
+), where you can execute interactive queries on Brackit's in-memory store.
 
 ## Installation
 
