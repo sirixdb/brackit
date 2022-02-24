@@ -423,7 +423,7 @@ declare function local:qsort($values) {
         $less := $values[. < $pivot];
         $greater := $values[. > $pivot];
         (local:qsort($less), $pivot, local:qsort($greater))
-    }
+    )
 };
 
 local:qsort((7,8,4,5,6,9,3,2,0,1))
