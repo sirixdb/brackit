@@ -33,11 +33,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import org.brackit.xquery.compiler.CompileChain;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.util.io.URIHandler;
@@ -83,6 +81,8 @@ public class Main {
   static {
     options.add(new Option("-qf", "query file [use '-' for stdin (default)]", true));
     options.add(new Option("-q", "query string", true));
+    options.add(new Option("-iqf", "query files [use '-' for stdin (default)]", true));
+    options.add(new Option("-iq", "query strings", true));
     options.add(new Option("-f", "default document", true));
     options.add(new Option("-p", "pretty print", false));
   }
@@ -91,6 +91,7 @@ public class Main {
     try {
       Config config = parseParams(args);
       QueryContext ctx = new BrackitQueryContext();
+      CompileChain compileChain = new CompileChain();
 
       String file = config.getValue("-f");
       if (file != null) {
@@ -110,15 +111,21 @@ public class Main {
         query = readFile(config.getValue("-qf"));
       } else if (config.isSet("-q")) {
         query = config.getValue("-q");
+      } else if (config.isSet("-iq")) {
+        while (true) {
+          query = readStringFromScannerWithEndMark();
+          executeQuery(config, compileChain, ctx, query);
+        }
+      } else if (config.isSet("-iqf")) {
+        while (true) {
+          query = readFile(config.getValue("-iqf"));
+          executeQuery(config, compileChain, ctx, query);
+        }
       } else {
         query = readString(System.in);
       }
 
-      XQuery xq = new XQuery(query);
-      if (config.isSet("-p")) {
-        xq.prettyPrint();
-      }
-      xq.serialize(ctx, System.out);
+      executeQuery(config, compileChain, ctx, query);
     } catch (QueryException e) {
       System.out.println("Error: " + e.getMessage());
       System.exit(-2);
@@ -128,6 +135,31 @@ public class Main {
     } catch (Throwable e) {
       System.out.println("Error: " + e.getMessage());
       System.exit(-4);
+    }
+  }
+
+  private static void executeQuery(Config config, CompileChain compileChain, QueryContext ctx, String query) {
+    XQuery xq = new XQuery(compileChain, query);
+    if (config.isSet("-p")) {
+      xq.prettyPrint();
+    }
+    xq.serialize(ctx, System.out);
+  }
+
+  private static String readStringFromScannerWithEndMark() {
+    try (final Scanner scanner = new Scanner(System.in)) {
+      final StringBuilder strbuf = new StringBuilder();
+
+      while (scanner.hasNextLine()) {
+        final String line = scanner.nextLine();
+
+        if (line.trim().equals("END"))
+          break;
+
+        strbuf.append(line);
+      }
+
+      return strbuf.toString();
     }
   }
 
@@ -169,7 +201,7 @@ public class Main {
 
   private static void printUsage() {
     System.out.println("No query provided");
-    System.out.println(String.format("Usage: java %s [options]", Main.class.getName()));
+    System.out.printf("Usage: java %s [options]%n", Main.class.getName());
     System.out.println("Options:");
     for (Option o : options) {
       System.out.print(" ");

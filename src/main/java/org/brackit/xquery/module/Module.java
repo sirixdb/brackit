@@ -40,19 +40,19 @@ import org.brackit.xquery.xdm.Expr;
  */
 public interface Module {
 
-  public String getTargetNS();
+  String getTargetNS();
 
-  public Expr getBody();
+  Expr getBody();
 
-  public void importModule(Module module) throws QueryException;
+  void importModule(Module module);
 
-  public List<Module> getImportedModules();
+  List<Module> getImportedModules();
 
-  public void addOption(QNm name, Str value);
+  void addOption(QNm name, Str value);
 
-  public Map<QNm, Str> getOptions();
+  Map<QNm, Str> getOptions();
 
-  public StaticContext getStaticContext();
+  StaticContext getStaticContext();
 
-  public Variables getVariables();
+  Variables getVariables();
 }

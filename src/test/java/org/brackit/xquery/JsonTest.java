@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery;
 
+import org.brackit.xquery.compiler.CompileChain;
 import org.brackit.xquery.jsonitem.array.DArray;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.Null;
@@ -56,6 +57,23 @@ public final class JsonTest extends XQueryBaseTest {
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
 
   @Test
+  public void customModule() throws IOException {
+    final var compileChain = new CompileChain();
+    try (final var out = new ByteArrayOutputStream()) {
+      final Path currentRelativePath = Paths.get("").resolve("src").resolve("test").resolve("resources").resolve("modules").resolve("sort.xq");
+      final String currentPath = currentRelativePath.toAbsolutePath().toString();
+      final String query = """
+          import module namespace sort = "https://sirix.io/ns/sort" at "%path";
+                    
+          sort:qsort((7,8,4,5,6,9,3,2,0,1))
+          """.replace("%path", currentPath);
+
+      final var xquery = new XQuery(compileChain, query);
+      xquery.serialize(ctx, new PrintStream(out));
+    }
+  }
+
+  @Test
   public void ampersandInFieldAndValue() throws IOException {
     final String query = """
         {"bar & baz":"foo & bar"}
@@ -65,7 +83,7 @@ public final class JsonTest extends XQueryBaseTest {
   }
 
   @Test
-  public void ddd() throws IOException {
+  public void random() throws IOException {
     final String query = """
         let $array := [true,false,"true",{"foo":["tada",{"baz":["yes","no",null],"bar": null, "foobar":"text"},{"baz":true}]}]
         let $sequence := $array[]=>foo[[1]]{baz,foobar}
@@ -117,14 +135,14 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testDynamicFunction() throws IOException {
     final String query = """
-xquery version "3.0";
-declare namespace db="http://sirix.io/xquery/db";
-declare function db:map($func, $list) {
-    for $item in $list return $func($item)
-};
-let $fun := function($x) { $x * $x }
-return db:map($fun, 1 to 5)
-        """;
+        xquery version "3.0";
+        declare namespace db="http://sirix.io/xquery/db";
+        declare function db:map($func, $list) {
+            for $item in $list return $func($item)
+        };
+        let $fun := function($x) { $x * $x }
+        return db:map($fun, 1 to 5)
+                """;
     final var result = query(query);
     assertEquals("{\"foo\":0} bar {\"baz\":true}", result);
   }
@@ -613,16 +631,16 @@ return db:map($fun, 1 to 5)
   @Test
   public void functionOverloading() throws IOException {
     final String query = """
-      declare function local:dummy($test) {
-          $test
-      };
-      
-      declare function local:dummy() {
-          local:dummy("test")
-      };
-      
-      local:dummy()
-        """;
+        declare function local:dummy($test) {
+            $test
+        };
+              
+        declare function local:dummy() {
+            local:dummy("test")
+        };
+              
+        local:dummy()
+          """;
     final var result = query(query);
     assertEquals("test", result);
   }
@@ -645,7 +663,9 @@ return db:map($fun, 1 to 5)
             }
         """.stripIndent();
     final var result = query(query);
-    assertEquals("{\"200\":{\"count\":409,\"fraction\":0.818}} {\"404\":{\"count\":56,\"fraction\":0.112}} {\"500\":{\"count\":35,\"fraction\":0.07}}", result);
+    assertEquals(
+        "{\"200\":{\"count\":409,\"fraction\":0.818}} {\"404\":{\"count\":56,\"fraction\":0.112}} {\"500\":{\"count\":35,\"fraction\":0.07}}",
+        result);
   }
 
   @Test

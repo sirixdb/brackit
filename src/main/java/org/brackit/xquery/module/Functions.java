@@ -66,9 +66,9 @@ public final class Functions {
 
   public static final QNm FN_ROOT = new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "root");
 
-  protected final Map<QNm, Function[]> functions = new HashMap<>();
+  private final Map<QNm, Function[]> functions = new HashMap<>();
 
-  protected final List<Functions> imports = new ArrayList<>();
+  private final List<Functions> imports = new ArrayList<>();
 
   static {
     // See XQuery Functions and Operators 2 Accessors

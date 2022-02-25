@@ -44,8 +44,8 @@ public abstract class AbstractModule implements Module {
   // use small lists instead of maps because we assume
   // relatively few module imports, external variables and options
   // per module and also relatively few lookups
-  protected final List<Module> modules = new ArrayList<Module>();
-  protected final Map<QNm, Str> options = new HashMap<QNm, Str>();
+  protected final List<Module> modules = new ArrayList<>();
+  protected final Map<QNm, Str> options = new HashMap<>();
   protected final ModuleContext context = new ModuleContext();
   protected final Variables variables = new Variables();
 

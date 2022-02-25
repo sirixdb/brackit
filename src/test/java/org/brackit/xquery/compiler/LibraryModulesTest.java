@@ -27,23 +27,18 @@
  */
 package org.brackit.xquery.compiler;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.ResultChecker;
-import org.brackit.xquery.XQuery;
-import org.brackit.xquery.XQueryBaseTest;
+import org.brackit.xquery.*;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.xdm.Sequence;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author Sebastian Baechle
