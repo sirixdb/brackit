@@ -39,7 +39,7 @@ public class Doc extends AbstractFunction {
         final int revision = args.length == 2 ? ((Int32) args[1]).intValue() : -1;
 
         try {
-            JsonItem document = null;
+            JsonItem document;
             if (name.isEmpty()) {
                 if (retrieve) {
                     throw new QueryException(ErrorCode.ERR_DOCUMENT_NOT_FOUND, "No default document defined.");

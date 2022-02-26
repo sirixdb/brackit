@@ -81,8 +81,8 @@ public class Main {
   static {
     options.add(new Option("-qf", "query file [use '-' for stdin (default)]", true));
     options.add(new Option("-q", "query string", true));
-    options.add(new Option("-iqf", "query files [use '-' for stdin (default)]", true));
-    options.add(new Option("-iq", "query strings", true));
+    options.add(new Option("-iqf", "query files [use '-' for stdin (default)]", false));
+    options.add(new Option("-iq", "query strings", false));
     options.add(new Option("-f", "default document", true));
     options.add(new Option("-p", "pretty print", false));
   }
@@ -113,11 +113,13 @@ public class Main {
         query = config.getValue("-q");
       } else if (config.isSet("-iq")) {
         while (true) {
+          System.out.println("Enter query string (terminate with END on the last line):");
           query = readStringFromScannerWithEndMark();
           executeQuery(config, compileChain, ctx, query);
         }
       } else if (config.isSet("-iqf")) {
         while (true) {
+          System.out.println("Enter query string (terminate with END on the last line):");
           query = readFile(config.getValue("-iqf"));
           executeQuery(config, compileChain, ctx, query);
         }
@@ -143,24 +145,27 @@ public class Main {
     if (config.isSet("-p")) {
       xq.prettyPrint();
     }
+    System.out.println();
+    System.out.println("Query result");
     xq.serialize(ctx, System.out);
+    System.out.println();
+    System.out.println();
   }
 
   private static String readStringFromScannerWithEndMark() {
-    try (final Scanner scanner = new Scanner(System.in)) {
-      final StringBuilder strbuf = new StringBuilder();
+    final Scanner scanner = new Scanner(System.in);
+    final StringBuilder strbuf = new StringBuilder();
 
-      while (scanner.hasNextLine()) {
-        final String line = scanner.nextLine();
+    while (scanner.hasNextLine()) {
+      final String line = scanner.nextLine();
 
-        if (line.trim().equals("END"))
-          break;
+      if (line.trim().equals("END"))
+        break;
 
-        strbuf.append(line);
-      }
-
-      return strbuf.toString();
+      strbuf.append(line);
     }
+
+    return strbuf.toString();
   }
 
   private static Config parseParams(String[] args) throws Exception {
