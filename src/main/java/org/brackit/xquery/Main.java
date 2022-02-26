@@ -146,7 +146,7 @@ public class Main {
       xq.prettyPrint();
     }
     System.out.println();
-    System.out.println("Query result");
+    System.out.println("Query result:");
     xq.serialize(ctx, System.out);
     System.out.println();
     System.out.println();
