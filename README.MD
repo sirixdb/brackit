@@ -122,17 +122,17 @@ mvn install
 Brackit ships with a rudimentary command line interface to run ad-hoc queries. Invoke it with 
 
 ```
-java -jar brackit-x.y.z.jar
+java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar
 ```
 
 where _x.y.z_ is the version number of brackit.
 
 #### Simple queries
 
-The simplest way to run a query is by passing it via stdin:
+The simplest way to run a query is by passing it via STDIN:
 
 ```
-echo "1+1" | java -jar brackit-x.y.z.jar
+echo "1+1" | java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar
 
 => 2
 ```
@@ -140,13 +140,19 @@ echo "1+1" | java -jar brackit-x.y.z.jar
 If the query is stored in a separate file, let's say test.xq, type:
 
 ```
-java -jar brackit-x.y.z.jar -q test.xq
+java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -q test.xq
 ```
 
 or use the file redirection of your shell:
 
 ```
-java -jar brackit-x.y.z.jar < test.xq
+java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar < test.xq
+```
+
+You can also use an interactive shell and enter a bunch of queries terminated with an "END" on the last line:
+
+```java
+java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -iq
 ```
 
 #### Querying documents
@@ -158,13 +164,13 @@ The default "storage" module resolves any referred documents accessed by the XQu
 To query a document in your local filesytem simply type use the path to this document in the fn:doc() function:
 
 ```
-echo "doc('products.xml')//product[@prodno = '4711']" | java -jar brackit-x.y.z.jar
+java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -q "doc('products.xml')//product[@prodno = '4711']"
 ```
 
 Of course, you can also directly query documents via http(s), or ftp. For example:
 
 ```
-echo "count(doc('http://example.org/foo.xml')//bar)" | java -jar brackit-x.y.z.jar
+echo "count(doc('http://example.org/foo.xml')//bar)" | java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar
 ```
 
 ### Coding with Brackit
