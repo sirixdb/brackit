@@ -1,4 +1,4 @@
-# Welcome to Brackit, your JSON and XML query engine!
+<h1 align="center">Welcome to Brackit, your JSON and XML query engine</h1>
 
 Brackit is a flexible JSONiq for XQuery-based query processor developed during Dr. Sebastian Bächles time as a PhD student at the TU Kaiserslautern in the context of their research in the field of query processing for semi-structured data. The system features a fast runtime and a flexible compiler backend, which is, e.g., able to rewrite queries for optimized join processing and efficient aggregation operations. It's either usable as an in-memory ad-hoc query engine or as the query engine of a data store. The data store itself can add sophisticated optimizations in different stages of the query processor. Thus, Brackit already bundles common optimizations and a data store can add further optimizations for instance for index matching.
 
@@ -86,8 +86,8 @@ At the moment we support XQuery 1.0 including library module support, the XQuery
 As a speciality, Brackit comes with extensions to work natively with JSON-style arrays and objects mostly as in JSONiq, also supporting all the update statements of JSONiq. Furthermore array index slices as in Python are supported. Another extension allows you to use a special statement syntax for writing query programs in a script-like style.
 
 ## Yupiter Notebook / Tutorial
-We're currently working on a [tutorial](https://colab.research.google.com/drive/19eC-UfJVm_gCjY--koOWN50sgiFa5hSC
-), where you can execute interactive queries on Brackit's in-memory store.
+**We're currently working on a [tutorial](https://colab.research.google.com/drive/19eC-UfJVm_gCjY--koOWN50sgiFa5hSC
+), where you can execute interactive queries on Brackit's in-memory store.**
 
 ## Installation
 
@@ -107,13 +107,10 @@ mvn -DskipTests package
 
 That's all. You find the ready-to-use jar file(s) in the subdirectory _./target_
 
-Step 3: Install (optional)
+Step 3: Dependency
 
-If you want to use brackit in your other Maven-based projects, you need to install brackit in your local maven repository.
+If you want to use brackit in your other maven- or gradle-based projects, please have a look into the "Maven / Gradle" section. 
 
-```
-mvn install
-```
 
 ## First Steps
 
