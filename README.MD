@@ -105,7 +105,7 @@ To skip running the unit tests run instead.
 mvn -DskipTests package
 ```
 
-That's all. You find the ready-to-use jar file in the subdirectory _./target_
+That's all. You find the ready-to-use jar file(s) in the subdirectory _./target_
 
 Step 3: Install (optional)
 
@@ -161,10 +161,26 @@ Querying documents is as simple as running any other query.
 
 The default "storage" module resolves any referred documents accessed by the XQuery functions ```fn:doc()``` and ```fn:collection()``` at query runtime.
 
-To query a document in your local filesytem simply type use the path to this document in the fn:doc() function:
+To query a document in your local filesytem simply use the path to this document in the fn:doc() function:
 
 ```java
 java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -q "doc('products.xml')//product[@prodno = '4711']"
+```
+
+For JSON there's the function ```jn:doc()```. Let's assume we have the following simple JSON structure:
+
+```json
+{"products":[{"productno":4711,"product":"Product number 4711"},{"productno":5982,"product":"Product number 5982"}]}
+```
+
+We can query this first dereferencing the "products" object field with `=>`, then unbox the array value via `[]` and add a filter where "." denotes the current context item and "{fieldName}" projects the resulting object into a new object, which is returned.
+
+```java
+java -jar brackit.jar -q "jn:doc('products.json')=>products[][.=>productno eq 4711]{product}"
+
+Query result
+{"product":"Product number 4711"}
+
 ```
 
 Of course, you can also directly query documents via http(s), or ftp. For example:
