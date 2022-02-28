@@ -159,7 +159,7 @@ java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -iq
 
 Querying documents is as simple as running any other query.
 
-The default "storage" module resolves any referred documents accessed by the XQuery functions ```fn:doc()``` and ```fn:collection()``` at query runtime.
+The default "storage" module resolves any referred documents accessed by the XQuery functions ```fn:doc()``` and ```fn:collection()``` at query runtime (XML).
 
 To query a document in your local filesytem simply use the path to this document in the fn:doc() function:
 
@@ -186,7 +186,11 @@ Query result
 Of course, you can also directly query documents via http(s), or ftp. For example:
 
 ```java
-echo "count(doc('http://example.org/foo.xml')//bar)" | java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar
+java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -q "count(doc('http://example.org/foo.xml')//bar)"
+
+or
+
+java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -q "count(jn:doc('http://example.org/foo.xml')=>bar[])"
 ```
 
 ### Coding with Brackit
