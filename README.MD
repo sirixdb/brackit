@@ -31,12 +31,15 @@ As the project started at a university (TU - Kaiserslautern under supervision of
 
 ## Getting started
 
+### If you simply want to use Brackit as a standalone query processor use the JAR provided with the [release](https://github.com/sirixdb/brackit/releases/tag/brackit-0.1.10)
+
+Otherwise for contributing
+
 ### [Download ZIP](https://github.com/sirixdb/brackit/archive/master.zip) or Git Clone
 
 ```
 git clone https://github.com/sirixdb/brackit.git
 ```
-
 or use the following dependencies in your Maven or Gradle project.
 
 **Brackit uses Java 17, thus you need an up-to-date Gradle (if you want to work on Brackit) and an IDE (for instance IntelliJ or Eclipse).**
