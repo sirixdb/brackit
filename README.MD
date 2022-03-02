@@ -5,8 +5,8 @@ Brackit is a flexible JSONiq for XQuery-based query processor developed during D
 Lately, Johannes Lichtenberger has added many optional temporal enhancements for temporal data stores such as SirixDB. Furthermore, JSON is now a first-class citizen. Brackit supports a slightly different syntax but the same data model as JSONiq and all update primitives described in the JSONiq specification. Brackit also supports Python-like array slices.
 
 ## Main features
-- retargetable, thus sharing optimizations, which are common for different data stores (physical optimizations and index rewrite rules can simply be added in further stages)
-- JSONiq a language which especially targets querying JSON supporting user defined functions (higher order functions are on our TODO list), easy tree traversals, FLWOR expressions to iterate, filter, sort and project item sequences
+- Retargetable, thus sharing optimizations, which are common for different data stores (physical optimizations and index rewrite rules can simply be added in further stages).
+- JSONiq, a language which especially targets querying JSON, supporting user defined functions (higher order functions are on our TODO list), easy tree traversals, FLWOR expressions to iterate, filter, sort and project item sequences.
 - Set-oriented processing, meaning pipelined execution of FLWOR clauses through operators, which operate on arrays of tuples and thus support known optimizations from relational database querying for joins and aggregates.
 
 **We're currently working on a [Jupyter Notebook / Tutorial](https://colab.research.google.com/drive/19eC-UfJVm_gCjY--koOWN50sgiFa5hSC)**.
@@ -88,7 +88,7 @@ repository {
 compile group:'io.sirix', name:'brackit', version:'0.1.10-SNAPSHOT'
 ```
 
-## Features
+## What's Brackit?
 Brackit is a query engine, which either could be used by different storage/database backends whereas common optimizations are shared as for instance set-oriented processing and hash-joins of FLWOR-clauses. Furthermore, in-memory stores for both processing XML and JSON are supported, thus brackit can simply be used as an in-memory query processor for ad-hoc analysis.
 
 At the moment we support XQuery 1.0 including library module support, the XQuery Update Facility 1.0 and some features of XQuery 3.0 like the FLWOR clauses group by and count.
