@@ -40,7 +40,7 @@ Otherwise for contributing
 ```
 git clone https://github.com/sirixdb/brackit.git
 ```
-or use the following dependencies in your Maven or Gradle project.
+or use the following dependencies in your Maven or Gradle project if you want to add queries in your Java or Kotlin projects for instance or if you want to implement some interfaces and add custom rewrite rules to be able to query your data store.
 
 **Brackit uses Java 17, thus you need an up-to-date Gradle (if you want to work on Brackit) and an IDE (for instance IntelliJ or Eclipse).**
 
