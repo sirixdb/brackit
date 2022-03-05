@@ -1,8 +1,15 @@
-# Welcome to Brackit!
+<h1 align="center">Brackit - a retargetable JSONiq query engine</h1>
 
 Brackit is a flexible JSONiq for XQuery-based query processor developed during Dr. Sebastian Bächles time as a PhD student at the TU Kaiserslautern in the context of their research in the field of query processing for semi-structured data. The system features a fast runtime and a flexible compiler backend, which is, e.g., able to rewrite queries for optimized join processing and efficient aggregation operations. It's either usable as an in-memory ad-hoc query engine or as the query engine of a data store. The data store itself can add sophisticated optimizations in different stages of the query processor. Thus, Brackit already bundles common optimizations and a data store can add further optimizations for instance for index matching.
 
 Lately, Johannes Lichtenberger has added many optional temporal enhancements for temporal data stores such as SirixDB. Furthermore, JSON is now a first-class citizen. Brackit supports a slightly different syntax but the same data model as JSONiq and all update primitives described in the JSONiq specification. Brackit also supports Python-like array slices.
+
+## Main features
+- Retargetable, thus sharing optimizations, which are common for different data stores (physical optimizations and index rewrite rules can simply be added in further stages).
+- JSONiq, a language which especially targets querying JSON, supporting user defined functions (higher order functions are on our TODO list), easy tree traversals, FLWOR expressions to iterate, filter, sort and project item sequences.
+- Set-oriented processing, meaning pipelined execution of FLWOR clauses through operators, which operate on arrays of tuples and thus support known optimizations from relational database querying for joins and aggregates.
+
+**We're currently working on a [Jupyter Notebook / Tutorial](https://colab.research.google.com/drive/19eC-UfJVm_gCjY--koOWN50sgiFa5hSC)**.
 
 [Here's](https://github.com/sirixdb/brackit/blob/master/mission.md) a more detailed document about the vision and overall mission of Brackit.
 
@@ -29,13 +36,16 @@ As the project started at a university (TU - Kaiserslautern under supervision of
 
 ## Getting started
 
+### If you simply want to use Brackit as a standalone query processor use the JAR provided with the [release](https://github.com/sirixdb/brackit/releases/tag/brackit-0.1.10)
+
+Otherwise for contributing
+
 ### [Download ZIP](https://github.com/sirixdb/brackit/archive/master.zip) or Git Clone
 
 ```
 git clone https://github.com/sirixdb/brackit.git
 ```
-
-or use the following dependencies in your Maven or Gradle project.
+or use the following dependencies in your Maven or Gradle project if you want to add queries in your Java or Kotlin projects for instance or if you want to implement some interfaces and add custom rewrite rules to be able to query your data store.
 
 **Brackit uses Java 17, thus you need an up-to-date Gradle (if you want to work on Brackit) and an IDE (for instance IntelliJ or Eclipse).**
 
@@ -78,16 +88,16 @@ repository {
 compile group:'io.sirix', name:'brackit', version:'0.1.10-SNAPSHOT'
 ```
 
-## Features
+## What's Brackit?
 Brackit is a query engine, which either could be used by different storage/database backends whereas common optimizations are shared as for instance set-oriented processing and hash-joins of FLWOR-clauses. Furthermore, in-memory stores for both processing XML and JSON are supported, thus brackit can simply be used as an in-memory query processor for ad-hoc analysis.
 
 At the moment we support XQuery 1.0 including library module support, the XQuery Update Facility 1.0 and some features of XQuery 3.0 like the FLWOR clauses group by and count.
 
 As a speciality, Brackit comes with extensions to work natively with JSON-style arrays and objects mostly as in JSONiq, also supporting all the update statements of JSONiq. Furthermore array index slices as in Python are supported. Another extension allows you to use a special statement syntax for writing query programs in a script-like style.
 
-## Yupiter Notebook / Tutorial
-We're currently working on a [tutorial](https://colab.research.google.com/drive/19eC-UfJVm_gCjY--koOWN50sgiFa5hSC
-), where you can execute interactive queries on Brackit's in-memory store.
+## Jupyter Notebook / Tutorial
+**We're currently working on a [tutorial](https://colab.research.google.com/drive/19eC-UfJVm_gCjY--koOWN50sgiFa5hSC
+), where you can execute interactive queries on Brackit's in-memory store.**
 
 ## Installation
 
@@ -105,15 +115,12 @@ To skip running the unit tests run instead.
 mvn -DskipTests package
 ```
 
-That's all. You find the ready-to-use jar file in the subdirectory _./target_
+That's all. You find the ready-to-use jar file(s) in the subdirectory _./target_
 
-Step 3: Install (optional)
+Step 3: Dependency
 
-If you want to use brackit in your other Maven-based projects, you need to install brackit in your local maven repository.
+If you want to use brackit in your other maven- or gradle-based projects, please have a look into the "Maven / Gradle" section. 
 
-```
-mvn install
-```
 
 ## First Steps
 
@@ -121,50 +128,76 @@ mvn install
 
 Brackit ships with a rudimentary command line interface to run ad-hoc queries. Invoke it with 
 
-```
-java -jar brackit-x.y.z.jar
+```java
+java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar
 ```
 
 where _x.y.z_ is the version number of brackit.
 
 #### Simple queries
 
-The simplest way to run a query is by passing it via stdin:
+The simplest way to run a query is by passing it via STDIN:
 
-```
-echo "1+1" | java -jar brackit-x.y.z.jar
+```java
+echo "1+1" | java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar
 
 => 2
 ```
 
 If the query is stored in a separate file, let's say test.xq, type:
 
-```
-java -jar brackit-x.y.z.jar -q test.xq
+```java
+java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -q test.xq
 ```
 
 or use the file redirection of your shell:
 
+```java
+java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar < test.xq
 ```
-java -jar brackit-x.y.z.jar < test.xq
+
+You can also use an interactive shell and enter a bunch of queries terminated with an "END" on the last line:
+
+```java
+java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -iq
 ```
 
 #### Querying documents
 
 Querying documents is as simple as running any other query.
 
-The default "storage" module resolves any referred documents accessed by the XQuery functions ```fn:doc()``` and ```fn:collection()``` at query runtime.
+The default "storage" module resolves any referred documents accessed by the XQuery functions ```fn:doc()``` and ```fn:collection()``` at query runtime (XML).
 
-To query a document in your local filesytem simply type use the path to this document in the fn:doc() function:
+To query a document in your local filesytem simply use the path to this document in the fn:doc() function:
 
+```java
+java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -q "doc('products.xml')//product[@prodno = '4711']"
 ```
-echo "doc('products.xml')//product[@prodno = '4711']" | java -jar brackit-x.y.z.jar
+
+For JSON there's the function ```jn:doc()```. Let's assume we have the following simple JSON structure:
+
+```json
+{"products":[{"productno":4711,"product":"Product number 4711"},{"productno":5982,"product":"Product number 5982"}]}
+```
+
+We can query this first dereferencing the "products" object field with `=>`, then unbox the array value via `[]` and add a filter where "." denotes the current context item and "{fieldName}" projects the resulting object into a new object, which is returned.
+
+```java
+java -jar brackit.jar -q "jn:doc('products.json')=>products[][.=>productno eq 4711]{product}"
+
+Query result
+{"product":"Product number 4711"}
+
 ```
 
 Of course, you can also directly query documents via http(s), or ftp. For example:
 
-```
-echo "count(doc('http://example.org/foo.xml')//bar)" | java -jar brackit-x.y.z.jar
+```java
+java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -q "count(doc('http://example.org/foo.xml')//bar)"
+
+or
+
+java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -q "count(jn:doc('http://example.org/foo.xml')=>bar[])"
 ```
 
 ### Coding with Brackit
