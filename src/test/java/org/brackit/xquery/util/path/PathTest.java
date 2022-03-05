@@ -245,6 +245,13 @@ public class PathTest {
   }
 
   @Test
+  public void testMatchWithWildcard() {
+    Path<QNm> pattern = (new PathParser("//*")).parse();
+    Path<QNm> path = (new PathParser("//a/b/c")).parse();
+    assertTrue("Pattern does match path", pattern.matches(path));
+  }
+
+  @Test
   public void testVerySimplePath() {
     Path<QNm> parsed = (new PathParser("l")).parse();
     assertFalse(parsed.isEmpty());
