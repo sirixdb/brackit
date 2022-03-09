@@ -13,6 +13,12 @@ Lately, Johannes Lichtenberger has added many optional temporal enhancements for
 
 [Here's](https://github.com/sirixdb/brackit/blob/master/mission.md) a more detailed document about the vision and overall mission of Brackit.
 
+## Syntax differences to JSONiq
+- `=>` expression to dereference object fields instead of `.`
+- array indexes start at position 0
+- object projections via a special syntax (`$object{field1,field2,field3}` instead of a function)
+- Python-like array slices
+
 ## Community
 We have a [Discord server](https://discord.gg/AstddxGxjP), where we'd welcome everyone who's interested in the project.
 
