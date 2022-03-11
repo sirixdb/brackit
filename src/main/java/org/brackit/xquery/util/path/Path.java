@@ -106,6 +106,9 @@ public final class Path<E> {
           : (axis == Axis.PARENT || axis == Axis.SELF || axis == Axis.CHILD_ARRAY || axis == Axis.DESC_ARRAY)
               ? ""
               : "*";
+      if (valueString.contains("/")) {
+        valueString = valueString.replace("/", "\\/");
+      }
       return axisString + valueString;
     }
   }
@@ -463,6 +466,10 @@ public final class Path<E> {
 
   public static Path<QNm> parse(String path) throws PathException {
     return (new PathParser(path)).parse();
+  }
+
+  public static Path<QNm> parse(String path, Type type) throws PathException {
+    return (new PathParser(path, type)).parse();
   }
 
   public static void main(String[] args) {

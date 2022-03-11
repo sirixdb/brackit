@@ -66,6 +66,5 @@ public class Len extends AbstractFunction {
   public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
     Array a = (Array) args[0];
     return (a == null) ? Int32.ZERO : a.length();
-
   }
 }

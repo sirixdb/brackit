@@ -38,6 +38,14 @@ import org.brackit.xquery.compiler.parser.Tokenizer;
  */
 public final class PathParser extends Tokenizer {
 
+  public enum Type {
+    JSON,
+
+    XML
+  }
+
+  private final Type type;
+
   private final Path<QNm> p;
 
   private Map<String, String> namespaces;
@@ -45,6 +53,13 @@ public final class PathParser extends Tokenizer {
   public PathParser(String s) {
     super(s);
     p = new Path<>();
+    type = Type.XML;
+  }
+
+  public PathParser(String s, Type type) {
+    super(s);
+    p = new Path<>();
+    this.type = type;
   }
 
   /**
@@ -60,7 +75,9 @@ public final class PathParser extends Tokenizer {
       startStep();
       while (axisStep())
         ;
-      attributeStep();
+      if (type == Type.XML) {
+        attributeStep();
+      }
       consumeEOF();
       return p;
     } catch (TokenizerException e) {
@@ -148,38 +165,60 @@ public final class PathParser extends Tokenizer {
     QNm q = null;
     Token la = la("//");
     if (la != null) {
-      if (la(la, "@") != null) {
+      if (type == Type.XML && la(la, "@") != null) {
         return false;
       }
 
       consume(la);
 
-      if ((la = la("[]")) != null) {
-        consume(la);
-        p.descendantArray();
-        return true;
+      if (type == Type.JSON) {
+        if ((la = la("[]")) != null) {
+          consume(la);
+          p.descendantArray();
+          return true;
+        }
       }
 
       if (!attempt("*")) {
-        q = name();
+        if (type == Type.XML) {
+          EQNameToken ela = laQName();
+          if (ela == null) {
+            throw new MismatchException("Wildcard", "QName");
+          }
+          consume(ela);
+          q = ela.qname();
+        } else {
+          q = name();
+        }
       }
       p.descendant(expand(q));
       return true;
     } else if ((la = la("/")) != null) {
-      if (la(la, "@") != null) {
+      if (type == Type.XML && la(la, "@") != null) {
         return false;
       }
 
       consume(la);
 
-      if ((la = la("[]")) != null) {
-        consume(la);
-        p.childArray();
-        return true;
+      if (type == Type.JSON) {
+        if ((la = la("[]")) != null) {
+          consume(la);
+          p.childArray();
+          return true;
+        }
       }
 
       if (!attempt("*")) {
-        q = name();
+        if (type == Type.XML) {
+          EQNameToken ela = laQName();
+          if (ela == null) {
+            throw new MismatchException("Wildcard", "QName");
+          }
+          consume(ela);
+          q = ela.qname();
+        } else {
+          q = name();
+        }
       }
       p.child(expand(q));
       return true;
@@ -188,32 +227,36 @@ public final class PathParser extends Tokenizer {
   }
 
   private QNm name() throws TokenizerException {
-    final var pos = position();
-    StringBuilder pathSegmentName = new StringBuilder(scanString(position(), '/'));
+    var pos = position();
+    final StringBuilder pathSegmentName = new StringBuilder(scanString(position(), '/'));
 
+    int i = 0;
+    boolean isEnd = false;
     while (pathSegmentName.toString().endsWith("\\")) {
-      if (pos + pathSegmentName.length() + 1 > getEnd()) {
+      i++;
+      if (pos + pathSegmentName.length() + i > getEnd()) {
+        isEnd = true;
         break;
       }
-      resetTo(pos + pathSegmentName.length() + 1);
+      resetTo(pos + pathSegmentName.length() + i);
+      pathSegmentName.delete(pathSegmentName.length() - 1, pathSegmentName.length());
       final var segment = scanString(position(), '/');
 
       if (segment != null) {
         pathSegmentName.append("/");
         pathSegmentName.append(segment);
+      } else if (attempt("/") || (position() == getEnd() && getInput()[position() - 1] == '/')) {
+        pathSegmentName.append("/");
       }
     }
 
     resetTo(pos);
 
-    final String[] prefixAndLocalName = pathSegmentName.toString().split(":");
-    final EQNameToken token;
-
-    if (prefixAndLocalName.length > 1) {
-      token = new EQNameToken(pos, pos + pathSegmentName.length(), null, prefixAndLocalName[0], prefixAndLocalName[1]);
-    } else {
-      token = new EQNameToken(pos, pos + pathSegmentName.length(), null, null, pathSegmentName.toString());
-    }
+    final EQNameToken token = new EQNameToken(pos,
+                                              isEnd ? getEnd() : pos + pathSegmentName.length() + i,
+                                              null,
+                                              null,
+                                              pathSegmentName.toString().replaceAll("\\\\\\[", "[").replaceAll("\\\\\\]", "]"));
 
     consume(token);
 

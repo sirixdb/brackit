@@ -295,6 +295,30 @@ public final class JsonTest extends XQueryBaseTest {
   }
 
   @Test
+  public void flattenAsCsv() throws IOException {
+    final String query = """
+          let $array := [{"foo":0,"ddd":"tztz"},{"bar":"hello","zzz":null},{"baz":true,"zzz":"yes"}]
+          let $value := for $object in $array
+                        return
+                          let $fields := bit:fields($object)
+                          let $len := bit:len($fields)
+                          for $field at $pos in $fields
+                          return if ($pos < $len) then (
+                            $object=>$field || ","
+                          ) else (
+                            $object=>$field || "\n"
+                          )
+          return string-join($value,"")
+        """;
+    final var result = query(query);
+    assertEquals("""
+                     0,tztz
+                     hello,null
+                     true,yes
+                     """.stripIndent(), result);
+  }
+
+  @Test
   public void arrayIndexSlice1WithIncrement() throws IOException {
     final String query = """
           let $array := [{"foo": 0}, "bar", {"baz": true()}]

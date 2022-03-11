@@ -42,21 +42,59 @@ public class PathTest {
 
   @Test
   public void testJsonPathWithArrayMatching() {
-    // /paths/\/business_service_providers\/search//[]/get.
+    // /paths/\/business_service_providers\/search\///[]/get\/.
     Path<QNm> expected = (new Path<QNm>()).child(new QNm("paths"))
-                                          .child(new QNm("\\/business_service_providers\\/search"))
+                                          .child(new QNm("/business_service_providers/search/"))
                                           .descendantArray()
-                                          .child(new QNm("get"));
-    Path<QNm> parsed = (new PathParser(expected.toString())).parse();
+                                          .child(new QNm("get/"));
+    Path<QNm> parsed = (new PathParser(expected.toString(), PathParser.Type.JSON)).parse();
     assertEquals("Path parsed correctly", expected, parsed);
 
     Path<QNm> toCheck = (new Path<QNm>()).child(new QNm("paths"))
-                                         .child(new QNm("\\/business_service_providers\\/search"))
+                                         .child(new QNm("/business_service_providers/search/"))
                                          .child(new QNm("foobar"))
                                          .childArray()
-                                         .child(new QNm("get"));
+                                         .child(new QNm("get/"));
 
     assertTrue(expected.matches(toCheck));
+  }
+
+  @Test
+  public void testSJsonPath3() {
+    // /paths/\/business_service_providers/search/get.
+    Path<QNm> expected = (new Path<QNm>()).child(new QNm("paths"))
+                                          .child(new QNm("/business_service_providers"))
+                                          .child(new QNm("search"))
+                                          .child(new QNm("get"));
+    Path<QNm> parsed = (new PathParser(expected.toString(), PathParser.Type.JSON)).parse();
+    assertEquals("Path parsed correctly", expected, parsed);
+  }
+
+  @Test
+  public void testSJsonPath4() {
+    // /paths/\/business_service_providers/\//search/get/\/.
+    Path<QNm> expected = (new Path<QNm>()).child(new QNm("paths"))
+                                          .child(new QNm("/business_service_providers"))
+                                          .child(new QNm("/"))
+                                          .child(new QNm("search"))
+                                          .child(new QNm("get"))
+                                          .child(new QNm("/"));
+    Path<QNm> parsed = (new PathParser(expected.toString(), PathParser.Type.JSON)).parse();
+    assertEquals("Path parsed correctly", expected, parsed);
+  }
+
+  @Test
+  public void testSJsonPath5() {
+    // /paths/\/business_service_providers/\//@foobar/search/get/\/.
+    Path<QNm> expected = (new Path<QNm>()).child(new QNm("paths"))
+                                          .child(new QNm("/business_service_providers"))
+                                          .child(new QNm("/"))
+                                          .child(new QNm("@foobar"))
+                                          .child(new QNm("search"))
+                                          .child(new QNm("get"))
+                                          .child(new QNm("/"));
+    Path<QNm> parsed = (new PathParser(expected.toString(), PathParser.Type.JSON)).parse();
+    assertEquals("Path parsed correctly", expected, parsed);
   }
 
   @Test
@@ -66,7 +104,7 @@ public class PathTest {
                                           .child(new QNm("\\/business_service_providers\\/search"))
                                           .descendantArray()
                                           .child(new QNm("get"));
-    Path<QNm> parsed = (new PathParser(expected.toString())).parse();
+    Path<QNm> parsed = (new PathParser(expected.toString(), PathParser.Type.JSON)).parse();
     assertEquals("Path parsed correctly", expected, parsed);
 
     Path<QNm> toCheck = (new Path<QNm>()).child(new QNm("paths"))
@@ -84,15 +122,15 @@ public class PathTest {
     Path<QNm> expected = (new Path<QNm>()).child(new QNm("paths"))
                                           .child(new QNm("\\/business_service_providers\\/search"))
                                           .child(new QNm("get"));
-    Path<QNm> parsed = (new PathParser(expected.toString())).parse();
+    Path<QNm> parsed = (new PathParser(expected.toString(), PathParser.Type.JSON)).parse();
     assertEquals("Path parsed correctly", expected, parsed);
   }
 
   @Test
   public void testSJsonPath2() {
     // /paths/\/business_service_providers\.
-    Path<QNm> expected = (new Path<QNm>()).child(new QNm("paths")).child(new QNm("\\/business_service_providers\\"));
-    Path<QNm> parsed = (new PathParser(expected.toString())).parse();
+    Path<QNm> expected = (new Path<QNm>()).child(new QNm("paths")).child(new QNm("/business_service_providers\\"));
+    Path<QNm> parsed = (new PathParser(expected.toString(), PathParser.Type.JSON)).parse();
     assertEquals("Path parsed correctly", expected, parsed);
   }
 
