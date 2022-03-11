@@ -191,7 +191,12 @@ public final class PathParser extends Tokenizer {
           q = name();
         }
       }
-      p.descendant(expand(q));
+
+      if (type == Type.XML) {
+        p.descendant(expand(q));
+      } else {
+        p.descendantObjectField(q);
+      }
       return true;
     } else if ((la = la("/")) != null) {
       if (type == Type.XML && la(la, "@") != null) {
@@ -220,7 +225,11 @@ public final class PathParser extends Tokenizer {
           q = name();
         }
       }
-      p.child(expand(q));
+      if (type == Type.XML) {
+        p.child(expand(q));
+      } else {
+        p.childObjectField(expand(q));
+      }
       return true;
     }
     return false;

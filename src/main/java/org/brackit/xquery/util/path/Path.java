@@ -47,7 +47,7 @@ import org.brackit.xquery.util.path.PathParser.*;
 public final class Path<E> {
   public enum Axis {
     PARENT(".."), SELF("."), DESC("//"), CHILD("/"), DESC_ATTRIBUTE("//@"), CHILD_ATTRIBUTE("/@"), CHILD_ARRAY("/[]"), DESC_ARRAY(
-        "//[]");
+        "//[]"), DESC_OBJECT_FIELD("//"), CHILD_OBJECT_FIELD("/");
 
     private final String text;
 
@@ -84,18 +84,16 @@ public final class Path<E> {
 
     @Override
     public boolean equals(Object obj) {
-      if (!(obj instanceof Step)) {
+      if (!(obj instanceof final Step<?> other)) {
         return false;
       }
-
-      final Step<?> other = (Step<?>) obj;
 
       return other.axis.equals(axis) && (other.value == value || other.value.equals(value));
     }
 
     @Override
     public int hashCode() {
-      return (value != null) ? axis.hashCode() ^ value.hashCode() : axis.hashCode();
+      return value != null ? axis.hashCode() ^ value.hashCode() : axis.hashCode();
     }
 
     @Override
@@ -103,11 +101,17 @@ public final class Path<E> {
       final String axisString = axis.getText();
       String valueString = value != null
           ? value.toString()
-          : (axis == Axis.PARENT || axis == Axis.SELF || axis == Axis.CHILD_ARRAY || axis == Axis.DESC_ARRAY)
-              ? ""
-              : "*";
+          : axis == Axis.PARENT || axis == Axis.SELF || axis == Axis.CHILD_ARRAY || axis == Axis.DESC_ARRAY ? "" : "*";
       if (valueString.contains("/")) {
         valueString = valueString.replace("/", "\\/");
+      }
+      if (axis == Axis.DESC_OBJECT_FIELD || axis == Axis.CHILD_OBJECT_FIELD) {
+        if (valueString.contains("\\[")) {
+          valueString = valueString.replace("\\\\\\[", "[");
+        }
+        if (valueString.contains("\\]")) {
+          valueString = valueString.replace("\\\\\\]", "]");
+        }
       }
       return axisString + valueString;
     }
@@ -133,8 +137,23 @@ public final class Path<E> {
     return this;
   }
 
+  public Path<E> childObjectField() {
+    path.add(new Step<>(Axis.CHILD_OBJECT_FIELD, null));
+    return this;
+  }
+
+  public Path<E> childObjectField(E value) {
+    path.add(new Step<>(Axis.CHILD_OBJECT_FIELD, value));
+    return this;
+  }
+
   public Path<E> descendant(E value) {
     path.add(new Step<>(Axis.DESC, value));
+    return this;
+  }
+
+  public Path<E> descendantObjectField(E value) {
+    path.add(new Step<>(Axis.DESC_OBJECT_FIELD, value));
     return this;
   }
 
@@ -155,6 +174,11 @@ public final class Path<E> {
 
   public Path<E> descendant() {
     path.add(new Step<>(Axis.DESC, null));
+    return this;
+  }
+
+  public Path<E> descendantObjectField() {
+    path.add(new Step<>(Axis.DESC_OBJECT_FIELD, null));
     return this;
   }
 
@@ -235,37 +259,39 @@ public final class Path<E> {
 
     while (pPos >= 0) {
       Axis pAxis = p[pPos].axis;
-      boolean pIsAttributeStep = (pAxis == Axis.CHILD_ATTRIBUTE) || (pAxis == Axis.DESC_ATTRIBUTE);
-      boolean pIsArrayStep = (pAxis == Axis.CHILD_ARRAY) || (pAxis == Axis.DESC_ARRAY);
-      boolean pIsNodeStep = (pAxis == Axis.CHILD) || (pAxis == Axis.DESC);
+      boolean pIsAttributeStep = pAxis == Axis.CHILD_ATTRIBUTE || pAxis == Axis.DESC_ATTRIBUTE;
+      boolean pIsArrayStep = pAxis == Axis.CHILD_ARRAY || pAxis == Axis.DESC_ARRAY;
+      boolean pIsNodeStep = pAxis == Axis.CHILD || pAxis == Axis.DESC;
+      boolean pIsObjectFieldStep = pAxis == Axis.CHILD_OBJECT_FIELD || pAxis == Axis.DESC_OBJECT_FIELD;
 
       Axis oAxis = o[oPos].axis;
-      boolean oIsAttributeStep = (oAxis == Axis.CHILD_ATTRIBUTE) || (oAxis == Axis.DESC_ATTRIBUTE);
-      boolean oIsArrayStep = (oAxis == Axis.CHILD_ARRAY) || (oAxis == Axis.DESC_ARRAY);
-      boolean oIsNodeStep = (oAxis == Axis.CHILD) || (oAxis == Axis.DESC);
+      boolean oIsAttributeStep = oAxis == Axis.CHILD_ATTRIBUTE || oAxis == Axis.DESC_ATTRIBUTE;
+      boolean oIsArrayStep = oAxis == Axis.CHILD_ARRAY || oAxis == Axis.DESC_ARRAY;
+      boolean oIsNodeStep = oAxis == Axis.CHILD || oAxis == Axis.DESC;
+      boolean oIsObjectFieldStep = oAxis == Axis.CHILD_OBJECT_FIELD || oAxis == Axis.DESC_OBJECT_FIELD;
 
-      if (!pIsNodeStep && !pIsAttributeStep && !pIsArrayStep) {
+      if (!pIsNodeStep && !pIsAttributeStep && !pIsArrayStep && !pIsObjectFieldStep) {
         throw new PathException("Illegal pattern path: %s", this);
       }
 
-      if (!oIsAttributeStep && !oIsArrayStep && !oIsNodeStep) {
+      if (!oIsAttributeStep && !oIsArrayStep && !oIsNodeStep && !oIsObjectFieldStep) {
         throw new PathException("Illegal path: %s", path);
       }
 
       // System.out.print(String.format("p: %3s  o: %3s  oPos: %3s  pPos: %3s  ",
       // p[pPos], o[oPos], oPos, pPos));
 
-      if ((p[pPos].value == null || p[pPos].value != null
-          && p[pPos].value.equals(o[oPos].value)) && (pAxis == oAxis || (pAxis == Axis.DESC && oAxis == Axis.CHILD)
-          || (pAxis == Axis.DESC_ATTRIBUTE && oAxis == Axis.CHILD_ATTRIBUTE) || (pAxis == Axis.DESC_ARRAY
-          && oAxis == Axis.CHILD_ARRAY))) {
+      if ((p[pPos].value == null || p[pPos].value != null && p[pPos].value.equals(o[oPos].value)) && (pAxis == oAxis
+          || pAxis == Axis.DESC && oAxis == Axis.CHILD || pAxis == Axis.DESC_ATTRIBUTE && oAxis == Axis.CHILD_ATTRIBUTE
+          || pAxis == Axis.DESC_ARRAY && oAxis == Axis.CHILD_ARRAY
+          || pAxis == Axis.DESC_OBJECT_FIELD && oAxis == Axis.CHILD_OBJECT_FIELD)) {
         // System.out.println("match " + p[pPos]);
         matchTable[pPos] = oPos;
         oPos--;
         pPos--;
       } else if (pPos < pLen - 1) {
         while (p[pPos + 1].axis != Axis.DESC && p[pPos + 1].axis != Axis.DESC_ATTRIBUTE
-            && p[pPos + 1].axis != Axis.DESC_ARRAY) {
+            && p[pPos + 1].axis != Axis.DESC_ARRAY && p[pPos + 1].axis != Axis.DESC_OBJECT_FIELD) {
           // backtracking
           // System.out.println("Backtracking to pPos " + (pPos + 1));
           pPos++;
@@ -292,7 +318,8 @@ public final class Path<E> {
     }
 
     boolean match =
-        oPos == -1 || p[0].axis == Axis.DESC || p[0].axis == Axis.DESC_ATTRIBUTE || p[0].axis == Axis.DESC_ARRAY;
+        oPos == -1 || p[0].axis == Axis.DESC || p[0].axis == Axis.DESC_OBJECT_FIELD || p[0].axis == Axis.DESC_ATTRIBUTE
+            || p[0].axis == Axis.DESC_ARRAY;
 
     if (match) {
       // System.out.println("MatchTable: " + Arrays.toString(matchTable));
@@ -303,12 +330,12 @@ public final class Path<E> {
 
   public E head() {
     int size = path.size();
-    return (size > 0) ? path.get(0).value : null;
+    return size > 0 ? path.get(0).value : null;
   }
 
   public E tail() {
     int index = path.size() - 1;
-    return (index >= 0) ? path.get(index).value : null;
+    return index >= 0 ? path.get(index).value : null;
   }
 
   public Path<E> leading() {
@@ -321,7 +348,7 @@ public final class Path<E> {
 
   public Path<E> trailing() {
     int index = path.size();
-    return (index > 0) ? new Path<>(new ArrayList<>(path.subList(1, index))) : new Path<>();
+    return index > 0 ? new Path<>(new ArrayList<>(path.subList(1, index))) : new Path<>();
   }
 
   public List<Step<E>> steps() {
@@ -347,7 +374,7 @@ public final class Path<E> {
 
   public boolean isAbsolute() {
     for (final Step<E> section : path) {
-      if ((section.axis != Axis.CHILD) || (section.value == null)) {
+      if (section.axis != Axis.CHILD || section.value == null) {
         return false;
       }
     }
@@ -363,7 +390,7 @@ public final class Path<E> {
     for (Step<E> step : path) {
       Axis a = step.axis;
 
-      if ((a != Axis.PARENT) && (a != Axis.SELF)) {
+      if (a != Axis.PARENT && a != Axis.SELF) {
         return false;
       }
     }
@@ -379,8 +406,8 @@ public final class Path<E> {
     for (final Step<E> step : path) {
       Axis a = step.axis;
 
-      if (((a != Axis.CHILD) && (a != Axis.CHILD_ATTRIBUTE)) && (a != Axis.SELF) && (a != Axis.DESC) && (a
-          != Axis.DESC_ATTRIBUTE)) {
+      if (a != Axis.CHILD && a != Axis.CHILD_ATTRIBUTE && a != Axis.SELF && a != Axis.DESC
+          && a != Axis.DESC_ATTRIBUTE) {
         return false;
       }
     }
@@ -389,12 +416,12 @@ public final class Path<E> {
   }
 
   public boolean isRelative() {
-    return (path.size() != 0) && (path.get(0).axis != Axis.CHILD);
+    return path.size() != 0 && path.get(0).axis != Axis.CHILD;
   }
 
   public boolean isAttribute() {
-    return (path.size() != 0) && ((path.get(path.size() - 1).axis == Axis.DESC_ATTRIBUTE) || (
-        path.get(path.size() - 1).axis == Axis.CHILD_ATTRIBUTE));
+    return path.size() != 0 && (path.get(path.size() - 1).axis == Axis.DESC_ATTRIBUTE
+        || path.get(path.size() - 1).axis == Axis.CHILD_ATTRIBUTE);
   }
 
   public Path<E> normalize() {
@@ -402,20 +429,18 @@ public final class Path<E> {
   }
 
   public Path<E> copy() {
-    return new Path<>((path != null) ? new ArrayList<>(path) : null);
+    return new Path<>(path != null ? new ArrayList<>(path) : null);
   }
 
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof Path<?>)) {
+    if (!(obj instanceof Path<?> other)) {
       return false;
     }
 
     if (obj == this) {
       return true;
     }
-
-    Path<?> other = (Path<?>) obj;
 
     if (other.path.size() != path.size()) {
       return false;
@@ -448,8 +473,8 @@ public final class Path<E> {
     Step<E> previous = null;
 
     for (final Step<E> section : path) {
-      if (((section.axis == Axis.SELF) || (section.axis == Axis.PARENT)) && (previous != null) && (
-          (previous.axis == Axis.SELF) || (previous.axis == Axis.PARENT))) {
+      if ((section.axis == Axis.SELF || section.axis == Axis.PARENT) && previous != null && (previous.axis == Axis.SELF
+          || previous.axis == Axis.PARENT)) {
         builder.append("/");
       }
 
@@ -465,11 +490,11 @@ public final class Path<E> {
   }
 
   public static Path<QNm> parse(String path) throws PathException {
-    return (new PathParser(path)).parse();
+    return new PathParser(path).parse();
   }
 
   public static Path<QNm> parse(String path, Type type) throws PathException {
-    return (new PathParser(path, type)).parse();
+    return new PathParser(path, type).parse();
   }
 
   public static void main(String[] args) {
@@ -480,14 +505,14 @@ public final class Path<E> {
     System.out.println("Leading " + path.leading());
     System.out.println("Explode " + path.explode());
 
-    path = new Path<String>();
+    path = new Path<>();
     path.child("bib");
     System.out.println("Tail " + path.tail());
     System.out.println("Leading " + path.leading());
     System.out.println("trailing " + path.leading());
     System.out.println("Explode " + path.explode());
 
-    path = new Path<String>();
+    path = new Path<>();
     System.out.println("Tail " + path.tail());
     System.out.println("Leading " + path.leading());
     System.out.println("trailing " + path.leading());
