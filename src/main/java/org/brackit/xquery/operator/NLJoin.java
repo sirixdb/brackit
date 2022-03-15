@@ -27,15 +27,14 @@
  */
 package org.brackit.xquery.operator;
 
-import java.util.Arrays;
-
 import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.util.Cmp;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
+
+import java.util.Arrays;
 
 /**
  * @author Sebastian Baechle
@@ -111,14 +110,14 @@ public class NLJoin implements Operator {
             return null;
           }
           lMatch = false;
-          lKey = (isGCmp) ? lExpr.evaluate(ctx, lt) : lExpr.evaluateToItem(ctx, lt);
+          lKey = isGCmp ? lExpr.evaluate(ctx, lt) : lExpr.evaluateToItem(ctx, lt);
           rc = r.create(ctx, lt);
           rc.open(ctx);
         }
         while ((rt = rc.next(ctx)) != null) {
-          rKey = (isGCmp) ? rExpr.evaluate(ctx, rt) : rExpr.evaluateToItem(ctx, rt);
+          rKey = isGCmp ? rExpr.evaluate(ctx, rt) : rExpr.evaluateToItem(ctx, rt);
 
-          boolean res = (isGCmp) ? cmp.gCmp(ctx, lKey, rKey) : cmp.vCmp(ctx, (Item) lKey, (Item) rKey);
+          boolean res = isGCmp ? cmp.gCmp(ctx, lKey, rKey) : cmp.vCmp(ctx, (Item) lKey, (Item) rKey);
 
           if (res) {
             Sequence[] tmp = rt.array();
@@ -129,7 +128,7 @@ public class NLJoin implements Operator {
         }
         rc.close(ctx);
         rc = null;
-        if ((leftJoin) && (!lMatch)) {
+        if (leftJoin && !lMatch) {
           return lt.concat(padding);
         }
       }

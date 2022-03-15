@@ -200,10 +200,6 @@ public class TableJoin extends Check implements Operator {
   }
 
   public Reference group() {
-    return new Reference() {
-      public void setPos(int pos) {
-        groupVar = pos;
-      }
-    };
+    return pos -> groupVar = pos;
   }
 }

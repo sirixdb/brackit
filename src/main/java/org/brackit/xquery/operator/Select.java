@@ -28,7 +28,6 @@
 package org.brackit.xquery.operator;
 
 import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.xdm.Expr;
 import org.brackit.xquery.xdm.Sequence;

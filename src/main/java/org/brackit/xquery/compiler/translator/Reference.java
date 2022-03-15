@@ -30,6 +30,7 @@ package org.brackit.xquery.compiler.translator;
 /**
  * @author Sebastian Baechle
  */
+@FunctionalInterface
 public interface Reference {
   /**
    * Initialize the reference to the variable's

@@ -82,13 +82,9 @@ public class BlockingParallelizer implements Operator {
       this.finished = false;
       start = noOfBuffers - 1;
       end = 0;
-      new Thread() {
-        public void run() {
-          // System.out.println("internal starting");
-          fill();
-          // System.out.println("internal stopping");
-        }
-      }.start();
+      // System.out.println("internal starting");
+      new Thread(this::fill).start();
+      // System.out.println("internal stopping");
     }
 
     private void fill() {
@@ -160,7 +156,7 @@ public class BlockingParallelizer implements Operator {
         long start = System.currentTimeMillis();
         try {
           wait();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignored) {
         }
         long end = System.currentTimeMillis();
 

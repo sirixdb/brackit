@@ -28,7 +28,6 @@
 package org.brackit.xquery.operator;
 
 import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.util.sort.Ordering;
 import org.brackit.xquery.util.sort.Ordering.OrderModifier;
@@ -66,7 +65,7 @@ public class OrderBy extends Check implements Operator {
         }
         sorted.close();
       }
-      if (((t = next) == null) && ((t = c.next(ctx)) == null)) {
+      if ((t = next) == null && (t = c.next(ctx)) == null) {
         return null;
       }
       next = null;
@@ -80,7 +79,7 @@ public class OrderBy extends Check implements Operator {
       Ordering sort = new Ordering(orderByExprs, modifier);
       sort.add(ctx, t);
       while ((next = c.next(ctx)) != null) {
-        if ((check) && (separate(t, next))) {
+        if (check && separate(t, next)) {
           break;
         }
         sort.add(ctx, next);

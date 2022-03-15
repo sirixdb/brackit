@@ -75,13 +75,11 @@ public class Parallelizer implements Operator {
       freeQueueStart = noOfBuffers - 1;
       freeQueueEnd = 0;
 
-      new Thread() {
-        public void run() {
-          // System.out.println("internal starting");
-          fill();
-          // System.out.println("internal stopping");
-        }
-      }.start();
+      new Thread(() -> {
+        // System.out.println("internal starting");
+        fill();
+        // System.out.println("internal stopping");
+      }).start();
     }
 
     private void fill() {
@@ -167,7 +165,7 @@ public class Parallelizer implements Operator {
         throw deliverError;
       }
 
-      if ((currentBuffer == null) || (pos == currentBuffer.length)) {
+      if (currentBuffer == null || pos == currentBuffer.length) {
         currentBuffer = dequeue();
         pos = 0;
       }

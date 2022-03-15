@@ -89,20 +89,19 @@ public class GroupBy extends Check implements Operator {
     @Override
     public Tuple next(QueryContext ctx) throws QueryException {
       Tuple t;
-      if (((t = next) == null) && ((t = c.next(ctx)) == null)) {
+      if ((t = next) == null && (t = c.next(ctx)) == null) {
         return null;
       }
       next = null;
 
       // pass through
-      if ((check) && (dead(t))) {
-        Tuple emit = grp.singleEmit(t);
-        return emit;
+      if (check && dead(t)) {
+        return grp.singleEmit(t);
       }
 
       grp.add(t);
       while ((next = c.next(ctx)) != null) {
-        if ((check) && (separate(t, next))) {
+        if (check && separate(t, next)) {
           break;
         }
         if (!grp.add(next)) {
@@ -140,12 +139,11 @@ public class GroupBy extends Check implements Operator {
       if (obj == this) {
         return true;
       }
-      if (obj instanceof Key) {
-        Key k = (Key) obj;
+      if (obj instanceof Key k) {
         for (int i = 0; i < val.length; i++) {
           Atomic a1 = val[i];
           Atomic a2 = k.val[i];
-          if (((a1 == null) && (a2 != null)) || (a2 == null) || (a1.atomicCmp(a2) != 0)) {
+          if (a1 == null && a2 != null || a2 == null || a1.atomicCmp(a2) != 0) {
             return false;
           }
         }
@@ -165,7 +163,7 @@ public class GroupBy extends Check implements Operator {
     public HashGroupBy(Cursor c, int tupleSize) {
       this.c = c;
       this.tupleSize = tupleSize;
-      this.map = new LinkedHashMap<Key, Grouping>();
+      this.map = new LinkedHashMap<>();
     }
 
     @Override
@@ -197,14 +195,13 @@ public class GroupBy extends Check implements Operator {
 
         // load groups
         Tuple t;
-        if (((t = next) != null) || ((t = c.next(ctx)) != null)) {
-          if ((check) && (dead(t))) {
+        if ((t = next) != null || (t = c.next(ctx)) != null) {
+          if (check && dead(t)) {
             if (map.isEmpty()) {
               next = null;
               Grouping grp = new Grouping(groupSpecs, addAggSpecs, defaultAgg, addAggs, tupleSize);
               grp.add(t);
-              Tuple emit = grp.emit();
-              return emit;
+              return grp.emit();
             } else {
               // keep next and output grouping map first
               it = map.keySet().iterator();
@@ -214,7 +211,7 @@ public class GroupBy extends Check implements Operator {
 
           add(t);
           while ((next = c.next(ctx)) != null) {
-            if ((check) && (separate(t, next))) {
+            if (check && separate(t, next)) {
               break;
             }
             add(next);
@@ -277,12 +274,11 @@ public class GroupBy extends Check implements Operator {
 
         // load groups
         Tuple t;
-        if (((t = next) != null) || ((t = c.next(ctx)) != null)) {
-          if ((check) && (dead(t))) {
+        if ((t = next) != null || (t = c.next(ctx)) != null) {
+          if (check && dead(t)) {
             if (grp.getSize() == 0) {
               next = null;
-              Tuple emit = grp.singleEmit(t);
-              return emit;
+              return grp.singleEmit(t);
             } else {
               // keep next and output grouping map first
               continue;
@@ -291,7 +287,7 @@ public class GroupBy extends Check implements Operator {
 
           grp.add(null, t);
           while ((next = c.next(ctx)) != null) {
-            if ((check) && (separate(t, next))) {
+            if (check && separate(t, next)) {
               break;
             }
             grp.add(null, next);
@@ -335,19 +331,11 @@ public class GroupBy extends Check implements Operator {
   }
 
   public Reference group(final int groupSpecNo) {
-    return new Reference() {
-      public void setPos(int pos) {
-        groupSpecs[groupSpecNo] = pos;
-      }
-    };
+    return pos -> groupSpecs[groupSpecNo] = pos;
   }
 
   public Reference aggregate(final int addAggNo) {
-    return new Reference() {
-      public void setPos(int pos) {
-        addAggSpecs[addAggNo] = pos;
-      }
-    };
+    return pos -> addAggSpecs[addAggNo] = pos;
   }
 
   public static void main(String[] args) throws Exception {

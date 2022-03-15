@@ -90,7 +90,7 @@ public class ForBind extends Check implements Operator {
         Sequence s = bind.evaluate(ctx, t);
         pos = Int32.ZERO;
         if (s == null) {
-          Tuple tmp = (allowingEmpty) ? emit(t, null) : (check) ? passthroughUncheck(t, local()) : null;
+          Tuple tmp = allowingEmpty ? emit(t, null) : check ? passthroughUncheck(t, local()) : null;
           t = null;
           return tmp;
         } else if (s instanceof Item && !(s instanceof Array)) {
@@ -119,12 +119,12 @@ public class ForBind extends Check implements Operator {
     private Tuple emit(Tuple t, Sequence item) {
       if (bindVar) {
         if (bindPos) {
-          return t.concat(new Sequence[] { item, (item != null) ? (pos = pos.inc()) : pos });
+          return t.concat(new Sequence[] { item, item != null ? (pos = pos.inc()) : pos });
         } else {
           return t.concat(item);
         }
       } else if (bindPos) {
-        return t.concat((item != null) ? (pos = pos.inc()) : pos);
+        return t.concat(item != null ? (pos = pos.inc()) : pos);
       } else {
         return t;
       }

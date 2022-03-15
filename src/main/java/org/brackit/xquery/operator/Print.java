@@ -48,11 +48,11 @@ public class Print implements Operator {
   }
 
   protected class PrintCursor implements Cursor {
+    private static final int MAX_SIZE = 20;
+
     private final Cursor c;
     private final Tuple[] t;
     private final PrintStream out;
-
-    private int maxSize = 20;
 
     private int count;
 
@@ -94,15 +94,15 @@ public class Print implements Operator {
     private String shrinkOrPad(String s) {
       int length = s.length();
 
-      if (length == maxSize) {
+      if (length == MAX_SIZE) {
         return s;
       }
-      if (length > maxSize) {
-        return s.substring(0, maxSize);
+      if (length > MAX_SIZE) {
+        return s.substring(0, MAX_SIZE);
       }
 
-      int toAdd = (maxSize - length);
-      char[] result = new char[maxSize];
+      int toAdd = (MAX_SIZE - length);
+      char[] result = new char[MAX_SIZE];
 
       int i = 0;
       while (i < (toAdd / 2)) {
