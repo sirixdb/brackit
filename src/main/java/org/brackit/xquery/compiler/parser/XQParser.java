@@ -3071,7 +3071,7 @@ public class XQParser extends Tokenizer {
       if (derefDescendant != null) {
         AST derefExpr = new AST(XQ.DerefDescendantExpr);
         derefExpr.addChild(expr);
-        derefExpr.addChild(deref);
+        derefExpr.addChild(derefDescendant);
         expr = derefExpr;
         continue;
       }
