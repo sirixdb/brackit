@@ -57,6 +57,32 @@ public final class JsonTest extends XQueryBaseTest {
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
 
   @Test
+  public void testVarDeref() throws IOException {
+    final String query = """
+        let $object := {"foo":{"baz":{"foo":"bar"}}}
+        let $foo := "foo"
+        let $baz := "baz"
+        let $sequence := $object=>$foo=>$baz=>foo
+        return $sequence
+        """;
+    final var result = query(query);
+    assertEquals("bar", result);
+  }
+
+  @Test
+  public void testDeref() throws IOException {
+    final String query = """
+        let $object := {"foo":{"baz":{"foo":"bar"}}}
+        let $foo := "foo"
+        let $baz := "baz"
+        let $sequence := $object=>foo=>baz=>foo
+        return $sequence
+        """;
+    final var result = query(query);
+    assertEquals("bar", result);
+  }
+
+  @Test
   public void customModule() throws IOException {
     final var compileChain = new CompileChain();
     try (final var out = new ByteArrayOutputStream()) {

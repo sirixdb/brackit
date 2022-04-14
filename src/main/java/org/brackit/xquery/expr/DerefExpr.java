@@ -44,8 +44,6 @@ import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
 import org.brackit.xquery.xdm.json.Object;
 
-import java.util.ArrayList;
-
 /**
  * @author Sebastian Baechle
  */
@@ -69,6 +67,10 @@ public class DerefExpr implements Expr {
 
     if (sequence instanceof LazySequence lazySequence) {
       return getLazySequence(ctx, tuple, lazySequence.iterate());
+    }
+
+    if (sequence instanceof BoundVariable boundVariable) {
+      System.out.println();
     }
 
     if (!(sequence instanceof Object object)) {

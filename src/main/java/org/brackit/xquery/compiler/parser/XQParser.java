@@ -4092,8 +4092,9 @@ public class XQParser extends Tokenizer {
     } else if ((la2 = laEQNameSkipWS(true)) != null) {
       consume(la2);
       return new AST(XQ.QNm, la2.qname());
+    } else {
+      return primaryExpr();
     }
-    return stepExpr();
   }
 
   private AST derefDescendantStep() throws TokenizerException {
