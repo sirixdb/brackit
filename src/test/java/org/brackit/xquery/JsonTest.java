@@ -56,6 +56,20 @@ public final class JsonTest extends XQueryBaseTest {
 
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
 
+  @Ignore
+  @Test
+  public void testDescVarDeref() throws IOException {
+    final String query = """
+        let $object := {"blabla":{"foo":{"baz":{"foo":"bar"}}}}
+        let $foo := "foo"
+        let $baz := "baz"
+        let $sequence := $object==>$foo=>$baz=>foo
+        return $sequence
+        """;
+    final var result = query(query);
+    assertEquals("bar", result);
+  }
+
   @Test
   public void testVarDeref() throws IOException {
     final String query = """
@@ -64,6 +78,19 @@ public final class JsonTest extends XQueryBaseTest {
         let $baz := "baz"
         let $sequence := $object=>$foo=>$baz=>foo
         return $sequence
+        """;
+    final var result = query(query);
+    assertEquals("bar", result);
+  }
+
+  @Test
+  public void testVarDeref2() throws IOException {
+    final String query = """
+        let $array := [true,false,"true",{"foo":["tada",{"baz":["yes","no",null],"bar": null, "foobar":"text"},{"baz":true},{"baz":{"foo":"bar"}}]}]
+        let $sequence := $array[]=>foo[]
+        let $baz := "baz"
+        let $sequence2 := $sequence=>$baz=>foo
+        return $sequence2
         """;
     final var result = query(query);
     assertEquals("bar", result);
