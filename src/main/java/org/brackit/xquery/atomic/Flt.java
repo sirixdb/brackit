@@ -28,6 +28,7 @@
 package org.brackit.xquery.atomic;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
@@ -136,9 +137,9 @@ public class Flt extends AbstractNumeric implements FltNumeric {
       return Double.compare(v, ((Numeric) other).doubleValue());
     }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                             "Cannot compare '%s' with '%s'",
-                             type(),
-                             other.type());
+        "Cannot compare '%s' with '%s'",
+        type(),
+        other.type());
   }
 
   @Override
@@ -158,8 +159,8 @@ public class Flt extends AbstractNumeric implements FltNumeric {
     if (v == 0)
       return (1 / v == 1 / 0.0f) ? "0" : "-0";
     return killTrailingZeros(((v > 0) && (v >= 1e-6) && (v < 1e6) || (-v >= 1e-6) && (-v < 1e6))
-                                 ? DF.format(v)
-                                 : SF.format(v));
+        ? DF.format(v)
+        : SF.format(v));
   }
 
   @Override
@@ -283,7 +284,10 @@ public class Flt extends AbstractNumeric implements FltNumeric {
     if (Float.isInfinite((float) scaled)) {
       BigDecimal bd = new BigDecimal(v);
       bd = bd.scaleByPowerOfTen(precision);
-      bd = bd.setScale(0, BigDecimal.ROUND_HALF_EVEN);
+      // Previously we used BigDecimal setScale(int, int) version. However, since that
+      // is deprecated
+      // the recommended approach is to use BigDecimal.setScale(int, RoundingMode)
+      bd = bd.setScale(0, RoundingMode.HALF_EVEN);
       bd = bd.scaleByPowerOfTen(-precision);
       return new Flt(bd.floatValue());
     }
