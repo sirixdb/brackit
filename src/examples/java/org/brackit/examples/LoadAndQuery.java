@@ -48,8 +48,6 @@ public class LoadAndQuery {
     low, high, critical
   }
 
-  ;
-
   public static void main(String[] args) {
     try {
       loadDocumentAndQuery();
@@ -73,7 +71,7 @@ public class LoadAndQuery {
     doc.deleteOnExit();
 
     // initialize query context and store
-    QueryContext ctx = new QueryContext();
+    QueryContext ctx = new BrackitQueryContext();
     Store store = ctx.getStore();
 
     // use XQuery to load sample document into store
@@ -83,7 +81,7 @@ public class LoadAndQuery {
     new XQuery(xq1).evaluate(ctx);
 
     // reuse store and query loaded document
-    QueryContext ctx2 = new QueryContext(store);
+    QueryContext ctx2 = new BrackitQueryContext(store);
     System.out.println();
     System.out.println("Query loaded document:");
     String xq2 = "doc('mydoc.xml')/log/@severity/string()";
@@ -105,7 +103,7 @@ public class LoadAndQuery {
     }
 
     // initialize query context and store
-    QueryContext ctx = new QueryContext();
+    QueryContext ctx = new BrackitQueryContext();
     Store store = ctx.getStore();
 
     // use XQuery to load all sample documents into store
@@ -115,7 +113,7 @@ public class LoadAndQuery {
     new XQuery(xq1).evaluate(ctx);
 
     // reuse store and query loaded collection
-    QueryContext ctx2 = new QueryContext(store);
+    QueryContext ctx2 = new BrackitQueryContext(store);
     System.out.println();
     System.out.println("Query loaded collection:");
     String xq2 =
