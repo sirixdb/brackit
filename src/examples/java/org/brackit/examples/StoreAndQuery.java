@@ -53,7 +53,7 @@ public class StoreAndQuery {
 
   private static void storeDocumentAndQuery() throws QueryException {
     // initialize query context and store
-    QueryContext ctx = new QueryContext();
+    QueryContext ctx = new BrackitQueryContext();
     Store store = ctx.getStore();
 
     // use XQuery to generate a sample document and store it
@@ -68,7 +68,7 @@ public class StoreAndQuery {
     System.out.println("Query stored document:");
     query = "doc('mydoc.xml')/log/@severity/string()";
     System.out.println(query);
-    QueryContext ctx2 = new QueryContext(store); // use same store
+    QueryContext ctx2 = new BrackitQueryContext(store); // use same store
     XQuery q = new XQuery(query);
     q.setPrettyPrint(true);
     q.serialize(ctx2, System.out);
@@ -77,7 +77,7 @@ public class StoreAndQuery {
 
   private static void storeCollectionAndQuery() throws QueryException {
     // initialize query context and store
-    QueryContext ctx = new QueryContext();
+    QueryContext ctx = new BrackitQueryContext();
     Store store = ctx.getStore();
 
     // use XQuery to generate a sample document and store it
@@ -90,7 +90,7 @@ public class StoreAndQuery {
     System.out.println(query);
     new XQuery(query).evaluate(ctx);
 
-    QueryContext ctx2 = new QueryContext(store);
+    QueryContext ctx2 = new BrackitQueryContext(store);
     System.out.println();
     System.out.println("Query loaded collection:");
     String xq2 =
