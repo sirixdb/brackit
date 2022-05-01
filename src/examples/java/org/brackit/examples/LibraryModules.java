@@ -67,7 +67,7 @@ public class LibraryModules {
 
   private static void compileAndImportLibrary() throws QueryException {
     // initialize query context
-    QueryContext ctx = new QueryContext();
+    QueryContext ctx = new BrackitQueryContext();
     // use a single compile chain for all queries
     CompileChain cc = new CompileChain();
 
@@ -88,7 +88,7 @@ public class LibraryModules {
 
   private static void dynamicLibraryImport() throws QueryException {
     // initialize query context
-    QueryContext ctx = new QueryContext();
+    QueryContext ctx = new BrackitQueryContext();
     // provide a custom module resolver
     ModuleResolver resolver = new BaseResolver() {
       @Override
