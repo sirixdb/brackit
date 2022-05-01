@@ -54,7 +54,7 @@ public class Simple {
 
   private static void queryAndSerialize() throws QueryException {
     // initialize query context
-    QueryContext ctx = new QueryContext();
+    QueryContext ctx = new BrackitQueryContext();
 
     // run query and serialize result to std out
     System.out.println("Running query:");
@@ -68,7 +68,7 @@ public class Simple {
 
   private static void queryAndIterate() throws QueryException {
     // initialize query context
-    QueryContext ctx = new QueryContext();
+    QueryContext ctx = new BrackitQueryContext();
 
     // run query and serialize result to std out
     System.out.println("Running query:");
