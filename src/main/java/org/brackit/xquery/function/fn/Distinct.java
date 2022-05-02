@@ -108,6 +108,12 @@ public class Distinct extends AbstractFunction {
           public void close() {
             it = null;
           }
+
+          @Override
+          public Split split(int min, int max) throws QueryException {
+            // TODO Auto-generated method stub
+            return null;
+          }
         };
       }
     };

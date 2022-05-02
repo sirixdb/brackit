@@ -72,9 +72,9 @@ public final class ArrayAccessExpr implements Expr {
 
     if (!(currItem instanceof Array array)) {
       throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                               "Illegal operand type '%s' where '%s' is expected",
-                               currItem.itemType(),
-                               ArrayType.ARRAY);
+          "Illegal operand type '%s' where '%s' is expected",
+          currItem.itemType(),
+          ArrayType.ARRAY);
     }
 
     final Item itemIndex = index.evaluateToItem(ctx, tuple);
@@ -85,9 +85,9 @@ public final class ArrayAccessExpr implements Expr {
 
     if (!(itemIndex instanceof IntNumeric numericIndex)) {
       throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                               "Illegal operand type '%s' where '%s' is expected",
-                               itemIndex.itemType(),
-                               Type.INR);
+          "Illegal operand type '%s' where '%s' is expected",
+          itemIndex.itemType(),
+          Type.INR);
     }
 
     if (numericIndex.intValue() < 0) {
@@ -95,7 +95,7 @@ public final class ArrayAccessExpr implements Expr {
 
       if (index < 0) {
         throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-                                 "Illegal negative index: " + index);
+            "Illegal negative index: " + index);
       }
 
       return array.at(array.len() + numericIndex.intValue());
@@ -133,12 +133,13 @@ public final class ArrayAccessExpr implements Expr {
               } else {
                 if (!(i instanceof IntNumeric intNumeric)) {
                   throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                           "Illegal operand type '%s' where '%s' is expected",
-                                           i.itemType(),
-                                           Type.INR);
+                      "Illegal operand type '%s' where '%s' is expected",
+                      i.itemType(),
+                      Type.INR);
                 }
 
-                final var index = intNumeric.intValue() >= 0 ? intNumeric.intValue() : array.len() + intNumeric.intValue();
+                final var index = intNumeric.intValue() >= 0 ? intNumeric.intValue()
+                    : array.len() + intNumeric.intValue();
 
                 return array.at(index).evaluateToItem(ctx, tuple);
               }
@@ -148,6 +149,12 @@ public final class ArrayAccessExpr implements Expr {
 
           @Override
           public void close() {
+          }
+
+          @Override
+          public Split split(int min, int max) throws QueryException {
+            // TODO Auto-generated method stub
+            return null;
           }
         };
       }
@@ -168,6 +175,12 @@ public final class ArrayAccessExpr implements Expr {
 
           @Override
           public void close() {
+          }
+
+          @Override
+          public Split split(int min, int max) throws QueryException {
+            // TODO Auto-generated method stub
+            return null;
           }
         };
       }

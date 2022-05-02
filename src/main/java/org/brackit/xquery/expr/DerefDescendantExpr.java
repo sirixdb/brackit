@@ -171,6 +171,12 @@ public class DerefDescendantExpr implements Expr {
           @Override
           public void close() {
           }
+
+          @Override
+          public Split split(int min, int max) throws QueryException {
+            // TODO Auto-generated method stub
+            return null;
+          }
         };
       }
     };
@@ -194,6 +200,12 @@ public class DerefDescendantExpr implements Expr {
           @Override
           public void close() {
           }
+
+          @Override
+          public Split split(int min, int max) throws QueryException {
+            // TODO Auto-generated method stub
+            return null;
+          }
         };
       }
     };
@@ -211,7 +223,8 @@ public class DerefDescendantExpr implements Expr {
   }
 
   private List<Sequence> getSequenceValues(QueryContext ctx, Tuple t, Array sequence, Expr field1) {
-    // TODO: Think about if it makes sense to get the result sequence with an iterator instead of materialize everything
+    // TODO: Think about if it makes sense to get the result sequence with an
+    // iterator instead of materialize everything
 
     final var vals = new ArrayList<Sequence>();
     for (Sequence value : sequence.values()) {

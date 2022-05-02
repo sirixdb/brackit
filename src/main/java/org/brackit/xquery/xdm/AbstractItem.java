@@ -69,6 +69,12 @@ public abstract class AbstractItem extends AbstractSequence implements Item {
 
       public final void close() {
       }
+
+      @Override
+      public Split split(int min, int max) throws QueryException {
+        // TODO Auto-generated method stub
+        return null;
+      }
     };
   }
 }

@@ -115,6 +115,12 @@ public abstract class FlatteningSequence extends AbstractSequence {
         it.close();
       }
     }
+
+    @Override
+    public Split split(int min, int max) throws QueryException {
+      // TODO Auto-generated method stub
+      return null;
+    }
   }
 
   // use volatile fields because
@@ -165,8 +171,8 @@ public abstract class FlatteningSequence extends AbstractSequence {
           // is a singleton
           if (it.next() != null) {
             throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-                                     "Effective boolean value is undefined " + "for sequences with two or more items "
-                                         + "not starting with a node");
+                "Effective boolean value is undefined " + "for sequences with two or more items "
+                    + "not starting with a node");
           }
         } finally {
           it.close();
@@ -176,8 +182,8 @@ public abstract class FlatteningSequence extends AbstractSequence {
       while ((s = sequence(i++)) != null) {
         if (s != null && !s.size().eq(Int32.ZERO)) {
           throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-                                   "Effective boolean value is undefined " + "for sequences with two or more items "
-                                       + "not starting with a node");
+              "Effective boolean value is undefined " + "for sequences with two or more items "
+                  + "not starting with a node");
         }
       }
       return bool = first.booleanValue();

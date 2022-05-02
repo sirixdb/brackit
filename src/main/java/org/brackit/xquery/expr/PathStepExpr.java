@@ -188,7 +188,7 @@ public class PathStepExpr implements Expr {
           nodeOnly = (next instanceof Node);
         } else if ((lastStep) && ((nodeOnly) ^ (next instanceof Node))) {
           throw new QueryException(ErrorCode.ERR_PATH_STEP_RETURNED_NODE_AND_NON_NODE_VALUES,
-                                   "Path step returned both nodes and non-node values");
+              "Path step returned both nodes and non-node values");
         }
       }
       return next;
@@ -197,8 +197,8 @@ public class PathStepExpr implements Expr {
     private Sequence performStep() {
       if (!(item instanceof Node<?>)) {
         throw new QueryException(ErrorCode.ERR_PATH_STEP_RETURNED_NON_NODE_VALUE,
-                                 "Intermediate step in path expression returned a non-node: %s",
-                                 item.itemType());
+            "Intermediate step in path expression returned a non-node: %s",
+            item.itemType());
       }
       Tuple current = t;
       if (bindCount > 0) {
@@ -224,6 +224,12 @@ public class PathStepExpr implements Expr {
       if (out != null) {
         out.close();
       }
+    }
+
+    @Override
+    public Split split(int min, int max) throws QueryException {
+      // TODO Auto-generated method stub
+      return null;
     }
   }
 
@@ -254,7 +260,7 @@ public class PathStepExpr implements Expr {
               nodeOnly = (next instanceof Node);
             } else if ((lastStep) && ((nodeOnly) ^ (next instanceof Node))) {
               throw new QueryException(ErrorCode.ERR_PATH_STEP_RETURNED_NODE_AND_NON_NODE_VALUES,
-                                       "Path step returned both nodes and non-node values");
+                  "Path step returned both nodes and non-node values");
             }
             return next;
           }
@@ -270,8 +276,8 @@ public class PathStepExpr implements Expr {
         }
         if (!(item instanceof Node<?>)) {
           throw new QueryException(ErrorCode.ERR_PATH_STEP_RETURNED_NON_NODE_VALUE,
-                                   "Intermediate step in path expression returned a non-node: %s",
-                                   item.itemType());
+              "Intermediate step in path expression returned a non-node: %s",
+              item.itemType());
         }
 
         if (bindCount > 0) {
@@ -300,6 +306,12 @@ public class PathStepExpr implements Expr {
       if (out != null) {
         out.close();
       }
+    }
+
+    @Override
+    public Split split(int min, int max) throws QueryException {
+      // TODO Auto-generated method stub
+      return null;
     }
   }
 
@@ -386,6 +398,12 @@ public class PathStepExpr implements Expr {
           if (it != null) {
             it.close();
           }
+        }
+
+        @Override
+        public Split split(int min, int max) throws QueryException {
+          // TODO Auto-generated method stub
+          return null;
         }
       };
     }

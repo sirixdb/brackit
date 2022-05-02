@@ -28,6 +28,7 @@
 package org.brackit.xquery.expr;
 
 import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
@@ -127,6 +128,12 @@ public class UnionExpr implements Expr {
             if (bIt != null) {
               bIt.close();
             }
+          }
+
+          @Override
+          public Split split(int min, int max) throws QueryException {
+            // TODO Auto-generated method stub
+            return null;
           }
         };
       }
