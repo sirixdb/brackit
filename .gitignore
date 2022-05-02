@@ -1,5 +1,6 @@
 /target
 .vscode
+*.class
 =======
 .classpath
 .project

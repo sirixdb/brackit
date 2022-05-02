@@ -32,6 +32,7 @@ import java.util.Deque;
 import java.util.List;
 
 import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.AbstractFunction;
@@ -64,8 +65,8 @@ public class ArrayValues extends AbstractFunction {
 
   public ArrayValues(QNm name) {
     super(name,
-          new Signature(SequenceType.ITEM_SEQUENCE, new SequenceType(ArrayType.ARRAY, Cardinality.ZeroOrOne)),
-          true);
+        new Signature(SequenceType.ITEM_SEQUENCE, new SequenceType(ArrayType.ARRAY, Cardinality.ZeroOrOne)),
+        true);
   }
 
   @Override
@@ -110,6 +111,12 @@ public class ArrayValues extends AbstractFunction {
 
           @Override
           public void close() {
+          }
+
+          @Override
+          public Split split(int min, int max) throws QueryException {
+            // TODO Auto-generated method stub
+            return null;
           }
         };
       }

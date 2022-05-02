@@ -28,6 +28,7 @@
 package org.brackit.xquery.expr;
 
 import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
@@ -144,8 +145,8 @@ public abstract class PredicateExpr implements Expr {
           } else {
             try (Iter it = res.iterate()) {
               Item first = it.next();
-              if ((first != null) && (it.next() == null) && (first instanceof Numeric) && (((Numeric) first).cmp(pos)
-                  != 0)) {
+              if ((first != null) && (it.next() == null) && (first instanceof Numeric)
+                  && (((Numeric) first).cmp(pos) != 0)) {
                 return false;
               }
             }
@@ -159,6 +160,12 @@ public abstract class PredicateExpr implements Expr {
           if (it != null) {
             it.close();
           }
+        }
+
+        @Override
+        public Split split(int min, int max) throws QueryException {
+          // TODO Auto-generated method stub
+          return null;
         }
       };
     }

@@ -62,7 +62,7 @@ public abstract class AbstractArray extends AbstractItem implements Array {
   @Override
   public boolean booleanValue() throws QueryException {
     throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-                             "Effective boolean value of array items is undefined.");
+        "Effective boolean value of array items is undefined.");
   }
 
   @Override
@@ -100,6 +100,12 @@ public abstract class AbstractArray extends AbstractItem implements Array {
 
       @Override
       public void close() {
+      }
+
+      @Override
+      public Split split(int min, int max) throws QueryException {
+        // TODO Auto-generated method stub
+        return null;
       }
     };
   }

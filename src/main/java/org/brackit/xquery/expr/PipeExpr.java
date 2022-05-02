@@ -28,6 +28,7 @@
 package org.brackit.xquery.expr;
 
 import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.operator.Cursor;
 import org.brackit.xquery.operator.Operator;
@@ -114,6 +115,12 @@ public class PipeExpr implements Expr {
             cursor.close(ctx);
           }
         }
+
+        @Override
+        public Split split(int min, int max) throws QueryException {
+          // TODO Auto-generated method stub
+          return null;
+        }
       };
     }
   }
@@ -132,7 +139,7 @@ public class PipeExpr implements Expr {
   public boolean isUpdating() {
     // TODO
     return expr.isUpdating();
-    //		return false;
+    // return false;
   }
 
   @Override

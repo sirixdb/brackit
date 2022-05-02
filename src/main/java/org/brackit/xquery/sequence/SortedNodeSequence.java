@@ -99,8 +99,8 @@ public class SortedNodeSequence extends LazySequence {
         if (sequence instanceof Item) {
           if (!(sequence instanceof Node<?>)) {
             throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                     "Illegal atomic item found in sequence: '%s'",
-                                     sequence);
+                "Illegal atomic item found in sequence: '%s'",
+                sequence);
           }
           sort.add(sequence);
         } else {
@@ -109,14 +109,20 @@ public class SortedNodeSequence extends LazySequence {
             while ((item = it.next()) != null) {
               if (!(item instanceof Node<?>)) {
                 throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                         "Illegal atomic item found in sequence: '%s'",
-                                         item);
+                    "Illegal atomic item found in sequence: '%s'",
+                    item);
               }
               sort.add(item);
             }
           }
         }
         sort.sort();
+      }
+
+      @Override
+      public Split split(int min, int max) throws QueryException {
+        // TODO Auto-generated method stub
+        return null;
       }
     };
   }

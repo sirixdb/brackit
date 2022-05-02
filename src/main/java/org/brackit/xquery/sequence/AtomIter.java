@@ -63,4 +63,10 @@ public class AtomIter implements Iter {
       atom = null;
     }
   }
+
+  @Override
+  public Split split(int min, int max) throws QueryException {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

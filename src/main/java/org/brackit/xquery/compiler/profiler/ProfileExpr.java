@@ -108,6 +108,12 @@ public class ProfileExpr extends ProfilingNode implements Expr {
       seqSkipCnt += skipCnt;
       seqSkipTotal += skipTime;
     }
+
+    @Override
+    public Split split(int min, int max) throws QueryException {
+      // TODO Auto-generated method stub
+      return null;
+    }
   }
 
   private class StatSequence extends AbstractSequence {
@@ -133,6 +139,12 @@ public class ProfileExpr extends ProfilingNode implements Expr {
 
         @Override
         public Item next() throws QueryException {
+          return null;
+        }
+
+        @Override
+        public Split split(int min, int max) throws QueryException {
+          // TODO Auto-generated method stub
           return null;
         }
       });
@@ -176,7 +188,7 @@ public class ProfileExpr extends ProfilingNode implements Expr {
     node.addRow("delivered by iter (seq)", seqDeliverCnt);
     node.addRow("total time iter (seq) [ms]", seqIterTotal / 1000000);
     node.addRow("avg. time iter (seq) [ms]",
-                (seqIterCnt > 0) ? (double) seqIterTotal / ((double) 1000000 * seqIterCnt) : -1);
+        (seqIterCnt > 0) ? (double) seqIterTotal / ((double) 1000000 * seqIterCnt) : -1);
     node.addRow("total time skip (seq) [ms]", seqSkipTotal / 1000000);
   }
 

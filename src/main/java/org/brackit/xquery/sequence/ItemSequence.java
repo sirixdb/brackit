@@ -55,8 +55,8 @@ public class ItemSequence extends AbstractSequence {
     }
     if (items.length > 1) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-                               "Effective boolean value is undefined " + "for sequences with two or more items "
-                                   + "not starting with a node");
+          "Effective boolean value is undefined " + "for sequences with two or more items "
+              + "not starting with a node");
     }
     return items[0].booleanValue();
   }
@@ -86,6 +86,12 @@ public class ItemSequence extends AbstractSequence {
 
       @Override
       public void close() {
+      }
+
+      @Override
+      public Split split(int min, int max) throws QueryException {
+        // TODO Auto-generated method stub
+        return null;
       }
     };
   }

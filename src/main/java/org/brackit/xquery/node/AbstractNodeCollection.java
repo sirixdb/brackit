@@ -81,6 +81,12 @@ public abstract class AbstractNodeCollection<E extends Node<E>> extends LazySequ
         }
         return docs.next();
       }
+
+      @Override
+      public Split split(int min, int max) throws QueryException {
+        // TODO Auto-generated method stub
+        return null;
+      }
     };
   }
 }
