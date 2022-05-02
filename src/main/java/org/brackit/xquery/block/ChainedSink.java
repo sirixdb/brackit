@@ -64,7 +64,7 @@ public abstract class ChainedSink implements Sink {
     ChainedSink fork = doFork();
     fork.next = next;
     fork.state = NO_TOKEN;
-    return (next = fork);
+    return next = fork;
   }
 
   protected abstract ChainedSink doFork();
@@ -180,7 +180,7 @@ public abstract class ChainedSink implements Sink {
       if (compareAndSet(NO_TOKEN, WAIT_TOKEN)) {
         // drop local work queue only if necessary
         // or token was not granted concurrently
-        if ((hasPending) && ((yield()) || (!compareAndSet(queue, null)))) {
+        if (hasPending && (this.yield() || !compareAndSet(queue, null))) {
           if (!SUSPEND) {
             // drop local queue
             worker.dropQueue();
@@ -218,7 +218,7 @@ public abstract class ChainedSink implements Sink {
     // process pending work of finished successors
     ChainedSink n = next;
     next = null;
-    while ((n != null) && (!n.compareAndSet(NO_TOKEN, HAS_TOKEN))) {
+    while (n != null && !n.compareAndSet(NO_TOKEN, HAS_TOKEN)) {
       if (n.state == WAIT_TOKEN) {
         n.state = HAS_TOKEN;
         takeover(n);
@@ -236,7 +236,7 @@ public abstract class ChainedSink implements Sink {
   private void promoteFailure() throws QueryException {
     ChainedSink n = next;
     // forward promote failure to forked sinks
-    while ((n != null) && (!n.compareAndSet(NO_TOKEN, FAILED))) {
+    while (n != null && !n.compareAndSet(NO_TOKEN, FAILED)) {
       if (n.state == FAILED) {
         break;
       }
@@ -260,7 +260,7 @@ public abstract class ChainedSink implements Sink {
       n.processPending();
     }
     Deque<Task> queue = n.deposit;
-    if ((queue != null) && (n.compareAndSet(queue, null))) {
+    if (queue != null && n.compareAndSet(queue, null)) {
       n.unyield();
       ((Worker) Thread.currentThread()).adopt(queue);
     }
