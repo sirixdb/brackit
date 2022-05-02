@@ -27,10 +27,11 @@
  */
 package org.brackit.examples;
 
+import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
-import org.brackit.xquery.xdm.Store;
+import org.brackit.xquery.xdm.node.NodeStore;
 
 /**
  * Store existing (dynamic) documents and fragments into
@@ -54,13 +55,17 @@ public class StoreAndQuery {
   private static void storeDocumentAndQuery() throws QueryException {
     // initialize query context and store
     QueryContext ctx = new BrackitQueryContext();
-    Store store = ctx.getStore();
+    NodeStore store = ctx.getNodeStore();
 
     // use XQuery to generate a sample document and store it
     System.out.println("Store document:");
-    String query =
-        "let $doc :=\n" + "<log tstamp='{current-date()}' severity='critical'>\n" + "    <src>192.168.12.31</src>\n"
-            + "    <msg>foo bar</msg>\n" + "</log>\n" + "return bit:store('mydoc.xml', $doc)";
+    String query = """
+        let $doc :=
+        <log tstamp='{current-date()}' severity='critical'>
+            <src>192.168.12.31</src>
+            <msg>foo bar</msg>
+        </log>
+        return bit:store('mydoc.xml', $doc)""";
     System.out.println(query);
     new XQuery(query).evaluate(ctx);
 
@@ -69,37 +74,47 @@ public class StoreAndQuery {
     query = "doc('mydoc.xml')/log/@severity/string()";
     System.out.println(query);
     QueryContext ctx2 = new BrackitQueryContext(store); // use same store
-    XQuery q = new XQuery(query);
-    q.setPrettyPrint(true);
-    q.serialize(ctx2, System.out);
+    new XQuery(query).prettyPrint().serialize(ctx2, System.out);
     System.out.println();
   }
 
   private static void storeCollectionAndQuery() throws QueryException {
     // initialize query context and store
     QueryContext ctx = new BrackitQueryContext();
-    Store store = ctx.getStore();
+    NodeStore store = ctx.getNodeStore();
 
     // use XQuery to generate a sample document and store it
     System.out.println("Store collection:");
-    String query = "let $docs :=\n" + "   for $i in (1 to 10)\n" + "   let $sev := if ($i mod 3 = 0) then\n"
-        + "                  'low'\n" + "               else if ($i mod 3 = 1) then\n" + "                   'high'\n"
-        + "               else 'critical'\n" + "   return\n"
-        + "      <log tstamp='{current-date()}' severity='{$sev}'>\n" + "        <src>192.168.12.{$i}</src>\n"
-        + "        <msg>foo bar</msg>\n" + "      </log>\n" + "return bit:store('mydocs.col', $docs)";
+    String query = """
+        let $docs :=
+           for $i in (1 to 10)
+           let $sev := if ($i mod 3 = 0) then
+                          'low'
+                       else if ($i mod 3 = 1) then
+                           'high'
+                       else 'critical'
+           return
+              <log tstamp='{current-date()}' severity='{$sev}'>
+                <src>192.168.12.{$i}</src>
+                <msg>foo bar</msg>
+              </log>
+        return bit:store('mydocs.col', $docs)""";
     System.out.println(query);
     new XQuery(query).evaluate(ctx);
 
     QueryContext ctx2 = new BrackitQueryContext(store);
     System.out.println();
     System.out.println("Query loaded collection:");
-    String xq2 =
-        "for $log in collection('mydocs.col')/log\n" + "where $log/@severity='critical'\n" + "return\n" + "<message>\n"
-            + "  <from>{$log/src/text()}</from>\n" + "  <body>{$log/msg/text()}</body>\n" + "</message>";
+    String xq2 = """
+        for $log in collection('mydocs.col')/log
+        where $log/@severity='critical'
+        return
+        <message>
+          <from>{$log/src/text()}</from>
+          <body>{$log/msg/text()}</body>
+        </message>""";
     System.out.println(xq2);
-    XQuery q = new XQuery(xq2);
-    q.setPrettyPrint(true);
-    q.serialize(ctx2, System.out);
+    new XQuery(query).prettyPrint().serialize(ctx2, System.out);
     System.out.println();
   }
 }

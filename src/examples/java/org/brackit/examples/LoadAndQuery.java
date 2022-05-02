@@ -27,17 +27,18 @@
  */
 package org.brackit.examples;
 
+import org.brackit.xquery.BrackitQueryContext;
+import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.QueryException;
+import org.brackit.xquery.XQuery;
+import org.brackit.xquery.xdm.node.NodeStore;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Date;
 import java.util.Random;
-
-import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.XQuery;
-import org.brackit.xquery.xdm.Store;
 
 /**
  * Load documents into the internal storage.
@@ -67,12 +68,12 @@ public class LoadAndQuery {
   private static void loadDocumentAndQuery() throws QueryException, IOException {
     // prepare sample document
     File tmpDir = new File(System.getProperty("java.io.tmpdir"));
-    File doc = generateSampleDoc(tmpDir, "sample", 0);
+    File doc = generateSampleDoc(tmpDir);
     doc.deleteOnExit();
 
     // initialize query context and store
     QueryContext ctx = new BrackitQueryContext();
-    Store store = ctx.getStore();
+    NodeStore store = ctx.getNodeStore();
 
     // use XQuery to load sample document into store
     System.out.println("Loading document:");
@@ -99,12 +100,12 @@ public class LoadAndQuery {
     }
     dir.deleteOnExit();
     for (int i = 0; i < 10; i++) {
-      generateSampleDoc(dir, "sample", i);
+      generateSampleDoc(dir);
     }
 
     // initialize query context and store
     QueryContext ctx = new BrackitQueryContext();
-    Store store = ctx.getStore();
+    NodeStore store = ctx.getNodeStore();
 
     // use XQuery to load all sample documents into store
     System.out.println("Load collection from files:");
@@ -116,17 +117,20 @@ public class LoadAndQuery {
     QueryContext ctx2 = new BrackitQueryContext(store);
     System.out.println();
     System.out.println("Query loaded collection:");
-    String xq2 =
-        "for $log in collection('mydocs.col')/log\n" + "where $log/@severity='critical'\n" + "return\n" + "<message>\n"
-            + "  <from>{$log/src/text()}</from>\n" + "  <body>{$log/msg/text()}</body>\n" + "</message>";
+    String xq2 = """
+        for $log in collection('mydocs.col')/log
+        where $log/@severity='critical'
+        return
+        <message>
+          <from>{$log/src/text()}</from>
+          <body>{$log/msg/text()}</body>
+        </message>""";
     System.out.println(xq2);
-    XQuery q = new XQuery(xq2);
-    q.setPrettyPrint(true);
-    q.serialize(ctx2, System.out);
+    new XQuery(xq2).prettyPrint().serialize(ctx2, System.out);
     System.out.println();
   }
 
-  private static File generateSampleDoc(File dir, String prefix, int no) throws IOException {
+  private static File generateSampleDoc(File dir) throws IOException {
     File file = File.createTempFile("sample", ".xml", dir);
     file.deleteOnExit();
     PrintStream out = new PrintStream(new FileOutputStream(file));
@@ -150,11 +154,11 @@ public class LoadAndQuery {
         bytes[i++] = ' ';
       }
     }
-    String msg = new String(bytes);
+    final String msg = new String(bytes);
     out.print("<?xml version='1.0'?>");
-    out.print(String.format("<log tstamp='%s' severity='%s'>", tst, sev));
-    out.print(String.format("<src>%s</src>", src));
-    out.print(String.format("<msg>%s</msg>", msg));
+    out.printf("<log tstamp='%s' severity='%s'>", tst, sev);
+    out.printf("<src>%s</src>", src);
+    out.printf("<msg>%s</msg>", msg);
     out.print("</log>");
     out.close();
     return file;

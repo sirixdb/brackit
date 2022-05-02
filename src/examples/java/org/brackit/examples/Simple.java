@@ -27,6 +27,7 @@
  */
 package org.brackit.examples;
 
+import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
@@ -58,11 +59,12 @@ public class Simple {
 
     // run query and serialize result to std out
     System.out.println("Running query:");
-    String xq = "for $i in (1 to 4)\n" + "let $d := <no>{$i}</no>\n" + "return $d";
+    String xq = """
+        for $i in (1 to 4)
+        let $d := <no>{$i}</no>
+        return $d""";
     System.out.println(xq);
-    XQuery q = new XQuery(xq);
-    q.setPrettyPrint(true);
-    q.serialize(ctx, System.out);
+    new XQuery(xq).prettyPrint().serialize(ctx, System.out);
     System.out.println();
   }
 
@@ -72,25 +74,25 @@ public class Simple {
 
     // run query and serialize result to std out
     System.out.println("Running query:");
-    String xq = "for $i in (1 to 4)\n" + "let $d := <no>{$i}</no>\n" + "return $d";
+    String xq = """
+        for $i in (1 to 4)
+        let $d := <no>{$i}</no>
+        return $d""";
     System.out.println(xq);
     XQuery q = new XQuery(xq);
     Sequence res = q.execute(ctx);
     System.out.println("result sequence size: " + res.size());
-    Iter it = res.iterate();
-    Item i;
-    try {
+    try (final Iter it = res.iterate()) {
+      Item item;
       int cnt = 0;
-      while ((i = it.next()) != null) {
+      while ((item = it.next()) != null) {
         System.out.print("Item ");
         System.out.print(cnt++);
         System.out.print(": ");
-        System.out.print(i.itemType());
+        System.out.print(item.itemType());
         System.out.print(" atomized value=");
-        System.out.println(i.atomize());
+        System.out.println(item.atomize());
       }
-    } finally {
-      it.close();
     }
   }
 }

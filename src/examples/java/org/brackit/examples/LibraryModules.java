@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
@@ -45,9 +46,10 @@ public class LibraryModules {
 
   private static final String LIBRARY_URI = "http://brackit.org/lib/foo";
 
-  private static final String LIBRARY_MODULE =
-      "module namespace foo=\"http://brackit.org/lib/foo\";\n" + "declare function foo:echo($s as item()*) as item()*\n"
-          + "{ ($s, $s) };";
+  private static final String LIBRARY_MODULE = """
+      module namespace foo="http://brackit.org/lib/foo";
+      declare function foo:echo($s as item()*) as item()*
+      { ($s, $s) };""";
 
   private static final String QUERY =
       "import module namespace foo=\"http://brackit.org/lib/foo\";\n" + "foo:echo('hello')";
@@ -80,9 +82,7 @@ public class LibraryModules {
     System.out.println();
     System.out.println("Run query with library import:");
     System.out.println(QUERY);
-    XQuery q = new XQuery(cc, QUERY);
-    q.setPrettyPrint(true);
-    q.serialize(ctx, System.out);
+    new XQuery(cc, QUERY).prettyPrint().serialize(ctx, System.out);
     System.out.println();
   }
 
@@ -95,7 +95,7 @@ public class LibraryModules {
       public List<String> load(String uri, String[] locations) throws IOException {
         if (uri.equals(LIBRARY_URI)) {
           System.out.println("-> Resolving module '" + uri + "'");
-          ArrayList<String> mod = new ArrayList<String>();
+          final List<String> mod = new ArrayList<>();
           mod.add(LIBRARY_MODULE);
           return mod;
         }
@@ -109,9 +109,7 @@ public class LibraryModules {
     System.out.println();
     System.out.println("Run query with library import:");
     System.out.println(QUERY);
-    XQuery q = new XQuery(cc, QUERY);
-    q.setPrettyPrint(true);
-    q.serialize(ctx, System.out);
+    new XQuery(cc, QUERY).prettyPrint().serialize(ctx, System.out);
     System.out.println();
   }
 }
