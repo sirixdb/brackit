@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -27,101 +27,100 @@
  */
 package org.brackit.xquery.block;
 
-import java.io.PrintStream;
-
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.expr.PrintExpr;
 
+import java.io.PrintStream;
+
 /**
  * @author Sebastian Baechle
- * 
  */
 public class Print implements Block {
 
-    public static class PrintSink extends ChainedSink {
-        private final PrintStream out;
-        private final Sink sink;
-        private int count;
-
-        public PrintSink(Sink sink, PrintStream out) {
-            this.sink = sink;
-            this.out = out;
-        }
-
-        @Override
-        protected ChainedSink doFork() {
-            return new PrintSink((sink != null) ? sink.fork() : null, out);
-        }
-
-        @Override
-        protected ChainedSink doPartition(Sink stopAt) {
-            return new PrintSink((sink != null) ? sink.partition(stopAt) : null, out);
-        }
-
-        @Override
-        protected void doOutput(Tuple[] buf, int len) throws QueryException {
-            for (int i = 0; i < len; i++) {
-                count++;
-                out.println(PrintExpr.asString(buf[i]));
-            }
-            if (sink != null) {
-                sink.output(buf, len);
-            }
-        }
-
-        @Override
-        protected void doBegin() throws QueryException {
-            if (sink != null) {
-                sink.begin();
-            }
-            out.println(">>>>");
-        }
-
-        @Override
-        protected void doEnd() throws QueryException {
-            if (sink != null) {
-                sink.end();
-            }
-            out.println("<<<<");
-        }
-
-        @Override
-        protected void doFail() throws QueryException {
-            if (sink != null) {
-                sink.fail();
-            }
-        }
-
-        @Override
-        protected void doFirstBegin() throws QueryException {
-            count = 0;
-            out.println("--- ");
-        }
-
-        @Override
-        protected void doFinalEnd() throws QueryException {
-            out.println("---");
-            out.print(count);
-            out.println(" results");
-            out.flush();
-        }
-    }
-
+  public static class PrintSink extends ChainedSink {
     private final PrintStream out;
+    private final Sink sink;
+    private int count;
 
-    public Print(PrintStream out) {
-        this.out = out;
+    public PrintSink(Sink sink, PrintStream out) {
+      this.sink = sink;
+      this.out = out;
     }
 
     @Override
-    public Sink create(QueryContext ctx, Sink sink) throws QueryException {
-        return new PrintSink(sink, out);
+    protected ChainedSink doFork() {
+      return new PrintSink((sink != null) ? sink.fork() : null, out);
     }
 
     @Override
-    public int outputWidth(int initSize) {
-        return initSize;
+    protected ChainedSink doPartition(Sink stopAt) {
+      return new PrintSink((sink != null) ? sink.partition(stopAt) : null, out);
     }
+
+    @Override
+    protected void doOutput(Tuple[] buf, int len) throws QueryException {
+      for (int i = 0; i < len; i++) {
+        count++;
+        out.println(PrintExpr.asString(buf[i]));
+      }
+      if (sink != null) {
+        sink.output(buf, len);
+      }
+    }
+
+    @Override
+    protected void doBegin() throws QueryException {
+      if (sink != null) {
+        sink.begin();
+      }
+      out.println(">>>>");
+    }
+
+    @Override
+    protected void doEnd() throws QueryException {
+      if (sink != null) {
+        sink.end();
+      }
+      out.println("<<<<");
+    }
+
+    @Override
+    protected void doFail() throws QueryException {
+      if (sink != null) {
+        sink.fail();
+      }
+    }
+
+    @Override
+    protected void doFirstBegin() throws QueryException {
+      count = 0;
+      out.println("--- ");
+    }
+
+    @Override
+    protected void doFinalEnd() throws QueryException {
+      out.println("---");
+      out.print(count);
+      out.println(" results");
+      out.flush();
+    }
+  }
+
+  private final PrintStream out;
+
+  public Print(PrintStream out) {
+    this.out = out;
+  }
+
+  @Override
+  public Sink create(QueryContext ctx, Sink sink) throws QueryException {
+    return new PrintSink(sink, out);
+  }
+
+  @Override
+  public int outputWidth(int initSize) {
+    return initSize;
+  }
 }

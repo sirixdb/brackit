@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,66 +34,65 @@ import org.brackit.xquery.xdm.Expr;
 
 /**
  * @author Sebastian Baechle
- * 
  */
 public class LetBind implements Block {
-    final Expr expr;
+  final Expr expr;
 
-    public LetBind(Expr expr) {
-        this.expr = expr;
+  public LetBind(Expr expr) {
+    this.expr = expr;
+  }
+
+  @Override
+  public Sink create(QueryContext ctx, Sink sink) throws QueryException {
+    return new LetBindSink(ctx, sink);
+  }
+
+  @Override
+  public int outputWidth(int inputWidth) {
+    return inputWidth + 1;
+  }
+
+  private class LetBindSink implements Sink {
+    final QueryContext ctx;
+    final Sink sink;
+
+    public LetBindSink(QueryContext ctx, Sink sink) {
+      this.ctx = ctx;
+      this.sink = sink;
     }
 
     @Override
-    public Sink create(QueryContext ctx, Sink sink) throws QueryException {
-        return new LetBindSink(ctx, sink);
+    public void output(Tuple[] buf, int len) throws QueryException {
+      for (int i = 0; i < len; i++) {
+        Tuple t = buf[i];
+        buf[i] = t.concat(expr.evaluate(ctx, t));
+      }
+      sink.output(buf, len);
     }
 
     @Override
-    public int outputWidth(int inputWidth) {
-        return inputWidth + 1;
+    public Sink fork() {
+      return new LetBindSink(ctx, sink.fork());
     }
 
-    private class LetBindSink implements Sink {
-        final QueryContext ctx;
-        final Sink sink;
-
-        public LetBindSink(QueryContext ctx, Sink sink) {
-            this.ctx = ctx;
-            this.sink = sink;
-        }
-
-        @Override
-        public void output(Tuple[] buf, int len) throws QueryException {
-            for (int i = 0; i < len; i++) {
-                Tuple t = buf[i];
-                buf[i] = t.concat(expr.evaluate(ctx, t));
-            }
-            sink.output(buf, len);
-        }
-
-        @Override
-        public Sink fork() {
-            return new LetBindSink(ctx, sink.fork());
-        }
-
-        @Override
-        public Sink partition(Sink stopAt) {
-            return new LetBindSink(ctx, sink.partition(stopAt));
-        }
-
-        @Override
-        public void end() throws QueryException {
-            sink.end();
-        }
-
-        @Override
-        public void begin() throws QueryException {
-            sink.begin();
-        }
-
-        @Override
-        public void fail() throws QueryException {
-            sink.fail();
-        }
+    @Override
+    public Sink partition(Sink stopAt) {
+      return new LetBindSink(ctx, sink.partition(stopAt));
     }
+
+    @Override
+    public void end() throws QueryException {
+      sink.end();
+    }
+
+    @Override
+    public void begin() throws QueryException {
+      sink.begin();
+    }
+
+    @Override
+    public void fail() throws QueryException {
+      sink.fail();
+    }
+  }
 }

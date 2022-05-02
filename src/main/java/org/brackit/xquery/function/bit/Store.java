@@ -27,8 +27,6 @@
  */
 package org.brackit.xquery.function.bit;
 
-import java.io.IOException;
-
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
@@ -41,20 +39,10 @@ import org.brackit.xquery.node.parser.StreamSubtreeParser;
 import org.brackit.xquery.node.parser.SubtreeHandler;
 import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.util.annotation.FunctionAnnotation;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.xdm.*;
 import org.brackit.xquery.xdm.node.Node;
 import org.brackit.xquery.xdm.node.NodeCollection;
-import org.brackit.xquery.xdm.type.AnyNodeType;
-import org.brackit.xquery.xdm.type.AtomicType;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.ElementType;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.xdm.type.*;
 
 /**
  * @author Henrique Valer
@@ -88,17 +76,17 @@ public class Store extends AbstractFunction {
   @Override
   public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
     try {
-      boolean createNew = (args.length != 3) ? true : ((Atomic) (args[2])).booleanValue();
-      String name = ((Atomic) args[0]).stringValue();
-      Sequence nodes = args[1];
+      final boolean createNew = args.length != 3 || args[2].booleanValue();
+      final String name = ((Atomic) args[0]).stringValue();
+      final Sequence nodes = args[1];
 
       org.brackit.xquery.xdm.node.NodeStore s = ctx.getNodeStore();
       if (createNew) {
         create(s, name, nodes);
       } else {
         try {
-          NodeCollection<?> coll = s.lookup(name);
-          add(s, coll, nodes);
+          final NodeCollection<?> coll = s.lookup(name);
+          add(coll, nodes);
         } catch (DocumentException e) {
           // collection does not exist
           create(s, name, nodes);
@@ -111,29 +99,24 @@ public class Store extends AbstractFunction {
     }
   }
 
-  private void add(org.brackit.xquery.xdm.node.NodeStore store, NodeCollection<?> coll, Sequence nodes)
-      throws DocumentException, IOException {
+  private void add(NodeCollection<?> coll, Sequence nodes)
+      throws DocumentException {
 
-    if (nodes instanceof Node) {
-      Node<?> n = (Node<?>) nodes;
+    if (nodes instanceof Node<?> n) {
       coll.add(new StoreParser(n));
     } else {
-      ParserStream parsers = new ParserStream(nodes);
-      try {
+      try (ParserStream parsers = new ParserStream(nodes)) {
         SubtreeParser parser;
         while ((parser = parsers.next()) != null) {
           coll.add(parser);
         }
-      } finally {
-        parsers.close();
       }
     }
   }
 
   private void create(org.brackit.xquery.xdm.node.NodeStore store, String name, Sequence nodes)
-      throws DocumentException, IOException {
-    if (nodes instanceof Node) {
-      Node<?> n = (Node<?>) nodes;
+      throws DocumentException {
+    if (nodes instanceof Node<?> n) {
       store.create(name, new StoreParser(n));
     } else {
       store.create(name, new ParserStream(nodes));
@@ -241,8 +224,7 @@ public class Store extends AbstractFunction {
         if (i == null) {
           return null;
         }
-        if (i instanceof Node<?>) {
-          Node<?> n = (Node<?>) i;
+        if (i instanceof Node<?> n) {
           return new StoreParser(n);
         } else {
           throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,

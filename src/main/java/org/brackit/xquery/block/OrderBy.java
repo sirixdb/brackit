@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -39,106 +39,104 @@ import org.brackit.xquery.xdm.Stream;
 
 /**
  * @author Sebastian Baechle
- * 
  */
 public class OrderBy implements Block {
 
-    final Expr[] orderByExprs;
-    final OrderModifier[] modifier;
+  final Expr[] orderByExprs;
+  final OrderModifier[] modifier;
 
-    public OrderBy(Expr[] orderByExprs, OrderModifier[] modifier) {
-        this.orderByExprs = orderByExprs;
-        this.modifier = modifier;
+  public OrderBy(Expr[] orderByExprs, OrderModifier[] modifier) {
+    this.orderByExprs = orderByExprs;
+    this.modifier = modifier;
+  }
+
+  @Override
+  public int outputWidth(int initSize) {
+    return initSize;
+  }
+
+  @Override
+  public Sink create(QueryContext ctx, Sink sink) throws QueryException {
+    return new OrderBySink(sink, ctx);
+  }
+
+  private static class Sortable extends Out {
+    final Sequence[][] sortKeys;
+    final Tuple[] buf;
+    final int len;
+
+    public Sortable(Sequence[][] sortKeys, Tuple[] buf, int len) {
+      this.sortKeys = sortKeys;
+      this.buf = buf;
+      this.len = len;
+    }
+  }
+
+  private class OrderBySink extends MutexSink {
+    final Sink sink;
+    final QueryContext ctx;
+    final Ordering sort;
+
+    OrderBySink(Sink sink, QueryContext ctx) {
+      this.sink = sink;
+      this.ctx = ctx;
+      this.sort = new Ordering(orderByExprs, modifier);
+    }
+
+    public Sink partition(Sink stopAt) {
+      return new OrderBySink(sink.partition(stopAt), ctx);
     }
 
     @Override
-    public int outputWidth(int initSize) {
-        return initSize;
+    protected Out doPreOutput(Tuple[] buf, int len) throws QueryException {
+      Sequence[][] sortKeys = new Sequence[buf.length][];
+      for (int i = 0; i < len; i++) {
+        sortKeys[i] = sort.sortKeys(ctx, buf[i]);
+      }
+      return new Sortable(sortKeys, buf, len);
     }
 
     @Override
-    public Sink create(QueryContext ctx, Sink sink) throws QueryException {
-        return new OrderBySink(sink, ctx);
+    protected void doOutput(Out out) throws QueryException {
+      Sortable s = (Sortable) out;
+      for (int i = 0; i < s.len; i++) {
+        sort.add(s.sortKeys[i], s.buf[i]);
+      }
     }
 
-    private static class Sortable extends Out {
-        final Sequence[][] sortKeys;
-        final Tuple[] buf;
-        final int len;
-
-        public Sortable(Sequence[][] sortKeys, Tuple[] buf, int len) {
-            this.sortKeys = sortKeys;
-            this.buf = buf;
-            this.len = len;
+    @Override
+    protected void doEnd() throws QueryException {
+      Stream<? extends Tuple> s = sort.sorted();
+      try {
+        sink.begin();
+        Tuple t;
+        int bufSize = 20;
+        Tuple[] buf = new Tuple[bufSize];
+        int len = 0;
+        while ((t = s.next()) != null) {
+          buf[len++] = t;
+          if (len == bufSize) {
+            sink.output(buf, len);
+            buf = new Tuple[bufSize];
+            len = 0;
+          }
         }
+        if (len > 0) {
+          sink.output(buf, len);
+        }
+        sink.end();
+      } finally {
+        sort.clear();
+        s.close();
+      }
     }
 
-    private class OrderBySink extends MutexSink {
-        final Sink sink;
-        final QueryContext ctx;
-        final Ordering sort;
-
-        OrderBySink(Sink sink, QueryContext ctx) {
-            this.sink = sink;
-            this.ctx = ctx;
-            this.sort = new Ordering(orderByExprs, modifier);
-        }
-
-        public Sink partition(Sink stopAt) {
-            return new OrderBySink(sink.partition(stopAt), ctx);
-        }
-
-        @Override
-        protected Out doPreOutput(Tuple[] buf, int len)
-                throws QueryException {
-            Sequence[][] sortKeys = new Sequence[buf.length][];
-            for (int i = 0; i < len; i++) {
-                sortKeys[i] = sort.sortKeys(ctx, buf[i]);
-            }
-            return new Sortable(sortKeys, buf, len);
-        }
-
-        @Override
-        protected void doOutput(Out out) throws QueryException {
-            Sortable s = (Sortable) out;
-            for (int i = 0; i < s.len; i++) {
-                sort.add(s.sortKeys[i], s.buf[i]);
-            }
-        }
-
-        @Override
-        protected void doEnd() throws QueryException {
-            Stream<? extends Tuple> s = sort.sorted();
-            try {
-                sink.begin();
-                Tuple t;
-                int bufSize = 20;
-                Tuple[] buf = new Tuple[bufSize];
-                int len = 0;
-                while ((t = s.next()) != null) {
-                    buf[len++] = t;
-                    if (len == bufSize) {
-                        sink.output(buf, len);
-                        buf = new Tuple[bufSize];
-                        len = 0;
-                    }
-                }
-                if (len > 0) {
-                    sink.output(buf, len);
-                }
-                sink.end();
-            } finally {
-                sort.clear();
-                s.close();
-            }
-        }
-
-        @Override
-        protected void doFail() throws QueryException {
-            sink.fail();
-            if (sort != null) {
-                sort.clear();
-            }
-        }
+    @Override
+    protected void doFail() throws QueryException {
+      sink.fail();
+      if (sort != null) {
+        sort.clear();
+      }
     }
+  }
 }

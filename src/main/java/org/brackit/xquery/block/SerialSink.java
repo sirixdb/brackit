@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -37,77 +37,75 @@ import org.brackit.xquery.Tuple;
  * A {@link SerialSink} creates a fan-in, i.e., all forked sinks are chained so
  * that (concurrent) output to all forks is serialized and the order is
  * preserved.
- * 
+ *
  * @author Sebastian Baechle
- * 
  */
 public abstract class SerialSink extends ChainedSink {
 
-    final Semaphore sem;
-    Tuple[] pending;
-    int pLen;
-    int held;
+  final Semaphore sem;
+  Tuple[] pending;
+  int pLen;
+  int held;
 
-    public SerialSink(int permits) {
-        this.sem = (permits >= 0) ? new Semaphore(permits) : null;
+  public SerialSink(int permits) {
+    this.sem = (permits >= 0) ? new Semaphore(permits) : null;
+  }
+
+  protected SerialSink(Semaphore sem) {
+    this.sem = sem;
+  }
+
+  protected abstract void doOutput(Tuple[] buf, int len) throws QueryException;
+
+  @Override
+  protected void processPending() throws QueryException {
+    doOutput(pending, pLen);
+    pending = null;
+  }
+
+  @Override
+  protected boolean hasPending() {
+    return pending != null;
+  }
+
+  @Override
+  protected void clearPending() {
+    pending = null;
+  }
+
+  @Override
+  protected boolean yield() {
+    if (sem != null) {
+      if (!sem.tryAcquire(pLen)) {
+        held = pLen;
+        return true;
+      }
+      return false;
     }
+    return false;
+  }
 
-    protected SerialSink(Semaphore sem) {
-        this.sem = sem;
+  @Override
+  protected void unyield() {
+    if (sem != null) {
+      int h = held;
+      held = 0;
+      sem.release(h);
     }
+  }
 
-    protected abstract void doOutput(Tuple[] buf, int len)
-            throws QueryException;
-
-    @Override
-    protected void processPending() throws QueryException {
-        doOutput(pending, pLen);
-        pending = null;
+  @Override
+  protected void setPending(Tuple[] buf, int len) throws QueryException {
+    if (pending == null) {
+      pending = buf;
+      pLen = len;
+    } else {
+      int newPLen = pLen + len;
+      if (newPLen > pending.length) {
+        pending = Arrays.copyOfRange(pending, 0, newPLen);
+      }
+      System.arraycopy(buf, 0, pending, pLen, len);
+      pLen = newPLen;
     }
-
-    @Override
-    protected boolean hasPending() {
-        return pending != null;
-    }
-
-    @Override
-    protected void clearPending() {
-        pending = null;
-    }
-
-    @Override
-    protected boolean yield() {
-        if (sem != null) {
-            if (!sem.tryAcquire(pLen)) {
-                held = pLen;
-                return true;
-            }
-            return false;
-        }
-        return false;
-    }
-
-    @Override
-    protected void unyield() {
-        if (sem != null) {
-            int h = held;
-            held = 0;
-            sem.release(h);
-        }
-    }
-
-    @Override
-    protected void setPending(Tuple[] buf, int len) throws QueryException {
-        if (pending == null) {
-            pending = buf;
-            pLen = len;
-        } else {
-            int newPLen = pLen + len;
-            if (newPLen > pending.length) {
-                pending = Arrays.copyOfRange(pending, 0, newPLen);
-            }
-            System.arraycopy(buf, 0, pending, pLen, len);
-            pLen = newPLen;
-        }
-    }
+  }
 }

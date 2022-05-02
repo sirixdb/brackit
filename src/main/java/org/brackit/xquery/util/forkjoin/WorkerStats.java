@@ -1,8 +1,8 @@
 /*
  * [New BSD License]
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>  
+ * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -29,42 +29,46 @@ package org.brackit.xquery.util.forkjoin;
 
 /**
  * @author Sebastian Baechle
- * 
  */
 public class WorkerStats {
-    // * NOTE: In Sebastian's code threadid was declared as a final, however, that
-    // * doesn't make sense in the context of the constructor
-    private long threadid;
-    int joinCnt;
-    int execCnt;
-    int forkCnt;
-    int stealCnt;
-    int robbedCnt;
-    int adoptCnt;
-    int parkCnt;
-    int joinParkCnt;
-    long execTime;
+  private final long threadid;
+  int joinCnt;
+  int execCnt;
+  int forkCnt;
+  int stealCnt;
+  int robbedCnt;
+  int adoptCnt;
+  int parkCnt;
+  int joinParkCnt;
+  long execTime;
 
-    public WorkerStats(long threadid) {
-        // * NOTE: In Sebastian's code threadid had a this so I removed it
-        this.threadid = threadid;
-    }
+  public WorkerStats(long threadid) {
+    this.threadid = threadid;
+  }
 
-    public String toString() {
-        return String
-                .format("%s: joinCnt=%s\texecCnt=%s\tforkCnt=%s\tstealCnt=%s\trobbedCnt=%s\tadoptCnt=%s\tparkCnt=%s\tjoinParkCnt=%s\texecTime=%sms",
-                        threadid, joinCnt, execCnt, forkCnt, stealCnt,
-                        robbedCnt, adoptCnt, parkCnt, joinParkCnt, execTime);
-    }
+  public String toString() {
+    return String.format(
+        "%s: joinCnt=%s\texecCnt=%s\tforkCnt=%s\tstealCnt=%s\trobbedCnt=%s\tadoptCnt=%s\tparkCnt=%s\tjoinParkCnt=%s\texecTime=%sms",
+        threadid,
+        joinCnt,
+        execCnt,
+        forkCnt,
+        stealCnt,
+        robbedCnt,
+        adoptCnt,
+        parkCnt,
+        joinParkCnt,
+        execTime);
+  }
 
-    public void reset() {
-        joinCnt = 0;
-        execCnt = 0;
-        forkCnt = 0;
-        stealCnt = 0;
-        robbedCnt = 0;
-        adoptCnt = 0;
-        execTime = 0;
-        parkCnt = 0;
-    }
+  public void reset() {
+    joinCnt = 0;
+    execCnt = 0;
+    forkCnt = 0;
+    stealCnt = 0;
+    robbedCnt = 0;
+    adoptCnt = 0;
+    execTime = 0;
+    parkCnt = 0;
+  }
 }
