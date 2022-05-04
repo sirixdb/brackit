@@ -68,11 +68,13 @@ public class FastList<E> {
   public void addAll(E[] v, int off, int len) {
     capacity(size + len);
     System.arraycopy(v, off, values, size, len);
+    size = size + len;
   }
 
   public void addAllSafe(Object[] v, int off, int len) {
     capacity(size + len);
     System.arraycopy(v, off, values, size, len);
+    size = size + len;
   }
 
   private void capacity(int capacity) {

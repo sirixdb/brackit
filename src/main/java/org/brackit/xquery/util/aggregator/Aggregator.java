@@ -34,9 +34,9 @@ import org.brackit.xquery.xdm.Sequence;
  * @author Sebastian Baechle
  */
 public interface Aggregator {
-  public Sequence getAggregate() throws QueryException;
+  Sequence getAggregate() throws QueryException;
 
-  public void add(Sequence seq) throws QueryException;
+  void add(Sequence seq) throws QueryException;
 
-  public void clear();
+  void clear();
 }
