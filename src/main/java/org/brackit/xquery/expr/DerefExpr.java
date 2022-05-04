@@ -113,12 +113,6 @@ public class DerefExpr implements Expr {
           @Override
           public void close() {
           }
-
-          @Override
-          public Split split(int min, int max) throws QueryException {
-            // TODO Auto-generated method stub
-            return null;
-          }
         };
       }
     };

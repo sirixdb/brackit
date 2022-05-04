@@ -118,12 +118,6 @@ public class SortedNodeSequence extends LazySequence {
         }
         sort.sort();
       }
-
-      @Override
-      public Split split(int min, int max) throws QueryException {
-        // TODO Auto-generated method stub
-        return null;
-      }
     };
   }
 }

@@ -1,3 +1,5 @@
+
+
 /*
  * [New BSD License]
  * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
@@ -25,64 +27,46 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.function.fn;
+package org.brackit.xquery.sequence;
 
-import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.sequence.BaseIter;
-import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Signature;
 
 /**
+ *
  * @author Sebastian Baechle
+ *
  */
-public class Data extends AbstractFunction {
-  public Data(QNm name, Signature signature) {
-    super(name, signature, true);
+public class ItemIter extends BaseIter {
+  final Item[] items;
+  int end;
+  int pos;
+
+  public ItemIter(Item[] items, int pos, int end) {
+    this.items = items;
+    this.end = end;
+    this.pos = pos;
   }
 
   @Override
-  public Sequence execute(StaticContext sctx, final QueryContext ctx, Sequence[] args) throws QueryException {
-    final Sequence s = args[0];
+  public Item next() {
+    return (pos < end) ? items[pos++] : null;
+  }
 
-    if (s == null) {
-      return null;
+  @Override
+  public Split split(int min, int max) throws QueryException {
+    int remaining = end - pos;
+    if (remaining <= min) {
+      return new Split(this, null, false);
     }
-    if (s instanceof Item) {
-      return ((Item) s).atomize();
-    }
+    int mid = pos + (remaining / 2);
+    Iter head = new ItemIter(items, pos, mid);
+    pos = mid;
+    return new Split(head, this, false);
+  }
 
-    return new LazySequence() {
-      @Override
-      public Iter iterate() {
-        return new BaseIter() {
-          Iter it;
-
-          @Override
-          public Item next() throws QueryException {
-            if (it == null) {
-              it = s.iterate();
-            }
-
-            Item next = it.next();
-
-            return (next != null) ? next.atomize() : null;
-          }
-
-          @Override
-          public void close() {
-            if (it != null) {
-              it.close();
-            }
-          }
-        };
-      }
-    };
+  @Override
+  public void close() {
   }
 }

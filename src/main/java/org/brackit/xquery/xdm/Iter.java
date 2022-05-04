@@ -29,6 +29,7 @@ package org.brackit.xquery.xdm;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.IntNumeric;
+import org.brackit.xquery.sequence.ItemIter;
 
 /**
  * <p>
@@ -88,14 +89,22 @@ public interface Iter extends AutoCloseable {
    * repositioned current iterator.
    * </p>
    */
-  public Split split(int min, int max) throws QueryException;
+  default Split split(int min, int max) {
+    final Item[] buf = new Item[max];
+    int i = 0;
+    while ((buf[i] = next()) != null && ++i < max)
+      ;
+    Iter head = new ItemIter(buf, 0, i);
+    Iter tail = (i < min) ? null : this;
+    return new Split(head, tail, true);
+  }
 
   /**
    * Close the iterator to release all resources.
    */
   void close();
 
-  public class Split {
+  class Split {
     public final Iter head;
     public final Iter tail;
     public final boolean serial;

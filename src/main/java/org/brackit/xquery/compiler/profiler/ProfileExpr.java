@@ -141,12 +141,6 @@ public class ProfileExpr extends ProfilingNode implements Expr {
         public Item next() throws QueryException {
           return null;
         }
-
-        @Override
-        public Split split(int min, int max) throws QueryException {
-          // TODO Auto-generated method stub
-          return null;
-        }
       });
     }
 

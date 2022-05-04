@@ -170,12 +170,6 @@ public class RangeExpr implements Expr {
               }
               current = (IntNumeric) current.add(i);
             }
-
-            @Override
-            public Split split(int min, int max) throws QueryException {
-              // TODO Auto-generated method stub
-              return null;
-            }
           };
         }
 

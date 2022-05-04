@@ -176,12 +176,6 @@ public class StepExpr extends PredicateExpr {
         nextS.close();
       }
     }
-
-    @Override
-    public Split split(int min, int max) throws QueryException {
-      // TODO Auto-generated method stub
-      return null;
-    }
   }
 
   @Override

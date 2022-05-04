@@ -115,12 +115,6 @@ public class PipeExpr implements Expr {
             cursor.close(ctx);
           }
         }
-
-        @Override
-        public Split split(int min, int max) throws QueryException {
-          // TODO Auto-generated method stub
-          return null;
-        }
       };
     }
   }
