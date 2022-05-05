@@ -43,13 +43,13 @@ import org.brackit.xquery.xdm.node.Node;
  */
 public abstract class FlatteningSequence extends AbstractSequence {
 
-  private class FlatteningIter implements Iter {
+  private class FlatteningIter extends BaseIter {
     private Sequence s;
     private Iter it;
     private int pos;
 
     @Override
-    public Item next() {
+    public Item next() throws QueryException {
       while (true) {
         if (it != null) {
           Item res = it.next();
@@ -75,7 +75,7 @@ public abstract class FlatteningSequence extends AbstractSequence {
     }
 
     @Override
-    public void skip(IntNumeric i) {
+    public void skip(IntNumeric i) throws QueryException {
       if (i.cmp(Int32.ZERO) <= 0) {
         return;
       }
@@ -114,12 +114,6 @@ public abstract class FlatteningSequence extends AbstractSequence {
       if (it != null) {
         it.close();
       }
-    }
-
-    @Override
-    public Split split(int min, int max) throws QueryException {
-      // TODO Auto-generated method stub
-      return null;
     }
   }
 

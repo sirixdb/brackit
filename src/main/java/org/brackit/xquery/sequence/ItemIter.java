@@ -1,3 +1,5 @@
+
+
 /*
  * [New BSD License]
  * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
@@ -25,18 +27,46 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.util.aggregator;
+package org.brackit.xquery.sequence;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.Iter;
 
 /**
+ *
  * @author Sebastian Baechle
+ *
  */
-public interface Aggregator {
-  Sequence getAggregate() throws QueryException;
+public class ItemIter extends BaseIter {
+  final Item[] items;
+  int end;
+  int pos;
 
-  void add(Sequence seq) throws QueryException;
+  public ItemIter(Item[] items, int pos, int end) {
+    this.items = items;
+    this.end = end;
+    this.pos = pos;
+  }
 
-  void clear();
+  @Override
+  public Item next() {
+    return (pos < end) ? items[pos++] : null;
+  }
+
+  @Override
+  public Split split(int min, int max) throws QueryException {
+    int remaining = end - pos;
+    if (remaining <= min) {
+      return new Split(this, null, false);
+    }
+    int mid = pos + (remaining / 2);
+    Iter head = new ItemIter(items, pos, mid);
+    pos = mid;
+    return new Split(head, this, false);
+  }
+
+  @Override
+  public void close() {
+  }
 }

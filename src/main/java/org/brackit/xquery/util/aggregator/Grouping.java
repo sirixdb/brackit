@@ -135,9 +135,8 @@ public class Grouping {
     for (int i = 0; i < aggSpecs.length; i++) {
       if (aggs[i] != null) {
         aggs[i].clear();
-      } else {
-        aggs[i] = aggSpecs[i].aggregator();
       }
+      aggs[i] = aggSpecs[i].aggregator();
     }
     size = 0;
   }
@@ -176,6 +175,13 @@ public class Grouping {
       if (s == null) {
         continue;
       }
+      if (aggs == null) {
+        System.out.println();
+      }
+
+      if (aggs[i] == null) {
+        aggs[i] = defaultAgg.aggregator();
+      }
       aggs[i].add(s);
     }
     for (int i = 0; i < addAggsSpecs.length; i++) {
@@ -185,6 +191,9 @@ public class Grouping {
       Sequence s = t.get(addAggsSpecs[i]);
       if (s == null) {
         continue;
+      }
+      if (aggs[tupleSize + i] == null) {
+        aggs[tupleSize + i] = defaultAgg.aggregator();
       }
       aggs[tupleSize + i].add(s);
     }

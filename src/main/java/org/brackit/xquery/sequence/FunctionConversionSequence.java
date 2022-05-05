@@ -133,12 +133,6 @@ public class FunctionConversionSequence extends LazySequence {
         s.close();
       }
     }
-
-    @Override
-    public Split split(int min, int max) throws QueryException {
-      // TODO Auto-generated method stub
-      return null;
-    }
   }
 
   private final class TypedIter extends BaseIter {
@@ -200,12 +194,6 @@ public class FunctionConversionSequence extends LazySequence {
       if (s != null) {
         s.close();
       }
-    }
-
-    @Override
-    public Split split(int min, int max) throws QueryException {
-      // TODO Auto-generated method stub
-      return null;
     }
   }
 

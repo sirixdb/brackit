@@ -146,8 +146,7 @@ public class GroupBy implements Block {
       if (obj == this) {
         return true;
       }
-      if (obj instanceof Key) {
-        Key k = (Key) obj;
+      if (obj instanceof Key k) {
         for (int i = 0; i < val.length; i++) {
           Atomic a1 = val[i];
           Atomic a2 = k.val[i];
@@ -167,7 +166,7 @@ public class GroupBy implements Block {
 
     HashGroupBy(Sink sink) {
       this.sink = sink;
-      this.map = new ConcurrentHashMap<Key, Grouping>();
+      this.map = new ConcurrentHashMap<>();
     }
 
     public Sink partition(Sink stopAt) {
@@ -245,7 +244,8 @@ public class GroupBy implements Block {
     return initSize + addAggs.length;
   }
 
-  public Sink create(BrackitQueryContext ctx, Sink sink) throws QueryException {
+  @Override
+  public Sink create(QueryContext ctx, Sink sink) throws QueryException {
     if (sequential) {
       return new SequentialGroupBy(FJControl.PERMITS, sink);
     } else {
@@ -254,19 +254,11 @@ public class GroupBy implements Block {
   }
 
   public Reference group(final int groupSpecNo) {
-    return new Reference() {
-      public void setPos(int pos) {
-        groupSpecs[groupSpecNo] = pos;
-      }
-    };
+    return pos -> groupSpecs[groupSpecNo] = pos;
   }
 
   public Reference aggregate(final int addAggNo) {
-    return new Reference() {
-      public void setPos(int pos) {
-        addAggSpecs[addAggNo] = pos;
-      }
-    };
+    return pos -> addAggSpecs[addAggNo] = pos;
   }
 
   public static void main(String[] args) throws Exception {
@@ -294,11 +286,5 @@ public class GroupBy implements Block {
     System.out.println(" results");
     long end = System.currentTimeMillis();
     System.out.println(end - start + " ms");
-  }
-
-  @Override
-  public Sink create(QueryContext ctx, Sink sink) throws QueryException {
-    // TODO Auto-generated method stub
-    return null;
   }
 }

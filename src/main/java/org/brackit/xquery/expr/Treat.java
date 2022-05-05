@@ -95,12 +95,6 @@ public class Treat implements Expr {
             public void close() {
               it.close();
             }
-
-            @Override
-            public Split split(int min, int max) throws QueryException {
-              // TODO Auto-generated method stub
-              return null;
-            }
           };
         }
 
