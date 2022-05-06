@@ -8,7 +8,7 @@
     </parent>
     <groupId>io.sirix</groupId>
     <artifactId>brackit</artifactId>
-    <version>0.2</version>
+    <version>0.3-SNAPSHOT</version>
     <name>Brackit Engine</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -24,7 +24,7 @@
         <connection>scm:git:git@github.com:sirixdb/brackit.git</connection>
         <developerConnection>scm:git:git@github.com:sirixdb/brackit.git</developerConnection>
         <url>https://github.com/sirixdb/brackit</url>
-        <tag>brackit-0.2</tag>
+        <tag>brackit-0.1.8</tag>
     </scm>
     <issueManagement>
         <url>https://github.com/sirixdb/brackit/issues</url>
