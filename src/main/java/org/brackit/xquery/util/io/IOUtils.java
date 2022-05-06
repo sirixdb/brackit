@@ -103,7 +103,7 @@ public class IOUtils {
    * @throws FileNotFoundException
    */
   public static List<File> getFilteredFileListing(File dir, FileFilter fileFilter) throws FileNotFoundException {
-    List<File> result = new ArrayList<File>();
+    List<File> result = new ArrayList<>();
     List<File> filesDirs = Arrays.asList(dir.listFiles());
 
     for (File file : filesDirs) {
@@ -112,6 +112,7 @@ public class IOUtils {
           result.add(file);
         }
       }
+      assert file != null;
       if (file.isDirectory()) {
         result.addAll(getFilteredFileListing(file, fileFilter));
       }
@@ -173,8 +174,7 @@ public class IOUtils {
    * Return the string content of an input stream.
    */
   public static String getStringFromInputStream(InputStream in) throws QueryException {
-
-    StringBuffer out = new StringBuffer();
+    StringBuilder out = new StringBuilder();
     byte[] b = new byte[4096];
     try {
       for (int n; (n = in.read(b)) != -1; ) {

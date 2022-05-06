@@ -262,29 +262,31 @@ public class GroupBy implements Block {
   }
 
   public static void main(String[] args) throws Exception {
-    FJControl.resizePool(4);
-    ForBind forBind = new ForBind(new RangeExpr(new Int32(1), new Int32(10000000)), false);
-    ForBind forBind2 = new ForBind(new SequenceExpr(new Str("a"), new Str("b"), new Str("c")), false);
-    forBind.bindVariable(true);
-    forBind2.bindVariable(true);
-    GroupBy groupBy = new GroupBy(Aggregate.SINGLE, new Aggregate[] { Aggregate.COUNT }, 1, false);
-    groupBy.group(0).setPos(0);
-    LetBind delay = new LetBind(new FunctionExpr(null, new Delay(), Int32.ONE));
-    Block block = new BlockChain(new Block[] { forBind2, forBind, delay, groupBy });
-    long start = System.currentTimeMillis();
-    Sequence res = new BlockExpr(block, new PrintExpr(), true).evaluate(new BrackitQueryContext(), new TupleImpl());
-    Iter it = res.iterate();
-    Item i;
-    int cnt = 0;
-    while ((i = it.next()) != null) {
-      System.out.println(i);
-      cnt++;
+    for (int i = 0; i < 20; i++) {
+      FJControl.resizePool(4);
+      ForBind forBind = new ForBind(new RangeExpr(new Int32(1), new Int32(10000000)), false);
+      ForBind forBind2 = new ForBind(new SequenceExpr(new Str("a"), new Str("b"), new Str("c")), false);
+      forBind.bindVariable(true);
+      forBind2.bindVariable(true);
+      GroupBy groupBy = new GroupBy(Aggregate.SINGLE, new Aggregate[] { Aggregate.COUNT }, 1, false);
+      groupBy.group(0).setPos(0);
+      LetBind delay = new LetBind(new FunctionExpr(null, new Delay(), Int32.ONE));
+      Block block = new BlockChain(new Block[] { forBind2, forBind, delay, groupBy });
+      long start = System.currentTimeMillis();
+      Sequence res = new BlockExpr(block, new PrintExpr(), true).evaluate(new BrackitQueryContext(), new TupleImpl());
+      Iter it = res.iterate();
+      Item item;
+      int cnt = 0;
+      while ((item = it.next()) != null) {
+        System.out.println(item);
+        cnt++;
+      }
+      it.close();
+      System.out.println("---");
+      System.out.print(cnt);
+      System.out.println(" results");
+      long end = System.currentTimeMillis();
+      System.out.println(end - start + " ms");
     }
-    it.close();
-    System.out.println("---");
-    System.out.print(cnt);
-    System.out.println(" results");
-    long end = System.currentTimeMillis();
-    System.out.println(end - start + " ms");
   }
 }

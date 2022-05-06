@@ -65,9 +65,9 @@ public abstract class FlatteningSequence extends AbstractSequence {
         if (s == null) {
           return null;
         }
-        if (s instanceof Item) {
+        if (s instanceof Item item) {
           // include single item in result
-          return (Item) s;
+          return item;
         }
         // flatten out result
         it = s.iterate();

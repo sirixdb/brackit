@@ -46,22 +46,23 @@ public class Grouping {
   final Aggregate defaultAgg;
   final Aggregate[] additionalAggs;
 
-  int tupleSize = -1;
+  volatile int tupleSize = -1;
   Aggregate[] aggSpecs;
   Atomic[] gk; // current grouping key
   Aggregator[] aggs;
   boolean[] onlyFirst;
   int size;
 
-  public Grouping(int[] groupSpecs, int[] addAggsSpecs, Aggregate defaultAgg, Aggregate[] additionalAggs) {
+  public Grouping(int[] groupSpecs, int[] addAggsSpecs, Aggregate defaultAgg,
+      Aggregate[] additionalAggs) {
     this.groupSpecs = groupSpecs;
     this.addAggsSpecs = addAggsSpecs;
     this.defaultAgg = defaultAgg;
     this.additionalAggs = additionalAggs;
   }
 
-  public Grouping(int[] groupSpecs, int[] addAggsSpecs, Aggregate defaultAgg, Aggregate[] additionalAggs,
-      int tupleSize) {
+  public Grouping(int[] groupSpecs, int[] addAggsSpecs, Aggregate defaultAgg,
+      Aggregate[] additionalAggs, int tupleSize) {
     this.groupSpecs = groupSpecs;
     this.addAggsSpecs = addAggsSpecs;
     this.defaultAgg = defaultAgg;
@@ -69,8 +70,10 @@ public class Grouping {
     init(tupleSize);
   }
 
-  private void init(int tupleSize) {
-    this.tupleSize = tupleSize;
+  private synchronized void init(int tupleSize) {
+    if (this.tupleSize != -1) {
+      return;
+    }
     int len = tupleSize + additionalAggs.length;
     this.aggSpecs = new Aggregate[len];
     this.aggs = new Aggregator[len];
@@ -95,13 +98,15 @@ public class Grouping {
       onlyFirst[pos] = (aggSpecs[pos] == Aggregate.SINGLE);
     }
     clear();
+    this.tupleSize = tupleSize;
   }
 
   public int getSize() {
     return size;
   }
 
-  public static Atomic[] groupingKeys(int[] groupSpecs, Tuple t) throws QueryException {
+  public static Atomic[] groupingKeys(int[] groupSpecs, Tuple t)
+      throws QueryException {
     Atomic[] gk = new Atomic[groupSpecs.length];
     for (int i = 0; i < groupSpecs.length; i++) {
       Sequence seq = t.get(groupSpecs[i]);
@@ -131,12 +136,13 @@ public class Grouping {
     return true;
   }
 
-  public void clear() {
+  public synchronized void clear() {
     for (int i = 0; i < aggSpecs.length; i++) {
       if (aggs[i] != null) {
         aggs[i].clear();
+      } else {
+        aggs[i] = aggSpecs[i].aggregator();
       }
-      aggs[i] = aggSpecs[i].aggregator();
     }
     size = 0;
   }
@@ -158,10 +164,11 @@ public class Grouping {
     if (tupleSize == -1) {
       init(t.getSize());
     }
-    Atomic[] pgk = gk;
+    Atomic[] pgk = this.gk;
     if ((pgk != null) && (!cmp(pgk, gk))) {
       return false;
     }
+    this.gk = gk;
     addInternal(t);
     return true;
   }
@@ -175,14 +182,9 @@ public class Grouping {
       if (s == null) {
         continue;
       }
-      if (aggs == null) {
-        System.out.println();
+      synchronized (aggs[i]) {
+        aggs[i].add(s);
       }
-
-      if (aggs[i] == null) {
-        aggs[i] = defaultAgg.aggregator();
-      }
-      aggs[i].add(s);
     }
     for (int i = 0; i < addAggsSpecs.length; i++) {
       if ((size > 0) && (onlyFirst[tupleSize + i])) {
@@ -192,10 +194,9 @@ public class Grouping {
       if (s == null) {
         continue;
       }
-      if (aggs[tupleSize + i] == null) {
-        aggs[tupleSize + i] = defaultAgg.aggregator();
+      synchronized (aggs[tupleSize + i]) {
+        aggs[tupleSize + i].add(s);
       }
-      aggs[tupleSize + i].add(s);
     }
     size++;
   }
