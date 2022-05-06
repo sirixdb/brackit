@@ -146,7 +146,7 @@ public class JoinRewriter extends ScopeWalker {
           == XQ.OrderBy)) {
         return select;
       } else if (anc == s2Begin.node) {
-        return convertToJoin(s2Begin.node.getParent(), select, s1Expr, s2Expr, cmp, isGCmp);
+        return convertToJoin(s2Begin.node, select, s1Expr, s2Expr, cmp, isGCmp);
       }
       anc = anc.getParent();
     }
