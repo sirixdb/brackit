@@ -209,7 +209,6 @@ public final class GroupByAggregates extends AggFunChecker {
   public static void main(String[] args) throws QueryException {
     DefaultOptimizer.UNNEST = false;
     CompileChain cc = new CompileChain() {
-
       @Override
       protected Optimizer getOptimizer(Map<QNm, Str> options) {
         return new TopDownOptimizer(options) {
