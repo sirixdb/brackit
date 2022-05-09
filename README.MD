@@ -5,6 +5,7 @@ Brackit is a flexible JSONiq and XQuery query processor developed during Dr. Seb
 Lately, Johannes Lichtenberger has added many optional temporal enhancements for temporal data stores such as SirixDB. Furthermore, JSON is now a first-class citizen. Brackit supports a slightly different syntax but the same data model as JSONiq and all update primitives described in the JSONiq specification. Brackit also supports Python-like array slices.
 
 ## Main features
+
 - Retargetable, thus sharing optimizations, which are common for different data stores (physical optimizations and index rewrite rules can simply be added in further stages).
 - JSONiq, a language which especially targets querying JSON, supporting user defined functions, easy tree traversals, FLWOR expressions to iterate, filter, sort and project item sequences.
 - Set-oriented processing, meaning pipelined execution of FLWOR clauses through operators, which operate on arrays of tuples and thus support known optimizations from relational database querying for implicit joins and aggregates.
@@ -14,31 +15,34 @@ Lately, Johannes Lichtenberger has added many optional temporal enhancements for
 [Here's](https://github.com/sirixdb/brackit/blob/master/mission.md) a more detailed document about the vision and overall mission of Brackit.
 
 ## Syntax differences in relation to JSONiq
+
 - `=>` expression to dereference object fields instead of `.`
 - array indexes start at position 0
 - object projections via a special syntax (`$object{field1,field2,field3}` instead of a function)
 - Python-like array slices
 
 ## Community
+
 We have a [Discord server](https://discord.gg/AstddxGxjP), where we'd welcome everyone who's interested in the project.
 
 ## Publications
+
 As the project started at a university (TU - Kaiserslautern under supervision of Dr. Dr. Theo Härder we'd be happy if it would be used as a research project again, too as there's a wide field of topics for future research and improvements.)
 
 - Ph.D thesis of Dr. Sebastian Bächle:
-[Separating Key Concerns in Query Processing - Set Orientation, Physical Data Independence, and Parallelism](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/Dissertation-Baechle.pdf)
+  [Separating Key Concerns in Query Processing - Set Orientation, Physical Data Independence, and Parallelism](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/Dissertation-Baechle.pdf)
 
 - Sebastian Bächle and Caetano Sauer:
-[Unleashing XQuery for Data-independent Programming](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2014/Unleash.2014.pdf)
+  [Unleashing XQuery for Data-independent Programming](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2014/Unleash.2014.pdf)
 
 - Henrique Valer, Caetano Sauer and Theo Härder:
-[XQuery Processing over NoSQL Stores](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/ValerGvD2013.pdf)
+  [XQuery Processing over NoSQL Stores](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/ValerGvD2013.pdf)
 
 - Caetano Sauer, Sebastian Bächle and Theo Härder:
-[Versatile XQuery Processing in MapReduce](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/ADBIS.2013.final.pdf)
+  [Versatile XQuery Processing in MapReduce](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/ADBIS.2013.final.pdf)
 
 - Caetano Sauer, Sebastian Bächle and Theo Härder:
-[BrackitMR: Flexible XQuery Processing in MapReduce](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/WAIM2013.pdf)
+  [BrackitMR: Flexible XQuery Processing in MapReduce](http://wwwlgis.informatik.uni-kl.de/cms/fileadmin/publications/2013/WAIM2013.pdf)
 
 ## Getting started
 
@@ -51,14 +55,17 @@ Otherwise for contributing
 ```
 git clone https://github.com/sirixdb/brackit.git
 ```
+
 or use the following dependencies in your Maven or Gradle project if you want to add queries in your Java or Kotlin projects for instance or if you want to implement some interfaces and add custom rewrite rules to be able to query your data store.
 
 **Brackit uses Java 17, thus you need an up-to-date Gradle (if you want to work on Brackit) and an IDE (for instance IntelliJ or Eclipse).**
 
 ## Maven / Gradle
+
 At this stage of development, you should use the latest SNAPSHOT artifacts from [the OSS snapshot repository](https://oss.sonatype.org/content/repositories/snapshots/io/sirix/brackit/) to get the most recent changes. You should use the most recent Maven/Gradle versions as we'll update to the newest Java versions.
 
 Just add the following repository section to your POM or build.gradle file:
+
 ```xml
 <repository>
   <id>sonatype-nexus-snapshots</id>
@@ -72,6 +79,7 @@ Just add the following repository section to your POM or build.gradle file:
   </snapshots>
 </repository>
 ```
+
 ```groovy
 repository {
     maven {
@@ -90,11 +98,13 @@ repository {
   <version>0.1.10-SNAPSHOT</version>
 </dependency>
 ```
+
 ```groovy
 compile group:'io.sirix', name:'brackit', version:'0.1.10-SNAPSHOT'
 ```
 
 ## What's Brackit?
+
 Brackit is a query engine, which either could be used by different storage/database backends whereas common optimizations are shared as for instance set-oriented processing and hash-joins of FLWOR-clauses. Furthermore, in-memory stores for both processing XML and JSON are supported, thus brackit can simply be used as an in-memory query processor for ad-hoc analysis.
 
 At the moment we support XQuery 1.0 including library module support, the XQuery Update Facility 1.0 and some features of XQuery 3.0 like the FLWOR clauses group by and count.
@@ -102,8 +112,8 @@ At the moment we support XQuery 1.0 including library module support, the XQuery
 As a speciality, Brackit comes with extensions to work natively with JSON-style arrays and objects mostly as in JSONiq, also supporting all the update statements of JSONiq. Furthermore array index slices as in Python are supported. Another extension allows you to use a special statement syntax for writing query programs in a script-like style.
 
 ## Jupyter Notebook / Tutorial
-**We're currently working on a [tutorial](https://colab.research.google.com/drive/19eC-UfJVm_gCjY--koOWN50sgiFa5hSC
-), where you can execute interactive queries on Brackit's in-memory store.**
+
+**We're currently working on a [tutorial](https://colab.research.google.com/drive/19eC-UfJVm_gCjY--koOWN50sgiFa5hSC), where you can execute interactive queries on Brackit's in-memory store.**
 
 ## Installation
 
@@ -125,14 +135,13 @@ That's all. You find the ready-to-use jar file(s) in the subdirectory _./target_
 
 Step 3: Dependency
 
-If you want to use brackit in your other maven- or gradle-based projects, please have a look into the "Maven / Gradle" section. 
-
+If you want to use brackit in your other maven- or gradle-based projects, please have a look into the "Maven / Gradle" section.
 
 ## First Steps
 
 ### Running from the command line
 
-Brackit ships with a rudimentary command line interface to run ad-hoc queries. Invoke it with 
+Brackit ships with a rudimentary command line interface to run ad-hoc queries. Invoke it with
 
 ```java
 java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar
@@ -153,7 +162,7 @@ echo "1+1" | java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar
 If the query is stored in a separate file, let's say test.xq, type:
 
 ```java
-java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -q test.xq
+java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -qf test.xq
 ```
 
 or use the file redirection of your shell:
@@ -172,7 +181,7 @@ java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -iq
 
 Querying documents is as simple as running any other query.
 
-The default "storage" module resolves any referred documents accessed by the XQuery functions ```fn:doc()``` and ```fn:collection()``` at query runtime (XML).
+The default "storage" module resolves any referred documents accessed by the XQuery functions `fn:doc()` and `fn:collection()` at query runtime (XML).
 
 To query a document in your local filesytem simply use the path to this document in the fn:doc() function:
 
@@ -180,10 +189,15 @@ To query a document in your local filesytem simply use the path to this document
 java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -q "doc('products.xml')//product[@prodno = '4711']"
 ```
 
-For JSON there's the function ```jn:doc()```. Let's assume we have the following simple JSON structure:
+For JSON there's the function `jn:doc()`. Let's assume we have the following simple JSON structure:
 
 ```json
-{"products":[{"productno":4711,"product":"Product number 4711"},{"productno":5982,"product":"Product number 5982"}]}
+{
+  "products": [
+    { "productno": 4711, "product": "Product number 4711" },
+    { "productno": 5982, "product": "Product number 5982" }
+  ]
+}
 ```
 
 We can query this first dereferencing the "products" object field with `=>`, then unbox the array value via `[]` and add a filter where "." denotes the current context item and "{fieldName}" projects the resulting object into a new object, which is returned.
@@ -298,7 +312,7 @@ return $value (: yields the same as above :)
 let $a := ["Jim", "John", "Joe"] return $a[[-1]] (: yields "Joe" :)
 ```
 
-### Objects 
+### Objects
 
 Objects provide an alternative to XML to represent structured data. Like with arrays we support an extended version of the standard JSON object syntax:
 
@@ -348,7 +362,7 @@ let $r := {"x": 1, "y": 2, "z": (3, 4) } return bit:values($r) (: yields the arr
 
 ### JSONiq update expressions
 
-Brackit supports all defined update statements in the JSONiq specification. It makes sense to implement these in a data store backend as for instance in SirixDB. 
+Brackit supports all defined update statements in the JSONiq specification. It makes sense to implement these in a data store backend as for instance in SirixDB.
 
 ```XQuery
 (: rename a field in an object :)
@@ -386,6 +400,7 @@ replace json value of ["foo", 0, 1][[2]] with "bar"   (: thus, the array is adap
 :)
 let $s := io:read('/data/sample.json') return json:parse($s)
 ```
+
 ## Statement Syntax Extension (Beta)
 
 **IMPORTANT NOTE:**
@@ -456,7 +471,7 @@ The following example shows an - admittedly rather slow - implementation of the 
 declare function local:qsort($values) {
     $len := count($values);
     if ($len <= 1) then (
-        $values 
+        $values
     ) else (
         $pivot := $values[$len idiv 2];
         $less := $values[. < $pivot];
