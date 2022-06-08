@@ -95,7 +95,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
         /* End XQuery Update Facility 1.0 */
         /* Begin JSONiq Update Facility */
         insertJsonExpr(expr) || deleteJsonExpr(expr) || renameJsonExpr(expr) || replaceJsonExpr(expr) || appendJsonExpr(
-        expr) ||
+            expr)
+        ||
         /* End JSONiq Update Facility */
         orExpr(expr));
   }
@@ -282,8 +283,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
       } catch (QueryException e) {
         if (e.getCode().equals(ErrorCode.ERR_DUPLICATE_VARIABLE_DECL)) {
           throw new QueryException(ErrorCode.ERR_FOR_VAR_AND_POS_VAR_EQUAL,
-                                   "Bound variable '%s' and its associated positional variable have the same name",
-                                   forVar);
+              "Bound variable '%s' and its associated positional variable have the same name",
+              forVar);
         }
         throw e;
       }
@@ -300,12 +301,12 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     QNm expanded = expand(name, DefaultNS.EMPTY);
     name = bind(expanded);
     binding.getChild(0).setValue(name);
-    //		SequenceType stype;
-    //		if (binding.getChildCount() >= 2) {
-    //			stype = typeDeclaration(binding.getChild(1));
-    //		} else {
-    //			stype = new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany);
-    //		}
+    // SequenceType stype;
+    // if (binding.getChildCount() >= 2) {
+    // stype = typeDeclaration(binding.getChild(1));
+    // } else {
+    // stype = new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany);
+    // }
     return expanded;
   }
 
@@ -319,7 +320,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     QNm expanded = expand(name, DefaultNS.EMPTY);
     name = bind(expanded);
     binding.getChild(0).setValue(name);
-    //		SequenceType stype = new SequenceType(AtomicType.INR, Cardinality.One);
+    // SequenceType stype = new SequenceType(AtomicType.INR, Cardinality.One);
     return expanded;
   }
 
@@ -430,8 +431,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
         String col = groupBySpec.getChild(1).getStringValue();
         if (!col.equals(StaticContext.UNICODE_COLLATION)) {
           throw new QueryException(ErrorCode.ERR_UNKNOWN_COLLATION_IN_FLWOR_CLAUSE,
-                                   "Unknown collation in group-by clause: %s",
-                                   col);
+              "Unknown collation in group-by clause: %s",
+              col);
         }
       }
     }
@@ -450,8 +451,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
           String col = orderBySpec.getChild(j).getStringValue();
           if (!col.equals(StaticContext.UNICODE_COLLATION)) {
             throw new QueryException(ErrorCode.ERR_UNKNOWN_COLLATION_IN_FLWOR_CLAUSE,
-                                     "Unknown collation in order-by clause: %s",
-                                     col);
+                "Unknown collation in order-by clause: %s",
+                col);
           }
         }
       }
@@ -667,8 +668,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   protected boolean additiveExpr(AST expr) throws QueryException {
-    if ((expr.getType() != XQ.ArithmeticExpr) || ((expr.getChild(0).getType() != XQ.AddOp) && (
-        expr.getChild(0).getType() != XQ.SubtractOp))) {
+    if ((expr.getType() != XQ.ArithmeticExpr)
+        || ((expr.getChild(0).getType() != XQ.AddOp) && (expr.getChild(0).getType() != XQ.SubtractOp))) {
       return multiplicativeExpr(expr);
     }
     additiveExpr(expr.getChild(1));
@@ -993,9 +994,9 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if ((name.equals(Functions.FN_POSITION)) || (name.equals(Functions.FN_LAST))) {
       if (argc != 0) {
         throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-                                 "Illegal number of parameters for function %s() : %s'",
-                                 name,
-                                 argc);
+            "Illegal number of parameters for function %s() : %s'",
+            name,
+            argc);
       }
       // change expr to variable reference
       expr.setType(XQ.VariableRef);
@@ -1006,9 +1007,9 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if ((name.equals(Functions.FN_TRUE) || name.equals(Functions.FN_FALSE))) {
       if (argc != 0) {
         throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-                                 "Illegal number of parameters for function %s() : %s'",
-                                 name,
-                                 argc);
+            "Illegal number of parameters for function %s() : %s'",
+            name,
+            argc);
       }
       // change expr to boolean literal
       expr.setType(XQ.Bool);
@@ -1019,9 +1020,9 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if (name.equals(Functions.FN_DEFAULT_COLLATION)) {
       if (argc != 0) {
         throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-                                 "Illegal number of parameters for function %s() : %s'",
-                                 name,
-                                 argc);
+            "Illegal number of parameters for function %s() : %s'",
+            name,
+            argc);
       }
       // change expr to string literal
       expr.setType(XQ.Str);
@@ -1031,9 +1032,9 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if (name.equals(Functions.FN_STATIC_BASE_URI)) {
       if (argc != 0) {
         throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-                                 "Illegal number of parameters for function %s() : %s'",
-                                 name,
-                                 argc);
+            "Illegal number of parameters for function %s() : %s'",
+            name,
+            argc);
       }
       AnyURI baseURI = sctx.getBaseURI();
       if (baseURI != null) {
@@ -1050,9 +1051,9 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if (name.equals(JSONFun.JSON_NULL)) {
       if (argc != 0) {
         throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-                                 "Illegal number of parameters for function %s() : %s'",
-                                 name,
-                                 argc);
+            "Illegal number of parameters for function %s() : %s'",
+            name,
+            argc);
       }
       expr.setType(XQ.Null);
       return true;
@@ -1207,7 +1208,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
       AST c = content.getChild(i);
       if (c.getType() == XQ.EnclosedExpr) {
         throw new QueryException(ErrorCode.ERR_ENCLOSED_EXPR_IN_NS_ATTRIBUTE,
-                                 "Illegal enclosed expression in direct namespace attribute");
+            "Illegal enclosed expression in direct namespace attribute");
       }
       uri.append(c.getStringValue());
     }
@@ -1220,18 +1221,18 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if (Namespaces.XML_PREFIX.equals(prefix)) {
       if (Namespaces.XML_NSURI.equals(uri)) {
         throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
-                                 "Illegal mapping of the prefix '%s' to the namespace URI '%s'",
-                                 Namespaces.XML_PREFIX,
-                                 uri);
+            "Illegal mapping of the prefix '%s' to the namespace URI '%s'",
+            Namespaces.XML_PREFIX,
+            uri);
       }
     } else if (Namespaces.XMLNS_PREFIX.equals(prefix)) {
       throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
-                               "Illegal namespace prefix '%s'",
-                               Namespaces.XMLNS_PREFIX);
+          "Illegal namespace prefix '%s'",
+          Namespaces.XMLNS_PREFIX);
     } else if (Namespaces.XML_NSURI.equals(uri)) {
       throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
-                               "Illegal namespace URI '%s'",
-                               Namespaces.XMLNS_NSURI);
+          "Illegal namespace URI '%s'",
+          Namespaces.XMLNS_NSURI);
     }
   }
 
@@ -1382,7 +1383,6 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     // expand and update AST
     name = expand(name, DefaultNS.FUNCTION);
     expr.getChild(0).setValue(name);
-    int argc = ((Numeric) expr.getChild(1).getValue()).intValue();
     // TODO lookup and checks
     return true;
   }
@@ -1402,26 +1402,29 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     // expand and update AST
     name = expand(name, null);
     child.getChild(0).setValue(name);
-//    if (name.getNamespaceURI().isEmpty()) {
-//      throw new QueryException(ErrorCode.ERR_FUNCTION_DECL_NOT_IN_NS, "Function %s is not in a namespace", name);
-//    }
+    // if (name.getNamespaceURI().isEmpty()) {
+    // throw new QueryException(ErrorCode.ERR_FUNCTION_DECL_NOT_IN_NS, "Function %s
+    // is not in a namespace", name);
+    // }
 
-//    String targetNS = module.getTargetNS();
-//    if ((targetNS != null) && (!targetNS.equals(name.getNamespaceURI()))) {
-//      throw new QueryException(ErrorCode.ERR_FUN_OR_VAR_NOT_IN_TARGET_NS,
-//                               "Declared function %s is not in library module namespace: %s",
-//                               name,
-//                               targetNS);
-//    }
-//
-//    String uri = name.getNamespaceURI();
-//    if ((uri.equals(Namespaces.XML_NSURI)) || (uri.equals(Namespaces.XS_NSURI)) || (uri.equals(Namespaces.XSI_NSURI))
-//        || (uri.equals(Namespaces.FN_NSURI)) || (uri.equals(Namespaces.FNMATH_NSURI))) {
-//      throw new QueryException(ErrorCode.ERR_FUNCTION_DECL_IN_ILLEGAL_NAMESPACE,
-//                               "Declared function %s is in illegal namespace: %s",
-//                               name,
-//                               uri);
-//    }
+    // String targetNS = module.getTargetNS();
+    // if ((targetNS != null) && (!targetNS.equals(name.getNamespaceURI()))) {
+    // throw new QueryException(ErrorCode.ERR_FUN_OR_VAR_NOT_IN_TARGET_NS,
+    // "Declared function %s is not in library module namespace: %s",
+    // name,
+    // targetNS);
+    // }
+    //
+    // String uri = name.getNamespaceURI();
+    // if ((uri.equals(Namespaces.XML_NSURI)) || (uri.equals(Namespaces.XS_NSURI))
+    // || (uri.equals(Namespaces.XSI_NSURI))
+    // || (uri.equals(Namespaces.FN_NSURI)) ||
+    // (uri.equals(Namespaces.FNMATH_NSURI))) {
+    // throw new QueryException(ErrorCode.ERR_FUNCTION_DECL_IN_ILLEGAL_NAMESPACE,
+    // "Declared function %s is in illegal namespace: %s",
+    // name,
+    // uri);
+    // }
 
     // parameters
     int noOfParameters = expr.getChildCount() - 2;
@@ -1436,9 +1439,9 @@ public class ExprAnalyzer extends AbstractAnalyzer {
       for (int j = 0; j < i; j++) {
         if (pNames[i].atomicCmp(pNames[j]) == 0) {
           throw new QueryException(ErrorCode.ERR_DUPLICATE_FUN_PARAMETER,
-                                   "Duplicate parameter in declared function %s: %s",
-                                   name,
-                                   pNames[j]);
+              "Duplicate parameter in declared function %s: %s",
+              name,
+              pNames[j]);
         }
       }
       if (child.getChildCount() == 2) {
@@ -1459,7 +1462,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     sctx.getFunctions().declare(udf);
 
     return true;
-    //throw new QueryException(ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR, "Inline functions not implemented yet.");
+    // throw new QueryException(ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
+    // "Inline functions not implemented yet.");
   }
 
   boolean enclosedExpr(AST expr) throws QueryException {
