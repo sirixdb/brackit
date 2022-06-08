@@ -77,7 +77,9 @@ public class Silent extends AbstractFunction {
       return Int32.ZERO;
     }
     CountStream out = new CountStream();
-    new StringSerializer(new PrintWriter(out)).serialize(sequence);
+    StringSerializer serializer = new StringSerializer(new PrintWriter(out));
+    serializer.serialize(sequence);
+    serializer.close();
     return new Int64(out.count);
   }
 }
