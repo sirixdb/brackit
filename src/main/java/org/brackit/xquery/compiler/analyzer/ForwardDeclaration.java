@@ -37,7 +37,6 @@ import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.Target;
 import org.brackit.xquery.compiler.Unit;
 import org.brackit.xquery.compiler.XQ;
-import org.brackit.xquery.compiler.analyzer.AbstractAnalyzer.DefaultNS;
 import org.brackit.xquery.expr.DeclVariable;
 import org.brackit.xquery.function.UDF;
 import org.brackit.xquery.module.Module;

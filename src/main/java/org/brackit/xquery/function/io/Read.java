@@ -35,7 +35,6 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
-import org.brackit.xquery.function.bit.BitFun;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.annotation.FunctionAnnotation;
 import org.brackit.xquery.util.io.IOUtils;
@@ -60,9 +59,9 @@ public class Read extends AbstractFunction {
 
   public Read(QNm name) {
     super(name,
-          new Signature(new SequenceType(AtomicType.STR, Cardinality.One),
-                        new SequenceType(AtomicType.STR, Cardinality.One)),
-          true);
+        new Signature(new SequenceType(AtomicType.STR, Cardinality.One),
+            new SequenceType(AtomicType.STR, Cardinality.One)),
+        true);
   }
 
   @Override

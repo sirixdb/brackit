@@ -31,7 +31,6 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 
-import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
@@ -62,10 +61,10 @@ public class Write extends AbstractFunction {
 
   public Write(QNm name) {
     super(name,
-          new Signature(new SequenceType(AtomicType.INR, Cardinality.One),
-                        new SequenceType(AtomicType.STR, Cardinality.One),
-                        new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)),
-          true);
+        new Signature(new SequenceType(AtomicType.INR, Cardinality.One),
+            new SequenceType(AtomicType.STR, Cardinality.One),
+            new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)),
+        true);
   }
 
   @Override

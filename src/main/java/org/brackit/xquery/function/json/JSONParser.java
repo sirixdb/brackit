@@ -1,14 +1,8 @@
 /*
  * [New BSD License]
-<<<<<<< HEAD
  * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
  *
-=======
- * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
- * All rights reserved.
- *
->>>>>>> upstream/master
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -19,11 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
-<<<<<<< HEAD
  *
-=======
- *
->>>>>>> upstream/master
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -166,10 +156,10 @@ public class JSONParser extends Tokenizer {
       if (la2 != null) {
         consume(la2);
         return Int32.parse(minus == null ? la2.string() : "-" + la2.string());
-      } else if ((la2 = laDecimal( true)) != null) {
+      } else if ((la2 = laDecimal(true)) != null) {
         consume(la2);
         return new Dec(minus == null ? la2.string() : "-" + la2.string());
-      } else if ((la2 = laDouble( true)) != null) {
+      } else if ((la2 = laDouble(true)) != null) {
         consume(la2);
         return new Dbl(minus == null ? la2.string() : "-" + la2.string());
       }
@@ -213,14 +203,15 @@ public class JSONParser extends Tokenizer {
   }
 
   public static void main(String[] args) throws Exception {
-    String s =
-        "{\"bindings\": [        {\"ircEvent\": \"PRIVMSG\", \"method\": \"newURI\", \"regex\": \"^http://.*\"},        {\"ircEvent\": \"PRIVMSG\", \"method\": \"deleteURI\", \"regex\": \"^delete.*\"},        {\"ircEvent\": \"PRIVMSG\", \"method\": \"randomURI\", \"regex\": \"^random.*\"}    ]}";
+    String s = "{\"bindings\": [        {\"ircEvent\": \"PRIVMSG\", \"method\": \"newURI\", \"regex\": \"^http://.*\"},        {\"ircEvent\": \"PRIVMSG\", \"method\": \"deleteURI\", \"regex\": \"^delete.*\"},        {\"ircEvent\": \"PRIVMSG\", \"method\": \"randomURI\", \"regex\": \"^random.*\"}    ]}";
     Item item = new JSONParser(s).parse();
-    new StringSerializer(System.out).serialize(item);
+    try (StringSerializer ser = new StringSerializer(System.out)) {
+      ser.serialize(item);
+      s = "[]";
 
-    s = "[]";
+      item = new JSONParser(s).parse();
+      ser.serialize(item);
 
-    item = new JSONParser(s).parse();
-    new StringSerializer(System.out).serialize(item);
+    }
   }
 }
