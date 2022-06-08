@@ -32,7 +32,6 @@ import java.util.Deque;
 import java.util.List;
 
 import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.AbstractFunction;

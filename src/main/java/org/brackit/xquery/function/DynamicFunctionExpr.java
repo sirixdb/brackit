@@ -46,8 +46,6 @@ import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.json.Object;
 import org.magicwerk.brownies.collections.GapList;
 
-import javax.management.Query;
-
 /**
  * @author Johannes Lichtenberger
  */
@@ -83,9 +81,9 @@ public class DynamicFunctionExpr implements Expr {
 
         if (!(indexItem instanceof IntNumeric)) {
           throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                   "Illegal operand type '%s' where '%s' is expected",
-                                   indexItem.itemType(),
-                                   Type.INR);
+              "Illegal operand type '%s' where '%s' is expected",
+              indexItem.itemType(),
+              Type.INR);
         }
 
         final int index = ((IntNumeric) indexItem).intValue();

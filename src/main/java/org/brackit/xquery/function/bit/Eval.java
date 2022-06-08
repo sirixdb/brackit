@@ -62,9 +62,9 @@ public class Eval extends AbstractFunction {
 
   public Eval(QNm name) {
     super(name,
-          new Signature(new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
-                        new SequenceType(AnyItemType.ANY, Cardinality.One)),
-          true);
+        new Signature(new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+            new SequenceType(AnyItemType.ANY, Cardinality.One)),
+        true);
   }
 
   @Override
@@ -75,8 +75,9 @@ public class Eval extends AbstractFunction {
         vQuery = ((Atomic) args[0]).stringValue();
       } else {
         PrintStream buf = IOUtils.createBuffer();
-        StringSerializer ser = new StringSerializer(buf);
-        ser.serialize(args[0]);
+        try (StringSerializer ser = new StringSerializer(buf)) {
+          ser.serialize(args[0]);
+        }
         vQuery = buf.toString();
       }
       XQuery x = new XQuery(vQuery);
