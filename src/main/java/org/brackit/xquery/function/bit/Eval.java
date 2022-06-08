@@ -75,9 +75,9 @@ public class Eval extends AbstractFunction {
         vQuery = ((Atomic) args[0]).stringValue();
       } else {
         PrintStream buf = IOUtils.createBuffer();
-        StringSerializer ser = new StringSerializer(buf);
-        ser.serialize(args[0]);
-        ser.close();
+        try (StringSerializer ser = new StringSerializer(buf)) {
+          ser.serialize(args[0]);
+        }
         vQuery = buf.toString();
       }
       XQuery x = new XQuery(vQuery);
