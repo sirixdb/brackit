@@ -77,60 +77,6 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     return true;
   }
 
-  private boolean varDecl(AST decl) throws QueryException {
-    if (decl.getType() != XQ.TypedVariableDeclaration) {
-      return false;
-    }
-    boolean declaredPrivateOrPublic = false;
-    int pos = 0;
-    AST child = decl.getChild(pos++);
-    while (child.getType() == XQ.Annotation) {
-      String annotation = child.getStringValue();
-      if ("%public".equals(annotation) || "%private".equals(annotation)) {
-        if (declaredPrivateOrPublic) {
-          throw new QueryException(ErrorCode.ERR_VAR_PRIVATE_OR_PUBLIC_ALREADY_DECLARED,
-                                   "Variable has already been declared private or public");
-        }
-        declaredPrivateOrPublic = true;
-      }
-      // TODO process annotations
-      log.warn("Ingoring variable annotation " + annotation);
-      child = decl.getChild(pos++);
-    }
-    QNm name = (QNm) child.getValue();
-    // expand and update AST
-    name = expand(name, DefaultNS.EMPTY);
-    child.setValue(name);
-    if (module.getVariables().isDeclared(name)) {
-      throw new QueryException(ErrorCode.ERR_DUPLICATE_VARIABLE_DECL, "Variable $%s has already been declared", name);
-    }
-    String targetNS = module.getTargetNS();
-    if ((targetNS != null) && (!targetNS.equals(name.getNamespaceURI()))) {
-      throw new QueryException(ErrorCode.ERR_FUN_OR_VAR_NOT_IN_TARGET_NS,
-                               "Declared variable $%s is not in library module namespace: %s",
-                               name,
-                               targetNS);
-    }
-
-    boolean external = false;
-    SequenceType type;
-    if (decl.getChildCount() > pos) {
-      child = decl.getChild(pos++);
-
-      if (child.getType() == XQ.SequenceType) {
-        type = sequenceType(child);
-      } else {
-        type = new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany);
-      }
-    } else {
-      type = new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany);
-    }
-
-    module.getVariables().declare(name, type, external);
-
-    return true;
-  }
-
   boolean expr(AST expr) throws QueryException {
     if (expr.getType() != XQ.SequenceExpr) {
       exprSingle(expr);
@@ -153,7 +99,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
             expr)
         ||
         /* End JSONiq Update Facility */
-        orExpr(expr) || varDecl(expr));
+        orExpr(expr));
   }
 
   // Begin XQuery Update Facility 1.0
