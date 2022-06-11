@@ -36,14 +36,15 @@ import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.sequence.FunctionConversionSequence;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.util.ExprUtil;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.xdm.*;
 import org.brackit.xquery.xdm.json.Array;
 import org.brackit.xquery.xdm.json.Object;
+import org.brackit.xquery.xdm.type.Cardinality;
+import org.brackit.xquery.xdm.type.ItemType;
+import org.brackit.xquery.xdm.type.SequenceType;
 import org.magicwerk.brownies.collections.GapList;
 
 /**
@@ -51,21 +52,22 @@ import org.magicwerk.brownies.collections.GapList;
  */
 public class DynamicFunctionExpr implements Expr {
   private final StaticContext sctx;
-  private final Expr function;
+  private final Expr functionExpr;
   private final Expr[] arguments;
 
   public DynamicFunctionExpr(StaticContext sctx, Expr function, Expr... exprs) {
     this.sctx = sctx;
-    this.function = function;
+    this.functionExpr = function;
     this.arguments = exprs;
   }
 
   @Override
   public Sequence evaluate(QueryContext ctx, Tuple tuple) {
-    final var functionItem = function.evaluateToItem(ctx, tuple);
+    final var functionItem = functionExpr.evaluateToItem(ctx, tuple);
 
+    final var argumentsSize = arguments.length;
     if (functionItem instanceof Array array) {
-      if (arguments.length == 0) {
+      if (argumentsSize == 0) {
         final var it = array.iterate();
 
         final var buffer = new GapList<Item>(array.len());
@@ -76,7 +78,7 @@ public class DynamicFunctionExpr implements Expr {
         return new ItemSequence(buffer.toArray(new Item[0]));
       }
 
-      if (arguments.length == 1) {
+      if (argumentsSize == 1) {
         final var indexItem = arguments[0].evaluateToItem(ctx, tuple);
 
         if (!(indexItem instanceof IntNumeric)) {
@@ -96,7 +98,7 @@ public class DynamicFunctionExpr implements Expr {
     }
 
     if (functionItem instanceof Object object) {
-      if (arguments.length == 0) {
+      if (argumentsSize == 0) {
         final var names = object.names();
         final var buffer = new GapList<Item>(names.len());
 
@@ -107,7 +109,7 @@ public class DynamicFunctionExpr implements Expr {
         return new ItemSequence(buffer.toArray(new Item[0]));
       }
 
-      if (arguments.length == 1) {
+      if (argumentsSize == 1) {
         final var fieldItem = arguments[0].evaluateToItem(ctx, tuple);
 
         return getSequenceByObjectField(object, fieldItem);
@@ -117,7 +119,58 @@ public class DynamicFunctionExpr implements Expr {
       throw new QueryException(new QNm(""));
     }
 
-    return null;
+    if (functionItem instanceof Function function) {
+      final ItemType dftCtxItemType = function.getSignature().defaultCtxItemType();
+      final SequenceType dftCtxType;
+      if (dftCtxItemType != null) {
+        dftCtxType = new SequenceType(dftCtxItemType, Cardinality.One);
+      } else {
+        dftCtxType = null;
+      }
+
+      Sequence res;
+      Sequence[] args;
+
+      if (dftCtxType != null) {
+        Item ctxItem = arguments[0].evaluateToItem(ctx, tuple);
+        FunctionConversionSequence.asTypedSequence(dftCtxType, ctxItem, false);
+        args = new Sequence[] { ctxItem };
+      } else {
+        SequenceType[] params = function.getSignature().getParams();
+        args = new Sequence[arguments.length];
+
+        for (int i = 0; i < arguments.length; i++) {
+          SequenceType sType = (i < params.length) ? params[i] : params[params.length - 1];
+          if (sType.getCardinality().many()) {
+            args[i] = arguments[i].evaluate(ctx, tuple);
+            if (!(sType.getItemType().isAnyItem())) {
+              args[i] = FunctionConversionSequence.asTypedSequence(sType, args[i], false);
+            }
+          } else {
+            args[i] = arguments[i].evaluateToItem(ctx, tuple);
+            args[i] = FunctionConversionSequence.asTypedSequence(sType, args[i], false);
+          }
+        }
+      }
+
+      try {
+        res = function.execute(sctx, ctx, args);
+      } catch (StackOverflowError e) {
+        throw new QueryException(e,
+                                 ErrorCode.BIT_DYN_RT_STACK_OVERFLOW,
+                                 "Execution of function '%s' was aborted because of too deep recursion.",
+                                 function.getName());
+      }
+      if (function.isBuiltIn()) {
+        return res;
+      }
+      res = FunctionConversionSequence.asTypedSequence(function.getSignature().getResultType(), res, false);
+
+      return ExprUtil.materialize(res);
+    }
+
+    // TODO / FIXME
+    throw new QueryException(new QNm(""));
   }
 
   private Sequence getSequenceByObjectField(Object object, Item itemField) {
@@ -139,7 +192,7 @@ public class DynamicFunctionExpr implements Expr {
 
   @Override
   public boolean isUpdating() {
-    return function.isUpdating();
+    return functionExpr.isUpdating();
   }
 
   @Override
@@ -148,6 +201,6 @@ public class DynamicFunctionExpr implements Expr {
   }
 
   public String toString() {
-    return function.toString();
+    return functionExpr.toString();
   }
 }

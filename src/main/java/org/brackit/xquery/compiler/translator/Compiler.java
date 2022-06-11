@@ -33,6 +33,7 @@ import org.brackit.xquery.atomic.*;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.compiler.analyzer.AbstractAnalyzer;
 import org.brackit.xquery.expr.*;
 import org.brackit.xquery.expr.ArithmeticExpr.ArithmeticOp;
 import org.brackit.xquery.expr.NodeCmpExpr.NodeCmp;
@@ -41,6 +42,7 @@ import org.brackit.xquery.expr.ObjectExpr.KeyValueField;
 import org.brackit.xquery.expr.ObjectExpr.ObjectField;
 import org.brackit.xquery.function.DynamicFunctionExpr;
 import org.brackit.xquery.function.FunctionExpr;
+import org.brackit.xquery.function.InlineFunctionExpr;
 import org.brackit.xquery.function.UDF;
 import org.brackit.xquery.function.bit.BitFun;
 import org.brackit.xquery.function.json.JSONFun;
@@ -210,11 +212,23 @@ public class Compiler implements Translator {
       case XQ.AppendJsonExpr -> appendJsonExpr(node);
       case XQ.EmptySequenceType -> new EmptyExpr();
       case XQ.StringConcatExpr -> stringConcatExpr(node);
+      case XQ.InlineFuncItem -> inlineFuncExpr(node);
       default -> throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
                                           "Unexpected AST expr node '%s' of type: %s",
                                           node,
                                           node.getType());
     };
+  }
+
+  protected Expr inlineFuncExpr(AST node) throws QueryException {
+    final var udf = (UDF) node.getProperty("udf");
+    final var body = node.getChild(node.getChildCount() - 1);
+    final var pNames = (QNm[]) node.getProperty("paramNames");
+
+    final var functionBody = function(table.module, node.getStaticContext(), udf, pNames, body, udf.isUpdating());
+    udf.setExpr(functionBody);
+
+    return new InlineFunctionExpr(udf);
   }
 
   private Expr stringConcatExpr(AST node) {

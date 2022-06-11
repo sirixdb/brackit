@@ -34,6 +34,7 @@ import org.brackit.xquery.atomic.*;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.expr.DeclVariable;
 import org.brackit.xquery.expr.Variable;
 import org.brackit.xquery.function.UDF;
 import org.brackit.xquery.function.json.JSONFun;
@@ -76,6 +77,60 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     return true;
   }
 
+  private boolean varDecl(AST decl) throws QueryException {
+    if (decl.getType() != XQ.TypedVariableDeclaration) {
+      return false;
+    }
+    boolean declaredPrivateOrPublic = false;
+    int pos = 0;
+    AST child = decl.getChild(pos++);
+    while (child.getType() == XQ.Annotation) {
+      String annotation = child.getStringValue();
+      if ("%public".equals(annotation) || "%private".equals(annotation)) {
+        if (declaredPrivateOrPublic) {
+          throw new QueryException(ErrorCode.ERR_VAR_PRIVATE_OR_PUBLIC_ALREADY_DECLARED,
+                                   "Variable has already been declared private or public");
+        }
+        declaredPrivateOrPublic = true;
+      }
+      // TODO process annotations
+      log.warn("Ingoring variable annotation " + annotation);
+      child = decl.getChild(pos++);
+    }
+    QNm name = (QNm) child.getValue();
+    // expand and update AST
+    name = expand(name, DefaultNS.EMPTY);
+    child.setValue(name);
+    if (module.getVariables().isDeclared(name)) {
+      throw new QueryException(ErrorCode.ERR_DUPLICATE_VARIABLE_DECL, "Variable $%s has already been declared", name);
+    }
+    String targetNS = module.getTargetNS();
+    if ((targetNS != null) && (!targetNS.equals(name.getNamespaceURI()))) {
+      throw new QueryException(ErrorCode.ERR_FUN_OR_VAR_NOT_IN_TARGET_NS,
+                               "Declared variable $%s is not in library module namespace: %s",
+                               name,
+                               targetNS);
+    }
+
+    boolean external = false;
+    SequenceType type;
+    if (decl.getChildCount() > pos) {
+      child = decl.getChild(pos++);
+
+      if (child.getType() == XQ.SequenceType) {
+        type = sequenceType(child);
+      } else {
+        type = new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany);
+      }
+    } else {
+      type = new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany);
+    }
+
+    module.getVariables().declare(name, type, external);
+
+    return true;
+  }
+
   boolean expr(AST expr) throws QueryException {
     if (expr.getType() != XQ.SequenceExpr) {
       exprSingle(expr);
@@ -98,7 +153,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
             expr)
         ||
         /* End JSONiq Update Facility */
-        orExpr(expr));
+        orExpr(expr) || varDecl(expr));
   }
 
   // Begin XQuery Update Facility 1.0
@@ -1372,7 +1427,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   protected boolean functionItemExpr(AST expr) throws QueryException {
-    return (literalFunctionItem(expr) || inlineFunction(expr));
+    return (literalFunctionItem(expr) || inlineFunctionItem(expr));
   }
 
   protected boolean literalFunctionItem(AST expr) throws QueryException {
@@ -1387,44 +1442,13 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     return true;
   }
 
-  protected boolean inlineFunction(AST expr) throws QueryException {
+  protected boolean inlineFunctionItem(AST expr) throws QueryException {
     if (expr.getType() != XQ.InlineFuncItem) {
       return false;
     }
 
     int pos = 0;
-
-    // function name child
-    AST child = expr.getParent().getChild(0);
-
-    // function name
-    QNm name = (QNm) child.getChild(0).getValue();
-    // expand and update AST
-    name = expand(name, null);
-    child.getChild(0).setValue(name);
-    // if (name.getNamespaceURI().isEmpty()) {
-    // throw new QueryException(ErrorCode.ERR_FUNCTION_DECL_NOT_IN_NS, "Function %s
-    // is not in a namespace", name);
-    // }
-
-    // String targetNS = module.getTargetNS();
-    // if ((targetNS != null) && (!targetNS.equals(name.getNamespaceURI()))) {
-    // throw new QueryException(ErrorCode.ERR_FUN_OR_VAR_NOT_IN_TARGET_NS,
-    // "Declared function %s is not in library module namespace: %s",
-    // name,
-    // targetNS);
-    // }
-    //
-    // String uri = name.getNamespaceURI();
-    // if ((uri.equals(Namespaces.XML_NSURI)) || (uri.equals(Namespaces.XS_NSURI))
-    // || (uri.equals(Namespaces.XSI_NSURI))
-    // || (uri.equals(Namespaces.FN_NSURI)) ||
-    // (uri.equals(Namespaces.FNMATH_NSURI))) {
-    // throw new QueryException(ErrorCode.ERR_FUNCTION_DECL_IN_ILLEGAL_NAMESPACE,
-    // "Declared function %s is in illegal namespace: %s",
-    // name,
-    // uri);
-    // }
+    AST child;
 
     // parameters
     int noOfParameters = expr.getChildCount() - 2;
@@ -1439,9 +1463,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
       for (int j = 0; j < i; j++) {
         if (pNames[i].atomicCmp(pNames[j]) == 0) {
           throw new QueryException(ErrorCode.ERR_DUPLICATE_FUN_PARAMETER,
-              "Duplicate parameter in declared function %s: %s",
-              name,
-              pNames[j]);
+                                   "Duplicate parameter in declared function: %s",
+                                   pNames[j]);
         }
       }
       if (child.getChildCount() == 2) {
@@ -1449,21 +1472,21 @@ public class ExprAnalyzer extends AbstractAnalyzer {
       } else {
         pTypes[i] = SequenceType.ITEM_SEQUENCE;
       }
+      argument(child);
     }
 
     // result type
     child = expr.getChild(pos++);
     SequenceType resultType = sequenceType(child);
-    child = expr.getChild(pos);
 
     // register function beforehand to support recursion
     Signature signature = new Signature(resultType, pTypes);
-    UDF udf = new UDF(name, signature, false);
-    sctx.getFunctions().declare(udf);
+    UDF udf = new UDF(null, signature, false);
+
+    expr.setProperty("udf", udf);
+    expr.setProperty("paramNames", pNames);
 
     return true;
-    // throw new QueryException(ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-    // "Inline functions not implemented yet.");
   }
 
   boolean enclosedExpr(AST expr) throws QueryException {

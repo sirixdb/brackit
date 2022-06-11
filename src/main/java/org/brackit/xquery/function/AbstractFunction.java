@@ -85,7 +85,7 @@ public abstract class AbstractFunction extends AbstractItem implements Function 
 
   @Override
   public final String toString() {
-    return name.toString() + signature;
+    return name == null ? "" + signature : name.toString() + signature;
   }
 
   @Override
