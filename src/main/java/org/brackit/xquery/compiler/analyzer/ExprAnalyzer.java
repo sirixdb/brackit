@@ -1402,10 +1402,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     SequenceType[] pTypes = new SequenceType[noOfParameters];
     for (int i = 0; i < noOfParameters; i++) {
       child = expr.getChild(pos++);
+      typedVarBinding(child);
       pNames[i] = (QNm) child.getChild(0).getValue();
-      // expand and update AST
-      pNames[i] = expand(pNames[i], DefaultNS.EMPTY);
-      child.getChild(0).setValue(pNames[i]);
       for (int j = 0; j < i; j++) {
         if (pNames[i].atomicCmp(pNames[j]) == 0) {
           throw new QueryException(ErrorCode.ERR_DUPLICATE_FUN_PARAMETER,
@@ -1418,12 +1416,14 @@ public class ExprAnalyzer extends AbstractAnalyzer {
       } else {
         pTypes[i] = SequenceType.ITEM_SEQUENCE;
       }
-      argument(child);
     }
+
+    offerScope();
 
     // result type
     child = expr.getChild(pos++);
     SequenceType resultType = sequenceType(child);
+    functionBody(expr.getChild(pos));
 
     // register function beforehand to support recursion
     Signature signature = new Signature(resultType, pTypes);

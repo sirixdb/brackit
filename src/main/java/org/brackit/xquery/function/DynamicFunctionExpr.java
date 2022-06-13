@@ -83,9 +83,9 @@ public class DynamicFunctionExpr implements Expr {
 
         if (!(indexItem instanceof IntNumeric)) {
           throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-              "Illegal operand type '%s' where '%s' is expected",
-              indexItem.itemType(),
-              Type.INR);
+                                   "Illegal operand type '%s' where '%s' is expected",
+                                   indexItem.itemType(),
+                                   Type.INR);
         }
 
         final int index = ((IntNumeric) indexItem).intValue();
@@ -120,6 +120,14 @@ public class DynamicFunctionExpr implements Expr {
     }
 
     if (functionItem instanceof Function function) {
+      int pos = 0;
+      for (Sequence sequence : tuple.array()) {
+        if (sequence == functionItem) {
+          break;
+        }
+        pos++;
+      }
+
       final ItemType dftCtxItemType = function.getSignature().defaultCtxItemType();
       final SequenceType dftCtxType;
       if (dftCtxItemType != null) {
@@ -137,18 +145,22 @@ public class DynamicFunctionExpr implements Expr {
         args = new Sequence[] { ctxItem };
       } else {
         SequenceType[] params = function.getSignature().getParams();
-        args = new Sequence[arguments.length];
+        args = new Sequence[arguments.length + pos];
+
+        for (int i = 0; i < pos; i++) {
+          args[i] = tuple.get(i);
+        }
 
         for (int i = 0; i < arguments.length; i++) {
           SequenceType sType = (i < params.length) ? params[i] : params[params.length - 1];
           if (sType.getCardinality().many()) {
-            args[i] = arguments[i].evaluate(ctx, tuple);
+            args[pos + i] = arguments[i].evaluate(ctx, tuple);
             if (!(sType.getItemType().isAnyItem())) {
-              args[i] = FunctionConversionSequence.asTypedSequence(sType, args[i], false);
+              args[pos + i] = FunctionConversionSequence.asTypedSequence(sType, args[i], false);
             }
           } else {
-            args[i] = arguments[i].evaluateToItem(ctx, tuple);
-            args[i] = FunctionConversionSequence.asTypedSequence(sType, args[i], false);
+            args[pos + i] = arguments[i].evaluateToItem(ctx, tuple);
+            args[pos + i] = FunctionConversionSequence.asTypedSequence(sType, args[i], false);
           }
         }
       }

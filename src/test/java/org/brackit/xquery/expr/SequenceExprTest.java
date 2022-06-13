@@ -33,6 +33,7 @@ import org.brackit.xquery.ResultChecker;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.sequence.ItemSequence;
+import org.brackit.xquery.xdm.Sequence;
 import org.junit.Test;
 
 /**
@@ -42,14 +43,14 @@ public class SequenceExprTest {
   QueryContext ctx = new BrackitQueryContext(null, null);
 
   @Test
-  public void simpleSequence() throws Exception {
+  public void simpleSequence() {
     SequenceExpr expr = new SequenceExpr(new Int32(1), new Int32(2), new Int32(3));
-    ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2), new Int32(3)),
-                         expr.evaluate(ctx, new TupleImpl()));
+    final var evaluatedSequence = expr.evaluate(ctx, new TupleImpl());
+    ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2), new Int32(3)), evaluatedSequence);
   }
 
   @Test
-  public void emptySequence() throws Exception {
+  public void emptySequence() {
     SequenceExpr expr = new SequenceExpr();
     ResultChecker.dCheck(null, expr.evaluate(ctx, new TupleImpl()));
   }
@@ -62,7 +63,7 @@ public class SequenceExprTest {
   }
 
   @Test
-  public void nestedSequences() throws Exception {
+  public void nestedSequences() {
     SequenceExpr expr = new SequenceExpr(new Int32(1),
                                          new SequenceExpr(new Int32(2), new Int32(3)),
                                          new Int32(4),

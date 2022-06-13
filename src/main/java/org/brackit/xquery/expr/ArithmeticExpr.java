@@ -53,7 +53,7 @@ public class ArithmeticExpr implements Expr {
 
     final String s;
 
-    private ArithmeticOp(String s) {
+    ArithmeticOp(String s) {
       this.s = s;
     }
 

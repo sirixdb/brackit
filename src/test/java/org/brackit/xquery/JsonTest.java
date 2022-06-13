@@ -203,11 +203,24 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testInlineFunction() throws IOException {
     final String query = """
-        let $fun := function($x) { $x * $x }
-        return $fun(2)
+        let $fun := function($x, $z) { $x * $x * $z }
+        return $fun(2,3)
                 """;
     final var result = query(query);
-    assertEquals("4", result);
+    assertEquals("12", result);
+  }
+
+  @Test
+  public void testInlineFunctionClosure() throws IOException {
+    final String query = """
+        let $c := 4
+        let $d := 5
+        let $e := function($a) { $a }
+        let $fun := function($a, $b) { ($a * $c) + ($b * $d) + $e(5) }
+        return $fun(2,3)
+        """;
+    final var result = query(query);
+    assertEquals("28", result);
   }
 
   @Test

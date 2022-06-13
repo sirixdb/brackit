@@ -229,21 +229,21 @@ public abstract class FlatteningSequence extends AbstractSequence {
     return new FlatteningIter();
   }
 
-  public String toString() {
-    StringBuilder sb = new StringBuilder();
-    try {
-      Sequence s;
-      int i = 0;
-      if ((s = sequence(i++)) != null) {
-        sb.append(s);
-        while ((s = sequence(i++)) != null) {
-          sb.append(",");
-          sb.append(s);
-        }
-      }
-    } catch (QueryException e) {
-      sb.append("...");
-    }
-    return sb.toString();
-  }
+//  public String toString() {
+//    StringBuilder sb = new StringBuilder();
+//    try {
+//      Sequence s;
+//      int i = 0;
+//      if ((s = sequence(i++)) != null) {
+//        sb.append(s);
+//        while ((s = sequence(i++)) != null) {
+//          sb.append(",");
+//          sb.append(s);
+//        }
+//      }
+//    } catch (QueryException e) {
+//      sb.append("...");
+//    }
+//    return sb.toString();
+//  }
 }

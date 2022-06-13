@@ -33,7 +33,6 @@ import org.brackit.xquery.atomic.*;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.XQ;
-import org.brackit.xquery.compiler.analyzer.AbstractAnalyzer;
 import org.brackit.xquery.expr.*;
 import org.brackit.xquery.expr.ArithmeticExpr.ArithmeticOp;
 import org.brackit.xquery.expr.NodeCmpExpr.NodeCmp;
@@ -116,6 +115,36 @@ public class Compiler implements Translator {
     Expr e = expr(expr, !allowUpdate);
     table.resolvePositions();
     return e;
+  }
+
+  public Expr inlineFunction(Module module, StaticContext ctx, UDF udf, QNm[] params, AST expr, boolean allowUpdate)
+      throws QueryException {
+    final var bound = this.table.bound();
+    table = new VariableTable(module);
+    for (final Binding binding : bound) {
+      table.bind(binding.getName(), binding.getType());
+    }
+    for (final Binding binding : bound) {
+      table.resolve(binding.getName());
+    }
+    this.ctx = ctx;
+    // bind parameter
+    SequenceType[] types = udf.getSignature().getParams();
+    for (int i = 0; i < params.length; i++) {
+      table.bind(params[i], types[i]);
+    }
+    // ensure fixed parameter positions
+    for (final QNm param : params) {
+      table.resolve(param);
+    }
+    // compile body
+    Expr body = expr(expr, !allowUpdate);
+    // unbind parameters
+    for (int i = 0; i < params.length; i++) {
+      table.unbind();
+    }
+    table.resolvePositions();
+    return body;
   }
 
   @Override
@@ -225,7 +254,7 @@ public class Compiler implements Translator {
     final var body = node.getChild(node.getChildCount() - 1);
     final var pNames = (QNm[]) node.getProperty("paramNames");
 
-    final var functionBody = function(table.module, node.getStaticContext(), udf, pNames, body, udf.isUpdating());
+    final var functionBody = inlineFunction(table.module, node.getStaticContext(), udf, pNames, body, udf.isUpdating());
     udf.setExpr(functionBody);
 
     return new InlineFunctionExpr(udf);
@@ -654,26 +683,41 @@ public class Compiler implements Translator {
     }
 
     Function function = ctx.getFunctions().resolve(name, childCount);
+
+    final var signature = function.getSignature();
+
+    final List<SequenceType> newParamTypes = new ArrayList<>();
+    final var params = signature.getParams();
+
     Expr[] args;
+
+    final List<Expr> argumentPlaceHolderExprs = new ArrayList<>();
 
     if (childCount > 0) {
       args = new Expr[childCount];
       for (int i = 0; i < childCount; i++) {
         AST arg = node.getChild(i);
         if (arg.getType() == XQ.ArgumentPlaceHolder) {
-          throw new QueryException(ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
-                                   "Partial function application is not supported yet");
+          argumentPlaceHolderExprs.add(new PartialArgumentExpr());
+          newParamTypes.add(params[i]);
+        } else {
+          args[i] = expr(arg, true);
         }
-        args[i] = expr(arg, true);
       }
-    } else if (function.getSignature().defaultCtxItemType() != null) {
+    } else if (signature.defaultCtxItemType() != null) {
       Expr contextItemRef = table.resolve(Bits.FS_DOT);
       args = new Expr[] { contextItemRef };
     } else {
       args = new Expr[0];
     }
 
-    return new FunctionExpr(node.getStaticContext(), function, args);
+    if (argumentPlaceHolderExprs.isEmpty()) {
+      return new FunctionExpr(node.getStaticContext(), function, args);
+    } else {
+      final UDF udf = new UDF(name, new Signature(signature.getResultType(), newParamTypes.toArray(new SequenceType[0])), function.isUpdating());
+      udf.setExpr(function);
+      return new FunctionExpr(node.getStaticContext(), udf, args);
+    }
   }
 
   protected Expr documentExpr(AST node) throws QueryException {
