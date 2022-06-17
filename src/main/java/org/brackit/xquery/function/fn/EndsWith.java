@@ -37,7 +37,7 @@ public class EndsWith extends AbstractFunction {
         }
         String first = ((Item) args[0]).atomize().stringValue();
         String second = ((Item) args[1]).atomize().stringValue();
-        boolean result = first.contains(second);
+        boolean result = first.endsWith(second);
         return (result == true) ? Int32.ONE : Int32.ZERO;
 
     }
