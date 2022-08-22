@@ -27,19 +27,18 @@
  */
 package org.brackit.xquery.node.d2linked;
 
-import java.util.Map;
-import java.util.TreeMap;
-
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.stream.EmptyStream;
 import org.brackit.xquery.node.stream.IteratorStream;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.OperationNotSupportedException;
 import org.brackit.xquery.xdm.Scope;
 import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.node.Node;
+
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * @author Sebastian Baechle
@@ -126,9 +125,9 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
   }
 
   @Override
-  public Stream<D2Node> getAttributes() throws OperationNotSupportedException, DocumentException {
+  public Stream<D2Node> getAttributes() throws DocumentException {
     if (firstAttribute == null) {
-      return new EmptyStream<D2Node>();
+      return new EmptyStream<>();
     }
     return new SiblingStream(firstAttribute);
   }
@@ -162,7 +161,7 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
   }
 
   @Override
-  public boolean deleteAttribute(QNm name) throws OperationNotSupportedException, DocumentException {
+  public boolean deleteAttribute(QNm name) throws DocumentException {
     D2Node prev = null;
     for (D2Node attribute = firstAttribute; attribute != null; attribute = attribute.sibling) {
       if (attribute.getName().equals(name)) {
@@ -179,7 +178,7 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
   }
 
   @Override
-  public D2Node setAttribute(Node<?> attribute) throws OperationNotSupportedException, DocumentException {
+  public D2Node setAttribute(Node<?> attribute) throws DocumentException {
     if (attribute.getKind() != Kind.ATTRIBUTE) {
       throw new DocumentException("Cannot set nodes of type '%s' as attribute", attribute.getKind());
     }
@@ -188,7 +187,7 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
   }
 
   @Override
-  public D2Node setAttribute(QNm name, Atomic value) throws OperationNotSupportedException, DocumentException {
+  public D2Node setAttribute(QNm name, Atomic value) throws DocumentException {
     checkName(name);
     if (firstAttribute == null) {
       return (firstAttribute = new AttributeD2Node(this, name, value));
@@ -205,12 +204,12 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
   }
 
   @Override
-  public void setName(QNm name) throws OperationNotSupportedException, DocumentException {
+  public void setName(QNm name) throws DocumentException {
     this.name = checkName(name);
   }
 
   @Override
-  public void setValue(Atomic value) throws OperationNotSupportedException, DocumentException {
+  public void setValue(Atomic value) throws DocumentException {
     firstChild = null;
     append(Kind.TEXT, null, value);
   }
@@ -223,9 +222,9 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
   @Override
   public Stream<String> localPrefixes() throws DocumentException {
     if (nsMappings == null) {
-      return new EmptyStream<String>();
+      return new EmptyStream<>();
     }
-    return new IteratorStream<String>(nsMappings.keySet());
+    return new IteratorStream<>(nsMappings.keySet());
   }
 
   @Override
@@ -234,7 +233,7 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
     if (nsMappings == null) {
       // use tree map because we expect only a few
       // entries and a tree map is much more space efficient
-      nsMappings = new TreeMap<String, String>();
+      nsMappings = new TreeMap<>();
     }
     nsMappings.put(prefix, uri);
   }
@@ -264,7 +263,7 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
         }
       }
       ParentD2Node p = n.parent;
-      if ((p == null) || (!(p instanceof ElementD2Node))) {
+      if ((!(p instanceof ElementD2Node))) {
         break;
       }
       n = (ElementD2Node) p;
@@ -272,7 +271,7 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
     if (prefix.equals("xml")) {
       return "http://www.w3.org/XML/1998/namespace";
     }
-    return ((prefix == null) || (prefix.isEmpty())) ? "" : null;
+    return prefix.isEmpty() ? "" : null;
   }
 
   @Override

@@ -34,7 +34,6 @@ import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.node.stream.EmptyStream;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.OperationNotSupportedException;
 import org.brackit.xquery.xdm.Stream;
 import org.brackit.xquery.xdm.node.Node;
 
@@ -69,7 +68,7 @@ abstract class ParentD2Node extends D2Node {
     }
   }
 
-  private final class FragmentScanner implements Stream<D2Node> {
+  private static final class FragmentScanner implements Stream<D2Node> {
     D2Node current;
 
     D2Node first;
@@ -100,14 +99,14 @@ abstract class ParentD2Node extends D2Node {
         return deliver;
       }
       D2Node next;
-      if ((current instanceof ElementD2Node) && ((next = ((ElementD2Node) current).firstAttribute) != null)) {
+      if (current instanceof ElementD2Node && (next = ((ElementD2Node) current).firstAttribute) != null) {
         // try to descend to attribute
         inAttribute = true;
         current = next;
         return next;
       }
 
-      if ((current instanceof ParentD2Node) && ((next = ((ParentD2Node) current).firstChild) != null)) {
+      if (current instanceof ParentD2Node && (next = ((ParentD2Node) current).firstChild) != null) {
         // try to descend to subtree
         current = next;
         return next;
@@ -132,7 +131,7 @@ abstract class ParentD2Node extends D2Node {
     }
   }
 
-  protected final class DescendantScanner implements Stream<D2Node> {
+  protected static final class DescendantScanner implements Stream<D2Node> {
     D2Node current;
 
     D2Node root;
@@ -157,7 +156,7 @@ abstract class ParentD2Node extends D2Node {
         return root;
       }
       D2Node next;
-      if ((current instanceof ParentD2Node) && ((next = ((ParentD2Node) current).firstChild) != null)) {
+      if (current instanceof ParentD2Node && (next = ((ParentD2Node) current).firstChild) != null) {
         // try to descend to subtree
         current = next;
         return next;
@@ -191,16 +190,13 @@ abstract class ParentD2Node extends D2Node {
   @Override
   public Atomic getValue() throws DocumentException {
     StringBuilder buffer = new StringBuilder();
-    Stream<D2Node> scanner = new DescendantScanner(this);
-    try {
+    try (Stream<D2Node> scanner = new DescendantScanner(this)) {
       D2Node descendant;
       while ((descendant = scanner.next()) != null) {
         if (descendant.getKind() == Kind.TEXT) {
           buffer.append(descendant.getValue());
         }
       }
-    } finally {
-      scanner.close();
     }
 
     return new Una(buffer.toString());
@@ -223,7 +219,7 @@ abstract class ParentD2Node extends D2Node {
   }
 
   void deleteChild(D2Node node) throws DocumentException {
-    if ((getKind() == Kind.DOCUMENT) && (node.getKind() == Kind.ELEMENT)) {
+    if (getKind() == Kind.DOCUMENT && node.getKind() == Kind.ELEMENT) {
       throw new DocumentException("The root element must not be deleted");
     }
 
@@ -235,8 +231,7 @@ abstract class ParentD2Node extends D2Node {
   }
 
   D2Node insertChild(D2Node sibling, Kind kind, QNm name, Atomic value, boolean right) throws DocumentException {
-
-    if ((getKind() == Kind.DOCUMENT) && (kind == Kind.ELEMENT)) {
+    if (getKind() == Kind.DOCUMENT && kind == Kind.ELEMENT) {
       for (D2Node c = firstChild; c != null; c = c.sibling) {
         if (c.getKind() == Kind.ELEMENT) {
           throw new DocumentException("Document nodes must have only one root element");
@@ -245,10 +240,10 @@ abstract class ParentD2Node extends D2Node {
     }
 
     if (firstChild == null) {
-      return (firstChild = buildChild(null, null, kind, name, value));
+      return firstChild = buildChild(null, null, kind, name, value);
     }
     D2Node ps = null;
-    D2Node ns = null;
+    D2Node ns;
     if (sibling == null) {
       if (right) {
         // insert as last child
@@ -257,7 +252,7 @@ abstract class ParentD2Node extends D2Node {
         while (ps.sibling != null) {
           ps = ps.sibling;
         }
-        ns = sibling;
+        ns = null;
       } else {
         // insert as first child
         ns = firstChild;
@@ -281,18 +276,18 @@ abstract class ParentD2Node extends D2Node {
 
     if (kind == Kind.TEXT) {
       // merge adjacent text nodes
-      if ((ps != null) && (ps.getKind() == Kind.TEXT)) {
+      if (ps != null && ps.getKind() == Kind.TEXT) {
         ps.setValue(new Una(ps.getValue().stringValue() + value.stringValue()));
         return ps;
       }
-      if ((ns != null) && (ns.getKind() == Kind.TEXT)) {
+      if (ns != null && ns.getKind() == Kind.TEXT) {
         ns.setValue(new Una(ns.getValue().stringValue() + value.stringValue()));
         return ns;
       }
     }
 
-    int[] psd = (ps != null) ? ps.division : null;
-    int[] nsd = (ns != null) ? ns.division : null;
+    int[] psd = ps != null ? ps.division : null;
+    int[] nsd = ns != null ? ns.division : null;
     D2Node c = buildChild(psd, nsd, kind, name, value);
     c.sibling = ns;
     if (ps == null) {
@@ -304,32 +299,29 @@ abstract class ParentD2Node extends D2Node {
   }
 
   private D2Node replaceChild(D2Node sibling, Kind kind, QNm name, Atomic value) throws DocumentException {
-
-    if ((getKind() == Kind.DOCUMENT) && (sibling != null) && (sibling.getKind() == Kind.ELEMENT) && (kind
-        != Kind.ELEMENT)) {
+    if (getKind() == Kind.DOCUMENT && sibling != null && sibling.getKind() == Kind.ELEMENT && kind
+        != Kind.ELEMENT) {
       throw new DocumentException("Cannot replace root element with of kind: %s", kind);
     }
 
     D2Node previous = firstChild;
-    while ((previous.sibling != null) && (previous.sibling != sibling))
+    while (previous.sibling != null && previous.sibling != sibling)
       previous = previous.sibling;
 
+    assert sibling != null;
     D2Node child = buildChild(sibling.division, kind, name, value);
 
     child.sibling = sibling.sibling;
+    previous.sibling = child;
 
-    if (previous != null)
-      previous.sibling = child;
-    else
-      firstChild = child;
     return child;
   }
 
   private D2Node buildChild(int[] prevSibling, int[] nextSibling, Kind kind, QNm name, Atomic value)
       throws DocumentException {
-    int[] division = (prevSibling != null) ? ((nextSibling != null)
+    int[] division = prevSibling != null ? nextSibling != null
         ? siblingBetween(prevSibling, nextSibling)
-        : siblingAfter(prevSibling)) : ((nextSibling != null) ? siblingBefore(nextSibling) : FIRST);
+        : siblingAfter(prevSibling) : nextSibling != null ? siblingBefore(nextSibling) : FIRST;
 
     return buildChild(division, kind, name, value);
   }
@@ -352,7 +344,7 @@ abstract class ParentD2Node extends D2Node {
   }
 
   @Override
-  public D2Node append(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException {
+  public D2Node append(Kind kind, QNm name, Atomic value) throws DocumentException {
     return insertChild(null, kind, name, value, true);
   }
 
@@ -360,22 +352,20 @@ abstract class ParentD2Node extends D2Node {
   public D2Node append(Node<?> child) throws DocumentException {
     D2NodeBuilder builder = new D2NodeBuilder(this, null, true);
     child.parse(builder);
-    D2Node n = builder.root();
-    return n;
+    return builder.root();
   }
 
   @Override
-  public D2Node append(SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
+  public D2Node append(SubtreeParser parser) throws DocumentException {
     D2NodeBuilder builder = new D2NodeBuilder(this, null, true);
     parser.parse(builder);
-    D2Node n = builder.root();
-    return n;
+    return builder.root();
   }
 
   @Override
   public Stream<D2Node> getChildren() throws DocumentException {
     if (firstChild == null) {
-      return new EmptyStream<D2Node>();
+      return new EmptyStream<>();
     }
     return new SiblingStream(firstChild);
   }
@@ -399,90 +389,84 @@ abstract class ParentD2Node extends D2Node {
 
   @Override
   public boolean hasChildren() throws DocumentException {
-    return (firstChild != null);
+    return firstChild != null;
   }
 
   @Override
   public boolean isAncestorOf(Node<?> node) {
-    return (node != null) && ((node instanceof D2Node) && (((D2Node) node).isInSubtreeOf(this)));
+    return node instanceof D2Node d2Node && d2Node.isInSubtreeOf(this);
   }
 
   @Override
   public boolean isAncestorOrSelfOf(Node<?> node) {
-    return (node != null) && (node == this) || ((node instanceof D2Node) && (((D2Node) node).isInSubtreeOf(this)));
+    return node == this || node instanceof D2Node d2Node && d2Node.isInSubtreeOf(this);
   }
 
   @Override
   public boolean isParentOf(Node<?> node) {
-    return (node != null) && (((node.isChildOf(this)) || (node.isAttributeOf(this))));
+    return node != null && (node.isChildOf(this) || node.isAttributeOf(this));
   }
 
   @Override
-  public D2Node prepend(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException {
+  public D2Node prepend(Kind kind, QNm name, Atomic value) throws DocumentException {
     return insertChild(null, kind, name, value, true);
   }
 
   @Override
-  public D2Node prepend(Node<?> child) throws OperationNotSupportedException, DocumentException {
+  public D2Node prepend(Node<?> child) throws DocumentException {
     D2NodeBuilder builder = new D2NodeBuilder(this, null, false);
     child.parse(builder);
-    D2Node n = builder.root();
-    return n;
+    return builder.root();
   }
 
   @Override
-  public D2Node prepend(SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
+  public D2Node prepend(SubtreeParser parser) throws DocumentException {
     D2NodeBuilder builder = new D2NodeBuilder(this, null, false);
     parser.parse(builder);
-    D2Node n = builder.root();
-    return n;
+    return builder.root();
   }
 
   D2Node insertBefore(D2Node node, Kind kind, QNm name, Atomic value)
-      throws OperationNotSupportedException, DocumentException {
+      throws DocumentException {
     return insertChild(node, kind, name, value, true);
   }
 
-  D2Node insertBefore(D2Node node, Node<?> child) throws OperationNotSupportedException, DocumentException {
+  D2Node insertBefore(D2Node node, Node<?> child) throws DocumentException {
     D2NodeBuilder builder = new D2NodeBuilder(this, node, false);
     child.parse(builder);
-    D2Node n = builder.root();
-    return n;
+    return builder.root();
   }
 
-  D2Node insertBefore(D2Node node, SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
+  D2Node insertBefore(D2Node node, SubtreeParser parser) throws DocumentException {
     D2NodeBuilder builder = new D2NodeBuilder(this, node, false);
     parser.parse(builder);
-    D2Node n = builder.root();
-    return n;
+    return builder.root();
   }
 
   D2Node insertAfter(D2Node node, Kind kind, QNm name, Atomic value)
-      throws OperationNotSupportedException, DocumentException {
+      throws DocumentException {
     return insertChild(node, kind, name, value, false);
   }
 
-  D2Node insertAfter(D2Node node, Node<?> child) throws OperationNotSupportedException, DocumentException {
+  D2Node insertAfter(D2Node node, Node<?> child) throws DocumentException {
     D2NodeBuilder builder = new D2NodeBuilder(this, node, true);
     child.parse(builder);
-    D2Node n = builder.root();
-    return n;
+    return builder.root();
   }
 
-  D2Node insertAfter(D2Node node, SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
+  D2Node insertAfter(D2Node node, SubtreeParser parser) throws DocumentException {
     D2NodeBuilder builder = new D2NodeBuilder(this, node, true);
     parser.parse(builder);
-    D2Node n = builder.root();
-    return n;
+    return builder.root();
 
   }
 
   D2Node replace(D2Node node, Kind kind, QNm name, Atomic value)
-      throws OperationNotSupportedException, DocumentException {
+      throws DocumentException {
     return replaceChild(node, kind, name, value);
   }
 
-  D2Node replace(D2Node node, Node<?> child) throws OperationNotSupportedException, DocumentException {
+  D2Node replace(D2Node node, Node<?> child) throws DocumentException {
     if (parent == null) {
       throw new DocumentException("Cannot replace node without parent");
     }
@@ -494,11 +478,10 @@ abstract class ParentD2Node extends D2Node {
       }
     };
     child.parse(builder);
-    D2Node n = builder.root();
-    return n;
+    return builder.root();
   }
 
-  D2Node replace(D2Node node, SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
+  D2Node replace(D2Node node, SubtreeParser parser) throws DocumentException {
     if (parent == null) {
       throw new DocumentException("Cannot replace node without parent");
     }
@@ -510,7 +493,6 @@ abstract class ParentD2Node extends D2Node {
       }
     };
     parser.parse(builder);
-    D2Node n = builder.root();
-    return n;
+    return builder.root();
   }
 }

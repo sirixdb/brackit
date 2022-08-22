@@ -36,7 +36,7 @@ public interface Reference {
    * Initialize the reference to the variable's
    * position in a tuple.
    *
-   * @param pos
+   * @param pos the position
    */
   void setPos(int pos);
 }

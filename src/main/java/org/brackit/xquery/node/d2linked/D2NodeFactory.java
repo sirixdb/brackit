@@ -96,13 +96,11 @@ public class D2NodeFactory implements NodeFactory<D2Node> {
   public NodeCollection<D2Node> collection(String name, Stream<SubtreeParser> parsers) throws DocumentException {
     D2NodeCollection coll = new D2NodeCollection(name);
     D2NodeBuilder builder = new D2NodeBuilder(coll);
-    try {
+    try (parsers) {
       SubtreeParser parser;
       while ((parser = parsers.next()) != null) {
         parser.parse(builder);
       }
-    } finally {
-      parsers.close();
     }
     return coll;
   }

@@ -86,7 +86,7 @@ public final class PID2Node extends D2Node {
   }
 
   @Override
-  public void setName(QNm name) throws OperationNotSupportedException, DocumentException {
+  public void setName(QNm name) throws DocumentException {
     this.target = checkName(name);
   }
 
@@ -96,7 +96,7 @@ public final class PID2Node extends D2Node {
   }
 
   @Override
-  public void setValue(Atomic value) throws OperationNotSupportedException, DocumentException {
+  public void setValue(Atomic value) throws DocumentException {
     this.value = checkValue(value);
   }
 

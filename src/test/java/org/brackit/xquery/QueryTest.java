@@ -25,67 +25,38 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.node.d2linked;
+package org.brackit.xquery;
 
+import org.brackit.xquery.atomic.Int32;
+import org.brackit.xquery.atomic.Null;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.compiler.CompileChain;
+import org.brackit.xquery.function.fn.EmptySequence;
+import org.brackit.xquery.jsonitem.array.DArray;
+import org.brackit.xquery.jsonitem.object.ArrayObject;
+import org.brackit.xquery.sequence.ItemSequence;
+import org.brackit.xquery.xdm.Sequence;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 /**
- * @author Sebastian Baechle
+ * @author Johannes Lichtenberger
  */
-public class DocumentD2Node extends ParentD2Node {
+public final class QueryTest extends XQueryBaseTest {
 
-  private final D2NodeCollection collection;
-
-  public DocumentD2Node(String name) {
-    super(null, FIRST);
-    this.collection = new D2NodeCollection(name, this);
-  }
-
-  public DocumentD2Node(D2NodeCollection collection) {
-    super(null, FIRST);
-    this.collection = collection;
-    collection.add(this);
-  }
-
-  public DocumentD2Node() {
-    super(null, FIRST);
-    this.collection = new D2NodeCollection(String.format("%s_%s_%s.xml",
-                                                         Thread.currentThread().getName(),
-                                                         "noname",
-                                                         System.currentTimeMillis()), this);
-  }
-
-  @Override
-  public D2NodeCollection getCollection() {
-    return collection;
-  }
-
-  @Override
-  public QNm getName() throws DocumentException {
-    return null;
-  }
-
-  @Override
-  public boolean isDocumentOf(Node<?> node) {
-    return (getKind() == Kind.DOCUMENT) && (node == this);
-  }
-
-  @Override
-  public Kind getKind() {
-    return Kind.DOCUMENT;
-  }
-
-  @Override
-  public Stream<? extends D2Node> getDescendantOrSelf() throws DocumentException {
-    return new DescendantScanner(this);
-  }
-
-  @Override
-  public String toString() {
-    return String.format("(type='%s', name='%s', value='%s')", Kind.DOCUMENT, collection.getName(), null);
+  private Sequence query(final String query) {
+    return new XQuery(query).execute(ctx);
   }
 }

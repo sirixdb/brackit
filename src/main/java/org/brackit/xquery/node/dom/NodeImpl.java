@@ -75,7 +75,7 @@ public class NodeImpl implements org.w3c.dom.Node {
   @Override
   public org.w3c.dom.Node appendChild(org.w3c.dom.Node newChild) throws DOMException {
     if (children == null) {
-      children = new ArrayList<org.w3c.dom.Node>(3);
+      children = new ArrayList<>(3);
     }
     children.add(newChild);
     return newChild;
@@ -90,26 +90,26 @@ public class NodeImpl implements org.w3c.dom.Node {
 
       if (deep) {
         if (children != null) {
-          List<org.w3c.dom.Node> clonedChildren = new ArrayList<org.w3c.dom.Node>(children.size());
+          List<org.w3c.dom.Node> clonedChildren = new ArrayList<>(children.size());
 
           for (org.w3c.dom.Node child : children) {
-            clonedChildren.add(child.cloneNode(deep));
+            clonedChildren.add(child.cloneNode(true));
           }
 
           clone.children = clonedChildren;
         }
 
         if (attributes != null) {
-          Map<String, Attr> clonedAttributes = new TreeMap<String, Attr>();
+          Map<String, Attr> clonedAttributes = new TreeMap<>();
 
           for (Entry<String, Attr> attribute : attributes.entrySet()) {
-            clonedAttributes.put(attribute.getKey(), (Attr) attribute.getValue().cloneNode(deep));
+            clonedAttributes.put(attribute.getKey(), (Attr) attribute.getValue().cloneNode(true));
           }
 
           clone.attributes = clonedAttributes;
         }
       }
-    } catch (CloneNotSupportedException e) {
+    } catch (CloneNotSupportedException ignored) {
     }
 
     return clone;
@@ -292,6 +292,6 @@ public class NodeImpl implements org.w3c.dom.Node {
 
   @Override
   public String toString() {
-    return String.format("%s(type=%s name=%s value=%s)", type, name, value);
+    return String.format("%s(type=%s name=%s value=%s)", this, type, name, value);
   }
 }

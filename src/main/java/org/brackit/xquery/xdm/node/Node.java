@@ -112,9 +112,9 @@ import org.brackit.xquery.xdm.type.NodeType;
  * </p>
  *
  * @author Sebastian Baechle
- * @see http://www.w3.org/TR/xpath-datamodel-30/
- * @see http://www.w3.org/TR/2009/CR-xquery-update-10-20090609/
- * @see http://www.w3.org/TR/xml-names11/
+ * @see <a href="http://www.w3.org/TR/xpath-datamodel-30/">XPath Data Model</a>
+ * @see <a href="http://www.w3.org/TR/2009/CR-xquery-update-10-20090609/">XQuery Update</a>
+ * @see <a href="http://www.w3.org/TR/xml-names11/">XML names</a>
  */
 public interface Node<E extends Node<E>> extends StructuredItem {
   /**
@@ -122,7 +122,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return {@code true}, iff the current node is the document root node, {@code false} otherwise
    */
-  public boolean isDocumentRoot();
+  boolean isDocumentRoot();
 
   /**
    * Checks if this node is the same as <code>node</code>.
@@ -130,7 +130,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @param node the node to be checked
    * @return <code>true</code> iff the current node is the same as <code>node</code>
    */
-  public boolean isSelfOf(Node<?> node);
+  boolean isSelfOf(Node<?> node);
 
   /**
    * Checks if this node is the parent node of <code>node</code>.
@@ -138,7 +138,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @param node the node to be checked
    * @return <code>true</code> iff the current node is the parent of <code>node</code>
    */
-  public boolean isParentOf(Node<?> node);
+  boolean isParentOf(Node<?> node);
 
   /**
    * Checks if this node is a child node of <code>node</code>.
@@ -146,7 +146,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @param node the node to be checked
    * @return <code>true</code> iff the current node is a child of <code>node</code>
    */
-  public boolean isChildOf(Node<?> node);
+  boolean isChildOf(Node<?> node);
 
   /**
    * Checks if this node is a descendant node of <code>node</code>.
@@ -154,7 +154,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @param node the node to be checked
    * @return <code>true</code> iff the current node is a descendant of <code>node</code>
    */
-  public boolean isDescendantOf(Node<?> node);
+  boolean isDescendantOf(Node<?> node);
 
   /**
    * Checks if this node is a descendant or self node of <code>node</code>.
@@ -162,7 +162,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @param node the node to be checked
    * @return <code>true</code> iff the current node is a descendant or self of <code>node</code>
    */
-  public boolean isDescendantOrSelfOf(Node<?> node);
+  boolean isDescendantOrSelfOf(Node<?> node);
 
   /**
    * Checks if this node is an ancestor node of <code>node</code>.
@@ -170,7 +170,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @param node the node to be checked
    * @return <code>true</code> iff the current node is an ancestor of <code>node</code>
    */
-  public boolean isAncestorOf(Node<?> node);
+  boolean isAncestorOf(Node<?> node);
 
   /**
    * Checks if this node is an ancestor or self node of <code>node</code>.
@@ -178,7 +178,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @param node the node to be checked
    * @return <code>true</code> iff the current node is an ancestor or self of <code>node</code>
    */
-  public boolean isAncestorOrSelfOf(Node<?> node);
+  boolean isAncestorOrSelfOf(Node<?> node);
 
   /**
    * Checks if this node is a sibling node of <code>node</code>.
@@ -186,7 +186,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @param node the node to be checked
    * @return <code>true</code> iff the current node is a child of <code>node</code>
    */
-  public boolean isSiblingOf(Node<?> node);
+  boolean isSiblingOf(Node<?> node);
 
   /**
    * Checks if this node is a preceding sibling node of <code>node</code>.
@@ -194,7 +194,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @param node the node to be checked
    * @return <code>true</code> iff the current node is a preceding sibling of <code>node</code>
    */
-  public boolean isPrecedingSiblingOf(Node<?> node);
+  boolean isPrecedingSiblingOf(Node<?> node);
 
   /**
    * Checks if this node is a following sibling node of <code>node</code>.
@@ -202,7 +202,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @param node the node to be checked
    * @return <code>true</code> iff the current node is a following sibling of <code>node</code>
    */
-  public boolean isFollowingSiblingOf(Node<?> node);
+  boolean isFollowingSiblingOf(Node<?> node);
 
   /**
    * Checks if this node is a preceding node of <code>node</code>.
@@ -210,7 +210,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @param node the node to be checked
    * @return <code>true</code> iff the current node is a preceding of <code>node</code>
    */
-  public boolean isPrecedingOf(Node<?> node);
+  boolean isPrecedingOf(Node<?> node);
 
   /**
    * Checks if this node is a following node of <code>node</code>.
@@ -218,7 +218,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @param node the node to be checked
    * @return <code>true</code> iff the current node is a following of <code>node</code>
    */
-  public boolean isFollowingOf(Node<?> node);
+  boolean isFollowingOf(Node<?> node);
 
   /**
    * Checks if this node is an attribute node of <code>node</code>.
@@ -226,7 +226,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @param node the node to be checked
    * @return <code>true</code> iff the current node is an attribute of <code>node</code>
    */
-  public boolean isAttributeOf(Node<?> node);
+  boolean isAttributeOf(Node<?> node);
 
   /**
    * Checks if this node is the document node of <code>node</code>.
@@ -234,14 +234,14 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @param node the node to be checked
    * @return <code>true</code> iff the current node is the document node of <code>node</code>
    */
-  public boolean isDocumentOf(Node<?> node);
+  boolean isDocumentOf(Node<?> node);
 
   /**
    * Checks if this node is the root element node of a document.
    *
    * @return <code>true</code> iff this node is the root element node of the document
    */
-  public boolean isRoot();
+  boolean isRoot();
 
   /**
    * Identifier for a particular implementation of the {@link Node} interface. Identifiers must be
@@ -249,13 +249,13 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * ensured across JVM boundaries for distributed computations. ID collisions will result in
    * unexpected behavior in many places.
    */
-  public int getNodeClassID();
+  int getNodeClassID();
 
   /**
    * Compares this node to another w.r.t. to a global document order as indicated by the fragment IDs
    * and their structural relationship
    */
-  public int cmp(Node<?> other);
+  int cmp(Node<?> other);
 
   /**
    * Returns the {@link NodeCollection} of this document, and <code>null</code> if this node not
@@ -263,14 +263,14 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the collection associated with this node
    */
-  public NodeCollection<E> getCollection();
+  NodeCollection<E> getCollection();
 
   /**
    * Returns the {@link Scope} for this node.
    *
    * @return the {@link Scope} for this node
    */
-  public Scope getScope();
+  Scope getScope();
 
   /**
    * Returns the {@link AnyURI base URI} type of this node.
@@ -281,7 +281,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the base URI of this node
    */
-  public AnyURI getBaseURI();
+  AnyURI getBaseURI();
 
   /**
    * Returns the {@link Type} type of this node.
@@ -292,7 +292,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the type of this node
    */
-  public Type type();
+  Type type();
 
   /**
    * Returns the {@link Kind} type of this node.
@@ -303,7 +303,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return the kind of this node
    */
-  public Kind getKind();
+  Kind getKind();
 
   /**
    * Returns the name of this node, and <code>null</code> if this type of node has no name.
@@ -315,7 +315,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @return name of this node, and <code>null</code> if this type of node has no name
    * @throws DocumentException if the operation failed
    */
-  public QNm getName() throws DocumentException;
+  QNm getName() throws DocumentException;
 
   /**
    * Sets the name of this node to <code>name</code>.
@@ -324,7 +324,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if the operation is not supported by this type of node
    * @throws DocumentException              if the operation failed
    */
-  public void setName(QNm name) throws OperationNotSupportedException, DocumentException;
+  void setName(QNm name) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Returns the typed value of this node, and <code>null</code> if this type of node has no value.
@@ -381,9 +381,9 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return value of this node, and <code>null</code> if this type of node has no value
    * @throws DocumentException if the operation failed
-   * @see http://www.w3.org/TR/xml-infoset/
+   * @see <a href="http://www.w3.org/TR/xml-infoset/">XML Infoset</a>
    */
-  public Atomic getValue() throws DocumentException;
+  Atomic getValue() throws DocumentException;
 
   /**
    * Returns the typed values of this node, and an empty stream if this type of node has no typed
@@ -396,7 +396,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @return typed values of this node, and an empty stream if this type of node has no typed value
    * @throws DocumentException if the operation failed
    */
-  public Stream<Atomic> getValues() throws DocumentException;
+  Stream<Atomic> getValues() throws DocumentException;
 
   /**
    * Returns the string value of this node, and <code>null</code> if this type of node has no value.
@@ -408,7 +408,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @return value of this node, and <code>null</code> if this type of node has no value
    * @throws DocumentException if the operation failed
    */
-  public Str getStrValue() throws DocumentException;
+  Str getStrValue() throws DocumentException;
 
   /**
    * Sets the value of this node to <code>value</code>.
@@ -417,7 +417,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if the operation is not supported by this type of node
    * @throws DocumentException              if the operation failed
    */
-  public void setValue(Atomic value) throws OperationNotSupportedException, DocumentException;
+  void setValue(Atomic value) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Returns the parent node, and <code>null</code> if this node has no parent.
@@ -429,7 +429,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @return the parent node, and <code>null</code> if this node has no parent
    * @throws DocumentException if the operation failed
    */
-  public E getParent() throws DocumentException;
+  E getParent() throws DocumentException;
 
   /**
    * Returns the first child node, and <code>null</code> if this node has no children.
@@ -437,7 +437,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @return the first child node, and <code>null</code> if this node has no children
    * @throws DocumentException if the operation failed
    */
-  public E getFirstChild() throws DocumentException;
+  E getFirstChild() throws DocumentException;
 
   /**
    * Returns the last child node, and <code>null</code> if this node has no children.
@@ -445,7 +445,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @return the last child node, and <code>null</code> if this node has no children
    * @throws DocumentException if the operation failed
    */
-  public E getLastChild() throws DocumentException;
+  E getLastChild() throws DocumentException;
 
   /**
    * Returns all children, and an empty {@link Stream} if this node has no children.
@@ -457,7 +457,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @return all children, and an empty {link Stream} if this node has no children
    * @throws DocumentException if the operation failed
    */
-  public Stream<? extends E> getChildren() throws DocumentException;
+  Stream<? extends E> getChildren() throws DocumentException;
 
   /**
    * Returns a {@link Stream} over all nodes in the subtree rooted a this current node in document
@@ -466,7 +466,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @return all nodes in the subtree rooted a this current node in document order
    * @throws DocumentException if the operation failed
    */
-  public Stream<? extends E> getSubtree() throws DocumentException;
+  Stream<? extends E> getSubtree() throws DocumentException;
 
   /**
    * Returns a {@link Stream} over all descendant nodes in the subtree rooted a this current node in
@@ -475,7 +475,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @return all descendant nodes in the subtree rooted a this current node in document order
    * @throws DocumentException if the operation failed
    */
-  public Stream<? extends E> getDescendantOrSelf() throws DocumentException;
+  Stream<? extends E> getDescendantOrSelf() throws DocumentException;
 
   /**
    * Returns a {@link Stream} over all nodes on the path starting at this node up to the root
@@ -483,7 +483,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @return all nodes in the subtree rooted a this current node in document order
    * @throws DocumentException if the operation failed
    */
-  public Stream<? extends E> getPath() throws DocumentException;
+  Stream<? extends E> getPath() throws DocumentException;
 
   /**
    * Checks if this node has children.
@@ -491,7 +491,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @return <code>true</code> iff this node has children
    * @throws DocumentException if the operation failed
    */
-  public boolean hasChildren() throws DocumentException;
+  boolean hasChildren() throws DocumentException;
 
   /**
    * Returns the next sibling node, and <code>null</code> if this node has no next sibling.
@@ -499,7 +499,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @return the next sibling node, and <code>null</code> if this node has no next sibling
    * @throws DocumentException if the operation failed
    */
-  public E getNextSibling() throws DocumentException;
+  E getNextSibling() throws DocumentException;
 
   /**
    * Returns the previous sibling node, and <code>null</code> if this node has no previous sibling.
@@ -507,7 +507,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @return the previous sibling node, and <code>null</code> if this node has no previous sibling
    * @throws DocumentException if the operation failed
    */
-  public E getPreviousSibling() throws DocumentException;
+  E getPreviousSibling() throws DocumentException;
 
   /**
    * Appends a new node.
@@ -516,7 +516,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E append(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
+  E append(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Appends a deep copy of the given node.
@@ -525,7 +525,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E append(Node<?> child) throws OperationNotSupportedException, DocumentException;
+  E append(Node<?> child) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Appends a copy of the parsed fragment.
@@ -534,7 +534,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E append(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
+  E append(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Prepends a new node.
@@ -543,7 +543,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E prepend(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
+  E prepend(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Prepends a deep copy of the given node.
@@ -552,7 +552,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E prepend(Node<?> child) throws OperationNotSupportedException, DocumentException;
+  E prepend(Node<?> child) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Prepends a copy of the parsed fragment.
@@ -561,7 +561,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E prepend(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
+  E prepend(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Inserts a new node before this node.
@@ -570,7 +570,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E insertBefore(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
+  E insertBefore(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Inserts a deep copy of the given node before this node.
@@ -579,7 +579,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E insertBefore(Node<?> node) throws OperationNotSupportedException, DocumentException;
+  E insertBefore(Node<?> node) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Inserts a copy of the parsed fragment before this node.
@@ -588,7 +588,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E insertBefore(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
+  E insertBefore(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Inserts a new node after this node.
@@ -597,7 +597,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E insertAfter(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
+  E insertAfter(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Inserts a deep copy of the given node after this node.
@@ -606,7 +606,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E insertAfter(Node<?> node) throws OperationNotSupportedException, DocumentException;
+  E insertAfter(Node<?> node) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Inserts a copy of the parsed fragment after this node.
@@ -615,7 +615,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E insertAfter(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
+  E insertAfter(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Inserts a copy of the given node as attribute.
@@ -624,7 +624,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E setAttribute(Node<?> attribute) throws OperationNotSupportedException, DocumentException;
+  E setAttribute(Node<?> attribute) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Creates or updates an attribute with given name and the given value.
@@ -633,7 +633,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E setAttribute(QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
+  E setAttribute(QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Deletes the attribute.
@@ -642,7 +642,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public boolean deleteAttribute(QNm name) throws OperationNotSupportedException, DocumentException;
+  boolean deleteAttribute(QNm name) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Returns all attributes, and an empty {@link Stream} if this node has no attributes.
@@ -652,9 +652,10 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * </p>
    *
    * @return all attributes, and an empty {link Stream} if this node has no attributes
+   * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException if the operation failed
    */
-  public Stream<? extends E> getAttributes() throws OperationNotSupportedException, DocumentException;
+  Stream<? extends E> getAttributes() throws OperationNotSupportedException, DocumentException;
 
   /**
    * Returns the attribute with the given name.
@@ -662,7 +663,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @return the attribute with the given name.
    * @throws DocumentException if the operation failed
    */
-  public E getAttribute(QNm name) throws DocumentException;
+  E getAttribute(QNm name) throws DocumentException;
 
   /**
    * Replaces this node with a deep copy of the given node.
@@ -671,7 +672,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E replaceWith(Node<?> node) throws OperationNotSupportedException, DocumentException;
+  E replaceWith(Node<?> node) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Replaces this node with a copy of the parsed fragment.
@@ -680,7 +681,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E replaceWith(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
+  E replaceWith(SubtreeParser parser) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Replaces this node with a new node.
@@ -689,7 +690,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
-  public E replaceWith(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
+  E replaceWith(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException;
 
   /**
    * Checks if this node has attributes.
@@ -697,24 +698,24 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @return <code>true</code> iff this node has attributes
    * @throws DocumentException if the operation failed
    */
-  public boolean hasAttributes() throws DocumentException;
+  boolean hasAttributes() throws DocumentException;
 
   /**
    * Delete this node.
    *
    * @throws DocumentException if the operation failed
    */
-  public void delete() throws DocumentException;
+  void delete() throws DocumentException;
 
   /**
    * Parse the subtree rooted at this node.
    *
    * @throws DocumentException if the operation or the handler failed
    */
-  public void parse(SubtreeHandler handler) throws DocumentException;
+  void parse(SubtreeHandler handler) throws DocumentException;
 
   /**
    * Try to pushdown navigation to node
    */
-  public Stream<? extends Node<?>> performStep(Axis axis, NodeType test) throws DocumentException;
+  Stream<? extends Node<?>> performStep(Axis axis, NodeType test) throws DocumentException;
 }

@@ -27,11 +27,7 @@
  */
 package org.brackit.xquery.module;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
@@ -47,11 +43,11 @@ import org.brackit.xquery.xdm.type.SequenceType;
  */
 public class Variables {
 
-  protected final Map<QNm, Variable> vars = new TreeMap<QNm, Variable>();
+  protected final Map<QNm, Variable> vars = new TreeMap<>();
   protected final DefaultCtxItem dftItem = new DefaultCtxItem();
   protected final DefaultCtxPos dftPos = new DefaultCtxPos(dftItem);
   protected final DefaultCtxSize dftSize = new DefaultCtxSize(dftItem);
-  protected LinkedList<Variables> imports = new LinkedList<Variables>();
+  protected final List<Variables> imports = new LinkedList<>();
 
   public Variables() {
   }
@@ -81,12 +77,13 @@ public class Variables {
     } else if (name.equals(Bits.FS_POSITION)) {
       return dftPos;
     } else if (name.equals(Bits.FS_LAST)) {
-      return var;
+      // var is null at this point.
+      return null;
     }
     for (Variables v : imports) {
       // TODO check only public vars!
       var = v.resolve(name);
-      if (v != null) {
+      if (var != null) {
         return var;
       }
     }

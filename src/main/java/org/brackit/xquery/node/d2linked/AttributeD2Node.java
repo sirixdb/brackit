@@ -75,12 +75,12 @@ public final class AttributeD2Node extends D2Node {
   }
 
   @Override
-  public void setName(QNm name) throws OperationNotSupportedException, DocumentException {
+  public void setName(QNm name) throws DocumentException {
     this.name = checkName(name);
   }
 
   @Override
-  public void setValue(Atomic value) throws OperationNotSupportedException, DocumentException {
+  public void setValue(Atomic value) throws DocumentException {
     this.value = value.asUna();
   }
 
@@ -94,7 +94,7 @@ public final class AttributeD2Node extends D2Node {
 
   @Override
   public boolean isAttributeOf(Node<?> node) {
-    return ((parent != null) && (parent == (Object) node));
+    return ((parent != null) && (parent == node));
   }
 
   @Override
@@ -106,7 +106,7 @@ public final class AttributeD2Node extends D2Node {
   public boolean isDescendantOrSelfOf(Node<?> node) {
     // check only for self
     // TODO: fix for sun's compiler bug using generics parent == node
-    return ((node != null) && ((this == (Object) node)));
+    return (((this == node)));
   }
 
   @Override
@@ -136,7 +136,7 @@ public final class AttributeD2Node extends D2Node {
 
   @Override
   public D2Node replaceWith(Kind kind, QNm name, Atomic value)
-      throws OperationNotSupportedException, DocumentException {
+      throws DocumentException {
     if (kind != Kind.ATTRIBUTE) {
       throw new DocumentException("Cannot replace attribute with node of type: %s.", kind);
     }
@@ -149,7 +149,7 @@ public final class AttributeD2Node extends D2Node {
   }
 
   @Override
-  public D2Node replaceWith(Node<?> node) throws OperationNotSupportedException, DocumentException {
+  public D2Node replaceWith(Node<?> node) throws DocumentException {
     Kind kind = node.getKind();
     if (kind != Kind.ATTRIBUTE) {
       throw new DocumentException("Cannot replace attribute with node of type: %s.", kind);
@@ -163,7 +163,7 @@ public final class AttributeD2Node extends D2Node {
   }
 
   @Override
-  public D2Node replaceWith(SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
+  public D2Node replaceWith(SubtreeParser parser) throws DocumentException {
     D2NodeBuilder builder = new D2NodeBuilder() {
       @Override
       D2Node first(Kind kind, QNm name, Atomic value) throws DocumentException {
@@ -192,64 +192,64 @@ public final class AttributeD2Node extends D2Node {
   }
 
   @Override
-  public D2Node append(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException {
+  public D2Node append(Kind kind, QNm name, Atomic value) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
   @Override
-  public D2Node append(Node<?> child) throws OperationNotSupportedException, DocumentException {
+  public D2Node append(Node<?> child) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
   @Override
-  public D2Node append(SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
+  public D2Node append(SubtreeParser parser) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
   @Override
   public D2Node insertAfter(Kind kind, QNm name, Atomic value)
-      throws OperationNotSupportedException, DocumentException {
+      throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
   @Override
-  public D2Node insertAfter(Node<?> node) throws OperationNotSupportedException, DocumentException {
+  public D2Node insertAfter(Node<?> node) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
   @Override
-  public D2Node insertAfter(SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
+  public D2Node insertAfter(SubtreeParser parser) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
   @Override
   public D2Node insertBefore(Kind kind, QNm name, Atomic value)
-      throws OperationNotSupportedException, DocumentException {
+      throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
   @Override
-  public D2Node insertBefore(Node<?> node) throws OperationNotSupportedException, DocumentException {
+  public D2Node insertBefore(Node<?> node) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
   @Override
-  public D2Node insertBefore(SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
+  public D2Node insertBefore(SubtreeParser parser) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
   @Override
-  public D2Node prepend(Kind kind, QNm name, Atomic value) throws OperationNotSupportedException, DocumentException {
+  public D2Node prepend(Kind kind, QNm name, Atomic value) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
   @Override
-  public D2Node prepend(Node<?> child) throws OperationNotSupportedException, DocumentException {
+  public D2Node prepend(Node<?> child) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
   @Override
-  public D2Node prepend(SubtreeParser parser) throws OperationNotSupportedException, DocumentException {
+  public D2Node prepend(SubtreeParser parser) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 

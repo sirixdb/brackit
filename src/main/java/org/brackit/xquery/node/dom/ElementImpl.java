@@ -55,7 +55,7 @@ public class ElementImpl extends NodeImpl implements org.w3c.dom.Element {
       }
     }
 
-    return value;
+    return value == null ? "" : value;
   }
 
   @Override
@@ -131,7 +131,7 @@ public class ElementImpl extends NodeImpl implements org.w3c.dom.Element {
   @Override
   public Attr setAttributeNode(Attr newAttr) throws DOMException {
     if (attributes == null) {
-      attributes = new TreeMap<String, Attr>();
+      attributes = new TreeMap<>();
     }
 
     return attributes.put(newAttr.getName(), newAttr);

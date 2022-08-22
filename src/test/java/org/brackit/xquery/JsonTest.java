@@ -113,7 +113,8 @@ public final class JsonTest extends XQueryBaseTest {
   public void customModule() throws IOException {
     final var compileChain = new CompileChain();
     try (final var out = new ByteArrayOutputStream()) {
-      final Path currentRelativePath = Paths.get("").resolve("src").resolve("test").resolve("resources").resolve("modules").resolve("sort.xq");
+      final Path currentRelativePath =
+          Paths.get("").resolve("src").resolve("test").resolve("resources").resolve("modules").resolve("sort.xq");
       final String currentPath = currentRelativePath.toAbsolutePath().toString();
       final String query = """
           import module namespace sort = "https://sirix.io/ns/sort" at "%path";
@@ -211,16 +212,77 @@ public final class JsonTest extends XQueryBaseTest {
   }
 
   @Test
-  public void testInlineFunctionClosure() throws IOException {
+  public void testInlineFunctionClosure1() throws IOException {
     final String query = """
         let $c := 4
         let $d := 5
         let $e := function($a) { $a }
         let $fun := function($a, $b) { ($a * $c) + ($b * $d) + $e(5) }
-        return $fun(2,3)
+        let $result := $fun(2,3)
+        return $result * 3
         """;
     final var result = query(query);
-    assertEquals("28", result);
+    assertEquals("84", result);
+  }
+
+  @Test
+  public void testInlineFunctionClosure2() throws IOException {
+    final String query = """
+        let $c := 4
+        let $d := 5
+        let $e := function($a) { $a }
+        let $fun := function($a, $b, $d) { ($a * $c) + ($b * $d) + $e(5) }
+        return $fun(2,3,7)
+            """;
+    final var result = query(query);
+    assertEquals("34", result);
+  }
+
+  @Test
+  public void testFunction1() throws IOException {
+    final String query = """
+         declare function local:foobar($x as xs:integer,$y as xs:integer,$z as xs:integer) as xs:integer {
+             $x * $y * $z
+         };
+         local:foobar(2,3,7)
+            """;
+    final var result = query(query);
+    assertEquals("42", result);
+  }
+
+  @Test
+  public void testPartialFunctionApplication1() throws IOException {
+    final String query = """
+         declare function local:foobar($x as xs:integer,$y as xs:integer,$z as xs:integer) as xs:integer {
+             $x * $y * $z
+         };
+         let $partFunc := local:foobar(2,?,7)
+         return $partFunc(1)
+            """;
+    final var result = query(query);
+    assertEquals("14", result);
+  }
+
+  @Test
+  public void testPartialFunctionApplication2() throws IOException {
+    final String query = """
+        let $fun := function($a, $b, $c) { $a * $b * $c }
+        let $fun1 := $fun(2,?,7)
+        return $fun1(1)
+            """;
+    final var result = query(query);
+    assertEquals("34", result);
+  }
+
+  @Test
+  public void testFunction() throws IOException {
+    final String query = """
+        let $fun := function($a, $b, $c) { $a * $b * $c }
+        let $fun1 := $fun(2,?,7)
+        return $fun1(1)
+            """;
+    final var result = query(query);
+    assertEquals("34", result);
   }
 
   @Test

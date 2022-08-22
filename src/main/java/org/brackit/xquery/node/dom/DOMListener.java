@@ -47,7 +47,7 @@ public class DOMListener extends DefaultListener<org.brackit.xquery.xdm.node.Nod
   protected final Deque<NodeImpl> stack;
 
   public DOMListener() {
-    this.stack = new ArrayDeque<NodeImpl>();
+    this.stack = new ArrayDeque<>();
   }
 
   @Override
@@ -67,6 +67,7 @@ public class DOMListener extends DefaultListener<org.brackit.xquery.xdm.node.Nod
   @Override
   public <T extends org.brackit.xquery.xdm.node.Node<?>> void attribute(T node) throws DocumentException {
     Node current = stack.peekLast();
+    assert current != null;
     ((Element) current).setAttributeNode(new AttrImpl(document,
                                                       current,
                                                       node.getName().stringValue(),
@@ -110,16 +111,19 @@ public class DOMListener extends DefaultListener<org.brackit.xquery.xdm.node.Nod
 
   private void insertText(String text) throws DocumentException {
     NodeImpl current = stack.peekLast();
+    assert current != null;
     current.appendChild(new TextImpl(document, current, null, text));
   }
 
   private void insertProcessingInstruction(String value) {
     NodeImpl current = stack.peekLast();
+    assert current != null;
     current.appendChild(new ProcInstrImpl(document, current, null, value));
   }
 
   private void insertComment(String value) {
     NodeImpl current = stack.peekLast();
+    assert current != null;
     current.appendChild(new CommentImpl(document, current, null, value));
   }
 }

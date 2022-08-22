@@ -88,7 +88,9 @@ public class XQuery {
       // iterate possibly lazy result sequence to "pull-in" all pending updates
       if (result != null && !(result instanceof Item)) {
         try (Iter it = result.iterate()) {
+          //noinspection StatementWithEmptyBody
           while (it.next() != null) {
+            // Intentionally left empty.
           }
         }
       }

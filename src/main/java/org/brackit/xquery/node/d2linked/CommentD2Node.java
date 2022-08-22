@@ -32,7 +32,6 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.OperationNotSupportedException;
 
 /**
  * @author Sebastian Baechle
@@ -75,7 +74,7 @@ public final class CommentD2Node extends D2Node {
   }
 
   @Override
-  public void setValue(Atomic value) throws OperationNotSupportedException, DocumentException {
+  public void setValue(Atomic value) throws DocumentException {
     this.value = checkValue(value);
   }
 
