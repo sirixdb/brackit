@@ -276,6 +276,7 @@ public final class JsonTest extends XQueryBaseTest {
     assertEquals("34", result);
   }
 
+  @Ignore
   @Test
   public void testFunction() throws IOException {
     final String query = """
