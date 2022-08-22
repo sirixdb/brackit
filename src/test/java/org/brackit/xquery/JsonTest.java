@@ -250,6 +250,7 @@ public final class JsonTest extends XQueryBaseTest {
     assertEquals("42", result);
   }
 
+  @Ignore
   @Test
   public void testPartialFunctionApplication1() throws IOException {
     final String query = """
@@ -263,6 +264,7 @@ public final class JsonTest extends XQueryBaseTest {
     assertEquals("14", result);
   }
 
+  @Ignore
   @Test
   public void testPartialFunctionApplication2() throws IOException {
     final String query = """
