@@ -27,7 +27,7 @@ jobs:
       run: mvn clean test
 
   publish:
-    name: Deploy to OSSRH and Docker Hub
+    name: Deploy to OSSRH
     if: ${{ github.repository_owner == 'sirixdb' && (github.event_name == 'push' || github.event_name == 'schedule') }}
     needs: Test
     runs-on: ubuntu-latest
