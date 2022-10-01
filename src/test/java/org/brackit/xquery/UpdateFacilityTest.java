@@ -53,14 +53,14 @@ public class UpdateFacilityTest extends XQueryBaseTest {
   public void insertInto() {
     ctx.setContextItem(doc);
     orig.getFirstChild().append(Kind.ELEMENT, new QNm("test"), null);
-    new XQuery("insert node <test/> into ./a").execute(ctx);
+    new XQuery("insert node <test/> into $$/a").execute(ctx);
     ResultChecker.dCheck(orig, doc, false);
   }
 
   @Test
   public void simpleDelete() {
     ctx.setContextItem(doc);
-    new XQuery("delete node ./a/c").execute(ctx);
+    new XQuery("delete node $$/a/c").execute(ctx);
     orig.getFirstChild().getLastChild().delete();
     ResultChecker.dCheck(orig, doc, false);
   }
@@ -68,7 +68,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
   @Test
   public void simpleReplaceNode() {
     ctx.setContextItem(doc);
-    new XQuery("replace node ./a/c with <d/>").execute(ctx);
+    new XQuery("replace node $$/a/c with <d/>").execute(ctx);
     orig.getFirstChild().getLastChild().replaceWith(Kind.ELEMENT, new QNm("d"), null);
     ResultChecker.dCheck(orig, doc, false);
   }
@@ -76,7 +76,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
   @Test
   public void simpleRename() {
     ctx.setContextItem(doc);
-    new XQuery("rename node ./a as 'b'").execute(ctx);
+    new XQuery("rename node $$/a as 'b'").execute(ctx);
     orig.getFirstChild().setName(new QNm("b"));
     ResultChecker.dCheck(orig, doc, false);
   }

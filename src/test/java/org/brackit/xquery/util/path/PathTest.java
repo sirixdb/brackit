@@ -224,7 +224,7 @@ public class PathTest {
   @Test
   public void testQualifiedPathUndefinedPrefix() {
     Path<QNm> expected = (new Path<QNm>()).child(new QNm("http://brackit.org/ns/bit", "xzibit", "tag"));
-    String path = "namespace foo = 'localhost'; " + expected.toString();
+    String path = "namespace foo = 'localhost'; " + expected;
     try {
       Path<QNm> parsed = (new PathParser(path)).parse();
       assertTrue("Missing namespace declaration recognized", false);
@@ -234,19 +234,19 @@ public class PathTest {
 
   @Test
   public void testFilePath() {
-    Path<QNm> parsed = (new PathParser("/test.xml")).parse();
+    Path<QNm> parsed = (new PathParser("/'test.xml'")).parse();
     assertEquals("Path parsed correctly", new Path<QNm>().child(new QNm("test.xml")), parsed);
   }
 
   @Test
   public void testFile2Path() {
-    Path<QNm> parsed = (new PathParser("_test.xml")).parse();
+    Path<QNm> parsed = (new PathParser("'_test.xml'")).parse();
     assertEquals("Path parsed correctly", new Path<QNm>().self().child(new QNm("_test.xml")), parsed);
   }
 
   @Test
   public void testFilePath2() {
-    Path<QNm> parsed = (new PathParser("../conf.d//test.xml")).parse();
+    Path<QNm> parsed = (new PathParser("../'conf.d'//'test.xml'")).parse();
     assertEquals("Path parsed correctly",
                  new Path<QNm>().parent().child(new QNm("conf.d")).descendant(new QNm("test.xml")),
                  parsed);

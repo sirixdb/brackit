@@ -120,7 +120,7 @@ public class FnTest extends XQueryBaseTest {
     NodeCollection<?> collection = store.lookup("test.xml");
     Node<?> documentNode = collection.getDocument();
     ctx.setContextItem(documentNode);
-    Sequence result = new XQuery("fn:root(.)").execute(ctx);
+    Sequence result = new XQuery("fn:root($$)").execute(ctx);
     ResultChecker.dCheck(documentNode, result);
   }
 
@@ -129,7 +129,7 @@ public class FnTest extends XQueryBaseTest {
     NodeCollection<?> coll = ctx.getNodeStore().create("test.xml", new DocumentParser("<a><b><c/><d/></b></a>"));
     Node<?> doc = coll.getDocument();
     ctx.setContextItem(doc);
-    Sequence result = new XQuery(".//d/fn:root()").execute(ctx);
+    Sequence result = new XQuery("$$//d/fn:root()").execute(ctx);
     ResultChecker.dCheck(doc, result);
   }
 

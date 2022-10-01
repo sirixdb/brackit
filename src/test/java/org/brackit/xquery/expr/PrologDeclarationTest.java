@@ -51,13 +51,13 @@ import org.junit.Test;
 public class PrologDeclarationTest extends XQueryBaseTest {
 
   @Test
-  public void declareFunction() throws Exception {
+  public void declareFunction() {
     Sequence res = new XQuery("declare function local:addOne($a as item()) { $a + 1 }; local:addOne(1)").execute(ctx);
     ResultChecker.check(new Int32(2), res);
   }
 
   @Test
-  public void declareRecursiveFunction() throws Exception {
+  public void declareRecursiveFunction() {
     Sequence res = new XQuery(
         "declare function local:countdown($a as xs:integer) { if ($a > 0) then ($a, local:countdown($a - 1)) else $a }; local:countdown(3)")
         .execute(ctx);
@@ -65,7 +65,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
   }
 
   @Test
-  public void declareIndirectRecursiveFunctions() throws Exception {
+  public void declareIndirectRecursiveFunctions() {
     Sequence res = new XQuery(
         "declare function local:a($a as xs:integer) { if ($a > 0) then ('a', $a, local:b($a - 1)) else ('a', $a) }; declare function local:b($b as xs:integer) { if ($b > 0) then ('b', $b, local:a($b - 1)) else ('b', $b) }; local:a(3)")
         .execute(ctx);
@@ -80,7 +80,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
   }
 
   @Test
-  public void declareFunctionInIllegalNS() throws Exception {
+  public void declareFunctionInIllegalNS() {
     try {
       new XQuery("declare function xs:addOne($a as item()) { $a + 1 }; 1");
       fail("Illegal declaration not detected");
@@ -90,13 +90,13 @@ public class PrologDeclarationTest extends XQueryBaseTest {
   }
 
   @Test
-  public void variableDeclarationWithAccess() throws Exception {
+  public void variableDeclarationWithAccess() {
     Sequence result = new XQuery("declare variable $x := 1; for $a in (1,2,3) return $a + $x").execute(ctx);
     ResultChecker.dCheck(new ItemSequence(new Int32(2), new Int32(3), new Int32(4)), result);
   }
 
   @Test
-  public void twoVariableDeclarationsWithAccess() throws Exception {
+  public void twoVariableDeclarationsWithAccess() {
     Sequence result =
         new XQuery("declare variable $x := 1; declare variable $y := $x + 2; for $a in (1,2,3) return $a + $x + $y").execute(
             ctx);
@@ -104,7 +104,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
   }
 
   @Test
-  public void externalVariableDeclarationWithAccess() throws Exception {
+  public void externalVariableDeclarationWithAccess() {
     ctx.bind(new QNm("x"), Int32.ZERO_TWO_TWENTY[2]);
     XQuery query = new XQuery("declare variable $x external := 1; for $a in (1,2,3) return $a + $x");
     Sequence result = query.execute(ctx);
@@ -149,19 +149,19 @@ public class PrologDeclarationTest extends XQueryBaseTest {
   }
 
   @Test
-  public void declareNS() throws Exception {
+  public void declareNS() {
     Sequence result = new XQuery("declare namespace foo=\"http://brackit.org/foo\"; (<a/>)/foo:a").execute(ctx);
     ResultChecker.dCheck(null, result);
   }
 
   @Test
-  public void declareDefaultElementNS() throws Exception {
+  public void declareDefaultElementNS() {
     Sequence result = new XQuery("declare default element namespace \"http://brackit.org/foo\"; <a/>").execute(ctx);
     ResultChecker.dCheck(ctx.getNodeFactory().element(new QNm("http://brackit.org/foo", "a")), result, false);
   }
 
   @Test
-  public void declareDefaultFunctionNS() throws Exception {
+  public void declareDefaultFunctionNS() {
     Sequence result = new XQuery(
         "declare default function namespace \"http://brackit.org/foo\"; declare function inc($i as xs:integer) { $i + 1 }; inc(1)")
         .execute(ctx);
@@ -169,7 +169,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
   }
 
   @Test
-  public void declareOption() throws Exception {
+  public void declareOption() {
     Sequence result = new XQuery("declare option foo \"bar\"; 1").execute(ctx);
     ResultChecker.dCheck(new Int(1), result);
   }
@@ -178,7 +178,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
   public void declareContextItemExternal() throws Exception {
     QueryContext ctx = createContext();
     ctx.setContextItem(new Int(1));
-    Sequence result = new XQuery("declare context item as item() external; .").execute(ctx);
+    Sequence result = new XQuery("declare context item as item() external; $$").execute(ctx);
     ResultChecker.dCheck(new Int(1), result);
   }
 
@@ -187,7 +187,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
     try {
       QueryContext ctx = createContext();
       ctx.setContextItem(new Int(1));
-      new XQuery("declare context item as node() external; .").execute(ctx);
+      new XQuery("declare context item as node() external; $$").execute(ctx);
       fail("Illegal context item access accepted");
     } catch (QueryException e) {
       assertEquals("Correct error code", ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, e.getCode());
@@ -198,14 +198,14 @@ public class PrologDeclarationTest extends XQueryBaseTest {
   public void declareContextItemIgnoreExternal() throws Exception {
     QueryContext ctx = createContext();
     ctx.setContextItem(new Int(1));
-    Sequence result = new XQuery("declare context item as xs:double := xs:double(1); .").execute(ctx);
+    Sequence result = new XQuery("declare context item as xs:double := xs:double(1); $$").execute(ctx);
     ResultChecker.dCheck(new Dbl(1), result);
   }
 
   @Test
-  public void declareContextItemContextDependentDefaultValue() throws Exception {
+  public void declareContextItemContextDependentDefaultValue() {
     try {
-      new XQuery("declare context item as item() := 1 + .; .");
+      new XQuery("declare context item as item() := 1 + $$; $$");
       fail("Illegal context item declaration accepted");
     } catch (QueryException e) {
       assertEquals("Correct error code", ErrorCode.ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER, e.getCode());
@@ -213,9 +213,9 @@ public class PrologDeclarationTest extends XQueryBaseTest {
   }
 
   @Test
-  public void declareContextItemContextDependentDefaultValue2() throws Exception {
+  public void declareContextItemContextDependentDefaultValue2() {
     try {
-      new XQuery("declare context item as item() := 1 + a; .");
+      new XQuery("declare context item as item() := 1 + a; $$");
       fail("Illegal context item declaration accepted");
     } catch (QueryException e) {
       assertEquals("Correct error code", ErrorCode.ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER, e.getCode());
@@ -223,7 +223,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
   }
 
   @Test
-  public void declareContextItemContextDefaultValue() throws Exception {
-    new XQuery("declare context item as item() := 1 + (<a/>)//a/(.); .");
+  public void declareContextItemContextDefaultValue() {
+    new XQuery("declare context item as item() := 1 + (<a/>)//a/($$); $$");
   }
 }

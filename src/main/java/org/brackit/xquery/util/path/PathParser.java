@@ -133,10 +133,21 @@ public final class PathParser extends Tokenizer {
     } else if (attempt(".")) {
       p.self();
     } else {
-      EQNameToken la = laQName();
-      if (la != null) {
-        consume(la);
-        p.self().child(expand(la.qname()));
+      Token token;
+      try {
+        token = laStringSkipWS(true);
+      } catch (TokenizerException e) {
+        throw new PathException(e, e.getMessage());
+      }
+      if (token != null) {
+        consume(token);
+        p.self().child(new QNm(token.string()));
+      } else {
+        EQNameToken la = laQName();
+        if (la != null) {
+          consume(la);
+          p.self().child(expand(la.qname()));
+        }
       }
     }
   }
@@ -181,12 +192,23 @@ public final class PathParser extends Tokenizer {
 
       if (!attempt("*")) {
         if (type == Type.XML) {
-          EQNameToken ela = laQName();
-          if (ela == null) {
-            throw new MismatchException("Wildcard", "QName");
+          Token token;
+          try {
+            token = laStringSkipWS(true);
+          } catch (TokenizerException e) {
+            throw new PathException(e, e.getMessage());
           }
-          consume(ela);
-          q = ela.qname();
+          if (token != null) {
+            consume(token);
+            q = new QNm(token.string());
+          } else {
+            EQNameToken ela = laQName();
+            if (ela == null) {
+              throw new MismatchException("Wildcard", "QName");
+            }
+            consume(ela);
+            q = ela.qname();
+          }
         } else {
           q = name();
         }
@@ -215,12 +237,23 @@ public final class PathParser extends Tokenizer {
 
       if (!attempt("*")) {
         if (type == Type.XML) {
-          EQNameToken ela = laQName();
-          if (ela == null) {
-            throw new MismatchException("Wildcard", "QName");
+          Token token;
+          try {
+            token = laStringSkipWS(true);
+          } catch (TokenizerException e) {
+            throw new PathException(e, e.getMessage());
           }
-          consume(ela);
-          q = ela.qname();
+          if (token != null) {
+            consume(token);
+            q = new QNm(token.string());
+          } else {
+            EQNameToken ela = laQName();
+            if (ela == null) {
+              throw new MismatchException("Wildcard", "QName");
+            }
+            consume(ela);
+            q = ela.qname();
+          }
         } else {
           q = name();
         }
@@ -297,7 +330,7 @@ public final class PathParser extends Tokenizer {
     }
   }
 
-  protected String scanString(int pos, char escapeChar) {
+  private String scanString(int pos, char escapeChar) {
     int e = pos;
     int s = e;
     int len = 0;

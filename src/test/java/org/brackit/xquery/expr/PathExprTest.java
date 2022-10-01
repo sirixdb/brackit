@@ -53,7 +53,7 @@ import org.junit.Test;
  */
 public class PathExprTest extends XQueryBaseTest {
   @Test
-  public void oneChildStepPathExpr() throws Exception {
+  public void oneChildStepPathExpr() {
     NodeCollection<?> locator = storeDocument("test.xml", "<a><b/><b/></a>");
     Node<?> documentNode = locator.getDocument();
     Node<?> root = documentNode.getFirstChild();
@@ -63,7 +63,7 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void singleSlashStepPathExpr() throws Exception {
+  public void singleSlashStepPathExpr() {
     NodeCollection<?> locator = storeDocument("test.xml", "<a><b/><b/></a>");
     Node<?> documentNode = locator.getDocument();
     Node<?> aNode = documentNode.getFirstChild().getFirstChild();
@@ -73,11 +73,11 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void oneDoubleSlashStepPathExpr() throws Exception {
+  public void oneDoubleSlashStepPathExpr() {
     NodeCollection<?> locator = storeDocument("test.xml", "<a><b/></a>");
     Node<?> documentNode = locator.getDocument();
     ctx.setContextItem(documentNode);
-    Sequence result = new XQuery(".//b").execute(ctx);
+    Sequence result = new XQuery("$$//b").execute(ctx);
     ResultChecker.dCheck(documentNode.getFirstChild().getFirstChild(), result);
   }
 
@@ -88,61 +88,61 @@ public class PathExprTest extends XQueryBaseTest {
   // }
 
   @Test
-  public void positionAsStep() throws Exception {
+  public void positionAsStep() {
     Sequence result = new XQuery("<a><b1/><b2/><b3/></a>/last()").execute(ctx);
     ResultChecker.dCheck(new Int32(1), result);
   }
 
   @Test
-  public void positionAndLastInPredicate() throws Exception {
+  public void positionAndLastInPredicate() {
     Sequence result = new XQuery("<a><b1/><b2/></a>/*[position() = last()]/name()").execute(ctx);
     ResultChecker.dCheck(new Str("b2"), result);
   }
 
   @Test
-  public void pathExprTest() throws Exception {
+  public void pathExprTest() {
     PrintStream buf = createBuffer();
-    new XQuery("(<a><b><c/><c/></b></a>)//node-name(.)").serialize(ctx, buf);
+    new XQuery("(<a><b><c/><c/></b></a>)//node-name($$)").serialize(ctx, buf);
     assertEquals("a b c c", buf.toString());
   }
 
   @Test
-  public void pathExprTest2() throws Exception {
+  public void pathExprTest2() {
     PrintStream buf = createBuffer();
     new XQuery("(<a><b><c/><c/></b></a>)//position()").serialize(ctx, buf);
     assertEquals("1 2 3 4", buf.toString());
   }
 
   @Test
-  public void pathExprTest3() throws Exception {
+  public void pathExprTest3() {
     PrintStream buf = createBuffer();
     new XQuery("(<a><b><c/><c/></b></a>)//last()").serialize(ctx, buf);
     assertEquals("4 4 4 4", buf.toString());
   }
 
   @Test
-  public void pathExprTest4() throws Exception {
+  public void pathExprTest4() {
     PrintStream buf = createBuffer();
     new XQuery("(<a><b><c/><c/></b></a>)//position()[last()]").serialize(ctx, buf);
     assertEquals("1 2 3 4", buf.toString());
   }
 
   @Test
-  public void pathExprTest5() throws Exception {
+  public void pathExprTest5() {
     PrintStream buf = createBuffer();
     new XQuery("(<a><b><c/><c>aha</c></b></a>)/b/*/position()").serialize(ctx, buf);
     assertEquals("1 2", buf.toString());
   }
 
   @Test
-  public void pathExprTest6() throws Exception {
+  public void pathExprTest6() {
     PrintStream buf = createBuffer();
     new XQuery("(<a><b><c>c1</c><b><c>c2</c></b><c>c3</c></b></a>)//b/c/text()").serialize(ctx, buf);
     assertEquals("c1c2c3", buf.toString());
   }
 
   @Test
-  public void pathExprTest9() throws Exception {
+  public void pathExprTest9() {
     PrintStream buf = createBuffer();
     new XQuery(
         "let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c))//position()")
@@ -151,7 +151,7 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void pathExprTest9b() throws Exception {
+  public void pathExprTest9b() {
     PrintStream buf = createBuffer();
     new XQuery("let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))//position()[2]")
         .serialize(ctx, buf);
@@ -159,7 +159,7 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void pathExprTest9c() throws Exception {
+  public void pathExprTest9c() {
     PrintStream buf = createBuffer();
     new XQuery("let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))//*[last() - 1]")
         .serialize(ctx, buf);
@@ -167,7 +167,7 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void pathExprTest9d() throws Exception {
+  public void pathExprTest9d() {
     PrintStream buf = createBuffer();
     new XQuery(
         "let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))/../*[last() - 1]").serialize(
@@ -177,7 +177,7 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void pathExprTest9e() throws Exception {
+  public void pathExprTest9e() {
     PrintStream buf = createBuffer();
     new XQuery(
         "let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))/..//*[last() - 1]").serialize(
@@ -187,14 +187,14 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void pathExprTest7() throws Exception {
+  public void pathExprTest7() {
     PrintStream buf = createBuffer();
     new XQuery("(<a><b><c>c1</c><b><c>c2</c></b><c>c3</c></b><b><c>c4</c></b></a>)//c[2]").serialize(ctx, buf);
     assertEquals("<c>c3</c>", buf.toString());
   }
 
   @Test
-  public void pathExprTest10() throws Exception {
+  public void pathExprTest10() {
     PrintStream buf = createBuffer();
     new XQuery(
         "let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c, $doc/d))/*").serialize(
@@ -204,7 +204,7 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void pathExprTest11() throws Exception {
+  public void pathExprTest11() {
     PrintStream buf = createBuffer();
     new XQuery(
         "let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c, $doc/d))//position()")
@@ -213,7 +213,7 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void pathExprTest12() throws Exception {
+  public void pathExprTest12() {
     PrintStream buf = createBuffer();
     new XQuery(
         "let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c, $doc/d))/b/text()")
@@ -222,7 +222,7 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void pathExprTestDebug() throws Exception {
+  public void pathExprTestDebug() {
     PrintStream buf = createBuffer();
     new XQuery("(<a><b><c>c1</c><b><c>c2</c></b><c>c3</c></b><b><c>c4</c></b></a>)/descendant-or-self::node()/c[2]").serialize(
         ctx,
@@ -231,7 +231,7 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void pathExprTest8() throws Exception {
+  public void pathExprTest8() {
     PrintStream buf = createBuffer();
     new XQuery("let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))//b").serialize(
         ctx,
@@ -240,27 +240,27 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void elementTest1() throws Exception {
+  public void elementTest1() {
     Sequence res = new XQuery("(<a><b/><c/></a>)/element(b)").execute(ctx);
     Node<?> exp = ctx.getNodeFactory().element(new QNm("b"));
     ResultChecker.check(exp, res, false);
   }
 
   @Test
-  public void elementTest2() throws Exception {
+  public void elementTest2() {
     Sequence res = new XQuery("(<a><b/><c/></a>)/element(b, xs:untyped)").execute(ctx);
     Node<?> exp = ctx.getNodeFactory().element(new QNm("b"));
     ResultChecker.check(exp, res, false);
   }
 
   @Test
-  public void elementTest3() throws Exception {
+  public void elementTest3() {
     Sequence res = new XQuery("(<a><b/><c/></a>)/element(b, xs:double)").execute(ctx);
     ResultChecker.check(null, res, false);
   }
 
   @Test
-  public void elementTest4() throws Exception {
+  public void elementTest4() {
     Sequence res = new XQuery("(<a><b/><c/></a>)/element(*, xs:untyped)").execute(ctx);
     Sequence exp =
         new ItemSequence(ctx.getNodeFactory().element(new QNm("b")), ctx.getNodeFactory().element(new QNm("c")));
@@ -268,27 +268,27 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void attributeTest1() throws Exception {
+  public void attributeTest1() {
     Sequence res = new XQuery("(<a b='' c=''/>)/attribute(b)").execute(ctx);
     Node<?> exp = ctx.getNodeFactory().attribute(new QNm("b"), new Una(""));
     ResultChecker.check(exp, res, false);
   }
 
   @Test
-  public void attributeTest2() throws Exception {
+  public void attributeTest2() {
     Sequence res = new XQuery("(<a b='' c=''/>)/attribute(b, xs:untypedAtomic)").execute(ctx);
     Node<?> exp = ctx.getNodeFactory().attribute(new QNm("b"), new Una(""));
     ResultChecker.check(exp, res, false);
   }
 
   @Test
-  public void attributeTest3() throws Exception {
+  public void attributeTest3() {
     Sequence res = new XQuery("(<a b='' c=''/>)/attribute(b, xs:double)").execute(ctx);
     ResultChecker.check(null, res, false);
   }
 
   @Test
-  public void attributeTest4() throws Exception {
+  public void attributeTest4() {
     Sequence res = new XQuery("(<a b='' c=''/>)/attribute(*, xs:untypedAtomic)").execute(ctx);
     Sequence exp = new ItemSequence(ctx.getNodeFactory().attribute(new QNm("b"), new Una("")),
                                     ctx.getNodeFactory().attribute(new QNm("c"), new Una("")));
@@ -296,7 +296,7 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void schemaElementTest() throws Exception {
+  public void schemaElementTest() {
     try {
       new XQuery("(<a><b/></a>)/schema-element(b)");
       fail("missing imported schema not detected");
@@ -306,7 +306,7 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void schemaAttributeTest() throws Exception {
+  public void schemaAttributeTest() {
     try {
       new XQuery("(<a b=''/>)/schema-attribute(b)");
       fail("missing imported schema not detected");
@@ -316,9 +316,9 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void mixedOutputTest() throws Exception {
+  public void mixedOutputTest() {
     try {
-      Sequence s = new XQuery("(<a>1</a>,<b>2</b>)/(if(position() eq 1) then . else data(.))").execute(ctx);
+      Sequence s = new XQuery("(<a>1</a>,<b>2</b>)/(if(position() eq 1) then $$ else data($$))").execute(ctx);
       Iter it = s.iterate();
       try {
         while (it.next() != null)
@@ -333,7 +333,7 @@ public class PathExprTest extends XQueryBaseTest {
   }
 
   @Test
-  public void mixedOutputTest2() throws Exception {
+  public void mixedOutputTest2() {
     try {
       Sequence s = new XQuery("declare variable $myVar := <e>text</e>; $myVar/text()/(<e/>, (), 1, <e/>)").execute(ctx);
       Iter it = s.iterate();
