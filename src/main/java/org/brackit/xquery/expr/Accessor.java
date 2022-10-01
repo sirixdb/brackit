@@ -57,7 +57,7 @@ public abstract class Accessor {
     @Override
     public Stream<Node<?>> performStep(Node<?> node) {
       Node<?> parent = node.getParent();
-      return (parent != null) ? new AtomStream<>(parent) : new EmptyStream<>();
+      return parent != null ? new AtomStream<>(parent) : new EmptyStream<>();
     }
   };
   public static final Accessor CHILD = new Accessor(Axis.CHILD) {
@@ -118,9 +118,9 @@ public abstract class Accessor {
 
     @Override
     public Stream<? extends Node<?>> performStep(Node<?> node, NodeType test) {
-      if ((test.getNodeKind() == Kind.ATTRIBUTE) && (test.getQName() != null)) {
+      if (test.getNodeKind() == Kind.ATTRIBUTE && test.getQName() != null) {
         Node<?> att = node.getAttribute(test.getQName());
-        if ((att == null) || ((test.getType() != null) && (!att.type().instanceOf(test.getType())))) {
+        if (att == null || test.getType() != null && !att.type().instanceOf(test.getType())) {
           return new EmptyStream<>();
         }
         return new AtomStream<Node<?>>(att);
@@ -246,7 +246,7 @@ public abstract class Accessor {
         @Override
         public Node<?> next() throws DocumentException {
           Node<?> n;
-          while (s != null && ((n = s.next()) != null)) {
+          while (s != null && (n = s.next()) != null) {
             if (n.isSelfOf(stopAt)) {
               s.close();
               s = null;
@@ -285,7 +285,7 @@ public abstract class Accessor {
 
         @Override
         public Node<?> next() throws DocumentException {
-          if ((next == null) || (next.isSelfOf(stopAt))) {
+          if (next == null || next.isSelfOf(stopAt)) {
             return null;
           }
           Node<?> deliver = next;
@@ -388,7 +388,7 @@ public abstract class Accessor {
     public Node<?> next() throws DocumentException {
       try {
         Node<?> next;
-        while (((next = stream.next()) != null) && !test.matches(next))
+        while ((next = stream.next()) != null && !test.matches(next))
           ;
         return next;
       } catch (DocumentException e) {
@@ -423,6 +423,6 @@ public abstract class Accessor {
 
   public Stream<? extends Node<?>> performStep(Node<?> node, NodeType test) {
     Stream<? extends Node<?>> s = node.performStep(axis, test);
-    return (s != null) ? s : new KindFilter(test, performStep(node));
+    return s != null ? s : new KindFilter(test, performStep(node));
   }
 }

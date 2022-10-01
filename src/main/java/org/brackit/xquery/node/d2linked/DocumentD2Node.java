@@ -71,7 +71,7 @@ public class DocumentD2Node extends ParentD2Node {
 
   @Override
   public boolean isDocumentOf(Node<?> node) {
-    return (getKind() == Kind.DOCUMENT) && (node == this);
+    return getKind() == Kind.DOCUMENT && node == this;
   }
 
   @Override

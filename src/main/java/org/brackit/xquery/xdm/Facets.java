@@ -115,7 +115,7 @@ public class Facets {
     this.length = length;
     this.maxLength = maxLength;
     this.minLength = minLength;
-    this.pattern = (pattern != null) ? Pattern.compile(pattern) : null;
+    this.pattern = pattern != null ? Pattern.compile(pattern) : null;
     this.enumeration = enumeration;
     this.whiltespace = whiltespace;
     this.maxInclusive = maxInclusive;

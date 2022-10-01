@@ -44,7 +44,7 @@ public class DoSNStepMerger extends Walker {
 
     for (int i = 0; i < node.getChildCount(); i++) {
       AST child = node.getChild(i);
-      if ((isDescendantOrSelfNodeStepWithoutPredicate(child)) && (i + 1 < node.getChildCount())) {
+      if (isDescendantOrSelfNodeStepWithoutPredicate(child) && i + 1 < node.getChildCount()) {
         AST nextStep = node.getChild(i + 1);
 
         if (isChildStepWithoutPredicate(nextStep)) {
@@ -65,13 +65,15 @@ public class DoSNStepMerger extends Walker {
   }
 
   private boolean isChildStepWithoutPredicate(AST child) {
-    return ((child.getType() == XQ.StepExpr) && (child.getChild(0).getType() == XQ.AxisSpec) && (
-        child.getChild(0).getChild(0).getType() == XQ.CHILD) && (child.getChildCount() == 2)); // no predicate
+    return
+        child.getType() == XQ.StepExpr && child.getChild(0).getType() == XQ.AxisSpec
+            && child.getChild(0).getChild(0).getType() == XQ.CHILD && child.getChildCount() == 2; // no predicate
   }
 
   private boolean isDescendantOrSelfNodeStepWithoutPredicate(AST child) {
-    return ((child.getType() == XQ.StepExpr) && (child.getChild(0).getType() == XQ.AxisSpec) && (
-        child.getChild(0).getChild(0).getType() == XQ.DESCENDANT_OR_SELF) && (child.getChild(1).getType()
-        == XQ.KindTestAnyKind) && (child.getChildCount() == 2)); // no predicate
+    return
+        child.getType() == XQ.StepExpr && child.getChild(0).getType() == XQ.AxisSpec
+            && child.getChild(0).getChild(0).getType() == XQ.DESCENDANT_OR_SELF && child.getChild(1).getType()
+            == XQ.KindTestAnyKind && child.getChildCount() == 2; // no predicate
   }
 }

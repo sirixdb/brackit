@@ -88,7 +88,7 @@ public abstract class AbstractAtomic extends AbstractItem implements Atomic, Int
 
   @Override
   public final boolean equals(Object obj) {
-    return obj == this || (obj instanceof Atomic && atomicCmp((Atomic) obj) == 0);
+    return obj == this || obj instanceof Atomic && atomicCmp((Atomic) obj) == 0;
   }
 
   @Override

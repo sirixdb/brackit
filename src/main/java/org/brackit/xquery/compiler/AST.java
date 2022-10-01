@@ -78,7 +78,7 @@ public class AST {
   }
 
   public String getStringValue() {
-    return (value != null) ? value.toString() : "";
+    return value != null ? value.toString() : "";
   }
 
   public void setValue(Object value) {
@@ -93,11 +93,11 @@ public class AST {
   }
 
   public Object getProperty(String name) {
-    return (properties != null) ? properties.get(name) : null;
+    return properties != null ? properties.get(name) : null;
   }
 
   public boolean checkProperty(String name) {
-    Object p = (properties != null) ? properties.get(name) : null;
+    Object p = properties != null ? properties.get(name) : null;
     if (p == null) {
       return false;
     }
@@ -115,7 +115,7 @@ public class AST {
   }
 
   public int getChildCount() {
-    return (children == null) ? 0 : children.length;
+    return children == null ? 0 : children.length;
   }
 
   public int getChildIndex() {
@@ -155,7 +155,7 @@ public class AST {
   }
 
   public void insertChild(int position, AST child) {
-    if ((position < 0) || (children == null) || (position > children.length)) {
+    if (position < 0 || children == null || position > children.length) {
       throw new IllegalArgumentException(String.format("Illegal child position: %s", position));
     }
     if (child == null) {
@@ -186,18 +186,18 @@ public class AST {
   }
 
   public AST getChild(int position) {
-    if ((position < 0) || (children == null) || (position >= children.length)) {
+    if (position < 0 || children == null || position >= children.length) {
       throw new IllegalArgumentException(String.format("Illegal child position: %s", position));
     }
     return children[position];
   }
 
   public AST getLastChild() {
-    return (children != null) ? children[children.length - 1] : null;
+    return children != null ? children[children.length - 1] : null;
   }
 
   public void replaceChild(int position, AST child) {
-    if ((position < 0) || (children == null) || (position >= children.length)) {
+    if (position < 0 || children == null || position >= children.length) {
       throw new IllegalArgumentException(String.format("Illegal child position: %s", position));
     }
     if (child == null) {
@@ -208,7 +208,7 @@ public class AST {
   }
 
   public void deleteChild(int position) {
-    if ((position < 0) || (children == null) || (position >= children.length)) {
+    if (position < 0 || children == null || position >= children.length) {
       throw new IllegalArgumentException(String.format("Illegal child position: %s", position));
     }
     if (children.length == 1) {
@@ -227,7 +227,7 @@ public class AST {
   }
 
   public AST copy() {
-    return new AST(type, value, sctx, (properties == null) ? null : new HashMap<String, Object>(properties));
+    return new AST(type, value, sctx, properties == null ? null : new HashMap<String, Object>(properties));
   }
 
   public AST copyTree() {
@@ -275,7 +275,7 @@ public class AST {
   }
 
   protected String getLabel(String value) {
-    return ((type > 0) && (type < XQ.NAMES.length)) ? (XQ.NAMES[type].equals(value))
+    return type > 0 && type < XQ.NAMES.length ? XQ.NAMES[type].equals(value)
         ? value
         : XQ.NAMES[type] + "[" + value + "]" : value;
   }

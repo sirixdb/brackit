@@ -44,6 +44,7 @@ import org.brackit.xquery.update.UpdateList;
 import org.brackit.xquery.update.op.UpdateOp;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.json.JsonCollection;
 import org.brackit.xquery.xdm.json.JsonStore;
 import org.brackit.xquery.xdm.node.Node;
 import org.brackit.xquery.xdm.node.NodeCollection;
@@ -75,7 +76,9 @@ public class BrackitQueryContext implements QueryContext {
 
   private Node<?> defaultDocument;
 
-  private NodeCollection<?> defaultCollection;
+  private NodeCollection<?> defaultNodeCollection;
+
+  private JsonCollection<?> defaultJsonCollection;
 
   private DateTime dateTime;
 
@@ -144,12 +147,12 @@ public class BrackitQueryContext implements QueryContext {
 
   @Override
   public Sequence resolve(QNm name) {
-    return (externalVars != null) ? externalVars.get(name) : null;
+    return externalVars != null ? externalVars.get(name) : null;
   }
 
   @Override
   public boolean isBound(QNm name) {
-    return ((externalVars != null) && (externalVars.containsKey(name)));
+    return externalVars != null && externalVars.containsKey(name);
   }
 
   @Override
@@ -181,28 +184,38 @@ public class BrackitQueryContext implements QueryContext {
   }
 
   @Override
-  public NodeCollection<?> getDefaultCollection() {
-    return defaultCollection;
+  public NodeCollection<?> getDefaultNodeCollection() {
+    return defaultNodeCollection;
   }
 
   @Override
-  public void setDefaultCollection(NodeCollection<?> defaultCollection) {
-    this.defaultCollection = defaultCollection;
+  public JsonCollection<?> getDefaultJsonCollection() {
+    return defaultJsonCollection;
+  }
+
+  @Override
+  public void setDefaultNodeCollection(NodeCollection<?> defaultNodeCollection) {
+    this.defaultNodeCollection = defaultNodeCollection;
+  }
+
+  @Override
+  public void setDefaultJsonCollection(JsonCollection<?> defaultJsonCollection) {
+    this.defaultJsonCollection = defaultJsonCollection;
   }
 
   @Override
   public DateTime getDateTime() {
-    return (dateTime != null) ? dateTime : (dateTime = new DateTime(implicitTimezone));
+    return dateTime != null ? dateTime : (dateTime = new DateTime(implicitTimezone));
   }
 
   @Override
   public Date getDate() {
-    return (date != null) ? date : (date = new Date(getDateTime()));
+    return date != null ? date : (date = new Date(getDateTime()));
   }
 
   @Override
   public Time getTime() {
-    return (time != null) ? time : (time = new Time(getDateTime()));
+    return time != null ? time : (time = new Time(getDateTime()));
   }
 
   @Override

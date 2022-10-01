@@ -37,14 +37,14 @@ public enum Cardinality {
   ZeroOrMany; // *
 
   public final boolean moreThanZero() {
-    return (this == One) || (this == OneOrMany);
+    return this == One || this == OneOrMany;
   }
 
   public final boolean many() {
-    return ((this == OneOrMany) || (this == ZeroOrMany));
+    return this == OneOrMany || this == ZeroOrMany;
   }
 
   public final boolean atMostOne() {
-    return ((this == ZeroOrOne) || (this == One));
+    return this == ZeroOrOne || this == One;
   }
 }

@@ -72,7 +72,7 @@ public class DTD extends AbstractDuration {
 
   public DTD(boolean negative, short days, byte hours, byte minutes, int micros) {
     this.days = days;
-    this.hours = (!negative) ? hours : (byte) (hours | 0x80);
+    this.hours = !negative ? hours : (byte) (hours | 0x80);
     this.minutes = minutes;
     this.micros = micros;
   }
@@ -89,23 +89,23 @@ public class DTD extends AbstractDuration {
     int pos = 0;
     int length = charArray.length;
 
-    if ((pos == length) || (charArray[pos] == '-')) {
+    if (pos == length || charArray[pos] == '-') {
       negative = true;
       pos++;
     }
 
-    if (((length - pos) < 3) || (charArray[pos++] != 'P')) {
+    if (length - pos < 3 || charArray[pos++] != 'P') {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:dayTimeDuration", str);
     }
 
     int start = pos;
-    while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+    while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
       pos++;
     int end = pos;
-    int sectionTerminator = (pos < length) ? charArray[pos++] : -1;
-    int v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1; // parse leading value
+    int sectionTerminator = pos < length ? charArray[pos++] : -1;
+    int v = start != end ? Integer.parseInt(str.substring(start, end)) : -1; // parse leading value
 
-    if ((sectionTerminator == 'D') && (v > -1)) {
+    if (sectionTerminator == 'D' && v > -1) {
       if (v > Short.MAX_VALUE) {
         throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
                                  "Cannot cast '%s' to xs:dayTimeDuration: component too large",
@@ -115,26 +115,26 @@ public class DTD extends AbstractDuration {
       days = (short) v;
 
       start = pos;
-      while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+      while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
         pos++;
       end = pos;
-      sectionTerminator = (pos < length) ? charArray[pos++] : -1;
-      v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1;
+      sectionTerminator = pos < length ? charArray[pos++] : -1;
+      v = start != end ? Integer.parseInt(str.substring(start, end)) : -1;
     }
 
     if (sectionTerminator == 'T') {
       start = pos;
-      while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+      while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
         pos++;
       end = pos;
-      sectionTerminator = (pos < length) ? charArray[pos++] : -1;
-      v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1;
+      sectionTerminator = pos < length ? charArray[pos++] : -1;
+      v = start != end ? Integer.parseInt(str.substring(start, end)) : -1;
 
       if (sectionTerminator == -1) {
         throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:dayTimeDuration", str);
       }
 
-      if ((sectionTerminator == 'H') && (v > -1)) {
+      if (sectionTerminator == 'H' && v > -1) {
         int newDays = days + v / 24;
         v = v % 24;
 
@@ -148,14 +148,14 @@ public class DTD extends AbstractDuration {
         hours = (byte) v;
 
         start = pos;
-        while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+        while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
           pos++;
         end = pos;
-        sectionTerminator = (pos < length) ? charArray[pos++] : -1;
-        v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1;
+        sectionTerminator = pos < length ? charArray[pos++] : -1;
+        v = start != end ? Integer.parseInt(str.substring(start, end)) : -1;
       }
 
-      if ((sectionTerminator == 'M') && (v > -1)) {
+      if (sectionTerminator == 'M' && v > -1) {
         int newDays = days + v / 1440;
         v = v % 1440;
         int newHours = hours + v / 60;
@@ -175,14 +175,14 @@ public class DTD extends AbstractDuration {
         minutes = (byte) v;
 
         start = pos;
-        while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+        while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
           pos++;
         end = pos;
-        sectionTerminator = (pos < length) ? charArray[pos++] : -1;
-        v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1;
+        sectionTerminator = pos < length ? charArray[pos++] : -1;
+        v = start != end ? Integer.parseInt(str.substring(start, end)) : -1;
       }
 
-      if (((sectionTerminator == '.') || (sectionTerminator == 'S')) && (v > -1)) {
+      if ((sectionTerminator == '.' || sectionTerminator == 'S') && v > -1) {
         int newDays = days + v / 86400;
         v = v % 86400;
         int newHours = hours + v / 3600;
@@ -208,21 +208,21 @@ public class DTD extends AbstractDuration {
 
         if (sectionTerminator == '.') {
           start = pos;
-          while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+          while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
             pos++;
           end = pos;
-          sectionTerminator = (pos < length) ? charArray[pos++] : -1;
+          sectionTerminator = pos < length ? charArray[pos++] : -1;
           int l = end - start;
-          v = (start != end) ? Integer.parseInt(str.substring(start, start + Math.min(l, 6))) : -1; // drop nano seconds
+          v = start != end ? Integer.parseInt(str.substring(start, start + Math.min(l, 6))) : -1; // drop nano seconds
 
-          if ((sectionTerminator == 'S') && (v > -1)) {
+          if (sectionTerminator == 'S' && v > -1) {
             if (v > 0) {
               for (int i = 0; i < 6 - l; i++) {
                 v *= 10;
               }
               micros += v;
             }
-            sectionTerminator = (pos < length) ? charArray[pos++] : -1;
+            sectionTerminator = pos < length ? charArray[pos++] : -1;
           } else {
             sectionTerminator = 'X';
           }
@@ -237,7 +237,7 @@ public class DTD extends AbstractDuration {
     }
 
     this.days = days;
-    this.hours = (!negative) ? hours : (byte) (hours | 0x80);
+    this.hours = !negative ? hours : (byte) (hours | 0x80);
     this.minutes = minutes;
     this.micros = micros;
   }
@@ -246,7 +246,7 @@ public class DTD extends AbstractDuration {
   public Atomic asType(Type type) throws QueryException {
     return type.instanceOf(type)
         ? new DTDDur(hours < 0, days, (byte) (hours & 0x7F), minutes, micros, type)
-        : new Dur((hours < 0), (short) 0, (byte) 0, days, (byte) (hours & 0x7F), minutes, micros).asType(type);
+        : new Dur(hours < 0, (short) 0, (byte) 0, days, (byte) (hours & 0x7F), minutes, micros).asType(type);
   }
 
   @Override
@@ -275,13 +275,13 @@ public class DTD extends AbstractDuration {
     int sign = hours & 0x80;
     int oSign = other.hours & 0x80;
     if (sign != oSign) {
-      return (sign < oSign) ? -1 : 1;
+      return sign < oSign ? -1 : 1;
     }
-    int res = (days - other.days);
+    int res = days - other.days;
     if (res != 0) {
       return res;
     }
-    res = ((hours & 0x7F) - ((other.hours & 0x7F)));
+    res = (hours & 0x7F) - (other.hours & 0x7F);
     if (res != 0) {
       return res;
     }
@@ -329,7 +329,7 @@ public class DTD extends AbstractDuration {
     long newHours = Math.round(getHours() * v);
     long newMinutes = Math.round(getMinutes() * v);
     long newMicros = Math.round(getMicros() * v);
-    boolean newNegative = (isNegative() ^ (v < 0));
+    boolean newNegative = isNegative() ^ v < 0;
 
     if (isNegative() ^ newNegative) {
       newDays *= -1;
@@ -338,11 +338,11 @@ public class DTD extends AbstractDuration {
       newMicros *= -1;
     }
 
-    newMinutes += (newMicros / 60000000);
+    newMinutes += newMicros / 60000000;
     newMicros %= 60000000;
-    newHours += (newMinutes / 60);
+    newHours += newMinutes / 60;
     newMinutes %= 60;
-    newDays += (newHours / 24);
+    newDays += newHours / 24;
     newHours %= 24;
 
     if (newDays > Short.MAX_VALUE) {
@@ -366,7 +366,7 @@ public class DTD extends AbstractDuration {
     long newHours = Math.round(getHours() / v);
     long newMinutes = Math.round(getMinutes() / v);
     long newMicros = Math.round(getMicros() / v);
-    boolean newNegative = (isNegative() ^ (v < 0));
+    boolean newNegative = isNegative() ^ v < 0;
 
     if (isNegative() ^ newNegative) {
       newDays *= -1;
@@ -375,11 +375,11 @@ public class DTD extends AbstractDuration {
       newMicros *= -1;
     }
 
-    newMinutes += (newMicros / 60000000);
+    newMinutes += newMicros / 60000000;
     newMicros %= 60000000;
-    newHours += (newMinutes / 60);
+    newHours += newMinutes / 60;
     newMinutes %= 60;
-    newDays += (newHours / 24);
+    newDays += newHours / 24;
     newHours %= 24;
 
     if (newDays > Short.MAX_VALUE) {
@@ -390,9 +390,9 @@ public class DTD extends AbstractDuration {
   }
 
   public Numeric divide(DTD dur) throws QueryException {
-    long a = ((((((getDays() * 24l) + getHours()) * 60l) + getMinutes()) * 60l) * 1000000) + getMicros();
+    long a = ((getDays() * 24l + getHours()) * 60l + getMinutes()) * 60l * 1000000 + getMicros();
     long b =
-        ((((((dur.getDays() * 24l) + dur.getHours()) * 60l) + dur.getMinutes()) * 60l) * 1000000) + dur.getMicros();
+        ((dur.getDays() * 24l + dur.getHours()) * 60l + dur.getMinutes()) * 60l * 1000000 + dur.getMicros();
 
     if (b == 0) {
       throw new QueryException(ErrorCode.ERR_DIVISION_BY_ZERO);
@@ -434,11 +434,11 @@ public class DTD extends AbstractDuration {
       newMicros *= -1;
     }
 
-    newMinutes += (newMicros / 60000000);
+    newMinutes += newMicros / 60000000;
     newMicros %= 60000000;
-    newHours += (newMinutes / 60);
+    newHours += newMinutes / 60;
     newMinutes %= 60;
-    newDays += (newHours / 24);
+    newDays += newHours / 24;
     newHours %= 24;
 
     if (newDays > Short.MAX_VALUE) {
@@ -450,7 +450,7 @@ public class DTD extends AbstractDuration {
 
   @Override
   public boolean isNegative() {
-    return (hours < 0);
+    return hours < 0;
   }
 
   @Override

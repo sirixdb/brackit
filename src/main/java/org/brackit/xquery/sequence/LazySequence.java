@@ -81,7 +81,8 @@ public abstract class LazySequence extends AbstractSequence {
         count.inc();
       }
     }
-    return (size = count.asIntNumeric());
+    size = count.asIntNumeric();
+    return size;
   }
 
   @Override

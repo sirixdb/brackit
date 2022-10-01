@@ -57,7 +57,7 @@ public class BooleanValue extends AbstractFunction {
           return Bool.TRUE;
         }
       }
-      return (args[0] == null) ? Bool.TRUE : args[0].booleanValue() ? Bool.FALSE : Bool.TRUE;
+      return args[0] == null ? Bool.TRUE : args[0].booleanValue() ? Bool.FALSE : Bool.TRUE;
     } else {
       if (args.length == 0) {
         if ("false".equals(getName().getLocalName())) {
@@ -66,7 +66,7 @@ public class BooleanValue extends AbstractFunction {
           return Bool.TRUE;
         }
       }
-      return (args[0] == null) ? Bool.FALSE : args[0].booleanValue() ? Bool.TRUE : Bool.FALSE;
+      return args[0] == null ? Bool.FALSE : args[0].booleanValue() ? Bool.TRUE : Bool.FALSE;
     }
   }
 }

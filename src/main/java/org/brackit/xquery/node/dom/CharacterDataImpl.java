@@ -49,7 +49,7 @@ public class CharacterDataImpl extends NodeImpl implements org.w3c.dom.Character
 
   @Override
   public void deleteData(int offset, int count) throws DOMException {
-    if ((value != null) && (count < value.length()))
+    if (value != null && count < value.length())
       value = value.substring(offset, offset + count);
     else
       throw new DOMException(DOMException.INDEX_SIZE_ERR, null);
@@ -62,7 +62,7 @@ public class CharacterDataImpl extends NodeImpl implements org.w3c.dom.Character
 
   @Override
   public int getLength() {
-    return (value != null) ? value.length() : 0;
+    return value != null ? value.length() : 0;
   }
 
   @Override

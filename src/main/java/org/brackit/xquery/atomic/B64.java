@@ -70,7 +70,7 @@ public class B64 extends AbstractAtomic {
       char c4 = str.charAt(charPos++);
 
       bytes[size++] = (byte) b64(str, c1);
-      bytes[size++] = (byte) ((c3 != '=') ? b64(str, c2) : b04(str, c2));
+      bytes[size++] = (byte) (c3 != '=' ? b64(str, c2) : b04(str, c2));
 
       if (c4 != '=') {
         bytes[size++] = (byte) b64(str, c3);
@@ -145,20 +145,20 @@ public class B64 extends AbstractAtomic {
 
   private int noOfOctets(String str) {
     int dataLength = str.length();
-    if ((dataLength > 0) && (str.charAt(dataLength - 1) == '='))
+    if (dataLength > 0 && str.charAt(dataLength - 1) == '=')
       dataLength--;
-    if ((dataLength > 0) && (str.charAt(dataLength - 1) == '='))
+    if (dataLength > 0 && str.charAt(dataLength - 1) == '=')
       dataLength--;
     return dataLength;
   }
 
   private int b64(String str, char c) throws QueryException {
     int v;
-    if ((c >= '0') && (c <= '9'))
+    if (c >= '0' && c <= '9')
       v = 52 + c - 48;
-    else if ((c >= 'A') && (c <= 'Z'))
+    else if (c >= 'A' && c <= 'Z')
       v = c - 65;
-    else if ((c >= 'a') && (c <= 'z'))
+    else if (c >= 'a' && c <= 'z')
       v = 26 + c - 87;
     else if (c == '+')
       v = 62;

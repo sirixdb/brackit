@@ -66,7 +66,7 @@ public class Distinct extends AbstractFunction {
 
     final Sequence s = args[0];
 
-    if ((s == null) || (s instanceof Item)) {
+    if (s == null || s instanceof Item) {
       return s;
     }
 
@@ -101,7 +101,7 @@ public class Distinct extends AbstractFunction {
               it = distinct.iterator();
             }
 
-            return (it.hasNext()) ? it.next() : null;
+            return it.hasNext() ? it.next() : null;
           }
 
           @Override

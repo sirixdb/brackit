@@ -78,7 +78,7 @@ public final class DocumentType extends NodeType {
       }
       throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR, "Document node does not have a root element");
     }
-    return (node.getKind() == Kind.DOCUMENT);
+    return node.getKind() == Kind.DOCUMENT;
   }
 
   @Override
@@ -100,11 +100,11 @@ public final class DocumentType extends NodeType {
       }
       throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR, "Document node does not have a root element");
     }
-    return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.DOCUMENT));
+    return item instanceof Node<?> && ((Node<?>) item).getKind() == Kind.DOCUMENT;
   }
 
   public String toString() {
-    return (elementType != null) ? String.format("document-node(\"%s\")", elementType) : "document-node()";
+    return elementType != null ? String.format("document-node(\"%s\")", elementType) : "document-node()";
   }
 
   public boolean equals(Object obj) {
@@ -120,7 +120,7 @@ public final class DocumentType extends NodeType {
         return false;
       }
     } else {
-      if ((t.elementType == null) || (!elementType.equals(t.elementType))) {
+      if (t.elementType == null || !elementType.equals(t.elementType)) {
         return false;
       }
     }

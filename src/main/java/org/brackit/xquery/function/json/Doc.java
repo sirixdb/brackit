@@ -3,11 +3,7 @@ package org.brackit.xquery.function.json;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.atomic.AnyURI;
-import org.brackit.xquery.atomic.Bool;
-import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.atomic.*;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.xdm.DocumentException;
@@ -16,9 +12,6 @@ import org.brackit.xquery.xdm.Signature;
 import org.brackit.xquery.xdm.json.JsonCollection;
 import org.brackit.xquery.xdm.json.JsonItem;
 import org.brackit.xquery.xdm.json.TemporalJsonCollection;
-import org.brackit.xquery.xdm.node.Node;
-import org.brackit.xquery.xdm.node.NodeCollection;
-import org.brackit.xquery.xdm.node.TemporalNodeCollection;
 
 public class Doc extends AbstractFunction {
     private final boolean retrieve;
@@ -32,7 +25,7 @@ public class Doc extends AbstractFunction {
     public Sequence execute(final StaticContext sctx, final QueryContext ctx, final Sequence[] args)
             throws QueryException {
         if (args[0] == null) {
-            return (retrieve ? null : Bool.FALSE);
+            return retrieve ? null : Bool.FALSE;
         }
 
         final String name = ((Str) args[0]).stringValue();
@@ -100,7 +93,7 @@ public class Doc extends AbstractFunction {
         }
         if (base == null) {
             base = sctx.getBaseURI();
-            if ((base == null) || (!base.isAbsolute())) {
+            if (base == null || !base.isAbsolute()) {
                 return relative;
             }
         }

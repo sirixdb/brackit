@@ -85,7 +85,7 @@ public class Bool extends AbstractAtomic {
   @Override
   public int cmp(Atomic other) throws QueryException {
     if (other instanceof Bool) {
-      return ((bool == ((Bool) other).bool) ? 0 : (((Bool) other).bool) ? 1 : -1);
+      return bool == ((Bool) other).bool ? 0 : ((Bool) other).bool ? 1 : -1;
     }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                              "Cannot compare '%s' with '%s'",
@@ -95,7 +95,7 @@ public class Bool extends AbstractAtomic {
 
   @Override
   public int atomicCmpInternal(Atomic other) {
-    return ((bool == ((Bool) other).bool) ? 0 : (((Bool) other).bool) ? 1 : -1);
+    return bool == ((Bool) other).bool ? 0 : ((Bool) other).bool ? 1 : -1;
   }
 
   @Override

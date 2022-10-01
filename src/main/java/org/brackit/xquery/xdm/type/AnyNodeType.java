@@ -47,7 +47,7 @@ public final class AnyNodeType extends NodeType {
 
   @Override
   public boolean matches(Item item) throws QueryException {
-    return (item instanceof Node<?>);
+    return item instanceof Node<?>;
   }
 
   @Override
@@ -57,6 +57,6 @@ public final class AnyNodeType extends NodeType {
 
   @Override
   public boolean equals(Object obj) {
-    return ((obj == this) || (obj instanceof AnyNodeType));
+    return obj == this || obj instanceof AnyNodeType;
   }
 }

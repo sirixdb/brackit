@@ -47,9 +47,9 @@ public class CodepointEqual extends AbstractFunction {
 
   @Override
   public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
-    int res = ((args[0] != null) && (args[1] != null))
+    int res = args[0] != null && args[1] != null
         ? ((Str) args[0]).cmp((Str) args[1])
-        : ((args[0] == null) ? ((args[1] == null) ? 0 : 1) : -1);
-    return (res == 0) ? Bool.TRUE : Bool.FALSE;
+        : args[0] == null ? args[1] == null ? 0 : 1 : -1;
+    return res == 0 ? Bool.TRUE : Bool.FALSE;
   }
 }

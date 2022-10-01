@@ -155,7 +155,7 @@ public final class DRArray extends AbstractArray {
   @Override
   public IntNumeric length() throws QueryException {
     int length = end - start;
-    return (length <= 20) ? Int32.ZERO_TWO_TWENTY[length] : new Int32(length);
+    return length <= 20 ? Int32.ZERO_TWO_TWENTY[length] : new Int32(length);
   }
 
   @Override

@@ -87,13 +87,13 @@ public class Analyzer {
     // check for cyclic dependencies
     // in initializer expressions
     for (ForwardDeclaration decl : decls) {
-      if ((decl instanceof CtxItemDecl)) {
+      if (decl instanceof CtxItemDecl) {
         if (checkCycle(decl, decls)) {
           throw new QueryException(ErrorCode.ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER,
                                    "Context item declaration depends on context item");
         }
       }
-      if ((decl instanceof VariableDecl)) {
+      if (decl instanceof VariableDecl) {
         if (checkCycle(decl, decls)) {
           throw new QueryException(ErrorCode.ERR_CIRCULAR_VARIABLE_DEPENDENCY,
                                    "Cyclic variable declaration: %s",
@@ -204,7 +204,7 @@ public class Analyzer {
     // add in-flight modules
     for (Module inFlight : modules) {
       String targetNS = inFlight.getTargetNS();
-      if ((targetNS != null) && targetNS.equals(i.getURI())) {
+      if (targetNS != null && targetNS.equals(i.getURI())) {
         toImport.add(inFlight);
       }
     }

@@ -63,7 +63,7 @@ public class BlockExpr implements Expr {
   @Override
   public Sequence evaluate(QueryContext ctx, Tuple t) throws QueryException {
     Return rs = new Return(ctx, expr);
-    Sink end = (ordered) ? new SerialValve(FJControl.PERMITS, rs) : rs;
+    Sink end = ordered ? new SerialValve(FJControl.PERMITS, rs) : rs;
     Sink start = block.create(ctx, end);
 
     EvalBlock task = new EvalBlock(t, start);
@@ -74,7 +74,7 @@ public class BlockExpr implements Expr {
 
   public void serialize(QueryContext ctx, Tuple t, SerializationHandler handler) throws QueryException {
     SerializerReturn rs = new SerializerReturn(ctx, expr, handler);
-    Sink end = (ordered) ? new SerialValve(FJControl.PERMITS, rs) : rs;
+    Sink end = ordered ? new SerialValve(FJControl.PERMITS, rs) : rs;
     Sink start = block.create(ctx, end);
 
     EvalBlock task = new EvalBlock(t, start);
@@ -246,7 +246,7 @@ public class BlockExpr implements Expr {
 
         @Override
         protected Sequence sequence(int pos) throws QueryException {
-          return (pos < len) ? buf.get(pos) : null;
+          return pos < len ? buf.get(pos) : null;
         }
       };
     }

@@ -115,7 +115,7 @@ public class Flt extends AbstractNumeric implements FltNumeric {
     }
     int i = (int) v;
     double f = v - i;
-    return (f == 0.0) ? new Int32(i) : null;
+    return f == 0.0 ? new Int32(i) : null;
   }
 
   @Override
@@ -125,7 +125,7 @@ public class Flt extends AbstractNumeric implements FltNumeric {
 
   @Override
   public boolean booleanValue() throws QueryException {
-    return ((v != 0) && (!Float.isNaN(v)) && (Float.isInfinite(v)));
+    return v != 0 && !Float.isNaN(v) && Float.isInfinite(v);
   }
 
   @Override
@@ -155,10 +155,10 @@ public class Flt extends AbstractNumeric implements FltNumeric {
     if (Float.isNaN(v))
       return "NaN";
     if (Float.isInfinite(v))
-      return (v > 0) ? "INF" : "-INF";
+      return v > 0 ? "INF" : "-INF";
     if (v == 0)
-      return (1 / v == 1 / 0.0f) ? "0" : "-0";
-    return killTrailingZeros(((v > 0) && (v >= 1e-6) && (v < 1e6) || (-v >= 1e-6) && (-v < 1e6))
+      return 1 / v == 1 / 0.0f ? "0" : "-0";
+    return killTrailingZeros(v > 0 && v >= 1e-6 && v < 1e6 || -v >= 1e-6 && -v < 1e6
         ? DF.format(v)
         : SF.format(v));
   }
@@ -254,27 +254,27 @@ public class Flt extends AbstractNumeric implements FltNumeric {
 
   @Override
   public Numeric round() throws QueryException {
-    return ((Float.isInfinite(v)) || (v == 0) || (Float.isNaN(v))) ? this : new Flt(Math.round(v));
+    return Float.isInfinite(v) || v == 0 || Float.isNaN(v) ? this : new Flt(Math.round(v));
   }
 
   @Override
   public Numeric abs() throws QueryException {
-    return ((v == Float.POSITIVE_INFINITY) || (v >= 0) || (Float.isNaN(v))) ? this : new Flt(Math.abs(v));
+    return v == Float.POSITIVE_INFINITY || v >= 0 || Float.isNaN(v) ? this : new Flt(Math.abs(v));
   }
 
   @Override
   public Numeric ceiling() throws QueryException {
-    return ((Float.isInfinite(v)) || (v == 0) || (Float.isNaN(v))) ? this : new Flt((float) Math.ceil(v));
+    return Float.isInfinite(v) || v == 0 || Float.isNaN(v) ? this : new Flt((float) Math.ceil(v));
   }
 
   @Override
   public Numeric floor() throws QueryException {
-    return ((Float.isInfinite(v)) || (v == 0) || (Float.isNaN(v))) ? this : new Flt((float) Math.floor(v));
+    return Float.isInfinite(v) || v == 0 || Float.isNaN(v) ? this : new Flt((float) Math.floor(v));
   }
 
   @Override
   public Numeric roundHalfToEven(int precision) throws QueryException {
-    if ((Float.isInfinite(v)) || (v == 0) || (Float.isNaN(v))) {
+    if (Float.isInfinite(v) || v == 0 || Float.isNaN(v)) {
       return this;
     }
 

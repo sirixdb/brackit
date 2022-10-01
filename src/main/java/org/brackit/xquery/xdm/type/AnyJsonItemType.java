@@ -41,7 +41,7 @@ public final class AnyJsonItemType extends JsonItemType {
 
   @Override
   public boolean matches(Item item) {
-    return (item instanceof JsonItem);
+    return item instanceof JsonItem;
   }
 
   @Override
@@ -51,6 +51,6 @@ public final class AnyJsonItemType extends JsonItemType {
 
   @Override
   public boolean equals(Object obj) {
-    return ((obj == this) || (obj instanceof AnyJsonItemType));
+    return obj == this || obj instanceof AnyJsonItemType;
   }
 }

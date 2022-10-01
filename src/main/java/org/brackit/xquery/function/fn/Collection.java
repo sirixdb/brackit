@@ -49,11 +49,11 @@ public class Collection extends AbstractFunction {
 
   @Override
   public Sequence execute(StaticContext sctx, final QueryContext ctx, Sequence[] args) throws QueryException {
-    String name = (args.length > 0) ? ((Str) args[0]).stringValue() : null;
+    String name = args.length > 0 ? ((Str) args[0]).stringValue() : null;
     try {
       org.brackit.xquery.xdm.node.NodeCollection<?> collection;
-      if ((name == null) || (name.isEmpty())) {
-        collection = ctx.getDefaultCollection();
+      if (name == null || name.isEmpty()) {
+        collection = ctx.getDefaultNodeCollection();
 
         if (collection == null) {
           throw new QueryException(ErrorCode.ERR_COLLECTION_NOT_FOUND, "No default collection defined.");

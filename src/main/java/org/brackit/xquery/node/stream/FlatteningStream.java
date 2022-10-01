@@ -65,7 +65,7 @@ public abstract class FlatteningStream<K, E> implements Stream<E> {
   public E next() throws DocumentException {
     try {
       E e;
-      while ((out == null) || ((e = out.next()) == null)) {
+      while (out == null || (e = out.next()) == null) {
         if (out != null) {
           out.close();
           out = null;

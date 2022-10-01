@@ -46,6 +46,6 @@ public class Ceiling extends AbstractFunction {
 
   @Override
   public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
-    return (args[0] == null) ? null : ((Numeric) args[0]).ceiling();
+    return args[0] == null ? null : ((Numeric) args[0]).ceiling();
   }
 }

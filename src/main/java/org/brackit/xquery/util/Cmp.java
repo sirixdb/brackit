@@ -76,11 +76,11 @@ public enum Cmp {
     boolean res;
 
     if (compare == 0) {
-      res = ((this == Cmp.ge) || (this == Cmp.le));
+      res = this == Cmp.ge || this == Cmp.le;
     } else if (compare < 0) {
-      res = ((this == Cmp.le) || (this == Cmp.lt));
+      res = this == Cmp.le || this == Cmp.lt;
     } else {
-      res = ((this == Cmp.ge) || (this == Cmp.gt));
+      res = this == Cmp.ge || this == Cmp.gt;
     }
 
     return res;
@@ -103,16 +103,16 @@ public enum Cmp {
   }
 
   public Bool vCmpAsBool(QueryContext ctx, Item left, Item right) throws QueryException {
-    if ((left == null) || (right == null)) {
+    if (left == null || right == null) {
       return null;
     }
     boolean res = vCmp(ctx, left, right);
-    return (res) ? Bool.TRUE : Bool.FALSE;
+    return res ? Bool.TRUE : Bool.FALSE;
   }
 
   public boolean gCmp(QueryContext ctx, Sequence left, Sequence right) throws QueryException {
     // assume simple case and perform cheaper direct evaluation
-    if ((left instanceof Item) && (right instanceof Item)) {
+    if (left instanceof Item && right instanceof Item) {
       return compareLeftAndRightAtomic(ctx, ((Item) left).atomize(), ((Item) right).atomize());
     }
 
@@ -151,11 +151,11 @@ public enum Cmp {
   }
 
   public Bool gCmpAsBool(QueryContext ctx, Sequence left, Sequence right) throws QueryException {
-    if ((left == null) || (right == null)) {
+    if (left == null || right == null) {
       return null;
     }
     boolean res = gCmp(ctx, left, right);
-    return (res) ? Bool.TRUE : Bool.FALSE;
+    return res ? Bool.TRUE : Bool.FALSE;
   }
 
   private boolean compareLeftAndRightAtomic(QueryContext ctx, Atomic lAtomic, Atomic rAtomic) throws QueryException {
@@ -165,7 +165,7 @@ public enum Cmp {
     if (lType.instanceOf(Type.UNA)) {
       if (rType.isNumeric()) {
         lAtomic = Dbl.parse(((Una) lAtomic).str);
-      } else if (rType.instanceOf(Type.UNA) || (rType.instanceOf(Type.STR))) {
+      } else if (rType.instanceOf(Type.UNA) || rType.instanceOf(Type.STR)) {
         // Optimized: Avoid explicit cast
         /*
          * rAtomic = Cast.cast(ctx, rAtomic, Type.STR, false); lAtomic =

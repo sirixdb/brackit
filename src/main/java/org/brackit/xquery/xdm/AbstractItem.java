@@ -50,7 +50,7 @@ public abstract class AbstractItem extends AbstractSequence implements Item {
 
   @Override
   public Item get(IntNumeric pos) throws QueryException {
-    return (Int32.ONE.eq(pos)) ? this : null;
+    return Int32.ONE.eq(pos) ? this : null;
   }
 
   @Override

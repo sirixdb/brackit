@@ -66,7 +66,7 @@ public class Castable implements Expr {
     Sequence sequence = expr.evaluate(ctx, tuple);
 
     if (sequence == null) {
-      return (allowEmptySequence) ? Bool.TRUE : Bool.FALSE;
+      return allowEmptySequence ? Bool.TRUE : Bool.FALSE;
     }
 
     Item item = null;
@@ -79,7 +79,7 @@ public class Castable implements Expr {
         item = it.next();
 
         if (item == null) {
-          return (allowEmptySequence) ? Bool.TRUE : Bool.FALSE;
+          return allowEmptySequence ? Bool.TRUE : Bool.FALSE;
         }
 
         if (it.next() != null) {
@@ -96,9 +96,9 @@ public class Castable implements Expr {
     } catch (QueryException e) {
       QNm code = e.getCode();
 
-      if ((code.eq(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE)) || (code.eq(ErrorCode.ERR_UNKNOWN_ATOMIC_SCHEMA_TYPE))
-          || (code.eq(ErrorCode.ERR_INVALID_LEXICAL_VALUE)) || (code.eq(ErrorCode.ERR_INVALID_VALUE_FOR_CAST))
-          || (code.eq(ErrorCode.ERR_ILLEGAL_CAST_TARGET_TYPE))) {
+      if (code.eq(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) || code.eq(ErrorCode.ERR_UNKNOWN_ATOMIC_SCHEMA_TYPE)
+          || code.eq(ErrorCode.ERR_INVALID_LEXICAL_VALUE) || code.eq(ErrorCode.ERR_INVALID_VALUE_FOR_CAST)
+          || code.eq(ErrorCode.ERR_ILLEGAL_CAST_TARGET_TYPE)) {
         return Bool.FALSE;
       }
 

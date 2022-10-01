@@ -52,7 +52,7 @@ public class DateTime extends AbstractFunction {
     Date date = (Date) args[0];
     Time time = (Time) args[1];
 
-    if ((date == null) || (time == null)) {
+    if (date == null || time == null) {
       return null;
     }
 
@@ -60,7 +60,7 @@ public class DateTime extends AbstractFunction {
     DTD timeTimezone = time.getTimezone();
 
     if (dateTimeTimezone != null) {
-      if ((timeTimezone == null) || (!dateTimeTimezone.eq(timeTimezone))) {
+      if (timeTimezone == null || !dateTimeTimezone.eq(timeTimezone)) {
         throw new QueryException(ErrorCode.ERR_DATETIME_FUNCTION_DIFFERENT_TZ,
                                  "Arguments of function '%s' have different timezones",
                                  getName());

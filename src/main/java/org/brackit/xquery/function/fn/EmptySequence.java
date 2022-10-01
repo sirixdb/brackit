@@ -52,16 +52,16 @@ public class EmptySequence extends AbstractFunction {
   @Override
   public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
     if (args[0] == null) {
-      return (empty) ? Bool.TRUE : Bool.FALSE;
+      return empty ? Bool.TRUE : Bool.FALSE;
     } else if (args[0] instanceof Item) {
-      return (empty) ? Bool.FALSE : Bool.TRUE;
+      return empty ? Bool.FALSE : Bool.TRUE;
     } else {
       Iter it = args[0].iterate();
       try {
         if (empty) {
-          return (it.next() != null) ? Bool.FALSE : Bool.TRUE;
+          return it.next() != null ? Bool.FALSE : Bool.TRUE;
         } else {
-          return (it.next() != null) ? Bool.TRUE : Bool.FALSE;
+          return it.next() != null ? Bool.TRUE : Bool.FALSE;
         }
       } finally {
         it.close();

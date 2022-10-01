@@ -99,8 +99,8 @@ public class DeepEqual extends AbstractFunction {
   }
 
   private static boolean deepEquals(Item a, Item b) {
-    if ((a == null)) {
-      return (b == null);
+    if (a == null) {
+      return b == null;
     }
     if (b == null) {
       return false;
@@ -144,7 +144,7 @@ public class DeepEqual extends AbstractFunction {
     if (aKind == Kind.ATTRIBUTE) {
       // TODO Type support requires comparison of typed value not string
       // value
-      return (a.getName().equals(b.getName())) && (a.getValue().equals(b.getValue()));
+      return a.getName().equals(b.getName()) && a.getValue().equals(b.getValue());
     }
     if (aKind == Kind.TEXT || aKind == Kind.COMMENT) {
       return a.getValue().equals(b.getValue());
@@ -153,7 +153,7 @@ public class DeepEqual extends AbstractFunction {
       return childrenDeepEqual(a, b);
     }
     if (aKind == Kind.PROCESSING_INSTRUCTION) {
-      return ((a.getName().equals(b.getName())) && (a.getValue().equals(b.getValue())));
+      return a.getName().equals(b.getName()) && a.getValue().equals(b.getValue());
     }
     throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR, "Unexpected node kind: '%s'", aKind);
   }
@@ -162,20 +162,20 @@ public class DeepEqual extends AbstractFunction {
     Node<?> aChild = a.getFirstChild();
     Node<?> bChild = b.getFirstChild();
 
-    while ((aChild != null) && (bChild != null)) {
-      while ((aChild.getKind() != Kind.ELEMENT) && (aChild.getKind() != Kind.TEXT)) {
+    while (aChild != null && bChild != null) {
+      while (aChild.getKind() != Kind.ELEMENT && aChild.getKind() != Kind.TEXT) {
         aChild = aChild.getNextSibling();
         if (aChild == null) {
           break;
         }
       }
-      while ((bChild.getKind() != Kind.ELEMENT) && (bChild.getKind() != Kind.TEXT)) {
+      while (bChild.getKind() != Kind.ELEMENT && bChild.getKind() != Kind.TEXT) {
         bChild = bChild.getNextSibling();
         if (bChild == null) {
           break;
         }
       }
-      if ((aChild != null) && (bChild != null)) {
+      if (aChild != null && bChild != null) {
         if (!nodeDeepEquals(aChild, bChild)) {
           return false;
         }
@@ -184,7 +184,7 @@ public class DeepEqual extends AbstractFunction {
       }
     }
 
-    return ((aChild == null) && (bChild == null));
+    return aChild == null && bChild == null;
   }
 
   private static Bool attributesDeepEqual(Node<?> a, Node<?> b) throws DocumentException {
@@ -196,7 +196,7 @@ public class DeepEqual extends AbstractFunction {
       Node<?> att;
       while ((att = aAttributes.next()) != null) {
         if (aSize == allAAttributes.length) {
-          allAAttributes = Arrays.copyOf(allAAttributes, (allAAttributes.length * 3) / 2 + 1);
+          allAAttributes = Arrays.copyOf(allAAttributes, allAAttributes.length * 3 / 2 + 1);
         }
         allAAttributes[aSize++] = att;
       }
@@ -219,8 +219,8 @@ public class DeepEqual extends AbstractFunction {
 
           // TODO Type support requires comparison of typed value not
           // string value
-          if ((aAttribute.getName().equals(bAttribute.getName())) && (aAttribute.getValue()
-                                                                                .equals(bAttribute.getValue()))) {
+          if (aAttribute.getName().equals(bAttribute.getName()) && aAttribute.getValue()
+                                                                             .equals(bAttribute.getValue())) {
             match = true;
             break;
           }
@@ -234,12 +234,12 @@ public class DeepEqual extends AbstractFunction {
       bAttributes.close();
     }
 
-    return (aSize == bSize) ? Bool.TRUE : Bool.FALSE;
+    return aSize == bSize ? Bool.TRUE : Bool.FALSE;
   }
 
   private static boolean atomicDeepEquals(Atomic a, Atomic b) throws QueryException {
     try {
-      return (a.eq(b));
+      return a.eq(b);
     } catch (QueryException e) {
       if (e.getCode().eq(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE)) {
         return false;

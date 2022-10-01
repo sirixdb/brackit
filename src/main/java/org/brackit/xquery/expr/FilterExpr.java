@@ -67,13 +67,13 @@ public class FilterExpr extends PredicateExpr {
           return null;
         } else if (fs instanceof Numeric) {
           IntNumeric pos = ((Numeric) fs).asIntNumeric();
-          s = (pos != null) ? s.get(pos) : null;
+          s = pos != null ? s.get(pos) : null;
         } else {
           try (Iter it = fs.iterate()) {
             Item first = it.next();
-            if ((first != null) && (it.next() == null) && (first instanceof Numeric)) {
+            if (first != null && it.next() == null && first instanceof Numeric) {
               IntNumeric pos = ((Numeric) first).asIntNumeric();
-              return (pos != null) ? s.get(pos) : null;
+              return pos != null ? s.get(pos) : null;
             }
           }
           if (!fs.booleanValue()) {
@@ -119,7 +119,7 @@ public class FilterExpr extends PredicateExpr {
           return null;
         }
 
-        if ((fRes instanceof Numeric) && (((Numeric) fRes).intValue() != 1)) {
+        if (fRes instanceof Numeric && ((Numeric) fRes).intValue() != 1) {
           return null;
         }
 

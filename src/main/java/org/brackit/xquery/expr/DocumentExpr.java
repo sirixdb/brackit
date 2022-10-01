@@ -79,7 +79,7 @@ public class DocumentExpr extends ConstructedNodeBuilder implements Expr {
 
   @Override
   public boolean isUpdating() {
-    return (contentExpr.isUpdating());
+    return contentExpr.isUpdating();
   }
 
   @Override

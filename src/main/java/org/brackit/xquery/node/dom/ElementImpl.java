@@ -65,7 +65,7 @@ public class ElementImpl extends NodeImpl implements org.w3c.dom.Element {
 
   @Override
   public Attr getAttributeNode(String name) {
-    return (attributes != null) ? attributes.get(name) : null;
+    return attributes != null ? attributes.get(name) : null;
   }
 
   @Override
@@ -95,7 +95,7 @@ public class ElementImpl extends NodeImpl implements org.w3c.dom.Element {
 
   @Override
   public boolean hasAttribute(String name) {
-    return (getAttributeNode(name) != null);
+    return getAttributeNode(name) != null;
   }
 
   @Override

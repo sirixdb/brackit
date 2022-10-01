@@ -197,13 +197,13 @@ public abstract class FlatteningSequence extends AbstractSequence {
     while ((s = sequence(i++)) != null) {
       si = (IntNumeric) si.add(s.size());
     }
-    return (size = si);
+    return size = si;
   }
 
   @Override
   public Item get(IntNumeric pos) {
     IntNumeric si = size; // volatile read
-    if ((si != null) && (si.cmp(pos) < 0)) {
+    if (si != null && si.cmp(pos) < 0) {
       return null;
     }
     if (Int32.ZERO.cmp(pos) >= 0) {

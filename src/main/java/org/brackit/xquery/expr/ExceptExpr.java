@@ -88,7 +88,7 @@ public class ExceptExpr implements Expr {
               b = (Node<?>) bIt.next();
             }
 
-            while ((a != null) && (b != null)) {
+            while (a != null && b != null) {
               int res = a.cmp(b);
 
               if (res == 0) {

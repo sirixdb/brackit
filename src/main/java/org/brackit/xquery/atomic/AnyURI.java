@@ -57,7 +57,7 @@ public class AnyURI extends AbstractAtomic {
   }
 
   public AnyURI(String str) throws QueryException {
-    if ((str == null) || ((str = Whitespace.collapse(str)).isEmpty())) {
+    if (str == null || (str = Whitespace.collapse(str)).isEmpty()) {
       this.uri = null;
     } else {
       try {
@@ -78,7 +78,7 @@ public class AnyURI extends AbstractAtomic {
   }
 
   public static boolean isValid(String str) {
-    if (str == null || ((str = Whitespace.collapse(str)).isEmpty())) {
+    if (str == null || (str = Whitespace.collapse(str)).isEmpty()) {
       return false;
     }
     try {
@@ -102,12 +102,12 @@ public class AnyURI extends AbstractAtomic {
 
   @Override
   public boolean booleanValue() throws QueryException {
-    return (uri != null);
+    return uri != null;
   }
 
   @Override
   public int cmp(Atomic other) throws QueryException {
-    if ((other instanceof AnyURI) || (other instanceof Str)) {
+    if (other instanceof AnyURI || other instanceof Str) {
       return stringValue().compareTo(other.stringValue());
     }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
@@ -128,16 +128,16 @@ public class AnyURI extends AbstractAtomic {
 
   @Override
   public String stringValue() {
-    return (uri != null) ? uri.toString() : "";
+    return uri != null ? uri.toString() : "";
   }
 
   public boolean isAbsolute() {
-    return ((uri != null) && (uri.isAbsolute()));
+    return uri != null && uri.isAbsolute();
   }
 
   @Override
   public int hashCode() {
-    return (uri != null) ? uri.hashCode() : 0;
+    return uri != null ? uri.hashCode() : 0;
   }
 
   public AnyURI absolutize(AnyURI baseURI) throws QueryException {

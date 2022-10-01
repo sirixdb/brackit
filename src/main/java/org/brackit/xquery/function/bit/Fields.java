@@ -64,6 +64,6 @@ public class Fields extends AbstractFunction {
   @Override
   public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
     Object r = (Object) args[0];
-    return (r == null) ? null : r.names();
+    return r == null ? null : r.names();
   }
 }

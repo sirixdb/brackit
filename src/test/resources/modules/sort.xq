@@ -6,8 +6,8 @@ declare function sort:qsort($values) {
     $values
   ) else (
     $pivot := $values[$len idiv 2];
-    $less := $values[. < $pivot];
-    $greater := $values[. > $pivot];
+    $less := $values[$$ < $pivot];
+    $greater := $values[$$ > $pivot];
     (sort:qsort($less), $pivot, sort:qsort($greater))
   )
 };

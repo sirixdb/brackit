@@ -67,7 +67,7 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
     if (type == baseType) {
       return value;
     }
-    if ((type.getPrimitiveBase() != baseType) && (type.instanceOf(baseType))) {
+    if (type.getPrimitiveBase() != baseType && type.instanceOf(baseType)) {
       throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
                                "Type '%s' is not a subtype of '%s",
                                type,
@@ -135,16 +135,16 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 
   protected final Numeric addInt(int a, int b) {
     int r = a + b;
-    if ((b >= 0) ? (r < a) : (r > a)) {
+    if (b >= 0 ? r < a : r > a) {
       // overflow escalate to long
       return new Int64((long) a + (long) b);
     }
-    return ((0 <= r) && (r <= 20)) ? Int32.ZERO_TWO_TWENTY[r] : new Int32(r);
+    return 0 <= r && r <= 20 ? Int32.ZERO_TWO_TWENTY[r] : new Int32(r);
   }
 
   protected final Numeric addLong(long a, long b) {
     long r = a + b;
-    if ((b >= 0) ? (r < a) : (r > a)) {
+    if (b >= 0 ? r < a : r > a) {
       // overflow escalate to BigDecimal
       new Int(new BigDecimal(a).add(new BigDecimal(b)));
     }
@@ -152,7 +152,7 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
   }
 
   protected final Numeric addBigDecimal(BigDecimal a, BigDecimal b, boolean isDecimal) {
-    return (isDecimal) ? new Dec(a.add(b)) : new Int(a.add(b));
+    return isDecimal ? new Dec(a.add(b)) : new Int(a.add(b));
   }
 
   protected final Numeric subtractDouble(double a, double b) {
@@ -165,7 +165,7 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 
   protected final Numeric subtractInt(int a, int b) {
     int r = a - b;
-    if ((b >= 0) ? (r >= a) : (r <= a)) {
+    if (b >= 0 ? r >= a : r <= a) {
       // overflow escalate to long
       return new Int64((long) a - (long) b);
     }
@@ -174,7 +174,7 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 
   protected final Numeric subtractLong(long a, long b) {
     long r = a - b;
-    if ((b >= 0) ? (r >= a) : (r <= a)) {
+    if (b >= 0 ? r >= a : r <= a) {
       // overflow escalate to BigDecimal
       new Int(new BigDecimal(a).subtract(new BigDecimal(b)));
     }
@@ -182,7 +182,7 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
   }
 
   protected final Numeric subtractBigDecimal(BigDecimal a, BigDecimal b, boolean isDecimal) {
-    return (isDecimal) ? new Dec(a.subtract(b)) : new Int(a.subtract(b));
+    return isDecimal ? new Dec(a.subtract(b)) : new Int(a.subtract(b));
   }
 
   protected final Numeric multiplyDouble(double a, double b) {
@@ -195,7 +195,7 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 
   protected final Numeric multiplyInt(int a, int b) {
     int r = a * b;
-    if ((b != 0) && (r / b != a)) {
+    if (b != 0 && r / b != a) {
       // overflow escalate to long
       return new Int64((long) a * (long) b);
     }
@@ -204,7 +204,7 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 
   protected final Numeric multiplyLong(long a, long b) {
     long r = a * b;
-    if ((b != 0) && (r / b != a)) {
+    if (b != 0 && r / b != a) {
       // overflow escalate to BigDecimal
       new Int(new BigDecimal(a).multiply(new BigDecimal(b)));
     }
@@ -212,15 +212,15 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
   }
 
   protected final Numeric multiplyBigDecimal(BigDecimal a, BigDecimal b, boolean isDecimal) {
-    return (isDecimal) ? new Dec(a.multiply(b)) : new Int(a.multiply(b));
+    return isDecimal ? new Dec(a.multiply(b)) : new Int(a.multiply(b));
   }
 
   protected final Numeric divideDouble(double a, double b) {
     if (b == 0) {
-      return (a < 0) ? Dbl.NINF : (a == 0) ? Dbl.NaN : Dbl.PINF;
+      return a < 0 ? Dbl.NINF : a == 0 ? Dbl.NaN : Dbl.PINF;
     }
 
-    if (((Double.isInfinite(a))) && ((Double.isInfinite(b)))) {
+    if (Double.isInfinite(a) && Double.isInfinite(b)) {
       return Dbl.NaN;
     }
 
@@ -229,10 +229,10 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
 
   protected final Numeric divideFloat(float a, float b) {
     if (b == 0) {
-      return (a < 0) ? Flt.NINF : (a == 0) ? Flt.NaN : Flt.PINF;
+      return a < 0 ? Flt.NINF : a == 0 ? Flt.NaN : Flt.PINF;
     }
 
-    if ((Float.isInfinite(a)) && (Float.isInfinite(b))) {
+    if (Float.isInfinite(a) && Float.isInfinite(b)) {
       return Flt.NaN;
     }
 
@@ -264,34 +264,34 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
       throw new QueryException(ErrorCode.ERR_DIVISION_BY_ZERO);
     }
 
-    int scale = (isDecimal) ? a.scale() - b.scale() : INTEGER_DIV_SCALE;
+    int scale = isDecimal ? a.scale() - b.scale() : INTEGER_DIV_SCALE;
     return new Dec(a.divide(b, scale, RoundingMode.HALF_EVEN));
   }
 
   protected final Numeric idivideDouble(double a, double b) {
     if (b == 0) {
-      return (a < 0) ? Dbl.NINF : (a == 0) ? Dbl.NaN : Dbl.PINF;
+      return a < 0 ? Dbl.NINF : a == 0 ? Dbl.NaN : Dbl.PINF;
     }
 
-    if (((Double.isInfinite(a))) && ((Double.isInfinite(b)))) {
+    if (Double.isInfinite(a) && Double.isInfinite(b)) {
       return Dbl.NaN;
     }
 
     double r = Math.floor(a / b);
-    return (r < Integer.MAX_VALUE) ? new Int32((int) r) : (r < Long.MAX_VALUE) ? new Int64((long) r) : new Int(r);
+    return r < Integer.MAX_VALUE ? new Int32((int) r) : r < Long.MAX_VALUE ? new Int64((long) r) : new Int(r);
   }
 
   protected final Numeric idivideFloat(float a, float b) {
     if (b == 0) {
-      return (a < 0) ? Flt.NINF : (a == 0) ? Flt.NaN : Flt.PINF;
+      return a < 0 ? Flt.NINF : a == 0 ? Flt.NaN : Flt.PINF;
     }
 
-    if ((Float.isInfinite(a)) && (Float.isInfinite(b))) {
+    if (Float.isInfinite(a) && Float.isInfinite(b)) {
       return Flt.NaN;
     }
 
-    float r = (float) Math.floor((a / b));
-    return (r < Integer.MAX_VALUE) ? new Int32((int) r) : (r < Long.MAX_VALUE) ? new Int64((long) r) : new Int(r);
+    float r = (float) Math.floor(a / b);
+    return r < Integer.MAX_VALUE ? new Int32((int) r) : r < Long.MAX_VALUE ? new Int64((long) r) : new Int(r);
   }
 
   protected final Numeric idivideInt(int a, int b) throws QueryException {
@@ -352,19 +352,19 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
     if (len <= 1) {
       return s;
     }
-    while ((pos >= 0) && (s.charAt(pos) == '0')) {
+    while (pos >= 0 && s.charAt(pos) == '0') {
       pos--;
     }
-    if ((pos > 0) && (s.charAt(pos) == '.')) {
+    if (pos > 0 && s.charAt(pos) == '.') {
       pos--;
     }
-    return (pos == len) ? s : s.substring(0, pos + 1);
+    return pos == len ? s : s.substring(0, pos + 1);
   }
 
   @Override
   public final int hashCode() {
     // Use same hash code as in OpenJDK's java.lang.Double
     long bits = Double.doubleToLongBits(doubleValue());
-    return (int) (bits ^ (bits >>> 32));
+    return (int) (bits ^ bits >>> 32);
   }
 }

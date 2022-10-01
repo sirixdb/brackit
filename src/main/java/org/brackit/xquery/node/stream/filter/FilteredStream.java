@@ -48,7 +48,7 @@ public class FilteredStream<E> implements Stream<E> {
   @Override
   public E next() throws DocumentException {
     E next;
-    while (((next = stream.next()) != null) && (filter.filter(next)))
+    while ((next = stream.next()) != null && filter.filter(next))
       ;
     return next;
   }

@@ -68,7 +68,7 @@ public abstract class ConcurrentSink implements Sink {
 
   @Override
   public final void begin() throws QueryException {
-    if ((!begin.get()) && (begin.compareAndSet(false, true))) {
+    if (!begin.get() && begin.compareAndSet(false, true)) {
       doBegin();
     }
   }

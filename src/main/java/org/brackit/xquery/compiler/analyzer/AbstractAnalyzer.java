@@ -86,10 +86,10 @@ public abstract class AbstractAnalyzer {
 
   ItemType itemType(AST itype) throws QueryException {
     ItemType type = kindTest(itype);
-    type = (type != null) ? type : anyKind(itype);
-    type = (type != null) ? type : functionTest(itype);
-    type = (type != null) ? type : atomicOrUnionType(itype);
-    type = (type != null) ? type : parenthesizedItemType(itype);
+    type = type != null ? type : anyKind(itype);
+    type = type != null ? type : functionTest(itype);
+    type = type != null ? type : atomicOrUnionType(itype);
+    type = type != null ? type : parenthesizedItemType(itype);
     return type;
   }
 
@@ -107,8 +107,8 @@ public abstract class AbstractAnalyzer {
       name = expand(name, DefaultNS.FUNCTION);
       annotationOrTest.getChild(0).setValue(name);
       String uri = name.getNamespaceURI();
-      if ((uri.equals(Namespaces.XML_NSURI)) || (uri.equals(Namespaces.XS_NSURI)) || (uri.equals(Namespaces.XSI_NSURI))
-          || (uri.equals(Namespaces.FN_NSURI)) || (uri.equals(Namespaces.FNMATH_NSURI))) {
+      if (uri.equals(Namespaces.XML_NSURI) || uri.equals(Namespaces.XS_NSURI) || uri.equals(Namespaces.XSI_NSURI)
+          || uri.equals(Namespaces.FN_NSURI) || uri.equals(Namespaces.FNMATH_NSURI)) {
         throw new QueryException(ErrorCode.ERR_FUNCTION_DECL_IN_ILLEGAL_NAMESPACE,
                                  "Function declaration %s is in illegal namespace: %s",
                                  name,
@@ -150,7 +150,7 @@ public abstract class AbstractAnalyzer {
   protected SequenceType singleType(AST type) throws QueryException {
     ItemType aouType = atomicOrUnionType(type.getChild(0));
     Cardinality card = Cardinality.One;
-    if ((type.getChildCount() >= 2) && (type.getChild(1).getType() == XQ.CardinalityZeroOrOne)) {
+    if (type.getChildCount() >= 2 && type.getChild(1).getType() == XQ.CardinalityZeroOrOne) {
       card = Cardinality.ZeroOrOne;
     }
     return new SequenceType(aouType, card);
@@ -158,19 +158,19 @@ public abstract class AbstractAnalyzer {
 
   protected ItemType kindTest(AST kindTest) throws QueryException {
     ItemType test = documentTest(kindTest);
-    test = (test != null) ? test : elementTest(kindTest);
-    test = (test != null) ? test : attributeTest(kindTest);
-    test = (test != null) ? test : schemaElementTest(kindTest);
-    test = (test != null) ? test : schemaAttributeTest(kindTest);
-    test = (test != null) ? test : piTest(kindTest);
-    test = (test != null) ? test : commentTest(kindTest);
-    test = (test != null) ? test : textTest(kindTest);
-    test = (test != null) ? test : namespaceNodeTest(kindTest);
-    test = (test != null) ? test : structuredItemTest(kindTest);
-    test = (test != null) ? test : jsonItemTest(kindTest);
-    test = (test != null) ? test : objectTest(kindTest);
-    test = (test != null) ? test : arrayTest(kindTest);
-    test = (test != null) ? test : anyKindTest(kindTest);
+    test = test != null ? test : elementTest(kindTest);
+    test = test != null ? test : attributeTest(kindTest);
+    test = test != null ? test : schemaElementTest(kindTest);
+    test = test != null ? test : schemaAttributeTest(kindTest);
+    test = test != null ? test : piTest(kindTest);
+    test = test != null ? test : commentTest(kindTest);
+    test = test != null ? test : textTest(kindTest);
+    test = test != null ? test : namespaceNodeTest(kindTest);
+    test = test != null ? test : structuredItemTest(kindTest);
+    test = test != null ? test : jsonItemTest(kindTest);
+    test = test != null ? test : objectTest(kindTest);
+    test = test != null ? test : arrayTest(kindTest);
+    test = test != null ? test : anyKindTest(kindTest);
     return test;
   }
 
@@ -183,7 +183,7 @@ public abstract class AbstractAnalyzer {
     }
     AST child = kindTest.getChild(0);
     ElementType test = elementTest(child);
-    test = (test != null) ? test : schemaElementTest(child);
+    test = test != null ? test : schemaElementTest(child);
     return new DocumentType(test);
   }
 
@@ -372,7 +372,7 @@ public abstract class AbstractAnalyzer {
       }
     } else if (mode == DefaultNS.PRAGMA) {
       // pragmas aren't resolved to the empty default namespace
-      if ((prefix.isEmpty()) && (!name.getNamespaceURI().isEmpty())) {
+      if (prefix.isEmpty() && !name.getNamespaceURI().isEmpty()) {
         return name;
       } else if ((uri = ns.resolve(prefix)) != null) {
         return new QNm(uri, prefix, name.getLocalName());

@@ -46,7 +46,7 @@ public final class ExprUtil {
   }
 
   public final static Item asItem(Sequence res) throws QueryException {
-    if ((res == null) || (res instanceof Item)) {
+    if (res == null || res instanceof Item) {
       return (Item) res;
     }
     Iter s = res.iterate();
@@ -67,7 +67,7 @@ public final class ExprUtil {
   public static Sequence materialize(Sequence res) throws QueryException {
     // TODO
     // how to decide cleverly if we should materialize or not???
-    if ((res == null) || (res instanceof Item)) {
+    if (res == null || res instanceof Item) {
       return res;
     }
     final var it = res.iterate();

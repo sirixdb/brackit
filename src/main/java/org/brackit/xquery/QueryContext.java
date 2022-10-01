@@ -10,6 +10,7 @@ import org.brackit.xquery.update.UpdateList;
 import org.brackit.xquery.update.op.UpdateOp;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.json.JsonCollection;
 import org.brackit.xquery.xdm.json.JsonStore;
 import org.brackit.xquery.xdm.node.Node;
 import org.brackit.xquery.xdm.node.NodeCollection;
@@ -48,9 +49,13 @@ public interface QueryContext {
 
   void setDefaultDocument(Node<?> defaultDocument);
 
-  NodeCollection<?> getDefaultCollection();
+  NodeCollection<?> getDefaultNodeCollection();
 
-  void setDefaultCollection(NodeCollection<?> defaultCollection);
+  JsonCollection<?> getDefaultJsonCollection();
+
+  void setDefaultNodeCollection(NodeCollection<?> defaultNodeCollection);
+
+  void setDefaultJsonCollection(JsonCollection<?> defaultJsonCollection);
 
   DateTime getDateTime();
 

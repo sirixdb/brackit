@@ -196,7 +196,7 @@ public final class ArrayObject extends AbstractObject {
   @Override
   public IntNumeric length() {
     int length = vals.size();
-    return (length <= 20) ? Int32.ZERO_TWO_TWENTY[length] : new Int32(length);
+    return length <= 20 ? Int32.ZERO_TWO_TWENTY[length] : new Int32(length);
   }
 
   @Override

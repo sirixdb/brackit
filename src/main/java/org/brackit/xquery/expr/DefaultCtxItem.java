@@ -85,7 +85,7 @@ public class DefaultCtxItem extends Variable implements Unit {
     if (external) {
       i = ctx.getContextItem();
     }
-    if ((i == null) && (expr != null)) {
+    if (i == null && expr != null) {
       i = expr.evaluateToItem(ctx, tuple);
     }
     if (i == null) {

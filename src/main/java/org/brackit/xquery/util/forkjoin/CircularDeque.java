@@ -95,7 +95,7 @@ public class CircularDeque<E> implements Deque<E> {
     CircularArray<E> a = this.activeArray;
     Object[] tmp = new Object[(int) a.size()];
     int len = 0;
-    for (E x; ((x = poll()) != null); ) {
+    for (E x; (x = poll()) != null; ) {
       tmp[len++] = x;
     }
     push(o);

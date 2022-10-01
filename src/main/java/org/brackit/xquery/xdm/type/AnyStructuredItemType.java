@@ -19,6 +19,6 @@ public final class AnyStructuredItemType extends StructuredItemType {
 
   @Override
   public boolean equals(Object obj) {
-    return ((obj == this) || (obj instanceof StructuredItemType));
+    return obj == this || obj instanceof StructuredItemType;
   }
 }

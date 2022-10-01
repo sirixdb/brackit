@@ -127,7 +127,7 @@ public class Dbl extends AbstractNumeric implements DblNumeric {
     }
     long i = (long) v;
     double f = v - i;
-    return (f == 0.0) ? new Int64(i) : null;
+    return f == 0.0 ? new Int64(i) : null;
   }
 
   @Override
@@ -137,7 +137,7 @@ public class Dbl extends AbstractNumeric implements DblNumeric {
 
   @Override
   public boolean booleanValue() throws QueryException {
-    return ((v != 0) && (!Double.isNaN(v)) && (!Double.isInfinite(v)));
+    return v != 0 && !Double.isNaN(v) && !Double.isInfinite(v);
   }
 
   @Override
@@ -163,10 +163,10 @@ public class Dbl extends AbstractNumeric implements DblNumeric {
     if (Double.isNaN(v))
       return "NaN";
     if (Double.isInfinite(v))
-      return (v > 0) ? "INF" : "-INF";
+      return v > 0 ? "INF" : "-INF";
     if (v == 0)
-      return (1 / v == 1 / 0.0) ? "0" : "-0";
-    return killTrailingZeros(((v > 0) && (v >= 1e-6) && (v < 1e6) || (-v >= 1e-6) && (-v < 1e6))
+      return 1 / v == 1 / 0.0 ? "0" : "-0";
+    return killTrailingZeros(v > 0 && v >= 1e-6 && v < 1e6 || -v >= 1e-6 && -v < 1e6
                                  ? DD.format(v)
                                  : SD.format(v));
   }
@@ -238,27 +238,27 @@ public class Dbl extends AbstractNumeric implements DblNumeric {
 
   @Override
   public Numeric round() throws QueryException {
-    return ((Double.isInfinite(v)) || (v == 0) || (Double.isNaN(v))) ? this : new Dbl(Math.round(v));
+    return Double.isInfinite(v) || v == 0 || Double.isNaN(v) ? this : new Dbl(Math.round(v));
   }
 
   @Override
   public Numeric abs() throws QueryException {
-    return ((v >= 0) || (Double.isNaN(v))) ? this : new Dbl(Math.abs(v));
+    return v >= 0 || Double.isNaN(v) ? this : new Dbl(Math.abs(v));
   }
 
   @Override
   public Numeric ceiling() throws QueryException {
-    return ((Double.isInfinite(v)) || (v == 0) || (Double.isNaN(v))) ? this : new Dbl(Math.ceil(v));
+    return Double.isInfinite(v) || v == 0 || Double.isNaN(v) ? this : new Dbl(Math.ceil(v));
   }
 
   @Override
   public Numeric floor() throws QueryException {
-    return ((Double.isInfinite(v)) || (v == 0) || (Double.isNaN(v))) ? this : new Dbl(Math.floor(v));
+    return Double.isInfinite(v) || v == 0 || Double.isNaN(v) ? this : new Dbl(Math.floor(v));
   }
 
   @Override
   public Numeric roundHalfToEven(int precision) throws QueryException {
-    if ((Double.isInfinite(v)) || (v == 0) || (Double.isNaN(v))) {
+    if (Double.isInfinite(v) || v == 0 || Double.isNaN(v)) {
       return this;
     }
 

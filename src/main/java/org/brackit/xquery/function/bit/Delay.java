@@ -62,7 +62,7 @@ public class Delay extends AbstractFunction {
     long delay = ((IntNumeric) args[0]).longValue();
     long start = System.currentTimeMillis();
     Random rnd = new Random();
-    while ((rnd.nextInt(5) != 0) && (System.currentTimeMillis() - start < delay))
+    while (rnd.nextInt(5) != 0 && System.currentTimeMillis() - start < delay)
       ;
     return null;
   }

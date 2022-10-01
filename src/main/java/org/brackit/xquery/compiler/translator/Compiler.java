@@ -387,7 +387,7 @@ public class Compiler implements Translator {
   }
 
   protected Expr extensionExpr(AST node) throws QueryException {
-    return (node.getChildCount() == 2) ? anyExpr(node.getChild(1)) : new EmptyExpr();
+    return node.getChildCount() == 2 ? anyExpr(node.getChild(1)) : new EmptyExpr();
   }
 
   protected Expr unionExpr(AST node) throws QueryException {
@@ -413,8 +413,7 @@ public class Compiler implements Translator {
     AST type = node.getChild(1);
     AST aouType = type.getChild(0);
     Type targetType = resolveType((QNm) aouType.getChild(0).getValue(), true);
-    boolean allowEmptySequence =
-        ((type.getChildCount() == 2) && (type.getChild(1).getType() == XQ.CardinalityZeroOrOne));
+    boolean allowEmptySequence = type.getChildCount() == 2 && type.getChild(1).getType() == XQ.CardinalityZeroOrOne;
     StaticContext sctx = node.getStaticContext();
     return new Cast(sctx, expr, targetType, allowEmptySequence);
   }
@@ -424,8 +423,7 @@ public class Compiler implements Translator {
     AST type = node.getChild(1);
     AST aouType = type.getChild(0);
     Type targetType = resolveType((QNm) aouType.getChild(0).getValue(), true);
-    boolean allowEmptySequence =
-        ((type.getChildCount() == 2) && (type.getChild(1).getType() == XQ.CardinalityZeroOrOne));
+    boolean allowEmptySequence = type.getChildCount() == 2 && type.getChild(1).getType() == XQ.CardinalityZeroOrOne;
     StaticContext sctx = node.getStaticContext();
     return new Castable(sctx, expr, targetType, allowEmptySequence);
   }
@@ -445,15 +443,15 @@ public class Compiler implements Translator {
   protected Expr typeswitchExpr(AST node) throws QueryException {
     Expr operandExpr = expr(node.getChild(0), false);
     if (operandExpr.isUpdating()) {
-      throw (new QueryException(ErrorCode.ERR_UPDATE_ILLEGAL_NESTED_UPDATE,
-                                "Operand expression of typeswitch expression must not be updating."));
+      throw new QueryException(ErrorCode.ERR_UPDATE_ILLEGAL_NESTED_UPDATE,
+                               "Operand expression of typeswitch expression must not be updating.");
     }
 
     boolean updating = false;
     int vacOrUpdate = 0;
     int cases = node.getChildCount() - 2;
-    Expr[] caseExprs = (cases > 0 ? new Expr[cases] : null);
-    SequenceType[] caseTypes = (cases > 0 ? new SequenceType[cases] : null);
+    Expr[] caseExprs = cases > 0 ? new Expr[cases] : null;
+    SequenceType[] caseTypes = cases > 0 ? new SequenceType[cases] : null;
     boolean[] varRefs = new boolean[cases + 1];
 
     for (int i = 0; i < cases; i++) {
@@ -524,8 +522,8 @@ public class Compiler implements Translator {
     }
 
     if (updating && vacOrUpdate < cases + 1) {
-      throw (new QueryException(ErrorCode.ERR_UPDATE_ILLEGAL_NESTED_UPDATE,
-                                "One updating expression in a typeswitch case requires all branches to be updating or vacuous expressions."));
+      throw new QueryException(ErrorCode.ERR_UPDATE_ILLEGAL_NESTED_UPDATE,
+                               "One updating expression in a typeswitch case requires all branches to be updating or vacuous expressions.");
     }
 
     return new TypeswitchExpr(operandExpr,
@@ -587,10 +585,10 @@ public class Compiler implements Translator {
   }
 
   protected Expr replaceExpr(AST node) throws QueryException {
-    boolean replaceNode = (node.getType() == XQ.ReplaceNodeExpr);
+    boolean replaceNode = node.getType() == XQ.ReplaceNodeExpr;
     Expr targetExpr = expr(node.getChild(0), true);
     Expr sourceExpr = expr(node.getChild(1), true);
-    return (replaceNode) ? new ReplaceNode(sourceExpr, targetExpr) : new ReplaceValue(sourceExpr, targetExpr);
+    return replaceNode ? new ReplaceNode(sourceExpr, targetExpr) : new ReplaceValue(sourceExpr, targetExpr);
   }
 
   protected Expr renameExpr(AST node) throws QueryException {
@@ -618,8 +616,8 @@ public class Compiler implements Translator {
     Expr modifyExpr = expr(current, false);
 
     if (!modifyExpr.isUpdating() && !modifyExpr.isVacuous()) {
-      throw (new QueryException(ErrorCode.ERR_UPDATING_OR_VACUOUS_EXPR_REQUIRED,
-                                "Modify clause must not contain an expression that is non-updating and non-vacuous."));
+      throw new QueryException(ErrorCode.ERR_UPDATING_OR_VACUOUS_EXPR_REQUIRED,
+                               "Modify clause must not contain an expression that is non-updating and non-vacuous.");
     }
 
     Expr returnExpr = expr(node.getChild(++c), true);
@@ -637,7 +635,7 @@ public class Compiler implements Translator {
   protected Expr quantifiedExpr(AST node) throws QueryException {
     int pos = 0;
     AST child = node.getChild(pos++);
-    boolean someQuantified = (child.getType() == XQ.SomeQuantifier);
+    boolean someQuantified = child.getType() == XQ.SomeQuantifier;
     Expr bindingSequenceExpr = quantifiedBindings(new Start(), node, pos);
     Function function;
 
@@ -777,10 +775,10 @@ public class Compiler implements Translator {
 
     for (int i = 0; i < node.getChildCount(); i++) {
       AST child = node.getChild(i);
-      if ((child.getType() == XQ.Str)) {
-        merged = (merged == null) ? child.getStringValue() : merged + child.getStringValue();
+      if (child.getType() == XQ.Str) {
+        merged = merged == null ? child.getStringValue() : merged + child.getStringValue();
       } else {
-        if ((merged != null) && (!merged.isEmpty())) {
+        if (merged != null && !merged.isEmpty()) {
           subExprs[size++] = new Str(merged);
         }
         merged = null;
@@ -788,7 +786,7 @@ public class Compiler implements Translator {
       }
     }
 
-    if ((merged != null) && (!merged.isEmpty())) {
+    if (merged != null && !merged.isEmpty()) {
       subExprs[size++] = new Str(merged);
     }
 
@@ -797,7 +795,7 @@ public class Compiler implements Translator {
 
   protected Expr attributeExpr(AST node) throws QueryException {
     Expr nameExpr = expr(node.getChild(0), true);
-    Expr[] contentExpr = (node.getChildCount() > 1) ? contentSequence(node.getChild(1)) : new Expr[0];
+    Expr[] contentExpr = node.getChildCount() > 1 ? contentSequence(node.getChild(1)) : new Expr[0];
     StaticContext sctx = node.getStaticContext();
     return new AttributeExpr(sctx, nameExpr, contentExpr, appendOnly(node));
   }
@@ -814,7 +812,7 @@ public class Compiler implements Translator {
 
   protected Expr piExpr(AST node) throws QueryException {
     Expr nameExpr = expr(node.getChild(0), true);
-    Expr contentExpr = (node.getChildCount() > 1) ? expr(node.getChild(1), true) : new EmptyExpr();
+    Expr contentExpr = node.getChildCount() > 1 ? expr(node.getChild(1), true) : new EmptyExpr();
     return new PIExpr(nameExpr, contentExpr, appendOnly(node));
   }
 
@@ -828,7 +826,7 @@ public class Compiler implements Translator {
     }
 
     boolean parentIsConstructor =
-        (parent.getType() == XQ.CompElementConstructor) || (parent.getType() == XQ.CompDocumentConstructor);
+        parent.getType() == XQ.CompElementConstructor || parent.getType() == XQ.CompDocumentConstructor;
 
     if (parentIsConstructor) {
       table.resolve(Bits.FS_PARENT);
@@ -855,12 +853,12 @@ public class Compiler implements Translator {
     Expr elseExpr = expr(node.getChild(2), false);
 
     if (ifExpr.isUpdating()) {
-      if ((!elseExpr.isUpdating()) && (!elseExpr.isVacuous())) {
+      if (!elseExpr.isUpdating() && !elseExpr.isVacuous()) {
         throw new QueryException(ErrorCode.ERR_UPDATE_ILLEGAL_NESTED_UPDATE,
                                  "Single updating if branch is not allowed");
       }
     } else if (elseExpr.isUpdating()) {
-      if ((!ifExpr.isUpdating()) && (!ifExpr.isVacuous())) {
+      if (!ifExpr.isUpdating() && !ifExpr.isVacuous()) {
         throw new QueryException(ErrorCode.ERR_UPDATE_ILLEGAL_NESTED_UPDATE,
                                  "Single updating else branch is not allowed");
       }
@@ -958,7 +956,7 @@ public class Compiler implements Translator {
       boolean bindItem = itemBinding.isReferenced();
       boolean bindPos = posBinding.isReferenced();
       boolean bindSize = sizeBinding.isReferenced();
-      boolean lastStep = (i + 1 == node.getChildCount());
+      boolean lastStep = i + 1 == node.getChildCount();
       boolean skipDDO = step.checkProperty("skipDDO");
       boolean checkInput = step.checkProperty("checkInput");
       e1 = new PathStepExpr(e1, e2, bindItem, bindPos, bindSize, lastStep, skipDDO, checkInput);
@@ -1147,7 +1145,7 @@ public class Compiler implements Translator {
   }
 
   protected QNm qNameOrWildcard(AST name) throws QueryException {
-    return (name.getType() == XQ.Wildcard) ? null : (QNm) name.getValue();
+    return name.getType() == XQ.Wildcard ? null : (QNm) name.getValue();
   }
 
   protected NodeType nameTest(AST child, Axis axis) throws QueryException {
@@ -1160,9 +1158,9 @@ public class Compiler implements Translator {
           return new AttributeType(null);
         }
       case XQ.NSWildcardNameTest:
-        return new NSWildcardNameTest((axis == Axis.ATTRIBUTE) ? Kind.ATTRIBUTE : Kind.ELEMENT, name.getStringValue());
+        return new NSWildcardNameTest(axis == Axis.ATTRIBUTE ? Kind.ATTRIBUTE : Kind.ELEMENT, name.getStringValue());
       case XQ.NSNameWildcardTest:
-        return new NSNameWildcardTest((axis == Axis.ATTRIBUTE) ? Kind.ATTRIBUTE : Kind.ELEMENT,
+        return new NSNameWildcardTest(axis == Axis.ATTRIBUTE ? Kind.ATTRIBUTE : Kind.ELEMENT,
                                       ctx.getNamespaces().resolve(name.getStringValue()));
       default:
         if (axis != Axis.ATTRIBUTE) {
@@ -1188,7 +1186,7 @@ public class Compiler implements Translator {
       subExpr[i] = expr(node.getChild(i), false);
 
       if (subExpr[i].isUpdating()) {
-        if ((!allVacouousOrUpdating) && (i > 0)) {
+        if (!allVacouousOrUpdating && i > 0) {
           // check if all preceding expressions are vacuous
           for (int j = 0; j < i; j++) {
             if (!subExpr[j].isVacuous()) {
@@ -1278,10 +1276,10 @@ public class Compiler implements Translator {
       AST modifier = orderBy.getChild(i);
       if (modifier.getType() == XQ.OrderByKind) {
         AST direction = modifier.getChild(0);
-        asc = (direction.getType() == XQ.ASCENDING);
+        asc = direction.getType() == XQ.ASCENDING;
       } else if (modifier.getType() == XQ.OrderByEmptyMode) {
         AST empty = modifier.getChild(0);
-        emptyLeast = (empty.getType() == XQ.LEAST);
+        emptyLeast = empty.getType() == XQ.LEAST;
       } else if (modifier.getType() == XQ.Collation) {
         collation = modifier.getChild(0).getStringValue();
       }
@@ -1404,7 +1402,7 @@ public class Compiler implements Translator {
     final Expr sourceExpr = expr(posBindingOrSourceExpr, true);
 
     final Binding runVarBinding = table.bind(runVarName, runVarType);
-    final Binding posBinding = (posVarName != null) ? table.bind(posVarName, SequenceType.INTEGER) : null;
+    final Binding posBinding = posVarName != null ? table.bind(posVarName, SequenceType.INTEGER) : null;
     final ForBind forBind = new ForBind(in.operator, sourceExpr, false);
 
     return new ClauseBinding(in, forBind, runVarBinding, posBinding) {
@@ -1442,7 +1440,7 @@ public class Compiler implements Translator {
     Expr[] expr = new Expr[cnt];
     for (int i = 0; i < cnt; i++) {
       AST field = node.getChild(i);
-      flatten[i] = (field.getType() == XQ.FlattenedField);
+      flatten[i] = field.getType() == XQ.FlattenedField;
       expr[i] = expr(field.getChild(0), true);
     }
     return new ArrayExpr(expr, flatten);

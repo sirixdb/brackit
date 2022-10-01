@@ -55,7 +55,7 @@ public class AttributeExpr extends ConstructedNodeBuilder implements Expr {
     this.nameExpr = nameExpr;
     this.valueExpr = valueExpr;
     this.appendOnly = appendOnly;
-    this.name = (QNm) ((nameExpr instanceof QNm) ? nameExpr : null);
+    this.name = (QNm) (nameExpr instanceof QNm ? nameExpr : null);
   }
 
   @Override
@@ -66,13 +66,13 @@ public class AttributeExpr extends ConstructedNodeBuilder implements Expr {
   @Override
   public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
     // See XQuery 3.0 3.8.3.2 Computed Attribute Constructors
-    QNm name = (this.name != null) ? this.name : buildAttributeName(sctx, nameExpr.evaluateToItem(ctx, tuple));
+    QNm name = this.name != null ? this.name : buildAttributeName(sctx, nameExpr.evaluateToItem(ctx, tuple));
 
     if ("xmlns".equals(name.getPrefix())) {
       throw new QueryException(ErrorCode.ERR_ILLEGAL_NAME_OF_CONSTRUCTED_ATTRIBUTE,
                                "Attribute name prefix must not be \"xmlns\"");
     }
-    if ((name.getPrefix() == null) && ("xmlns".equals(name.getLocalName()))) {
+    if (name.getPrefix() == null && "xmlns".equals(name.getLocalName())) {
       throw new QueryException(ErrorCode.ERR_ILLEGAL_NAME_OF_CONSTRUCTED_ATTRIBUTE,
                                "Attribute name must not be \"xmlns\"");
     }

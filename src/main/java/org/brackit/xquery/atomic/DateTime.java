@@ -73,40 +73,40 @@ public class DateTime extends AbstractTimeInstant {
 
     // parse variable length year
     boolean negative = false;
-    if ((pos == length) || (charArray[pos] == '-')) {
+    if (pos == length || charArray[pos] == '-') {
       negative = true;
       pos++;
     }
 
     int start = pos;
-    while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+    while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
       pos++;
     int end = pos;
 
     if (end - start < 4) {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:dateTime", str);
-    } else if ((end - start > 4) && (negative)) {
+    } else if (end - start > 4 && negative) {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:dateTime", str);
     }
-    int v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1; // parse leading value
+    int v = start != end ? Integer.parseInt(str.substring(start, end)) : -1; // parse leading value
 
-    if ((v > Short.MAX_VALUE) || (v == 0)) {
+    if (v > Short.MAX_VALUE || v == 0) {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:dateTime", str);
     }
-    year = (negative) ? (short) -v : (short) v;
+    year = negative ? (short) -v : (short) v;
 
     // consume '-'
-    if ((pos >= length) || (charArray[pos++] != '-')) {
+    if (pos >= length || charArray[pos++] != '-') {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:dateTime", str);
     }
 
     // parse month
     start = pos;
-    while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+    while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
       pos++;
     end = pos;
-    v = (end - start == 2) ? Integer.parseInt(str.substring(start, end)) : -1;
-    if ((v < 1) || (v > 12)) {
+    v = end - start == 2 ? Integer.parseInt(str.substring(start, end)) : -1;
+    if (v < 1 || v > 12) {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
                                "Cannot cast '%s' to xs:dateTime: illegal month",
                                str);
@@ -114,17 +114,17 @@ public class DateTime extends AbstractTimeInstant {
     month = (byte) v;
 
     // consume '-'
-    if ((pos >= length) || (charArray[pos++] != '-')) {
+    if (pos >= length || charArray[pos++] != '-') {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:dateTime", str);
     }
 
     // parse day
     start = pos;
-    while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+    while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
       pos++;
     end = pos;
-    v = (end - start == 2) ? Integer.parseInt(str.substring(start, end)) : -1;
-    if ((v < 1) || (v > 31)) {
+    v = end - start == 2 ? Integer.parseInt(str.substring(start, end)) : -1;
+    if (v < 1 || v > 31) {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
                                "Cannot cast '%s' to xs:dateTime: illegal day",
                                str);
@@ -132,17 +132,17 @@ public class DateTime extends AbstractTimeInstant {
     day = (byte) v;
 
     // consume 'T'
-    if ((pos >= length) || (charArray[pos++] != 'T')) {
+    if (pos >= length || charArray[pos++] != 'T') {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:dateTime", str);
     }
 
     // parse hour
     start = pos;
-    while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+    while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
       pos++;
     end = pos;
-    v = (end - start == 2) ? Integer.parseInt(str.substring(start, end)) : -1;
-    if ((v < 0) || (v > 24)) // attention 24 is only allowed if the minutes
+    v = end - start == 2 ? Integer.parseInt(str.substring(start, end)) : -1;
+    if (v < 0 || v > 24) // attention 24 is only allowed if the minutes
     // are zero!
     {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
@@ -152,17 +152,17 @@ public class DateTime extends AbstractTimeInstant {
     hour = (byte) v;
 
     // consume ':'
-    if ((pos >= length) || (charArray[pos++] != ':')) {
+    if (pos >= length || charArray[pos++] != ':') {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:dateTime", str);
     }
 
     // parse hour
     start = pos;
-    while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+    while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
       pos++;
     end = pos;
-    v = (end - start == 2) ? Integer.parseInt(str.substring(start, end)) : -1;
-    if ((v < 0) || (v > 59)) {
+    v = end - start == 2 ? Integer.parseInt(str.substring(start, end)) : -1;
+    if (v < 0 || v > 59) {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
                                "Cannot cast '%s' to xs:dateTime: illegal minute",
                                str);
@@ -170,29 +170,29 @@ public class DateTime extends AbstractTimeInstant {
     minute = (byte) v;
 
     // consume ':'
-    if ((pos >= length) || (charArray[pos++] != ':')) {
+    if (pos >= length || charArray[pos++] != ':') {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:dateTime", str);
     }
 
     start = pos;
-    while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+    while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
       pos++;
     end = pos;
-    v = (end - start == 2) ? Integer.parseInt(str.substring(start, end)) : -1;
-    if ((v < 0) || (v > 59)) {
+    v = end - start == 2 ? Integer.parseInt(str.substring(start, end)) : -1;
+    if (v < 0 || v > 59) {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
                                "Cannot cast '%s' to xs:dateTime: illegal seconds",
                                str);
     }
     micros = v * 1000000;
 
-    if ((pos < length) && (charArray[pos] == '.')) {
+    if (pos < length && charArray[pos] == '.') {
       start = ++pos;
-      while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+      while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
         pos++;
       end = pos;
       int l = end - start;
-      v = (start != end) ? Integer.parseInt(str.substring(start, start + Math.min(l, 6))) : -1; // drop nano seconds
+      v = start != end ? Integer.parseInt(str.substring(start, start + Math.min(l, 6))) : -1; // drop nano seconds
 
       if (v == -1) {
         throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
@@ -260,10 +260,10 @@ public class DateTime extends AbstractTimeInstant {
     cal.add(Calendar.MINUTE, utcDiff);
     this.year = (short) cal.get(Calendar.YEAR);
     this.month = (byte) (cal.get(Calendar.MONTH) + 1);
-    this.day = (byte) (cal.get(Calendar.DAY_OF_MONTH));
-    this.hour = (byte) (cal.get(Calendar.HOUR_OF_DAY));
-    this.minute = (byte) (cal.get(Calendar.MINUTE));
-    this.micros = ((cal.get(Calendar.SECOND) * 1000) + cal.get(Calendar.MILLISECOND)) * 1000;
+    this.day = (byte) cal.get(Calendar.DAY_OF_MONTH);
+    this.hour = (byte) cal.get(Calendar.HOUR_OF_DAY);
+    this.minute = (byte) cal.get(Calendar.MINUTE);
+    this.micros = (cal.get(Calendar.SECOND) * 1000 + cal.get(Calendar.MILLISECOND)) * 1000;
     this.timezone = timezone;
   }
 
@@ -310,18 +310,18 @@ public class DateTime extends AbstractTimeInstant {
 
   @Override
   public String stringValue() {
-    String yTmp = (year < 0) ? "-" : "" + ((year < 10) ? "000" : (year < 100) ? "00" : (year < 1000) ? "0" : "") + year;
-    String mTmp = ((month < 10) ? "0" : "") + month;
-    String dTmp = ((day < 10) ? "0" : "") + day;
-    String hTmp = ((hour < 10) ? "0" : "") + hour;
-    String minTmp = ((minute < 10) ? "0" : "") + minute;
+    String yTmp = year < 0 ? "-" : "" + (year < 10 ? "000" : year < 100 ? "00" : year < 1000 ? "0" : "") + year;
+    String mTmp = (month < 10 ? "0" : "") + month;
+    String dTmp = (day < 10 ? "0" : "") + day;
+    String hTmp = (hour < 10 ? "0" : "") + hour;
+    String minTmp = (minute < 10 ? "0" : "") + minute;
     String tzTmp = timezoneString();
 
     int seconds = micros / 1000000;
-    int remainder = (micros - (seconds * 1000000));
-    String sTmp = ((seconds < 10) ? "0" : "") + String.valueOf(seconds);
+    int remainder = micros - seconds * 1000000;
+    String sTmp = (seconds < 10 ? "0" : "") + String.valueOf(seconds);
     if (remainder != 0) {
-      while ((remainder / 10) == 0)
+      while (remainder / 10 == 0)
         remainder /= 10; // cut trailing zeros
       sTmp += ":" + remainder;
     }

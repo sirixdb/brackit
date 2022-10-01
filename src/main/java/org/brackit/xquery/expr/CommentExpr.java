@@ -90,7 +90,7 @@ public class CommentExpr extends ConstructedNodeBuilder implements Expr {
 
     String content = buf.toString();
 
-    if ((content.contains("--")) || (content.endsWith("-"))) {
+    if (content.contains("--") || content.endsWith("-")) {
       throw new QueryException(ErrorCode.ERR_COMMENT_WOULD_CONTAIN_ILLEGAL_HYPHENS,
                                "Comment node contains illegal hyphens: '%s'",
                                content);

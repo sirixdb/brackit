@@ -209,10 +209,9 @@ public class TypedSequence extends LazySequence {
         throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Invalid empty-sequence()");
       }
       return null;
-    } else if (s instanceof Item) {
+    } else if (s instanceof Item item) {
       // short-circuit wrapping of single item parameter
       ItemType itemType = sType.getItemType();
-      Item item = (Item) s;
 
       if (!itemType.matches(item)) {
         throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,

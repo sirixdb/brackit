@@ -130,7 +130,7 @@ public class BlockingParallelizer implements Operator {
         } catch (InterruptedException e) {
         }
         long end = System.currentTimeMillis();
-        producerBlock += (end - start);
+        producerBlock += end - start;
         // enqueueRetries++;
       }
 
@@ -161,7 +161,7 @@ public class BlockingParallelizer implements Operator {
         long end = System.currentTimeMillis();
 
         // firstConsumerBlock.add(end - start);
-        consumerBlock += (end - start);
+        consumerBlock += end - start;
         // dequeueRetries++;
       }
 
@@ -185,7 +185,7 @@ public class BlockingParallelizer implements Operator {
 
     @Override
     public Tuple next(QueryContext ctx) throws QueryException {
-      if ((currentBuffer == null) || (pos == currentBuffer.length)) {
+      if (currentBuffer == null || pos == currentBuffer.length) {
         currentBuffer = dequeue();
         pos = 0;
       }

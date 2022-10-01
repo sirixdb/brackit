@@ -74,7 +74,7 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem imple
   @SuppressWarnings("unchecked")
   @Override
   public final int cmp(Node<?> other) {
-    if ((other) == this) {
+    if (other == this) {
       return 0;
     }
     int fragmentIDA = getNodeClassID();
@@ -117,7 +117,7 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem imple
 
   @Override
   public Str getStrValue() {
-    if ((getKind() == Kind.ELEMENT) || (getKind() == Kind.DOCUMENT)) {
+    if (getKind() == Kind.ELEMENT || getKind() == Kind.DOCUMENT) {
       final StringBuilder buffer = new StringBuilder();
       final Stream<? extends E> scanner = getDescendantOrSelf();
       try {
@@ -181,6 +181,6 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem imple
 
   @Override
   public final boolean equals(Object obj) {
-    return ((obj instanceof Node<?>) && (isSelfOf(((Node<?>) obj))));
+    return obj instanceof Node<?> && isSelfOf((Node<?>) obj);
   }
 }

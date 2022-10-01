@@ -61,11 +61,11 @@ public final class ArrayAccessExpr implements Expr {
     }
 
     if (sequence instanceof ItemSequence itemSequence) {
-      return getLazySequence(ctx, tuple, itemSequence.iterate());
+      return getLazySequence(ctx, tuple, itemSequence);
     }
 
     if (sequence instanceof LazySequence lazySequence) {
-      return getLazySequence(ctx, tuple, lazySequence.iterate());
+      return getLazySequence(ctx, tuple, lazySequence);
     }
 
     final var currItem = ExprUtil.asItem(sequence);
@@ -104,11 +104,12 @@ public final class ArrayAccessExpr implements Expr {
     return array.at(numericIndex);
   }
 
-  private LazySequence getLazySequence(final QueryContext ctx, final Tuple tuple, final Iter iter) {
+  private LazySequence getLazySequence(final QueryContext ctx, final Tuple tuple, final Sequence sequence) {
     return new LazySequence() {
       @Override
       public Iter iterate() {
         return new BaseIter() {
+          final Iter iter = sequence.iterate();
           Iter nestedIter;
 
           @Override

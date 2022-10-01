@@ -74,7 +74,7 @@ public class Binding {
       next = new Binding[2];
     }
     if (nextCount == next.length) {
-      next = Arrays.copyOf(next, ((next.length * 3) / 2 + 1));
+      next = Arrays.copyOf(next, next.length * 3 / 2 + 1);
     }
     next[nextCount++] = binding;
   }
@@ -84,7 +84,7 @@ public class Binding {
       refs = new Reference[2];
     }
     if (refCount == refs.length) {
-      refs = Arrays.copyOf(refs, ((refs.length * 3) / 2 + 1));
+      refs = Arrays.copyOf(refs, refs.length * 3 / 2 + 1);
     }
     refs[refCount++] = variable;
   }
@@ -120,7 +120,7 @@ public class Binding {
     out.print("(");
     out.print(refCount);
     out.print(" refs)");
-    indent += (11 + name.toString().length() + Integer.toString(refCount).length());
+    indent += 11 + name.toString().length() + Integer.toString(refCount).length();
     if (nextCount > 0) {
       next[0].dumpIndented(out, indent);
       for (int i = 1; i < nextCount; i++) {

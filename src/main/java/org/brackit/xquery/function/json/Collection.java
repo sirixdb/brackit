@@ -25,84 +25,48 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.util.join;
+package org.brackit.xquery.function.json;
 
-import java.util.Arrays;
+import org.brackit.xquery.ErrorCode;
+import org.brackit.xquery.QueryContext;
+import org.brackit.xquery.QueryException;
+import org.brackit.xquery.atomic.AnyURI;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.function.AbstractFunction;
+import org.brackit.xquery.module.StaticContext;
+import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.xdm.json.JsonCollection;
 
 /**
- * Array-based variant of a list. Faster than java.util.ArrayList for our
- * purposes, e.g., makes less error-checks.
- *
- * @author Sebastian Baechle
+ * @author Johannes Lichtenberger
  */
-public class FastList<E> {
-
-  public static final FastList<Object> EMPTY_LIST = new FastList<Object>(0);
-
-  private Object[] values;
-
-  private int size;
-
-  public FastList(int size) {
-    values = new Object[size];
+public final class Collection extends AbstractFunction {
+  public Collection(QNm name, Signature signature) {
+    super(name, signature, true);
   }
 
-  public FastList() {
-    values = new Object[10];
-  }
+  @Override
+  public Sequence execute(StaticContext sctx, final QueryContext ctx, Sequence[] args) throws QueryException {
+    String name = args.length > 0 ? ((Str) args[0]).stringValue() : null;
+    try {
+      JsonCollection<?> collection;
+      if (name == null || name.isEmpty()) {
+        collection = ctx.getDefaultJsonCollection();
 
-  @SuppressWarnings("unchecked")
-  public static <T> FastList<T> emptyList() {
-    return (FastList<T>) EMPTY_LIST;
-  }
+        if (collection == null) {
+          throw new QueryException(ErrorCode.ERR_COLLECTION_NOT_FOUND, "No default collection defined.");
+        }
 
-  public int getSize() {
-    return size;
-  }
-
-  @SuppressWarnings("unchecked")
-  public E get(int p) {
-    return (E) values[p];
-  }
-
-  public void addAll(E[] v, int off, int len) {
-    capacity(size + len);
-    System.arraycopy(v, off, values, size, len);
-    size = size + len;
-  }
-
-  public void addAllSafe(Object[] v, int off, int len) {
-    capacity(size + len);
-    System.arraycopy(v, off, values, size, len);
-    size = size + len;
-  }
-
-  private void capacity(int capacity) {
-    if (values.length < capacity) {
-      values = Arrays.copyOf(values, capacity);
+        return collection;
+      } else {
+        AnyURI uri = Doc.resolve(sctx, name);
+        return ctx.getJsonItemStore().lookup(uri.stringValue());
+      }
+    } catch (DocumentException e) {
+      throw new QueryException(e, ErrorCode.ERR_COLLECTION_NOT_FOUND, "Collection '%s' not found.", name);
     }
-  }
-
-  public void sort() {
-    Arrays.sort(values, 0, size);
-  }
-
-  public void add(E v) {
-    if (size == values.length) {
-      values = Arrays.copyOf(values, values.length * 3 / 2 + 1);
-    }
-    values[size++] = v;
-  }
-
-  public void addUnchecked(E v) {
-    values[size++] = v;
-  }
-
-  public boolean isEmpty() {
-    return size == 0;
-  }
-
-  public void ensureAdditional(int len) {
-    capacity(size + len);
   }
 }

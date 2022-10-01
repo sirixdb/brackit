@@ -157,7 +157,7 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
 
   @Override
   public boolean hasAttributes() throws DocumentException {
-    return (firstAttribute != null);
+    return firstAttribute != null;
   }
 
   @Override
@@ -190,7 +190,7 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
   public D2Node setAttribute(QNm name, Atomic value) throws DocumentException {
     checkName(name);
     if (firstAttribute == null) {
-      return (firstAttribute = new AttributeD2Node(this, name, value));
+      return firstAttribute = new AttributeD2Node(this, name, value);
     } else {
       D2Node prev = null;
       for (D2Node attribute = firstAttribute; attribute != null; attribute = attribute.sibling) {
@@ -199,7 +199,7 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
         }
         prev = attribute;
       }
-      return (prev.sibling = new AttributeD2Node(this, siblingAfter(prev.division), name, value));
+      return prev.sibling = new AttributeD2Node(this, siblingAfter(prev.division), name, value);
     }
   }
 
@@ -263,7 +263,7 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
         }
       }
       ParentD2Node p = n.parent;
-      if ((!(p instanceof ElementD2Node))) {
+      if (!(p instanceof ElementD2Node)) {
         break;
       }
       n = (ElementD2Node) p;

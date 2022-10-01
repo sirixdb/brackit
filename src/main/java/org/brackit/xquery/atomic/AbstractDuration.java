@@ -51,9 +51,9 @@ public abstract class AbstractDuration extends AbstractAtomic implements Duratio
   public final boolean eq(Atomic atomic) throws QueryException {
     if (atomic instanceof Duration) {
       Duration other = (Duration) atomic;
-      return ((isNegative() == other.isNegative()) && (getYears() == other.getYears()) && (getMonths()
-          == other.getMonths()) && (getDays() == other.getDays()) && (getHours() == other.getHours()) && (getMinutes()
-          == other.getMinutes()) && (getMicros() == other.getMicros()));
+      return isNegative() == other.isNegative() && getYears() == other.getYears() && getMonths()
+          == other.getMonths() && getDays() == other.getDays() && getHours() == other.getHours() && getMinutes()
+          == other.getMinutes() && getMicros() == other.getMicros();
     }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                              "Cannot compare '%s with '%s'",
@@ -67,7 +67,7 @@ public abstract class AbstractDuration extends AbstractAtomic implements Duratio
   public final String stringValue() {
     boolean fieldSet = false;
     boolean timeSet = false;
-    StringBuilder out = (!isNegative()) ? new StringBuilder("P") : new StringBuilder("-P");
+    StringBuilder out = !isNegative() ? new StringBuilder("P") : new StringBuilder("-P");
     short years = getYears();
     byte months = getMonths();
     short days = getDays();
@@ -115,7 +115,7 @@ public abstract class AbstractDuration extends AbstractAtomic implements Duratio
       }
       int seconds = micros / 1000000;
       out.append(seconds);
-      int remainder = (micros - (seconds * 1000000));
+      int remainder = micros - seconds * 1000000;
       if (remainder != 0) {
         out.append('.');
         out.append(remainder);

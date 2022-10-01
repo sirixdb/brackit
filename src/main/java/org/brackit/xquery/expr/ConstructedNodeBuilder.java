@@ -116,7 +116,7 @@ public abstract class ConstructedNodeBuilder {
         return contentNode;
       }
     } else {
-      if ((prevSibling != null) && (prevSibling.getKind() == Kind.TEXT)) {
+      if (prevSibling != null && prevSibling.getKind() == Kind.TEXT) {
         prevSibling.setValue(new Str(prevSibling.getValue().stringValue() + " " + ((Atomic) item).stringValue()));
         return prevSibling;
       } else {
@@ -185,7 +185,7 @@ public abstract class ConstructedNodeBuilder {
 
     if (nameType.instanceOf(Type.QNM)) {
       return (QNm) name;
-    } else if ((nameType.instanceOf(Type.STR)) || (nameType.instanceOf(Type.UNA))) {
+    } else if (nameType.instanceOf(Type.STR) || nameType.instanceOf(Type.UNA)) {
       QNm qnm = new QNm(atomicName.stringValue());
       if (qnm.getPrefix() != null && !qnm.getPrefix().isEmpty()) {
         String uri = ctx.getNamespaces().resolve(qnm.getPrefix());
@@ -197,7 +197,7 @@ public abstract class ConstructedNodeBuilder {
         return new QNm(uri, null, qnm.getLocalName());
       } else {
         String uri = ctx.getNamespaces().getDefaultElementNamespace();
-        if ((uri == null) || (uri.isEmpty())) {
+        if (uri == null || uri.isEmpty()) {
           return qnm;
         } else {
           return new QNm(uri, null, qnm.getLocalName());
@@ -218,7 +218,7 @@ public abstract class ConstructedNodeBuilder {
 
     if (nameType.instanceOf(Type.QNM)) {
       return (QNm) name;
-    } else if ((nameType.instanceOf(Type.STR)) || (nameType.instanceOf(Type.UNA))) {
+    } else if (nameType.instanceOf(Type.STR) || nameType.instanceOf(Type.UNA)) {
       QNm qnm = new QNm(atomicName.stringValue());
       if (!qnm.getPrefix().isEmpty()) {
         String uri = ctx.getNamespaces().resolve(qnm.getPrefix());
@@ -230,7 +230,7 @@ public abstract class ConstructedNodeBuilder {
         return new QNm(uri, null, qnm.getLocalName());
       } else {
         String uri = ctx.getNamespaces().getDefaultElementNamespace();
-        if ((uri == null) || (uri.isEmpty())) {
+        if (uri == null || uri.isEmpty()) {
           return qnm;
         } else {
           return new QNm(uri, null, qnm.getLocalName());
@@ -253,7 +253,7 @@ public abstract class ConstructedNodeBuilder {
 
     if (type == Type.NCN) {
       target = new QNm(atomic.stringValue());
-    } else if ((type == Type.STR) || (type == Type.UNA)) {
+    } else if (type == Type.STR || type == Type.UNA) {
       String ncname = atomic.stringValue();
       ncname = Whitespace.normalizeXML11(ncname);
       ncname = Whitespace.collapse(ncname);

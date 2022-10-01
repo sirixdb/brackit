@@ -132,7 +132,7 @@ public class Cast implements Expr {
     }
     Type source = atomic.type();
 
-    if ((source == target) || (target == Type.ANA)) {
+    if (source == target || target == Type.ANA) {
       // identity cast
       // (diagonal in casting matrix)
       return atomic;
@@ -160,7 +160,7 @@ public class Cast implements Expr {
       // See XQuery 1.0: 17.5 Casting across the type hierarchy
       Atomic temp = toPrimitive(sctx, atomic, source, sourceBase);
 
-      if ((sourceBase == Type.STR) || (sourceBase == Type.UNA)) {
+      if (sourceBase == Type.STR || sourceBase == Type.UNA) {
         // TODO check upcasted atomic
         // against the pattern facets of target
       }
@@ -297,14 +297,14 @@ public class Cast implements Expr {
           return new QNm(uri, null, qnm.getLocalName());
         } else {
           String uri = sctx.getNamespaces().getDefaultElementNamespace();
-          if ((uri == null) || (uri.isEmpty())) {
+          if (uri == null || uri.isEmpty()) {
             return qnm;
           } else {
             return new QNm(uri, null, qnm.getLocalName());
           }
         }
       }
-    } else if ((target == Type.NOT) || (target == Type.ANA)) {
+    } else if (target == Type.NOT || target == Type.ANA) {
       throw new QueryException(ErrorCode.ERR_ILLEGAL_CAST_TARGET_TYPE, "Cast to %s is not allowed", target);
     } else {
       throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
@@ -314,10 +314,10 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToGDay(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       return new GDay(atomic.stringValue());
     }
-    if ((source == Type.DATI) || (source == Type.DATE)) {
+    if (source == Type.DATI || source == Type.DATE) {
       TimeInstant ti = (TimeInstant) atomic;
       return new GDay(ti.getDay(), ti.getTimezone());
     }
@@ -328,10 +328,10 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToGMD(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       return new GMD(atomic.stringValue());
     }
-    if ((source == Type.DATI) || (source == Type.DATE)) {
+    if (source == Type.DATI || source == Type.DATE) {
       TimeInstant ti = (TimeInstant) atomic;
       return new GMD(ti.getMonth(), ti.getDay(), ti.getTimezone());
     }
@@ -342,10 +342,10 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToGMon(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       return new GMon(atomic.stringValue());
     }
-    if ((source == Type.DATI) || (source == Type.DATE)) {
+    if (source == Type.DATI || source == Type.DATE) {
       TimeInstant ti = (TimeInstant) atomic;
       return new GMon(ti.getMonth(), ti.getTimezone());
     }
@@ -356,10 +356,10 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToGYM(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       return new GYM(atomic.stringValue());
     }
-    if ((source == Type.DATI) || (source == Type.DATE)) {
+    if (source == Type.DATI || source == Type.DATE) {
       TimeInstant ti = (TimeInstant) atomic;
       return new GYM(ti.getYear(), ti.getMonth(), ti.getTimezone());
     }
@@ -370,10 +370,10 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToGYE(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       return new GYE(atomic.stringValue());
     }
-    if ((source == Type.DATI) || (source == Type.DATE)) {
+    if (source == Type.DATI || source == Type.DATE) {
       TimeInstant ti = (TimeInstant) atomic;
       return new GYE(ti.getYear(), ti.getTimezone());
     }
@@ -384,7 +384,7 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToDateTime(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       return new DateTime(atomic.stringValue());
     }
     if (source == Type.DATE) {
@@ -398,7 +398,7 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToDate(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       return new Date(atomic.stringValue());
     }
     if (source == Type.DATI) {
@@ -412,7 +412,7 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToTime(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       return new Time(atomic.stringValue());
     }
     if (source == Type.DATI) {
@@ -426,7 +426,7 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToDur(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       return new Dur(atomic.stringValue());
     } else if (source == Type.YMD) {
       YMD ymd = (YMD) atomic;
@@ -448,7 +448,7 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToYMDur(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       return new YMD(atomic.stringValue());
     } else if (source == Type.DUR) {
       Dur dur = (Dur) atomic;
@@ -464,7 +464,7 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToDTDur(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       return new DTD(atomic.stringValue());
     }
     if (source == Type.DUR) {
@@ -481,7 +481,7 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToDbl(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR) || (source == Type.DEC) || (source == Type.INR)) {
+    if (source == Type.UNA || source == Type.STR || source == Type.DEC || source == Type.INR) {
       return Dbl.parse(atomic.stringValue());
     }
     if (source == Type.FLO) {
@@ -497,7 +497,7 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToFlt(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR) || (source == Type.DEC) || (source == Type.INR)) {
+    if (source == Type.UNA || source == Type.STR || source == Type.DEC || source == Type.INR) {
       return Flt.parse(atomic.stringValue());
     }
     if (source == Type.DBL) {
@@ -513,19 +513,19 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToDec(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       return new Dec(atomic.stringValue());
     }
     if (source == Type.DBL) {
       double dv = ((Numeric) atomic).doubleValue();
-      if ((Double.isNaN(dv)) || (Double.isInfinite(dv))) {
+      if (Double.isNaN(dv) || Double.isInfinite(dv)) {
         throw new QueryException(ErrorCode.ERR_INVALID_LEXICAL_VALUE);
       }
       return new Dec(new BigDecimal(dv));
     }
     if (source == Type.FLO) {
       float fv = ((Numeric) atomic).floatValue();
-      if ((Float.isNaN(fv)) || (Float.isInfinite(fv))) {
+      if (Float.isNaN(fv) || Float.isInfinite(fv)) {
         throw new QueryException(ErrorCode.ERR_INVALID_LEXICAL_VALUE);
       }
       return new Dec(new BigDecimal(fv));
@@ -543,12 +543,12 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToInt(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       return Int32.parse(atomic.stringValue());
     }
-    if ((source == Type.DBL) || (source == Type.FLO)) {
+    if (source == Type.DBL || source == Type.FLO) {
       double d = ((Numeric) atomic).doubleValue();
-      if ((Double.isNaN(d)) || (Double.isInfinite(d))) {
+      if (Double.isNaN(d) || Double.isInfinite(d)) {
         throw new QueryException(ErrorCode.ERR_INVALID_LEXICAL_VALUE);
       }
       return asInteger(d);
@@ -557,7 +557,7 @@ public class Cast implements Expr {
       return asInt(((Numeric) atomic).decimalValue());
     }
     if (source == Type.BOOL) {
-      return (((Bool) atomic).bool) ? Int32.ONE : Int32.ZERO;
+      return ((Bool) atomic).bool ? Int32.ONE : Int32.ZERO;
     }
     if (source == target) {
       return atomic;
@@ -566,11 +566,11 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToBool(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       String s = Whitespace.collapseTrimOnly(atomic.stringValue());
-      if (("true".equals(s)) || ("1".equals(s))) {
+      if ("true".equals(s) || "1".equals(s)) {
         return Bool.TRUE;
-      } else if (("false".equals(s)) || ("0".equals(s))) {
+      } else if ("false".equals(s) || "0".equals(s)) {
         return Bool.FALSE;
       } else {
         throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Illegal cast from %s to %s", source, target);
@@ -578,7 +578,7 @@ public class Cast implements Expr {
     }
     if (source.isNumeric()) {
       double d = ((Numeric) atomic).doubleValue();
-      return new Bool(((d == Double.NaN) || (d == 0)) ? false : true);
+      return new Bool(d == Double.NaN || d == 0 ? false : true);
     }
     if (source == target) {
       return atomic;
@@ -587,7 +587,7 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToAnyURI(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       return new AnyURI(atomic.stringValue());
     }
     if (source == target) {
@@ -598,7 +598,7 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToHex(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       return new Hex(atomic.stringValue());
     }
     if (source == Type.B64) {
@@ -612,7 +612,7 @@ public class Cast implements Expr {
   }
 
   private static Atomic primitiveToB64(Atomic atomic, Type source, Type target) {
-    if ((source == Type.UNA) || (source == Type.STR)) {
+    if (source == Type.UNA || source == Type.STR) {
       return new B64(atomic.stringValue());
     }
     if (source == Type.HEX) {
@@ -629,9 +629,9 @@ public class Cast implements Expr {
     if (d.scale() != 0) {
       d = d.setScale(0, RoundingMode.DOWN);
     }
-    if ((d.compareTo(Int32.MAX_VALUE_AS_DECIMAL) <= 0) && (d.compareTo(Int32.MIN_VALUE_AS_DECIMAL) >= 0)) {
+    if (d.compareTo(Int32.MAX_VALUE_AS_DECIMAL) <= 0 && d.compareTo(Int32.MIN_VALUE_AS_DECIMAL) >= 0) {
       return new Int32(d.intValue());
-    } else if ((d.compareTo(Int64.MAX_VALUE_AS_DECIMAL) <= 0) && (d.compareTo(Int64.MIN_VALUE_AS_DECIMAL) >= 0)) {
+    } else if (d.compareTo(Int64.MAX_VALUE_AS_DECIMAL) <= 0 && d.compareTo(Int64.MIN_VALUE_AS_DECIMAL) >= 0) {
       return new Int64(d.longValue());
     } else {
       return new Int(d);
@@ -639,13 +639,13 @@ public class Cast implements Expr {
   }
 
   public static IntNumeric asInteger(double d) {
-    if ((d == Double.NaN) || (d == Double.POSITIVE_INFINITY) || (d == Double.NEGATIVE_INFINITY)) {
+    if (d == Double.NaN || d == Double.POSITIVE_INFINITY || d == Double.NEGATIVE_INFINITY) {
       throw new QueryException(ErrorCode.ERR_INVALID_LEXICAL_VALUE);
     }
-    if ((d <= Integer.MAX_VALUE) && (d >= Integer.MIN_VALUE)) {
+    if (d <= Integer.MAX_VALUE && d >= Integer.MIN_VALUE) {
       return new Int32((int) d);
     }
-    if ((d <= Long.MAX_VALUE) || (d >= Long.MIN_VALUE)) {
+    if (d <= Long.MAX_VALUE || d >= Long.MIN_VALUE) {
       return new Int64((long) d);
     }
     return new Int(d);
@@ -653,7 +653,7 @@ public class Cast implements Expr {
 
   @Override
   public boolean isUpdating() {
-    return (expr.isUpdating());
+    return expr.isUpdating();
   }
 
   @Override

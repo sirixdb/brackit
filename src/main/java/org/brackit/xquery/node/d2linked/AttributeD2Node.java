@@ -58,7 +58,7 @@ public final class AttributeD2Node extends D2Node {
   }
 
   private QNm checkName(QNm name) throws DocumentException {
-    if ((name.getPrefix() == null) || (parent == null)) {
+    if (name.getPrefix() == null || parent == null) {
       return name;
     }
     return ((ElementD2Node) parent).checkName(name);
@@ -94,7 +94,7 @@ public final class AttributeD2Node extends D2Node {
 
   @Override
   public boolean isAttributeOf(Node<?> node) {
-    return ((parent != null) && (parent == node));
+    return parent != null && parent == node;
   }
 
   @Override
@@ -106,7 +106,7 @@ public final class AttributeD2Node extends D2Node {
   public boolean isDescendantOrSelfOf(Node<?> node) {
     // check only for self
     // TODO: fix for sun's compiler bug using generics parent == node
-    return (((this == node)));
+    return this == node;
   }
 
   @Override

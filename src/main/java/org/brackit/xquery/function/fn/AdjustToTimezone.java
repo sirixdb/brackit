@@ -74,7 +74,7 @@ public class AdjustToTimezone extends AbstractFunction {
     if (args.length > 1) {
       timezone = (DTD) args[1];
       if (timezone != null && (timezone.getMinutes() != 0 || timezone.getDays() != 0 || timezone.getHours() > 14)) {
-        throw (new QueryException(ErrorCode.ERR_INVALID_TIMEZONE, "Invalid value for timezone."));
+        throw new QueryException(ErrorCode.ERR_INVALID_TIMEZONE, "Invalid value for timezone.");
       }
     } else {
       timezone = ctx.getImplicitTimezone();

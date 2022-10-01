@@ -30,7 +30,10 @@ package org.brackit.xquery.function.json;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.module.Functions;
 import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.type.*;
+import org.brackit.xquery.xdm.type.AnyJsonItemType;
+import org.brackit.xquery.xdm.type.AtomicType;
+import org.brackit.xquery.xdm.type.Cardinality;
+import org.brackit.xquery.xdm.type.SequenceType;
 
 /**
  * @author Sebastian Baechle
@@ -52,13 +55,19 @@ public class JSONFun {
                   new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne)));
   public static final Doc DOC_FUNC_2 = new Doc(new QNm(JSONFun.JSON_NSURI, JSONFun.JSON_PREFIX, "doc"),
           true,
-          new Signature(new SequenceType(DocumentType.DOC, Cardinality.ZeroOrOne),
+          new Signature(new SequenceType(AnyJsonItemType.ANY_JSON_ITEM, Cardinality.ZeroOrOne),
                   new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
                   new SequenceType(AtomicType.INT, Cardinality.ZeroOrOne)));
   public static final Doc DOC_AVAILABLE_FUNC = new Doc(new QNm(JSONFun.JSON_NSURI, JSONFun.JSON_PREFIX, "doc-available"),
           false,
           new Signature(new SequenceType(AtomicType.BOOL, Cardinality.One),
                   new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne)));
+
+  public static final Collection COLLECTION_FUNC = new Collection(new QNm(JSONFun.JSON_NSURI, JSONFun.JSON_PREFIX, "collection"),
+                             new Signature(new SequenceType(AnyJsonItemType.ANY_JSON_ITEM, Cardinality.ZeroOrMany)));
+  public static final Collection COLLECTION_FUNC_2 = new Collection(new QNm(JSONFun.JSON_NSURI, JSONFun.JSON_PREFIX, "collection"),
+                             new Signature(new SequenceType(AnyJsonItemType.ANY_JSON_ITEM, Cardinality.ZeroOrMany),
+                                           new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne)));
 
   public static void register() {
       // dummy function to cause static block
@@ -70,5 +79,7 @@ public class JSONFun {
     Functions.predefine(DOC_FUNC);
     Functions.predefine(DOC_FUNC_2);
     Functions.predefine(DOC_AVAILABLE_FUNC);
+    Functions.predefine(COLLECTION_FUNC);
+    Functions.predefine(COLLECTION_FUNC_2);
   }
 }

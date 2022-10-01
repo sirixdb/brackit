@@ -46,12 +46,12 @@ public final class CommentType extends NodeType {
 
   @Override
   public boolean matches(Node<?> node) throws QueryException {
-    return (node.getKind() == Kind.COMMENT);
+    return node.getKind() == Kind.COMMENT;
   }
 
   @Override
   public boolean matches(Item item) throws QueryException {
-    return ((item instanceof Node<?>) && (((Node<?>) item).getKind() == Kind.COMMENT));
+    return item instanceof Node<?> && ((Node<?>) item).getKind() == Kind.COMMENT;
   }
 
   public String toString() {
@@ -59,6 +59,6 @@ public final class CommentType extends NodeType {
   }
 
   public boolean equals(Object obj) {
-    return ((obj == this) || (obj instanceof CommentType));
+    return obj == this || obj instanceof CommentType;
   }
 }

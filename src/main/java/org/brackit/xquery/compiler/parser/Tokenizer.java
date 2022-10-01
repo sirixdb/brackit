@@ -137,8 +137,8 @@ public class Tokenizer {
 
     @Override
     public String string() {
-      final var prefixAndNcName = (prefix != null) ? prefix + ":" + ncname : ncname;
-      return (uri != null) ? ("\"" + uri + "\":") + prefixAndNcName : prefixAndNcName;
+      final var prefixAndNcName = prefix != null ? prefix + ":" + ncname : ncname;
+      return uri != null ? "\"" + uri + "\":" + prefixAndNcName : prefixAndNcName;
     }
   }
 
@@ -152,7 +152,7 @@ public class Tokenizer {
   }
 
   protected void resetTo(int pos) throws TokenizerException {
-    if ((pos < 0) || (pos > end)) {
+    if (pos < 0 || pos > end) {
       throw new TokenizerException("Illegal position: %s", pos);
     }
     this.pos = pos;
@@ -248,23 +248,23 @@ public class Tokenizer {
         return null;
       }
     }
-    boolean isSym = (e == end) || (isSymDel(input[e]));
+    boolean isSym = e == end || isSymDel(input[e]);
     return isSym ? new Token(s, e) : null;
   }
 
   private boolean isSymDel(char c) {
     // char is (prefix of) a symbol separator (whitespace or comment)
     // see A.2.2 Terminal Delimitation for details
-    return ((XMLChar.isWS(c)) || (c == '(') || (isDelChar(c)));
+    return XMLChar.isWS(c) || c == '(' || isDelChar(c);
   }
 
   private boolean isDelChar(char c) {
     // char is (prefix of) delimiting terminal symbol
     // see A.2.2 Terminal Delimitation for details
-    return ((XMLChar.isWS(c)) || (c == '!') || (c == '\'') || (c == '"') || (c == '#') || (c == '$') || (c == '%') || (c
-        == '(') || (c == ')') || (c == '*') || (c == '+') || (c == ',') || (c == '-') || (c == '.') || (c == '/') || (c
-        == ':') || (c == ';') || (c == '<') || (c == '=') || (c == '>') || (c == '?') || (c == '@') || (c == '[') || (c
-        == ']') || (c == '{') || (c == '|') || (c == '}'));
+    return XMLChar.isWS(c) || c == '!' || c == '\'' || c == '"' || c == '#' || c == '$' || c == '%' || c
+        == '(' || c == ')' || c == '*' || c == '+' || c == ',' || c == '-' || c == '.' || c == '/' || c
+        == ':' || c == ';' || c == '<' || c == '=' || c == '>' || c == '?' || c == '@' || c == '[' || c
+        == ']' || c == '{' || c == '|' || c == '}';
   }
 
   protected Token la(int from, String token) {
@@ -349,7 +349,7 @@ public class Tokenizer {
     int ws = ws(pos);
     int p = pos + ws;
     // ignore trailing '\0'
-    while ((p < end) && (input[p] == '\u0000'))
+    while (p < end && input[p] == '\u0000')
       p++;
     if (p != end) {
       throw new TokenizerException("Expected end of query: %s", paraphrase());
@@ -373,7 +373,7 @@ public class Tokenizer {
   }
 
   protected void consume(Token token) {
-    if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
+    if (XQuery.DEBUG && log.isDebugEnabled()) {
       log.debug("Consuming " + token + " (to [" + token.start + ":" + token.end + "]/" + end + ")");
     }
     pos = token.end;
@@ -401,9 +401,9 @@ public class Tokenizer {
     char[] preBuf = new char[60];
     final int preLen = 60 - 1;
     int start = preLen;
-    p = (pos == end) ? pos - 1 : pos;
-    while ((p >= 0) && (start > 0)) {
-      if ((!XMLChar.isWS(input[p])) || ((start < preLen) && (!XMLChar.isWS(preBuf[start + 1])))) {
+    p = pos == end ? pos - 1 : pos;
+    while (p >= 0 && start > 0) {
+      if (!XMLChar.isWS(input[p]) || start < preLen && !XMLChar.isWS(preBuf[start + 1])) {
         preBuf[start] = input[p];
       }
       p--;
@@ -415,7 +415,7 @@ public class Tokenizer {
 
   protected Token laWS() {
     int ws = ws(pos);
-    return (ws > 0) ? new Token(pos, pos + ws) : null;
+    return ws > 0 ? new Token(pos, pos + ws) : null;
   }
 
   protected Token laS(Token token) {
@@ -428,7 +428,7 @@ public class Tokenizer {
 
   private Token laS(int pos) {
     int s = s(pos);
-    return (s > 0) ? new Token(pos, pos + s) : null;
+    return s > 0 ? new Token(pos, pos + s) : null;
   }
 
   protected boolean skipS() {
@@ -437,7 +437,7 @@ public class Tokenizer {
       return false;
     }
 
-    if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
+    if (XQuery.DEBUG && log.isDebugEnabled()) {
       log.debug("Skipping whitespace from " + pos + " to " + (pos + s));
     }
     pos += s;
@@ -450,7 +450,7 @@ public class Tokenizer {
     while (p < end) {
       c = input[p];
       // skip whitespace characters
-      if ((c == ' ') || (c == '\r') || (c == '\t') || (c == '\n')) {
+      if (c == ' ' || c == '\r' || c == '\t' || c == '\n') {
         p++;
         continue;
       }
@@ -465,12 +465,12 @@ public class Tokenizer {
     while (p < end) {
       c = input[p];
       // skip whitespace characters
-      if ((c == ' ') || (c == '\r') || (c == '\t') || (c == '\n')) {
+      if (c == ' ' || c == '\r' || c == '\t' || c == '\n') {
         p++;
         continue;
       }
       // check for (nested) comment
-      if ((c == '(') && (p < end) && (input[p + 1] == ':')) {
+      if (c == '(' && p < end && input[p + 1] == ':') {
         int len = comment(p);
         if (len == 0) {
           p++;
@@ -487,7 +487,7 @@ public class Tokenizer {
   private int comment(int from) {
     int e = from;
     char c = input[e++];
-    if ((c != '(') || (e >= end) || ((c = input[e++]) != ':')) {
+    if (c != '(' || e >= end || (c = input[e++]) != ':') {
       return 0;
     }
     int len = 2; // the starting '(:'
@@ -614,18 +614,18 @@ public class Tokenizer {
     }
     int len = 0;
     char c = input[e++];
-    if ((c == ':') || (!XMLChar.isNameStartChar(c))) {
+    if (c == ':' || c == '.' || !XMLChar.isNameStartChar(c)) {
       return null;
     }
     len++;
     while (e < end) {
       c = input[e++];
-      if ((c == ':') || (!XMLChar.isNameChar(c))) {
+      if (c == ':' || c == '.' || !XMLChar.isNameChar(c)) {
         break;
       }
       len++;
     }
-    if ((len == 0) || ((e != end) && (!isDelChar(input[e - 1])))) {
+    if (len == 0 || e != end && !isDelChar(input[e - 1])) {
       return null;
     }
     return new Token(pos, pos + len);
@@ -652,7 +652,7 @@ public class Tokenizer {
     }
     while (e < end) {
       c = input[e++];
-      if ((c >= '0') && (c <= '9')) {
+      if (c >= '0' && c <= '9') {
         len++;
       } else {
         break;
@@ -662,7 +662,7 @@ public class Tokenizer {
       len++;
       if (len == 1) {
         // at least one digit must follow the period
-        if ((e >= end) || ((c = input[e++]) < '0') || (c > '9')) {
+        if (e >= end || (c = input[e++]) < '0' || c > '9') {
           if (cond) {
             return null;
           }
@@ -675,14 +675,14 @@ public class Tokenizer {
       // remaining digits after period are optional
       while (e < end) {
         c = input[e++];
-        if ((c >= '0') && (c <= '9')) {
+        if (c >= '0' && c <= '9') {
           len++;
         } else {
           break;
         }
       }
     }
-    if ((len > 0) && ((c == 'e') || (c == 'E'))) {
+    if (len > 0 && (c == 'e' || c == 'E')) {
       len++;
       if (e >= end) {
         if (cond) {
@@ -693,7 +693,7 @@ public class Tokenizer {
                                      paraphrase());
       }
       c = input[e++];
-      if ((c == '-') || (c == '+')) {
+      if (c == '-' || c == '+') {
         len++;
         if (e >= end) {
           if (cond) {
@@ -705,7 +705,7 @@ public class Tokenizer {
         }
         c = input[e++];
       }
-      if ((c < '0') || (c > '9')) {
+      if (c < '0' || c > '9') {
         if (cond) {
           return null;
         }
@@ -717,14 +717,14 @@ public class Tokenizer {
       // remaining digits after are optional
       while (e < end) {
         c = input[e++];
-        if ((c >= '0') && (c <= '9')) {
+        if (c >= '0' && c <= '9') {
           len++;
         } else {
           break;
         }
       }
     }
-    if ((len == 0) || ((e != end) && (!isDelChar(input[e - 1])))) {
+    if (len == 0 || e != end && !isDelChar(input[e - 1])) {
       return null;
     }
     return new Token(pos, pos + len);
@@ -751,7 +751,7 @@ public class Tokenizer {
     }
     while (e < end) {
       c = input[e++];
-      if ((c >= '0') && (c <= '9')) {
+      if (c >= '0' && c <= '9') {
         len++;
       } else if (c == 'E') {
         // found exponent
@@ -765,7 +765,7 @@ public class Tokenizer {
       len++;
       if (len == 1) {
         // at least one digit must follow the period
-        if ((e >= end) || ((c = input[e++]) < '0') || (c > '9')) {
+        if (e >= end || (c = input[e++]) < '0' || c > '9') {
           if (cond) {
             return null;
           }
@@ -778,14 +778,14 @@ public class Tokenizer {
       // remaining digits after period are optional
       while (e < end) {
         c = input[e++];
-        if ((c >= '0') && (c <= '9')) {
+        if (c >= '0' && c <= '9') {
           len++;
         } else {
           break;
         }
       }
     }
-    if ((len == 0) || ((e != end) && (!isDelChar(input[e - 1])))) {
+    if (len == 0 || e != end && !isDelChar(input[e - 1])) {
       return null;
     }
     return new Token(pos, pos + len);
@@ -812,7 +812,7 @@ public class Tokenizer {
     }
     while (e < end) {
       c = input[e++];
-      if ((c >= '0') && (c <= '9')) {
+      if (c >= '0' && c <= '9') {
         len++;
       } else if (c == '.') {
         // found decimal point
@@ -822,7 +822,7 @@ public class Tokenizer {
         break;
       }
     }
-    if ((len == 0) || ((e != end) && (!isDelChar(input[e - 1])))) {
+    if (len == 0 || e != end && !isDelChar(input[e - 1])) {
       return null;
     }
     return new Token(pos, pos + len);
@@ -884,7 +884,7 @@ public class Tokenizer {
     int len = 0;
     while (e < end) {
       int c = input[e++];
-      if ((c == '#') && (e < end) && (input[e] == ')')) {
+      if (c == '#' && e < end && input[e] == ')') {
         return new Token(s, s + len);
       } else if (!XMLChar.isChar(c)) {
         if (cond) {
@@ -1022,11 +1022,11 @@ public class Tokenizer {
     char c;
     while (e < end) {
       c = input[e++];
-      if ((c == escapeChar) && (e < end) && (input[e] == escapeChar)) {
+      if (c == escapeChar && e < end && input[e] == escapeChar) {
         hasEscapes = true;
         e++;
         len += 2;
-      } else if ((c == escapeChar) || (c == '{') || (c == '}') || (c == '<') || (c == '&') || (!XMLChar.isChar(c))) {
+      } else if (c == escapeChar || c == '{' || c == '}' || c == '<' || c == '&' || !XMLChar.isChar(c)) {
         break;
       } else {
         len++;
@@ -1055,7 +1055,7 @@ public class Tokenizer {
     char c;
     while (e < end) {
       c = input[e++];
-      if ((c == '{') || (c == '}') || (c == '<') || (c == '&') || (!XMLChar.isChar(c))) {
+      if (c == '{' || c == '}' || c == '<' || c == '&' || !XMLChar.isChar(c)) {
         break;
       } else {
         len++;
@@ -1082,7 +1082,7 @@ public class Tokenizer {
         if (end - e <= 1) {
           return null;
         }
-        if ((input[e] == ']') && (input[e + 1] == '>')) {
+        if (input[e] == ']' && input[e + 1] == '>') {
           break;
         }
       }
@@ -1101,7 +1101,7 @@ public class Tokenizer {
     if (e + 1 >= end) {
       return null;
     }
-    if ((input[e++] != '\\')) {
+    if (input[e++] != '\\') {
       return null;
     }
     if (input[e] == '\\') {
@@ -1160,7 +1160,7 @@ public class Tokenizer {
     if (e + 1 >= end) {
       return null;
     }
-    if ((input[e++] != '&') || (input[e] == '#')) {
+    if (input[e++] != '&' || input[e] == '#') {
       return null;
     }
     if (end - e <= 3) {
@@ -1168,28 +1168,28 @@ public class Tokenizer {
                                    new String(input, pos, Math.min(4, end - pos)),
                                    paraphrase());
     }
-    if ((input[e] == 'l') && (input[e + 1] == 't') && (input[e + 2] == ';')) {
+    if (input[e] == 'l' && input[e + 1] == 't' && input[e + 2] == ';') {
       lastScanEnd = pos + 4;
       return "<";
     }
-    if ((input[e] == 'g') && (input[e + 1] == 't') && (input[e + 2] == ';')) {
+    if (input[e] == 'g' && input[e + 1] == 't' && input[e + 2] == ';') {
       lastScanEnd = pos + 4;
       return ">";
     }
     if (end - e >= 4) {
-      if ((input[e] == 'a') && (input[e + 1] == 'm') && (input[e + 2] == 'p') && (input[e + 3] == ';')) {
+      if (input[e] == 'a' && input[e + 1] == 'm' && input[e + 2] == 'p' && input[e + 3] == ';') {
         lastScanEnd = pos + 5;
         return "&";
       }
     }
     if (end - e >= 5) {
-      if ((input[e] == 'a') && (input[e + 1] == 'p') && (input[e + 2] == 'o') && (input[e + 3] == 's') && (input[e + 4]
-          == ';')) {
+      if (input[e] == 'a' && input[e + 1] == 'p' && input[e + 2] == 'o' && input[e + 3] == 's' && input[e + 4]
+          == ';') {
         lastScanEnd = pos + 6;
         return "'";
       }
-      if ((input[e] == 'q') && (input[e + 1] == 'u') && (input[e + 2] == 'o') && (input[e + 3] == 't') && (input[e + 4]
-          == ';')) {
+      if (input[e] == 'q' && input[e + 1] == 'u' && input[e + 2] == 'o' && input[e + 3] == 't' && input[e + 4]
+          == ';') {
         lastScanEnd = pos + 6;
         return "\"";
       }
@@ -1206,7 +1206,7 @@ public class Tokenizer {
     if (e + 1 >= end) {
       return null;
     }
-    if ((input[e++] != '\\') || (input[e++] != 'u')) {
+    if (input[e++] != '\\' || input[e++] != 'u') {
       return null;
     }
     if (end - e <= 3) {
@@ -1219,8 +1219,8 @@ public class Tokenizer {
     int radix = 10;
     while (e < end && len < 4) {
       c = input[e++];
-      if (!((('0' <= c) && (c <= '9')))) {
-        if ((c != ';') || (len == 0)) {
+      if (!('0' <= c && c <= '9')) {
+        if (c != ';' || len == 0) {
           return null;
         }
         break;
@@ -1237,7 +1237,7 @@ public class Tokenizer {
       //			}
       throw new TokenizerException("Illegal Unicode character reference '%s' %s: '%s'", tmp, paraphrase());
     }
-    if ((charRef.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0) || (!XMLChar.isChar(charRef.intValue()))) {
+    if (charRef.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0 || !XMLChar.isChar(charRef.intValue())) {
       //			if (cond) {
       //				return null;
       //			}
@@ -1252,7 +1252,7 @@ public class Tokenizer {
     if (e + 1 >= end) {
       return null;
     }
-    if ((input[e++] != '&') || (input[e++] != '#')) {
+    if (input[e++] != '&' || input[e++] != '#') {
       return null;
     }
     if (end - e <= 3) {
@@ -1269,8 +1269,8 @@ public class Tokenizer {
       e++; // consume 'x'
       while (e < end) {
         c = input[e++];
-        if (!((('0' <= c) && (c <= '9')) || (('a' <= c) && (c <= 'z')) || (('A' <= c) && (c <= 'Z')))) {
-          if ((c != ';') || (len == 0)) {
+        if (!('0' <= c && c <= '9' || 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z')) {
+          if (c != ';' || len == 0) {
             return null;
           }
           break;
@@ -1280,8 +1280,8 @@ public class Tokenizer {
     } else {
       while (e < end) {
         c = input[e++];
-        if (!((('0' <= c) && (c <= '9')))) {
-          if ((c != ';') || (len == 0)) {
+        if (!('0' <= c && c <= '9')) {
+          if (c != ';' || len == 0) {
             return null;
           }
           break;
@@ -1299,7 +1299,7 @@ public class Tokenizer {
       //			}
       throw new TokenizerException("Illegal Unicode character reference '%s' %s: '%s'", tmp, paraphrase());
     }
-    if ((charRef.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0) || (!XMLChar.isChar(charRef.intValue()))) {
+    if (charRef.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0 || !XMLChar.isChar(charRef.intValue())) {
       //			if (cond) {
       //				return null;
       //			}
@@ -1324,7 +1324,7 @@ public class Tokenizer {
     char c;
     while (e < end) {
       c = input[e++];
-      if ((c == escapeChar) || (isXml && c == '&') || (!isXml && c == '\\')) {
+      if (c == escapeChar || isXml && c == '&' || !isXml && c == '\\') {
         break;
       } else {
         len++;
@@ -1343,9 +1343,9 @@ public class Tokenizer {
     int spos = pos;
     while (true) {
       String s = scanPredefEntityRef(spos, cond);
-      s = (s != null) ? s : scanCharRef(spos, cond);
-      s = (s != null) ? s : scanEscape(spos, '\'', "'");
-      s = (s != null) ? s : scanString(spos, '\'', true);
+      s = s != null ? s : scanCharRef(spos, cond);
+      s = s != null ? s : scanEscape(spos, '\'', "'");
+      s = s != null ? s : scanString(spos, '\'', true);
       if (s != null) {
         buf.append(s);
         spos = lastScanEnd;
@@ -1362,9 +1362,9 @@ public class Tokenizer {
     int spos = pos;
     while (true) {
       String s = scanJsonPredefCharRef(spos, cond);
-      s = (s != null) ? s : scanJsonCharRef(spos, cond);
-      s = (s != null) ? s : scanEscape(spos, '"', "\"");
-      s = (s != null) ? s : scanString(spos, '"', false);
+      s = s != null ? s : scanJsonCharRef(spos, cond);
+      s = s != null ? s : scanEscape(spos, '"', "\"");
+      s = s != null ? s : scanString(spos, '"', false);
       if (s != null) {
         buf.append(s);
         spos = lastScanEnd;
@@ -1378,7 +1378,7 @@ public class Tokenizer {
   protected String scanEscape(int pos, char escapeChar, String escapeString) {
     int s = pos;
     int e = s;
-    if ((end - e < 2) || ((input[e++] != escapeChar) || (input[e++] != escapeChar))) {
+    if (end - e < 2 || input[e++] != escapeChar || input[e++] != escapeChar) {
       return null;
     }
     lastScanEnd = e;
@@ -1395,8 +1395,8 @@ public class Tokenizer {
     char c;
     while (e < end) {
       c = input[e++];
-      if ((c == '-') && (e < end) && (input[e] == '-')) {
-        if ((e + 1 < end) && (input[e + 1] == '>')) {
+      if (c == '-' && e < end && input[e] == '-') {
+        if (e + 1 < end && input[e + 1] == '>') {
           break;
         }
         if (cond) {
@@ -1437,7 +1437,7 @@ public class Tokenizer {
       return null;
     }
     String target = new String(input, s, len);
-    if ((target.length() == 3) && (target.toLowerCase().equals("xml"))) {
+    if (target.length() == 3 && target.toLowerCase().equals("xml")) {
       if (cond) {
         return null;
       }
@@ -1457,7 +1457,7 @@ public class Tokenizer {
     char c;
     while (e < end) {
       c = input[e++];
-      if ((c == '?') && (e < end) && (input[e] == '>')) {
+      if (c == '?' && e < end && input[e] == '>') {
         break;
       }
       if (!XMLChar.isChar(c)) {

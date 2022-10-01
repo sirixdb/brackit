@@ -91,6 +91,6 @@ public final class AnyItemType implements ItemType {
 
   @Override
   public boolean equals(Object obj) {
-    return ((obj == this) || (obj instanceof AnyItemType));
+    return obj == this || obj instanceof AnyItemType;
   }
 }

@@ -38,7 +38,7 @@ public class Counter {
   private BigDecimal bdv;
 
   public IntNumeric asIntNumeric() {
-    return (bdv == null) ? new Int64(lv) : new Int(bdv);
+    return bdv == null ? new Int64(lv) : new Int(bdv);
   }
 
   public Counter inc() {

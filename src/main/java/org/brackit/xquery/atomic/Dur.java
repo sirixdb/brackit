@@ -66,7 +66,7 @@ public class Dur extends AbstractDuration {
 
   public Dur(boolean negative, short years, byte months, short days, byte hours, byte minutes, int micros) {
     this.years = years;
-    this.months = (!negative) ? months : (byte) (months | 0x80);
+    this.months = !negative ? months : (byte) (months | 0x80);
     this.days = days;
     this.hours = hours;
     this.minutes = minutes;
@@ -88,21 +88,21 @@ public class Dur extends AbstractDuration {
     int pos = 0;
     int length = charArray.length;
 
-    if ((pos == length) || (charArray[pos] == '-')) {
+    if (pos == length || charArray[pos] == '-') {
       negative = true;
       pos++;
     }
 
-    if (((length - pos) < 3) || (charArray[pos++] != 'P')) {
+    if (length - pos < 3 || charArray[pos++] != 'P') {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:duration", str);
     }
 
     int start = pos;
-    while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+    while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
       pos++;
     int end = pos;
-    int sectionTerminator = (pos < length) ? charArray[pos++] : -1;
-    int v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1; // parse leading value
+    int sectionTerminator = pos < length ? charArray[pos++] : -1;
+    int v = start != end ? Integer.parseInt(str.substring(start, end)) : -1; // parse leading value
 
     if (sectionTerminator == 'Y') {
       if (v > Short.MAX_VALUE) {
@@ -114,14 +114,14 @@ public class Dur extends AbstractDuration {
       years = (short) v;
 
       start = pos;
-      while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+      while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
         pos++;
       end = pos;
-      sectionTerminator = (pos < length) ? charArray[pos++] : -1;
-      v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1;
+      sectionTerminator = pos < length ? charArray[pos++] : -1;
+      v = start != end ? Integer.parseInt(str.substring(start, end)) : -1;
     }
 
-    if ((sectionTerminator == 'M') && (v > -1)) {
+    if (sectionTerminator == 'M' && v > -1) {
       int newYears = years + v / 12;
       v = v % 12;
 
@@ -135,14 +135,14 @@ public class Dur extends AbstractDuration {
       years = (short) newYears;
 
       start = pos;
-      while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+      while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
         pos++;
       end = pos;
-      sectionTerminator = (pos < length) ? charArray[pos++] : -1;
-      v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1;
+      sectionTerminator = pos < length ? charArray[pos++] : -1;
+      v = start != end ? Integer.parseInt(str.substring(start, end)) : -1;
     }
 
-    if ((sectionTerminator == 'D') && (v > -1)) {
+    if (sectionTerminator == 'D' && v > -1) {
       if (v > Short.MAX_VALUE) {
         throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
                                  "Cannot cast '%s' to xs:duration: component too large",
@@ -152,26 +152,26 @@ public class Dur extends AbstractDuration {
       days = (short) v;
 
       start = pos;
-      while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+      while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
         pos++;
       end = pos;
-      sectionTerminator = (pos < length) ? charArray[pos++] : -1;
-      v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1;
+      sectionTerminator = pos < length ? charArray[pos++] : -1;
+      v = start != end ? Integer.parseInt(str.substring(start, end)) : -1;
     }
 
     if (sectionTerminator == 'T') {
       start = pos;
-      while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+      while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
         pos++;
       end = pos;
-      sectionTerminator = (pos < length) ? charArray[pos++] : -1;
-      v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1;
+      sectionTerminator = pos < length ? charArray[pos++] : -1;
+      v = start != end ? Integer.parseInt(str.substring(start, end)) : -1;
 
       if (sectionTerminator == -1) {
         throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:duration", str);
       }
 
-      if ((sectionTerminator == 'H') && (v > -1)) {
+      if (sectionTerminator == 'H' && v > -1) {
         int newDays = days + v / 24;
         v = v % 24;
 
@@ -185,14 +185,14 @@ public class Dur extends AbstractDuration {
         hours = (byte) v;
 
         start = pos;
-        while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+        while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
           pos++;
         end = pos;
-        sectionTerminator = (pos < length) ? charArray[pos++] : -1;
-        v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1;
+        sectionTerminator = pos < length ? charArray[pos++] : -1;
+        v = start != end ? Integer.parseInt(str.substring(start, end)) : -1;
       }
 
-      if ((sectionTerminator == 'M') && (v > -1)) {
+      if (sectionTerminator == 'M' && v > -1) {
         int newDays = days + v / 1440;
         v = v % 1440;
         int newHours = hours + v / 60;
@@ -212,14 +212,14 @@ public class Dur extends AbstractDuration {
         minutes = (byte) v;
 
         start = pos;
-        while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+        while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
           pos++;
         end = pos;
-        sectionTerminator = (pos < length) ? charArray[pos++] : -1;
-        v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1;
+        sectionTerminator = pos < length ? charArray[pos++] : -1;
+        v = start != end ? Integer.parseInt(str.substring(start, end)) : -1;
       }
 
-      if (((sectionTerminator == '.') || (sectionTerminator == 'S')) && (v > -1)) {
+      if ((sectionTerminator == '.' || sectionTerminator == 'S') && v > -1) {
         int newDays = days + v / 86400;
         v = v % 86400;
         int newHours = hours + v / 3600;
@@ -245,21 +245,21 @@ public class Dur extends AbstractDuration {
 
         if (sectionTerminator == '.') {
           start = pos;
-          while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+          while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
             pos++;
           end = pos;
-          sectionTerminator = (pos < length) ? charArray[pos++] : -1;
+          sectionTerminator = pos < length ? charArray[pos++] : -1;
           int l = end - start;
-          v = (start != end) ? Integer.parseInt(str.substring(start, start + Math.min(l, 6))) : -1; // drop nano seconds
+          v = start != end ? Integer.parseInt(str.substring(start, start + Math.min(l, 6))) : -1; // drop nano seconds
 
-          if ((sectionTerminator == 'S') && (v > -1)) {
+          if (sectionTerminator == 'S' && v > -1) {
             if (v > 0) {
               for (int i = 0; i < 6 - l; i++) {
                 v *= 10;
               }
               micros += v;
             }
-            sectionTerminator = (pos < length) ? charArray[pos] : -1;
+            sectionTerminator = pos < length ? charArray[pos] : -1;
           } else {
             sectionTerminator = 'X';
           }
@@ -274,7 +274,7 @@ public class Dur extends AbstractDuration {
     }
 
     this.years = years;
-    this.months = (!negative) ? months : (byte) (months | 0x80);
+    this.months = !negative ? months : (byte) (months | 0x80);
     this.days = days;
     this.hours = hours;
     this.minutes = minutes;
@@ -335,7 +335,7 @@ public class Dur extends AbstractDuration {
 
   @Override
   public boolean isNegative() {
-    return (months < 0);
+    return months < 0;
   }
 
   @Override

@@ -54,7 +54,7 @@ public class D2NodeFactory implements NodeFactory<D2Node> {
 
   @Override
   public D2Node document(Str name) throws DocumentException {
-    String s = (name != null) ? name.stringValue() : null;
+    String s = name != null ? name.stringValue() : null;
     return new DocumentD2Node(s);
   }
 

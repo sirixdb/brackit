@@ -61,56 +61,56 @@ public class Date extends AbstractTimeInstant {
 
     // parse variable length year
     boolean negative = false;
-    if ((pos == length) || (charArray[pos] == '-')) {
+    if (pos == length || charArray[pos] == '-') {
       negative = true;
       pos++;
     }
 
     int start = pos;
-    while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+    while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
       pos++;
     int end = pos;
 
     if (end - start < 4) {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:date", str);
-    } else if ((end - start > 4) && (negative)) {
+    } else if (end - start > 4 && negative) {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:date", str);
     }
-    int v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1; // parse leading value
+    int v = start != end ? Integer.parseInt(str.substring(start, end)) : -1; // parse leading value
 
-    if ((v > Short.MAX_VALUE) || (v == 0)) {
+    if (v > Short.MAX_VALUE || v == 0) {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:date", str);
     }
-    year = (negative) ? (short) -v : (short) v;
+    year = negative ? (short) -v : (short) v;
 
     // consume '-'
-    if ((pos >= length) || (charArray[pos++] != '-')) {
+    if (pos >= length || charArray[pos++] != '-') {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:date", str);
     }
 
     // parse month
     start = pos;
-    while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+    while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
       pos++;
     end = pos;
-    v = (end - start == 2) ? Integer.parseInt(str.substring(start, end)) : -1;
-    if ((v < 1) || (v > 12)) {
+    v = end - start == 2 ? Integer.parseInt(str.substring(start, end)) : -1;
+    if (v < 1 || v > 12) {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:date: illegal month", str);
     }
     month = (byte) v;
 
     // consume '-'
-    if ((pos >= length) || (charArray[pos++] != '-')) {
+    if (pos >= length || charArray[pos++] != '-') {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:date", str);
     }
 
     // parse day
     start = pos;
-    while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+    while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
       pos++;
     end = pos;
-    v = (end - start == 2) ? Integer.parseInt(str.substring(start, end)) : -1;
-    if ((v < 1) || (v > 31)) {
+    v = end - start == 2 ? Integer.parseInt(str.substring(start, end)) : -1;
+    if (v < 1 || v > 31) {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:date: illegal day", str);
     }
     day = (byte) v;
@@ -187,9 +187,9 @@ public class Date extends AbstractTimeInstant {
 
   @Override
   public String stringValue() {
-    String yTmp = (year < 0) ? "-" : "" + ((year < 10) ? "000" : (year < 100) ? "00" : (year < 1000) ? "0" : "") + year;
-    String mTmp = ((month < 10) ? "0" : "") + month;
-    String dTmp = ((day < 10) ? "0" : "") + day;
+    String yTmp = year < 0 ? "-" : "" + (year < 10 ? "000" : year < 100 ? "00" : year < 1000 ? "0" : "") + year;
+    String mTmp = (month < 10 ? "0" : "") + month;
+    String dTmp = (day < 10 ? "0" : "") + day;
     String tzTmp = timezoneString();
 
     return String.format("%s-%s-%s%s", yTmp, mTmp, dTmp, tzTmp);

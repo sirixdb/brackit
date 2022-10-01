@@ -65,7 +65,7 @@ public class Exists extends AbstractFunction {
   public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
     try {
       String name = ((Atomic) args[0]).stringValue();
-      return (ctx.getNodeStore().lookup(name) != null) ? Bool.TRUE : Bool.FALSE;
+      return ctx.getNodeStore().lookup(name) != null ? Bool.TRUE : Bool.FALSE;
     } catch (Exception e) {
       throw new QueryException(e, BitFun.BIT_EXISTCOLLECTION_INT_ERROR, e.getMessage());
     }

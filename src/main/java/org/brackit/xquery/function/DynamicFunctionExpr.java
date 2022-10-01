@@ -152,10 +152,10 @@ public class DynamicFunctionExpr implements Expr {
         }
 
         for (int i = 0; i < arguments.length; i++) {
-          SequenceType sType = (i < params.length) ? params[i] : params[params.length - 1];
+          SequenceType sType = i < params.length ? params[i] : params[params.length - 1];
           if (sType.getCardinality().many()) {
             args[pos + i] = arguments[i].evaluate(ctx, tuple);
-            if (!(sType.getItemType().isAnyItem())) {
+            if (!sType.getItemType().isAnyItem()) {
               args[pos + i] = FunctionConversionSequence.asTypedSequence(sType, args[i], false);
             }
           } else {

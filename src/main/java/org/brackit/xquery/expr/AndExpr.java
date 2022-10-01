@@ -57,18 +57,18 @@ public class AndExpr implements Expr {
   public Item evaluateToItem(QueryContext ctx, Tuple tuple) throws QueryException {
     Sequence firstResult = firstExpr.evaluate(ctx, tuple);
 
-    if ((firstResult == null) || (!firstResult.booleanValue())) {
+    if (firstResult == null || !firstResult.booleanValue()) {
       return Bool.FALSE;
     }
 
     Sequence secondResult = secondExpr.evaluate(ctx, tuple);
 
-    return ((secondResult != null) && (secondResult.booleanValue())) ? Bool.TRUE : Bool.FALSE;
+    return secondResult != null && secondResult.booleanValue() ? Bool.TRUE : Bool.FALSE;
   }
 
   @Override
   public boolean isUpdating() {
-    return ((firstExpr.isUpdating()) || (secondExpr.isUpdating()));
+    return firstExpr.isUpdating() || secondExpr.isUpdating();
   }
 
   @Override

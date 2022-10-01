@@ -1,8 +1,8 @@
-/*
+/**
  * [New BSD License]
  * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>
  * All rights reserved.
- *
+ * <p>
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Brackit Project Team nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- *
+ * <p>
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -30,11 +30,13 @@ package org.brackit.xquery.compiler.analyzer;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
-import org.brackit.xquery.atomic.*;
+import org.brackit.xquery.atomic.AnyURI;
+import org.brackit.xquery.atomic.Bool;
+import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.XQ;
-import org.brackit.xquery.expr.DeclVariable;
 import org.brackit.xquery.expr.Variable;
 import org.brackit.xquery.function.UDF;
 import org.brackit.xquery.function.json.JSONFun;
@@ -89,7 +91,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   boolean exprSingle(AST expr) throws QueryException {
-    return (flowrExpr(expr) || quantifiedExpr(expr) || switchExpr(expr) || typeswitchExpr(expr) || ifExpr(expr)
+    return flowrExpr(expr) || quantifiedExpr(expr) || switchExpr(expr) || typeswitchExpr(expr) || ifExpr(expr)
         || tryCatchExpr(expr) ||
         /* Begin XQuery Update Facility 1.0 */
         insertExpr(expr) || deleteExpr(expr) || renameExpr(expr) || replaceExpr(expr) || transformExpr(expr) ||
@@ -99,7 +101,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
             expr)
         ||
         /* End JSONiq Update Facility */
-        orExpr(expr));
+        orExpr(expr);
   }
 
   // Begin XQuery Update Facility 1.0
@@ -258,7 +260,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   protected boolean initialClause(AST clause) throws QueryException {
-    return (forClause(clause) || letClause(clause) || windowClause(clause));
+    return forClause(clause) || letClause(clause) || windowClause(clause);
   }
 
   protected boolean forClause(AST clause) throws QueryException {
@@ -342,7 +344,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   protected boolean windowClause(AST clause) throws QueryException {
-    return (tumblingWindowClause(clause) || slidingWindowClause(clause));
+    return tumblingWindowClause(clause) || slidingWindowClause(clause);
   }
 
   protected boolean tumblingWindowClause(AST clause) throws QueryException {
@@ -404,8 +406,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   protected boolean intermediateClause(AST clause) throws QueryException {
-    return (initialClause(clause) || whereClause(clause) || groupByClause(clause) || orderByClause(clause)
-        || countClause(clause));
+    return initialClause(clause) || whereClause(clause) || groupByClause(clause) || orderByClause(clause)
+        || countClause(clause);
   }
 
   protected boolean whereClause(AST clause) throws QueryException {
@@ -669,8 +671,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   protected boolean additiveExpr(AST expr) throws QueryException {
-    if ((expr.getType() != XQ.ArithmeticExpr)
-        || ((expr.getChild(0).getType() != XQ.AddOp) && (expr.getChild(0).getType() != XQ.SubtractOp))) {
+    if (expr.getType() != XQ.ArithmeticExpr
+        || expr.getChild(0).getType() != XQ.AddOp && expr.getChild(0).getType() != XQ.SubtractOp) {
       return multiplicativeExpr(expr);
     }
     additiveExpr(expr.getChild(1));
@@ -697,7 +699,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   protected boolean intersectExpr(AST expr) throws QueryException {
-    if ((expr.getType() != XQ.IntersectExpr) && (expr.getType() != XQ.ExceptExpr)) {
+    if (expr.getType() != XQ.IntersectExpr && expr.getType() != XQ.ExceptExpr) {
       return instanceOfExpr(expr);
     }
     intersectExpr(expr.getChild(0));
@@ -746,7 +748,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   protected boolean valueExpr(AST expr) throws QueryException {
-    return (validateExpr(expr) || pathExpr(expr) || extensionExpr(expr));
+    return validateExpr(expr) || pathExpr(expr) || extensionExpr(expr);
   }
 
   protected boolean extensionExpr(AST expr) throws QueryException {
@@ -802,7 +804,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 
   protected ItemType nodeTest(AST nodeTest, boolean attributeAxis) throws QueryException {
     ItemType test = kindTest(nodeTest);
-    test = (test != null) ? test : nameTest(nodeTest, !attributeAxis);
+    test = test != null ? test : nameTest(nodeTest, !attributeAxis);
     return test;
   }
 
@@ -833,10 +835,10 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if (test.getType() == XQ.Wildcard) {
       return new ElementType();
     } else if (test.getType() == XQ.NSWildcardNameTest) {
-      Kind kind = (element) ? Kind.ELEMENT : Kind.ATTRIBUTE;
+      Kind kind = element ? Kind.ELEMENT : Kind.ATTRIBUTE;
       return new NSWildcardNameTest(kind, test.getStringValue());
     } else if (test.getType() == XQ.NSNameWildcardTest) {
-      Kind kind = (element) ? Kind.ELEMENT : Kind.ATTRIBUTE;
+      Kind kind = element ? Kind.ELEMENT : Kind.ATTRIBUTE;
       return new NSNameWildcardTest(kind, resolvePrefix(test.getStringValue()));
     } else {
       return null;
@@ -914,12 +916,12 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   protected boolean primaryExpr(AST expr) throws QueryException {
-    return (literal(expr) || varRef(expr) || parenthesizedExpr(expr) || contextItemExpr(expr) || functionCall(expr)
-        || orderedExpr(expr) || unorderedExpr(expr) || constructor(expr) || functionItemExpr(expr));
+    return literal(expr) || varRef(expr) || parenthesizedExpr(expr) || contextItemExpr(expr) || functionCall(expr)
+        || orderedExpr(expr) || unorderedExpr(expr) || constructor(expr) || functionItemExpr(expr);
   }
 
   protected boolean literal(AST expr) throws QueryException {
-    return (numericLiteral(expr) || (expr.getType() == XQ.Str));
+    return numericLiteral(expr) || expr.getType() == XQ.Str;
   }
 
   protected boolean varRef(AST expr) throws QueryException {
@@ -973,7 +975,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if (fun == null) {
       unknownFunction(name, noOfParams);
     }
-    if ((noOfParams == 0) && (fun.getSignature().defaultCtxItemType() != null)) {
+    if (noOfParams == 0 && fun.getSignature().defaultCtxItemType() != null) {
       referContextItem();
     }
     if (fun == null) {
@@ -983,7 +985,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   private void unknownFunction(QNm name, int noOfParams) throws QueryException {
-    String argp = (noOfParams > 0) ? "?" : "";
+    String argp = noOfParams > 0 ? "?" : "";
     for (int i = 1; i < noOfParams; i++) {
       argp += ", ?";
     }
@@ -992,7 +994,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 
   protected boolean replaceFunctionCall(AST expr, QNm name) throws QueryException {
     int argc = expr.getChildCount();
-    if ((name.equals(Functions.FN_POSITION)) || (name.equals(Functions.FN_LAST))) {
+    if (name.equals(Functions.FN_POSITION) || name.equals(Functions.FN_LAST)) {
       if (argc != 0) {
         throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
             "Illegal number of parameters for function %s() : %s'",
@@ -1005,7 +1007,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
       expr.setValue(newName);
       return true;
     }
-    if ((name.equals(Functions.FN_TRUE) || name.equals(Functions.FN_FALSE))) {
+    if (name.equals(Functions.FN_TRUE) || name.equals(Functions.FN_FALSE)) {
       if (argc != 0) {
         throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
             "Illegal number of parameters for function %s() : %s'",
@@ -1014,7 +1016,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
       }
       // change expr to boolean literal
       expr.setType(XQ.Bool);
-      Bool val = (name.equals(Functions.FN_TRUE)) ? Bool.TRUE : Bool.FALSE;
+      Bool val = name.equals(Functions.FN_TRUE) ? Bool.TRUE : Bool.FALSE;
       expr.setValue(val);
       return true;
     }
@@ -1096,15 +1098,12 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     }
     // END Custom array syntax extension
     // BEGIN Custom object syntax extension
-    if (objectConstructor(expr)) {
-      return true;
-    }
+    return objectConstructor(expr);
     // END Custom object syntax extension
-    return false;
   }
 
   protected boolean directConstructor(AST expr) throws QueryException {
-    return (dirElemConstructor(expr) || dirCommentConstructor(expr) || dirPIConstructor(expr));
+    return dirElemConstructor(expr) || dirCommentConstructor(expr) || dirPIConstructor(expr);
   }
 
   protected boolean dirElemConstructor(AST expr) throws QueryException {
@@ -1163,7 +1162,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     for (int i = 0; i < cseq.getChildCount(); i++) {
       AST c = cseq.getChild(i);
       if (c.getType() == XQ.Str) {
-        if ((sctx.isBoundarySpaceStrip()) && (c.checkProperty("boundaryWS"))) {
+        if (sctx.isBoundarySpaceStrip() && c.checkProperty("boundaryWS")) {
           cseq.deleteChild(i--);
           merge = 0;
         } else {
@@ -1181,7 +1180,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
           cseq.deleteChild(firstStrPos + 1);
         }
         sc.setValue(buf.toString());
-        i -= (merge - 1);
+        i -= merge - 1;
       }
       merge = 0;
     }
@@ -1255,7 +1254,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   protected boolean dirElementContent(AST content) throws QueryException {
-    return (directConstructor(content) || (content.getType() == XQ.Str) || enclosedExpr(content));
+    return directConstructor(content) || content.getType() == XQ.Str || enclosedExpr(content);
   }
 
   protected boolean dirCommentConstructor(AST expr) throws QueryException {
@@ -1275,9 +1274,9 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   protected boolean computedConstructor(AST expr) throws QueryException {
-    return (compDocConstructor(expr) || compElemConstructor(expr) || compAttrConstructor(expr)
+    return compDocConstructor(expr) || compElemConstructor(expr) || compAttrConstructor(expr)
         || compNamespaceConstructor(expr) || compTextConstructor(expr) || compCommentConstructor(expr)
-        || compPIConstructor(expr));
+        || compPIConstructor(expr);
   }
 
   protected boolean compDocConstructor(AST expr) throws QueryException {
@@ -1373,7 +1372,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   protected boolean functionItemExpr(AST expr) throws QueryException {
-    return (literalFunctionItem(expr) || inlineFunctionItem(expr));
+    return literalFunctionItem(expr) || inlineFunctionItem(expr);
   }
 
   protected boolean literalFunctionItem(AST expr) throws QueryException {
@@ -1451,7 +1450,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     for (int i = 0; i < expr.getChildCount(); i++) {
       AST field = expr.getChild(i);
       int fType = field.getType();
-      if ((fType != XQ.SequenceField) && (fType != XQ.FlattenedField)) {
+      if (fType != XQ.SequenceField && fType != XQ.FlattenedField) {
         throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR, "Invalid array field type: %s", fType);
       }
       expr(field.getChild(0));
@@ -1510,23 +1509,23 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   // END Custom object syntax extension
 
   protected boolean numericLiteral(AST literal) throws QueryException {
-    return (integerLiteral(literal) || decimalLiteral(literal) || (doubleLiteral(literal)));
+    return integerLiteral(literal) || decimalLiteral(literal) || doubleLiteral(literal);
   }
 
   protected boolean doubleLiteral(AST literal) throws QueryException {
-    return (literal.getType() == XQ.Dbl);
+    return literal.getType() == XQ.Dbl;
   }
 
   protected boolean decimalLiteral(AST literal) throws QueryException {
-    return (literal.getType() == XQ.Dec);
+    return literal.getType() == XQ.Dec;
   }
 
   protected boolean integerLiteral(AST literal) throws QueryException {
-    return (literal.getType() == XQ.Int);
+    return literal.getType() == XQ.Int;
   }
 
   QNm bind(QNm name) throws QueryException {
-    if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
+    if (XQuery.DEBUG && log.isDebugEnabled()) {
       log.debug("Declare variable " + name);
     }
     if (variables.check(name)) {
@@ -1536,7 +1535,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   protected QNm resolve(QNm name) throws QueryException {
-    if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
+    if (XQuery.DEBUG && log.isDebugEnabled()) {
       log.debug("Resolve variable " + name);
     }
     QNm resolved = variables.resolve(name);
@@ -1553,21 +1552,21 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   protected void openScope() throws QueryException {
-    if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
+    if (XQuery.DEBUG && log.isDebugEnabled()) {
       log.debug("Open scope");
     }
     variables.openScope();
   }
 
   protected void offerScope() throws QueryException {
-    if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
+    if (XQuery.DEBUG && log.isDebugEnabled()) {
       log.debug("Offer scope");
     }
     variables.offerScope();
   }
 
   protected void closeScope() throws QueryException {
-    if ((XQuery.DEBUG) && (log.isDebugEnabled())) {
+    if (XQuery.DEBUG && log.isDebugEnabled()) {
       log.debug("Close scope");
     }
     variables.closeScope();

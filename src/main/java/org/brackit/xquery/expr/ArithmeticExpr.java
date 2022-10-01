@@ -86,7 +86,7 @@ public class ArithmeticExpr implements Expr {
     Item left = leftExpr.evaluateToItem(ctx, tuple);
     Item right = rightExpr.evaluateToItem(ctx, tuple);
 
-    if ((left == null) || (right == null)) {
+    if (left == null || right == null) {
       return null;
     }
 
@@ -221,7 +221,7 @@ public class ArithmeticExpr implements Expr {
 
   @Override
   public boolean isUpdating() {
-    return ((leftExpr.isUpdating()) || (rightExpr.isUpdating()));
+    return leftExpr.isUpdating() || rightExpr.isUpdating();
   }
 
   @Override

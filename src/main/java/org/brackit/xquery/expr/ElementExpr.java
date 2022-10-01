@@ -77,7 +77,7 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
     this.contentExprs = contentExpr;
     this.bind = bind;
     this.appendOnly = appendOnly;
-    this.name = (QNm) ((nameExpr instanceof QNm) ? nameExpr : null);
+    this.name = (QNm) (nameExpr instanceof QNm ? nameExpr : null);
   }
 
   @Override
@@ -88,7 +88,7 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
   @Override
   public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
     // See XQuery 3.7.3.1 Computed Element Constructors
-    QNm name = (this.name != null) ? this.name : buildElementName(sctx, nameExpr.evaluateToItem(ctx, tuple));
+    QNm name = this.name != null ? this.name : buildElementName(sctx, nameExpr.evaluateToItem(ctx, tuple));
 
     final Node<?> element;
 
@@ -110,9 +110,9 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
 
     String nsURI = name.getNamespaceURI();
     String prefix = name.getPrefix();
-    if ((prefix != null) && (element.getScope().resolvePrefix(prefix) == null)) {
+    if (prefix != null && element.getScope().resolvePrefix(prefix) == null) {
       element.getScope().addPrefix(prefix, nsURI);
-    } else if ((!nsURI.isEmpty()) && (!nsURI.equals(element.getScope().defaultNS()))) {
+    } else if (!nsURI.isEmpty() && !nsURI.equals(element.getScope().defaultNS())) {
       element.getScope().setDefaultNS(nsURI);
     }
 
@@ -134,14 +134,14 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
       Sequence content = contentExprs[i].evaluate(ctx, t);
       buildContentSequence(ctx, sink, content);
     }
-    return (appendOnly) ? null : element;
+    return appendOnly ? null : element;
   }
 
   @Override
   public boolean isUpdating() {
     boolean updating = nameExpr.isUpdating();
     int i = 0;
-    while ((!updating) && (i < contentExprs.length)) {
+    while (!updating && i < contentExprs.length) {
       updating = contentExprs[i++].isUpdating();
     }
     return updating;

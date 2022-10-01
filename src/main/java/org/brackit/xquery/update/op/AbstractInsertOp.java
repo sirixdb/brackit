@@ -63,7 +63,7 @@ public abstract class AbstractInsertOp implements UpdateOp {
 
   public void addContent(Node<?> node) {
     if (size == content.length) {
-      content = Arrays.copyOf(content, (content.length * 3) / 2 + 1);
+      content = Arrays.copyOf(content, content.length * 3 / 2 + 1);
     }
 
     content[size++] = node;

@@ -68,16 +68,16 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
     if (charArray[pos] == 'Z') {
       // UTC
       pos++;
-    } else if ((charArray[pos] == '+') || (charArray[pos] == '-')) {
-      negative = (charArray[pos++] == '-');
+    } else if (charArray[pos] == '+' || charArray[pos] == '-') {
+      negative = charArray[pos++] == '-';
 
       // parse hour
       int start = pos;
-      while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+      while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
         pos++;
       int end = pos;
-      int v = (end - start == 2) ? Integer.parseInt(str.substring(start, end)) : -1;
-      if ((v < 0) || (v > 24)) {
+      int v = end - start == 2 ? Integer.parseInt(str.substring(start, end)) : -1;
+      if (v < 0 || v > 24) {
         throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
                                  "Cannot cast '%s' to xs:dateTime: illegal hour",
                                  str);
@@ -85,17 +85,17 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
       hour = (byte) v;
 
       // consume ':'
-      if ((pos >= length) || (charArray[pos++] != ':')) {
+      if (pos >= length || charArray[pos++] != ':') {
         throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Illegal hour in timezone: %s", str);
       }
 
       // parse minute
       start = pos;
-      while ((pos < length) && ('0' <= charArray[pos]) && (charArray[pos] <= '9'))
+      while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
         pos++;
       end = pos;
-      v = (end - start == 2) ? Integer.parseInt(str.substring(start, end)) : -1;
-      if ((v < 0) || (v > 59)) {
+      v = end - start == 2 ? Integer.parseInt(str.substring(start, end)) : -1;
+      if (v < 0 || v > 59) {
         throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Illegal minute in timezone: %s", str);
       }
       minute = (byte) v;
@@ -107,7 +107,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Illegal timezone: %s", str);
     }
 
-    if ((hour == 0) && (minute == 0)) {
+    if (hour == 0 && minute == 0) {
       return UTC_TIMEZONE;
     }
 
@@ -120,7 +120,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
     AbstractTimeInstant a = this;
     AbstractTimeInstant b = other;
 
-    if ((a.getTimezone() != null) && ((a.getTimezone().getHours() != 0) || (a.getTimezone().getMinutes() != 0))) {
+    if (a.getTimezone() != null && (a.getTimezone().getHours() != 0 || a.getTimezone().getMinutes() != 0)) {
       a = new DateTime(a.getYear(),
                        a.getMonth(),
                        a.getDay(),
@@ -130,7 +130,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
                        a.getTimezone()).canonicalize();
       aHasTZ = true;
     }
-    if ((b.getTimezone() != null) && ((b.getTimezone().getHours() != 0) || (b.getTimezone().getMinutes() != 0))) {
+    if (b.getTimezone() != null && (b.getTimezone().getHours() != 0 || b.getTimezone().getMinutes() != 0)) {
       b = new DateTime(b.getYear(),
                        b.getMonth(),
                        b.getDay(),
@@ -230,7 +230,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
     carry = fQuotient(temp, 24);
 
     byte maxDayInMonth = maxDayInMonth(newYear, newMonth);
-    int newDays = ((getDay() > maxDayInMonth) ? maxDayInMonth : (getDay() < 1) ? 1 : getDay()) + durationDays + carry;
+    int newDays = (getDay() > maxDayInMonth ? maxDayInMonth : getDay() < 1 ? 1 : getDay()) + durationDays + carry;
 
     while (true) {
       if (newDays < 0) {
@@ -297,7 +297,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
     if (ehour < a.getHours()) {
       hours = a.getHours() - ehour;
     } else {
-      hours = (24 - ehour) + a.getHours();
+      hours = 24 - ehour + a.getHours();
       if (eday == maxDayInMonth(eyear, emonth)) {
         if (emonth == 12) {
           eyear++;
@@ -314,7 +314,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
     if (eyear < a.getYear()) {
       // advance days to 1st. of next month
       byte maxDayInMonth = maxDayInMonth(eyear, emonth);
-      days += (maxDayInMonth - eday + 1);
+      days += maxDayInMonth - eday + 1;
       eday = 1;
 
       // advance months to next year
@@ -326,15 +326,15 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
 
       // advance years
       while (++eyear < a.getYear()) {
-        boolean isLeap = ((eyear % 400 == 0) || ((eyear % 100 != 0) && (eyear % 4 == 0)));
-        days += (isLeap) ? 366 : 365;
+        boolean isLeap = eyear % 400 == 0 || eyear % 100 != 0 && eyear % 4 == 0;
+        days += isLeap ? 366 : 365;
       }
     }
 
     if (emonth < a.getMonth()) {
       // advance days to 1st. of next month
       byte maxDayInMonth = maxDayInMonth(eyear, emonth);
-      days += (maxDayInMonth - eday + 1);
+      days += maxDayInMonth - eday + 1;
       eday = 1;
 
       // advance months
@@ -346,7 +346,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
 
     if (eday < a.getDay()) {
       // advance days
-      days += (a.getDay() - eday);
+      days += a.getDay() - eday;
     }
 
     return new DTD(negative, days, (byte) hours, (byte) minutes, micros);
@@ -361,7 +361,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
   }
 
   private static int fQuotient(int a, int b) {
-    return (a >= 0) ? a / b : (((a / b) * b) == a) ? a / b : a / b - 1;
+    return a >= 0 ? a / b : a / b * b == a ? a / b : a / b - 1;
   }
 
   private static int modulo(int a, int low, int high) {
@@ -397,19 +397,19 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
     }
     DTD tz = getTimezone();
     DTD otz = other.getTimezone();
-    return (tz == null) ? ((otz == null) ? 0 : -1) : (otz == null) ? 1 : tz.atomicCmpInternal(otz);
+    return tz == null ? otz == null ? 0 : -1 : otz == null ? 1 : tz.atomicCmpInternal(otz);
   }
 
   protected abstract AbstractTimeInstant create(short year, byte month, byte day, byte hours, byte minutes, int micros,
       DTD timezone);
 
   protected byte maxDayInMonth(int year, int month) {
-    int m = (month % 13);
+    int m = month % 13;
     int y = year + month / 13;
 
     if (m == 2) {
-      return ((y % 400 == 0) || ((y % 100 != 0) && (y % 4 == 0))) ? (byte) 29 : (byte) 28;
-    } else if ((m == 4) || (m == 6) || (m == 9) || (m == 11)) {
+      return y % 400 == 0 || y % 100 != 0 && y % 4 == 0 ? (byte) 29 : (byte) 28;
+    } else if (m == 4 || m == 6 || m == 9 || m == 11) {
       return 30;
     } else {
       return 31;
@@ -421,11 +421,11 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
     String tzTmp = "";
     if (timezone != null) {
       byte tzHours = timezone.getHours();
-      String tzHTmp = ((tzHours < 10) ? "0" : "") + tzHours;
+      String tzHTmp = (tzHours < 10 ? "0" : "") + tzHours;
       byte tzMinutes = timezone.getMinutes();
-      String tzMinTmp = ((tzMinutes < 10) ? "0" : "") + tzMinutes;
+      String tzMinTmp = (tzMinutes < 10 ? "0" : "") + tzMinutes;
       tzTmp =
-          ((tzHours == 0) && (tzMinutes == 0)) ? "Z" : ((timezone.isNegative()) ? "-" : "+") + tzHTmp + ":" + tzMinTmp;
+          tzHours == 0 && tzMinutes == 0 ? "Z" : (timezone.isNegative() ? "-" : "+") + tzHTmp + ":" + tzMinTmp;
     }
     return tzTmp;
   }
@@ -433,7 +433,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
   @Override
   public AbstractTimeInstant canonicalize() {
     DTD timezone = getTimezone();
-    if ((timezone == null) || ((timezone.getDays() == 0) && (timezone.getHours() == 0))) {
+    if (timezone == null || timezone.getDays() == 0 && timezone.getHours() == 0) {
       return this;
     }
     return add(!timezone.isNegative(), timezone, UTC_TIMEZONE);

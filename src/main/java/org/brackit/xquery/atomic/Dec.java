@@ -92,7 +92,7 @@ public class Dec extends AbstractNumeric implements DecNumeric {
 
   @Override
   public boolean booleanValue() throws QueryException {
-    return (v.intValue() != 0);
+    return v.intValue() != 0;
   }
 
   @Override
@@ -124,7 +124,7 @@ public class Dec extends AbstractNumeric implements DecNumeric {
   @Override
   public String stringValue() {
     String s = v.toPlainString();
-    return (v.scale() <= 0) ? s : killTrailingZeros(s);
+    return v.scale() <= 0 ? s : killTrailingZeros(s);
   }
 
   public static void main(String[] args) {
@@ -241,12 +241,12 @@ public class Dec extends AbstractNumeric implements DecNumeric {
 
   @Override
   public Numeric round() throws QueryException {
-    return (v.signum() >= 0) ? new Dec(v.setScale(0, RoundingMode.HALF_UP)) : new Dec(v.setScale(0, RoundingMode.DOWN));
+    return v.signum() >= 0 ? new Dec(v.setScale(0, RoundingMode.HALF_UP)) : new Dec(v.setScale(0, RoundingMode.DOWN));
   }
 
   @Override
   public Numeric abs() throws QueryException {
-    return (v.signum() >= 0) ? this : new Int(v.negate());
+    return v.signum() >= 0 ? this : new Int(v.negate());
   }
 
   @Override

@@ -90,12 +90,12 @@ public class Count extends Check implements Operator {
 
   @Override
   public Cursor create(QueryContext ctx, Tuple tuple) {
-    return (bind) ? new CountCursor(in.create(ctx, tuple)) : in.create(ctx, tuple);
+    return bind ? new CountCursor(in.create(ctx, tuple)) : in.create(ctx, tuple);
   }
 
   @Override
   public Cursor create(QueryContext ctx, Tuple[] buf, int len) {
-    return (bind) ? new CountCursor(in.create(ctx, buf, len)) : in.create(ctx, buf, len);
+    return bind ? new CountCursor(in.create(ctx, buf, len)) : in.create(ctx, buf, len);
   }
 
   @Override

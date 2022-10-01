@@ -91,17 +91,17 @@ public abstract class AbstractBuilder<E extends Node<E>> implements SubtreeListe
   protected abstract E buildProcessingInstruction(E parent, QNm target, Atomic text) throws DocumentException;
 
   private void prepare() throws DocumentException {
-    if ((stackSize == 0) && (rootParent != null)) {
+    if (stackSize == 0 && rootParent != null) {
       throw new DocumentException("A root already exists");
     }
     if (stackSize == stack.length) {
-      stack = Arrays.copyOf(stack, ((stackSize * 3) / 2 + 1));
+      stack = Arrays.copyOf(stack, stackSize * 3 / 2 + 1);
     }
   }
 
   @SuppressWarnings("unchecked")
   public E root() throws DocumentException {
-    E root = (E) ((rootParent == null) ? stack[0] : stack[1]);
+    E root = (E) (rootParent == null ? stack[0] : stack[1]);
     if (root == null) {
       throw new DocumentException("No root node has been build");
     }

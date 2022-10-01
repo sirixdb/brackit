@@ -74,7 +74,7 @@ public class Cfg {
 
   public static String asString(String key, String dflt) {
     String s = getValue(key);
-    return (s != null) ? s : dflt;
+    return s != null ? s : dflt;
   }
 
   public static String check(String key) {
@@ -103,7 +103,7 @@ public class Cfg {
 
   public static int asInt(String key, int dflt) {
     String s = getValue(key);
-    return (s != null) ? Integer.parseInt(s) : dflt;
+    return s != null ? Integer.parseInt(s) : dflt;
   }
 
   public static void set(String key, long val) {
@@ -116,7 +116,7 @@ public class Cfg {
 
   public static long asLong(String key, long dflt) {
     String s = getValue(key);
-    return (s != null) ? Long.parseLong(s) : dflt;
+    return s != null ? Long.parseLong(s) : dflt;
   }
 
   public static void set(String key, boolean val) {
@@ -129,7 +129,7 @@ public class Cfg {
 
   public static boolean asBool(String key, boolean dflt) {
     String s = getValue(key);
-    return (s != null) ? Boolean.parseBoolean(s) : dflt;
+    return s != null ? Boolean.parseBoolean(s) : dflt;
   }
 
   public static void set(String key, double val) {
@@ -142,6 +142,6 @@ public class Cfg {
 
   public static double asDouble(String key, double dflt) {
     String s = getValue(key);
-    return (s != null) ? Double.parseDouble(s) : dflt;
+    return s != null ? Double.parseDouble(s) : dflt;
   }
 }

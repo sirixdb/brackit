@@ -78,12 +78,12 @@ public final class AttributeType extends NodeType {
 
   @Override
   public boolean matches(Node<?> node) throws QueryException {
-    return ((node.getKind() == Kind.ATTRIBUTE) && ((name == null) || (name.eq(node.getName()))) && ((type == null)
-        || (node.type().instanceOf(type))));
+    return node.getKind() == Kind.ATTRIBUTE && (name == null || name.eq(node.getName())) && (type == null
+        || node.type().instanceOf(type));
   }
 
   public String toString() {
-    return (type == null)
+    return type == null
         ? String.format("attribute(\"%s\")", name)
         : String.format("attribute(\"%s\", \"%s\")", name, type);
   }
@@ -101,7 +101,7 @@ public final class AttributeType extends NodeType {
         return false;
       }
     } else {
-      if ((t.name == null) || (!name.equals(t.name))) {
+      if (t.name == null || !name.equals(t.name)) {
         return false;
       }
     }
@@ -110,7 +110,7 @@ public final class AttributeType extends NodeType {
         return false;
       }
     } else {
-      if ((t.type == null) || (!type.equals(t.type))) {
+      if (t.type == null || !type.equals(t.type)) {
         return false;
       }
     }

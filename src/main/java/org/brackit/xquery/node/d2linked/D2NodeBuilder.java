@@ -62,19 +62,19 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
 
   public D2NodeBuilder(D2Node parent, D2Node sibling, boolean right) throws DocumentException {
     super(parent);
-    this.coll = (parent != null) ? parent.getCollection() : null;
+    this.coll = parent != null ? parent.getCollection() : null;
     this.sibling = sibling;
     this.right = right;
   }
 
   @Override
   protected D2Node buildDocument() throws DocumentException {
-    return (coll == null) ? new DocumentD2Node() : new DocumentD2Node(coll);
+    return coll == null ? new DocumentD2Node() : new DocumentD2Node(coll);
   }
 
   @Override
   protected D2Node buildAttribute(D2Node parent, QNm name, Atomic value) throws DocumentException {
-    return (parent != null) ? parent.setAttribute(name, value) : first(Kind.ATTRIBUTE, name, value);
+    return parent != null ? parent.setAttribute(name, value) : first(Kind.ATTRIBUTE, name, value);
   }
 
   D2Node first(Kind kind, QNm name, Atomic value) throws DocumentException {

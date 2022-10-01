@@ -48,6 +48,6 @@ public class ArrayStream<E> implements Stream<E> {
 
   @Override
   public E next() throws DocumentException {
-    return (pos < v.length) ? v[pos++] : null;
+    return pos < v.length ? v[pos++] : null;
   }
 }

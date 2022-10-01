@@ -42,7 +42,7 @@ public abstract class BaseIter implements Iter {
   public void skip(IntNumeric i) throws QueryException {
     Counter skipped = new Counter();
     if (skipped.cmp(i) < 0) {
-      while ((next() != null) && (skipped.inc().cmp(i) < 0))
+      while (next() != null && skipped.inc().cmp(i) < 0)
         ;
     }
   }

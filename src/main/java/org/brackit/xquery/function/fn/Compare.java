@@ -56,9 +56,9 @@ public class Compare extends AbstractFunction {
       }
     }
 
-    int res = ((args[0] != null) && (args[1] != null))
+    int res = args[0] != null && args[1] != null
         ? ((Str) args[0]).cmp((Str) args[1])
-        : ((args[0] == null) ? ((args[1] == null) ? 0 : 1) : -1);
-    return (res < 0) ? Int32.N_ONE : (res == 0) ? Int32.ZERO : Int32.ONE;
+        : args[0] == null ? args[1] == null ? 0 : 1 : -1;
+    return res < 0 ? Int32.N_ONE : res == 0 ? Int32.ZERO : Int32.ONE;
   }
 }

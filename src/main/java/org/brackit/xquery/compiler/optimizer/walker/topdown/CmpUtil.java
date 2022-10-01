@@ -62,12 +62,12 @@ public final class CmpUtil {
 
   public static int type(Cmp cmp, boolean isGCmp) {
     return switch (cmp) {
-      case eq -> (isGCmp) ? GeneralCompEQ : ValueCompEQ;
-      case ge -> (isGCmp) ? GeneralCompGE : ValueCompGE;
-      case gt -> (isGCmp) ? GeneralCompGT : ValueCompGT;
-      case le -> (isGCmp) ? GeneralCompLE : ValueCompLE;
-      case lt -> (isGCmp) ? GeneralCompLT : ValueCompLT;
-      case ne -> (isGCmp) ? GeneralCompNE : ValueCompNE;
+      case eq -> isGCmp ? GeneralCompEQ : ValueCompEQ;
+      case ge -> isGCmp ? GeneralCompGE : ValueCompGE;
+      case gt -> isGCmp ? GeneralCompGT : ValueCompGT;
+      case le -> isGCmp ? GeneralCompLE : ValueCompLE;
+      case lt -> isGCmp ? GeneralCompLT : ValueCompLT;
+      case ne -> isGCmp ? GeneralCompNE : ValueCompNE;
     };
   }
 

@@ -46,6 +46,6 @@ public class Count extends AbstractFunction {
 
   @Override
   public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
-    return (args[0] != null) ? args[0].size() : Int32.ZERO;
+    return args[0] != null ? args[0].size() : Int32.ZERO;
   }
 }

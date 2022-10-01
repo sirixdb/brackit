@@ -72,7 +72,7 @@ public class Data extends AbstractFunction {
 
             Item next = it.next();
 
-            return (next != null) ? next.atomize() : null;
+            return next != null ? next.atomize() : null;
           }
 
           @Override

@@ -63,7 +63,7 @@ public final class JsonTest extends XQueryBaseTest {
         let $object := {"blabla":{"foo":{"baz":{"foo":"bar"}}}}
         let $foo := "foo"
         let $baz := "baz"
-        let $sequence := $object==>$foo=>$baz=>foo
+        let $sequence := $object=.$foo.$baz.foo
         return $sequence
         """;
     final var result = query(query);
@@ -76,7 +76,7 @@ public final class JsonTest extends XQueryBaseTest {
         let $object := {"foo":{"baz":{"foo":"bar"}}}
         let $foo := "foo"
         let $baz := "baz"
-        let $sequence := $object=>$foo=>$baz=>foo
+        let $sequence := $object.$foo.$baz.foo
         return $sequence
         """;
     final var result = query(query);
@@ -87,9 +87,9 @@ public final class JsonTest extends XQueryBaseTest {
   public void testVarDeref2() throws IOException {
     final String query = """
         let $array := [true,false,"true",{"foo":["tada",{"baz":["yes","no",null],"bar": null, "foobar":"text"},{"baz":true},{"baz":{"foo":"bar"}}]}]
-        let $sequence := $array[]=>foo[]
+        let $sequence := $array[].foo[]
         let $baz := "baz"
-        let $sequence2 := $sequence=>$baz=>foo
+        let $sequence2 := $sequence.$baz.foo
         return $sequence2
         """;
     final var result = query(query);
@@ -102,7 +102,7 @@ public final class JsonTest extends XQueryBaseTest {
         let $object := {"foo":{"baz":{"foo":"bar"}}}
         let $foo := "foo"
         let $baz := "baz"
-        let $sequence := $object=>foo=>baz=>foo
+        let $sequence := $object.foo.baz.foo
         return $sequence
         """;
     final var result = query(query);
@@ -140,7 +140,7 @@ public final class JsonTest extends XQueryBaseTest {
   public void random() throws IOException {
     final String query = """
         let $array := [true,false,"true",{"foo":["tada",{"baz":["yes","no",null],"bar": null, "foobar":"text"},{"baz":true}]}]
-        let $sequence := $array[]=>foo[[1]]{baz,foobar}
+        let $sequence := $array[].foo[[1]]{baz,foobar}
         let $resultArray := for $item in bit:values($sequence)
                             where $item instance of array()
                             return $item
@@ -173,11 +173,11 @@ public final class JsonTest extends XQueryBaseTest {
         ]
         let $join :=
           for $store in $stores, $sale in $sales
-          where $store=>"store number" = $sale=>"store number"
+          where $store."store number" = $sale."store number"
           return {
-            "nb" : $store=>"store number",
-            "state" : $store=>state,
-            "sold" : $sale=>product
+            "nb" : $store."store number",
+            "state" : $store.state,
+            "sold" : $sale.product
           }
         return [$join]
         """;
@@ -399,7 +399,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void derefExprWithNegativeArrayIndexExpr() throws IOException {
     final String query = """
-          [true,false,"true",{"foo":["tada",{"baz":"yes"},{"baz":true}]}][]=>foo[[-1]]=>baz
+          [true,false,"true",{"foo":["tada",{"baz":"yes"},{"baz":true}]}][].foo[[-1]].baz
         """;
     final var result = query(query);
     assertEquals("true", result);
@@ -445,9 +445,9 @@ public final class JsonTest extends XQueryBaseTest {
                           let $len := bit:len($fields)
                           for $field at $pos in $fields
                           return if ($pos < $len) then (
-                            $object=>$field || ","
+                            $object.$field || ","
                           ) else (
-                            $object=>$field || "\n"
+                            $object.$field || "\n"
                           )
           return string-join($value,"")
         """;
@@ -817,7 +817,30 @@ public final class JsonTest extends XQueryBaseTest {
         let $total-count := count($logs)
                 
         return for $log in $logs
-            let $status := $log=>status
+            let $status := $log.status
+            group by $status
+            order by count($log) descending
+            return {
+                xs:string($status): {
+                    "count": count($log),
+                    "fraction": count($log) div $total-count[1]
+                }
+            }
+        """.stripIndent();
+    final var result = query(query);
+    assertEquals(
+        "{\"200\":{\"count\":409,\"fraction\":0.818}} {\"404\":{\"count\":56,\"fraction\":0.112}} {\"500\":{\"count\":35,\"fraction\":0.07}}",
+        result);
+  }
+
+  @Test
+  public void remoteUrlCollection() throws IOException {
+    final String query = """
+        let $logs := jn:collection('https://raw.githubusercontent.com/sirixdb/brackit/master/logs.json')[]
+        let $total-count := count($logs)
+                
+        return for $log in $logs
+            let $status := $log.status
             group by $status
             order by count($log) descending
             return {
@@ -880,7 +903,7 @@ public final class JsonTest extends XQueryBaseTest {
   public void renameObjectField() throws IOException {
     final String query = """
           let $object := {"foo": 0}
-          return rename json $object=>foo as "bar"
+          return rename json $object.foo as "bar"
         """;
     query(query);
   }
@@ -921,7 +944,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void removeFromObject() throws IOException {
     final String query = """
-          delete json {"foo": not(true()), "baz": jn:null()}=>foo
+          delete json {"foo": not(true()), "baz": jn:null()}.foo
         """;
     query(query);
   }
@@ -937,7 +960,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void replaceObjectValue() throws IOException {
     final String query = """
-          replace json value of {"foo": not(true()), "baz": jn:null()}=>foo with 1
+          replace json value of {"foo": not(true()), "baz": jn:null()}.foo with 1
         """;
     query(query);
   }
@@ -954,7 +977,7 @@ public final class JsonTest extends XQueryBaseTest {
   public void testNegativeArrayIndex() throws IOException {
     final var query = """
           let $array := [true,false,"true",{"foo":["tada",{"baz":"yes"},{"baz":true}]}]
-          return $array[]=>foo[[-1]]=>baz
+          return $array[].foo[[-1]].baz
         """;
     final var result = query(query);
     assertEquals("true", result);
@@ -964,7 +987,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testDescendantDerefExpr() throws IOException {
     final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
-    final var query = json + "==>revision=>tada[.=>foo=>baz = 'bar']";
+    final var query = json + "=.revision.tada[..foo.baz = 'bar']";
     final var result = query(query);
     assertEquals("[{\"foo\":\"bar\"},{\"baz\":false},\"boo\",{},[{\"foo\":[true,{\"baz\":\"bar\"}]}]]", result);
   }
@@ -972,7 +995,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testDerefExpr() throws IOException {
     final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
-    final var query = json + "=>sirix[]=>revision=>tada[.[[4]][]=>foo[[0]] = true()]";
+    final var query = json + ".sirix[].revision.tada[$$[[4]][].foo[[0]] = true()]";
     final var result = query(query);
     assertEquals("[{\"foo\":\"bar\"},{\"baz\":false},\"boo\",{},[{\"foo\":[true,{\"baz\":\"bar\"}]}]]", result);
   }
@@ -980,7 +1003,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testDerefExpr1() throws IOException {
     final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
-    final var query = json + "=>sirix[[2]]=>revision=>tada[.[][]=>foo[]=>baz eq 'bar']";
+    final var query = json + ".sirix[[2]].revision.tada[$$[][].foo[].baz eq 'bar']";
     final var result = query(query);
     assertEquals("[{\"foo\":\"bar\"},{\"baz\":false},\"boo\",{},[{\"foo\":[true,{\"baz\":\"bar\"}]}]]", result);
   }
@@ -988,7 +1011,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testDerefExpr2() throws IOException {
     final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
-    final var query = json + "=>sirix[]=>revision=>tada[]=>foo";
+    final var query = json + ".sirix[].revision.tada[].foo";
     final var result = query(query);
     assertEquals("bar bar bar", result);
   }
@@ -996,7 +1019,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testDerefExpr3() throws IOException {
     final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
-    final var query = json + "=>sirix[[2]]=>revision=>tada[[4]][[0]]=>foo[[1]]=>baz";
+    final var query = json + ".sirix(2).revision.tada(4)(0).foo(1).baz";
     final var result = query(query);
     assertEquals("bar", result);
   }
@@ -1004,7 +1027,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testDerefExpr4() throws IOException {
     final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
-    final var query = json + "=>sirix[[2]]=>revision=>tada[[4]]=>foo[[1]]=>baz";
+    final var query = json + ".sirix[[2]].revision.tada[[4]].foo[[1]].baz";
     final var result = query(query);
     assertEquals("", result);
   }
@@ -1012,7 +1035,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testDerefExpr5() throws IOException {
     final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
-    final var query = json + "=>sirix[[2]]=>revision=>tada[[4]][[0]]=>foo[]";
+    final var query = json + ".sirix[[2]].revision.tada[[4]][[0]].foo[]";
     final var result = query(query);
     assertEquals("true {\"baz\":\"bar\"}", result);
   }
@@ -1027,7 +1050,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testNestedDerefsWithArrays() throws IOException {
     final var query =
-        "[{\"key\":0},{\"value\":[{\"key\":{\"boolean\":true()}},{\"newkey\":\"yes\"}]},{\"key\":\"hey\",\"value\":false()}][]=>value[]=>key=>boolean";
+        "[{\"key\":0},{\"value\":[{\"key\":{\"boolean\":true()}},{\"newkey\":\"yes\"}]},{\"key\":\"hey\",\"value\":false()}][].value[].key.boolean";
     final var result = query(query);
     assertEquals("true", result);
   }
@@ -1035,7 +1058,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testArray() throws IOException {
     final var query =
-        "{\"foo\": [\"bar\", jn:null(), 2.33],\"bar\": {\"hello\": \"world\", \"helloo\": true()},\"baz\": \"hello\",\"tada\": [{\"foo\": \"bar\"}, {\"baz\": false()}, \"boo\", {}, []]}=>foo";
+        "{\"foo\": [\"bar\", jn:null(), 2.33],\"bar\": {\"hello\": \"world\", \"helloo\": true()},\"baz\": \"hello\",\"tada\": [{\"foo\": \"bar\"}, {\"baz\": false()}, \"boo\", {}, []]}.foo";
     final var result = query(query);
     assertEquals("[\"bar\",null,2.33]", result);
   }
@@ -1043,7 +1066,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void nestedExpressionsTest() throws IOException {
     final var json = Files.readString(JSON_RESOURCES.resolve("user_profiles.json"));
-    final var query = json + "=>websites[]=>description";
+    final var query = json + ".websites[].description";
     final var result = query(query);
     assertEquals("work tutorials", result);
   }
@@ -1051,7 +1074,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void nestedExpressionsWithPredicateTest() throws IOException {
     final var json = Files.readString(JSON_RESOURCES.resolve("user_profiles.json"));
-    final var query = json + "=>websites[[]][.=>description eq \"work\"]{description}";
+    final var query = json + ".websites[[]][$$.description eq \"work\"]{description}";
     final var result = query(query);
     assertEquals("{\"description\":\"work\"}", result);
   }
@@ -1075,7 +1098,7 @@ public final class JsonTest extends XQueryBaseTest {
     final var query = """
             let $values := [{"key": "hey"}, {"key": 0}]
             for $i in $values
-            where $i=>key instance of xs:integer and $i=>key eq 0
+            where $i.key instance of xs:integer and $i.key eq 0
             return $i
         """;
     final var result = query(query);
@@ -1142,15 +1165,15 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void forEachInRecordTest() throws IOException {
-    final var query = "let $json := {\"key\": 3, \"foo\": 0} for $key in bit:fields($json) where $json=>$key eq 3\n"
-        + "return { $key: $json=>$key }";
+    final var query = "let $json := {\"key\": 3, \"foo\": 0} for $key in bit:fields($json) where $json.$key eq 3\n"
+        + "return { $key: $json.$key }";
     final var result = query(query);
     assertEquals("{\"key\":3}", result);
   }
 
   @Test
   public void forEachInArrayTest() throws IOException {
-    final var query = "for $i in [{\"key\": 3}, {\"key\": 0}] where $i=>key eq 0 return $i";
+    final var query = "for $i in [{\"key\": 3}, {\"key\": 0}] where $i.key eq 0 return $i";
     final var result = query(query);
     assertEquals("{\"key\":0}", result);
   }
@@ -1242,7 +1265,7 @@ public final class JsonTest extends XQueryBaseTest {
     final var query = """
             let $x := { "eyes": "blue", "hair": "fuchsia" }
             let $y := { "eyes": "brown", "hair": "brown" }
-            return { "eyes": $x=>eyes, "hair": $y=>hair }
+            return { "eyes": $x.eyes, "hair": $y.hair }
         """;
     final var result = query(query);
     assertEquals("{\"eyes\":\"blue\",\"hair\":\"brown\"}", result);
@@ -1258,7 +1281,7 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void predicateClauseTest() throws IOException {
-    final var query = "{\"key\": 3, \"foo\": 0}[.=>key eq 3]";
+    final var query = "{\"key\": 3, \"foo\": 0}[$$.key eq 3]";
     final var result = query(query);
     assertEquals("{\"key\":3,\"foo\":0}", result);
   }

@@ -60,7 +60,7 @@ public class LetBind extends Check implements Operator {
       if (t == null) {
         return null;
       }
-      if ((check) && (dead(t))) {
+      if (check && dead(t)) {
         return t.concat((Sequence) null);
       }
 
@@ -85,12 +85,12 @@ public class LetBind extends Check implements Operator {
 
   @Override
   public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-    return (bind) ? new LetBindCursor(in.create(ctx, tuple)) : in.create(ctx, tuple);
+    return bind ? new LetBindCursor(in.create(ctx, tuple)) : in.create(ctx, tuple);
   }
 
   @Override
   public Cursor create(QueryContext ctx, Tuple[] buf, int len) throws QueryException {
-    return (bind) ? new LetBindCursor(in.create(ctx, buf, len)) : in.create(ctx, buf, len);
+    return bind ? new LetBindCursor(in.create(ctx, buf, len)) : in.create(ctx, buf, len);
   }
 
   @Override

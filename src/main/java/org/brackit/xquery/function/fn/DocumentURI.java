@@ -52,6 +52,6 @@ public class DocumentURI extends AbstractFunction {
     }
     Node<?> node = (Node<?>) args[0];
     org.brackit.xquery.xdm.node.NodeCollection<?> collection = node.getCollection();
-    return (collection != null) ? new AnyURI(collection.getName()) : null;
+    return collection != null ? new AnyURI(collection.getName()) : null;
   }
 }

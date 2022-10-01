@@ -117,7 +117,7 @@ public abstract class AbstractSequence implements Sequence {
 
   @Override
   public Tuple conreplace(Sequence con, int position, Sequence s) {
-    if ((position < 0) || (position >= 2)) {
+    if (position < 0 || position >= 2) {
       throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR, position);
     }
     Sequence[] tmp = new Sequence[] { this, con };
@@ -128,7 +128,7 @@ public abstract class AbstractSequence implements Sequence {
   @Override
   public Tuple conreplace(Sequence[] con, int position, Sequence s) {
     int nLen = con.length + 1;
-    if ((position < 0) || (position >= nLen)) {
+    if (position < 0 || position >= nLen) {
       throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR, position);
     }
     Sequence[] tmp = new Sequence[nLen];

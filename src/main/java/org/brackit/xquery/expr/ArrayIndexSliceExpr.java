@@ -114,7 +114,7 @@ public final class ArrayIndexSliceExpr implements Expr {
             if (first) {
               first = false;
               buffer.add(item);
-            } else if ((i % step) == 0) {
+            } else if (i % step == 0) {
               buffer.add(item);
             }
             i++;
@@ -173,7 +173,7 @@ public final class ArrayIndexSliceExpr implements Expr {
       if (first) {
         first = false;
         buffer.add(item);
-      } else if ((i % step) == 0) {
+      } else if (i % step == 0) {
         buffer.add(item);
       }
       i++;
@@ -202,7 +202,7 @@ public final class ArrayIndexSliceExpr implements Expr {
       if (first) {
         first = false;
         buffer.add(item);
-      } else if ((i % step) == 0) {
+      } else if (i % step == 0) {
         buffer.add(item);
       }
       i++;

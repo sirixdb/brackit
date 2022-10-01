@@ -67,10 +67,10 @@ public class CardinalityTest extends AbstractFunction {
 
   private Sequence zeroOrOne(Sequence[] args) throws QueryException {
     Sequence s = args[0];
-    if ((s != null) && (!(s instanceof Item))) {
+    if (s != null && !(s instanceof Item)) {
       Iter it = s.iterate();
       try {
-        if (((s = it.next()) != null) && (it.next() != null)) {
+        if ((s = it.next()) != null && it.next() != null) {
           throw new QueryException(ErrorCode.ERR_ZERO_OR_ONE_FAILED,
                                    "fn:zero-or-one called with a sequence containing more than one item");
         }

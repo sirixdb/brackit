@@ -54,7 +54,7 @@ public class CASDeque<E> implements Deque<E> {
     AtomicReferenceArray<E> q = this.queue;
     Object[] tmp = new Object[q.length()];
     int len = 0;
-    for (E x; ((x = poll()) != null); ) {
+    for (E x; (x = poll()) != null; ) {
       tmp[len++] = x;
     }
     push(t);
@@ -69,7 +69,7 @@ public class CASDeque<E> implements Deque<E> {
     int m;
     if ((q = queue) != null) { // ignore if queue removed
       // calc index with modulo (length is power of 2!)
-      int i = ((s = queueTop) & (m = q.length() - 1));
+      int i = (s = queueTop) & (m = q.length() - 1);
       q.set(i, t);
       queueTop = s + 1;
       s -= queueBase;
@@ -103,7 +103,7 @@ public class CASDeque<E> implements Deque<E> {
     int b;
     int i;
     if (queueTop != (b = queueBase) && (q = queue) != null && // must read q after b
-        (i = (q.length() - 1) & b) >= 0 && (t = q.get(i)) != null && queueBase == b && q.compareAndSet(i, t, null)) {
+        (i = q.length() - 1 & b) >= 0 && (t = q.get(i)) != null && queueBase == b && q.compareAndSet(i, t, null)) {
       queueBase = b + 1;
       return t;
     }
@@ -123,9 +123,9 @@ public class CASDeque<E> implements Deque<E> {
     int oldMask;
     if (oldQ != null && (oldMask = oldQ.length() - 1) >= 0) {
       for (int b = queueBase; b != top; ++b) {
-        int oldI = b & (oldMask);
+        int oldI = b & oldMask;
         E t = oldQ.get(oldI);
-        if (t != null && oldQ.compareAndSet((b & oldMask), t, null)) {
+        if (t != null && oldQ.compareAndSet(b & oldMask, t, null)) {
           int i = b & mask;
           q.set(i, t);
         }
