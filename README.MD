@@ -201,10 +201,10 @@ For JSON there's the function `jn:doc()`. Let's assume we have the following sim
 }
 ```
 
-We can query this first dereferencing the "products" object field with `=>`, then unbox the array value via `[]` and add a filter where "." denotes the current context item and "{fieldName}" projects the resulting object into a new object, which is returned.
+We can query this first dereferencing the "products" object field with `.`, then unbox the array value via `[]` and add a filter where "$$" denotes the current context item and "{fieldName}" projects the resulting object into a new object, which is returned.
 
 ```java
-java -jar brackit.jar -q "jn:doc('products.json')=>products[][.=>productno eq 4711]{product}"
+java -jar brackit.jar -q "jn:doc('products.json').products[][$$.productno eq 4711]{product}"
 
 Query result
 {"product":"Product number 4711"}
@@ -218,7 +218,7 @@ java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -q "count(doc('http://exa
 
 or
 
-java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -q "count(jn:doc('http://example.org/foo.xml')=>bar[])"
+java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -q "count(jn:doc('http://example.org/foo.xml').bar[])"
 ```
 
 ### Coding with Brackit
@@ -340,19 +340,19 @@ let $r := { "x":1, "y":2 } return { $r, "z":3} (: yields {"x":1,"y":2,"z":3} :)
 (: fields may be selectively projected into a new object :)
 {"x": 1, "y": 2, "z": 3}{z,y} (: yields {"z":3,"y":2} :)
 
-(: values of object fields can be accessed using the deref operator '=>' :)
-{ "a": "hello", "b": "world" }=>b (: yields the string "world" :)
+(: values of object fields can be accessed using the deref operator '.' :)
+{ "a": "hello", "b": "world" }.b (: yields the string "world" :)
 
 (: the deref operator can be used to navigate into deeply nested object structures :)
-let $n := yval let $r := {"e" : {"m":'mvalue', "n":$n}} return $r=>e=>n/y (: yields the XML fragment yval :)
+let $n := yval let $r := {"e" : {"m":'mvalue', "n":$n}} return $r.e.n/y (: yields the XML fragment yval :)
 
 (: the deref operator can be used to navigate into deeply nested object structures in combination with the array unboxing operator for instance :)
 (: note, that here the expression "[]" is unboxing the array and a sequence of items is evaluated for the next deref operator :)
 (: the deref operator thus either get's a sequence input or an object as the left operand :)
-let $r := {"e": {"m": [{"n":"o"}, true, null, {"n": "bar"}] }, "n":"m"}} return $r=>e=>m[]=>n (: yields "o" "bar" :)
+let $r := {"e": {"m": [{"n":"o"}, true, null, {"n": "bar"}] }, "n":"m"}} return $r.e.m[].n (: yields "o" "bar" :)
 
 (: to only retrieve the first item/value in the array you can use an index :)
-let $r := {"e": {"m": [{"n":"o"}, true, null, {"n": "bar"}] }, "n":"m"}} return $r=>e=>m[[0]]=>n (: yields "o" :)
+let $r := {"e": {"m": [{"n":"o"}, true, null, {"n": "bar"}] }, "n":"m"}} return $r.e.m[[0]].n (: yields "o" :)
 
 (: the function bit:fields() returns the field names of an object :)
 let $r := {"x": 1, "y": 2, "z": 3} return bit:fields($r) (: yields the xs:QName array [x,y,z ] :)
@@ -368,7 +368,7 @@ Brackit supports all defined update statements in the JSONiq specification. It m
 ```XQuery
 (: rename a field in an object :)
 let $object := {"foo": 0}
-return rename json $object=>foo as "bar"  (: renames the field foo of the object to bar :)
+return rename json $object.foo as "bar"  (: renames the field foo of the object to bar :)
 
 (: append values into an array :)
 append json (1, 2, 3) into ["foo", true, false, null]  (: appends the sequence (1,2,3) into the array (["foo",true,false,null,[1,2,3]]) :)
@@ -380,13 +380,13 @@ insert json (1, 2, 3) into ["foo", true, false, null] at position 2  (: inserts 
 insert json {"foo": not(true), "baz": null} into {"bar": false}   (: inserts/appends the two field/value pairs into the object ({"bar":false,"foo":false,"baz:null}) :)
 
 (: delete a field/value from an object :)
-delete json {"foo": not(true), "baz": null}=>foo    (: removes the field "foo" from the object :)
+delete json {"foo": not(true), "baz": null}.foo    (: removes the field "foo" from the object :)
 
 (: delete an array item at position 1 in the array :)
 delete json ["foo", 0, 1][[1]]  (: removes the 0 (["foo",1]) :)
 
 (: replace a JSON value of a field with another value :)
-replace json value of {"foo": not(true), "baz": null}=>foo with 1     (: thus, the object is adapted to {"foo":1,"baz":null} :)
+replace json value of {"foo": not(true), "baz": null}.foo with 1     (: thus, the object is adapted to {"foo":1,"baz":null} :)
 
 (: replace an item in an array at the second position (that is the third) :)
 replace json value of ["foo", 0, 1][[2]] with "bar"   (: thus, the array is adapted to ["foo",0,"bar"]
