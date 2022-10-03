@@ -4117,7 +4117,7 @@ public class XQParser extends Tokenizer {
   }
 
   private AST derefDescendantStep() throws TokenizerException {
-    if (!attemptSkipS("->>")) {
+    if (!attemptSkipS("=>>")) {
       return null;
     }
     Token la = laStringSkipWS(true);
