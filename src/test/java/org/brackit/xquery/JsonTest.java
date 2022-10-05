@@ -39,6 +39,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -115,7 +116,7 @@ public final class JsonTest extends XQueryBaseTest {
     try (final var out = new ByteArrayOutputStream()) {
       final Path currentRelativePath =
           Paths.get("").resolve("src").resolve("test").resolve("resources").resolve("modules").resolve("sort.xq");
-      final String currentPath = currentRelativePath.toAbsolutePath().toString();
+      final String currentPath = (File.separatorChar == '\\' ? currentRelativePath.toUri() : currentRelativePath.toAbsolutePath()).toString();
       final String query = """
           import module namespace sort = "https://sirix.io/ns/sort" at "%path";
                     
