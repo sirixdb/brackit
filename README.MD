@@ -101,7 +101,7 @@ repository {
 ```
 
 ```groovy
-compile group:'io.sirix', name:'brackit', version:'0.1.10-SNAPSHOT'
+compile group:'io.sirix', name:'brackit', version:'0.3-SNAPSHOT'
 ```
 
 ## What's Brackit?
