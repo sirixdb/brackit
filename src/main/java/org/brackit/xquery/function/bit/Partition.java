@@ -56,8 +56,7 @@ public class Partition extends AbstractFunction {
         // TODO Auto-generated method stub
         Str minStr = (Str) args[0];
         Str maxStr = (Str) args[1];
-        // Seems that the queue variable is not necessary always so we don't need a
-        // preemptive null check
+        // Seems that the queue variable is not necessary always, so we don't need a preemptive null check
         Str queueCountStr = (Str) args[2];
         if (minStr == null && maxStr == null) {
             return null;

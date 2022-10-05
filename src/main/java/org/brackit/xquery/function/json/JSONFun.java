@@ -38,8 +38,8 @@ import org.brackit.xquery.xdm.type.SequenceType;
 /**
  * @author Sebastian Baechle
  */
-public class JSONFun {
-  public static final String JSON_NSURI = "http://brackit.org/ns/json";
+public final class JSONFun {
+  public static final String JSON_NSURI = "http://jsoniq.org/functions";
 
   public static final String JSON_PREFIX = "jn";
 
@@ -69,6 +69,8 @@ public class JSONFun {
                              new Signature(new SequenceType(AnyJsonItemType.ANY_JSON_ITEM, Cardinality.ZeroOrMany),
                                            new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne)));
 
+  public static final Size SIZE_FUNC = new Size();
+
   public static void register() {
       // dummy function to cause static block
       // to be executed exactly once
@@ -81,5 +83,6 @@ public class JSONFun {
     Functions.predefine(DOC_AVAILABLE_FUNC);
     Functions.predefine(COLLECTION_FUNC);
     Functions.predefine(COLLECTION_FUNC_2);
+    Functions.predefine(SIZE_FUNC);
   }
 }

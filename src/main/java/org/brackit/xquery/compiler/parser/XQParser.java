@@ -43,6 +43,7 @@ import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.XQ;
+import org.brackit.xquery.function.json.JSONFun;
 import org.brackit.xquery.module.Functions;
 import org.brackit.xquery.xdm.Type;
 
@@ -4077,8 +4078,8 @@ public class XQParser extends Tokenizer {
           f.addChild(new AST(XQ.Bool, Bool.TRUE));
         } else if (attemptSymSkipWS("false()")) {
           f.addChild(new AST(XQ.Bool, Bool.FALSE));
-        } else if (attemptSymSkipWS("jn:null()")) {
-          f.addChild(new AST(XQ.FunctionCall, new QNm("http://brackit.org/ns/json", "jn", "null")));
+        } else if (attemptSymSkipWS("jn:null()") || attemptSymSkipWS("null()")) {
+          f.addChild(new AST(XQ.FunctionCall, new QNm(JSONFun.JSON_NSURI, JSONFun.JSON_PREFIX, "null")));
         } else {
           f.addChild(exprSingle());
         }

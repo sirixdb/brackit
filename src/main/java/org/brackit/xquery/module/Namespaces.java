@@ -44,6 +44,8 @@ public class Namespaces {
 
   public static final String FN_NSURI = "http://www.w3.org/2005/xpath-functions";
 
+  public static final String DEFAULT_FN_NSURI = "http://jsoniq.org/default-function-namespace";
+
   public static final String FNMATH_NSURI = "http://www.w3.org/2005/xpath-functions/math";
 
   public static final String XSI_NSURI = "http://www.w3.org/2001/XMLSchema-instance";
@@ -85,7 +87,7 @@ public class Namespaces {
 
   protected final Namespaces parent;
 
-  protected String defaultFunctionNamespace = FN_NSURI;
+  protected String defaultFunctionNamespace = DEFAULT_FN_NSURI;
 
   protected String defaultElementNamespace = null;
 
@@ -136,7 +138,7 @@ public class Namespaces {
   }
 
   public String resolve(String prefix) {
-    if ((prefix == null) || (prefix.isEmpty())) {
+    if (prefix == null || prefix.isEmpty()) {
       return null;
     }
     NamespaceDecl nsDecl = namespaces.get(prefix);

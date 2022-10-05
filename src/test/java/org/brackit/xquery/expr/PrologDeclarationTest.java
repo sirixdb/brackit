@@ -105,7 +105,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
 
   @Test
   public void externalVariableDeclarationWithAccess() {
-    ctx.bind(new QNm("x"), Int32.ZERO_TWO_TWENTY[2]);
+    ctx.bind(new QNm("x"), Int32.ZERO_TO_TWENTY[2]);
     XQuery query = new XQuery("declare variable $x external := 1; for $a in (1,2,3) return $a + $x");
     Sequence result = query.execute(ctx);
     ResultChecker.dCheck(new ItemSequence(new Int32(3), new Int32(4), new Int32(5)), result);

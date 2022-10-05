@@ -52,7 +52,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
 
   public static final Int32 ONE = new Int32(1);
 
-  public static final Int32[] ZERO_TWO_TWENTY =
+  public static final Int32[] ZERO_TO_TWENTY =
       new Int32[] { ZERO, ONE, new Int32(2), new Int32(3), new Int32(4), new Int32(5), new Int32(6), new Int32(7),
           new Int32(8), new Int32(9), new Int32(10), new Int32(11), new Int32(12), new Int32(13), new Int32(14),
           new Int32(15), new Int32(16), new Int32(17), new Int32(18), new Int32(19), new Int32(20) };
@@ -136,7 +136,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
   @Override
   public IntNumeric inc() {
     return ((v < 20) && (v > 0))
-        ? ZERO_TWO_TWENTY[v + 1]
+        ? ZERO_TO_TWENTY[v + 1]
         : (v != Integer.MAX_VALUE) ? new Int32(v + 1) : new Int64(((long) v) + 1);
   }
 

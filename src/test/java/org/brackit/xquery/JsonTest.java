@@ -57,6 +57,61 @@ public final class JsonTest extends XQueryBaseTest {
 
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
 
+  @Test
+  public void testKeysFunction1() throws IOException {
+    final String query = """
+        let $o := ("foo", [ 1, 2, 3 ], { "a" : 1, "b" : 2 }, { "a" : 3, "c" : 4 })
+        return keys($o)
+        """;
+    final var result = query(query);
+    assertEquals("a b c", result);
+  }
+
+  @Test
+  public void testKeysFunction2() throws IOException {
+    final String query = """
+      let $map := { "eyes" : "blue", "hair" : "fuchsia" }
+      for $key in keys($map)
+      return { $key : $map.$key }
+        """;
+    final var result = query(query);
+    assertEquals("{\"eyes\":\"blue\"} {\"hair\":\"fuchsia\"}", result);
+  }
+
+  @Test
+  public void testSizeFunction() throws IOException {
+    final String query = """
+      let $a := [=(1 to 10)]   (: explicilty flatten sequence with "=(...)" :)
+      return size($a)
+        """;
+    final var result = query(query);
+    assertEquals("10", result);
+  }
+
+  @Test
+  public void testWithDotInObjectField1() throws IOException {
+    final String query = """
+        let $object := {"foo":{"baz.bar":{"foo":"bar"}}}
+        let $foo := "foo"
+        let $baz := "baz.bar"
+        let $sequence := $object.$foo.$baz.foo
+        return $sequence
+        """;
+    final var result = query(query);
+    assertEquals("bar", result);
+  }
+
+  @Test
+  public void testWithDotInObjectField2() throws IOException {
+    final String query = """
+        let $object := {"foo":{"baz.bar":{"foo":"bar"}}}
+        let $sequence := $object.foo."baz.bar".foo
+        return $sequence
+        """;
+    final var result = query(query);
+    assertEquals("bar", result);
+  }
+
   @Ignore
   @Test
   public void testDescVarDeref() throws IOException {
@@ -64,7 +119,7 @@ public final class JsonTest extends XQueryBaseTest {
         let $object := {"blabla":{"foo":{"baz":{"foo":"bar"}}}}
         let $foo := "foo"
         let $baz := "baz"
-        let $sequence := $object=.$foo.$baz.foo
+        let $sequence := $object.$foo.$baz.foo
         return $sequence
         """;
     final var result = query(query);
@@ -1110,6 +1165,17 @@ public final class JsonTest extends XQueryBaseTest {
   public void arrayForLoop2Test() throws IOException {
     final var query = """
             let $values := ["foo",0,true(),jn:null()]
+            for $i in $values
+            return $i
+        """;
+    final var result = query(query);
+    assertEquals("foo 0 true null", result);
+  }
+
+  @Test
+  public void arrayForLoop3Test() throws IOException {
+    final var query = """
+            let $values := ["foo",0,true(),null()]
             for $i in $values
             return $i
         """;

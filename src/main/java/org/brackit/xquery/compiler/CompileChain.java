@@ -62,6 +62,8 @@ import org.brackit.xquery.function.io.Readline;
 import org.brackit.xquery.function.io.Write;
 import org.brackit.xquery.function.io.Writeline;
 import org.brackit.xquery.function.json.JSONParse;
+import org.brackit.xquery.function.json.Keys;
+import org.brackit.xquery.function.json.Size;
 import org.brackit.xquery.module.Functions;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.util.dot.DotUtil;
@@ -105,6 +107,8 @@ public class CompileChain {
     Functions.predefine(new ArrayValues());
     // JSON
     Functions.predefine(new JSONParse());
+    Functions.predefine(new Size());
+    Functions.predefine(new Keys());
   }
 
   final AnyURI baseURI;

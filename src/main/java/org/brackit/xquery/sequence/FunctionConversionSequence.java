@@ -48,7 +48,7 @@ import org.brackit.xquery.xdm.type.SequenceType;
  */
 public class FunctionConversionSequence extends LazySequence {
 
-  private static final Int32 TWO = Int32.ZERO_TWO_TWENTY[2];
+  private static final Int32 TWO = Int32.ZERO_TO_TWENTY[2];
 
   private final class AtomicTypedIter extends BaseIter {
     final Cardinality card;

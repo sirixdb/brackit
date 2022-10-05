@@ -28,10 +28,14 @@
 package org.brackit.xquery.module;
 
 import org.brackit.xquery.atomic.QNm;
+import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.ConstructorFunction;
 import org.brackit.xquery.function.fn.Collection;
 import org.brackit.xquery.function.fn.Number;
 import org.brackit.xquery.function.fn.*;
+import org.brackit.xquery.function.json.JSONFun;
+import org.brackit.xquery.function.json.Keys;
+import org.brackit.xquery.function.json.Size;
 import org.brackit.xquery.util.Regex;
 import org.brackit.xquery.xdm.Function;
 import org.brackit.xquery.xdm.Signature;
@@ -730,6 +734,9 @@ public final class Functions {
     predefine(new CurrentDateTime(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "default-collation"),
                                   new Signature(new SequenceType(AtomicType.STR, Cardinality.One))));
 
+    predefine(new Keys());
+    predefine(new Size());
+
     for (Type type : Type.builtInTypes) {
       if ((type != Type.ANA) && (type != Type.NOT)) {
         predefine(new ConstructorFunction(type.getName(),
@@ -741,6 +748,30 @@ public final class Functions {
   }
 
   public Function resolve(QNm name, int argCount) {
+    if (name.getNamespaceURI().equals(Namespaces.DEFAULT_FN_NSURI)) {
+      name = new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, name.getLocalName());
+
+      var function = getFunction(name, argCount);
+
+      if (function == null) {
+        name = new QNm(JSONFun.JSON_NSURI, JSONFun.JSON_NSURI, name.getLocalName());
+        function = getFunction(name, argCount);
+
+        if (function == null) {
+          name = new QNm(Bits.BIT_NSURI, Bits.BIT_PREFIX, name.getLocalName());
+          return getFunction(name, argCount);
+        } else {
+          return function;
+        }
+      } else {
+        return function;
+      }
+    } else {
+      return getFunction(name, argCount);
+    }
+  }
+
+  private Function getFunction(QNm name, int argCount) {
     // collect all available functions for the given name
     final var availableFunctions = new ArrayList<Function>();
     final Function[] declaredFuns = functions.get(name);
