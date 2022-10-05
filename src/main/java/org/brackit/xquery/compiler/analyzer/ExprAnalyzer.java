@@ -978,27 +978,44 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if (noOfParams == 0 && fun.getSignature().defaultCtxItemType() != null) {
       referContextItem();
     }
-    if (fun == null) {
-      unknownFunction(name, noOfParams);
-    }
     return true;
   }
 
   private void unknownFunction(QNm name, int noOfParams) throws QueryException {
-    String argp = noOfParams > 0 ? "?" : "";
-    for (int i = 1; i < noOfParams; i++) {
-      argp += ", ?";
-    }
-    throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION, "Unknown function: %s(%s)", name, argp);
+    throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION, "Unknown function: %s(%s)", name,
+                             (noOfParams > 0 ? "?" : "") + ", ?".repeat(Math.max(0, noOfParams - 1)));
   }
 
   protected boolean replaceFunctionCall(AST expr, QNm name) throws QueryException {
+    if (name.getNamespaceURI().equals(Namespaces.DEFAULT_FN_NSURI)) {
+      name = new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, name.getLocalName());
+
+      var replaced = internalReplaceFunctionCall(expr, name);
+
+      if (replaced) {
+        return true;
+      }
+
+      name = new QNm(JSONFun.JSON_NSURI, JSONFun.JSON_NSURI, name.getLocalName());
+      replaced = internalReplaceFunctionCall(expr, name);
+
+      if (replaced) {
+        return true;
+      }
+
+      name = new QNm(Bits.BIT_NSURI, Bits.BIT_PREFIX, name.getLocalName());
+      return internalReplaceFunctionCall(expr, name);
+    }
+
+    return internalReplaceFunctionCall(expr, name);
+  }
+
+  private boolean internalReplaceFunctionCall(AST expr, QNm name) {
     int argc = expr.getChildCount();
     if (name.equals(Functions.FN_POSITION) || name.equals(Functions.FN_LAST)) {
       if (argc != 0) {
         throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-            "Illegal number of parameters for function %s() : %s'",
-            name,
+            "Illegal number of parameters for function %s() : %s'", name,
             argc);
       }
       // change expr to variable reference
@@ -1010,8 +1027,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if (name.equals(Functions.FN_TRUE) || name.equals(Functions.FN_FALSE)) {
       if (argc != 0) {
         throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-            "Illegal number of parameters for function %s() : %s'",
-            name,
+            "Illegal number of parameters for function %s() : %s'", name,
             argc);
       }
       // change expr to boolean literal
@@ -1023,8 +1039,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if (name.equals(Functions.FN_DEFAULT_COLLATION)) {
       if (argc != 0) {
         throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-            "Illegal number of parameters for function %s() : %s'",
-            name,
+            "Illegal number of parameters for function %s() : %s'", name,
             argc);
       }
       // change expr to string literal
@@ -1035,8 +1050,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if (name.equals(Functions.FN_STATIC_BASE_URI)) {
       if (argc != 0) {
         throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-            "Illegal number of parameters for function %s() : %s'",
-            name,
+            "Illegal number of parameters for function %s() : %s'", name,
             argc);
       }
       AnyURI baseURI = sctx.getBaseURI();
@@ -1054,8 +1068,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if (name.equals(JSONFun.JSON_NULL)) {
       if (argc != 0) {
         throw new QueryException(ErrorCode.ERR_UNDEFINED_FUNCTION,
-            "Illegal number of parameters for function %s() : %s'",
-            name,
+            "Illegal number of parameters for function %s() : %s'", name,
             argc);
       }
       expr.setType(XQ.Null);

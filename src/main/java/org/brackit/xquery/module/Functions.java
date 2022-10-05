@@ -750,25 +750,24 @@ public final class Functions {
   public Function resolve(QNm name, int argCount) {
     if (name.getNamespaceURI().equals(Namespaces.DEFAULT_FN_NSURI)) {
       name = new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, name.getLocalName());
-
       var function = getFunction(name, argCount);
 
-      if (function == null) {
-        name = new QNm(JSONFun.JSON_NSURI, JSONFun.JSON_NSURI, name.getLocalName());
-        function = getFunction(name, argCount);
-
-        if (function == null) {
-          name = new QNm(Bits.BIT_NSURI, Bits.BIT_PREFIX, name.getLocalName());
-          return getFunction(name, argCount);
-        } else {
-          return function;
-        }
-      } else {
+      if (function != null) {
         return function;
       }
-    } else {
+
+      name = new QNm(JSONFun.JSON_NSURI, JSONFun.JSON_NSURI, name.getLocalName());
+      function = getFunction(name, argCount);
+
+      if (function != null) {
+        return function;
+      }
+
+      name = new QNm(Bits.BIT_NSURI, Bits.BIT_PREFIX, name.getLocalName());
       return getFunction(name, argCount);
     }
+
+    return getFunction(name, argCount);
   }
 
   private Function getFunction(QNm name, int argCount) {
