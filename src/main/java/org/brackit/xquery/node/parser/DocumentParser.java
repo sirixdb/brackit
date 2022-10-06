@@ -34,9 +34,9 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParserFactory;
 import java.io.*;
+
+import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  * @author Sebastian Baechle
