@@ -75,8 +75,8 @@ public final class DocumentParser implements SubtreeParser {
   public DocumentParser(InputSource source) throws DocumentException {
     this.source = source;
     try {
-      xmlReader = SAXParserFactory.newInstance().newSAXParser().getXMLReader();
-    } catch (SAXException | ParserConfigurationException e) {
+      xmlReader = XMLReaderFactory.createXMLReader();
+    } catch (SAXException e) {
       throw new DocumentException(e, "Error creating document parser.");
     }
   }
