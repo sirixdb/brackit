@@ -57,6 +57,20 @@ public final class JsonTest extends XQueryBaseTest {
 
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
 
+  private static final String USER_PROFILES_JSON = """
+      {"first_name":"Sammy","last_name":"Shark","location":"Ocean","websites":[{"description":"work","URL":"https://www.digitalocean.com/"},{"description":"tutorials","URL":"https://www.digitalocean.com/community/tutorials"}],"social_media":[{"description":"twitter","link":"https://twitter.com/digitalocean"},{"description":"facebook","link":"https://www.facebook.com/DigitalOceanCloudHosting"},{"description":"github","link":"https://github.com/digitalocean"}]}
+      """.strip();
+
+  @Test
+  public void testStoreFunction1() throws IOException {
+    final var doc = JSON_RESOURCES.resolve("user_profiles.json");
+    final var storeQuery = "load('mydoc.json', '%s')".formatted(doc);
+    query(storeQuery);
+    final var query = "json-doc('mydoc.json')";
+    final var result = query(query);
+    assertEquals(USER_PROFILES_JSON, result);
+  }
+
   @Test
   public void testKeysFunction1() throws IOException {
     final String query = """
@@ -493,7 +507,7 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void flattenAsCsv() throws IOException {
-    final String query = """
+    @SuppressWarnings("UnnecessaryStringEscape") final String query = """
           let $array := [{"foo":0,"ddd":"tztz"},{"bar":"hello","zzz":null},{"baz":true,"zzz":"yes"}]
           let $value := for $object in $array
                         return
@@ -869,7 +883,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void remoteUrl() throws IOException {
     final String query = """
-        let $logs := jn:doc('https://raw.githubusercontent.com/sirixdb/brackit/master/logs.json')[]
+        let $logs := json-doc('https://raw.githubusercontent.com/sirixdb/brackit/master/logs.json')[]
         let $total-count := count($logs)
                 
         return for $log in $logs

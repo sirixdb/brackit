@@ -27,26 +27,21 @@
  */
 package org.brackit.xquery.node.parser;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
-
 import org.brackit.xquery.util.Cfg;
 import org.brackit.xquery.xdm.DocumentException;
 import org.xml.sax.DTDHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.XMLReaderFactory;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.*;
 
 /**
  * @author Sebastian Baechle
  */
-public class DocumentParser implements SubtreeParser {
+public final class DocumentParser implements SubtreeParser {
   public final static String IGNORE_COMMENTS = "org.brackit.xquery.node.parser.DocumentParser.ignoreComments";
 
   private final XMLReader xmlReader;
@@ -80,8 +75,8 @@ public class DocumentParser implements SubtreeParser {
   public DocumentParser(InputSource source) throws DocumentException {
     this.source = source;
     try {
-      xmlReader = XMLReaderFactory.createXMLReader();
-    } catch (SAXException e) {
+      xmlReader = SAXParserFactory.newInstance().newSAXParser().getXMLReader();
+    } catch (SAXException | ParserConfigurationException e) {
       throw new DocumentException(e, "Error creating document parser.");
     }
   }
@@ -120,9 +115,7 @@ public class DocumentParser implements SubtreeParser {
       if (!Cfg.asBool(IGNORE_COMMENTS, false))
         xmlReader.setProperty("http://xml.org/sax/properties/lexical-handler", handlerAdapter);
       xmlReader.parse(source);
-    } catch (SAXException e) {
-      throw new DocumentException(e, "Error parsing document.");
-    } catch (IOException e) {
+    } catch (SAXException | IOException e) {
       throw new DocumentException(e, "Error parsing document.");
     }
   }

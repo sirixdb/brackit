@@ -41,5 +41,5 @@ public interface SubtreeParser {
    * @param handler the handler to use
    * @throws DocumentException if something goes wrong
    */
-  public void parse(SubtreeHandler handler);
+  void parse(SubtreeHandler handler);
 }

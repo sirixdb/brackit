@@ -25,20 +25,26 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.brackit.xquery.node.parser;
-
-import java.io.IOException;
+package org.brackit.xquery.jsonitem;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
+import org.brackit.xquery.atomic.Str;
+import org.brackit.xquery.function.json.JSONParser;
+import org.brackit.xquery.node.parser.DocumentParser;
+import org.brackit.xquery.node.parser.StreamSubtreeParser;
+import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.util.io.URIHandler;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.util.serialize.StringSerializer;
+import org.brackit.xquery.xdm.*;
+import org.brackit.xquery.xdm.json.JsonItem;
 import org.brackit.xquery.xdm.node.Node;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 
 /**
  * A Stream of SubtreeParsers that delivers one SubtreeParser for each item in
@@ -46,7 +52,7 @@ import org.brackit.xquery.xdm.node.Node;
  *
  * @author Martin Hiller
  */
-public final class ParserStream implements Stream<SubtreeParser> {
+public final class ParserStream implements Stream<String> {
   private final Iter it;
 
   public ParserStream(Sequence locs) {
@@ -54,7 +60,7 @@ public final class ParserStream implements Stream<SubtreeParser> {
   }
 
   @Override
-  public SubtreeParser next() throws DocumentException {
+  public String next() throws DocumentException {
     try {
       Item item = it.next();
       if (item == null) {
@@ -62,12 +68,14 @@ public final class ParserStream implements Stream<SubtreeParser> {
       }
       if (item instanceof Atomic) {
         String str = ((Atomic) item).stringValue();
-        return new DocumentParser(URIHandler.getInputStream(str));
-      } else if (item instanceof Node<?> n) {
-        return new StreamSubtreeParser(n.getSubtree());
+        return new String(URIHandler.getInputStream(str).readAllBytes(), StandardCharsets.UTF_8);
+      } else if (item instanceof JsonItem jsonItem) {
+        final var writer = new PrintWriter(new StringWriter());
+        new StringSerializer(writer).serialize(jsonItem);
+        return writer.toString();
       } else {
         throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                 "Cannot create subtree parser for item of type: %s",
+                                 "Cannot create string for item of type: %s",
                                  item.itemType());
       }
     } catch (IOException | QueryException e) {

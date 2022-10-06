@@ -50,7 +50,7 @@ import org.brackit.xquery.xdm.Item;
  *
  * @author Sebastian Baechle
  */
-public class JSONParser extends Tokenizer {
+public final class JSONParser extends Tokenizer {
 
   public JSONParser(String query) {
     super(query);

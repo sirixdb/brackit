@@ -27,15 +27,14 @@
  */
 package org.brackit.xquery.node.parser;
 
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
-public class RelativeEntityResolver implements EntityResolver {
+public final class RelativeEntityResolver implements EntityResolver {
   private final String baseDir;
 
   public RelativeEntityResolver(String baseDir) {
@@ -43,7 +42,7 @@ public class RelativeEntityResolver implements EntityResolver {
   }
 
   @Override
-  public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
+  public InputSource resolveEntity(String publicId, String systemId) throws IOException {
     if (systemId != null) {
       if (systemId.startsWith("file://")) {
         String targetFile = systemId.substring(7);

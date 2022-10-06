@@ -29,6 +29,7 @@ package org.brackit.xquery.xdm.json;
 
 import java.nio.file.Path;
 
+import org.brackit.xquery.function.json.JSONParser;
 import org.brackit.xquery.xdm.DocumentException;
 import org.brackit.xquery.xdm.OperationNotSupportedException;
 import org.brackit.xquery.xdm.Stream;
@@ -67,7 +68,7 @@ public interface JsonCollection<E extends StructuredItem> extends StructuredItem
   E add(Path file);
 
   /**
-   * Add a file to the JSON collection.
+   * Add a JSON string to the JSON collection.
    *
    * @param json the JSON string to add to the collection
    * @return the JSON root
@@ -77,5 +78,5 @@ public interface JsonCollection<E extends StructuredItem> extends StructuredItem
   E add(String json);
 
   @Override
-  public long getDocumentCount();
+  long getDocumentCount();
 }

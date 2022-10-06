@@ -43,7 +43,7 @@ import java.nio.file.Paths;
  * @author Caetano Sauer
  * @author Sebastian Baechle
  */
-public class URIHandler {
+public final class URIHandler {
 
   public static final int TIMEOUT = 2000;
 
@@ -104,7 +104,7 @@ public class URIHandler {
       if (fullPath.startsWith("//")) {
         fullPath = fullPath.substring(1);
       }
-      return new FileInputStream(new File(fullPath));
+      return new FileInputStream(fullPath);
     } else if (scheme.equals("http") || scheme.equals("https") || scheme.equals("ftp") || scheme.equals("jar")) {
       return new URLInputStream(uri.toURL(), TIMEOUT);
     } else {

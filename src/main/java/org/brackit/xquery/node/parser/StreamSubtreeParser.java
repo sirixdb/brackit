@@ -46,7 +46,7 @@ public class StreamSubtreeParser implements SubtreeParser {
 
   @Override
   public void parse(SubtreeHandler handler) throws DocumentException {
-    List<SubtreeListener<Node<?>>> listener = new ArrayList<SubtreeListener<Node<?>>>();
+    final var listener = new ArrayList<SubtreeListener<Node<?>>>();
     listener.add(new SubtreeListener2HandlerAdapter(handler));
     StreamSubtreeProcessor<?> processor = new StreamSubtreeProcessor(stream, listener);
     processor.process();
