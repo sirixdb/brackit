@@ -190,7 +190,7 @@ To query a document in your local filesytem simply use the path to this document
 java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -q "doc('products.xml')//product[@prodno = '4711']"
 ```
 
-For JSON there's the function `jn:doc()`. Let's assume we have the following simple JSON structure:
+For JSON there's the function `json-doc()`. Let's assume we have the following simple JSON structure:
 
 ```json
 {
@@ -204,7 +204,7 @@ For JSON there's the function `jn:doc()`. Let's assume we have the following sim
 We can query this first dereferencing the "products" object field with `.`, then unbox the array value via `[]` and add a filter where "$$" denotes the current context item and "{fieldName}" projects the resulting object into a new object, which is returned.
 
 ```java
-java -jar brackit.jar -q "jn:doc('products.json').products[][$$.productno eq 4711]{product}"
+java -jar brackit.jar -q "json-doc('products.json').products[][$$.productno eq 4711]{product}"
 
 Query result
 {"product":"Product number 4711"}
