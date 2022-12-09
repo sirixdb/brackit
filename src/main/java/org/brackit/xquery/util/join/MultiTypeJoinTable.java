@@ -54,11 +54,11 @@ public class MultiTypeJoinTable {
 
   private final boolean skipSort;
 
-  private final Map<Type, AbstractJoinTable> tables = new HashMap<Type, AbstractJoinTable>();
+  private final Map<Type, AbstractJoinTable> tables = new HashMap<>();
 
-  private final Set<Type> convertedUntypedAtomic = new HashSet<Type>();
+  private final Set<Type> convertedUntypedAtomic = new HashSet<>();
 
-  private final Set<Type> nonNumericTypes = new HashSet<Type>();
+  private final Set<Type> nonNumericTypes = new HashSet<>();
 
   private boolean convertedUntypedAtomicToDbl;
 
@@ -204,14 +204,14 @@ public class MultiTypeJoinTable {
   protected final FastList<Sequence[]> sortAndDeduplicate(FastList<TValue> in) throws QueryException {
     int inSize = in.getSize();
     if ((skipSort) || (inSize < 2)) {
-      FastList<Sequence[]> out = new FastList<Sequence[]>(inSize);
+      FastList<Sequence[]> out = new FastList<>(inSize);
       for (int i = 0; i < inSize; i++) {
         out.add(in.get(i).bindings);
       }
       return out;
     } else {
       in.sort();
-      FastList<Sequence[]> out = new FastList<Sequence[]>();
+      FastList<Sequence[]> out = new FastList<>();
       TValue p = null;
       for (int i = 0; i < inSize; i++) {
         TValue v = in.get(i);

@@ -65,6 +65,7 @@ public class FastList<E> {
     return (E) values[p];
   }
 
+  @SuppressWarnings("unused")
   public void addAll(E[] v, int off, int len) {
     capacity(size + len);
     System.arraycopy(v, off, values, size, len);

@@ -99,10 +99,11 @@ public abstract class AbstractJoinTable {
     @Override
     public int compareTo(TEntry o) {
       int res = 0;
-      return ((key == o.key) || ((res = key.compareTo(o.key)) != 0)) ? res : value.compareTo(o.value);
+      return key == o.key || (res = key.compareTo(o.key)) != 0 ? res : value.compareTo(o.value);
     }
   }
 
+  @SuppressWarnings("unused")
   protected final FastList<Sequence[]> sortAndDeduplicate(FastList<TValue> in) throws QueryException {
     in.sort();
     final FastList<Sequence[]> out = new FastList<>();
