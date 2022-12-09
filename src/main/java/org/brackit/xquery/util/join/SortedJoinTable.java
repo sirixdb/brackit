@@ -39,7 +39,7 @@ import org.brackit.xquery.xdm.Sequence;
 /**
  * @author Sebastian Baechle
  */
-public class SortedJoinTable extends JoinTable {
+public class SortedJoinTable extends AbstractJoinTable {
   private final Cmp cmp;
 
   private TEntry[] entries = new TEntry[50];

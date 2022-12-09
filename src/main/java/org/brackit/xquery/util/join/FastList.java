@@ -37,7 +37,7 @@ import java.util.Arrays;
  */
 public class FastList<E> {
 
-  public static final FastList<Object> EMPTY_LIST = new FastList<Object>(0);
+  public static final FastList<Object> EMPTY_LIST = new FastList<>(0);
 
   private Object[] values;
 

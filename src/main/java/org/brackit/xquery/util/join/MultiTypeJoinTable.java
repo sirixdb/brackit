@@ -36,8 +36,8 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.util.Cmp;
-import org.brackit.xquery.util.join.JoinTable.TEntry;
-import org.brackit.xquery.util.join.JoinTable.TValue;
+import org.brackit.xquery.util.join.AbstractJoinTable.TEntry;
+import org.brackit.xquery.util.join.AbstractJoinTable.TValue;
 import org.brackit.xquery.xdm.Item;
 import org.brackit.xquery.xdm.Iter;
 import org.brackit.xquery.xdm.Sequence;
@@ -54,7 +54,7 @@ public class MultiTypeJoinTable {
 
   private final boolean skipSort;
 
-  private final Map<Type, JoinTable> tables = new HashMap<Type, JoinTable>();
+  private final Map<Type, AbstractJoinTable> tables = new HashMap<Type, AbstractJoinTable>();
 
   private final Set<Type> convertedUntypedAtomic = new HashSet<Type>();
 
@@ -76,22 +76,22 @@ public class MultiTypeJoinTable {
     this.skipSort = skipSort;
   }
 
-  private JoinTable createTable(Type type) {
-    return (cmp == Cmp.eq) ? new HashJoinTable() : new SortedJoinTable(cmp);
+  private AbstractJoinTable createTable() {
+    return cmp == Cmp.eq ? new HashJoinTable() : new SortedJoinTable(cmp);
   }
 
   private void addItem(Item key, Sequence[] bindings, int pos) throws QueryException {
     Atomic atomic = key.atomize();
     Type type = atomic.type().getPrimitiveBase();
 
-    if ((!isGCmp) && (type == Type.UNA)) {
+    if (!isGCmp && type == Type.UNA) {
       atomic = Cast.cast(null, atomic, Type.STR, false);
       type = Type.STR;
     }
 
-    JoinTable table = tables.get(type);
+    AbstractJoinTable table = tables.get(type);
     if (table == null) {
-      table = createTable(type);
+      table = createTable();
       tables.put(type, table);
     }
     table.add(atomic, pos, bindings);
@@ -171,15 +171,15 @@ public class MultiTypeJoinTable {
   }
 
   private void addToTable(Type from, Type to) throws QueryException {
-    JoinTable fromTable = tables.get(from);
+    AbstractJoinTable fromTable = tables.get(from);
 
     if (fromTable == null) {
       return;
     }
 
-    JoinTable table = tables.get(to);
+    AbstractJoinTable table = tables.get(to);
     if (table == null) {
-      table = createTable(to);
+      table = createTable();
       tables.put(to, table);
     }
 
@@ -195,7 +195,7 @@ public class MultiTypeJoinTable {
   }
 
   private void probeAtomic(FastList<TValue> matches, Atomic atomic, Type type) throws QueryException {
-    JoinTable table = tables.get(type);
+    AbstractJoinTable table = tables.get(type);
     if (table != null) {
       table.lookup(matches, atomic);
     }
@@ -228,17 +228,14 @@ public class MultiTypeJoinTable {
     if (keys == null) {
       return;
     }
-    if (keys instanceof Item) {
-      addItem((Item) keys, bindings, pos);
+    if (keys instanceof Item item) {
+      addItem(item, bindings, pos);
     } else {
-      Iter it = keys.iterate();
-      try {
+      try (final Iter it = keys.iterate()) {
         Item key;
         while ((key = it.next()) != null) {
           addItem(key, bindings, pos);
         }
-      } finally {
-        it.close();
       }
     }
   }
@@ -248,19 +245,16 @@ public class MultiTypeJoinTable {
       return FastList.emptyList();
     }
 
-    FastList<TValue> matches = new FastList<TValue>();
+    final var matches = new FastList<TValue>();
 
     if (keys instanceof Item) {
       probeItem(matches, (Item) keys);
     } else {
-      Iter it = keys.iterate();
-      try {
+      try (final Iter it = keys.iterate()) {
         Item key;
         while ((key = it.next()) != null) {
           probeItem(matches, key);
         }
-      } finally {
-        it.close();
       }
     }
 

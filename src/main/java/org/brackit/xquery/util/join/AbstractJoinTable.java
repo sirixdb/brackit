@@ -27,6 +27,7 @@
  */
 package org.brackit.xquery.util.join;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.brackit.xquery.QueryException;
@@ -36,7 +37,7 @@ import org.brackit.xquery.xdm.Sequence;
 /**
  * @author Sebastian Baechle
  */
-public abstract class JoinTable {
+public abstract class AbstractJoinTable {
   static class TKey implements Comparable<TKey> {
     final Atomic atomic;
 
@@ -46,8 +47,7 @@ public abstract class JoinTable {
 
     @Override
     public boolean equals(Object obj) {
-      boolean b = (obj instanceof TKey) && (((TKey) obj).atomic.atomicCmp(atomic) == 0);
-      return b;
+      return obj instanceof TKey && ((TKey) obj).atomic.atomicCmp(atomic) == 0;
     }
 
     @Override
@@ -78,12 +78,12 @@ public abstract class JoinTable {
 
     @Override
     public int compareTo(TValue o) {
-      return pos < o.pos ? -1 : (pos == o.pos) ? 0 : 1;
+      return Integer.compare(pos, o.pos);
     }
 
     @Override
     public String toString() {
-      return bindings.toString() + "@" + pos;
+      return Arrays.toString(bindings) + "@" + pos;
     }
   }
 
@@ -105,7 +105,7 @@ public abstract class JoinTable {
 
   protected final FastList<Sequence[]> sortAndDeduplicate(FastList<TValue> in) throws QueryException {
     in.sort();
-    FastList<Sequence[]> out = new FastList<Sequence[]>();
+    final FastList<Sequence[]> out = new FastList<>();
     TValue p = null;
     int inSize = in.getSize();
     for (int i = 0; i < inSize; i++) {

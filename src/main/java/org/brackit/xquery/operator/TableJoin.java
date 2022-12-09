@@ -43,7 +43,7 @@ import org.brackit.xquery.xdm.Sequence;
 /**
  * @author Sebastian Baechle
  */
-public class TableJoin extends Check implements Operator {
+public final class TableJoin extends Check implements Operator {
   private class TableJoinCursor implements Cursor {
     final Cursor lc;
     final Sequence[] padding;
@@ -77,26 +77,26 @@ public class TableJoin extends Check implements Operator {
 
     @Override
     public Tuple next(QueryContext ctx) throws QueryException {
-      if ((it != null) && (itPos < itSize)) {
+      if (it != null && itPos < itSize) {
         return tuple.concat(it.get(itPos++));
       }
 
-      while (((tuple = next) != null) || ((tuple = lc.next(ctx)) != null)) {
+      while ((tuple = next) != null || (tuple = lc.next(ctx)) != null) {
         next = null;
-        if ((check) && (dead(tuple))) {
+        if (check && dead(tuple)) {
           prev = tuple.concat(padding);
           return prev;
         }
         if (groupVar >= 0) {
           Atomic gk = (Atomic) tuple.get(groupVar);
-          if ((tgk != null) && (tgk.atomicCmp(gk) != 0)) {
+          if (tgk != null && tgk.atomicCmp(gk) != 0) {
             table = null;
           }
         }
         if (table == null) {
           buildTable(ctx, tuple);
         }
-        final Sequence keys = (isGCmp) ? lExpr.evaluate(ctx, tuple) : lExpr.evaluateToItem(ctx, tuple);
+        final Sequence keys = isGCmp ? leftExpr.evaluate(ctx, tuple) : leftExpr.evaluateToItem(ctx, tuple);
         final FastList<Sequence[]> matches = table.probe(keys);
 
         it = matches;
@@ -108,17 +108,17 @@ public class TableJoin extends Check implements Operator {
           return prev;
         } else if (leftJoin) {
           if (check) {
-            // predicate is not fulfilled but we must keep
+            // predicate is not fulfilled, but we must keep
             // lifted iteration group alive for "left-join"
             // semantics:
             // skip if previously returned tuple was in same
             // iteration group
-            if ((prev != null) && (!separate(prev, tuple))) {
+            if (prev != null && !separate(prev, tuple)) {
               continue;
             }
             next = lc.next(ctx);
             // skip if next tuple is in same iteration group
-            if ((next != null) && (!separate(tuple, next))) {
+            if (next != null && !separate(tuple, next)) {
               continue;
             }
             // emit "dead" tuple where "check" field is switched-off
@@ -140,14 +140,14 @@ public class TableJoin extends Check implements Operator {
         tgk = (Atomic) tuple.get(groupVar);
       }
       int pos = 1;
-      Tuple t;
-      Cursor rc = r.create(ctx, tuple);
+      Tuple rcTuple;
+      Cursor rc = right.create(ctx, tuple);
       try {
         rc.open(ctx);
-        while ((t = rc.next(ctx)) != null) {
-          Sequence keys = (isGCmp) ? rExpr.evaluate(ctx, t) : rExpr.evaluateToItem(ctx, t);
+        while ((rcTuple = rc.next(ctx)) != null) {
+          Sequence keys = isGCmp ? rightExpr.evaluate(ctx, rcTuple) : rightExpr.evaluateToItem(ctx, rcTuple);
           if (keys != null) {
-            Sequence[] tmp = t.array();
+            Sequence[] tmp = rcTuple.array();
             Sequence[] bindings = Arrays.copyOfRange(tmp, lSize, tmp.length);
             table.add(keys, bindings, pos++);
           }
@@ -158,10 +158,10 @@ public class TableJoin extends Check implements Operator {
     }
   }
 
-  final Operator l;
-  final Operator r;
-  final Expr rExpr;
-  final Expr lExpr;
+  final Operator left;
+  final Operator right;
+  final Expr rightExpr;
+  final Expr leftExpr;
   final boolean leftJoin;
   final Cmp cmp;
   final boolean isGCmp;
@@ -174,29 +174,29 @@ public class TableJoin extends Check implements Operator {
     this.isGCmp = isGCmsp;
     this.leftJoin = leftJoin;
     this.skipSort = skipSort;
-    this.l = l;
-    this.r = r;
-    this.rExpr = rExpr;
-    this.lExpr = lExpr;
+    this.left = l;
+    this.right = r;
+    this.rightExpr = rExpr;
+    this.leftExpr = lExpr;
   }
 
   @Override
   public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-    int lSize = l.tupleWidth(tuple.getSize());
-    int pad = r.tupleWidth(tuple.getSize()) - tuple.getSize();
-    return new TableJoinCursor(l.create(ctx, tuple), lSize, pad);
+    int lSize = left.tupleWidth(tuple.getSize());
+    int pad = right.tupleWidth(tuple.getSize()) - tuple.getSize();
+    return new TableJoinCursor(left.create(ctx, tuple), lSize, pad);
   }
 
   @Override
   public Cursor create(QueryContext ctx, Tuple[] buf, int len) throws QueryException {
-    int lSize = l.tupleWidth(buf[0].getSize());
-    int pad = r.tupleWidth(buf[0].getSize()) - buf[0].getSize();
-    return new TableJoinCursor(l.create(ctx, buf, len), lSize, pad);
+    int lSize = left.tupleWidth(buf[0].getSize());
+    int pad = right.tupleWidth(buf[0].getSize()) - buf[0].getSize();
+    return new TableJoinCursor(left.create(ctx, buf, len), lSize, pad);
   }
 
   @Override
   public int tupleWidth(int initSize) {
-    return l.tupleWidth(initSize) + r.tupleWidth(initSize) - initSize;
+    return left.tupleWidth(initSize) + right.tupleWidth(initSize) - initSize;
   }
 
   public Reference group() {
