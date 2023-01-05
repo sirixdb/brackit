@@ -201,7 +201,7 @@ For JSON there's the function `json-doc()`. Let's assume we have the following s
 }
 ```
 
-We can query this first dereferencing the "products" object field with `.`, then unbox the array value via `[]` and add a filter where "$$" denotes the current context item and "{fieldName}" projects the resulting object into a new object, which is returned.
+We can query this first dereferencing the "products" object field with `.`, then unbox the array value via `[]` and add a filter where `$$` denotes the current context item and `{fieldName}` projects the resulting object into a new object, which is returned.
 
 ```java
 java -jar brackit.jar -q "json-doc('products.json').products[][$$.productno eq 4711]{product}"
