@@ -96,7 +96,7 @@ repository {
 <dependency>
   <groupId>io.sirix</groupId>
   <artifactId>brackit</artifactId>
-  <version>0.1.10-SNAPSHOT</version>
+  <version>0.3-SNAPSHOT</version>
 </dependency>
 ```
 
