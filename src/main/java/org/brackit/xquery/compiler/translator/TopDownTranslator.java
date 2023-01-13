@@ -110,33 +110,41 @@ public class TopDownTranslator extends Compiler {
 
   protected Operator _anyOp(Operator in, AST node) throws QueryException {
     switch (node.getType()) {
-      case XQ.Start:
+      case XQ.Start -> {
         if (node.getChildCount() == 0) {
           return new Start();
         } else {
           return anyOp(new Start(), node.getLastChild());
         }
-      case XQ.End:
+      }
+      case XQ.End -> {
         return in;
-      case XQ.ForBind:
+      }
+      case XQ.ForBind -> {
         return forBind(in, node);
-      case XQ.LetBind:
+      }
+      case XQ.LetBind -> {
         return letBind(in, node);
-      case XQ.Selection:
+      }
+      case XQ.Selection -> {
         return select(in, node);
-      case XQ.OrderBy:
+      }
+      case XQ.OrderBy -> {
         return orderBy(in, node);
-      case XQ.GroupBy:
+      }
+      case XQ.GroupBy -> {
         return groupBy(in, node);
-      case XQ.Count:
+      }
+      case XQ.Count -> {
         return count(in, node);
-      case XQ.Join:
+      }
+      case XQ.Join -> {
         return join(in, node);
-      default:
-        throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-                                 "Unexpected AST operator node '%s' of type: %s",
-                                 node,
-                                 node.getType());
+      }
+      default -> throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+                                          "Unexpected AST operator node '%s' of type: %s",
+                                          node,
+                                          node.getType());
     }
   }
 
@@ -334,7 +342,7 @@ public class TopDownTranslator extends Compiler {
     if (posVarDecl.getChildCount() == 2) {
       posVarType = sequenceType(posVarDecl.getChild(1));
     }
-    Binding binding = table.bind(posVarName, posVarType);
+    table.bind(posVarName, posVarType);
 
     // Fake binding of let variable because set-oriented processing requires
     // the variable anyway
@@ -384,34 +392,28 @@ public class TopDownTranslator extends Compiler {
           return "";
         }
         if (sequence instanceof Item) {
-          return (sequence instanceof Node<?>) ? nodeAsString(ctx, (Node<?>) sequence) : sequence.toString();
+          return (sequence instanceof Node<?>) ? nodeAsString((Node<?>) sequence) : sequence.toString();
         }
         StringBuilder s = new StringBuilder("(");
-        Iter it = sequence.iterate();
-        try {
+        try (Iter it = sequence.iterate()) {
           for (Item item = it.next(); item != null; item = it.next()) {
-            s.append((sequence instanceof Node<?>) ? nodeAsString(ctx, (Node<?>) sequence) : sequence.toString());
+            s.append(sequence);
             s.append(", ");
           }
         } finally {
           s.append(")");
-          it.close();
         }
         return s.toString();
       }
 
-      private String nodeAsString(QueryContext ctx, Node<?> node) {
+      private String nodeAsString(Node<?> node) {
         try {
-          switch (node.getKind()) {
-            case ELEMENT:
-              return "<" + node.getName() + ">";
-            case ATTRIBUTE:
-              return node.getName() + "='" + node.getValue() + "'";
-            case DOCUMENT:
-              return "doc(" + node.getCollection().getName() + ")";
-            default:
-              return node.getValue().stringValue();
-          }
+          return switch (node.getKind()) {
+            case ELEMENT -> "<" + node.getName() + ">";
+            case ATTRIBUTE -> node.getName() + "='" + node.getValue() + "'";
+            case DOCUMENT -> "doc(" + node.getCollection().getName() + ")";
+            default -> node.getValue().stringValue();
+          };
         } catch (DocumentException e) {
           e.printStackTrace();
           return "";

@@ -130,7 +130,7 @@ public final class TupleImpl implements Tuple {
 
   @Override
   public Sequence get(int position) {
-    if ((position < 0) || (position >= sequences.length)) {
+    if (position < 0 || position >= sequences.length) {
       throw new QueryException(ErrorCode.BIT_DYN_RT_OUT_OF_BOUNDS_ERROR, position);
     }
 
