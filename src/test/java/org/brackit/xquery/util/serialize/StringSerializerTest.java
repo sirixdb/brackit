@@ -8,6 +8,8 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.brackit.xquery.BrackitQueryContext;
+import org.brackit.xquery.XQuery;
 import org.brackit.xquery.function.json.JSONParser;
 import org.brackit.xquery.util.io.IOUtils;
 import org.junit.Test;
@@ -39,7 +41,7 @@ public class StringSerializerTest {
     /**
      * Tests the {@code org.brackit.xquery.util.StringSerializer} serializing a JSON object with double space
      * formatting turned on.
-     * 
+     *
      * @throws IOException If there is trouble reading from the test resource file
      */
     @Test
@@ -75,7 +77,42 @@ public class StringSerializerTest {
 
 	assertEquals(expected, output.toString());
     }
-    
+
+    /**
+     * Tests the {@code org.brackit.xquery.util.StringSerializer} serializing a typed sequence with double space
+     * indentation formatting turned on. Sequences that don't implement {@code org.brackit.xquery.xdm.Item} are
+     * handled slightly differently in the serializer.
+     *
+     * @throws IOException If there is trouble reading from the test resource file
+     */
+    @Test
+    public final void testNonItemSeqSerialization() throws IOException {
+	final PrintStream output = IOUtils.createBuffer();
+	final String expected = getExpected("typed-seq");
+        final String query = """
+            let $people :=
+                [
+                    { "first_name" : "Caitlin", "last_name" : "Harris" },
+                    { "first_name" : "Kylie", "last_name" : "Smith" }
+                ]
+            let $result :=
+                for $names in $people
+                return {
+                    "first" : $names.first_name,
+                    "last" : $names.last_name
+                }
+            return [$result]
+	""";
+
+        try (StringSerializer serializer = new StringSerializer(output)) {
+            serializer.setFormat(true);
+            serializer.setIndent("  ");
+            serializer.serialize(new XQuery(query).execute(new BrackitQueryContext()));
+        }
+
+	assertEquals(expected, output.toString());
+    }
+
     /**
      * Gets the expected JSON output from test resource file.
      * 

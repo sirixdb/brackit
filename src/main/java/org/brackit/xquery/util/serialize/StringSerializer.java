@@ -319,6 +319,11 @@ public class StringSerializer implements Serializer {
         while ((i = it.next()) != null) {
           if (!first) {
             out.write(",");
+
+            if (format) {
+              out.write(EOL);
+              out.write(indent(depth));
+            }
           }
 
           json(i, p, i instanceof Array ? true : false, depth);
