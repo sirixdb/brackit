@@ -37,10 +37,10 @@ import org.brackit.xquery.function.json.JSONFun;
 import org.brackit.xquery.function.json.Keys;
 import org.brackit.xquery.function.json.Size;
 import org.brackit.xquery.util.Regex;
-import org.brackit.xquery.xdm.Function;
-import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.Type;
-import org.brackit.xquery.xdm.type.*;
+import org.brackit.xquery.jdm.Function;
+import org.brackit.xquery.jdm.Signature;
+import org.brackit.xquery.jdm.Type;
+import org.brackit.xquery.jdm.type.*;
 
 import java.util.*;
 

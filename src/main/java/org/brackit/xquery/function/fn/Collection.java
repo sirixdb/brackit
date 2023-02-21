@@ -35,9 +35,9 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.Signature;
 
 /**
  * @author Sebastian Baechle
@@ -51,7 +51,7 @@ public class Collection extends AbstractFunction {
   public Sequence execute(StaticContext sctx, final QueryContext ctx, Sequence[] args) throws QueryException {
     String name = args.length > 0 ? ((Str) args[0]).stringValue() : null;
     try {
-      org.brackit.xquery.xdm.node.NodeCollection<?> collection;
+      org.brackit.xquery.jdm.node.NodeCollection<?> collection;
       if (name == null || name.isEmpty()) {
         collection = ctx.getDefaultNodeCollection();
 

@@ -29,8 +29,8 @@ package org.brackit.xquery.node.d2linked;
 
 import org.brackit.xquery.node.AxisTest;
 import org.brackit.xquery.node.SimpleNodeStore;
-import org.brackit.xquery.xdm.node.NodeFactory;
-import org.brackit.xquery.xdm.node.NodeStore;
+import org.brackit.xquery.jdm.node.NodeFactory;
+import org.brackit.xquery.jdm.node.NodeStore;
 
 /**
  * @author Sebastian Baechle

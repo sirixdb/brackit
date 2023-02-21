@@ -28,16 +28,15 @@
 package org.brackit.xquery.function.json;
 
 import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.util.annotation.FunctionAnnotation;
-import org.brackit.xquery.xdm.*;
-import org.brackit.xquery.xdm.json.Object;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.jdm.*;
+import org.brackit.xquery.jdm.json.Object;
+import org.brackit.xquery.jdm.type.SequenceType;
 
 import java.util.*;
 

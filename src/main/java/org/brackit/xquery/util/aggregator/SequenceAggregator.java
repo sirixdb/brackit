@@ -31,7 +31,7 @@ import java.util.Arrays;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.sequence.NestedSequence;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Sequence;
 
 /**
  * Aggregator for sequence concatenation

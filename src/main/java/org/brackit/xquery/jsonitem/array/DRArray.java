@@ -34,8 +34,8 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.json.Array;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.json.Array;
 
 import static java.util.Objects.checkFromToIndex;
 

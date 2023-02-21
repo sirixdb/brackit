@@ -41,12 +41,12 @@ import org.brackit.xquery.update.op.InsertBeforeOp;
 import org.brackit.xquery.update.op.InsertIntoAsFirstOp;
 import org.brackit.xquery.update.op.InsertIntoAsLastOp;
 import org.brackit.xquery.update.op.InsertIntoOp;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.jdm.Expr;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Kind;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.node.Node;
 
 /**
  * @author Sebastian Baechle

@@ -38,7 +38,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Bool;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.sequence.ItemSequence;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Sequence;
 
 /**
  * Backing implementation of predefined functions fn:matches($arg1, $arg2),

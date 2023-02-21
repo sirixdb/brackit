@@ -42,7 +42,7 @@ import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.sequence.ItemSequence;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Sequence;
 import org.junit.Test;
 
 /**

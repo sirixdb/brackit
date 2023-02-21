@@ -49,9 +49,9 @@ import org.brackit.xquery.function.bit.Delay;
 import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.util.aggregator.Aggregate;
 import org.brackit.xquery.util.aggregator.Grouping;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Sequence;
 
 /**
  * @author Sebastian Baechle

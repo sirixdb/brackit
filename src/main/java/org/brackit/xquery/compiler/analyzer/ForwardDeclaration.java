@@ -40,7 +40,7 @@ import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.expr.DeclVariable;
 import org.brackit.xquery.function.UDF;
 import org.brackit.xquery.module.Module;
-import org.brackit.xquery.xdm.Function;
+import org.brackit.xquery.jdm.Function;
 
 /**
  * @author Sebastian Baechle

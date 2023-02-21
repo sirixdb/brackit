@@ -34,13 +34,13 @@ import org.brackit.xquery.Tuple;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.Unit;
 import org.brackit.xquery.sequence.TypedSequence;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.type.AnyItemType;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.ItemType;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.jdm.Expr;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.type.AnyItemType;
+import org.brackit.xquery.jdm.type.Cardinality;
+import org.brackit.xquery.jdm.type.ItemType;
+import org.brackit.xquery.jdm.type.SequenceType;
 
 /**
  * Reference to the default context item,

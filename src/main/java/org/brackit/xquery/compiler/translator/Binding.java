@@ -32,7 +32,7 @@ import java.util.Arrays;
 
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.util.log.Logger;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.jdm.type.SequenceType;
 
 /**
  * @author Sebastian Baechle

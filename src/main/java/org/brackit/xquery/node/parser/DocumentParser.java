@@ -28,7 +28,7 @@
 package org.brackit.xquery.node.parser;
 
 import org.brackit.xquery.util.Cfg;
-import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.jdm.DocumentException;
 import org.xml.sax.DTDHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -41,7 +41,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
 /**
  * @author Sebastian Baechle
  */
-public final class DocumentParser implements SubtreeParser {
+public final class DocumentParser implements NodeSubtreeParser {
   public final static String IGNORE_COMMENTS = "org.brackit.xquery.node.parser.DocumentParser.ignoreComments";
 
   private final XMLReader xmlReader;
@@ -94,7 +94,7 @@ public final class DocumentParser implements SubtreeParser {
   }
 
   @Override
-  public void parse(SubtreeHandler handler) throws DocumentException {
+  public void parse(NodeSubtreeHandler handler) throws DocumentException {
     try {
       SAX2SubtreeHandlerAdapter handlerAdapter = new SAX2SubtreeHandlerAdapter(handler);
       if (retainWhitespace) {

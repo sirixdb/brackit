@@ -31,10 +31,10 @@ package org.brackit.xquery.jsonitem;
 
 import org.brackit.xquery.function.json.JSONParser;
 import org.brackit.xquery.node.stream.ArrayStream;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.OperationNotSupportedException;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.json.JsonItem;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.OperationNotSupportedException;
+import org.brackit.xquery.jdm.Stream;
+import org.brackit.xquery.jdm.json.JsonItem;
 
 import java.nio.file.Path;
 import java.util.Arrays;

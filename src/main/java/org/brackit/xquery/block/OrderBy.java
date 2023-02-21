@@ -33,9 +33,9 @@ import org.brackit.xquery.Tuple;
 import org.brackit.xquery.block.MutexSink.Out;
 import org.brackit.xquery.util.sort.Ordering;
 import org.brackit.xquery.util.sort.Ordering.OrderModifier;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.jdm.Expr;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.Stream;
 
 /**
  * @author Sebastian Baechle

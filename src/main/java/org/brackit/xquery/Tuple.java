@@ -27,7 +27,7 @@
  */
 package org.brackit.xquery;
 
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Sequence;
 
 /**
  * A tuple represents the data that "flows" through the query pipeline. In

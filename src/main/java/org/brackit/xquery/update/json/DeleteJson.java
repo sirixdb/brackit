@@ -36,13 +36,13 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.update.json.op.DeleteArrayIndexOp;
 import org.brackit.xquery.update.json.op.DeleteRecordFieldOp;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.json.Array;
-import org.brackit.xquery.xdm.json.JsonItem;
-import org.brackit.xquery.xdm.json.Object;
+import org.brackit.xquery.jdm.Expr;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.json.Array;
+import org.brackit.xquery.jdm.json.JsonItem;
+import org.brackit.xquery.jdm.json.Object;
 
 /**
  * @author Sebastian Baechle

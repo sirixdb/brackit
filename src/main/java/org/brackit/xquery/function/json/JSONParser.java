@@ -36,7 +36,7 @@ import org.brackit.xquery.atomic.*;
 import org.brackit.xquery.compiler.parser.Tokenizer;
 import org.brackit.xquery.jsonitem.object.ArrayObject;
 import org.brackit.xquery.util.serialize.StringSerializer;
-import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.jdm.Item;
 
 /**
  * <p>

@@ -32,8 +32,8 @@ import java.util.Map;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.AbstractBuilder;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Kind;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Kind;
 
 /**
  * @author Sebastian Baechle

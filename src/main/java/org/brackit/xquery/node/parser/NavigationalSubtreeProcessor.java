@@ -29,20 +29,20 @@ package org.brackit.xquery.node.parser;
 
 import java.util.List;
 
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Kind;
+import org.brackit.xquery.jdm.Stream;
+import org.brackit.xquery.jdm.node.Node;
 
 /**
- * Navigating {@link SubtreeProcessor} for fragments.
+ * Navigating {@link NodeSubtreeProcessor} for fragments.
  *
  * @author Sebastian Baechle
  */
-public class NavigationalSubtreeProcessor<E extends Node<E>> extends SubtreeProcessor<E> {
+public class NavigationalSubtreeProcessor<E extends Node<E>> extends NodeSubtreeProcessor<E> {
   private final E root;
 
-  public NavigationalSubtreeProcessor(E root, List<SubtreeListener<? super E>> listeners) {
+  public NavigationalSubtreeProcessor(E root, List<NodeSubtreeListener<? super E>> listeners) {
     super(listeners);
     this.root = root;
   }

@@ -34,7 +34,7 @@ import org.brackit.xquery.atomic.Null;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.jsonitem.object.ArrayObject;
 import org.brackit.xquery.sequence.ItemSequence;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Sequence;
 import org.junit.Ignore;
 import org.junit.Test;
 

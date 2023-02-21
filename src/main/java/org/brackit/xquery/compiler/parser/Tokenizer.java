@@ -34,7 +34,7 @@ import javax.xml.namespace.QName;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.util.log.Logger;
-import org.brackit.xquery.xdm.XMLChar;
+import org.brackit.xquery.jdm.XMLChar;
 
 /**
  * @author Sebastian Baechle

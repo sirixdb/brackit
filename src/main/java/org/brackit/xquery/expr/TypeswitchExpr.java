@@ -29,14 +29,14 @@ package org.brackit.xquery.expr;
 
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.type.AnyItemType;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.ItemType;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.jdm.Expr;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.type.AnyItemType;
+import org.brackit.xquery.jdm.type.Cardinality;
+import org.brackit.xquery.jdm.type.ItemType;
+import org.brackit.xquery.jdm.type.SequenceType;
 
 public class TypeswitchExpr implements Expr {
   private final Expr operandExpr;

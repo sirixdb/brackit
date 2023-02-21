@@ -39,7 +39,7 @@ import org.brackit.xquery.compiler.translator.TopDownTranslator;
 import org.brackit.xquery.module.MainModule;
 import org.brackit.xquery.operator.Operator;
 import org.brackit.xquery.util.dot.DotContext;
-import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.jdm.Expr;
 
 /**
  * @author Sebastian Baechle

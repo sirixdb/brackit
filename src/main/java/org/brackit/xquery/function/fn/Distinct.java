@@ -41,10 +41,10 @@ import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.Signature;
 
 /**
  * @author Sebastian Baechle

@@ -36,10 +36,10 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.expr.ConstructedNodeBuilder;
 import org.brackit.xquery.update.json.op.ReplaceArrayValueOp;
 import org.brackit.xquery.update.json.op.ReplaceRecordValueOp;
-import org.brackit.xquery.xdm.*;
-import org.brackit.xquery.xdm.json.Array;
-import org.brackit.xquery.xdm.json.JsonItem;
-import org.brackit.xquery.xdm.json.Object;
+import org.brackit.xquery.jdm.*;
+import org.brackit.xquery.jdm.json.Array;
+import org.brackit.xquery.jdm.json.JsonItem;
+import org.brackit.xquery.jdm.json.Object;
 
 /**
  * @author Johannes Lichtenberger

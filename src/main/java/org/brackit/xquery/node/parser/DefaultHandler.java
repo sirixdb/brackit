@@ -29,12 +29,12 @@ package org.brackit.xquery.node.parser;
 
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.jdm.DocumentException;
 
 /**
  * @author Sebastian Baechle
  */
-public class DefaultHandler implements SubtreeHandler {
+public class DefaultHandler implements NodeSubtreeHandler {
   @Override
   public void attribute(QNm name, Atomic value) throws DocumentException {
   }

@@ -32,12 +32,12 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Counter;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.ItemType;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.type.Cardinality;
+import org.brackit.xquery.jdm.type.ItemType;
+import org.brackit.xquery.jdm.type.SequenceType;
 
 /**
  * @author Sebastian Baechle

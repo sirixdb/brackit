@@ -31,7 +31,7 @@ import org.brackit.xquery.BrackitQueryContext;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.XQuery;
-import org.brackit.xquery.xdm.node.NodeStore;
+import org.brackit.xquery.jdm.node.NodeStore;
 
 import java.io.File;
 import java.io.FileOutputStream;

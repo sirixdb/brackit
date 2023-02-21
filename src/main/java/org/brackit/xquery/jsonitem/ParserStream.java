@@ -30,16 +30,10 @@ package org.brackit.xquery.jsonitem;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.atomic.Str;
-import org.brackit.xquery.function.json.JSONParser;
-import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.node.parser.StreamSubtreeParser;
-import org.brackit.xquery.node.parser.SubtreeParser;
 import org.brackit.xquery.util.io.URIHandler;
 import org.brackit.xquery.util.serialize.StringSerializer;
-import org.brackit.xquery.xdm.*;
-import org.brackit.xquery.xdm.json.JsonItem;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.jdm.*;
+import org.brackit.xquery.jdm.json.JsonItem;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -47,10 +41,9 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 
 /**
- * A Stream of SubtreeParsers that delivers one SubtreeParser for each item in
- * the sequence.
+ * A Stream of Strings for each item in the sequence.
  *
- * @author Martin Hiller
+ * @author Johannes Lichtenberger
  */
 public final class ParserStream implements Stream<String> {
   private final Iter it;

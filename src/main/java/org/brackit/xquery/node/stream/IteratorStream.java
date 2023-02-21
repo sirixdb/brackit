@@ -29,8 +29,8 @@ package org.brackit.xquery.node.stream;
 
 import java.util.Iterator;
 
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Stream;
 
 /**
  * Thin wrapper bridging standard {@link Iterator} to the {@link Stream}

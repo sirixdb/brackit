@@ -27,7 +27,7 @@
  */
 package org.brackit.xquery.util.path;
 
-import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.jdm.DocumentException;
 
 /**
  * @author Sebastian Baechle

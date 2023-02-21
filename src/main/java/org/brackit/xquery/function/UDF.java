@@ -34,9 +34,9 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Unit;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.operator.TupleImpl;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.jdm.Expr;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.Signature;
 
 /**
  * @author Sebastian Baechle

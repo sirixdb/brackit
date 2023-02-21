@@ -27,27 +27,7 @@
  */
 package org.brackit.xquery;
 
-import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.atomic.Null;
-import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.atomic.Str;
-import org.brackit.xquery.compiler.CompileChain;
-import org.brackit.xquery.function.fn.EmptySequence;
-import org.brackit.xquery.jsonitem.array.DArray;
-import org.brackit.xquery.jsonitem.object.ArrayObject;
-import org.brackit.xquery.sequence.ItemSequence;
-import org.brackit.xquery.xdm.Sequence;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
+import org.brackit.xquery.jdm.Sequence;
 
 import static org.junit.Assert.assertEquals;
 

@@ -36,10 +36,10 @@ import org.brackit.xquery.compiler.Unit;
 import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.sequence.TypedSequence;
 import org.brackit.xquery.util.ExprUtil;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.jdm.Expr;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.type.SequenceType;
 
 /**
  * Resolves references to declared variables.

@@ -43,8 +43,8 @@ import java.io.PrintWriter;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.parser.DefaultHandler;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.node.Node;
 
 /**
  * @author Sebastian Baechle

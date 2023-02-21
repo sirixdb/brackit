@@ -37,11 +37,11 @@ import java.util.*;
 
 import org.brackit.xquery.compiler.CompileChain;
 import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.node.parser.NodeSubtreeParser;
 import org.brackit.xquery.util.io.URIHandler;
-import org.brackit.xquery.xdm.node.Node;
-import org.brackit.xquery.xdm.node.NodeCollection;
-import org.brackit.xquery.xdm.node.NodeFactory;
+import org.brackit.xquery.jdm.node.Node;
+import org.brackit.xquery.jdm.node.NodeCollection;
+import org.brackit.xquery.jdm.node.NodeFactory;
 
 /**
  * @author Sebastian Baechle
@@ -97,7 +97,7 @@ public class Main {
       if (file != null) {
         URI uri = new URI(file);
         try (InputStream in = URIHandler.getInputStream(uri)) {
-          SubtreeParser parser = new DocumentParser(in);
+          NodeSubtreeParser parser = new DocumentParser(in);
           String name = uri.toURL().getFile();
           NodeFactory<?> factory = ctx.getNodeFactory();
           NodeCollection<?> coll = factory.collection(name, parser);

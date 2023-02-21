@@ -31,11 +31,11 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.stream.EmptyStream;
 import org.brackit.xquery.node.stream.IteratorStream;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Scope;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Kind;
+import org.brackit.xquery.jdm.Scope;
+import org.brackit.xquery.jdm.Stream;
+import org.brackit.xquery.jdm.node.Node;
 
 import java.util.Map;
 import java.util.TreeMap;

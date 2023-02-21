@@ -37,14 +37,14 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.Whitespace;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.Type;
-import org.brackit.xquery.xdm.XMLChar;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Kind;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.Stream;
+import org.brackit.xquery.jdm.Type;
+import org.brackit.xquery.jdm.XMLChar;
+import org.brackit.xquery.jdm.node.Node;
 
 /**
  * Abstract base for expressions that have to construct computed nodes as

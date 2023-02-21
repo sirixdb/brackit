@@ -28,15 +28,13 @@
 package org.brackit.xquery.util;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.sequence.ItemSequence;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Sequence;
 
 /**
  * @author Sebastian Baechle

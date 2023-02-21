@@ -43,8 +43,8 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.util.Cfg;
 import org.brackit.xquery.util.log.Logger;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Stream;
 
 /**
  * Combination of main memory and external merge sort. The implementation is I/O

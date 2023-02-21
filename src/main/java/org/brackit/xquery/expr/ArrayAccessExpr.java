@@ -36,9 +36,9 @@ import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.util.ExprUtil;
-import org.brackit.xquery.xdm.*;
-import org.brackit.xquery.xdm.json.Array;
-import org.brackit.xquery.xdm.type.ArrayType;
+import org.brackit.xquery.jdm.*;
+import org.brackit.xquery.jdm.json.Array;
+import org.brackit.xquery.jdm.type.ArrayType;
 
 /**
  * @author Sebastian Baechle

@@ -49,12 +49,12 @@ import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.dot.DotContext;
 import org.brackit.xquery.util.dot.DotNode;
 import org.brackit.xquery.util.dot.DotUtil;
-import org.brackit.xquery.xdm.type.AnyItemType;
-import org.brackit.xquery.xdm.type.AtomicType;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.DocumentType;
-import org.brackit.xquery.xdm.type.ElementType;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.jdm.type.AnyItemType;
+import org.brackit.xquery.jdm.type.AtomicType;
+import org.brackit.xquery.jdm.type.Cardinality;
+import org.brackit.xquery.jdm.type.DocumentType;
+import org.brackit.xquery.jdm.type.ElementType;
+import org.brackit.xquery.jdm.type.SequenceType;
 
 /**
  * @author Sebastian Baechle
@@ -1000,7 +1000,9 @@ public abstract class ScopeWalker extends Walker {
   private void documentExpr(AST node) {
     table.openScope(node, false);
     table.bind(Bits.FS_PARENT, new SequenceType(DocumentType.DOC, Cardinality.One));
-    walkInspect(node.getChild(0), true, false);
+    if (node.getChildCount() > 0) {
+      walkInspect(node.getChild(0), true, false);
+    }
     table.closeScope();
   }
 

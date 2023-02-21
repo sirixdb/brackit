@@ -38,7 +38,7 @@ import org.brackit.xquery.expr.BoundVariable;
 import org.brackit.xquery.expr.Variable;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.util.log.Logger;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.jdm.type.SequenceType;
 
 /**
  * @author Sebastian Baechle

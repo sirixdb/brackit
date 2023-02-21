@@ -33,12 +33,12 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.util.io.URIHandler;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.Stream;
+import org.brackit.xquery.jdm.node.Node;
 
 /**
  * A Stream of SubtreeParsers that delivers one SubtreeParser for each item in
@@ -46,7 +46,7 @@ import org.brackit.xquery.xdm.node.Node;
  *
  * @author Martin Hiller
  */
-public final class ParserStream implements Stream<SubtreeParser> {
+public final class ParserStream implements Stream<NodeSubtreeParser> {
   private final Iter it;
 
   public ParserStream(Sequence locs) {
@@ -54,7 +54,7 @@ public final class ParserStream implements Stream<SubtreeParser> {
   }
 
   @Override
-  public SubtreeParser next() throws DocumentException {
+  public NodeSubtreeParser next() throws DocumentException {
     try {
       Item item = it.next();
       if (item == null) {
@@ -64,7 +64,7 @@ public final class ParserStream implements Stream<SubtreeParser> {
         String str = ((Atomic) item).stringValue();
         return new DocumentParser(URIHandler.getInputStream(str));
       } else if (item instanceof Node<?> n) {
-        return new StreamSubtreeParser(n.getSubtree());
+        return new NodeStreamSubtreeParser(n.getSubtree());
       } else {
         throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                  "Cannot create subtree parser for item of type: %s",

@@ -31,7 +31,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Sequence;
 
 /**
  * @author Sebastian Baechle

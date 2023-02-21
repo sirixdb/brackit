@@ -27,8 +27,8 @@
  */
 package org.brackit.xquery.node.stream;
 
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Stream;
 
 /**
  * Flattens out a stream of items that provide streams into a single stream.

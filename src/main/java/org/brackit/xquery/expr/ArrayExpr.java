@@ -32,10 +32,10 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.jsonitem.array.DArray;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Expr;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Sequence;
 import org.magicwerk.brownies.collections.GapList;
 
 /**

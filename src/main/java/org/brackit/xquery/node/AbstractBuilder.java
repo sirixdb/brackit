@@ -33,15 +33,15 @@ import java.util.TreeMap;
 
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.node.parser.SubtreeHandler;
-import org.brackit.xquery.node.parser.SubtreeListener;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.node.parser.NodeSubtreeHandler;
+import org.brackit.xquery.node.parser.NodeSubtreeListener;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.node.Node;
 
 /**
  * @author Sebastian Baechle
  */
-public abstract class AbstractBuilder<E extends Node<E>> implements SubtreeListener<E>, SubtreeHandler {
+public abstract class AbstractBuilder<E extends Node<E>> implements NodeSubtreeListener<E>, NodeSubtreeHandler {
   private Node[] stack;
 
   private int stackSize;

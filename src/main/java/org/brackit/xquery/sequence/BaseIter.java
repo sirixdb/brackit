@@ -30,8 +30,7 @@ package org.brackit.xquery.sequence;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Counter;
 import org.brackit.xquery.atomic.IntNumeric;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
+import org.brackit.xquery.jdm.Iter;
 
 /**
  * @author Sebastian Baechle

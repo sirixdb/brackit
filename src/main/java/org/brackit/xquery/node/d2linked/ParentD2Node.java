@@ -30,12 +30,12 @@ package org.brackit.xquery.node.d2linked;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Una;
-import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.node.parser.NodeSubtreeParser;
 import org.brackit.xquery.node.stream.EmptyStream;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Kind;
+import org.brackit.xquery.jdm.Stream;
+import org.brackit.xquery.jdm.node.Node;
 
 /**
  * Abstract base for all constructed nodes that may have children.
@@ -356,7 +356,7 @@ abstract class ParentD2Node extends D2Node {
   }
 
   @Override
-  public D2Node append(SubtreeParser parser) throws DocumentException {
+  public D2Node append(NodeSubtreeParser parser) throws DocumentException {
     D2NodeBuilder builder = new D2NodeBuilder(this, null, true);
     parser.parse(builder);
     return builder.root();
@@ -420,7 +420,7 @@ abstract class ParentD2Node extends D2Node {
   }
 
   @Override
-  public D2Node prepend(SubtreeParser parser) throws DocumentException {
+  public D2Node prepend(NodeSubtreeParser parser) throws DocumentException {
     D2NodeBuilder builder = new D2NodeBuilder(this, null, false);
     parser.parse(builder);
     return builder.root();
@@ -437,7 +437,7 @@ abstract class ParentD2Node extends D2Node {
     return builder.root();
   }
 
-  D2Node insertBefore(D2Node node, SubtreeParser parser) throws DocumentException {
+  D2Node insertBefore(D2Node node, NodeSubtreeParser parser) throws DocumentException {
     D2NodeBuilder builder = new D2NodeBuilder(this, node, false);
     parser.parse(builder);
     return builder.root();
@@ -454,7 +454,7 @@ abstract class ParentD2Node extends D2Node {
     return builder.root();
   }
 
-  D2Node insertAfter(D2Node node, SubtreeParser parser) throws DocumentException {
+  D2Node insertAfter(D2Node node, NodeSubtreeParser parser) throws DocumentException {
     D2NodeBuilder builder = new D2NodeBuilder(this, node, true);
     parser.parse(builder);
     return builder.root();
@@ -481,7 +481,7 @@ abstract class ParentD2Node extends D2Node {
     return builder.root();
   }
 
-  D2Node replace(D2Node node, SubtreeParser parser) throws DocumentException {
+  D2Node replace(D2Node node, NodeSubtreeParser parser) throws DocumentException {
     if (parent == null) {
       throw new DocumentException("Cannot replace node without parent");
     }

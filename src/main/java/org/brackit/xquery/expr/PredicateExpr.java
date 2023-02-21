@@ -28,17 +28,16 @@
 package org.brackit.xquery.expr;
 
 import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.Numeric;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Expr;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Sequence;
 
 /**
  * @author Sebastian Baechle

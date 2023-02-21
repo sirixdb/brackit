@@ -27,8 +27,6 @@
  */
 package org.brackit.xquery.node;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -40,12 +38,12 @@ import org.brackit.xquery.expr.Accessor;
 import org.brackit.xquery.node.stream.StreamUtil;
 import org.brackit.xquery.node.stream.filter.Filter;
 import org.brackit.xquery.node.stream.filter.FilteredStream;
-import org.brackit.xquery.xdm.Axis;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.node.Node;
-import org.brackit.xquery.xdm.node.NodeCollection;
-import org.brackit.xquery.xdm.node.NodeStore;
+import org.brackit.xquery.jdm.Axis;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Stream;
+import org.brackit.xquery.jdm.node.Node;
+import org.brackit.xquery.jdm.node.NodeCollection;
+import org.brackit.xquery.jdm.node.NodeStore;
 import org.junit.Test;
 import junit.framework.Assert;
 

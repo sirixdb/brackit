@@ -30,10 +30,10 @@ package org.brackit.xquery.jsonitem.object;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
-import org.brackit.xquery.xdm.AbstractItem;
-import org.brackit.xquery.xdm.json.Object;
-import org.brackit.xquery.xdm.type.ItemType;
-import org.brackit.xquery.xdm.type.ObjectType;
+import org.brackit.xquery.jdm.AbstractItem;
+import org.brackit.xquery.jdm.json.Object;
+import org.brackit.xquery.jdm.type.ItemType;
+import org.brackit.xquery.jdm.type.ObjectType;
 
 /**
  * @author Sebastian Baechle

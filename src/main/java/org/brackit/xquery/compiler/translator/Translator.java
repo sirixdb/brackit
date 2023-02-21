@@ -33,7 +33,7 @@ import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.function.UDF;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.jdm.Expr;
 
 /**
  * @author Sebastian Baechle

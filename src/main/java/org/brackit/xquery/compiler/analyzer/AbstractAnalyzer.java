@@ -36,10 +36,10 @@ import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.util.log.Logger;
-import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.Type;
-import org.brackit.xquery.xdm.XMLChar;
-import org.brackit.xquery.xdm.type.*;
+import org.brackit.xquery.jdm.Signature;
+import org.brackit.xquery.jdm.Type;
+import org.brackit.xquery.jdm.XMLChar;
+import org.brackit.xquery.jdm.type.*;
 
 /**
  * @author Sebastian Baechle

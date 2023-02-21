@@ -28,7 +28,7 @@
 package org.brackit.xquery.update.op;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.StructuredItem;
+import org.brackit.xquery.jdm.StructuredItem;
 
 /**
  * Update operations used in XQuery Update Facility and JSONiq updates

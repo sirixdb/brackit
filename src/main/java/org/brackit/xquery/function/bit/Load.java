@@ -38,20 +38,20 @@ import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.node.parser.NodeSubtreeParser;
 import org.brackit.xquery.util.annotation.FunctionAnnotation;
 import org.brackit.xquery.util.io.URIHandler;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.node.NodeCollection;
-import org.brackit.xquery.xdm.type.AtomicType;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.ElementType;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.Signature;
+import org.brackit.xquery.jdm.Stream;
+import org.brackit.xquery.jdm.node.NodeCollection;
+import org.brackit.xquery.jdm.type.AtomicType;
+import org.brackit.xquery.jdm.type.Cardinality;
+import org.brackit.xquery.jdm.type.ElementType;
+import org.brackit.xquery.jdm.type.SequenceType;
 
 /**
  * @author Henrique Valer
@@ -89,7 +89,7 @@ public class Load extends AbstractFunction {
       String name = ((Atomic) args[0]).stringValue();
       Sequence resources = args[1];
 
-      org.brackit.xquery.xdm.node.NodeStore s = ctx.getNodeStore();
+      org.brackit.xquery.jdm.node.NodeStore s = ctx.getNodeStore();
       if (createNew) {
         create(s, name, resources);
       } else {
@@ -108,14 +108,14 @@ public class Load extends AbstractFunction {
     }
   }
 
-  private void add(org.brackit.xquery.xdm.node.NodeStore store, NodeCollection<?> coll, Sequence resources)
+  private void add(org.brackit.xquery.jdm.node.NodeStore store, NodeCollection<?> coll, Sequence resources)
       throws DocumentException, IOException {
     if (resources instanceof Atomic) {
       String r = ((Atomic) resources).stringValue();
       coll.add(new DocumentParser(URIHandler.getInputStream(r)));
     } else {
       try (ParserStream parsers = new ParserStream(resources)) {
-        SubtreeParser parser;
+        NodeSubtreeParser parser;
         while ((parser = parsers.next()) != null) {
           coll.add(parser);
         }
@@ -123,7 +123,7 @@ public class Load extends AbstractFunction {
     }
   }
 
-  private void create(org.brackit.xquery.xdm.node.NodeStore store, String name, Sequence resources)
+  private void create(org.brackit.xquery.jdm.node.NodeStore store, String name, Sequence resources)
       throws DocumentException, IOException {
     if (resources instanceof Atomic) {
       String r = ((Atomic) resources).stringValue();
@@ -133,7 +133,7 @@ public class Load extends AbstractFunction {
     }
   }
 
-  private static class ParserStream implements Stream<SubtreeParser> {
+  private static class ParserStream implements Stream<NodeSubtreeParser> {
     Iter it;
 
     public ParserStream(Sequence locs) {
@@ -141,7 +141,7 @@ public class Load extends AbstractFunction {
     }
 
     @Override
-    public SubtreeParser next() throws DocumentException {
+    public NodeSubtreeParser next() throws DocumentException {
       try {
         Item i = it.next();
         if (i == null) {

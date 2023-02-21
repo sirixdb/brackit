@@ -30,8 +30,8 @@ package org.brackit.xquery.node.stream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Stream;
 
 /**
  * Utility class for {@link Stream Streams}.

@@ -36,7 +36,7 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.atomic.Una;
-import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.jdm.DocumentException;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -47,7 +47,7 @@ import org.xml.sax.ext.DefaultHandler2;
  * @author Sebastian Baechle
  */
 public class SAX2SubtreeHandlerAdapter extends DefaultHandler2 {
-  private final SubtreeHandler handler;
+  private final NodeSubtreeHandler handler;
 
   private boolean inComment;
 
@@ -122,7 +122,7 @@ public class SAX2SubtreeHandlerAdapter extends DefaultHandler2 {
     }
   }
 
-  public SAX2SubtreeHandlerAdapter(SubtreeHandler handler) {
+  public SAX2SubtreeHandlerAdapter(NodeSubtreeHandler handler) {
     super();
     this.handler = handler;
     content = new TrimmingStringBuilder();

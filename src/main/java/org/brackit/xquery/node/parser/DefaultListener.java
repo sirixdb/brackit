@@ -27,13 +27,13 @@
  */
 package org.brackit.xquery.node.parser;
 
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.node.Node;
 
 /**
  * @author Sebastian Baechle
  */
-public class DefaultListener<E extends Node<?>> implements SubtreeListener<E> {
+public class DefaultListener<E extends Node<?>> implements NodeSubtreeListener<E> {
   @Override
   public <T extends E> void attribute(T node) throws DocumentException {
   }

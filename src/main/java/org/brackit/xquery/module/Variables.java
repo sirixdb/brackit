@@ -36,7 +36,7 @@ import org.brackit.xquery.expr.DefaultCtxItem;
 import org.brackit.xquery.expr.DefaultCtxPos;
 import org.brackit.xquery.expr.DefaultCtxSize;
 import org.brackit.xquery.expr.Variable;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.jdm.type.SequenceType;
 
 /**
  * @author Sebastian Baechle

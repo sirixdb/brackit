@@ -4,7 +4,7 @@ import org.brackit.xquery.ResultChecker;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.XQueryBaseTest;
 import org.brackit.xquery.atomic.Bool;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Sequence;
 import org.junit.Test;
 
 public final class InstanceOfTest extends XQueryBaseTest {
@@ -29,6 +29,18 @@ public final class InstanceOfTest extends XQueryBaseTest {
   @Test
   public void emptyArrayInstanceOfStructuredItem() {
     Sequence result = new XQuery("[] instance of structured-item()").execute(ctx);
+    ResultChecker.dCheck(Bool.TRUE, result);
+  }
+
+  @Test
+  public void emptyDocumentInstanceOfDocumentNode1() {
+    Sequence result = new XQuery("document {()} instance of document-node()").execute(ctx);
+    ResultChecker.dCheck(Bool.TRUE, result);
+  }
+
+  @Test
+  public void emptyDocumentInstanceOfDocumentNode2() {
+    Sequence result = new XQuery("document {} instance of document-node()").execute(ctx);
     ResultChecker.dCheck(Bool.TRUE, result);
   }
 

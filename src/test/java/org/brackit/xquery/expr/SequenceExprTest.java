@@ -33,7 +33,6 @@ import org.brackit.xquery.ResultChecker;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.sequence.ItemSequence;
-import org.brackit.xquery.xdm.Sequence;
 import org.junit.Test;
 
 /**

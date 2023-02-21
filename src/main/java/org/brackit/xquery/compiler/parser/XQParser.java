@@ -45,7 +45,7 @@ import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.function.json.JSONFun;
 import org.brackit.xquery.module.Functions;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.jdm.Type;
 
 /**
  * Straight-forward, recursive descent parser.
@@ -3543,8 +3543,13 @@ public class XQParser extends Tokenizer {
     consume(la);
     consume(la2);
     AST doc = new AST(XQ.CompDocumentConstructor);
-    doc.addChild(expr());
-    consumeSkipWS("}");
+    Token la3 = laSkipWS("}");
+    if (la3 == null) {
+      doc.addChild(expr());
+      consumeSkipWS("}");
+    } else {
+      consume(la3);
+    }
     return doc;
   }
 

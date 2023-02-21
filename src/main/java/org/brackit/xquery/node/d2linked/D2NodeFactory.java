@@ -31,12 +31,12 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.parser.NavigationalSubtreeParser;
-import org.brackit.xquery.node.parser.SubtreeParser;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.node.Node;
-import org.brackit.xquery.xdm.node.NodeCollection;
-import org.brackit.xquery.xdm.node.NodeFactory;
+import org.brackit.xquery.node.parser.NodeSubtreeParser;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Stream;
+import org.brackit.xquery.jdm.node.Node;
+import org.brackit.xquery.jdm.node.NodeCollection;
+import org.brackit.xquery.jdm.node.NodeFactory;
 
 /**
  * @author Sebastian Baechle
@@ -78,14 +78,14 @@ public class D2NodeFactory implements NodeFactory<D2Node> {
     return build(new NavigationalSubtreeParser(source));
   }
 
-  public D2Node build(SubtreeParser parser) throws DocumentException {
+  public D2Node build(NodeSubtreeParser parser) throws DocumentException {
     D2NodeBuilder handler = new D2NodeBuilder();
     parser.parse(handler);
     return handler.root();
   }
 
   @Override
-  public NodeCollection<D2Node> collection(String name, SubtreeParser parser) throws DocumentException {
+  public NodeCollection<D2Node> collection(String name, NodeSubtreeParser parser) throws DocumentException {
     D2NodeCollection coll = new D2NodeCollection(name);
     D2NodeBuilder builder = new D2NodeBuilder(coll);
     parser.parse(builder);
@@ -93,11 +93,11 @@ public class D2NodeFactory implements NodeFactory<D2Node> {
   }
 
   @Override
-  public NodeCollection<D2Node> collection(String name, Stream<SubtreeParser> parsers) throws DocumentException {
+  public NodeCollection<D2Node> collection(String name, Stream<NodeSubtreeParser> parsers) throws DocumentException {
     D2NodeCollection coll = new D2NodeCollection(name);
     D2NodeBuilder builder = new D2NodeBuilder(coll);
     try (parsers) {
-      SubtreeParser parser;
+      NodeSubtreeParser parser;
       while ((parser = parsers.next()) != null) {
         parser.parse(builder);
       }

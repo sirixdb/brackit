@@ -33,7 +33,7 @@ import java.math.RoundingMode;
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.util.Whitespace;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.jdm.Type;
 
 public class Flt extends AbstractNumeric implements FltNumeric {
   public static final Flt NaN = new Flt(Float.NaN);

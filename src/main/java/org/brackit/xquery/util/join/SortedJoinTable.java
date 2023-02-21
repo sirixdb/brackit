@@ -34,7 +34,7 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.util.Cmp;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Sequence;
 
 /**
  * @author Sebastian Baechle

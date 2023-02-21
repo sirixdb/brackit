@@ -24,8 +24,8 @@ package org.brackit.xquery;
 import org.brackit.xquery.node.d2linked.D2Node;
 import org.brackit.xquery.node.d2linked.D2NodeBuilder;
 import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.node.NodeCollection;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.node.NodeCollection;
 import org.junit.Before;
 import org.junit.Test;
 

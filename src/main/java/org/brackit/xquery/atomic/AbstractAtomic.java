@@ -30,10 +30,10 @@ package org.brackit.xquery.atomic;
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
-import org.brackit.xquery.xdm.AbstractItem;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.type.AtomicType;
-import org.brackit.xquery.xdm.type.ItemType;
+import org.brackit.xquery.jdm.AbstractItem;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.type.AtomicType;
+import org.brackit.xquery.jdm.type.ItemType;
 
 /**
  * Base class for atomic items.

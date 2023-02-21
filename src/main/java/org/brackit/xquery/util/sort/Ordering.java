@@ -36,12 +36,12 @@ import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.node.stream.TransformerStream;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Expr;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.Stream;
+import org.brackit.xquery.jdm.Type;
 
 /**
  * @author Sebastian Baechle
@@ -76,7 +76,7 @@ public class Ordering implements Comparator<Tuple> {
 
   public Stream<Tuple> sorted() throws QueryException {
     sort.sort();
-    Stream<Tuple> s = new TransformerStream<Tuple, Tuple>(sort.stream()) {
+    Stream<Tuple> s = new TransformerStream<>(sort.stream()) {
       @Override
       protected Tuple transform(Tuple next) throws DocumentException {
         try {

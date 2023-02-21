@@ -30,10 +30,9 @@ package org.brackit.xquery.module;
 import java.util.List;
 import java.util.Map;
 
-import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
-import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.jdm.Expr;
 
 /**
  * @author Sebastian Baechle

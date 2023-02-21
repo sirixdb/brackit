@@ -38,10 +38,10 @@ import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.jsonitem.object.ArrayObject;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.json.Object;
+import org.brackit.xquery.jdm.Expr;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.json.Object;
 
 /**
  * @author Sebastian Baechle

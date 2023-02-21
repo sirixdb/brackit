@@ -33,8 +33,8 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.compiler.Bits;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Sequence;
 
 /**
  * Reference to the context position of the default context item.

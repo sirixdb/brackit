@@ -32,7 +32,7 @@ import org.brackit.xquery.compiler.optimizer.Optimizer;
 import org.brackit.xquery.compiler.translator.Translator;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.jdm.Expr;
 
 /**
  * A compilation target for a specific unit.

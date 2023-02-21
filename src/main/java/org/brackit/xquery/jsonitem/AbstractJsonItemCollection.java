@@ -31,11 +31,11 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.AnyURI;
 import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.LazySequence;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.json.JsonCollection;
-import org.brackit.xquery.xdm.json.JsonItem;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Stream;
+import org.brackit.xquery.jdm.json.JsonCollection;
+import org.brackit.xquery.jdm.json.JsonItem;
 
 /**
  * @param <E>

@@ -45,10 +45,10 @@ import org.brackit.xquery.module.Module;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.Whitespace;
-import org.brackit.xquery.xdm.Function;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.type.*;
+import org.brackit.xquery.jdm.Function;
+import org.brackit.xquery.jdm.Kind;
+import org.brackit.xquery.jdm.Signature;
+import org.brackit.xquery.jdm.type.*;
 
 /**
  * @author Sebastian Baechle
@@ -1296,7 +1296,9 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if (expr.getType() != XQ.CompDocumentConstructor) {
       return false;
     }
-    expr(expr.getChild(0));
+    if (expr.getChildCount() > 0) {
+      expr(expr.getChild(0));
+    }
     return true;
   }
 

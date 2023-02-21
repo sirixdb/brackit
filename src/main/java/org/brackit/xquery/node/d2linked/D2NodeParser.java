@@ -28,15 +28,15 @@ package org.brackit.xquery.node.d2linked;
 
 import java.util.Map.Entry;
 
-import org.brackit.xquery.node.parser.SubtreeHandler;
-import org.brackit.xquery.node.parser.SubtreeParser;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Kind;
+import org.brackit.xquery.node.parser.NodeSubtreeHandler;
+import org.brackit.xquery.node.parser.NodeSubtreeParser;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Kind;
 
 /**
  * @author Sebastian Baechle
  */
-public class D2NodeParser implements SubtreeParser {
+public class D2NodeParser implements NodeSubtreeParser {
 
   private final D2Node root;
 
@@ -45,7 +45,7 @@ public class D2NodeParser implements SubtreeParser {
   }
 
   @Override
-  public void parse(SubtreeHandler handler) throws DocumentException {
+  public void parse(NodeSubtreeHandler handler) throws DocumentException {
     try {
       handler.begin();
       handler.beginFragment();
@@ -58,7 +58,7 @@ public class D2NodeParser implements SubtreeParser {
     }
   }
 
-  private void traverse(SubtreeHandler handler, D2Node node) throws DocumentException {
+  private void traverse(NodeSubtreeHandler handler, D2Node node) throws DocumentException {
     Kind kind = node.getKind();
     if (kind == Kind.ELEMENT) {
       ElementD2Node elem = (ElementD2Node) node;

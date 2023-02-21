@@ -37,8 +37,8 @@ import org.brackit.xquery.compiler.translator.Reference;
 import org.brackit.xquery.util.Cmp;
 import org.brackit.xquery.util.join.FastList;
 import org.brackit.xquery.util.join.MultiTypeJoinTable;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Expr;
+import org.brackit.xquery.jdm.Sequence;
 
 /**
  * @author Sebastian Baechle

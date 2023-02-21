@@ -33,16 +33,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.AbstractNode;
-import org.brackit.xquery.node.parser.SubtreeHandler;
-import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.node.parser.NodeSubtreeHandler;
+import org.brackit.xquery.node.parser.NodeSubtreeParser;
 import org.brackit.xquery.node.stream.AtomStream;
 import org.brackit.xquery.node.stream.EmptyStream;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.OperationNotSupportedException;
-import org.brackit.xquery.xdm.Scope;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Kind;
+import org.brackit.xquery.jdm.OperationNotSupportedException;
+import org.brackit.xquery.jdm.Scope;
+import org.brackit.xquery.jdm.Stream;
+import org.brackit.xquery.jdm.node.Node;
 
 /**
  * Abstract base class for memory nodes.
@@ -452,7 +452,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public void parse(SubtreeHandler handler) throws DocumentException {
+  public void parse(NodeSubtreeHandler handler) throws DocumentException {
     new D2NodeParser(this).parse(handler);
   }
 
@@ -538,7 +538,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public D2Node append(SubtreeParser parser) throws DocumentException {
+  public D2Node append(NodeSubtreeParser parser) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
@@ -558,7 +558,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public D2Node prepend(SubtreeParser parser) throws DocumentException {
+  public D2Node prepend(NodeSubtreeParser parser) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
@@ -580,7 +580,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public D2Node insertAfter(SubtreeParser parser) throws DocumentException {
+  public D2Node insertAfter(NodeSubtreeParser parser) throws DocumentException {
     if (parent == null) {
       throw new DocumentException("%s has no parent", this);
     }
@@ -605,7 +605,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public D2Node insertBefore(SubtreeParser parser) throws DocumentException {
+  public D2Node insertBefore(NodeSubtreeParser parser) throws DocumentException {
     if (parent == null) {
       throw new DocumentException("%s has no parent", this);
     }
@@ -632,7 +632,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public D2Node replaceWith(SubtreeParser parser) throws DocumentException {
+  public D2Node replaceWith(NodeSubtreeParser parser) throws DocumentException {
     final D2Node me = this;
     D2NodeBuilder builder = new D2NodeBuilder() {
       @Override

@@ -28,8 +28,8 @@
 package org.brackit.xquery.expr;
 
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.jdm.Expr;
+import org.brackit.xquery.jdm.type.SequenceType;
 
 /**
  * Abstract typed variable

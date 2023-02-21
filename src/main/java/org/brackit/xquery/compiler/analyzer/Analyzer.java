@@ -37,7 +37,7 @@ import org.brackit.xquery.compiler.parser.XQParser;
 import org.brackit.xquery.expr.Variable;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.module.*;
-import org.brackit.xquery.xdm.Function;
+import org.brackit.xquery.jdm.Function;
 
 import java.io.IOException;
 import java.util.*;

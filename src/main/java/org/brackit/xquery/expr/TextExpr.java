@@ -31,8 +31,8 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.atomic.Una;
-import org.brackit.xquery.xdm.*;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.jdm.*;
+import org.brackit.xquery.jdm.node.Node;
 
 /**
  * @author Sebastian Baechle

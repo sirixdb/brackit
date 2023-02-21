@@ -28,9 +28,9 @@
 package org.brackit.xquery.node;
 
 import org.brackit.xquery.util.path.Path;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Stream;
+import org.brackit.xquery.jdm.node.Node;
 
 /**
  * @param <E>

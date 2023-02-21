@@ -30,13 +30,9 @@ package org.brackit.xquery.expr;
 import org.brackit.xquery.ResultChecker;
 import org.brackit.xquery.XQuery;
 import org.brackit.xquery.XQueryBaseTest;
-import org.brackit.xquery.atomic.Dbl;
 import org.brackit.xquery.atomic.Dec;
-import org.brackit.xquery.atomic.Int32;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Sequence;
 import org.junit.Test;
-
-import java.math.BigDecimal;
 
 /**
  * @author Johannes Lichtenberger

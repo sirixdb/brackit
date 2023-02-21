@@ -39,15 +39,15 @@ import java.util.Random;
 import org.brackit.xquery.atomic.DTD;
 import org.brackit.xquery.node.SimpleNodeStore;
 import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.node.parser.NodeSubtreeParser;
 import org.brackit.xquery.util.serialize.SubtreePrinter;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.node.Node;
-import org.brackit.xquery.xdm.node.NodeCollection;
-import org.brackit.xquery.xdm.node.NodeStore;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Kind;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.node.Node;
+import org.brackit.xquery.jdm.node.NodeCollection;
+import org.brackit.xquery.jdm.node.NodeStore;
 import org.junit.Before;
 import org.junit.Ignore;
 
@@ -115,7 +115,7 @@ public class XQueryBaseTest {
     return storeDocument(name, new DocumentParser(document));
   }
 
-  protected NodeCollection<?> storeDocument(String name, SubtreeParser parser) {
+  protected NodeCollection<?> storeDocument(String name, NodeSubtreeParser parser) {
     NodeCollection<?> collection = store.create(name, parser);
     return collection;
   }

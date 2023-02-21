@@ -42,15 +42,15 @@ import org.brackit.xquery.node.SimpleNodeStore;
 import org.brackit.xquery.node.d2linked.D2NodeFactory;
 import org.brackit.xquery.update.UpdateList;
 import org.brackit.xquery.update.op.UpdateOp;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.json.JsonCollection;
-import org.brackit.xquery.xdm.json.JsonStore;
-import org.brackit.xquery.xdm.node.Node;
-import org.brackit.xquery.xdm.node.NodeCollection;
-import org.brackit.xquery.xdm.node.NodeFactory;
-import org.brackit.xquery.xdm.node.NodeStore;
-import org.brackit.xquery.xdm.type.ItemType;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.json.JsonCollection;
+import org.brackit.xquery.jdm.json.JsonStore;
+import org.brackit.xquery.jdm.node.Node;
+import org.brackit.xquery.jdm.node.NodeCollection;
+import org.brackit.xquery.jdm.node.NodeFactory;
+import org.brackit.xquery.jdm.node.NodeStore;
+import org.brackit.xquery.jdm.type.ItemType;
 
 /**
  * @author Sebastian Baechle

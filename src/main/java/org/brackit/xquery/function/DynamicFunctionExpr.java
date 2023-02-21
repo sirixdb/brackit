@@ -39,12 +39,12 @@ import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.sequence.FunctionConversionSequence;
 import org.brackit.xquery.sequence.ItemSequence;
 import org.brackit.xquery.util.ExprUtil;
-import org.brackit.xquery.xdm.*;
-import org.brackit.xquery.xdm.json.Array;
-import org.brackit.xquery.xdm.json.Object;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.ItemType;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.jdm.*;
+import org.brackit.xquery.jdm.json.Array;
+import org.brackit.xquery.jdm.json.Object;
+import org.brackit.xquery.jdm.type.Cardinality;
+import org.brackit.xquery.jdm.type.ItemType;
+import org.brackit.xquery.jdm.type.SequenceType;
 import org.magicwerk.brownies.collections.GapList;
 
 /**

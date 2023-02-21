@@ -31,8 +31,8 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.node.stream.ArrayStream;
 import org.brackit.xquery.node.stream.AtomStream;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Stream;
 
 /**
  * A parser that announces each top level element from the input parsers as a
@@ -40,30 +40,30 @@ import org.brackit.xquery.xdm.Stream;
  *
  * @author Martin Hiller
  */
-public class CollectionParser implements SubtreeParser {
+public class CollectionParser implements NodeSubtreeParser {
 
-  private final Stream<SubtreeParser> parsers;
+  private final Stream<NodeSubtreeParser> parsers;
 
-  public CollectionParser(Stream<SubtreeParser> parsers) {
+  public CollectionParser(Stream<NodeSubtreeParser> parsers) {
     this.parsers = parsers;
   }
 
-  public CollectionParser(SubtreeParser parser) {
+  public CollectionParser(NodeSubtreeParser parser) {
     this.parsers = new AtomStream<>(parser);
   }
 
-  public CollectionParser(SubtreeParser[] parsers) {
+  public CollectionParser(NodeSubtreeParser[] parsers) {
     this.parsers = new ArrayStream<>(parsers);
   }
 
   @Override
-  public void parse(SubtreeHandler handler) throws DocumentException {
+  public void parse(NodeSubtreeHandler handler) throws DocumentException {
 
     CollectionHandler collHandler = new CollectionHandler(handler);
 
     // announce begin / begin fragment
     handler.begin();
-    SubtreeParser current = null;
+    NodeSubtreeParser current = null;
     while ((current = parsers.next()) != null) {
       current.parse(collHandler);
     }
@@ -74,13 +74,13 @@ public class CollectionParser implements SubtreeParser {
   /**
    * Handler class used by the CollectionParser.
    */
-  private class CollectionHandler implements SubtreeHandler {
+  private class CollectionHandler implements NodeSubtreeHandler {
 
-    private final SubtreeHandler handler;
+    private final NodeSubtreeHandler handler;
 
     private int level;
 
-    public CollectionHandler(SubtreeHandler handler) {
+    public CollectionHandler(NodeSubtreeHandler handler) {
       this.handler = handler;
       this.level = 0;
     }

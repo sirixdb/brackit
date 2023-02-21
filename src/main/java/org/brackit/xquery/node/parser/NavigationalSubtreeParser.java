@@ -30,13 +30,13 @@ package org.brackit.xquery.node.parser;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.node.Node;
 
 /**
  * @author Sebastian Baechle
  */
-public class NavigationalSubtreeParser implements SubtreeParser {
+public class NavigationalSubtreeParser implements NodeSubtreeParser {
   private final Node<?> root;
 
   public NavigationalSubtreeParser(Node<?> root) {
@@ -44,9 +44,9 @@ public class NavigationalSubtreeParser implements SubtreeParser {
   }
 
   @Override
-  public void parse(SubtreeHandler handler) throws DocumentException {
-    List<SubtreeListener<Node<?>>> listener = new ArrayList<SubtreeListener<Node<?>>>(1);
-    listener.add(new SubtreeListener2HandlerAdapter(handler));
+  public void parse(NodeSubtreeHandler handler) throws DocumentException {
+    List<NodeSubtreeListener<Node<?>>> listener = new ArrayList<NodeSubtreeListener<Node<?>>>(1);
+    listener.add(new NodeSubtreeListener2HandlerAdapter(handler));
     NavigationalSubtreeProcessor<?> processor = new NavigationalSubtreeProcessor(root, listener);
     processor.process();
   }

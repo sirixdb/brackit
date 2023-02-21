@@ -30,9 +30,9 @@ package org.brackit.xquery.update.json.op;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.update.op.OpType;
 import org.brackit.xquery.update.op.UpdateOp;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.json.JsonItem;
-import org.brackit.xquery.xdm.json.Object;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.json.JsonItem;
+import org.brackit.xquery.jdm.json.Object;
 
 /**
  * @author Johannes Lichtenberger

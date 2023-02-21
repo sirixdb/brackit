@@ -33,12 +33,12 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.type.AtomicType;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.DocumentType;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.Signature;
+import org.brackit.xquery.jdm.type.AtomicType;
+import org.brackit.xquery.jdm.type.Cardinality;
+import org.brackit.xquery.jdm.type.DocumentType;
+import org.brackit.xquery.jdm.type.SequenceType;
 
 /**
  * @author Sebastian Baechle

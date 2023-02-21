@@ -31,7 +31,7 @@ import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.Tuple;
 import org.brackit.xquery.util.ExprUtil;
-import org.brackit.xquery.xdm.*;
+import org.brackit.xquery.jdm.*;
 
 /**
  * @author Johannes Lichtenberger

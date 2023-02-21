@@ -33,9 +33,9 @@ import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.operator.TupleImpl;
 import org.brackit.xquery.util.ExprUtil;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.Type;
 
 /**
  * @author Sebastian Baechle

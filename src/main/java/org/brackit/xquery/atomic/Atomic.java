@@ -29,8 +29,8 @@ package org.brackit.xquery.atomic;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Type;
 
 /**
  * An {@link Atomic} defines the common interface of an atomic value in the

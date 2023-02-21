@@ -31,11 +31,11 @@ import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.xdm.AbstractItem;
-import org.brackit.xquery.xdm.Function;
-import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.type.FunctionType;
-import org.brackit.xquery.xdm.type.ItemType;
+import org.brackit.xquery.jdm.AbstractItem;
+import org.brackit.xquery.jdm.Function;
+import org.brackit.xquery.jdm.Signature;
+import org.brackit.xquery.jdm.type.FunctionType;
+import org.brackit.xquery.jdm.type.ItemType;
 
 /**
  * @author Sebastian Baechle

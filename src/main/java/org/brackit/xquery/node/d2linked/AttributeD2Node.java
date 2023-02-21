@@ -30,11 +30,11 @@ package org.brackit.xquery.node.d2linked;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.atomic.Una;
-import org.brackit.xquery.node.parser.SubtreeParser;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.OperationNotSupportedException;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.node.parser.NodeSubtreeParser;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Kind;
+import org.brackit.xquery.jdm.OperationNotSupportedException;
+import org.brackit.xquery.jdm.node.Node;
 
 /**
  * @author Sebastian Baechle
@@ -163,7 +163,7 @@ public final class AttributeD2Node extends D2Node {
   }
 
   @Override
-  public D2Node replaceWith(SubtreeParser parser) throws DocumentException {
+  public D2Node replaceWith(NodeSubtreeParser parser) throws DocumentException {
     D2NodeBuilder builder = new D2NodeBuilder() {
       @Override
       D2Node first(Kind kind, QNm name, Atomic value) throws DocumentException {
@@ -202,7 +202,7 @@ public final class AttributeD2Node extends D2Node {
   }
 
   @Override
-  public D2Node append(SubtreeParser parser) throws DocumentException {
+  public D2Node append(NodeSubtreeParser parser) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
@@ -218,7 +218,7 @@ public final class AttributeD2Node extends D2Node {
   }
 
   @Override
-  public D2Node insertAfter(SubtreeParser parser) throws DocumentException {
+  public D2Node insertAfter(NodeSubtreeParser parser) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
@@ -234,7 +234,7 @@ public final class AttributeD2Node extends D2Node {
   }
 
   @Override
-  public D2Node insertBefore(SubtreeParser parser) throws DocumentException {
+  public D2Node insertBefore(NodeSubtreeParser parser) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
@@ -249,7 +249,7 @@ public final class AttributeD2Node extends D2Node {
   }
 
   @Override
-  public D2Node prepend(SubtreeParser parser) throws DocumentException {
+  public D2Node prepend(NodeSubtreeParser parser) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 

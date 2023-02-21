@@ -44,6 +44,7 @@ import org.brackit.xquery.function.FunctionExpr;
 import org.brackit.xquery.function.InlineFunctionExpr;
 import org.brackit.xquery.function.UDF;
 import org.brackit.xquery.function.bit.BitFun;
+import org.brackit.xquery.function.fn.EmptySequence;
 import org.brackit.xquery.function.json.JSONFun;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.module.StaticContext;
@@ -55,8 +56,8 @@ import org.brackit.xquery.util.Cmp;
 import org.brackit.xquery.util.Whitespace;
 import org.brackit.xquery.util.aggregator.Aggregate;
 import org.brackit.xquery.util.sort.Ordering.OrderModifier;
-import org.brackit.xquery.xdm.*;
-import org.brackit.xquery.xdm.type.*;
+import org.brackit.xquery.jdm.*;
+import org.brackit.xquery.jdm.type.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -720,7 +721,12 @@ public class Compiler implements Translator {
 
   protected Expr documentExpr(AST node) throws QueryException {
     final Binding binding = table.bind(Bits.FS_PARENT, SequenceType.ITEM);
-    final Expr contentExpr = expr(node.getChild(0), false);
+    final Expr contentExpr;
+    if (node.getChildCount() > 0) {
+      contentExpr = expr(node.getChild(0), false);
+    } else {
+      contentExpr = new EmptyExpr();
+    }
     table.unbind();
     final boolean bind = binding.isReferenced();
     return new DocumentExpr(contentExpr, bind);

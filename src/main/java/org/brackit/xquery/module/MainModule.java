@@ -28,7 +28,7 @@
 package org.brackit.xquery.module;
 
 import org.brackit.xquery.compiler.Unit;
-import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.jdm.Expr;
 
 /**
  * @author Sebastian Baechle

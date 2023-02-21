@@ -35,10 +35,10 @@ import org.brackit.xquery.atomic.Dbl;
 import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.expr.Cast;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.Type;
 
 /**
  * @author Sebastian Baechle

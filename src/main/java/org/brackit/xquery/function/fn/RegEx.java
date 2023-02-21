@@ -35,8 +35,8 @@ import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
 import org.brackit.xquery.util.Regex;
 import org.brackit.xquery.util.Regex.Mode;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Signature;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.Signature;
 
 /**
  * Implementation of predefined functions fn:matches($arg1, $arg2),

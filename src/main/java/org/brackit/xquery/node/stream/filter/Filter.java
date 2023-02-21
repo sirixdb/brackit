@@ -27,7 +27,7 @@
  */
 package org.brackit.xquery.node.stream.filter;
 
-import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.jdm.DocumentException;
 
 /**
  * @param <T>

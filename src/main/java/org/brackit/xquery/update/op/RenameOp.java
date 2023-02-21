@@ -29,7 +29,7 @@ package org.brackit.xquery.update.op;
 
 import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.jdm.node.Node;
 
 /**
  * @author Sebastian Baechle

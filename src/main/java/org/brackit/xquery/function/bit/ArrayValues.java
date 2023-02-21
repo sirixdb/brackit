@@ -41,14 +41,14 @@ import org.brackit.xquery.sequence.BaseIter;
 import org.brackit.xquery.sequence.FlatteningSequence;
 import org.brackit.xquery.sequence.LazySequence;
 import org.brackit.xquery.util.annotation.FunctionAnnotation;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.json.Array;
-import org.brackit.xquery.xdm.type.ArrayType;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.Signature;
+import org.brackit.xquery.jdm.json.Array;
+import org.brackit.xquery.jdm.type.ArrayType;
+import org.brackit.xquery.jdm.type.Cardinality;
+import org.brackit.xquery.jdm.type.SequenceType;
 
 /**
  * @author Sebastian Baechle

@@ -34,14 +34,13 @@ import org.brackit.xquery.atomic.Str;
 import org.brackit.xquery.node.stream.AtomStream;
 import org.brackit.xquery.node.stream.filter.Filter;
 import org.brackit.xquery.node.stream.filter.FilteredStream;
-import org.brackit.xquery.xdm.AbstractItem;
-import org.brackit.xquery.xdm.Axis;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Kind;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.Type;
-import org.brackit.xquery.xdm.node.Node;
-import org.brackit.xquery.xdm.type.*;
+import org.brackit.xquery.jdm.AbstractItem;
+import org.brackit.xquery.jdm.Axis;
+import org.brackit.xquery.jdm.Kind;
+import org.brackit.xquery.jdm.Stream;
+import org.brackit.xquery.jdm.Type;
+import org.brackit.xquery.jdm.node.Node;
+import org.brackit.xquery.jdm.type.*;
 
 /**
  * @author Sebastian Baechle
@@ -119,16 +118,13 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem imple
   public Str getStrValue() {
     if (getKind() == Kind.ELEMENT || getKind() == Kind.DOCUMENT) {
       final StringBuilder buffer = new StringBuilder();
-      final Stream<? extends E> scanner = getDescendantOrSelf();
-      try {
+      try (Stream<? extends E> scanner = getDescendantOrSelf()) {
         E descendant;
         while ((descendant = scanner.next()) != null) {
           if (descendant.getKind() == Kind.TEXT) {
             buffer.append(descendant.getValue());
           }
         }
-      } finally {
-        scanner.close();
       }
       return new Str(buffer.toString());
     } else {
@@ -138,35 +134,24 @@ public abstract class AbstractNode<E extends Node<E>> extends AbstractItem imple
 
   @Override
   public Type type() {
-    switch (getKind()) {
-      case ELEMENT:
-        return Type.UN;
-      case ATTRIBUTE:
-      case TEXT:
-        return Type.UNA;
-      default:
-        return null;
-    }
+    return switch (getKind()) {
+      case ELEMENT -> Type.UN;
+      case ATTRIBUTE, TEXT -> Type.UNA;
+      default -> null;
+    };
   }
 
   @Override
   public ItemType itemType() {
-    switch (getKind()) {
-      case ELEMENT:
-        return new ElementType(getName(), Type.UN);
-      case ATTRIBUTE:
-        return new AttributeType(getName(), Type.UNA);
-      case TEXT:
-        return new TextType();
-      case COMMENT:
-        return new CommentType();
-      case PROCESSING_INSTRUCTION:
-        return new PIType();
-      case DOCUMENT:
-        return new DocumentType();
-      default:
-        return null;
-    }
+    return switch (getKind()) {
+      case ELEMENT -> new ElementType(getName(), Type.UN);
+      case ATTRIBUTE -> new AttributeType(getName(), Type.UNA);
+      case TEXT -> new TextType();
+      case COMMENT -> new CommentType();
+      case PROCESSING_INSTRUCTION -> new PIType();
+      case DOCUMENT -> new DocumentType();
+      default -> null;
+    };
   }
 
   @Override

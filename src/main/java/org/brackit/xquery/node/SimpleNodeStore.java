@@ -29,15 +29,15 @@ package org.brackit.xquery.node;
 
 import org.brackit.xquery.node.d2linked.D2NodeFactory;
 import org.brackit.xquery.node.parser.DocumentParser;
-import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.node.parser.NodeSubtreeParser;
 import org.brackit.xquery.util.io.URIHandler;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.OperationNotSupportedException;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.node.Node;
-import org.brackit.xquery.xdm.node.NodeCollection;
-import org.brackit.xquery.xdm.node.NodeFactory;
-import org.brackit.xquery.xdm.node.NodeStore;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.OperationNotSupportedException;
+import org.brackit.xquery.jdm.Stream;
+import org.brackit.xquery.jdm.node.Node;
+import org.brackit.xquery.jdm.node.NodeCollection;
+import org.brackit.xquery.jdm.node.NodeFactory;
+import org.brackit.xquery.jdm.node.NodeStore;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,14 +59,14 @@ public class SimpleNodeStore implements NodeStore {
   }
 
   @Override
-  public NodeCollection<?> create(String name, SubtreeParser parser) throws DocumentException {
+  public NodeCollection<?> create(String name, NodeSubtreeParser parser) throws DocumentException {
     NodeCollection<?> coll = getNodeFactory().collection(name, parser);
     docs.put(name, coll);
     return coll;
   }
 
   @Override
-  public NodeCollection<?> create(String name, Stream<SubtreeParser> parsers) throws DocumentException {
+  public NodeCollection<?> create(String name, Stream<NodeSubtreeParser> parsers) throws DocumentException {
     NodeCollection<?> coll = getNodeFactory().collection(name, parsers);
     docs.put(name, coll);
     return coll;

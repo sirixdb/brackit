@@ -45,8 +45,8 @@ import org.brackit.xquery.atomic.Dbl;
 import org.brackit.xquery.atomic.Dur;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.YMD;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.Type;
 import org.junit.Test;
 
 /**

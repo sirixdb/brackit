@@ -28,7 +28,7 @@
 package org.brackit.xquery.node.parser;
 
 /**
- * Different Modes for {@link SubtreeListener SubtreeListeners}.
+ * Different Modes for {@link NodeSubtreeListener SubtreeListeners}.
  *
  * @author Sebastian Baechle
  */

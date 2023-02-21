@@ -29,9 +29,9 @@ package org.brackit.xquery.update.json.op;
 
 import org.brackit.xquery.update.op.OpType;
 import org.brackit.xquery.update.op.UpdateOp;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.json.Array;
-import org.brackit.xquery.xdm.json.JsonItem;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.json.Array;
+import org.brackit.xquery.jdm.json.JsonItem;
 
 /**
  * @author Johannes Lichtenberger

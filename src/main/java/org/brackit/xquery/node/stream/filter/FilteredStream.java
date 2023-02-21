@@ -27,8 +27,8 @@
  */
 package org.brackit.xquery.node.stream.filter;
 
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Stream;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Stream;
 
 /**
  * A filtered stream removes filter-matching elements.

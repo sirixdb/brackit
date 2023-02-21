@@ -54,13 +54,13 @@ import org.brackit.xquery.operator.TableJoin;
 import org.brackit.xquery.util.Cmp;
 import org.brackit.xquery.util.aggregator.Aggregate;
 import org.brackit.xquery.util.sort.Ordering.OrderModifier;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Expr;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.node.Node;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Expr;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.node.Node;
+import org.brackit.xquery.jdm.type.SequenceType;
 
 /**
  * Extended compiler for bottom-up compilation of unnested flwor expressions

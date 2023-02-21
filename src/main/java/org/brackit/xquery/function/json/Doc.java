@@ -6,12 +6,12 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.*;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.json.JsonCollection;
-import org.brackit.xquery.xdm.json.JsonItem;
-import org.brackit.xquery.xdm.json.TemporalJsonCollection;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.Signature;
+import org.brackit.xquery.jdm.json.JsonCollection;
+import org.brackit.xquery.jdm.json.JsonItem;
+import org.brackit.xquery.jdm.json.TemporalJsonCollection;
 
 public final class Doc extends AbstractFunction {
   private final boolean retrieve;

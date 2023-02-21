@@ -29,7 +29,7 @@ package org.brackit.xquery.atomic;
 
 import org.brackit.xquery.ErrorCode;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.jdm.Type;
 
 /**
  * @author Johannes Lichtenberger

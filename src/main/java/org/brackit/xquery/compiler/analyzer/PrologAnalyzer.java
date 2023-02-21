@@ -41,11 +41,11 @@ import org.brackit.xquery.module.DecimalFormat;
 import org.brackit.xquery.module.Module;
 import org.brackit.xquery.module.Namespaces;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.xdm.Signature;
-import org.brackit.xquery.xdm.type.AnyItemType;
-import org.brackit.xquery.xdm.type.Cardinality;
-import org.brackit.xquery.xdm.type.ItemType;
-import org.brackit.xquery.xdm.type.SequenceType;
+import org.brackit.xquery.jdm.Signature;
+import org.brackit.xquery.jdm.type.AnyItemType;
+import org.brackit.xquery.jdm.type.Cardinality;
+import org.brackit.xquery.jdm.type.ItemType;
+import org.brackit.xquery.jdm.type.SequenceType;
 
 import java.util.ArrayList;
 import java.util.List;

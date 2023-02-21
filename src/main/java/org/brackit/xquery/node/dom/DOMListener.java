@@ -31,8 +31,8 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 import org.brackit.xquery.node.parser.DefaultListener;
-import org.brackit.xquery.node.parser.SubtreeListener;
-import org.brackit.xquery.xdm.DocumentException;
+import org.brackit.xquery.node.parser.NodeSubtreeListener;
+import org.brackit.xquery.jdm.DocumentException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -40,8 +40,8 @@ import org.w3c.dom.Node;
 /**
  * @author Sebastian Baechle
  */
-public class DOMListener extends DefaultListener<org.brackit.xquery.xdm.node.Node<?>>
-    implements SubtreeListener<org.brackit.xquery.xdm.node.Node<?>> {
+public class DOMListener extends DefaultListener<org.brackit.xquery.jdm.node.Node<?>>
+    implements NodeSubtreeListener<org.brackit.xquery.jdm.node.Node<?>> {
   protected DocumentImpl document;
 
   protected final Deque<NodeImpl> stack;
@@ -65,7 +65,7 @@ public class DOMListener extends DefaultListener<org.brackit.xquery.xdm.node.Nod
   }
 
   @Override
-  public <T extends org.brackit.xquery.xdm.node.Node<?>> void attribute(T node) throws DocumentException {
+  public <T extends org.brackit.xquery.jdm.node.Node<?>> void attribute(T node) throws DocumentException {
     Node current = stack.peekLast();
     assert current != null;
     ((Element) current).setAttributeNode(new AttrImpl(document,
@@ -75,7 +75,7 @@ public class DOMListener extends DefaultListener<org.brackit.xquery.xdm.node.Nod
   }
 
   @Override
-  public <T extends org.brackit.xquery.xdm.node.Node<?>> void startElement(T node) throws DocumentException {
+  public <T extends org.brackit.xquery.jdm.node.Node<?>> void startElement(T node) throws DocumentException {
     NodeImpl current = stack.peekLast();
 
     ElementImpl newChild = new ElementImpl(document, current, node.getName().stringValue(), null);
@@ -90,22 +90,22 @@ public class DOMListener extends DefaultListener<org.brackit.xquery.xdm.node.Nod
   }
 
   @Override
-  public <T extends org.brackit.xquery.xdm.node.Node<?>> void endElement(T node) throws DocumentException {
+  public <T extends org.brackit.xquery.jdm.node.Node<?>> void endElement(T node) throws DocumentException {
     stack.pop();
   }
 
   @Override
-  public <T extends org.brackit.xquery.xdm.node.Node<?>> void text(T node) throws DocumentException {
+  public <T extends org.brackit.xquery.jdm.node.Node<?>> void text(T node) throws DocumentException {
     insertText(node.getValue().stringValue());
   }
 
   @Override
-  public <T extends org.brackit.xquery.xdm.node.Node<?>> void comment(T node) throws DocumentException {
+  public <T extends org.brackit.xquery.jdm.node.Node<?>> void comment(T node) throws DocumentException {
     insertComment(node.getValue().stringValue());
   }
 
   @Override
-  public <T extends org.brackit.xquery.xdm.node.Node<?>> void processingInstruction(T node) throws DocumentException {
+  public <T extends org.brackit.xquery.jdm.node.Node<?>> void processingInstruction(T node) throws DocumentException {
     insertProcessingInstruction(node.getValue().stringValue());
   }
 

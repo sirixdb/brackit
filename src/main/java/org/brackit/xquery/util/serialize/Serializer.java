@@ -28,7 +28,7 @@
 package org.brackit.xquery.util.serialize;
 
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Sequence;
 
 /**
  * Serializer, to serialize a sequence.

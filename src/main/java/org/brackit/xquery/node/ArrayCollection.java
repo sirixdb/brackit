@@ -29,12 +29,12 @@ package org.brackit.xquery.node;
 
 import java.util.Arrays;
 
-import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.node.parser.NodeSubtreeParser;
 import org.brackit.xquery.node.stream.ArrayStream;
-import org.brackit.xquery.xdm.DocumentException;
-import org.brackit.xquery.xdm.OperationNotSupportedException;
-import org.brackit.xquery.xdm.Stream;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.jdm.DocumentException;
+import org.brackit.xquery.jdm.OperationNotSupportedException;
+import org.brackit.xquery.jdm.Stream;
+import org.brackit.xquery.jdm.node.Node;
 
 /**
  * @author Sebastian Baechle
@@ -69,7 +69,7 @@ public class ArrayCollection<E extends Node<E>> extends AbstractNodeCollection<E
   }
 
   @Override
-  public E add(SubtreeParser parser) {
+  public E add(NodeSubtreeParser parser) {
     throw new OperationNotSupportedException();
   }
 

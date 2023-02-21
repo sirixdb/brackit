@@ -35,14 +35,14 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.Bits;
 import org.brackit.xquery.function.AbstractFunction;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.node.parser.StreamSubtreeParser;
-import org.brackit.xquery.node.parser.SubtreeHandler;
-import org.brackit.xquery.node.parser.SubtreeParser;
+import org.brackit.xquery.node.parser.NodeStreamSubtreeParser;
+import org.brackit.xquery.node.parser.NodeSubtreeHandler;
+import org.brackit.xquery.node.parser.NodeSubtreeParser;
 import org.brackit.xquery.util.annotation.FunctionAnnotation;
-import org.brackit.xquery.xdm.*;
-import org.brackit.xquery.xdm.node.Node;
-import org.brackit.xquery.xdm.node.NodeCollection;
-import org.brackit.xquery.xdm.type.*;
+import org.brackit.xquery.jdm.*;
+import org.brackit.xquery.jdm.node.Node;
+import org.brackit.xquery.jdm.node.NodeCollection;
+import org.brackit.xquery.jdm.type.*;
 
 /**
  * @author Henrique Valer
@@ -80,7 +80,7 @@ public class Store extends AbstractFunction {
       final String name = ((Atomic) args[0]).stringValue();
       final Sequence nodes = args[1];
 
-      org.brackit.xquery.xdm.node.NodeStore s = ctx.getNodeStore();
+      org.brackit.xquery.jdm.node.NodeStore s = ctx.getNodeStore();
       if (createNew) {
         create(s, name, nodes);
       } else {
@@ -103,10 +103,10 @@ public class Store extends AbstractFunction {
       throws DocumentException {
 
     if (nodes instanceof Node<?> n) {
-      coll.add(new StoreParser(n));
+      coll.add(new NodeStoreParser(n));
     } else {
       try (ParserStream parsers = new ParserStream(nodes)) {
-        SubtreeParser parser;
+        NodeSubtreeParser parser;
         while ((parser = parsers.next()) != null) {
           coll.add(parser);
         }
@@ -114,36 +114,37 @@ public class Store extends AbstractFunction {
     }
   }
 
-  private void create(org.brackit.xquery.xdm.node.NodeStore store, String name, Sequence nodes)
+  private void create(org.brackit.xquery.jdm.node.NodeStore store, String name, Sequence nodes)
       throws DocumentException {
     if (nodes instanceof Node<?> n) {
-      store.create(name, new StoreParser(n));
+      store.create(name, new NodeStoreParser(n));
     } else {
       store.create(name, new ParserStream(nodes));
     }
   }
 
-  private static class StoreParser extends StreamSubtreeParser {
+  private static class NodeStoreParser implements NodeSubtreeParser {
+    private final NodeStreamSubtreeParser parser;
     private final boolean intercept;
 
-    public StoreParser(Node<?> node) throws DocumentException {
-      super(node.getSubtree());
+    public NodeStoreParser(Node<?> node) throws DocumentException {
+      parser = new NodeStreamSubtreeParser(node.getSubtree());
       intercept = (node.getKind() != Kind.DOCUMENT);
     }
 
     @Override
-    public void parse(SubtreeHandler handler) throws DocumentException {
+    public void parse(NodeSubtreeHandler handler) throws DocumentException {
       if (intercept) {
         handler = new InterceptorHandler(handler);
       }
-      super.parse(handler);
+      parser.parse(handler);
     }
   }
 
-  private static class InterceptorHandler implements SubtreeHandler {
-    private final SubtreeHandler handler;
+  private static class InterceptorHandler implements NodeSubtreeHandler {
+    private final NodeSubtreeHandler handler;
 
-    public InterceptorHandler(SubtreeHandler handler) {
+    public InterceptorHandler(NodeSubtreeHandler handler) {
       this.handler = handler;
     }
 
@@ -210,7 +211,7 @@ public class Store extends AbstractFunction {
     }
   }
 
-  private static class ParserStream implements Stream<SubtreeParser> {
+  private static class ParserStream implements Stream<NodeSubtreeParser> {
     Iter it;
 
     public ParserStream(Sequence locs) {
@@ -218,14 +219,14 @@ public class Store extends AbstractFunction {
     }
 
     @Override
-    public SubtreeParser next() throws DocumentException {
+    public NodeSubtreeParser next() throws DocumentException {
       try {
         Item i = it.next();
         if (i == null) {
           return null;
         }
         if (i instanceof Node<?> n) {
-          return new StoreParser(n);
+          return new NodeStoreParser(n);
         } else {
           throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                    "Cannot create subtree parser for item of type: %s",

@@ -35,8 +35,8 @@ import org.brackit.xquery.atomic.Una;
 import org.brackit.xquery.expr.ConstructedNodeBuilder;
 import org.brackit.xquery.update.op.ReplaceElementContentOp;
 import org.brackit.xquery.update.op.ReplaceValueOp;
-import org.brackit.xquery.xdm.*;
-import org.brackit.xquery.xdm.node.Node;
+import org.brackit.xquery.jdm.*;
+import org.brackit.xquery.jdm.node.Node;
 
 import java.util.EnumSet;
 

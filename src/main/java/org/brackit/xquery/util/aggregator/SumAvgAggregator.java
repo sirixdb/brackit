@@ -36,10 +36,10 @@ import org.brackit.xquery.atomic.Int64;
 import org.brackit.xquery.atomic.Numeric;
 import org.brackit.xquery.atomic.YMD;
 import org.brackit.xquery.expr.Cast;
-import org.brackit.xquery.xdm.Item;
-import org.brackit.xquery.xdm.Iter;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.Type;
+import org.brackit.xquery.jdm.Item;
+import org.brackit.xquery.jdm.Iter;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.Type;
 
 /**
  * Aggregator for operations with fn:sum() and fn:avg() semantics.

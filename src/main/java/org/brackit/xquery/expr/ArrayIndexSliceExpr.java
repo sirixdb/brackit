@@ -34,8 +34,8 @@ import org.brackit.xquery.Tuple;
 import org.brackit.xquery.jsonitem.array.DArray;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.util.ExprUtil;
-import org.brackit.xquery.xdm.*;
-import org.brackit.xquery.xdm.json.Array;
+import org.brackit.xquery.jdm.*;
+import org.brackit.xquery.jdm.json.Array;
 import org.magicwerk.brownies.collections.GapList;
 
 /**

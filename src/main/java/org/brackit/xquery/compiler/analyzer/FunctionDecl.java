@@ -34,7 +34,7 @@ import org.brackit.xquery.compiler.Target;
 import org.brackit.xquery.compiler.translator.Translator;
 import org.brackit.xquery.function.UDF;
 import org.brackit.xquery.module.Module;
-import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.jdm.Expr;
 
 /**
  * @author Sebastian Baechle

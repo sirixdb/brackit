@@ -33,9 +33,9 @@ import org.brackit.xquery.jsonitem.array.DArray;
 import org.brackit.xquery.atomic.Int32;
 import org.brackit.xquery.atomic.IntNumeric;
 import org.brackit.xquery.atomic.QNm;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.json.Array;
-import org.brackit.xquery.xdm.json.Object;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.json.Array;
+import org.brackit.xquery.jdm.json.Object;
 import org.magicwerk.brownies.collections.GapList;
 
 import java.util.*;

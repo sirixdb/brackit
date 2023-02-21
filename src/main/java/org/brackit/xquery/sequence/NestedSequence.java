@@ -27,7 +27,7 @@
  */
 package org.brackit.xquery.sequence;
 
-import org.brackit.xquery.xdm.Sequence;
+import org.brackit.xquery.jdm.Sequence;
 
 /**
  * @author Sebastian Baechle

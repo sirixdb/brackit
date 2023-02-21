@@ -27,7 +27,7 @@
  */
 package org.brackit.xquery.compiler;
 
-import org.brackit.xquery.xdm.Expr;
+import org.brackit.xquery.jdm.Expr;
 
 /**
  * A compilation unit, e.g. a main module or a function.

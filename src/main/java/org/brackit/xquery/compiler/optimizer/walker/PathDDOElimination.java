@@ -32,7 +32,7 @@ import org.brackit.xquery.atomic.QNm;
 import org.brackit.xquery.compiler.AST;
 import org.brackit.xquery.compiler.XQ;
 import org.brackit.xquery.module.StaticContext;
-import org.brackit.xquery.xdm.Function;
+import org.brackit.xquery.jdm.Function;
 
 /**
  * <p>

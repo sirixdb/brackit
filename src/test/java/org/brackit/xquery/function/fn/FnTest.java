@@ -32,9 +32,9 @@ import org.brackit.xquery.atomic.DateTime;
 import org.brackit.xquery.atomic.*;
 import org.brackit.xquery.node.parser.DocumentParser;
 import org.brackit.xquery.sequence.ItemSequence;
-import org.brackit.xquery.xdm.Sequence;
-import org.brackit.xquery.xdm.node.Node;
-import org.brackit.xquery.xdm.node.NodeCollection;
+import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.jdm.node.Node;
+import org.brackit.xquery.jdm.node.NodeCollection;
 import org.junit.Before;
 import org.junit.Test;
 
