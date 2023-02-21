@@ -36,8 +36,8 @@ import org.brackit.xquery.QueryException;
 import org.brackit.xquery.atomic.Atomic;
 import org.brackit.xquery.expr.Cast;
 import org.brackit.xquery.util.Cmp;
-import org.brackit.xquery.util.join.JoinTable.TEntry;
-import org.brackit.xquery.util.join.JoinTable.TValue;
+import org.brackit.xquery.util.join.AbstractJoinTable.TEntry;
+import org.brackit.xquery.util.join.AbstractJoinTable.TValue;
 import org.brackit.xquery.jdm.Item;
 import org.brackit.xquery.jdm.Iter;
 import org.brackit.xquery.jdm.Sequence;
@@ -106,7 +106,7 @@ public class MultiTypeJoinTable {
     Atomic atomic = key.atomize();
     Type type = atomic.type().getPrimitiveBase();
 
-    if ((!isGCmp) && (type == Type.UNA)) {
+    if (!isGCmp && type == Type.UNA) {
       atomic = Cast.cast(null, atomic, Type.STR, false);
       type = Type.STR;
     }
