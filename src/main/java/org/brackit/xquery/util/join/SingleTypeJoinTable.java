@@ -29,10 +29,10 @@ package org.brackit.xquery.util.join;
 
 import org.brackit.xquery.QueryContext;
 import org.brackit.xquery.QueryException;
-import org.brackit.xquery.util.join.JoinTable.TValue;
-import org.brackit.xquery.jdm.Item;
-import org.brackit.xquery.jdm.Iter;
-import org.brackit.xquery.jdm.Sequence;
+import org.brackit.xquery.util.join.AbstractJoinTable.TValue;
+import org.brackit.xquery.xdm.Item;
+import org.brackit.xquery.xdm.Iter;
+import org.brackit.xquery.xdm.Sequence;
 
 /**
  * @author Sebastian Baechle
@@ -40,9 +40,9 @@ import org.brackit.xquery.jdm.Sequence;
 public class SingleTypeJoinTable {
   protected final QueryContext ctx;
 
-  protected final JoinTable table;
+  protected final AbstractJoinTable table;
 
-  public SingleTypeJoinTable(QueryContext ctx, JoinTable table) {
+  public SingleTypeJoinTable(QueryContext ctx, AbstractJoinTable table) {
     this.ctx = ctx;
     this.table = table;
   }
@@ -66,14 +66,11 @@ public class SingleTypeJoinTable {
     if (keys instanceof Item) {
       table.add(((Item) keys).atomize(), pos, bindings);
     } else {
-      Iter it = keys.iterate();
-      try {
+      try (final Iter it = keys.iterate()) {
         Item key;
         while ((key = it.next()) != null) {
           table.add(key.atomize(), pos, bindings);
         }
-      } finally {
-        it.close();
       }
     }
   }
@@ -88,14 +85,11 @@ public class SingleTypeJoinTable {
     if (keys instanceof Item) {
       table.lookup(matches, ((Item) keys).atomize());
     } else {
-      Iter it = keys.iterate();
-      try {
+      try (final Iter it = keys.iterate()) {
         Item key;
         while ((key = it.next()) != null) {
           table.lookup(matches, key.atomize());
         }
-      } finally {
-        it.close();
       }
     }
 

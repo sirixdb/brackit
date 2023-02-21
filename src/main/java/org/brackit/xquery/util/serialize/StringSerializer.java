@@ -51,6 +51,8 @@ import org.brackit.xquery.jdm.node.Node;
  */
 public class StringSerializer implements Serializer {
 
+  private static final String EOL = System.lineSeparator();
+
   private final PrintWriter out;
   private boolean format;
   private String indent = "  ";
@@ -87,17 +89,21 @@ public class StringSerializer implements Serializer {
       return;
     }
 
-    boolean first = true;
     final SubtreePrinter printer = new SubtreePrinter(out);
+
+    boolean first = true;
+    int depth = 0;
+
     printer.setPrettyPrint(format);
     printer.setIndent(indent);
     printer.setAutoFlush(false);
 
-    if (printJson(s, printer)) {
+    if (printJson(s, printer, depth)) {
       return;
     }
 
     Item item;
+
     try (final Iter it = s.iterate()) {
       while ((item = it.next()) != null) {
         if (item instanceof Node<?>) {
@@ -107,6 +113,7 @@ public class StringSerializer implements Serializer {
           if (kind == Kind.ATTRIBUTE) {
             throw new QueryException(ErrorCode.ERR_SERIALIZE_ATTRIBUTE_OR_NAMESPACE_NODE);
           }
+
           if (kind == Kind.DOCUMENT) {
             node = node.getFirstChild();
 
@@ -117,30 +124,36 @@ public class StringSerializer implements Serializer {
             }
           }
 
-          if (node != null)
+          if (node != null) {
             printer.print(node);
+          }
+
           first = true;
         } else if (item instanceof Atomic) {
           if (!first) {
             out.write(" ");
           }
+
           if (item instanceof JsonItem) {
-            json(item, printer, false);
+            json(item, printer, false, depth);
           } else {
             out.write(item.toString());
           }
+
           first = false;
         } else if (item instanceof Array) {
           if (!first) {
             out.write(" ");
           }
-          json(item, printer, true);
+
+          json(item, printer, true, depth);
           first = false;
         } else if (item instanceof Object) {
           if (!first) {
             out.write(" ");
           }
-          json(item, printer, false);
+
+          json(item, printer, false, depth);
           first = false;
         } else {
           throw new QueryException(ErrorCode.BIT_DYN_RT_NOT_IMPLEMENTED_YET_ERROR,
@@ -154,10 +167,10 @@ public class StringSerializer implements Serializer {
     }
   }
 
-  private boolean printJson(Sequence s, SubtreePrinter printer) {
+  private boolean printJson(Sequence s, SubtreePrinter printer, int depth) {
     if (s instanceof Array) {
       try {
-        json(s, printer, true);
+        json(s, printer, true, depth);
         return true;
       } finally {
         printer.flush();
@@ -165,7 +178,7 @@ public class StringSerializer implements Serializer {
       }
     } else if (s instanceof Object) {
       try {
-        json(s, printer, false);
+        json(s, printer, false, depth);
         return true;
       } finally {
         printer.flush();
@@ -176,7 +189,7 @@ public class StringSerializer implements Serializer {
     return false;
   }
 
-  private void json(Sequence s, SubtreePrinter p, boolean isArrayContent) throws QueryException {
+  private void json(Sequence s, SubtreePrinter p, boolean isArrayContent, int depth) throws QueryException {
     if (s == null || s instanceof Null) {
       out.print("null");
     } else if (s instanceof Item) {
@@ -193,44 +206,91 @@ public class StringSerializer implements Serializer {
           out.write("\"");
         }
       } else if (s instanceof Array) {
+	int arrayDepth = depth + 1;
         Array a = (Array) s;
+
         out.write("[");
+
+        if (format && a.len() > 0) {
+            out.write(EOL);
+            out.write(indent(arrayDepth));
+        }
+
         for (int i = 0; i < a.len(); i++) {
           if (i > 0) {
             out.append(",");
+
+            if (format) {
+              out.append(EOL);
+              out.write(indent(arrayDepth));
+            }
           }
-          json(a.at(i), p, true);
+
+          json(a.at(i), p, true, arrayDepth);
         }
+
+        if (format && a.len() > 0) {
+            out.write(EOL);
+            out.write(indent(depth));
+        }
+
         out.write("]");
       } else if (s instanceof Object) {
+	int objDepth = depth + 1;
         Object r = (Object) s;
+
         out.write("{");
+
+        if (format && r.len() > 0) {
+          out.write(EOL);
+          out.write(indent(objDepth));
+        }
+
         for (int i = 0; i < r.len(); i++) {
           if (i > 0) {
             out.write(",");
+
+            if (format) {
+              out.write(EOL);
+              out.write(indent(objDepth));
+            }
           }
+
           out.write("\"");
           out.write(r.name(i).stringValue());
           out.write("\":");
+
+          if (format) {
+            out.write(" ");
+          }
+
           final var value = r.value(i);
-          json(value, p, value instanceof Array ? true : false);
+          json(value, p, value instanceof Array ? true : false, objDepth);
         }
+
+        if (format && r.len() > 0) {
+          out.write(EOL);
+          out.write(indent(objDepth - 1));
+        }
+
         out.write("}");
       } else if (s instanceof Node<?>) {
-        // TODO
-        // we should serialize XML trees as JSON record....
+        // TODO: We should serialize XML trees as JSON record...
         Node<?> node = (Node<?>) s;
         Kind kind = node.getKind();
 
         if (kind == Kind.ATTRIBUTE) {
           throw new QueryException(ErrorCode.ERR_SERIALIZE_ATTRIBUTE_OR_NAMESPACE_NODE);
         }
+
         if (kind == Kind.DOCUMENT) {
           node = node.getFirstChild();
+
           while (node.getKind() != Kind.ELEMENT) {
             node = node.getNextSibling();
           }
         }
+
         out.write("\"");
         p.print(node);
         out.write("\"");
@@ -240,27 +300,62 @@ public class StringSerializer implements Serializer {
                                  ((Item) s).itemType());
       }
     } else {
-      // serialize sequence as JSON array
+      // Serialize sequence as JSON array
       if (!isArrayContent) {
         out.write("[");
+
+        if (format && s.getSize() > 0) {
+            out.write(EOL);
+            out.write(indent(depth));
+        }
       }
+
       Iter it = s.iterate();
+
       try {
         boolean first = true;
         Item i;
+
         while ((i = it.next()) != null) {
           if (!first) {
             out.write(",");
+
+            if (format) {
+              out.write(EOL);
+              out.write(indent(depth));
+            }
           }
-          json(i, p, i instanceof Array ? true : false);
+
+          json(i, p, i instanceof Array ? true : false, depth);
           first = false;
         }
       } finally {
         it.close();
       }
+
       if (!isArrayContent) {
+        if (format && s.getSize() > 0) {
+          out.write(EOL);
+        }
+
         out.write("]");
       }
     }
+  }
+
+  /**
+   * Gets the correct indentation for the supplied document depth.
+   *
+   * @param depth A document depth
+   * @return A corresponding indentation
+   */
+  private String indent(final int depth) {
+      final StringBuilder indentation = new StringBuilder();
+
+      for (int i = 0; i < depth; i++) {
+	  indentation.append(indent);
+      }
+
+      return indentation.toString();
   }
 }

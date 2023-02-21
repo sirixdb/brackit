@@ -39,8 +39,8 @@ import org.brackit.xquery.jdm.Sequence;
 /**
  * @author Sebastian Baechle
  */
-public class HashJoinTable extends JoinTable {
-  private final HashMap<TKey, TValue> table = new HashMap<TKey, TValue>();
+public final class HashJoinTable extends AbstractJoinTable {
+  private final Map<TKey, TValue> table = new HashMap<>();
 
   protected void add(Atomic key, int pos, Sequence[] bindings) throws QueryException {
     TKey htKey = new TKey(key);
@@ -80,7 +80,7 @@ public class HashJoinTable extends JoinTable {
 
   @Override
   protected List<TEntry> entries() {
-    ArrayList<TEntry> entries = new ArrayList<TEntry>();
+    final var entries = new ArrayList<TEntry>();
     for (Map.Entry<TKey, TValue> entry : table.entrySet()) {
       for (TValue v = entry.getValue(); v != null; v = v.next) {
         entries.add(new TEntry(entry.getKey(), v));

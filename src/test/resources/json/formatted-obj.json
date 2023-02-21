@@ -1,0 +1,21 @@
+{
+  "one": 1,
+  "empty_array": [],
+  "two": "two",
+  "three": null,
+  "booleans": {
+    "true": true,
+    "false": false,
+    "array": [
+      {
+        "true": true,
+        "false": false
+      },
+      true,
+      false,
+      [],
+      {}
+    ]
+  },
+  "four": {}
+}

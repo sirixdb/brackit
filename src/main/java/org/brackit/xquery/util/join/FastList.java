@@ -37,7 +37,7 @@ import java.util.Arrays;
  */
 public class FastList<E> {
 
-  public static final FastList<Object> EMPTY_LIST = new FastList<Object>(0);
+  public static final FastList<Object> EMPTY_LIST = new FastList<>(0);
 
   private Object[] values;
 
@@ -65,6 +65,7 @@ public class FastList<E> {
     return (E) values[p];
   }
 
+  @SuppressWarnings("unused")
   public void addAll(E[] v, int off, int len) {
     capacity(size + len);
     System.arraycopy(v, off, values, size, len);

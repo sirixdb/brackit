@@ -74,18 +74,19 @@ public class ObjectExpr implements Expr {
       } else {
         final var names = new ArrayList<QNm>();
         final var values = new ArrayList<Sequence>();
-        final var iter = i.iterate();
-        Item item;
-        while ((item = iter.next()) != null) {
-          if (!(item instanceof Object)) {
-            throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                     "Illegal item type in object constructor: %s",
-                                     item.itemType());
-          }
+        try (var iter = i.iterate()) {
+          Item item;
+          while ((item = iter.next()) != null) {
+            if (!(item instanceof final Object object)) {
+              throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                                       "Illegal item type in object constructor: %s",
+                                       item.itemType());
+            }
 
-          final Object object = (Object) item;
-          Collections.addAll(names, object.names().values().toArray(new QNm[0]));
-          Collections.addAll(values, object.values().values().toArray(new Sequence[0]));
+            //noinspection SuspiciousToArrayCall
+            Collections.addAll(names, object.names().values().toArray(new QNm[0]));
+            Collections.addAll(values, object.values().values().toArray(new Sequence[0]));
+          }
         }
 
         return new ArrayObject(names.toArray(new QNm[0]), values.toArray(new Sequence[0]));
@@ -142,8 +143,8 @@ public class ObjectExpr implements Expr {
     QNm[] names = new QNm[fields.length];
     Sequence[] vals = new Sequence[fields.length];
     int pos = 0;
-    for (int i = 0; i < fields.length; i++) {
-      Object res = fields[i].evaluate(ctx, t);
+    for (final Field field : fields) {
+      Object res = field.evaluate(ctx, t);
       for (int j = 0; j < res.len(); j++) {
         QNm name = res.name(j);
         if (!dedup.add(name)) {
@@ -191,12 +192,12 @@ public class ObjectExpr implements Expr {
     StringBuilder out = new StringBuilder();
     out.append("[");
     boolean first = true;
-    for (int i = 0; i < fields.length; i++) {
+    for (final Field field : fields) {
       if (!first) {
         out.append(", ");
       }
       first = false;
-      out.append(fields[i].toString());
+      out.append(field.toString());
     }
     out.append("]");
     return out.toString();

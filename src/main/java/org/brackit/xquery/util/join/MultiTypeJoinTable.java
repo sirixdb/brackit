@@ -54,11 +54,11 @@ public class MultiTypeJoinTable {
 
   private final boolean skipSort;
 
-  private final Map<Type, JoinTable> tables = new HashMap<Type, JoinTable>();
+  private final Map<Type, AbstractJoinTable> tables = new HashMap<>();
 
-  private final Set<Type> convertedUntypedAtomic = new HashSet<Type>();
+  private final Set<Type> convertedUntypedAtomic = new HashSet<>();
 
-  private final Set<Type> nonNumericTypes = new HashSet<Type>();
+  private final Set<Type> nonNumericTypes = new HashSet<>();
 
   private boolean convertedUntypedAtomicToDbl;
 
@@ -76,22 +76,22 @@ public class MultiTypeJoinTable {
     this.skipSort = skipSort;
   }
 
-  private JoinTable createTable(Type type) {
-    return (cmp == Cmp.eq) ? new HashJoinTable() : new SortedJoinTable(cmp);
+  private AbstractJoinTable createTable() {
+    return cmp == Cmp.eq ? new HashJoinTable() : new SortedJoinTable(cmp);
   }
 
   private void addItem(Item key, Sequence[] bindings, int pos) throws QueryException {
     Atomic atomic = key.atomize();
     Type type = atomic.type().getPrimitiveBase();
 
-    if ((!isGCmp) && (type == Type.UNA)) {
+    if (!isGCmp && type == Type.UNA) {
       atomic = Cast.cast(null, atomic, Type.STR, false);
       type = Type.STR;
     }
 
-    JoinTable table = tables.get(type);
+    AbstractJoinTable table = tables.get(type);
     if (table == null) {
-      table = createTable(type);
+      table = createTable();
       tables.put(type, table);
     }
     table.add(atomic, pos, bindings);
@@ -171,15 +171,15 @@ public class MultiTypeJoinTable {
   }
 
   private void addToTable(Type from, Type to) throws QueryException {
-    JoinTable fromTable = tables.get(from);
+    AbstractJoinTable fromTable = tables.get(from);
 
     if (fromTable == null) {
       return;
     }
 
-    JoinTable table = tables.get(to);
+    AbstractJoinTable table = tables.get(to);
     if (table == null) {
-      table = createTable(to);
+      table = createTable();
       tables.put(to, table);
     }
 
@@ -195,7 +195,7 @@ public class MultiTypeJoinTable {
   }
 
   private void probeAtomic(FastList<TValue> matches, Atomic atomic, Type type) throws QueryException {
-    JoinTable table = tables.get(type);
+    AbstractJoinTable table = tables.get(type);
     if (table != null) {
       table.lookup(matches, atomic);
     }
@@ -204,14 +204,14 @@ public class MultiTypeJoinTable {
   protected final FastList<Sequence[]> sortAndDeduplicate(FastList<TValue> in) throws QueryException {
     int inSize = in.getSize();
     if ((skipSort) || (inSize < 2)) {
-      FastList<Sequence[]> out = new FastList<Sequence[]>(inSize);
+      FastList<Sequence[]> out = new FastList<>(inSize);
       for (int i = 0; i < inSize; i++) {
         out.add(in.get(i).bindings);
       }
       return out;
     } else {
       in.sort();
-      FastList<Sequence[]> out = new FastList<Sequence[]>();
+      FastList<Sequence[]> out = new FastList<>();
       TValue p = null;
       for (int i = 0; i < inSize; i++) {
         TValue v = in.get(i);
@@ -228,17 +228,14 @@ public class MultiTypeJoinTable {
     if (keys == null) {
       return;
     }
-    if (keys instanceof Item) {
-      addItem((Item) keys, bindings, pos);
+    if (keys instanceof Item item) {
+      addItem(item, bindings, pos);
     } else {
-      Iter it = keys.iterate();
-      try {
+      try (final Iter it = keys.iterate()) {
         Item key;
         while ((key = it.next()) != null) {
           addItem(key, bindings, pos);
         }
-      } finally {
-        it.close();
       }
     }
   }
@@ -248,19 +245,16 @@ public class MultiTypeJoinTable {
       return FastList.emptyList();
     }
 
-    FastList<TValue> matches = new FastList<TValue>();
+    final var matches = new FastList<TValue>();
 
     if (keys instanceof Item) {
       probeItem(matches, (Item) keys);
     } else {
-      Iter it = keys.iterate();
-      try {
+      try (final Iter it = keys.iterate()) {
         Item key;
         while ((key = it.next()) != null) {
           probeItem(matches, key);
         }
-      } finally {
-        it.close();
       }
     }
 

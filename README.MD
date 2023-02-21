@@ -4,7 +4,7 @@
 
 Brackit is a flexible JSONiq and XQuery query processor developed during Dr. Sebastian Bächles time as a PhD student at the TU Kaiserslautern in the context of their research in the field of query processing for semi-structured data. The system features a fast runtime and a flexible compiler backend, which is, e.g., able to rewrite queries for optimized join processing and efficient aggregation operations. It's either usable as an in-memory ad-hoc query engine or as the query engine of a data store. The data store itself can add sophisticated optimizations in different stages of the query processor. Thus, Brackit already bundles common optimizations and a data store can add further optimizations for instance for index matching.
 
-Lately, Johannes Lichtenberger has added many optional temporal enhancements for temporal data stores such as SirixDB. Furthermore, JSON is now a first-class citizen. Brackit supports a slightly different syntax but the same data model as JSONiq and all update primitives described in the JSONiq specification. Brackit also supports Python-like array slices.
+Lately, Johannes Lichtenberger has added many optional temporal enhancements for temporal data stores such as SirixDB. Furthermore, JSON is now a first-class citizen. Brackit supports a slightly different syntax but the same data model as JSONiq and all update primitives described in the JSONiq specification. Brackit also supports Python-like array slices. Furthermore anonymous functions and closures were added lately.
 
 ## Main features
 
@@ -96,7 +96,7 @@ repository {
 <dependency>
   <groupId>io.sirix</groupId>
   <artifactId>brackit</artifactId>
-  <version>0.1.10-SNAPSHOT</version>
+  <version>0.3-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -201,7 +201,7 @@ For JSON there's the function `json-doc()`. Let's assume we have the following s
 }
 ```
 
-We can query this first dereferencing the "products" object field with `.`, then unbox the array value via `[]` and add a filter where "$$" denotes the current context item and "{fieldName}" projects the resulting object into a new object, which is returned.
+We can query this first dereferencing the "products" object field with `.`, then unbox the array value via `[]` and add a filter where `$$` denotes the current context item and `{fieldName}` projects the resulting object into a new object, which is returned.
 
 ```java
 java -jar brackit.jar -q "json-doc('products.json').products[][$$.productno eq 4711]{product}"
