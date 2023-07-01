@@ -45,8 +45,10 @@ import java.util.List;
 public final class UpdateList {
   private static final Logger log = Logger.getLogger(UpdateList.class);
 
-  private static final EnumSet<OpType> checkOps =
-      EnumSet.of(OpType.RENAME, OpType.REPLACE_NODE, OpType.REPLACE_VALUE, OpType.REPLACE_ELEMENT_CONTENT);
+  private static final EnumSet<OpType> checkOps = EnumSet.of(OpType.RENAME,
+                                                             OpType.REPLACE_NODE,
+                                                             OpType.REPLACE_VALUE,
+                                                             OpType.REPLACE_ELEMENT_CONTENT);
 
   private final List<UpdateOp> ops;
 
@@ -95,7 +97,8 @@ public final class UpdateList {
       case RENAME:
         if (op1.getTarget().equals(op2.getTarget())) {
           throw new QueryException(ErrorCode.ERR_UPDATE_DUPLICATE_RENAME_TARGET,
-              "Node %s is target of more than one replace operation.", op2.getTarget());
+                                   "Node %s is target of more than one replace operation.",
+                                   op2.getTarget());
         }
         break;
       case REPLACE_NODE:
@@ -109,7 +112,8 @@ public final class UpdateList {
 
         if (op1.getTarget().equals(op2.getTarget())) {
           throw new QueryException(ErrorCode.ERR_UPDATE_DUPLICATE_REPLACE_NODE_TARGET,
-              "Node %s is target of more than one replace node operation.", op2.getTarget());
+                                   "Node %s is target of more than one replace node operation.",
+                                   op2.getTarget());
         }
         break;
       case REPLACE_VALUE:
@@ -123,13 +127,15 @@ public final class UpdateList {
 
         if (op1.getTarget().equals(op2.getTarget())) {
           throw new QueryException(ErrorCode.ERR_UPDATE_DUPLICATE_REPLACE_VALUE_TARGET,
-              "Node %s is target of more than one replace value operation.", op2.getTarget());
+                                   "Node %s is target of more than one replace value operation.",
+                                   op2.getTarget());
         }
         break;
       case REPLACE_ELEMENT_CONTENT:
         if (op1.getTarget().equals(op2.getTarget())) {
           throw new QueryException(ErrorCode.ERR_UPDATE_DUPLICATE_REPLACE_VALUE_TARGET,
-              "Node %s is target of more than one replace element content operation.", op2.getTarget());
+                                   "Node %s is target of more than one replace element content operation.",
+                                   op2.getTarget());
         }
         break;
       default:

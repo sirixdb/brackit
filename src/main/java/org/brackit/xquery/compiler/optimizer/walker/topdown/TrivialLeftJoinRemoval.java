@@ -64,13 +64,12 @@ public final class TrivialLeftJoinRemoval extends Walker {
 
     AST leftIn = join.getChild(0).getChild(0);
     AST rightIn = join.getChild(1).getChild(0);
-    if ((leftIn.getType() != XQ.End) || (!constTrueJoinKey(leftIn.getChild(0)))
-        || (!constTrueJoinKey(findEnd(rightIn).getChild(0)))) {
+    if ((leftIn.getType() != XQ.End) || (!constTrueJoinKey(leftIn.getChild(0))) || (!constTrueJoinKey(findEnd(rightIn)
+                                                                                                                      .getChild(0)))) {
       return join;
     }
 
-    @SuppressWarnings("unchecked")
-    List<QNm> check = (List<QNm>) join.getProperty("check");
+    @SuppressWarnings("unchecked") List<QNm> check = (List<QNm>) join.getProperty("check");
 
     QNm checkVar = createCheckVarName();
     AST count = new AST(XQ.Count);

@@ -40,8 +40,8 @@ import org.w3c.dom.Node;
 /**
  * @author Sebastian Baechle
  */
-public class DOMListener extends DefaultListener<org.brackit.xquery.jdm.node.Node<?>>
-    implements NodeSubtreeListener<org.brackit.xquery.jdm.node.Node<?>> {
+public class DOMListener extends DefaultListener<org.brackit.xquery.jdm.node.Node<?>> implements
+    NodeSubtreeListener<org.brackit.xquery.jdm.node.Node<?>> {
   protected DocumentImpl document;
 
   protected final Deque<NodeImpl> stack;

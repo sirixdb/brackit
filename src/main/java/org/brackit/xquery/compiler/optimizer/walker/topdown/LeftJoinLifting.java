@@ -46,9 +46,9 @@ public class LeftJoinLifting extends Walker {
 
     AST leftIn = join.getChild(0).getChild(0);
     AST rightIn = join.getChild(1).getChild(0);
-    if ((rightIn.getType() != XQ.Join) || (join.getProperty("cmp") != Cmp.eq)
-        || (!constTrueJoinKey(findEnd(leftIn).getChild(0))) || (!constTrueJoinKey(findEnd(rightIn.getChild(3)).getChild(
-        0)))) {
+    if ((rightIn.getType() != XQ.Join) || (join.getProperty("cmp") != Cmp.eq) || (!constTrueJoinKey(findEnd(leftIn)
+                                                                                                                   .getChild(0)))
+        || (!constTrueJoinKey(findEnd(rightIn.getChild(3)).getChild(0)))) {
       return join;
     }
 
@@ -81,7 +81,7 @@ public class LeftJoinLifting extends Walker {
 
     // replace the left input with the assembled join
     // and replace the right input and the post-join
-    // with empty pipelines 
+    // with empty pipelines
     join.replaceChild(0, newLeftIn);
     join.replaceChild(1, emptyJoinInput(true));
     join.getChild(2).replaceChild(0, new AST(XQ.End));

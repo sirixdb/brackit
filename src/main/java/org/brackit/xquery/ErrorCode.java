@@ -91,8 +91,9 @@ public class ErrorCode {
   /**
    * err:XQTY0024
    */
-  public static final QNm ERR_TYPE_CONTENT_SEQUENCE_ATTRIBUTE_FOLLOWING_NON_ATTRIBUTE =
-      new QNm(ERR_NSURI, ERR_PREFIX, "XQTY0024");
+  public static final QNm ERR_TYPE_CONTENT_SEQUENCE_ATTRIBUTE_FOLLOWING_NON_ATTRIBUTE = new QNm(ERR_NSURI,
+                                                                                                ERR_PREFIX,
+                                                                                                "XQTY0024");
 
   /**
    * err:XPST0008
@@ -127,8 +128,9 @@ public class ErrorCode {
   /**
    * err:XQST0016
    */
-  public static final QNm ERR_MODULE_IMPORT_OR_DECLARATION_FEATURE_NOT_SUPPORTED =
-      new QNm(ERR_NSURI, ERR_PREFIX, "XQST0016");
+  public static final QNm ERR_MODULE_IMPORT_OR_DECLARATION_FEATURE_NOT_SUPPORTED = new QNm(ERR_NSURI,
+                                                                                           ERR_PREFIX,
+                                                                                           "XQST0016");
 
   /**
    * err:XQST0040
@@ -487,14 +489,16 @@ public class ErrorCode {
   /**
    * err:XUTY0010
    */
-  public static final QNm ERR_UPDATE_REPLACE_NODE_REPLACEMENT_NOT_A_ETCP_NODE =
-      new QNm(ERR_NSURI, ERR_PREFIX, "XUTY0010");
+  public static final QNm ERR_UPDATE_REPLACE_NODE_REPLACEMENT_NOT_A_ETCP_NODE = new QNm(ERR_NSURI,
+                                                                                        ERR_PREFIX,
+                                                                                        "XUTY0010");
 
   /**
    * err:XUTY0011
    */
-  public static final QNm ERR_UPDATE_REPLACE_NODE_REPLACEMENT_NOT_AN_A_NODE =
-      new QNm(ERR_NSURI, ERR_PREFIX, "XUTY0011");
+  public static final QNm ERR_UPDATE_REPLACE_NODE_REPLACEMENT_NOT_AN_A_NODE = new QNm(ERR_NSURI,
+                                                                                      ERR_PREFIX,
+                                                                                      "XUTY0011");
 
   /**
    * err:XUTY0012
@@ -519,8 +523,9 @@ public class ErrorCode {
   /**
    * err:XUDY0030
    */
-  public static final QNm ERR_UPDATE_INSERT_BEFORE_AFTER_TARGET_PARENT_IS_DOCUMENT_NODE =
-      new QNm(ERR_NSURI, ERR_PREFIX, "XUDY0030");
+  public static final QNm ERR_UPDATE_INSERT_BEFORE_AFTER_TARGET_PARENT_IS_DOCUMENT_NODE = new QNm(ERR_NSURI,
+                                                                                                  ERR_PREFIX,
+                                                                                                  "XUDY0030");
 
   /**
    * err:XQDY0026

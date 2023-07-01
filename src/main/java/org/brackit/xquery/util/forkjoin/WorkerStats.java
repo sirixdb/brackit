@@ -47,18 +47,17 @@ public class WorkerStats {
   }
 
   public String toString() {
-    return String.format(
-        "%s: joinCnt=%s\texecCnt=%s\tforkCnt=%s\tstealCnt=%s\trobbedCnt=%s\tadoptCnt=%s\tparkCnt=%s\tjoinParkCnt=%s\texecTime=%sms",
-        threadid,
-        joinCnt,
-        execCnt,
-        forkCnt,
-        stealCnt,
-        robbedCnt,
-        adoptCnt,
-        parkCnt,
-        joinParkCnt,
-        execTime);
+    return String.format("%s: joinCnt=%s\texecCnt=%s\tforkCnt=%s\tstealCnt=%s\trobbedCnt=%s\tadoptCnt=%s\tparkCnt=%s\tjoinParkCnt=%s\texecTime=%sms",
+                         threadid,
+                         joinCnt,
+                         execCnt,
+                         forkCnt,
+                         stealCnt,
+                         robbedCnt,
+                         adoptCnt,
+                         parkCnt,
+                         joinParkCnt,
+                         execTime);
   }
 
   public void reset() {

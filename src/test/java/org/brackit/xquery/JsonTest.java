@@ -57,9 +57,11 @@ public final class JsonTest extends XQueryBaseTest {
 
   private static final Path JSON_RESOURCES = Paths.get("src", "test", "resources", "json");
 
-  private static final String USER_PROFILES_JSON = """
-      {"first_name":"Sammy","last_name":"Shark","location":"Ocean","websites":[{"description":"work","URL":"https://www.digitalocean.com/"},{"description":"tutorials","URL":"https://www.digitalocean.com/community/tutorials"}],"social_media":[{"description":"twitter","link":"https://twitter.com/digitalocean"},{"description":"facebook","link":"https://www.facebook.com/DigitalOceanCloudHosting"},{"description":"github","link":"https://github.com/digitalocean"}]}
-      """.strip();
+  private static final String USER_PROFILES_JSON =
+      """
+          {"first_name":"Sammy","last_name":"Shark","location":"Ocean","websites":[{"description":"work","URL":"https://www.digitalocean.com/"},{"description":"tutorials","URL":"https://www.digitalocean.com/community/tutorials"}],"social_media":[{"description":"twitter","link":"https://twitter.com/digitalocean"},{"description":"facebook","link":"https://www.facebook.com/DigitalOceanCloudHosting"},{"description":"github","link":"https://github.com/digitalocean"}]}
+          """
+         .strip();
 
   @Test
   public void testStoreFunction1() throws IOException {
@@ -84,10 +86,10 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testKeysFunction2() throws IOException {
     final String query = """
-      let $map := { "eyes" : "blue", "hair" : "fuchsia" }
-      for $key in keys($map)
-      return { $key : $map.$key }
-        """;
+        let $map := { "eyes" : "blue", "hair" : "fuchsia" }
+        for $key in keys($map)
+        return { $key : $map.$key }
+          """;
     final var result = query(query);
     assertEquals("{\"eyes\":\"blue\"} {\"hair\":\"fuchsia\"}", result);
   }
@@ -95,9 +97,9 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testSizeFunction() throws IOException {
     final String query = """
-      let $a := [=(1 to 10)]   (: explicilty flatten sequence with "=(...)" :)
-      return size($a)
-        """;
+        let $a := [=(1 to 10)]   (: explicilty flatten sequence with "=(...)" :)
+        return size($a)
+          """;
     final var result = query(query);
     assertEquals("10", result);
   }
@@ -155,13 +157,14 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void testVarDeref2() throws IOException {
-    final String query = """
-        let $array := [true,false,"true",{"foo":["tada",{"baz":["yes","no",null],"bar": null, "foobar":"text"},{"baz":true},{"baz":{"foo":"bar"}}]}]
-        let $sequence := $array[].foo[]
-        let $baz := "baz"
-        let $sequence2 := $sequence.$baz.foo
-        return $sequence2
-        """;
+    final String query =
+        """
+            let $array := [true,false,"true",{"foo":["tada",{"baz":["yes","no",null],"bar": null, "foobar":"text"},{"baz":true},{"baz":{"foo":"bar"}}]}]
+            let $sequence := $array[].foo[]
+            let $baz := "baz"
+            let $sequence2 := $sequence.$baz.foo
+            return $sequence2
+            """;
     final var result = query(query);
     assertEquals("bar", result);
   }
@@ -183,12 +186,18 @@ public final class JsonTest extends XQueryBaseTest {
   public void customModule() throws IOException {
     final var compileChain = new CompileChain();
     try (final var out = new ByteArrayOutputStream()) {
-      final Path currentRelativePath =
-          Paths.get("").resolve("src").resolve("test").resolve("resources").resolve("modules").resolve("sort.xq");
-      final String currentPath = (File.separatorChar == '\\' ? currentRelativePath.toUri() : currentRelativePath.toAbsolutePath()).toString();
+      final Path currentRelativePath = Paths.get("")
+                                            .resolve("src")
+                                            .resolve("test")
+                                            .resolve("resources")
+                                            .resolve("modules")
+                                            .resolve("sort.xq");
+      final String currentPath = (File.separatorChar == '\\'
+          ? currentRelativePath.toUri()
+          : currentRelativePath.toAbsolutePath()).toString();
       final String query = """
           import module namespace sort = "https://sirix.io/ns/sort" at "%path";
-                    
+
           sort:qsort((7,8,4,5,6,9,3,2,0,1))
           """.replace("%path", currentPath);
 
@@ -208,14 +217,15 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void random() throws IOException {
-    final String query = """
-        let $array := [true,false,"true",{"foo":["tada",{"baz":["yes","no",null],"bar": null, "foobar":"text"},{"baz":true}]}]
-        let $sequence := $array[].foo[[1]]{baz,foobar}
-        let $resultArray := for $item in bit:values($sequence)
-                            where $item instance of array()
-                            return $item
-        return $resultArray
-        """;
+    final String query =
+        """
+            let $array := [true,false,"true",{"foo":["tada",{"baz":["yes","no",null],"bar": null, "foobar":"text"},{"baz":true}]}]
+            let $sequence := $array[].foo[[1]]{baz,foobar}
+            let $resultArray := for $item in bit:values($sequence)
+                                where $item instance of array()
+                                return $item
+            return $resultArray
+            """;
     final var result = query(query);
     assertEquals("[\"yes\",\"no\",null]", result);
   }
@@ -311,11 +321,11 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testFunction1() throws IOException {
     final String query = """
-         declare function local:foobar($x as xs:integer,$y as xs:integer,$z as xs:integer) as xs:integer {
-             $x * $y * $z
-         };
-         local:foobar(2,3,7)
-            """;
+        declare function local:foobar($x as xs:integer,$y as xs:integer,$z as xs:integer) as xs:integer {
+            $x * $y * $z
+        };
+        local:foobar(2,3,7)
+           """;
     final var result = query(query);
     assertEquals("42", result);
   }
@@ -324,12 +334,12 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testPartialFunctionApplication1() throws IOException {
     final String query = """
-         declare function local:foobar($x as xs:integer,$y as xs:integer,$z as xs:integer) as xs:integer {
-             $x * $y * $z
-         };
-         let $partFunc := local:foobar(2,?,7)
-         return $partFunc(1)
-            """;
+        declare function local:foobar($x as xs:integer,$y as xs:integer,$z as xs:integer) as xs:integer {
+            $x * $y * $z
+        };
+        let $partFunc := local:foobar(2,?,7)
+        return $partFunc(1)
+           """;
     final var result = query(query);
     assertEquals("14", result);
   }
@@ -523,10 +533,10 @@ public final class JsonTest extends XQueryBaseTest {
         """;
     final var result = query(query);
     assertEquals("""
-                     0,tztz
-                     hello,null
-                     true,yes
-                     """.stripIndent(), result);
+        0,tztz
+        hello,null
+        true,yes
+        """.stripIndent(), result);
   }
 
   @Test
@@ -869,11 +879,11 @@ public final class JsonTest extends XQueryBaseTest {
         declare function local:dummy($test) {
             $test
         };
-              
+
         declare function local:dummy() {
             local:dummy("test")
         };
-              
+
         local:dummy()
           """;
     final var result = query(query);
@@ -885,7 +895,7 @@ public final class JsonTest extends XQueryBaseTest {
     final String query = """
         let $logs := json-doc('https://raw.githubusercontent.com/sirixdb/brackit/master/logs.json')[]
         let $total-count := count($logs)
-                
+
         return for $log in $logs
             let $status := $log.status
             group by $status
@@ -898,9 +908,8 @@ public final class JsonTest extends XQueryBaseTest {
             }
         """.stripIndent();
     final var result = query(query);
-    assertEquals(
-        "{\"200\":{\"count\":409,\"fraction\":0.818}} {\"404\":{\"count\":56,\"fraction\":0.112}} {\"500\":{\"count\":35,\"fraction\":0.07}}",
-        result);
+    assertEquals("{\"200\":{\"count\":409,\"fraction\":0.818}} {\"404\":{\"count\":56,\"fraction\":0.112}} {\"500\":{\"count\":35,\"fraction\":0.07}}",
+                 result);
   }
 
   @Test
@@ -908,7 +917,7 @@ public final class JsonTest extends XQueryBaseTest {
     final String query = """
         let $logs := jn:collection('https://raw.githubusercontent.com/sirixdb/brackit/master/logs.json')[]
         let $total-count := count($logs)
-                
+
         return for $log in $logs
             let $status := $log.status
             group by $status
@@ -921,9 +930,8 @@ public final class JsonTest extends XQueryBaseTest {
             }
         """.stripIndent();
     final var result = query(query);
-    assertEquals(
-        "{\"200\":{\"count\":409,\"fraction\":0.818}} {\"404\":{\"count\":56,\"fraction\":0.112}} {\"500\":{\"count\":35,\"fraction\":0.07}}",
-        result);
+    assertEquals("{\"200\":{\"count\":409,\"fraction\":0.818}} {\"404\":{\"count\":56,\"fraction\":0.112}} {\"500\":{\"count\":35,\"fraction\":0.07}}",
+                 result);
   }
 
   @Test
@@ -1278,8 +1286,8 @@ public final class JsonTest extends XQueryBaseTest {
     final var query = "{\"foo\":jn:null(),\"bar\":(1,2)}";
     final var resultSequence = new XQuery(query).execute(ctx);
     ResultChecker.check(new ItemSequence(new ArrayObject(new QNm[] { new QNm("foo"), new QNm("bar") },
-                                                         new Sequence[] { new Null(),
-                                                             new DArray(List.of(new Int32(1), new Int32(2))) })),
+                                                         new Sequence[] { new Null(), new DArray(List.of(new Int32(1),
+                                                                                                         new Int32(2))) })),
                         resultSequence);
   }
 
@@ -1380,9 +1388,8 @@ public final class JsonTest extends XQueryBaseTest {
   public void dynamicPairsTest2() throws IOException {
     final var query = "{| for $i in 1 to 10 return { concat(\"Square of \", $i) : $i * $i } |}";
     final var result = query(query);
-    assertEquals(
-        "{\"Square of 1\":1,\"Square of 2\":4,\"Square of 3\":9,\"Square of 4\":16,\"Square of 5\":25,\"Square of 6\":36,\"Square of 7\":49,\"Square of 8\":64,\"Square of 9\":81,\"Square of 10\":100}",
-        result);
+    assertEquals("{\"Square of 1\":1,\"Square of 2\":4,\"Square of 3\":9,\"Square of 4\":16,\"Square of 5\":25,\"Square of 6\":36,\"Square of 7\":49,\"Square of 8\":64,\"Square of 9\":81,\"Square of 10\":100}",
+                 result);
   }
 
   @Test

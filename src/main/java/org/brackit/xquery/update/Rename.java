@@ -48,8 +48,9 @@ import org.brackit.xquery.jdm.node.Node;
  * @author Sebastian Baechle
  */
 public class Rename extends ConstructedNodeBuilder implements Expr {
-  private static final EnumSet<Kind> renameNodeKind =
-      EnumSet.of(Kind.ELEMENT, Kind.ATTRIBUTE, Kind.PROCESSING_INSTRUCTION);
+  private static final EnumSet<Kind> renameNodeKind = EnumSet.of(Kind.ELEMENT,
+                                                                 Kind.ATTRIBUTE,
+                                                                 Kind.PROCESSING_INSTRUCTION);
 
   private final StaticContext sctx;
   private final Expr sourceExpr;

@@ -46,21 +46,20 @@ public class XMLChar {
 
   public static final String NAME_PATTERN = "(" + NAME_START_CHAR_PATTERN + ")(" + NAME_CHAR_PATTERN + ")*";
 
-  public static final String NCNAME_PATTERN =
-      "(" + NAME_START_CHAR_WITHOUT_COLON_PATTERN + "|" + NAME_CHAR_OTHER_PATTERN + ")+";
+  public static final String NCNAME_PATTERN = "(" + NAME_START_CHAR_WITHOUT_COLON_PATTERN + "|"
+      + NAME_CHAR_OTHER_PATTERN + ")+";
 
   public static boolean isNameStartChar(int c) {
-    return c == ':' || 'A' <= c && c <= 'Z' || c == '_' || 'a' <= c && c <= 'z' || '\u00C0' <= c
-        && c <= '\u00D6' || '\u00D8' <= c && c <= '\u00F6' || '\u00F8' <= c && c <= '\u02FF' || '\u0370' <= c && c <= '\u037D'
-        || '\u037F' <= c && c <= '\u1FFF' || '\u200C' <= c && c
-        <= '\u200D' || '\u2070' <= c && c <= '\u218F' || '\u2C00' <= c && c <= '\u2FEF' || '\u3001' <= c && c <= '\uD7FF'
-        || '\uF900' <= c && c <= '\uFDCF' || '\uFDF0' <= c && c
-        <= '\uFFFD' || 0x10000 <= c && c <= 0xEFFFF;
+    return c == ':' || 'A' <= c && c <= 'Z' || c == '_' || 'a' <= c && c <= 'z' || '\u00C0' <= c && c <= '\u00D6'
+        || '\u00D8' <= c && c <= '\u00F6' || '\u00F8' <= c && c <= '\u02FF' || '\u0370' <= c && c <= '\u037D'
+        || '\u037F' <= c && c <= '\u1FFF' || '\u200C' <= c && c <= '\u200D' || '\u2070' <= c && c <= '\u218F'
+        || '\u2C00' <= c && c <= '\u2FEF' || '\u3001' <= c && c <= '\uD7FF' || '\uF900' <= c && c <= '\uFDCF'
+        || '\uFDF0' <= c && c <= '\uFFFD' || 0x10000 <= c && c <= 0xEFFFF;
   }
 
   public static boolean isNameChar(int c) {
-    return isNameStartChar(c) || c == '-' || c == '.' || '0' <= c && c <= '9' || c == '\u00B7' || '\u0300' <= c && c <= '\u036F'
-        || '\u203F' <= c && c <= '\u2040';
+    return isNameStartChar(c) || c == '-' || c == '.' || '0' <= c && c <= '9' || c == '\u00B7' || '\u0300' <= c && c
+        <= '\u036F' || '\u203F' <= c && c <= '\u2040';
   }
 
   public static boolean isWS(int c) {
@@ -68,8 +67,8 @@ public class XMLChar {
   }
 
   public static boolean isChar(int c) {
-    return c == '\t' || c == '\n' || c == '\r' || '\u0020' <= c && c <= '\uD7FF' || '\uE000' <= c && c
-        <= '\uFFFD' || 0x10000 <= c && c <= 0xEFFFF;
+    return c == '\t' || c == '\n' || c == '\r' || '\u0020' <= c && c <= '\uD7FF' || '\uE000' <= c && c <= '\uFFFD'
+        || 0x10000 <= c && c <= 0xEFFFF;
   }
 
   public static String toString(int c) {

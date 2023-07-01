@@ -46,8 +46,7 @@ import org.brackit.xquery.util.path.PathParser.*;
  */
 public final class Path<E> {
   public enum Axis {
-    PARENT(".."), SELF("."), DESC("//"), CHILD("/"), DESC_ATTRIBUTE("//@"), CHILD_ATTRIBUTE("/@"), CHILD_ARRAY("/[]"), DESC_ARRAY(
-        "//[]"), DESC_OBJECT_FIELD("//"), CHILD_OBJECT_FIELD("/");
+    PARENT(".."), SELF("."), DESC("//"), CHILD("/"), DESC_ATTRIBUTE("//@"), CHILD_ATTRIBUTE("/@"), CHILD_ARRAY("/[]"), DESC_ARRAY("//[]"), DESC_OBJECT_FIELD("//"), CHILD_OBJECT_FIELD("/");
 
     private final String text;
 
@@ -283,15 +282,15 @@ public final class Path<E> {
 
       if ((p[pPos].value == null || p[pPos].value != null && p[pPos].value.equals(o[oPos].value)) && (pAxis == oAxis
           || pAxis == Axis.DESC && oAxis == Axis.CHILD || pAxis == Axis.DESC_ATTRIBUTE && oAxis == Axis.CHILD_ATTRIBUTE
-          || pAxis == Axis.DESC_ARRAY && oAxis == Axis.CHILD_ARRAY
-          || pAxis == Axis.DESC_OBJECT_FIELD && oAxis == Axis.CHILD_OBJECT_FIELD)) {
+          || pAxis == Axis.DESC_ARRAY && oAxis == Axis.CHILD_ARRAY || pAxis == Axis.DESC_OBJECT_FIELD && oAxis
+              == Axis.CHILD_OBJECT_FIELD)) {
         // System.out.println("match " + p[pPos]);
         matchTable[pPos] = oPos;
         oPos--;
         pPos--;
       } else if (pPos < pLen - 1) {
-        while (p[pPos + 1].axis != Axis.DESC && p[pPos + 1].axis != Axis.DESC_ATTRIBUTE
-            && p[pPos + 1].axis != Axis.DESC_ARRAY && p[pPos + 1].axis != Axis.DESC_OBJECT_FIELD) {
+        while (p[pPos + 1].axis != Axis.DESC && p[pPos + 1].axis != Axis.DESC_ATTRIBUTE && p[pPos + 1].axis
+            != Axis.DESC_ARRAY && p[pPos + 1].axis != Axis.DESC_OBJECT_FIELD) {
           // backtracking
           // System.out.println("Backtracking to pPos " + (pPos + 1));
           pPos++;
@@ -317,9 +316,8 @@ public final class Path<E> {
       }
     }
 
-    boolean match =
-        oPos == -1 || p[0].axis == Axis.DESC || p[0].axis == Axis.DESC_OBJECT_FIELD || p[0].axis == Axis.DESC_ATTRIBUTE
-            || p[0].axis == Axis.DESC_ARRAY;
+    boolean match = oPos == -1 || p[0].axis == Axis.DESC || p[0].axis == Axis.DESC_OBJECT_FIELD || p[0].axis
+        == Axis.DESC_ATTRIBUTE || p[0].axis == Axis.DESC_ARRAY;
 
     if (match) {
       // System.out.println("MatchTable: " + Arrays.toString(matchTable));
@@ -406,8 +404,8 @@ public final class Path<E> {
     for (final Step<E> step : path) {
       Axis a = step.axis;
 
-      if (a != Axis.CHILD && a != Axis.CHILD_ATTRIBUTE && a != Axis.SELF && a != Axis.DESC
-          && a != Axis.DESC_ATTRIBUTE) {
+      if (a != Axis.CHILD && a != Axis.CHILD_ATTRIBUTE && a != Axis.SELF && a != Axis.DESC && a
+          != Axis.DESC_ATTRIBUTE) {
         return false;
       }
     }
@@ -420,8 +418,8 @@ public final class Path<E> {
   }
 
   public boolean isAttribute() {
-    return path.size() != 0 && (path.get(path.size() - 1).axis == Axis.DESC_ATTRIBUTE
-        || path.get(path.size() - 1).axis == Axis.CHILD_ATTRIBUTE);
+    return path.size() != 0 && (path.get(path.size() - 1).axis == Axis.DESC_ATTRIBUTE || path.get(path.size() - 1).axis
+        == Axis.CHILD_ATTRIBUTE);
   }
 
   public Path<E> normalize() {

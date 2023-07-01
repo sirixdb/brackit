@@ -115,8 +115,8 @@ public class ResultChecker {
     compare(expected, result, nodeIdentity);
   }
 
-  private static void compare(Sequence expected, Sequence result, boolean nodeIdentity)
-      throws QueryException, AssertionError {
+  private static void compare(Sequence expected, Sequence result, boolean nodeIdentity) throws QueryException,
+      AssertionError {
     if (expected == null) {
       if (result != null) // verify that result sequence has no results
       {
@@ -222,8 +222,8 @@ public class ResultChecker {
     }
   }
 
-  private static void compareNode(Node<?> eNode, Node<?> rNode)
-      throws DocumentException, OperationNotSupportedException {
+  private static void compareNode(Node<?> eNode, Node<?> rNode) throws DocumentException,
+      OperationNotSupportedException {
     assertEquals("Node kind is correct", eNode.getKind(), rNode.getKind());
     if (eNode.getKind() == Kind.DOCUMENT) {
       compareChildren(eNode, rNode);

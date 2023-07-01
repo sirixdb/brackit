@@ -95,7 +95,7 @@ public final class SelectPullup extends ScopeWalker {
     }
 
     // swap the position in the pipeline:
-    // 1. remove it from current position 
+    // 1. remove it from current position
     // 3. place it on top the current downstream pipeline
     // 2. append the downstream pipeline
     node.getParent().replaceChild(node.getChildIndex(), node.getLastChild());

@@ -59,8 +59,8 @@ import org.brackit.xquery.jdm.type.SequenceType;
  * @author Sebastian Baechle
  */
 @FunctionAnnotation(description = "Load (external) documents into a collection. "
-    + "If explicitly required or if the collection does not exist, "
-    + "a new collection will be created. ", parameters = { "$name", "$resources", "$create-new" })
+    + "If explicitly required or if the collection does not exist, " + "a new collection will be created. ",
+    parameters = { "$name", "$resources", "$create-new" })
 public class Load extends AbstractFunction {
 
   public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI, Bits.BIT_PREFIX, "load");

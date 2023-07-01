@@ -47,12 +47,14 @@ public class NodeCmpExpr implements Expr {
       public Bool compare(QueryContext ctx, Node<?> left, Node<?> right) {
         return left.equals(right) ? Bool.TRUE : Bool.FALSE;
       }
-    }, Preceding {
+    },
+    Preceding {
       @Override
       public Bool compare(QueryContext ctx, Node<?> left, Node<?> right) {
         return left.isPrecedingOf(right) ? Bool.TRUE : Bool.FALSE;
       }
-    }, Following {
+    },
+    Following {
       @Override
       public Bool compare(QueryContext ctx, Node<?> left, Node<?> right) {
         return left.isFollowingOf(right) ? Bool.TRUE : Bool.FALSE;

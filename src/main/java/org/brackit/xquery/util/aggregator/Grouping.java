@@ -53,16 +53,15 @@ public class Grouping {
   boolean[] onlyFirst;
   int size;
 
-  public Grouping(int[] groupSpecs, int[] addAggsSpecs, Aggregate defaultAgg,
-      Aggregate[] additionalAggs) {
+  public Grouping(int[] groupSpecs, int[] addAggsSpecs, Aggregate defaultAgg, Aggregate[] additionalAggs) {
     this.groupSpecs = groupSpecs;
     this.addAggsSpecs = addAggsSpecs;
     this.defaultAgg = defaultAgg;
     this.additionalAggs = additionalAggs;
   }
 
-  public Grouping(int[] groupSpecs, int[] addAggsSpecs, Aggregate defaultAgg,
-      Aggregate[] additionalAggs, int tupleSize) {
+  public Grouping(int[] groupSpecs, int[] addAggsSpecs, Aggregate defaultAgg, Aggregate[] additionalAggs,
+      int tupleSize) {
     this.groupSpecs = groupSpecs;
     this.addAggsSpecs = addAggsSpecs;
     this.defaultAgg = defaultAgg;
@@ -105,8 +104,7 @@ public class Grouping {
     return size;
   }
 
-  public static Atomic[] groupingKeys(int[] groupSpecs, Tuple t)
-      throws QueryException {
+  public static Atomic[] groupingKeys(int[] groupSpecs, Tuple t) throws QueryException {
     Atomic[] gk = new Atomic[groupSpecs.length];
     for (int i = 0; i < groupSpecs.length; i++) {
       Sequence seq = t.get(groupSpecs[i]);

@@ -71,13 +71,13 @@ public class StepExpr extends PredicateExpr {
 
     if (!(node instanceof Item)) {
       throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
-          "Context item in axis step is not an item: %s",
-          node);
+                               "Context item in axis step is not an item: %s",
+                               node);
     }
     if (!(node instanceof Node<?>)) {
       throw new QueryException(ErrorCode.ERR_PATH_STEP_CONTEXT_ITEM_IS_NOT_A_NODE,
-          "Context item in axis step is not a node: %s",
-          ((Item) node).itemType());
+                               "Context item in axis step is not a node: %s",
+                               ((Item) node).itemType());
     }
     Sequence s = new AxisStepSequence((Node<?>) node);
     boolean backwardAxis = !accessor.getAxis().isForward();

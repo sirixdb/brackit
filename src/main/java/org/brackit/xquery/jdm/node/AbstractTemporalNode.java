@@ -7,6 +7,6 @@ import org.brackit.xquery.node.AbstractNode;
  *
  * @author Johannes Lichtenberger
  */
-public abstract class AbstractTemporalNode<E extends AbstractTemporalNode<E>>
-    extends AbstractNode<AbstractTemporalNode<E>> implements TemporalNode<AbstractTemporalNode<E>> {
+public abstract class AbstractTemporalNode<E extends AbstractTemporalNode<E>> extends
+    AbstractNode<AbstractTemporalNode<E>> implements TemporalNode<AbstractTemporalNode<E>> {
 }

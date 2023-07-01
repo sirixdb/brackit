@@ -54,10 +54,9 @@ import org.brackit.xquery.jdm.Type;
  */
 public class XQParser extends Tokenizer {
 
-  private static final String[] RESERVED_FUNC_NAMES =
-      new String[] { "attribute", "comment", "document-node", "element", "empty-sequence", "function", "if", "item",
-          "namespace-node", "node", "processing-instruction", "schema-attribute", "schema-element", "switch", "text",
-          "typeswitch, array, object" };
+  private static final String[] RESERVED_FUNC_NAMES = new String[] { "attribute", "comment", "document-node", "element",
+      "empty-sequence", "function", "if", "item", "namespace-node", "node", "processing-instruction",
+      "schema-attribute", "schema-element", "switch", "text", "typeswitch, array, object" };
 
   public class IllegalNestingException extends TokenizerException {
     private final String expected;
@@ -713,9 +712,9 @@ public class XQParser extends Tokenizer {
     }
     // perform look ahead
     if (laSkipWS(la, "%") == null && laSymSkipWS(la, "variable") == null && laSymSkipWS(la, "function") == null
-        // Begin XQuery Update Facility 1.0
+    // Begin XQuery Update Facility 1.0
         && laSymSkipWS(la, "updating") == null
-      // End XQuery Update Facility 1.0
+    // End XQuery Update Facility 1.0
     ) {
       return null;
     }
@@ -2474,8 +2473,8 @@ public class XQParser extends Tokenizer {
     // leading-lone-slash rule:
     // check if next token can form the start of
     // a relative path expression...
-    return laSkipWS("*") == null && laSkipWS("<") == null && laNCNameSkipWS() == null && laQNameSkipWS()
-        == null && laSkipWS("\"") == null && laSkipWS("'") == null;
+    return laSkipWS("*") == null && laSkipWS("<") == null && laNCNameSkipWS() == null && laQNameSkipWS() == null
+        && laSkipWS("\"") == null && laSkipWS("'") == null;
   }
 
   private AST descendantOrSelfNode() {
@@ -3090,8 +3089,9 @@ public class XQParser extends Tokenizer {
           AST arrayAccess = new AST(XQ.ArrayAccess);
           arrayAccess.addChild(expr);
           if (index.getType() == XQ.ArithmeticExpr && index.getChild(1).getValue() instanceof Int32 int32Index
-              && int32Index.intValue() == -1 && index.getChild(2).getValue() instanceof Int32 int32Index2
-              && int32Index2.intValue() > 0) {
+              && int32Index.intValue() == -1 && index.getChild(2).getValue() instanceof Int32 int32Index2 && int32Index2
+                                                                                                                        .intValue()
+                  > 0) {
             index = new AST(XQ.Int, new Int32(-1 * int32Index2.intValue()));
           }
           arrayAccess.addChild(index);
@@ -3342,9 +3342,8 @@ public class XQParser extends Tokenizer {
       boolean checkBoundaryWS = true;
       while ((content = dirElementContent(checkBoundaryWS)) != null) {
         cseq.addChild(content);
-        checkBoundaryWS =
-            content.getType() == XQ.DirElementConstructor || content.getType() == XQ.DirCommentConstructor
-                || content.getType() == XQ.DirPIConstructor || content.getType() == XQ.EnclosedExpr;
+        checkBoundaryWS = content.getType() == XQ.DirElementConstructor || content.getType() == XQ.DirCommentConstructor
+            || content.getType() == XQ.DirPIConstructor || content.getType() == XQ.EnclosedExpr;
       }
       consume("</");
       skipS();
@@ -3446,8 +3445,8 @@ public class XQParser extends Tokenizer {
 
   private AST dirElementContent(boolean checkBoundaryWS) throws TokenizerException {
     Token la;
-    if (checkBoundaryWS && ((la = laSkipS("<")) != null || (la = laSkipS("{")) != null && la(la, "{") == null)
-        && (la = laS()) != null) {
+    if (checkBoundaryWS && ((la = laSkipS("<")) != null || (la = laSkipS("{")) != null && la(la, "{") == null) && (la =
+        laS()) != null) {
       consume(la);
       AST boundaryWS = new AST(XQ.Str, la.string());
       boundaryWS.setProperty("boundaryWS", true);

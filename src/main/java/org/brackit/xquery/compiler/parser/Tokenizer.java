@@ -261,10 +261,10 @@ public class Tokenizer {
   private boolean isDelChar(char c) {
     // char is (prefix of) delimiting terminal symbol
     // see A.2.2 Terminal Delimitation for details
-    return XMLChar.isWS(c) || c == '!' || c == '\'' || c == '"' || c == '#' || c == '$' || c == '%' || c
-        == '(' || c == ')' || c == '*' || c == '+' || c == ',' || c == '-' || c == '.' || c == '/' || c
-        == ':' || c == ';' || c == '<' || c == '=' || c == '>' || c == '?' || c == '@' || c == '[' || c
-        == ']' || c == '{' || c == '|' || c == '}';
+    return XMLChar.isWS(c) || c == '!' || c == '\'' || c == '"' || c == '#' || c == '$' || c == '%' || c == '(' || c
+        == ')' || c == '*' || c == '+' || c == ',' || c == '-' || c == '.' || c == '/' || c == ':' || c == ';' || c
+            == '<' || c == '=' || c == '>' || c == '?' || c == '@' || c == '[' || c == ']' || c == '{' || c == '|' || c
+                == '}';
   }
 
   protected Token la(int from, String token) {
@@ -1183,13 +1183,11 @@ public class Tokenizer {
       }
     }
     if (end - e >= 5) {
-      if (input[e] == 'a' && input[e + 1] == 'p' && input[e + 2] == 'o' && input[e + 3] == 's' && input[e + 4]
-          == ';') {
+      if (input[e] == 'a' && input[e + 1] == 'p' && input[e + 2] == 'o' && input[e + 3] == 's' && input[e + 4] == ';') {
         lastScanEnd = pos + 6;
         return "'";
       }
-      if (input[e] == 'q' && input[e + 1] == 'u' && input[e + 2] == 'o' && input[e + 3] == 't' && input[e + 4]
-          == ';') {
+      if (input[e] == 'q' && input[e + 1] == 'u' && input[e + 2] == 'o' && input[e + 3] == 't' && input[e + 4] == ';') {
         lastScanEnd = pos + 6;
         return "\"";
       }

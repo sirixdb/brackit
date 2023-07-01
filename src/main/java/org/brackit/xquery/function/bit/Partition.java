@@ -42,26 +42,26 @@ import org.brackit.xquery.jdm.type.SequenceType;
 import org.brackit.xquery.atomic.Str;
 
 public class Partition extends AbstractFunction {
-    public static final QNm PARTITION = new QNm(Bits.BIT_NSURI, Bits.BIT_PREFIX, "partition");
+  public static final QNm PARTITION = new QNm(Bits.BIT_NSURI, Bits.BIT_PREFIX, "partition");
 
-    public Partition() {
-        super(PARTITION,
-                new Signature(new SequenceType(DocumentType.DOC, Cardinality.One),
+  public Partition() {
+    super(PARTITION,
+          new Signature(new SequenceType(DocumentType.DOC, Cardinality.One),
                         new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne)),
-                true);
-    }
+          true);
+  }
 
-    @Override
-    public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) {
-        // TODO Auto-generated method stub
-        Str minStr = (Str) args[0];
-        Str maxStr = (Str) args[1];
-        // Seems that the queue variable is not necessary always, so we don't need a preemptive null check
-        Str queueCountStr = (Str) args[2];
-        if (minStr == null && maxStr == null) {
-            return null;
-        }
-        return null;
+  @Override
+  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) {
+    // TODO Auto-generated method stub
+    Str minStr = (Str) args[0];
+    Str maxStr = (Str) args[1];
+    // Seems that the queue variable is not necessary always, so we don't need a preemptive null check
+    Str queueCountStr = (Str) args[2];
+    if (minStr == null && maxStr == null) {
+      return null;
     }
+    return null;
+  }
 
 }

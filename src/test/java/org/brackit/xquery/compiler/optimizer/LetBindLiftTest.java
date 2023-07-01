@@ -44,10 +44,9 @@ public class LetBindLiftTest extends XQueryBaseTest {
 
   @Test
   public void forLetWhereConditional() {
-    Sequence res = new XQuery(
-        "for $a in (1,2,3) " + "let $b := 5 " + "let $c := " + "	for $d in (2 to 1)" + "	let $e := "
-            + "		for $f in (4,5,6) " + "		return $f " + "	where exactly-one($d) " + "	return $d " + "return 'no'")
-        .execute(ctx);
+    Sequence res = new XQuery("for $a in (1,2,3) " + "let $b := 5 " + "let $c := " + "	for $d in (2 to 1)"
+        + "	let $e := " + "		for $f in (4,5,6) " + "		return $f " + "	where exactly-one($d) " + "	return $d "
+        + "return 'no'").execute(ctx);
     Str no = new Str("no");
     ResultChecker.dCheck(new ItemSequence(no, no, no), res);
   }
@@ -55,8 +54,7 @@ public class LetBindLiftTest extends XQueryBaseTest {
   @Test
   public void orderByBatched() {
     Sequence res = new XQuery("for $a in (1,2,3) " + "let $c := " + "	for $d in (6,5,4) " + "	for $e in (7,8,9) "
-                                  + "	order by $d ascending, $e descending " + "	return ($d,$e) " + "return ($a, $c)")
-        .execute(ctx);
+        + "	order by $d ascending, $e descending " + "	return ($d,$e) " + "return ($a, $c)").execute(ctx);
     ResultChecker.dCheck(intSequence(1,
                                      4,
                                      9,
@@ -119,8 +117,7 @@ public class LetBindLiftTest extends XQueryBaseTest {
   @Test
   public void orderBy() {
     Sequence res = new XQuery("for $a in (7,8,9) " + "let $c := " + "	for $d in (3,2,1) " + "	for $e in (4,5,6) "
-                                  + "	order by $d ascending, $e descending " + "	return ($d,$e) " + "return ($a, $c)")
-        .execute(ctx);
+        + "	order by $d ascending, $e descending " + "	return ($d,$e) " + "return ($a, $c)").execute(ctx);
     ResultChecker.dCheck(intSequence(7,
                                      1,
                                      6,
@@ -183,16 +180,16 @@ public class LetBindLiftTest extends XQueryBaseTest {
   @Test
   public void orderBy2() {
     Sequence res = new XQuery("	for $d in (3,2,1) " + "	for $e in (4,5,6) " + "	order by $d ascending, $e descending "
-                                  + "	return ($d,$e)").execute(ctx);
+        + "	return ($d,$e)").execute(ctx);
     ResultChecker.dCheck(intSequence(1, 6, 1, 5, 1, 4, 2, 6, 2, 5, 2, 4, 3, 6, 3, 5, 3, 4), res);
   }
 
   @Test
   public void doubledNestedWithOrderBy() {
-    Sequence res = new XQuery("for $z in 1 " + "let $x := " + "for $a in (1 to 5) " + "let $b := " + "	for $c in (2,4) "
-                                  + "	let $f := if ($c) then (2,4) else () " + "	order by $c " + "	let $d := "
-                                  + "		for $e in $f " + "		let $g := 'ignore' " + "		where $c = $a "
-                                  + "		return $e " + "	return $d " + "return ($a,$b) " + "return $x").execute(ctx);
+    Sequence res = new XQuery("for $z in 1 " + "let $x := " + "for $a in (1 to 5) " + "let $b := "
+        + "	for $c in (2,4) " + "	let $f := if ($c) then (2,4) else () " + "	order by $c " + "	let $d := "
+        + "		for $e in $f " + "		let $g := 'ignore' " + "		where $c = $a " + "		return $e " + "	return $d "
+        + "return ($a,$b) " + "return $x").execute(ctx);
     ResultChecker.dCheck(intSequence(1, 2, 2, 4, 3, 4, 2, 4, 5), res);
   }
 

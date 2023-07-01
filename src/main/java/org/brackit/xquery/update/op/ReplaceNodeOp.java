@@ -80,15 +80,15 @@ public class ReplaceNodeOp implements UpdateOp {
     }
   }
 
-  private void insertAndThenDelete(Node<?> ancorNode, boolean insertAfter)
-      throws OperationNotSupportedException, DocumentException {
+  private void insertAndThenDelete(Node<?> ancorNode, boolean insertAfter) throws OperationNotSupportedException,
+      DocumentException {
     insert(ancorNode, insertAfter);
 
     target.delete();
   }
 
-  private void deleteAndThenInsert(Node<?> ancorNode, boolean insertAfter)
-      throws DocumentException, OperationNotSupportedException {
+  private void deleteAndThenInsert(Node<?> ancorNode, boolean insertAfter) throws DocumentException,
+      OperationNotSupportedException {
     target.delete();
 
     insert(ancorNode, insertAfter);

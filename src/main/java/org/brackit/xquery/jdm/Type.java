@@ -56,8 +56,8 @@ public final class Type {
 
   public static final String NAME_PATTERN = "(" + NAME_START_CHAR_PATTERN + ")(" + NAME_CHAR_PATTERN + ")*";
 
-  public static final String NCNAME_PATTERN =
-      "(" + NAME_START_CHAR_WITHOUT_COLON_PATTERN + "|" + NAME_CHAR_OTHER_PATTERN + ")+";
+  public static final String NCNAME_PATTERN = "(" + NAME_START_CHAR_WITHOUT_COLON_PATTERN + "|"
+      + NAME_CHAR_OTHER_PATTERN + ")+";
 
   public final static int DATI_CODE = 1;
 
@@ -1169,10 +1169,9 @@ public final class Type {
   public static final Type[] builtInTypes;
 
   static {
-    builtInTypes =
-        new Type[] { ANY, UN, ANS, IDRS, NMT, ENTS, ANA, UNA, DATI, DATE, TIME, DUR, YMD, DTD, FLO, DBL, DEC, INR, NPI,
-            NINR, LON, INT, SHO, BYT, NNI, ULON, UINT, USHO, UBYT, PINR, STR, NSTR, TOK, LAN, NMTS, NAM, NCN, ID, IDR,
-            ENT, GYM, GYE, GMD, GDAY, GMON, BOOL, B64, HEX, AURI, QNM, NOT };
+    builtInTypes = new Type[] { ANY, UN, ANS, IDRS, NMT, ENTS, ANA, UNA, DATI, DATE, TIME, DUR, YMD, DTD, FLO, DBL, DEC,
+        INR, NPI, NINR, LON, INT, SHO, BYT, NNI, ULON, UINT, USHO, UBYT, PINR, STR, NSTR, TOK, LAN, NMTS, NAM, NCN, ID,
+        IDR, ENT, GYM, GYE, GMD, GDAY, GMON, BOOL, B64, HEX, AURI, QNM, NOT };
   }
 
   private final QNm name;

@@ -61,9 +61,9 @@ public class Readline extends AbstractFunction {
 
   public Readline(QNm name) {
     super(name,
-        new Signature(new SequenceType(AtomicType.STR, Cardinality.ZeroOrMany),
-            new SequenceType(AtomicType.STR, Cardinality.One)),
-        true);
+          new Signature(new SequenceType(AtomicType.STR, Cardinality.ZeroOrMany),
+                        new SequenceType(AtomicType.STR, Cardinality.One)),
+          true);
   }
 
   @Override

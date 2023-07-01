@@ -129,9 +129,8 @@ public class DirConstructorTest extends XQueryBaseTest {
   @Test
   public void boundarySpaceStrip() throws Exception {
     PrintStream buf = createBuffer();
-    new XQuery("declare boundary-space strip; <cat>\n    <breed>2</breed>\n    <color>4</color>2 	\n</cat>").serialize(
-        ctx,
-        buf);
+    new XQuery("declare boundary-space strip; <cat>\n    <breed>2</breed>\n    <color>4</color>2 	\n</cat>").serialize(ctx,
+                                                                                                                       buf);
     Assert.assertEquals("serialized result differs",
                         "<cat><breed>2</breed><color>4</color>2 	\n</cat>",
                         buf.toString());

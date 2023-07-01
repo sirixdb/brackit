@@ -79,14 +79,14 @@ public final class ElementType extends NodeType {
 
   @Override
   public boolean matches(Node<?> node) throws QueryException {
-    return node.getKind() == Kind.ELEMENT && (name == null || name.eq(node.getName())) && (type == null
-        || node.type().instanceOf(type));
+    return node.getKind() == Kind.ELEMENT && (name == null || name.eq(node.getName())) && (type == null || node.type()
+                                                                                                               .instanceOf(type));
   }
 
   public String toString() {
-    return name != null ? type == null
-        ? String.format("element(\"%s\")", name)
-        : String.format("element(\"%s\", \"%s\")", name, type) : "element()";
+    return name != null
+        ? type == null ? String.format("element(\"%s\")", name) : String.format("element(\"%s\", \"%s\")", name, type)
+        : "element()";
   }
 
   public boolean equals(Object obj) {

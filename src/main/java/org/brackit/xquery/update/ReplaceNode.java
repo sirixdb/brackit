@@ -46,11 +46,16 @@ import org.brackit.xquery.jdm.node.Node;
  * @author Sebastian Baechle
  */
 public class ReplaceNode extends ConstructedNodeBuilder implements Expr {
-  private static final EnumSet<Kind> replaceNodeKind =
-      EnumSet.of(Kind.ELEMENT, Kind.ATTRIBUTE, Kind.TEXT, Kind.COMMENT, Kind.PROCESSING_INSTRUCTION);
+  private static final EnumSet<Kind> replaceNodeKind = EnumSet.of(Kind.ELEMENT,
+                                                                  Kind.ATTRIBUTE,
+                                                                  Kind.TEXT,
+                                                                  Kind.COMMENT,
+                                                                  Kind.PROCESSING_INSTRUCTION);
 
-  private static final EnumSet<Kind> allowedForReplaceNonAtt =
-      EnumSet.of(Kind.ELEMENT, Kind.TEXT, Kind.COMMENT, Kind.PROCESSING_INSTRUCTION);
+  private static final EnumSet<Kind> allowedForReplaceNonAtt = EnumSet.of(Kind.ELEMENT,
+                                                                          Kind.TEXT,
+                                                                          Kind.COMMENT,
+                                                                          Kind.PROCESSING_INSTRUCTION);
 
   private final Expr sourceExpr;
 

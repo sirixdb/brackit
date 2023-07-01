@@ -63,7 +63,7 @@ public class B64 extends AbstractAtomic {
     int length = str.length();
     byte[] bytes = new byte[noOfOctets(str)];
 
-    for (int charPos = 0; charPos < length; ) {
+    for (int charPos = 0; charPos < length;) {
       char c1 = str.charAt(charPos++);
       char c2 = str.charAt(charPos++);
       char c3 = str.charAt(charPos++);

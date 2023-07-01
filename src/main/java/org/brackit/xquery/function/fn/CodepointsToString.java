@@ -70,8 +70,8 @@ public class CodepointsToString extends AbstractFunction {
     while (item != null) {
       int codePoint = ((IntNumeric) item).intValue();
 
-      if ((codePoint < 0x20 || codePoint > 0xD7FF) && codePoint != 0x9 && codePoint != 0xA && codePoint != 0xD && (
-          codePoint < 0xE000 || codePoint > 0xFFFD) && (codePoint < 0x10000 || codePoint > 0x10FFFF)) {
+      if ((codePoint < 0x20 || codePoint > 0xD7FF) && codePoint != 0x9 && codePoint != 0xA && codePoint != 0xD
+          && (codePoint < 0xE000 || codePoint > 0xFFFD) && (codePoint < 0x10000 || codePoint > 0x10FFFF)) {
         throw new QueryException(ErrorCode.ERR_CODE_POINT_NOT_VALID,
                                  "Codepoint does not represent a legal XML character: %s.",
                                  codePoint);

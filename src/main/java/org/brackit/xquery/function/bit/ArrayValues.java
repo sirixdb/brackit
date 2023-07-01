@@ -64,8 +64,8 @@ public class ArrayValues extends AbstractFunction {
 
   public ArrayValues(QNm name) {
     super(name,
-        new Signature(SequenceType.ITEM_SEQUENCE, new SequenceType(ArrayType.ARRAY, Cardinality.ZeroOrOne)),
-        true);
+          new Signature(SequenceType.ITEM_SEQUENCE, new SequenceType(ArrayType.ARRAY, Cardinality.ZeroOrOne)),
+          true);
   }
 
   @Override

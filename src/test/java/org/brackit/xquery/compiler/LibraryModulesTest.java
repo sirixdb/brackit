@@ -51,17 +51,14 @@ public class LibraryModulesTest extends XQueryBaseTest {
   private static final String LEFT =
       "module namespace left='left'; import module namespace right='right'; declare function left:foo() {1};";
 
-  private static final String FOO =
-      "module namespace foo=\"http://brackit.org/lib/foo\"; " + "declare function foo:echo($s as item()*) as item()* "
-          + "{ ($s, $s) };";
+  private static final String FOO = "module namespace foo=\"http://brackit.org/lib/foo\"; "
+      + "declare function foo:echo($s as item()*) as item()* " + "{ ($s, $s) };";
 
-  private static final String FOO2 =
-      "module namespace foo=\"http://brackit.org/lib/foo\"; " + "declare function foo:echo2($s as item()*) as item()* "
-          + "{ ($s, $s) };";
+  private static final String FOO2 = "module namespace foo=\"http://brackit.org/lib/foo\"; "
+      + "declare function foo:echo2($s as item()*) as item()* " + "{ ($s, $s) };";
 
-  private static final String BAR =
-      "module namespace bar=\"http://brackit.org/lib/bar\"; " + "declare function bar:echo2($s as item()*) as item()* "
-          + "{ ($s, $s) };";
+  private static final String BAR = "module namespace bar=\"http://brackit.org/lib/bar\"; "
+      + "declare function bar:echo2($s as item()*) as item()* " + "{ ($s, $s) };";
 
   private static final String IMPORT_FOO = "import module namespace foo=\"http://brackit.org/lib/foo\"; ";
 

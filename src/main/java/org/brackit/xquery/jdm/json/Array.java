@@ -92,6 +92,7 @@ public interface Array extends ListOrUnion {
 
   /**
    * Append a sequence.
+   *
    * @param value the sequence to append
    * @return this array instance
    */

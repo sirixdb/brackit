@@ -77,8 +77,8 @@ public final class AttributeType extends NodeType {
 
   @Override
   public boolean matches(Node<?> node) throws QueryException {
-    return node.getKind() == Kind.ATTRIBUTE && (name == null || name.eq(node.getName())) && (type == null
-        || node.type().instanceOf(type));
+    return node.getKind() == Kind.ATTRIBUTE && (name == null || name.eq(node.getName())) && (type == null || node.type()
+                                                                                                                 .instanceOf(type));
   }
 
   public String toString() {

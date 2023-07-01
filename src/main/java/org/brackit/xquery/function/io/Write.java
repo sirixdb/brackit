@@ -61,10 +61,10 @@ public class Write extends AbstractFunction {
 
   public Write(QNm name) {
     super(name,
-        new Signature(new SequenceType(AtomicType.INR, Cardinality.One),
-            new SequenceType(AtomicType.STR, Cardinality.One),
-            new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)),
-        true);
+          new Signature(new SequenceType(AtomicType.INR, Cardinality.One),
+                        new SequenceType(AtomicType.STR, Cardinality.One),
+                        new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany)),
+          true);
   }
 
   @Override

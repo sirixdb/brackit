@@ -73,8 +73,8 @@ public class FunctionConversionSequence extends LazySequence {
       if (item == null) {
         if ((pos.cmp(Int32.ZERO) == 0) && (card.moreThanZero())) {
           throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-              "Invalid empty typed sequence (expected %s)",
-              card);
+                                   "Invalid empty typed sequence (expected %s)",
+                                   card);
         }
         safe = true; // remember that sequence type is OK
         return null;
@@ -83,9 +83,9 @@ public class FunctionConversionSequence extends LazySequence {
       pos.inc();
       if ((card == Cardinality.Zero) || ((pos.cmp(TWO) == 0) && (card.atMostOne()))) {
         throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-            "Invalid cardinality of typed sequence (expected %s): >= %s",
-            card,
-            pos);
+                                 "Invalid cardinality of typed sequence (expected %s): >= %s",
+                                 card,
+                                 pos);
       }
 
       // See XQuery 3.1.5 Function Calls
@@ -97,9 +97,9 @@ public class FunctionConversionSequence extends LazySequence {
           atomic = Cast.cast(null, atomic, Type.DBL, false);
         } else if ((expected.instanceOf(Type.QNM)) || (expected.instanceOf(Type.NOT))) {
           throw new QueryException(ErrorCode.ERR_TYPE_CAST_TO_NAMESPACE_SENSITIVE_TYPE,
-              "Cannot cast %s to namespace-sensitive type %s",
-              type,
-              expected);
+                                   "Cannot cast %s to namespace-sensitive type %s",
+                                   type,
+                                   expected);
         } else {
           atomic = Cast.cast(null, atomic, expected, false);
         }
@@ -110,9 +110,9 @@ public class FunctionConversionSequence extends LazySequence {
           atomic = Cast.cast(null, atomic, expected, false);
         } else {
           throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-              "Item of invalid atomic type in typed sequence (expected %s): %s",
-              iType,
-              atomic);
+                                   "Item of invalid atomic type in typed sequence (expected %s): %s",
+                                   iType,
+                                   atomic);
         }
       }
 
@@ -156,8 +156,8 @@ public class FunctionConversionSequence extends LazySequence {
       if (item == null) {
         if ((pos.cmp(Int32.ZERO) == 0) && (card.moreThanZero())) {
           throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-              "Invalid empty typed sequence (expected %s)",
-              card);
+                                   "Invalid empty typed sequence (expected %s)",
+                                   card);
         }
         safe = true; // remember that sequence type is OK
         return null;
@@ -166,16 +166,16 @@ public class FunctionConversionSequence extends LazySequence {
       pos.inc();
       if ((card == Cardinality.Zero) || ((pos.cmp(TWO) == 0) && (card.atMostOne()))) {
         throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-            "Invalid cardinality of typed sequence (expected %s): >= %s",
-            card,
-            pos);
+                                 "Invalid cardinality of typed sequence (expected %s): >= %s",
+                                 card,
+                                 pos);
       }
       if (!iType.matches(item)) {
         throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-            "Item of invalid type %s in typed sequence (expected %s): %s",
-            item.itemType(),
-            iType,
-            item);
+                                 "Item of invalid type %s in typed sequence (expected %s): %s",
+                                 item.itemType(),
+                                 iType,
+                                 item);
       }
 
       return item;
@@ -233,27 +233,27 @@ public class FunctionConversionSequence extends LazySequence {
     if (item == null) {
       if (card.moreThanZero()) {
         throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-            "Invalid empty typed sequence (expected %s)",
-            card);
+                                 "Invalid empty typed sequence (expected %s)",
+                                 card);
       }
     } else {
       if ((pos.cmp(Int32.ONE) > 0) && (card.atMostOne())) {
         throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-            "Invalid cardinality of typed sequence (expected %s): >= %s",
-            card,
-            pos);
+                                 "Invalid cardinality of typed sequence (expected %s): >= %s",
+                                 card,
+                                 pos);
       }
       if ((pos.cmp(Int32.ZERO) > 0) && (card == Cardinality.Zero)) {
         throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-            "Invalid cardinality of typed sequence (expected %s): >= %s",
-            card,
-            pos);
+                                 "Invalid cardinality of typed sequence (expected %s): >= %s",
+                                 card,
+                                 pos);
       }
       if (!type.getItemType().matches(item)) {
         throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-            "Item of invalid type in typed sequence (expected %s): %s",
-            type.getItemType(),
-            item);
+                                 "Item of invalid type in typed sequence (expected %s): %s",
+                                 type.getItemType(),
+                                 item);
       }
     }
     return item;
@@ -282,9 +282,9 @@ public class FunctionConversionSequence extends LazySequence {
             atomic = Cast.cast(null, atomic, expected, false);
           } else if ((expected.instanceOf(Type.QNM)) || (expected.instanceOf(Type.NOT))) {
             throw new QueryException(ErrorCode.ERR_TYPE_CAST_TO_NAMESPACE_SENSITIVE_TYPE,
-                "Cannot cast %s to namespace-sensitive type %s",
-                type,
-                expected);
+                                     "Cannot cast %s to namespace-sensitive type %s",
+                                     type,
+                                     expected);
           } else {
             atomic = Cast.cast(null, atomic, expected, false);
           }
@@ -295,18 +295,18 @@ public class FunctionConversionSequence extends LazySequence {
             atomic = Cast.cast(null, atomic, expected, false);
           } else {
             throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                "Item of invalid atomic type in typed sequence (expected %s): %s",
-                iType,
-                atomic);
+                                     "Item of invalid atomic type in typed sequence (expected %s): %s",
+                                     iType,
+                                     atomic);
           }
         }
 
         return atomic;
       } else if (!iType.matches((Item) s)) {
         throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-            "Item of invalid type in typed sequence (expected %s): %s",
-            iType,
-            s);
+                                 "Item of invalid type in typed sequence (expected %s): %s",
+                                 iType,
+                                 s);
       }
 
       return s;

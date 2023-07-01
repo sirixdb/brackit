@@ -39,7 +39,8 @@ public final class PathParserTest {
   public void testJsonFieldWithSlash2() {
     final var pathParser = new PathParser("//@a/\\//*", PathParser.Type.JSON);
     final var path = pathParser.parse();
-    assertEquals(new Path<>().descendantObjectField(new QNm("@a")).childObjectField(new QNm("/")).childObjectField(), path);
+    assertEquals(new Path<>().descendantObjectField(new QNm("@a")).childObjectField(new QNm("/")).childObjectField(),
+                 path);
   }
 
   @Test

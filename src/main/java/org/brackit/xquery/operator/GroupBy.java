@@ -343,8 +343,11 @@ public class GroupBy extends Check implements Operator {
     ForBind forBind = new ForBind(s, new RangeExpr(new Int32(1), new Int32(10)), false);
     ForBind forBind2 = new ForBind(forBind, new SequenceExpr(new Str("a"), new Str("b"), new Str("c")), false);
     forBind.bindVariable(true);
-    GroupBy groupBy =
-        new GroupBy(forBind2, Aggregate.SEQUENCE, new Aggregate[] { Aggregate.AVG, Aggregate.SUM }, 1, true);
+    GroupBy groupBy = new GroupBy(forBind2,
+                                  Aggregate.SEQUENCE,
+                                  new Aggregate[] { Aggregate.AVG, Aggregate.SUM },
+                                  1,
+                                  true);
     groupBy.group(0).setPos(1);
     Print p = new Print(groupBy, System.out);
     QueryContext ctx = new BrackitQueryContext();

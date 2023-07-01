@@ -100,9 +100,7 @@ public class PathTest {
   @Test
   public void testJsonPathToString2() {
     // /[]//[]/\[\].
-    Path<QNm> expected = (new Path<QNm>()).childArray()
-                                          .descendantArray()
-                                          .childObjectField(new QNm("\\[\\]"));
+    Path<QNm> expected = (new Path<QNm>()).childArray().descendantArray().childObjectField(new QNm("\\[\\]"));
     assertEquals("/[]//[]/\\[\\]", expected.toString());
   }
 
@@ -151,7 +149,8 @@ public class PathTest {
   @Test
   public void testSJsonPath2() {
     // /paths/\/business_service_providers\.
-    Path<QNm> expected = (new Path<QNm>()).childObjectField(new QNm("paths")).childObjectField(new QNm("/business_service_providers\\"));
+    Path<QNm> expected = (new Path<QNm>()).childObjectField(new QNm("paths"))
+                                          .childObjectField(new QNm("/business_service_providers\\"));
     Path<QNm> parsed = (new PathParser(expected.toString(), PathParser.Type.JSON)).parse();
     assertEquals("Path parsed correctly", expected, parsed);
   }
@@ -172,16 +171,20 @@ public class PathTest {
 
   @Test
   public void testSimplePath3() {
-    Path<QNm> expected =
-        (new Path<QNm>()).self().child(new QNm("tag")).child(new QNm("hallo")).descendant(new QNm("aha"));
+    Path<QNm> expected = (new Path<QNm>()).self()
+                                          .child(new QNm("tag"))
+                                          .child(new QNm("hallo"))
+                                          .descendant(new QNm("aha"));
     Path<QNm> parsed = (new PathParser(expected.toString())).parse();
     assertEquals("Path parsed correctly", expected, parsed);
   }
 
   @Test
   public void testSimplePath4() {
-    Path<QNm> expected =
-        (new Path<QNm>()).self().child(new QNm("tag")).child(new QNm("hallo")).descendant(new QNm("aha"));
+    Path<QNm> expected = (new Path<QNm>()).self()
+                                          .child(new QNm("tag"))
+                                          .child(new QNm("hallo"))
+                                          .descendant(new QNm("aha"));
     String implicitSelfPath = expected.toString().substring(2);
     Path<QNm> parsed = (new PathParser(implicitSelfPath)).parse();
     assertEquals("Path parsed correctly", expected, parsed);
@@ -204,8 +207,8 @@ public class PathTest {
   @Test
   public void testQualifiedPathPreamble() {
     Path<QNm> expected = (new Path<QNm>()).child(new QNm("http://brackit.org/ns/bit", "bit", "tag"));
-    String path =
-        "namespace foo = 'localhost'; " + "namespace bit = 'http://brackit.org/ns/bit'; " + expected.toString();
+    String path = "namespace foo = 'localhost'; " + "namespace bit = 'http://brackit.org/ns/bit'; " + expected
+                                                                                                              .toString();
     Path<QNm> parsed = (new PathParser(path)).parse();
     assertEquals("Path parsed correctly", expected, parsed);
   }

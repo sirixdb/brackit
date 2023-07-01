@@ -338,8 +338,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   @Override
   public boolean isDescendantOrSelfOf(Node<?> node) {
     // TODO: fix for sun's compiler bug using generics parent == node
-    return node != null && (this == node || parent == node || parent != null && parent.isDescendantOrSelfOf(
-        node));
+    return node != null && (this == node || parent == node || parent != null && parent.isDescendantOrSelfOf(node));
   }
 
   @Override
@@ -563,8 +562,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public D2Node insertAfter(Kind kind, QNm name, Atomic value)
-      throws DocumentException {
+  public D2Node insertAfter(Kind kind, QNm name, Atomic value) throws DocumentException {
     if (parent == null) {
       throw new DocumentException("%s has no parent", this);
     }
@@ -588,8 +586,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public D2Node insertBefore(Kind kind, QNm name, Atomic value)
-      throws DocumentException {
+  public D2Node insertBefore(Kind kind, QNm name, Atomic value) throws DocumentException {
     if (parent == null) {
       throw new DocumentException("%s has no parent", this);
     }
@@ -613,8 +610,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
-  public D2Node replaceWith(Kind kind, QNm name, Atomic value)
-      throws DocumentException {
+  public D2Node replaceWith(Kind kind, QNm name, Atomic value) throws DocumentException {
     if (parent == null) {
       throw new DocumentException("Cannot replace node without parent");
     }

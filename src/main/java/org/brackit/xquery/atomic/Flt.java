@@ -137,9 +137,9 @@ public class Flt extends AbstractNumeric implements FltNumeric {
       return Double.compare(v, ((Numeric) other).doubleValue());
     }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-        "Cannot compare '%s' with '%s'",
-        type(),
-        other.type());
+                             "Cannot compare '%s' with '%s'",
+                             type(),
+                             other.type());
   }
 
   @Override
@@ -158,9 +158,7 @@ public class Flt extends AbstractNumeric implements FltNumeric {
       return v > 0 ? "INF" : "-INF";
     if (v == 0)
       return 1 / v == 1 / 0.0f ? "0" : "-0";
-    return killTrailingZeros(v > 0 && v >= 1e-6 && v < 1e6 || -v >= 1e-6 && -v < 1e6
-        ? DF.format(v)
-        : SF.format(v));
+    return killTrailingZeros(v > 0 && v >= 1e-6 && v < 1e6 || -v >= 1e-6 && -v < 1e6 ? DF.format(v) : SF.format(v));
   }
 
   @Override

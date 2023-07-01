@@ -206,14 +206,14 @@ public class StringSerializer implements Serializer {
           out.write("\"");
         }
       } else if (s instanceof Array) {
-	int arrayDepth = depth + 1;
+        int arrayDepth = depth + 1;
         Array a = (Array) s;
 
         out.write("[");
 
         if (format && a.len() > 0) {
-            out.write(EOL);
-            out.write(indent(arrayDepth));
+          out.write(EOL);
+          out.write(indent(arrayDepth));
         }
 
         for (int i = 0; i < a.len(); i++) {
@@ -230,13 +230,13 @@ public class StringSerializer implements Serializer {
         }
 
         if (format && a.len() > 0) {
-            out.write(EOL);
-            out.write(indent(depth));
+          out.write(EOL);
+          out.write(indent(depth));
         }
 
         out.write("]");
       } else if (s instanceof Object) {
-	int objDepth = depth + 1;
+        int objDepth = depth + 1;
         Object r = (Object) s;
 
         out.write("{");
@@ -305,8 +305,8 @@ public class StringSerializer implements Serializer {
         out.write("[");
 
         if (format && s.getSize() > 0) {
-            out.write(EOL);
-            out.write(indent(depth));
+          out.write(EOL);
+          out.write(indent(depth));
         }
       }
 
@@ -350,12 +350,12 @@ public class StringSerializer implements Serializer {
    * @return A corresponding indentation
    */
   private String indent(final int depth) {
-      final StringBuilder indentation = new StringBuilder();
+    final StringBuilder indentation = new StringBuilder();
 
-      for (int i = 0; i < depth; i++) {
-	  indentation.append(indent);
-      }
+    for (int i = 0; i < depth; i++) {
+      indentation.append(indent);
+    }
 
-      return indentation.toString();
+    return indentation.toString();
   }
 }

@@ -56,8 +56,10 @@ public final class Insert extends ConstructedNodeBuilder implements Expr {
     FIRST, LAST, INTO, BEFORE, AFTER
   }
 
-  private static final EnumSet<Kind> abNodeKind =
-      EnumSet.of(Kind.ELEMENT, Kind.TEXT, Kind.COMMENT, Kind.PROCESSING_INSTRUCTION);
+  private static final EnumSet<Kind> abNodeKind = EnumSet.of(Kind.ELEMENT,
+                                                             Kind.TEXT,
+                                                             Kind.COMMENT,
+                                                             Kind.PROCESSING_INSTRUCTION);
 
   private static final EnumSet<Kind> intoNodeKind = EnumSet.of(Kind.DOCUMENT, Kind.ELEMENT);
 

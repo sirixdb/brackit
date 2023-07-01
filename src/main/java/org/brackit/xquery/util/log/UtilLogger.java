@@ -35,10 +35,9 @@ import java.util.logging.LogRecord;
 public class UtilLogger extends Logger {
   private java.util.logging.Logger log;
 
-  private java.util.logging.Level[] map =
-      new java.util.logging.Level[] { java.util.logging.Level.FINER, java.util.logging.Level.FINE,
-          java.util.logging.Level.INFO, java.util.logging.Level.WARNING, java.util.logging.Level.SEVERE,
-          java.util.logging.Level.SEVERE };
+  private java.util.logging.Level[] map = new java.util.logging.Level[] { java.util.logging.Level.FINER,
+      java.util.logging.Level.FINE, java.util.logging.Level.INFO, java.util.logging.Level.WARNING,
+      java.util.logging.Level.SEVERE, java.util.logging.Level.SEVERE };
 
   private static class UtilLogRecord extends LogRecord {
 

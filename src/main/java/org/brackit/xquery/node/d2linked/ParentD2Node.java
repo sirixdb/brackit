@@ -299,8 +299,7 @@ abstract class ParentD2Node extends D2Node {
   }
 
   private D2Node replaceChild(D2Node sibling, Kind kind, QNm name, Atomic value) throws DocumentException {
-    if (getKind() == Kind.DOCUMENT && sibling != null && sibling.getKind() == Kind.ELEMENT && kind
-        != Kind.ELEMENT) {
+    if (getKind() == Kind.DOCUMENT && sibling != null && sibling.getKind() == Kind.ELEMENT && kind != Kind.ELEMENT) {
       throw new DocumentException("Cannot replace root element with of kind: %s", kind);
     }
 
@@ -319,9 +318,9 @@ abstract class ParentD2Node extends D2Node {
 
   private D2Node buildChild(int[] prevSibling, int[] nextSibling, Kind kind, QNm name, Atomic value)
       throws DocumentException {
-    int[] division = prevSibling != null ? nextSibling != null
-        ? siblingBetween(prevSibling, nextSibling)
-        : siblingAfter(prevSibling) : nextSibling != null ? siblingBefore(nextSibling) : FIRST;
+    int[] division = prevSibling != null
+        ? nextSibling != null ? siblingBetween(prevSibling, nextSibling) : siblingAfter(prevSibling)
+        : nextSibling != null ? siblingBefore(nextSibling) : FIRST;
 
     return buildChild(division, kind, name, value);
   }
@@ -426,8 +425,7 @@ abstract class ParentD2Node extends D2Node {
     return builder.root();
   }
 
-  D2Node insertBefore(D2Node node, Kind kind, QNm name, Atomic value)
-      throws DocumentException {
+  D2Node insertBefore(D2Node node, Kind kind, QNm name, Atomic value) throws DocumentException {
     return insertChild(node, kind, name, value, true);
   }
 
@@ -443,8 +441,7 @@ abstract class ParentD2Node extends D2Node {
     return builder.root();
   }
 
-  D2Node insertAfter(D2Node node, Kind kind, QNm name, Atomic value)
-      throws DocumentException {
+  D2Node insertAfter(D2Node node, Kind kind, QNm name, Atomic value) throws DocumentException {
     return insertChild(node, kind, name, value, false);
   }
 
@@ -461,8 +458,7 @@ abstract class ParentD2Node extends D2Node {
 
   }
 
-  D2Node replace(D2Node node, Kind kind, QNm name, Atomic value)
-      throws DocumentException {
+  D2Node replace(D2Node node, Kind kind, QNm name, Atomic value) throws DocumentException {
     return replaceChild(node, kind, name, value);
   }
 

@@ -26,7 +26,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package org.brackit.xquery.jsonitem;
 
 import org.brackit.xquery.function.json.JSONParser;
@@ -45,6 +44,7 @@ import java.util.Arrays;
 // TODO: Implement methods
 public final class SimpleJsonCollection extends AbstractJsonItemCollection<JsonItem> {
   private JsonItem[] docs;
+
   public SimpleJsonCollection(String name, JsonItem doc) {
     super(name);
     this.docs = new JsonItem[] { doc };

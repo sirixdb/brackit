@@ -144,45 +144,40 @@ public class PathExprTest extends XQueryBaseTest {
   @Test
   public void pathExprTest9() {
     PrintStream buf = createBuffer();
-    new XQuery(
-        "let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c))//position()")
-        .serialize(ctx, buf);
+    new XQuery("let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c))//position()").serialize(ctx,
+                                                                                                                                           buf);
     assertEquals("1 2 3 4 5 6 7 8", buf.toString());
   }
 
   @Test
   public void pathExprTest9b() {
     PrintStream buf = createBuffer();
-    new XQuery("let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))//position()[2]")
-        .serialize(ctx, buf);
+    new XQuery("let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))//position()[2]").serialize(ctx,
+                                                                                                                                    buf);
     assertEquals("", buf.toString());
   }
 
   @Test
   public void pathExprTest9c() {
     PrintStream buf = createBuffer();
-    new XQuery("let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))//*[last() - 1]")
-        .serialize(ctx, buf);
+    new XQuery("let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))//*[last() - 1]").serialize(ctx,
+                                                                                                                                    buf);
     assertEquals("<b>b1</b>", buf.toString());
   }
 
   @Test
   public void pathExprTest9d() {
     PrintStream buf = createBuffer();
-    new XQuery(
-        "let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))/../*[last() - 1]").serialize(
-        ctx,
-        buf);
+    new XQuery("let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))/../*[last() - 1]").serialize(ctx,
+                                                                                                                                      buf);
     assertEquals("<c><b>b1</b><b>b2</b></c>", buf.toString());
   }
 
   @Test
   public void pathExprTest9e() {
     PrintStream buf = createBuffer();
-    new XQuery(
-        "let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))/..//*[last() - 1]").serialize(
-        ctx,
-        buf);
+    new XQuery("let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))/..//*[last() - 1]").serialize(ctx,
+                                                                                                                                       buf);
     assertEquals("<c><b>b1</b><b>b2</b></c><b>b1</b>", buf.toString());
   }
 
@@ -196,46 +191,40 @@ public class PathExprTest extends XQueryBaseTest {
   @Test
   public void pathExprTest10() {
     PrintStream buf = createBuffer();
-    new XQuery(
-        "let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c, $doc/d))/*").serialize(
-        ctx,
-        buf);
+    new XQuery("let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c, $doc/d))/*").serialize(ctx,
+                                                                                                                                         buf);
     assertEquals("<b>b1</b><b>b2</b><b>b3</b>", buf.toString());
   }
 
   @Test
   public void pathExprTest11() {
     PrintStream buf = createBuffer();
-    new XQuery(
-        "let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c, $doc/d))//position()")
-        .serialize(ctx, buf);
+    new XQuery("let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c, $doc/d))//position()").serialize(ctx,
+                                                                                                                                                   buf);
     assertEquals("1 2 3 4 5 6 7 8", buf.toString());
   }
 
   @Test
   public void pathExprTest12() {
     PrintStream buf = createBuffer();
-    new XQuery(
-        "let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c, $doc/d))/b/text()")
-        .serialize(ctx, buf);
+    new XQuery("let $doc := document{<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>}/* return (($doc/d, $doc/c, $doc/d))/b/text()").serialize(ctx,
+                                                                                                                                                buf);
     assertEquals("b1b2b3", buf.toString());
   }
 
   @Test
   public void pathExprTestDebug() {
     PrintStream buf = createBuffer();
-    new XQuery("(<a><b><c>c1</c><b><c>c2</c></b><c>c3</c></b><b><c>c4</c></b></a>)/descendant-or-self::node()/c[2]").serialize(
-        ctx,
-        buf);
+    new XQuery("(<a><b><c>c1</c><b><c>c2</c></b><c>c3</c></b><b><c>c4</c></b></a>)/descendant-or-self::node()/c[2]").serialize(ctx,
+                                                                                                                               buf);
     assertEquals("<c>c3</c>", buf.toString());
   }
 
   @Test
   public void pathExprTest8() {
     PrintStream buf = createBuffer();
-    new XQuery("let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))//b").serialize(
-        ctx,
-        buf);
+    new XQuery("let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))//b").serialize(ctx,
+                                                                                                                        buf);
     assertEquals("<b>b1</b><b>b2</b><b>b3</b>", buf.toString());
   }
 
@@ -262,8 +251,8 @@ public class PathExprTest extends XQueryBaseTest {
   @Test
   public void elementTest4() {
     Sequence res = new XQuery("(<a><b/><c/></a>)/element(*, xs:untyped)").execute(ctx);
-    Sequence exp =
-        new ItemSequence(ctx.getNodeFactory().element(new QNm("b")), ctx.getNodeFactory().element(new QNm("c")));
+    Sequence exp = new ItemSequence(ctx.getNodeFactory().element(new QNm("b")),
+                                    ctx.getNodeFactory().element(new QNm("c")));
     ResultChecker.check(exp, res, false);
   }
 

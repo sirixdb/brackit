@@ -59,8 +59,9 @@ public final class Functions {
 
   public static final QNm FN_FALSE = new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "false");
 
-  public static final QNm FN_DEFAULT_COLLATION =
-      new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "default-collation");
+  public static final QNm FN_DEFAULT_COLLATION = new QNm(Namespaces.FN_NSURI,
+                                                         Namespaces.FN_PREFIX,
+                                                         "default-collation");
 
   public static final QNm FN_STATIC_BASE_URI = new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "static-base-uri");
 
@@ -789,8 +790,9 @@ public final class Functions {
       }
     }
     if (availableFunctions.isEmpty() && name.getNamespaceURI().isEmpty()) {
-      final Function[] predefFunsInDefaultNamespace =
-          predefined.get(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, name.getLocalName()));
+      final Function[] predefFunsInDefaultNamespace = predefined.get(new QNm(Namespaces.FN_NSURI,
+                                                                             Namespaces.FN_PREFIX,
+                                                                             name.getLocalName()));
       if (predefFunsInDefaultNamespace != null) {
         availableFunctions.addAll(Arrays.asList(predefFunsInDefaultNamespace));
       }

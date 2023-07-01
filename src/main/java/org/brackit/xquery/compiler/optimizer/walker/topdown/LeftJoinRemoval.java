@@ -45,9 +45,9 @@ public class LeftJoinRemoval extends Walker {
 
     AST leftIn = join.getChild(0).getChild(0);
     AST rightIn = join.getChild(1).getChild(0);
-    if ((leftIn.getType() != XQ.Join) || (!leftIn.checkProperty("leftJoin"))
-        || (!constTrueJoinKey(findEnd(leftIn).getChild(0))) || (!constTrueJoinKey(findEnd(rightIn).getChild(0))) || (
-        join.getChild(2).getChild(0).getType() != XQ.End)) {
+    if ((leftIn.getType() != XQ.Join) || (!leftIn.checkProperty("leftJoin")) || (!constTrueJoinKey(findEnd(leftIn)
+                                                                                                                  .getChild(0)))
+        || (!constTrueJoinKey(findEnd(rightIn).getChild(0))) || (join.getChild(2).getChild(0).getType() != XQ.End)) {
       return join;
     }
 

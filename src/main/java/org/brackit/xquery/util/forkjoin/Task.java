@@ -35,11 +35,11 @@ import java.util.concurrent.locks.LockSupport;
  */
 public abstract class Task {
 
-  private static final AtomicIntegerFieldUpdater<Task> STATUS_CAS =
-      AtomicIntegerFieldUpdater.newUpdater(Task.class, "status");
+  private static final AtomicIntegerFieldUpdater<Task> STATUS_CAS = AtomicIntegerFieldUpdater.newUpdater(Task.class,
+                                                                                                         "status");
 
-  private static final AtomicIntegerFieldUpdater<Task> PROCESS_CAS =
-      AtomicIntegerFieldUpdater.newUpdater(Task.class, "process");
+  private static final AtomicIntegerFieldUpdater<Task> PROCESS_CAS = AtomicIntegerFieldUpdater.newUpdater(Task.class,
+                                                                                                          "process");
 
   private static final int NOTIFY = -1;
   private static final int NEW = 0;

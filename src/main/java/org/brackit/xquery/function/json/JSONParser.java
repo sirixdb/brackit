@@ -203,7 +203,8 @@ public final class JSONParser extends Tokenizer {
   }
 
   public static void main(String[] args) throws Exception {
-    String s = "{\"bindings\": [        {\"ircEvent\": \"PRIVMSG\", \"method\": \"newURI\", \"regex\": \"^http://.*\"},        {\"ircEvent\": \"PRIVMSG\", \"method\": \"deleteURI\", \"regex\": \"^delete.*\"},        {\"ircEvent\": \"PRIVMSG\", \"method\": \"randomURI\", \"regex\": \"^random.*\"}    ]}";
+    String s =
+        "{\"bindings\": [        {\"ircEvent\": \"PRIVMSG\", \"method\": \"newURI\", \"regex\": \"^http://.*\"},        {\"ircEvent\": \"PRIVMSG\", \"method\": \"deleteURI\", \"regex\": \"^delete.*\"},        {\"ircEvent\": \"PRIVMSG\", \"method\": \"randomURI\", \"regex\": \"^random.*\"}    ]}";
     Item item = new JSONParser(s).parse();
     try (StringSerializer ser = new StringSerializer(System.out)) {
       ser.serialize(item);
