@@ -26,8 +26,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-
 package org.brackit.xquery.jsonitem;
 
 import org.brackit.xquery.atomic.Str;
@@ -54,6 +52,7 @@ import java.util.Map;
  */
 public final class SimpleJsonStore implements JsonStore {
   private final Map<String, JsonCollection<?>> docs = new HashMap<>();
+
   @Override
   public JsonCollection<?> lookup(String name) {
     JsonCollection<?> coll = docs.get(name);

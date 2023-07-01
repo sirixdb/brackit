@@ -424,8 +424,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
       String tzHTmp = (tzHours < 10 ? "0" : "") + tzHours;
       byte tzMinutes = timezone.getMinutes();
       String tzMinTmp = (tzMinutes < 10 ? "0" : "") + tzMinutes;
-      tzTmp =
-          tzHours == 0 && tzMinutes == 0 ? "Z" : (timezone.isNegative() ? "-" : "+") + tzHTmp + ":" + tzMinTmp;
+      tzTmp = tzHours == 0 && tzMinutes == 0 ? "Z" : (timezone.isNegative() ? "-" : "+") + tzHTmp + ":" + tzMinTmp;
     }
     return tzTmp;
   }

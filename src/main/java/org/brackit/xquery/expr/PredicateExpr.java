@@ -144,8 +144,8 @@ public abstract class PredicateExpr implements Expr {
           } else {
             try (Iter it = res.iterate()) {
               Item first = it.next();
-              if ((first != null) && (it.next() == null) && (first instanceof Numeric)
-                  && (((Numeric) first).cmp(pos) != 0)) {
+              if ((first != null) && (it.next() == null) && (first instanceof Numeric) && (((Numeric) first).cmp(pos)
+                  != 0)) {
                 return false;
               }
             }

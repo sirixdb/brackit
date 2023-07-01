@@ -36,32 +36,38 @@ public enum Aggregate {
     public Aggregator aggregator() {
       return new SequenceAggregator();
     }
-  }, COUNT {
+  },
+  COUNT {
     @Override
     public Aggregator aggregator() {
       return new CountAggregator();
     }
-  }, SUM {
+  },
+  SUM {
     @Override
     public Aggregator aggregator() {
       return new SumAvgAggregator(false, null);
     }
-  }, AVG {
+  },
+  AVG {
     @Override
     public Aggregator aggregator() {
       return new SumAvgAggregator(true, null);
     }
-  }, MIN {
+  },
+  MIN {
     @Override
     public Aggregator aggregator() {
       return new MinMaxAggregator(true);
     }
-  }, MAX {
+  },
+  MAX {
     @Override
     public Aggregator aggregator() {
       return new MinMaxAggregator(false);
     }
-  }, SINGLE {
+  },
+  SINGLE {
     @Override
     public Aggregator aggregator() {
       return new SingleAggregator();

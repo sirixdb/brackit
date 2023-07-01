@@ -107,22 +107,22 @@ public class CastTest extends XQueryBaseTest {
 
   @Test
   public void dateTimeAddYearMonthDuration() {
-    Sequence res =
-        new XQuery("xs:dateTime('1981-12-31T12:05:35.1234567') + xs:yearMonthDuration('P1Y2M')").execute(ctx);
+    Sequence res = new XQuery("xs:dateTime('1981-12-31T12:05:35.1234567') + xs:yearMonthDuration('P1Y2M')").execute(
+                                                                                                                    ctx);
     ResultChecker.dCheck(new DateTime((short) 1983, (byte) 2, (byte) 28, (byte) 12, (byte) 5, 35123456, null), res);
   }
 
   @Test
   public void dateTimeAddYearMonthDuration2() {
-    Sequence res =
-        new XQuery("xs:dateTime('1981-12-12T12:05:35.1234567') + xs:yearMonthDuration('-P1Y1M')").execute(ctx);
+    Sequence res = new XQuery("xs:dateTime('1981-12-12T12:05:35.1234567') + xs:yearMonthDuration('-P1Y1M')").execute(
+                                                                                                                     ctx);
     ResultChecker.dCheck(new DateTime((short) 1980, (byte) 11, (byte) 12, (byte) 12, (byte) 5, 35123456, null), res);
   }
 
   @Test
   public void dateTimeAddDayTImeDuration() {
-    Sequence res =
-        new XQuery("xs:dateTime('1981-12-12T12:05:35.1234567') + xs:dayTimeDuration('P19DT14H40.654321S')").execute(ctx);
+    Sequence res = new XQuery("xs:dateTime('1981-12-12T12:05:35.1234567') + xs:dayTimeDuration('P19DT14H40.654321S')")
+                                                                                                                      .execute(ctx);
     ResultChecker.dCheck(new DateTime((short) 1982, (byte) 1, (byte) 1, (byte) 2, (byte) 6, 15777777, null), res);
   }
 
@@ -242,15 +242,15 @@ public class CastTest extends XQueryBaseTest {
 
   @Test
   public void subtractDateTimes() {
-    Sequence res =
-        new XQuery("xs:dateTime(\"2000-10-30T06:12:00\") -  xs:dateTime(\"1999-11-28T09:00:00\")").execute(ctx);
+    Sequence res = new XQuery("xs:dateTime(\"2000-10-30T06:12:00\") -  xs:dateTime(\"1999-11-28T09:00:00\")").execute(
+                                                                                                                      ctx);
     ResultChecker.dCheck(new DTD(false, (short) 336, (byte) 21, (byte) 12, 0), res);
   }
 
   @Test
   public void subtractDateTimes2() {
-    Sequence res =
-        new XQuery("xs:dateTime(\"2000-10-30T06:12:00\") -  xs:dateTime(\"1999-11-28T09:00:00Z\")").execute(ctx);
+    Sequence res = new XQuery("xs:dateTime(\"2000-10-30T06:12:00\") -  xs:dateTime(\"1999-11-28T09:00:00Z\")").execute(
+                                                                                                                       ctx);
     ResultChecker.dCheck(new DTD(false, (short) 336, (byte) 21, (byte) 12, 0), res);
   }
 

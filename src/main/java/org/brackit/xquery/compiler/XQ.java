@@ -328,70 +328,69 @@ public final class XQ {
   public static final int AppendJsonExpr = 272;
   // End JSONiq update expressions
 
-  public static final String[] NAMES =
-      new String[] { "XQuery", "LibraryModule", "MainModule", "Prolog", "NamespaceDeclaration", "QueryBody",
-          "SequenceExpr", "FlowrExpr", "ForClause", "AllowingEmpty", "TypedVariableBinding", "Variable", "LetClause",
-          "WhereClause", "GroupByClause", "GroupBySpec", "AggregateSpec", "DftAggregateSpec", "AggregateBinding",
-          "SequenceAgg", "CountAgg", "SumAgg", "AvgAgg", "MinAgg", "MaxAgg", "SingleAgg", "VariableRef", "Collation",
-          "OrderByClause", "OrderBySpec", "OrderByKind", "ASCENDING", "DESCENDING", "OrderByEmptyMode", "GREATEST",
-          "LEAST", "CountClause", "ReturnClause", "OrExpr", "AndExpr", "GeneralCompEQ", "GeneralCompNE",
-          "GeneralCompLT", "GeneralCompLE", "GeneralCompGT", "GeneralCompGE", "ValueCompEQ", "ValueCompNE",
-          "ValueCompLT", "ValueCompLE", "ValueCompGT", "ValueCompGE", "NodeCompIs", "NodeCompPrecedes",
-          "NodeCompFollows", "ComparisonExpr", "StringConcatExpr", "RangeExpr", "AddOp", "SubtractOp", "ArithmeticExpr",
-          "MultiplyOp", "DivideOp", "IDivideOp", "ModulusOp", "UnionExpr", "IntersectExpr", "ExceptExpr",
-          "InstanceofExpr", "SequenceType", "EmptySequenceType", "ItemType", "AtomicOrUnionType", "CardinalityOne",
-          "CardinalityZeroOrOne", "CardinalityZeroOrMany", "CardinalityOneOrMany", "TreatExpr", "CastableExpr",
-          "CastExpr", "FunctionCall", "PathExpr", "MapExpr", "StepExpr", "AxisSpec", "SELF", "CHILD", "DESCENDANT",
-          "DESCENDANT_OR_SELF", "ATTRIBUTE", "FOLLOWING_SIBLING", "FOLLOWING", "PARENT", "ANCESTOR",
-          "PRECEDING_SIBLING", "PRECEDING", "ANCESTOR_OR_SELF", "KindTestAnyKind", "KindTestDocument", "NameTest",
-          "Wildcard", "Nilled", "KindTestElement", "KindTestAttribute", "KindTestSchemaElement",
-          "KindTestSchemaAttribute", "KindTestPi", "KindTestComment", "KindTestText", "KindTestNamespaceNode",
-          "NSWildcardNameTest", "NSNameWildcardTest", "ParenthesizedExpr", "ContextItemExpr", "ArgumentPlaceHolder",
-          "OrderedExpr", "UnorderedExpr", "Int", "Str", "QNm", "Dbl", "Dec", "AnyURI", "Bool", "Annotation",
-          "FunctionTest", "AnyFunctionType", "TypedFunctionType", "SomeQuantifier", "EveryQuantifier", "QuantifiedExpr",
-          "QuantifiedBinding", "SwitchExpr", "SwitchClause", "TypeSwitch", "TypeSwitchCase", "IfExpr", "TryCatchExpr",
-          "CatchClause", "CatchErrorList", "ExtensionExpr", "Pragma", "PragmaContent", "ValidateExpr", "ValidateLax",
-          "ValidateStrict", "LiteralFuncItem", "InlineFuncItem", "TypedVariableDeclaration", "CompElementConstructor",
-          "CompAttributeConstructor", "CompCommentConstructor", "ContentSequence", "EnclosedExpr",
-          "DirElementConstructor", "DirAttributeConstructor", "DirCommentConstructor", "DirPIConstructor",
-          "CompDocumentConstructor", "CompTextConstructor", "DefaultElementNamespace", "DefaultFunctionNamespace",
-          "SchemaImport", "ModuleImport", "Namespace", "ContextItemDeclaration", "ExternalVariable", "AnnotatedDecl",
-          "FunctionDecl", "ExternalFunction", "BoundarySpaceDeclaration", "BoundarySpaceModePreserve",
-          "BoundarySpaceModeStrip", "CollationDeclaration", "BaseURIDeclaration", "ConstructionDeclaration",
-          "ConstructionModePreserve", "ConstructionModeStrip", "OrderingModeDeclaration", "OrderingModeOrdered",
-          "OrderingModeUnordered", "EmptyOrderDeclaration", "EmptyOrderModeGreatest", "EmptyOrderModeLeast",
-          "CopyNamespacesDeclaration", "CopyNamespacesPreserveModePreserve", "CopyNamespacesPreserveModeNoPreserve",
-          "CopyNamespacesInheritModeInherit", "CopyNamespacesInheritModeNoInherit", "DecimalFormatDeclaration",
-          "DecimalFormatDefault", "DecimalFormatProperty", "DecimalFormatPropertyDecimalSeparator",
-          "DecimalFormatPropertyGroupingSeparator", "DecimalFormatPropertyInfinity", "DecimalFormatPropertyMinusSign",
-          "DecimalFormatPropertyNaN", "DecimalFormatPropertyPercent", "DecimalFormatPropertyPerMille",
-          "DecimalFormatPropertyZeroDigit", "DecimalFormatPropertyDigit", "DecimalFormatPropertyPatternSeparator",
-          "OptionDeclaration", "CompNamespaceConstructor", "CompPIConstructor", "Predicate", "FilterExpr",
-          "DynamicFunctionCallExpr", "SlidingWindowClause", "TumblingWindowClause", "WindowStartCondition",
-          "WindowEndCondition", "WindowVars", "PreviousItemBinding", "NextItemBinding",
-          // Begin XQuery Update Facility 1.0
-          "RevalidationDeclaration", "RevalidationModeStrict", "RevalidationModeLax", "RevalidationModeSkip",
-          "InsertExpr", "InsertFirst", "InsertLast", "InsertAfter", "InsertBefore", "InsertInto", "DeleteExpr",
-          "ReplaceValueExpr", "ReplaceNodeExpr", "RenameExpr", "TransformExpr", "CopyVariableBinding",
-          // End XQuery Update Facility 1.0
-          // Begin brackit's set-oriented extensions
-          "PipeExpr", "Selection", "GroupBy", "OrderBy", "Join", "JoinClause", "Start", "ForBind", "LetBind", "Count",
-          "End",
-          // End brackit's set-oriented extensions
-          // Begin brackit's custom array syntax
-          "KindTestArray", "ArrayAccess", "ArrayConstructor", "SequenceField", "FlattenedField", "ArrayIndexSlice",
-          // End brackit's custom array syntax
-          // Begin brackit's custom object syntax
-          "KindTestObject", "ObjectProjection", "ObjectConstructor", "ObjectField", "KeyValueField", "DerefExpr", "DerefDescendantExpr",
-          // End brackit's custom object syntax
-          // Begin temporal
-          "NEXT", "PREVIOUS", "EARLIER", "EARLIER_OR_SELF", "FUTURE", "FUTURE_OR_SELF", "FIRST", "LAST", "ALL_TIME",
-          // End temporal
-          "JsonItemTest", "StructuredItemTest", "KindTestNull", "Null",
-          // Begin JSONiq update expressions
-          "InsertJsonExpr", "DeleteJsonExpr", "RenameJsonExpr", "ReplaceJsonExpr", "AppendJsonExpr",
-          // End JSONiq update expressions
-      };
+  public static final String[] NAMES = new String[] { "XQuery", "LibraryModule", "MainModule", "Prolog",
+      "NamespaceDeclaration", "QueryBody", "SequenceExpr", "FlowrExpr", "ForClause", "AllowingEmpty",
+      "TypedVariableBinding", "Variable", "LetClause", "WhereClause", "GroupByClause", "GroupBySpec", "AggregateSpec",
+      "DftAggregateSpec", "AggregateBinding", "SequenceAgg", "CountAgg", "SumAgg", "AvgAgg", "MinAgg", "MaxAgg",
+      "SingleAgg", "VariableRef", "Collation", "OrderByClause", "OrderBySpec", "OrderByKind", "ASCENDING", "DESCENDING",
+      "OrderByEmptyMode", "GREATEST", "LEAST", "CountClause", "ReturnClause", "OrExpr", "AndExpr", "GeneralCompEQ",
+      "GeneralCompNE", "GeneralCompLT", "GeneralCompLE", "GeneralCompGT", "GeneralCompGE", "ValueCompEQ", "ValueCompNE",
+      "ValueCompLT", "ValueCompLE", "ValueCompGT", "ValueCompGE", "NodeCompIs", "NodeCompPrecedes", "NodeCompFollows",
+      "ComparisonExpr", "StringConcatExpr", "RangeExpr", "AddOp", "SubtractOp", "ArithmeticExpr", "MultiplyOp",
+      "DivideOp", "IDivideOp", "ModulusOp", "UnionExpr", "IntersectExpr", "ExceptExpr", "InstanceofExpr",
+      "SequenceType", "EmptySequenceType", "ItemType", "AtomicOrUnionType", "CardinalityOne", "CardinalityZeroOrOne",
+      "CardinalityZeroOrMany", "CardinalityOneOrMany", "TreatExpr", "CastableExpr", "CastExpr", "FunctionCall",
+      "PathExpr", "MapExpr", "StepExpr", "AxisSpec", "SELF", "CHILD", "DESCENDANT", "DESCENDANT_OR_SELF", "ATTRIBUTE",
+      "FOLLOWING_SIBLING", "FOLLOWING", "PARENT", "ANCESTOR", "PRECEDING_SIBLING", "PRECEDING", "ANCESTOR_OR_SELF",
+      "KindTestAnyKind", "KindTestDocument", "NameTest", "Wildcard", "Nilled", "KindTestElement", "KindTestAttribute",
+      "KindTestSchemaElement", "KindTestSchemaAttribute", "KindTestPi", "KindTestComment", "KindTestText",
+      "KindTestNamespaceNode", "NSWildcardNameTest", "NSNameWildcardTest", "ParenthesizedExpr", "ContextItemExpr",
+      "ArgumentPlaceHolder", "OrderedExpr", "UnorderedExpr", "Int", "Str", "QNm", "Dbl", "Dec", "AnyURI", "Bool",
+      "Annotation", "FunctionTest", "AnyFunctionType", "TypedFunctionType", "SomeQuantifier", "EveryQuantifier",
+      "QuantifiedExpr", "QuantifiedBinding", "SwitchExpr", "SwitchClause", "TypeSwitch", "TypeSwitchCase", "IfExpr",
+      "TryCatchExpr", "CatchClause", "CatchErrorList", "ExtensionExpr", "Pragma", "PragmaContent", "ValidateExpr",
+      "ValidateLax", "ValidateStrict", "LiteralFuncItem", "InlineFuncItem", "TypedVariableDeclaration",
+      "CompElementConstructor", "CompAttributeConstructor", "CompCommentConstructor", "ContentSequence", "EnclosedExpr",
+      "DirElementConstructor", "DirAttributeConstructor", "DirCommentConstructor", "DirPIConstructor",
+      "CompDocumentConstructor", "CompTextConstructor", "DefaultElementNamespace", "DefaultFunctionNamespace",
+      "SchemaImport", "ModuleImport", "Namespace", "ContextItemDeclaration", "ExternalVariable", "AnnotatedDecl",
+      "FunctionDecl", "ExternalFunction", "BoundarySpaceDeclaration", "BoundarySpaceModePreserve",
+      "BoundarySpaceModeStrip", "CollationDeclaration", "BaseURIDeclaration", "ConstructionDeclaration",
+      "ConstructionModePreserve", "ConstructionModeStrip", "OrderingModeDeclaration", "OrderingModeOrdered",
+      "OrderingModeUnordered", "EmptyOrderDeclaration", "EmptyOrderModeGreatest", "EmptyOrderModeLeast",
+      "CopyNamespacesDeclaration", "CopyNamespacesPreserveModePreserve", "CopyNamespacesPreserveModeNoPreserve",
+      "CopyNamespacesInheritModeInherit", "CopyNamespacesInheritModeNoInherit", "DecimalFormatDeclaration",
+      "DecimalFormatDefault", "DecimalFormatProperty", "DecimalFormatPropertyDecimalSeparator",
+      "DecimalFormatPropertyGroupingSeparator", "DecimalFormatPropertyInfinity", "DecimalFormatPropertyMinusSign",
+      "DecimalFormatPropertyNaN", "DecimalFormatPropertyPercent", "DecimalFormatPropertyPerMille",
+      "DecimalFormatPropertyZeroDigit", "DecimalFormatPropertyDigit", "DecimalFormatPropertyPatternSeparator",
+      "OptionDeclaration", "CompNamespaceConstructor", "CompPIConstructor", "Predicate", "FilterExpr",
+      "DynamicFunctionCallExpr", "SlidingWindowClause", "TumblingWindowClause", "WindowStartCondition",
+      "WindowEndCondition", "WindowVars", "PreviousItemBinding", "NextItemBinding",
+      // Begin XQuery Update Facility 1.0
+      "RevalidationDeclaration", "RevalidationModeStrict", "RevalidationModeLax", "RevalidationModeSkip", "InsertExpr",
+      "InsertFirst", "InsertLast", "InsertAfter", "InsertBefore", "InsertInto", "DeleteExpr", "ReplaceValueExpr",
+      "ReplaceNodeExpr", "RenameExpr", "TransformExpr", "CopyVariableBinding",
+      // End XQuery Update Facility 1.0
+      // Begin brackit's set-oriented extensions
+      "PipeExpr", "Selection", "GroupBy", "OrderBy", "Join", "JoinClause", "Start", "ForBind", "LetBind", "Count",
+      "End",
+      // End brackit's set-oriented extensions
+      // Begin brackit's custom array syntax
+      "KindTestArray", "ArrayAccess", "ArrayConstructor", "SequenceField", "FlattenedField", "ArrayIndexSlice",
+      // End brackit's custom array syntax
+      // Begin brackit's custom object syntax
+      "KindTestObject", "ObjectProjection", "ObjectConstructor", "ObjectField", "KeyValueField", "DerefExpr",
+      "DerefDescendantExpr",
+      // End brackit's custom object syntax
+      // Begin temporal
+      "NEXT", "PREVIOUS", "EARLIER", "EARLIER_OR_SELF", "FUTURE", "FUTURE_OR_SELF", "FIRST", "LAST", "ALL_TIME",
+      // End temporal
+      "JsonItemTest", "StructuredItemTest", "KindTestNull", "Null",
+      // Begin JSONiq update expressions
+      "InsertJsonExpr", "DeleteJsonExpr", "RenameJsonExpr", "ReplaceJsonExpr", "AppendJsonExpr",
+      // End JSONiq update expressions
+  };
 
   private XQ() {
   }

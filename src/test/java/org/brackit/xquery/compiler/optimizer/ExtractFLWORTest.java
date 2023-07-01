@@ -45,9 +45,8 @@ public class ExtractFLWORTest extends XQueryBaseTest {
 
   @Test
   public void nestedInWhere() throws Exception {
-    Sequence res =
-        new XQuery("for $a in (1,2,3) " + "where $a > (for $b in (2,3,4) " + "			return $b) " + "return $a").execute(
-            ctx);
+    Sequence res = new XQuery("for $a in (1,2,3) " + "where $a > (for $b in (2,3,4) " + "			return $b) "
+        + "return $a").execute(ctx);
     ResultChecker.dCheck(new Int32(3), res);
   }
 

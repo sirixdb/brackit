@@ -75,12 +75,13 @@ public class DotNode {
 
   public String toDotString() {
     String head = String.format(
-        "%s [ label=<<TABLE PORT=\"port\" BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" ALIGN=\"CENTER\">",
-        DotContext.maskHTML(name));
+                                "%s [ label=<<TABLE PORT=\"port\" BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" ALIGN=\"CENTER\">",
+                                DotContext.maskHTML(name));
     for (DotNode.Row r : rows) {
       if (r.value != null) {
-        head +=
-            String.format("<TR><TD>%s</TD><TD>%s</TD></TR>", DotContext.maskHTML(r.name), DotContext.maskHTML(r.value));
+        head += String.format("<TR><TD>%s</TD><TD>%s</TD></TR>",
+                              DotContext.maskHTML(r.name),
+                              DotContext.maskHTML(r.value));
       } else {
         head += String.format("<TR><TD COLSPAN=\"2\">%s</TD></TR>", DotContext.maskHTML(r.name));
       }

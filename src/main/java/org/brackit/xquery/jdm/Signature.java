@@ -98,9 +98,9 @@ public class Signature {
     if (params.length != s.params.length) {
       return false;
     }
-    if ((!resultType.equals(s.resultType)) || (lastIsVarArg != s.lastIsVarArg) || ((defaultCtxItemType != null) && (
-        (s.defaultCtxItemType == null) || (!defaultCtxItemType.equals(s.defaultCtxItemType)))) || (
-        (defaultCtxItemType == null) && (s.defaultCtxItemType != null))) {
+    if ((!resultType.equals(s.resultType)) || (lastIsVarArg != s.lastIsVarArg) || ((defaultCtxItemType != null)
+        && ((s.defaultCtxItemType == null) || (!defaultCtxItemType.equals(s.defaultCtxItemType))))
+        || ((defaultCtxItemType == null) && (s.defaultCtxItemType != null))) {
       return false;
     }
     for (int i = 0; i < params.length; i++) {

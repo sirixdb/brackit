@@ -135,8 +135,7 @@ public final class AttributeD2Node extends D2Node {
   }
 
   @Override
-  public D2Node replaceWith(Kind kind, QNm name, Atomic value)
-      throws DocumentException {
+  public D2Node replaceWith(Kind kind, QNm name, Atomic value) throws DocumentException {
     if (kind != Kind.ATTRIBUTE) {
       throw new DocumentException("Cannot replace attribute with node of type: %s.", kind);
     }
@@ -207,8 +206,7 @@ public final class AttributeD2Node extends D2Node {
   }
 
   @Override
-  public D2Node insertAfter(Kind kind, QNm name, Atomic value)
-      throws DocumentException {
+  public D2Node insertAfter(Kind kind, QNm name, Atomic value) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 
@@ -223,8 +221,7 @@ public final class AttributeD2Node extends D2Node {
   }
 
   @Override
-  public D2Node insertBefore(Kind kind, QNm name, Atomic value)
-      throws DocumentException {
+  public D2Node insertBefore(Kind kind, QNm name, Atomic value) throws DocumentException {
     throw new OperationNotSupportedException();
   }
 

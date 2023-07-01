@@ -54,8 +54,8 @@ import java.nio.charset.StandardCharsets;
  * @author Johannes Lichtenberger
  */
 @FunctionAnnotation(description = "Load (external) documents into a collection. "
-    + "If explicitly required or if the collection does not exist, "
-    + "a new collection will be created. ", parameters = { "$name", "$resources", "$create-new" })
+    + "If explicitly required or if the collection does not exist, " + "a new collection will be created. ",
+    parameters = { "$name", "$resources", "$create-new" })
 public final class Load extends AbstractFunction {
 
   public static final QNm DEFAULT_NAME = new QNm(JSONFun.JSON_NSURI, JSONFun.JSON_PREFIX, "load");
@@ -103,8 +103,7 @@ public final class Load extends AbstractFunction {
     }
   }
 
-  private void add(JsonStore store, JsonCollection<?> coll, Sequence resources)
-      throws DocumentException, IOException {
+  private void add(JsonStore store, JsonCollection<?> coll, Sequence resources) throws DocumentException, IOException {
     if (resources instanceof Atomic) {
       String r = ((Atomic) resources).stringValue();
       coll.add(new String(URIHandler.getInputStream(r).readAllBytes(), StandardCharsets.UTF_8));
@@ -118,8 +117,7 @@ public final class Load extends AbstractFunction {
     }
   }
 
-  private void create(JsonStore store, String name, Sequence resources)
-      throws DocumentException, IOException {
+  private void create(JsonStore store, String name, Sequence resources) throws DocumentException, IOException {
     if (resources instanceof Atomic) {
       String r = ((Atomic) resources).stringValue();
       store.create(name, new String(URIHandler.getInputStream(r).readAllBytes(), StandardCharsets.UTF_8));

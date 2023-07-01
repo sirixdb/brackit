@@ -53,8 +53,8 @@ import org.brackit.xquery.jdm.type.SequenceType;
 @FunctionAnnotation(description = "Lists all files in the given path. "
     + "The optional filter pattern is evaluated according to "
     + "fn:matches without additional flags, i.e., to match all"
-    + "files in a directory ending with \".xml\" you must use \"\\.xml$\" "
-    + "instead of a shell-like \"*.xml\"", parameters = { "$path", "$pattern" })
+    + "files in a directory ending with \".xml\" you must use \"\\.xml$\" " + "instead of a shell-like \"*.xml\"",
+    parameters = { "$path", "$pattern" })
 public class Ls extends AbstractFunction {
   public static final QNm DEFAULT_NAME = new QNm(IOFun.IO_NSURI, IOFun.IO_PREFIX, "ls");
 

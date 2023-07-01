@@ -653,7 +653,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    *
    * @return all attributes, and an empty {link Stream} if this node has no attributes
    * @throws OperationNotSupportedException if this operation is not supported
-   * @throws DocumentException if the operation failed
+   * @throws DocumentException              if the operation failed
    */
   Stream<? extends E> getAttributes() throws OperationNotSupportedException, DocumentException;
 

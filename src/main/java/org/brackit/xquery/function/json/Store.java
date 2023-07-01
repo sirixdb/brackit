@@ -50,8 +50,8 @@ import org.brackit.xquery.jdm.type.*;
  * @author Sebastian Baechle
  */
 @FunctionAnnotation(description = "Store the given fragments in a collection. "
-    + "If explicitly required or if the collection does not exist, "
-    + "a new collection will be created. ", parameters = { "$name", "$fragments", "$create-new" })
+    + "If explicitly required or if the collection does not exist, " + "a new collection will be created. ",
+    parameters = { "$name", "$fragments", "$create-new" })
 public class Store extends AbstractFunction {
   public static final QNm DEFAULT_NAME = new QNm(JSONFun.JSON_NSURI, JSONFun.JSON_PREFIX, "store");
 
@@ -76,168 +76,168 @@ public class Store extends AbstractFunction {
   public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
     return null;
   }
-//    try {
-//      final boolean createNew = args.length != 3 || args[2].booleanValue();
-//      final String name = ((Atomic) args[0]).stringValue();
-//      final Sequence nodes = args[1];
-//
-//     JsonStore s = ctx.getJsonItemStore();
-//      if (createNew) {
-//        create(s, name, nodes);
-//      } else {
-//        try {
-//          final JsonCollection<?> coll = s.lookup(name);
-//          add(coll, nodes);
-//        } catch (DocumentException e) {
-//          // collection does not exist
-//          create(s, name, nodes);
-//        }
-//      }
-//      // TODO return statistics?
-//      return null;
-//    } catch (Exception e) {
-//      throw new QueryException(e, BitFun.BIT_ADDTOCOLLECTION_INT_ERROR, e.getMessage());
-//    }
-//  }
-//
-//  private void add(JsonCollection<?> coll, Sequence sequence)
-//      throws DocumentException {
-//    if (sequence instanceof JsonItem jsonItem) {
-//      coll.add(new StoreParser(n));
-//    } else {
-//      try (final var parsers = new org.brackit.xquery.jsonitem.ParserStream(sequence)) {
-//        String json;
-//        while ((json = parsers.next()) != null) {
-//          coll.add(json);
-//        }
-//      }
-//    }
-//  }
-//
-//  private void create(JsonStore store, String name, Sequence sequence)
-//      throws DocumentException {
-//    if (sequence instanceof JsonItem jsonItem) {
-//      store.create(name, new JsonStoreParser(jsonItem));
-//    } else {
-//      store.create(name, new ParserStream(sequence));
-//    }
-//  }
-//
-//  private static class JsonStoreParser extends NodeStreamSubtreeParser {
-//    private final boolean intercept;
-//
-//    public StoreParser(JsonItem jsonItem) throws DocumentException {
-//      super(node.getSubtree());
-//    }
-//
-//    @Override
-//    public void parse(SubtreeHandler handler) throws DocumentException {
-//      if (intercept) {
-//        handler = new InterceptorHandler(handler);
-//      }
-//      super.parse(handler);
-//    }
-//  }
-//
-//  private static class InterceptorHandler implements SubtreeHandler {
-//    private final SubtreeHandler handler;
-//
-//    public InterceptorHandler(SubtreeHandler handler) {
-//      this.handler = handler;
-//    }
-//
-//    public void beginFragment() throws DocumentException {
-//      handler.beginFragment();
-//      handler.startDocument();
-//    }
-//
-//    public void endFragment() throws DocumentException {
-//      handler.endDocument();
-//      handler.endFragment();
-//    }
-//
-//    public void startDocument() throws DocumentException {
-//      handler.startDocument();
-//    }
-//
-//    public void endDocument() throws DocumentException {
-//      handler.endDocument();
-//    }
-//
-//    public void text(Atomic content) throws DocumentException {
-//      handler.text(content);
-//    }
-//
-//    public void comment(Atomic content) throws DocumentException {
-//      handler.comment(content);
-//    }
-//
-//    public void processingInstruction(QNm target, Atomic content) throws DocumentException {
-//      handler.processingInstruction(target, content);
-//    }
-//
-//    public void startMapping(String prefix, String uri) throws DocumentException {
-//      handler.startMapping(prefix, uri);
-//    }
-//
-//    public void endMapping(String prefix) throws DocumentException {
-//      handler.endMapping(prefix);
-//    }
-//
-//    public void startElement(QNm name) throws DocumentException {
-//      handler.startElement(name);
-//    }
-//
-//    public void endElement(QNm name) throws DocumentException {
-//      handler.endElement(name);
-//    }
-//
-//    public void attribute(QNm name, Atomic value) throws DocumentException {
-//      handler.attribute(name, value);
-//    }
-//
-//    public void begin() throws DocumentException {
-//      handler.begin();
-//    }
-//
-//    public void end() throws DocumentException {
-//      handler.end();
-//    }
-//
-//    public void fail() throws DocumentException {
-//      handler.fail();
-//    }
-//  }
-//
-//  private static class ParserStream implements Stream<SubtreeParser> {
-//    Iter it;
-//
-//    public ParserStream(Sequence locs) {
-//      it = locs.iterate();
-//    }
-//
-//    @Override
-//    public SubtreeParser next() throws DocumentException {
-//      try {
-//        Item item = it.next();
-//        if (item == null) {
-//          return null;
-//        }
-//        if (item instanceof JsonItem jsonItem) {
-//          return new JsonItemSubtreeParser(jsonItem);
-//        } else {
-//          throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-//                                   "Cannot create subtree parser for item of type: %s",
-//                                   item.itemType());
-//        }
-//      } catch (QueryException e) {
-//        throw new DocumentException(e);
-//      }
-//    }
-//
-//    @Override
-//    public void close() {
-//      it.close();
-//    }
-//  }
+  //    try {
+  //      final boolean createNew = args.length != 3 || args[2].booleanValue();
+  //      final String name = ((Atomic) args[0]).stringValue();
+  //      final Sequence nodes = args[1];
+  //
+  //     JsonStore s = ctx.getJsonItemStore();
+  //      if (createNew) {
+  //        create(s, name, nodes);
+  //      } else {
+  //        try {
+  //          final JsonCollection<?> coll = s.lookup(name);
+  //          add(coll, nodes);
+  //        } catch (DocumentException e) {
+  //          // collection does not exist
+  //          create(s, name, nodes);
+  //        }
+  //      }
+  //      // TODO return statistics?
+  //      return null;
+  //    } catch (Exception e) {
+  //      throw new QueryException(e, BitFun.BIT_ADDTOCOLLECTION_INT_ERROR, e.getMessage());
+  //    }
+  //  }
+  //
+  //  private void add(JsonCollection<?> coll, Sequence sequence)
+  //      throws DocumentException {
+  //    if (sequence instanceof JsonItem jsonItem) {
+  //      coll.add(new StoreParser(n));
+  //    } else {
+  //      try (final var parsers = new org.brackit.xquery.jsonitem.ParserStream(sequence)) {
+  //        String json;
+  //        while ((json = parsers.next()) != null) {
+  //          coll.add(json);
+  //        }
+  //      }
+  //    }
+  //  }
+  //
+  //  private void create(JsonStore store, String name, Sequence sequence)
+  //      throws DocumentException {
+  //    if (sequence instanceof JsonItem jsonItem) {
+  //      store.create(name, new JsonStoreParser(jsonItem));
+  //    } else {
+  //      store.create(name, new ParserStream(sequence));
+  //    }
+  //  }
+  //
+  //  private static class JsonStoreParser extends NodeStreamSubtreeParser {
+  //    private final boolean intercept;
+  //
+  //    public StoreParser(JsonItem jsonItem) throws DocumentException {
+  //      super(node.getSubtree());
+  //    }
+  //
+  //    @Override
+  //    public void parse(SubtreeHandler handler) throws DocumentException {
+  //      if (intercept) {
+  //        handler = new InterceptorHandler(handler);
+  //      }
+  //      super.parse(handler);
+  //    }
+  //  }
+  //
+  //  private static class InterceptorHandler implements SubtreeHandler {
+  //    private final SubtreeHandler handler;
+  //
+  //    public InterceptorHandler(SubtreeHandler handler) {
+  //      this.handler = handler;
+  //    }
+  //
+  //    public void beginFragment() throws DocumentException {
+  //      handler.beginFragment();
+  //      handler.startDocument();
+  //    }
+  //
+  //    public void endFragment() throws DocumentException {
+  //      handler.endDocument();
+  //      handler.endFragment();
+  //    }
+  //
+  //    public void startDocument() throws DocumentException {
+  //      handler.startDocument();
+  //    }
+  //
+  //    public void endDocument() throws DocumentException {
+  //      handler.endDocument();
+  //    }
+  //
+  //    public void text(Atomic content) throws DocumentException {
+  //      handler.text(content);
+  //    }
+  //
+  //    public void comment(Atomic content) throws DocumentException {
+  //      handler.comment(content);
+  //    }
+  //
+  //    public void processingInstruction(QNm target, Atomic content) throws DocumentException {
+  //      handler.processingInstruction(target, content);
+  //    }
+  //
+  //    public void startMapping(String prefix, String uri) throws DocumentException {
+  //      handler.startMapping(prefix, uri);
+  //    }
+  //
+  //    public void endMapping(String prefix) throws DocumentException {
+  //      handler.endMapping(prefix);
+  //    }
+  //
+  //    public void startElement(QNm name) throws DocumentException {
+  //      handler.startElement(name);
+  //    }
+  //
+  //    public void endElement(QNm name) throws DocumentException {
+  //      handler.endElement(name);
+  //    }
+  //
+  //    public void attribute(QNm name, Atomic value) throws DocumentException {
+  //      handler.attribute(name, value);
+  //    }
+  //
+  //    public void begin() throws DocumentException {
+  //      handler.begin();
+  //    }
+  //
+  //    public void end() throws DocumentException {
+  //      handler.end();
+  //    }
+  //
+  //    public void fail() throws DocumentException {
+  //      handler.fail();
+  //    }
+  //  }
+  //
+  //  private static class ParserStream implements Stream<SubtreeParser> {
+  //    Iter it;
+  //
+  //    public ParserStream(Sequence locs) {
+  //      it = locs.iterate();
+  //    }
+  //
+  //    @Override
+  //    public SubtreeParser next() throws DocumentException {
+  //      try {
+  //        Item item = it.next();
+  //        if (item == null) {
+  //          return null;
+  //        }
+  //        if (item instanceof JsonItem jsonItem) {
+  //          return new JsonItemSubtreeParser(jsonItem);
+  //        } else {
+  //          throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+  //                                   "Cannot create subtree parser for item of type: %s",
+  //                                   item.itemType());
+  //        }
+  //      } catch (QueryException e) {
+  //        throw new DocumentException(e);
+  //      }
+  //    }
+  //
+  //    @Override
+  //    public void close() {
+  //      it.close();
+  //    }
+  //  }
 }

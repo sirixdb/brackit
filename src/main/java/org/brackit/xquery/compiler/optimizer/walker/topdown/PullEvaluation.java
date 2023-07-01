@@ -66,8 +66,7 @@ public class PullEvaluation extends Walker {
       return join;
     }
 
-    @SuppressWarnings("unchecked")
-    List<QNm> check = (List<QNm>) join.getProperty("check");
+    @SuppressWarnings("unchecked") List<QNm> check = (List<QNm>) join.getProperty("check");
 
     // prepend a check counter to the left input
     QNm postJoinVar = createCheckVarName();

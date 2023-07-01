@@ -93,9 +93,9 @@ public class VarScopes {
   }
 
   public QNm declare(QNm name) {
-    Variable var = (level > 0) ? new Variable(new QNm(name.getNamespaceURI(),
-                                                      name.getPrefix(),
-                                                      name.getLocalName() + ";" + idSequence++)) : new Variable(name);
+    Variable var = (level > 0)
+        ? new Variable(new QNm(name.getNamespaceURI(), name.getPrefix(), name.getLocalName() + ";" + idSequence++))
+        : new Variable(name);
     current.mapping.put(name, var);
     return var.name;
   }

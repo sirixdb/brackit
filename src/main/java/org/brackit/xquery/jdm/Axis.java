@@ -48,102 +48,122 @@ public enum Axis {
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return node.isParentOf(other);
     }
-  }, CHILD(true) {
+  },
+  CHILD(true) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return node.isChildOf(other);
     }
-  }, ANCESTOR(false) {
+  },
+  ANCESTOR(false) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return node.isAncestorOf(other);
     }
-  }, DESCENDANT(true) {
+  },
+  DESCENDANT(true) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return node.isDescendantOf(other);
     }
-  }, ANCESTOR_OR_SELF(false) {
+  },
+  ANCESTOR_OR_SELF(false) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return node.isAncestorOrSelfOf(other);
     }
-  }, DESCENDANT_OR_SELF(true) {
+  },
+  DESCENDANT_OR_SELF(true) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return node.isDescendantOrSelfOf(other);
     }
-  }, ATTRIBUTE(true) {
+  },
+  ATTRIBUTE(true) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return node.isAttributeOf(other);
     }
-  }, SELF(true) {
+  },
+  SELF(true) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return node.isSelfOf(other);
     }
-  }, FOLLOWING(true) {
+  },
+  FOLLOWING(true) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return node.isFollowingOf(other);
     }
-  }, FOLLOWING_SIBLING(true) {
+  },
+  FOLLOWING_SIBLING(true) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return node.isFollowingSiblingOf(other);
     }
-  }, PRECEDING(false) {
+  },
+  PRECEDING(false) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return node.isPrecedingOf(other);
     }
-  }, PRECEDING_SIBLING(false) {
+  },
+  PRECEDING_SIBLING(false) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return node.isPrecedingSiblingOf(other);
     }
-  }, NEXT(true) {
+  },
+  NEXT(true) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return ((TemporalNode<?>) node).isNextOf((TemporalNode<?>) other);
     }
-  }, PREVIOUS(false) {
+  },
+  PREVIOUS(false) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return ((TemporalNode<?>) node).isPreviousOf((TemporalNode<?>) other);
     }
-  }, FUTURE(true) {
+  },
+  FUTURE(true) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return ((TemporalNode<?>) node).isFutureOf((TemporalNode<?>) other);
     }
-  }, FUTURE_OR_SELF(true) {
+  },
+  FUTURE_OR_SELF(true) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return ((TemporalNode<?>) node).isFutureOrSelfOf((TemporalNode<?>) other);
     }
-  }, PAST(false) {
+  },
+  PAST(false) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return ((TemporalNode<?>) node).isEarlierOf((TemporalNode<?>) other);
     }
-  }, PAST_OR_SELF(false) {
+  },
+  PAST_OR_SELF(false) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return ((TemporalNode<?>) node).isEarlierOrSelfOf((TemporalNode<?>) other);
     }
-  }, LAST(false) {
+  },
+  LAST(false) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return ((TemporalNode<?>) node).isLastOf((TemporalNode<?>) other);
     }
-  }, FIRST(true) {
+  },
+  FIRST(true) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       return ((TemporalNode<?>) node).isFirstOf((TemporalNode<?>) other);
     }
-  }, ALL_TIME(true) {
+  },
+  ALL_TIME(true) {
     @Override
     public boolean check(Node<?> node, Node<?> other) throws QueryException {
       // TODO

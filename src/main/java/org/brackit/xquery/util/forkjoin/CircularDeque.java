@@ -68,8 +68,9 @@ public class CircularDeque<E> implements Deque<E> {
   }
 
   @SuppressWarnings("rawtypes")
-  private static final AtomicLongFieldUpdater<CircularDeque> UPDATER =
-      AtomicLongFieldUpdater.newUpdater(CircularDeque.class, "top");
+  private static final AtomicLongFieldUpdater<CircularDeque> UPDATER = AtomicLongFieldUpdater.newUpdater(
+                                                                                                         CircularDeque.class,
+                                                                                                         "top");
 
   private static final int INITIAL_CAPACITY = 6; // log size -> actual size =
   // 2^6
@@ -95,7 +96,7 @@ public class CircularDeque<E> implements Deque<E> {
     CircularArray<E> a = this.activeArray;
     Object[] tmp = new Object[(int) a.size()];
     int len = 0;
-    for (E x; (x = poll()) != null; ) {
+    for (E x; (x = poll()) != null;) {
       tmp[len++] = x;
     }
     push(o);

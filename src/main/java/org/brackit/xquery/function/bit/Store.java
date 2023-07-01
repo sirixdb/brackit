@@ -50,8 +50,8 @@ import org.brackit.xquery.jdm.type.*;
  * @author Sebastian Baechle
  */
 @FunctionAnnotation(description = "Store the given fragments in a collection. "
-    + "If explicitly required or if the collection does not exist, "
-    + "a new collection will be created. ", parameters = { "$name", "$fragments", "$create-new" })
+    + "If explicitly required or if the collection does not exist, " + "a new collection will be created. ",
+    parameters = { "$name", "$fragments", "$create-new" })
 public class Store extends AbstractFunction {
 
   public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI, Bits.BIT_PREFIX, "store");
@@ -99,8 +99,7 @@ public class Store extends AbstractFunction {
     }
   }
 
-  private void add(NodeCollection<?> coll, Sequence nodes)
-      throws DocumentException {
+  private void add(NodeCollection<?> coll, Sequence nodes) throws DocumentException {
 
     if (nodes instanceof Node<?> n) {
       coll.add(new NodeStoreParser(n));

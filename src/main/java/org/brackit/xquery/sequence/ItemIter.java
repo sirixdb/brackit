@@ -1,5 +1,4 @@
 
-
 /*
  * [New BSD License]
  * Copyright (c) 2011-2012, Brackit Project Team <info@brackit.org>

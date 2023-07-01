@@ -51,9 +51,9 @@ public abstract class AbstractDuration extends AbstractAtomic implements Duratio
   public final boolean eq(Atomic atomic) throws QueryException {
     if (atomic instanceof Duration) {
       Duration other = (Duration) atomic;
-      return isNegative() == other.isNegative() && getYears() == other.getYears() && getMonths()
-          == other.getMonths() && getDays() == other.getDays() && getHours() == other.getHours() && getMinutes()
-          == other.getMinutes() && getMicros() == other.getMicros();
+      return isNegative() == other.isNegative() && getYears() == other.getYears() && getMonths() == other.getMonths()
+          && getDays() == other.getDays() && getHours() == other.getHours() && getMinutes() == other.getMinutes()
+          && getMicros() == other.getMicros();
     }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                              "Cannot compare '%s with '%s'",

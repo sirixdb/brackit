@@ -298,7 +298,9 @@ public final class PathParser extends Tokenizer {
                                               isEnd ? getEnd() : pos + pathSegmentName.length() + i,
                                               null,
                                               null,
-                                              pathSegmentName.toString().replaceAll("\\\\\\[", "[").replaceAll("\\\\\\]", "]"));
+                                              pathSegmentName.toString()
+                                                             .replaceAll("\\\\\\[", "[")
+                                                             .replaceAll("\\\\\\]", "]"));
 
     consume(token);
 

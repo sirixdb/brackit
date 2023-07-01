@@ -51,48 +51,44 @@ public class JoinTest extends XQueryBaseTest {
 
   @Test
   public void simpleNestedFor() {
-    Sequence res =
-        new XQuery("for $a in (1,2,3) " + "for $b in (2,3,4) " + "where $a = $b " + "return $a").execute(ctx);
+    Sequence res = new XQuery("for $a in (1,2,3) " + "for $b in (2,3,4) " + "where $a = $b " + "return $a").execute(
+                                                                                                                    ctx);
     ResultChecker.dCheck(intSequence(2, 3), res);
   }
 
   @Test
   public void nestedForWithLetsInOuterFor() {
-    Sequence res = new XQuery(
-        "for $w in (2,4) " + "let $x := (2 to $w) " + "for $a in (1,2,3) " + "for $b in $x " + "let $z := $a + $x[0] "
-            + "where $a = $b " + "return $a").execute(ctx);
+    Sequence res = new XQuery("for $w in (2,4) " + "let $x := (2 to $w) " + "for $a in (1,2,3) " + "for $b in $x "
+        + "let $z := $a + $x[0] " + "where $a = $b " + "return $a").execute(ctx);
     ResultChecker.dCheck(intSequence(2, 2, 3), res);
   }
 
   @Test
   public void nestedForWithLets() {
-    Sequence res = new XQuery(
-        "let $x := (2,3,4) " + "for $a in (1,2,3) " + "let $y := 'foo'" + "for $b in $x " + "let $z := $a + $x[0] "
-            + "where $a = $b " + "return $a").execute(ctx);
+    Sequence res = new XQuery("let $x := (2,3,4) " + "for $a in (1,2,3) " + "let $y := 'foo'" + "for $b in $x "
+        + "let $z := $a + $x[0] " + "where $a = $b " + "return $a").execute(ctx);
     ResultChecker.dCheck(intSequence(2, 3), res);
   }
 
   @Test
   public void letNestedFor() {
-    Sequence res = new XQuery(
-        "for $a in (1,2,3) " + "let $c := for $b in (2,3,4) " + "          where $a = $b " + "          return $a "
-            + "return $c").execute(ctx);
+    Sequence res = new XQuery("for $a in (1,2,3) " + "let $c := for $b in (2,3,4) " + "          where $a = $b "
+        + "          return $a " + "return $c").execute(ctx);
     ResultChecker.dCheck(intSequence(2, 3), res);
   }
 
   @Test
   public void letNestedForWithLets() {
     Sequence res = new XQuery("for $w in (2,4) " + "let $x := (2 to $w) " + "for $a in (1,2,3) " + "let $y := 'foo'"
-                                  + "let $c := for $b in $x " + "          let $z := $a + $x[0] "
-                                  + "          where $a = $b " + "          return $a " + "return $c").execute(ctx);
+        + "let $c := for $b in $x " + "          let $z := $a + $x[0] " + "          where $a = $b "
+        + "          return $a " + "return $c").execute(ctx);
     ResultChecker.dCheck(intSequence(2, 2, 3), res);
   }
 
   @Test
   public void fakeJoin() {
-    Sequence res = new XQuery(
-        "for $a in (1,2,3) " + "for $b in (2,3,4) " + "let $x := for $c in 1 " + "			where $a = $b "
-            + "			return $c " + "return $x").execute(ctx);
+    Sequence res = new XQuery("for $a in (1,2,3) " + "for $b in (2,3,4) " + "let $x := for $c in 1 "
+        + "			where $a = $b " + "			return $c " + "return $x").execute(ctx);
     ResultChecker.dCheck(intSequence(1, 1), res);
   }
 

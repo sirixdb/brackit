@@ -177,7 +177,7 @@ public class IOUtils {
     StringBuilder out = new StringBuilder();
     byte[] b = new byte[4096];
     try {
-      for (int n; (n = in.read(b)) != -1; ) {
+      for (int n; (n = in.read(b)) != -1;) {
         out.append(new String(b, 0, n));
       }
     } catch (IOException e) {

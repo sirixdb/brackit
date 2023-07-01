@@ -329,8 +329,8 @@ public class Compiler implements Translator {
   protected Expr tryCatchExpr(AST node) throws QueryException {
     Expr expr = expr(node.getChild(0), true);
 
-    Binding code =
-        table.bind((QNm) node.getChild(1).getChild(0).getValue(), new SequenceType(AtomicType.QNM, Cardinality.One));
+    Binding code = table.bind((QNm) node.getChild(1).getChild(0).getValue(),
+                              new SequenceType(AtomicType.QNM, Cardinality.One));
     Binding desc = table.bind((QNm) node.getChild(2).getChild(0).getValue(),
                               new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne));
     Binding value = table.bind((QNm) node.getChild(3).getChild(0).getValue(),
@@ -713,7 +713,9 @@ public class Compiler implements Translator {
     if (argumentPlaceHolderExprs.isEmpty()) {
       return new FunctionExpr(node.getStaticContext(), function, args);
     } else {
-      final UDF udf = new UDF(name, new Signature(signature.getResultType(), newParamTypes.toArray(new SequenceType[0])), function.isUpdating());
+      final UDF udf = new UDF(name,
+                              new Signature(signature.getResultType(), newParamTypes.toArray(new SequenceType[0])),
+                              function.isUpdating());
       udf.setExpr(function);
       return new FunctionExpr(node.getStaticContext(), udf, args);
     }
@@ -831,8 +833,8 @@ public class Compiler implements Translator {
       parent = parent.getParent();
     }
 
-    boolean parentIsConstructor =
-        parent.getType() == XQ.CompElementConstructor || parent.getType() == XQ.CompDocumentConstructor;
+    boolean parentIsConstructor = parent.getType() == XQ.CompElementConstructor || parent.getType()
+        == XQ.CompDocumentConstructor;
 
     if (parentIsConstructor) {
       table.resolve(Bits.FS_PARENT);

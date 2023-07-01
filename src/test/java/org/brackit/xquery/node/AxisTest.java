@@ -125,64 +125,64 @@ public abstract class AxisTest extends XQueryBaseTest {
   @Test
   public void testRootFollowing() {
     Node<?> node = collection.getDocument().getFirstChild();
-    Set<Node<?>> expected =
-        buildExpectedSet(collection.getDocument().getSubtree(), new AxisFilter(node, Axis.FOLLOWING));
+    Set<Node<?>> expected = buildExpectedSet(collection.getDocument().getSubtree(),
+                                             new AxisFilter(node, Axis.FOLLOWING));
     checkOutput(Accessor.FOLLOWING.performStep(node), expected);
   }
 
   @Test
   public void testNonRootFollowing() {
     Node<?> node = collection.getDocument().getFirstChild().getFirstChild().getFirstChild().getNextSibling();
-    Set<Node<?>> expected =
-        buildExpectedSet(collection.getDocument().getSubtree(), new AxisFilter(node, Axis.FOLLOWING));
+    Set<Node<?>> expected = buildExpectedSet(collection.getDocument().getSubtree(),
+                                             new AxisFilter(node, Axis.FOLLOWING));
     checkOutput(Accessor.FOLLOWING.performStep(node), expected);
   }
 
   @Test
   public void testRootPreceding() {
     Node<?> node = collection.getDocument().getFirstChild();
-    Set<Node<?>> expected =
-        buildExpectedSet(collection.getDocument().getSubtree(), new AxisFilter(node, Axis.PRECEDING));
+    Set<Node<?>> expected = buildExpectedSet(collection.getDocument().getSubtree(),
+                                             new AxisFilter(node, Axis.PRECEDING));
     checkOutput(Accessor.PRECEDING.performStep(node), expected);
   }
 
   @Test
   public void testNonRootPreceding() {
     Node<?> node = collection.getDocument().getFirstChild().getFirstChild().getFirstChild().getNextSibling();
-    Set<Node<?>> expected =
-        buildExpectedSet(collection.getDocument().getSubtree(), new AxisFilter(node, Axis.PRECEDING));
+    Set<Node<?>> expected = buildExpectedSet(collection.getDocument().getSubtree(),
+                                             new AxisFilter(node, Axis.PRECEDING));
     checkOutput(Accessor.PRECEDING.performStep(node), expected);
   }
 
   @Test
   public void testRootPrecedingSibling() {
     Node<?> node = collection.getDocument().getFirstChild();
-    Set<Node<?>> expected =
-        buildExpectedSet(collection.getDocument().getSubtree(), new AxisFilter(node, Axis.PRECEDING_SIBLING));
+    Set<Node<?>> expected = buildExpectedSet(collection.getDocument().getSubtree(),
+                                             new AxisFilter(node, Axis.PRECEDING_SIBLING));
     checkOutput(Accessor.PRECEDING_SIBLING.performStep(node), expected);
   }
 
   @Test
   public void testNonRootPrecedingSibling() {
     Node<?> node = collection.getDocument().getFirstChild().getFirstChild().getFirstChild().getNextSibling();
-    Set<Node<?>> expected =
-        buildExpectedSet(collection.getDocument().getSubtree(), new AxisFilter(node, Axis.PRECEDING_SIBLING));
+    Set<Node<?>> expected = buildExpectedSet(collection.getDocument().getSubtree(),
+                                             new AxisFilter(node, Axis.PRECEDING_SIBLING));
     checkOutput(Accessor.PRECEDING_SIBLING.performStep(node), expected);
   }
 
   @Test
   public void testRootFollowingSibling() {
     Node<?> node = collection.getDocument().getFirstChild();
-    Set<Node<?>> expected =
-        buildExpectedSet(collection.getDocument().getSubtree(), new AxisFilter(node, Axis.FOLLOWING_SIBLING));
+    Set<Node<?>> expected = buildExpectedSet(collection.getDocument().getSubtree(),
+                                             new AxisFilter(node, Axis.FOLLOWING_SIBLING));
     checkOutput(Accessor.FOLLOWING_SIBLING.performStep(node), expected);
   }
 
   @Test
   public void testNonRootFollowingSibling() {
     Node<?> node = collection.getDocument().getFirstChild().getFirstChild().getFirstChild().getNextSibling();
-    Set<Node<?>> expected =
-        buildExpectedSet(collection.getDocument().getSubtree(), new AxisFilter(node, Axis.FOLLOWING_SIBLING));
+    Set<Node<?>> expected = buildExpectedSet(collection.getDocument().getSubtree(),
+                                             new AxisFilter(node, Axis.FOLLOWING_SIBLING));
     checkOutput(Accessor.FOLLOWING_SIBLING.performStep(node), expected);
   }
 

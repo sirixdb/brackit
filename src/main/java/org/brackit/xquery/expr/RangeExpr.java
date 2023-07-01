@@ -89,9 +89,9 @@ public class RangeExpr implements Expr {
       val = Cast.cast(null, val, Type.INR, false);
     } else {
       throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-          "Illegal operand type '%s' where '%s' is expected",
-          val.type(),
-          Type.INR);
+                               "Illegal operand type '%s' where '%s' is expected",
+                               val.type(),
+                               Type.INR);
     }
     return val;
   }
@@ -133,8 +133,8 @@ public class RangeExpr implements Expr {
         public boolean booleanValue() {
           if (!size().eq(Int32.ONE)) {
             throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-                "Effective boolean value is undefined " + "for sequences with two or more items "
-                    + "not starting with a node");
+                                     "Effective boolean value is undefined " + "for sequences with two or more items "
+                                         + "not starting with a node");
           }
           return start.booleanValue();
         }

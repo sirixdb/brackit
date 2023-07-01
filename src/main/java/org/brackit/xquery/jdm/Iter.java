@@ -44,9 +44,9 @@ import org.brackit.xquery.sequence.ItemIter;
  * <pre>
  * Iter it = s.iterate();
  * try {
- *   ...
+ * ...
  * } finally {
- * 	it.close();
+ * it.close();
  * }
  * </pre>
  * <p>
@@ -54,7 +54,7 @@ import org.brackit.xquery.sequence.ItemIter;
  *
  * <pre>
  * try (Iter it = s.iterate()) {
- *   ...
+ * ...
  * }
  * </pre>
  *

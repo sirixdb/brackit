@@ -381,8 +381,7 @@ public class DTD extends AbstractDuration {
 
   public Numeric divide(DTD dur) throws QueryException {
     long a = ((getDays() * 24l + getHours()) * 60l + getMinutes()) * 60l * 1000000 + getMicros();
-    long b =
-        ((dur.getDays() * 24l + dur.getHours()) * 60l + dur.getMinutes()) * 60l * 1000000 + dur.getMicros();
+    long b = ((dur.getDays() * 24l + dur.getHours()) * 60l + dur.getMinutes()) * 60l * 1000000 + dur.getMicros();
 
     if (b == 0) {
       throw new QueryException(ErrorCode.ERR_DIVISION_BY_ZERO);

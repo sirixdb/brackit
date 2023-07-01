@@ -272,7 +272,7 @@ public class FnTest extends XQueryBaseTest {
   public void fnSubsequence2ArgFromStart() {
     Sequence result = new XQuery("fn:subsequence((1, 2, 3, 4, 5), xs:double(1))").execute(ctx);
     ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5)),
-        result);
+                         result);
   }
 
   @Test
@@ -291,7 +291,7 @@ public class FnTest extends XQueryBaseTest {
   public void fnSubsequence2ArgFromBeforeStart() {
     Sequence result = new XQuery("fn:subsequence((1, 2, 3, 4, 5), xs:double(0))").execute(ctx);
     ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5)),
-        result);
+                         result);
   }
 
   @Test
@@ -304,7 +304,7 @@ public class FnTest extends XQueryBaseTest {
   public void fnSubsequence3ArgFromStart() {
     Sequence result = new XQuery("fn:subsequence((1, 2, 3, 4, 5), xs:double(1), xs:double(5))").execute(ctx);
     ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5)),
-        result);
+                         result);
   }
 
   @Test
@@ -329,7 +329,7 @@ public class FnTest extends XQueryBaseTest {
   public void fnReverse() {
     Sequence result = new XQuery("fn:reverse((1, 2, 3, 4, 5))").execute(ctx);
     ResultChecker.dCheck(new ItemSequence(new Int32(5), new Int32(4), new Int32(3), new Int32(2), new Int32(1)),
-        result);
+                         result);
   }
 
   @Test
@@ -360,7 +360,7 @@ public class FnTest extends XQueryBaseTest {
   public void fnRemoveIllegalIndex() {
     Sequence result = new XQuery("fn:remove((1, 2, 3, 4, 5), 7)").execute(ctx);
     ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5)),
-        result);
+                         result);
   }
 
   @Test
@@ -373,33 +373,33 @@ public class FnTest extends XQueryBaseTest {
   public void fnInsertBeforeStart() {
     Sequence result = new XQuery("fn:insert-before((1, 2, 3, 4, 5), 1, (7))").execute(ctx);
     ResultChecker.dCheck(new ItemSequence(new Int32(7),
-        new Int32(1),
-        new Int32(2),
-        new Int32(3),
-        new Int32(4),
-        new Int32(5)), result);
+                                          new Int32(1),
+                                          new Int32(2),
+                                          new Int32(3),
+                                          new Int32(4),
+                                          new Int32(5)), result);
   }
 
   @Test
   public void fnInsertBeforeMiddle() {
     Sequence result = new XQuery("fn:insert-before((1, 2, 3, 4, 5), 3, (7))").execute(ctx);
     ResultChecker.dCheck(new ItemSequence(new Int32(1),
-        new Int32(2),
-        new Int32(7),
-        new Int32(3),
-        new Int32(4),
-        new Int32(5)), result);
+                                          new Int32(2),
+                                          new Int32(7),
+                                          new Int32(3),
+                                          new Int32(4),
+                                          new Int32(5)), result);
   }
 
   @Test
   public void fnInsertBeforeEnd() {
     Sequence result = new XQuery("fn:insert-before((1, 2, 3, 4, 5), 6, (7))").execute(ctx);
     ResultChecker.dCheck(new ItemSequence(new Int32(1),
-        new Int32(2),
-        new Int32(3),
-        new Int32(4),
-        new Int32(5),
-        new Int32(7)), result);
+                                          new Int32(2),
+                                          new Int32(3),
+                                          new Int32(4),
+                                          new Int32(5),
+                                          new Int32(7)), result);
   }
 
   @Test
@@ -412,7 +412,7 @@ public class FnTest extends XQueryBaseTest {
   public void fnInsertBeforeEmpIns() {
     Sequence result = new XQuery("fn:insert-before((1, 2, 3, 4, 5), 6, ())").execute(ctx);
     ResultChecker.dCheck(new ItemSequence(new Int32(1), new Int32(2), new Int32(3), new Int32(4), new Int32(5)),
-        result);
+                         result);
   }
 
   @Test
@@ -443,12 +443,12 @@ public class FnTest extends XQueryBaseTest {
   public void fnStringToCodepoints() {
     Sequence result = new XQuery("fn:string-to-codepoints('Thérèse')").execute(ctx);
     ResultChecker.dCheck(new ItemSequence(new Int32(84),
-        new Int32(104),
-        new Int32(233),
-        new Int32(114),
-        new Int32(232),
-        new Int32(115),
-        new Int32(101)), result);
+                                          new Int32(104),
+                                          new Int32(233),
+                                          new Int32(114),
+                                          new Int32(232),
+                                          new Int32(115),
+                                          new Int32(101)), result);
   }
 
   @Test
@@ -626,50 +626,42 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnMatchesNoMatchSingleLine() {
     Sequence result = new XQuery(
-        "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'Kaum.*krähen')").execute(
-            ctx);
+                                 "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'Kaum.*krähen')").execute(ctx);
     ResultChecker.dCheck(Bool.FALSE, result);
   }
 
   @Test
   public void fnMatchesMatchLineSpanning() {
     Sequence result = new XQuery(
-        "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'Kaum.*krähen', 's')")
-        .execute(
-            ctx);
+                                 "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'Kaum.*krähen', 's')").execute(ctx);
     ResultChecker.dCheck(Bool.TRUE, result);
   }
 
   @Test
   public void fnMatchesNoMatchWholeInput() {
     Sequence result = new XQuery(
-        "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', '^Kaum.*gesehen,$')").execute(
-            ctx);
+                                 "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', '^Kaum.*gesehen,$')").execute(ctx);
     ResultChecker.dCheck(Bool.FALSE, result);
   }
 
   @Test
   public void fnMatchesMatchWholeLine() {
     Sequence result = new XQuery(
-        "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', '^Kaum.*gesehen,$', 'm')")
-        .execute(
-            ctx);
+                                 "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', '^Kaum.*gesehen,$', 'm')").execute(ctx);
     ResultChecker.dCheck(Bool.TRUE, result);
   }
 
   @Test
   public void fnMatchesIgnoreCase() {
     Sequence result = new XQuery(
-        "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'kaum', 'i')").execute(
-            ctx);
+                                 "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'kaum', 'i')").execute(ctx);
     ResultChecker.dCheck(Bool.TRUE, result);
   }
 
   @Test
   public void fnMatchesIgnoreWhitespace() {
     Sequence result = new XQuery(
-        "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'K aum', 'x')").execute(
-            ctx);
+                                 "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'K aum', 'x')").execute(ctx);
     ResultChecker.dCheck(Bool.TRUE, result);
   }
 
@@ -898,11 +890,11 @@ public class FnTest extends XQueryBaseTest {
   public void fnTokenizeSimple2() {
     Sequence result = new XQuery("fn:tokenize('1,15,,24,50,', ',')").execute(ctx);
     ResultChecker.dCheck(new ItemSequence(new Str("1"),
-        new Str("15"),
-        Str.EMPTY,
-        new Str("24"),
-        new Str("50"),
-        Str.EMPTY), result);
+                                          new Str("15"),
+                                          Str.EMPTY,
+                                          new Str("24"),
+                                          new Str("50"),
+                                          Str.EMPTY), result);
   }
 
   @Test
@@ -1272,31 +1264,28 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnAdjustDateTimeToTimezoneEmptyTimezone() {
     Sequence result = new XQuery("fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'), ())")
-        .execute(ctx);
+                                                                                                                .execute(ctx);
     ResultChecker.dCheck(new DateTime("2002-03-07T10:00:00"), result);
   }
 
   @Test
   public void fnAdjustDateTimeToTimezone() {
     Sequence result = new XQuery(
-        "fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'), xs:dayTimeDuration('PT10H'))")
-        .execute(
-            ctx);
+                                 "fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'), xs:dayTimeDuration('PT10H'))").execute(ctx);
     ResultChecker.dCheck(new DateTime("2002-03-08T01:00:00+10:00"), result);
   }
 
   @Test
   public void fnAdjustDateTimeToTimezoneWithoutTimezone() {
     Sequence result = new XQuery(
-        "fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00'), xs:dayTimeDuration('PT10H'))").execute(
-            ctx);
+                                 "fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00'), xs:dayTimeDuration('PT10H'))").execute(ctx);
     ResultChecker.dCheck(new DateTime("2002-03-07T10:00:00+10:00"), result);
   }
 
   @Test
   public void fnAdjustDateTimeToTimezoneImplicitTimezone() {
-    Sequence result = new XQuery("fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'))")
-        .execute(ctx);
+    Sequence result = new XQuery("fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'))").execute(
+                                                                                                                     ctx);
     ResultChecker.dCheck(new DateTime("2002-03-07T16:00:00+01:00"), result);
   }
 
@@ -1309,9 +1298,7 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnAdjustDateTimeToTimezoneIllegalTimezone() {
     try {
-      new XQuery(
-          "fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'), xs:dayTimeDuration('PT15H'))")
-          .execute(ctx);
+      new XQuery("fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'), xs:dayTimeDuration('PT15H'))").execute(ctx);
       fail("Accepted illegal timezone.");
     } catch (QueryException e) {
       assertEquals("Wrong error code", ErrorCode.ERR_INVALID_TIMEZONE, e.getCode());
@@ -1327,14 +1314,14 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnAdjustDateToTimezone() {
     Sequence result = new XQuery(
-        "fn:adjust-date-to-timezone(xs:date('2002-03-07-05:00'), xs:dayTimeDuration('-PT10H'))").execute(ctx);
+                                 "fn:adjust-date-to-timezone(xs:date('2002-03-07-05:00'), xs:dayTimeDuration('-PT10H'))").execute(ctx);
     ResultChecker.dCheck(new Date("2002-03-06-10:00"), result);
   }
 
   @Test
   public void fnAdjustDateToTimezoneWithoutTimezone() {
     Sequence result = new XQuery("fn:adjust-date-to-timezone(xs:date('2002-03-07'), xs:dayTimeDuration('-PT10H'))")
-        .execute(ctx);
+                                                                                                                   .execute(ctx);
     ResultChecker.dCheck(new Date("2002-03-07-10:00"), result);
   }
 
@@ -1369,14 +1356,14 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnAdjustTimeToTimezone() {
     Sequence result = new XQuery("fn:adjust-time-to-timezone(xs:time('10:00:00-05:00'), xs:dayTimeDuration('PT10H'))")
-        .execute(ctx);
+                                                                                                                      .execute(ctx);
     ResultChecker.dCheck(new Time("01:00:00+10:00"), result);
   }
 
   @Test
   public void fnAdjustTimeToTimezoneWithoutTimezone() {
     Sequence result = new XQuery("fn:adjust-time-to-timezone(xs:time('10:00:00'), xs:dayTimeDuration('PT10H'))")
-        .execute(ctx);
+                                                                                                                .execute(ctx);
     ResultChecker.dCheck(new Time("10:00:00+10:00"), result);
   }
 

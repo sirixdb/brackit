@@ -275,9 +275,9 @@ public class AST {
   }
 
   protected String getLabel(String value) {
-    return type > 0 && type < XQ.NAMES.length ? XQ.NAMES[type].equals(value)
-        ? value
-        : XQ.NAMES[type] + "[" + value + "]" : value;
+    return type > 0 && type < XQ.NAMES.length
+        ? XQ.NAMES[type].equals(value) ? value : XQ.NAMES[type] + "[" + value + "]"
+        : value;
   }
 
   public AST getFirstChildWithType(int type) {

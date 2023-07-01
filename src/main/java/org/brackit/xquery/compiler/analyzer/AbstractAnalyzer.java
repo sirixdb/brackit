@@ -107,8 +107,9 @@ public abstract class AbstractAnalyzer {
       name = expand(name, DefaultNS.FUNCTION);
       annotationOrTest.getChild(0).setValue(name);
       String uri = name.getNamespaceURI();
-      if (uri.equals(Namespaces.XML_NSURI) || uri.equals(Namespaces.XS_NSURI) || uri.equals(Namespaces.XSI_NSURI)
-          || uri.equals(Namespaces.FN_NSURI) || uri.equals(Namespaces.FNMATH_NSURI)) {
+      if (uri.equals(Namespaces.XML_NSURI) || uri.equals(Namespaces.XS_NSURI) || uri.equals(Namespaces.XSI_NSURI) || uri
+                                                                                                                        .equals(Namespaces.FN_NSURI)
+          || uri.equals(Namespaces.FNMATH_NSURI)) {
         throw new QueryException(ErrorCode.ERR_FUNCTION_DECL_IN_ILLEGAL_NAMESPACE,
                                  "Function declaration %s is in illegal namespace: %s",
                                  name,

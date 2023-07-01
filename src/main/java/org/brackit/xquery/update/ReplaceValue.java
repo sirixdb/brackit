@@ -44,8 +44,11 @@ import java.util.EnumSet;
  * @author Sebastian Baechle
  */
 public class ReplaceValue extends ConstructedNodeBuilder implements Expr {
-  private static final EnumSet<Kind> replaceValueKind =
-      EnumSet.of(Kind.ELEMENT, Kind.ATTRIBUTE, Kind.TEXT, Kind.COMMENT, Kind.PROCESSING_INSTRUCTION);
+  private static final EnumSet<Kind> replaceValueKind = EnumSet.of(Kind.ELEMENT,
+                                                                   Kind.ATTRIBUTE,
+                                                                   Kind.TEXT,
+                                                                   Kind.COMMENT,
+                                                                   Kind.PROCESSING_INSTRUCTION);
 
   private final Expr sourceExpr;
 

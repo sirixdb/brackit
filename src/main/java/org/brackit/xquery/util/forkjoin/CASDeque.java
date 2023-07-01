@@ -54,7 +54,7 @@ public class CASDeque<E> implements Deque<E> {
     AtomicReferenceArray<E> q = this.queue;
     Object[] tmp = new Object[q.length()];
     int len = 0;
-    for (E x; (x = poll()) != null; ) {
+    for (E x; (x = poll()) != null;) {
       tmp[len++] = x;
     }
     push(t);
@@ -83,7 +83,7 @@ public class CASDeque<E> implements Deque<E> {
     int m;
     AtomicReferenceArray<E> q = queue;
     if (q != null && (m = q.length() - 1) >= 0) {
-      for (int s; (s = queueTop) != queueBase; ) {
+      for (int s; (s = queueTop) != queueBase;) {
         int i = m & --s;
         E t = q.get(i);
         if (t == null) // lost to stealer

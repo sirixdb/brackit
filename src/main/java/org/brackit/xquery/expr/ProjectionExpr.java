@@ -123,8 +123,7 @@ public final class ProjectionExpr implements Expr {
   }
 
   public static void main(String[] args) {
-    new XQuery("let $a:= 1 let $b:= {'b':2.0} let $n := <x><y>yval</y></x> return {a:$a, $b, c:'3'}{a,c}=>c").serialize(
-        new BrackitQueryContext(),
-        System.out);
+    new XQuery("let $a:= 1 let $b:= {'b':2.0} let $n := <x><y>yval</y></x> return {a:$a, $b, c:'3'}{a,c}=>c").serialize(new BrackitQueryContext(),
+                                                                                                                        System.out);
   }
 }

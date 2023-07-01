@@ -165,8 +165,8 @@ public abstract class FlatteningSequence extends AbstractSequence {
           // is a singleton
           if (it.next() != null) {
             throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-                "Effective boolean value is undefined " + "for sequences with two or more items "
-                    + "not starting with a node");
+                                     "Effective boolean value is undefined " + "for sequences with two or more items "
+                                         + "not starting with a node");
           }
         } finally {
           it.close();
@@ -176,8 +176,8 @@ public abstract class FlatteningSequence extends AbstractSequence {
       while ((s = sequence(i++)) != null) {
         if (s != null && !s.size().eq(Int32.ZERO)) {
           throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-              "Effective boolean value is undefined " + "for sequences with two or more items "
-                  + "not starting with a node");
+                                   "Effective boolean value is undefined " + "for sequences with two or more items "
+                                       + "not starting with a node");
         }
       }
       return bool = first.booleanValue();
@@ -229,21 +229,21 @@ public abstract class FlatteningSequence extends AbstractSequence {
     return new FlatteningIter();
   }
 
-//  public String toString() {
-//    StringBuilder sb = new StringBuilder();
-//    try {
-//      Sequence s;
-//      int i = 0;
-//      if ((s = sequence(i++)) != null) {
-//        sb.append(s);
-//        while ((s = sequence(i++)) != null) {
-//          sb.append(",");
-//          sb.append(s);
-//        }
-//      }
-//    } catch (QueryException e) {
-//      sb.append("...");
-//    }
-//    return sb.toString();
-//  }
+  //  public String toString() {
+  //    StringBuilder sb = new StringBuilder();
+  //    try {
+  //      Sequence s;
+  //      int i = 0;
+  //      if ((s = sequence(i++)) != null) {
+  //        sb.append(s);
+  //        while ((s = sequence(i++)) != null) {
+  //          sb.append(",");
+  //          sb.append(s);
+  //        }
+  //      }
+  //    } catch (QueryException e) {
+  //      sb.append("...");
+  //    }
+  //    return sb.toString();
+  //  }
 }
