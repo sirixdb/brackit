@@ -69,10 +69,6 @@ public class DerefExpr implements Expr {
       return getLazySequence(ctx, tuple, lazySequence.iterate());
     }
 
-    if (sequence instanceof BoundVariable boundVariable) {
-      System.out.println();
-    }
-
     if (!(sequence instanceof Object object)) {
       return null;
     }

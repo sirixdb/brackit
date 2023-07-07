@@ -218,10 +218,8 @@ public class AST {
       if (position > 0) {
         System.arraycopy(children, 0, tmp, 0, position);
       }
-      if (position < children.length) {
-        int length = children.length - (position + 1);
-        System.arraycopy(children, position + 1, tmp, position, length);
-      }
+      int length = children.length - (position + 1);
+      System.arraycopy(children, position + 1, tmp, position, length);
       children = tmp;
     }
   }
@@ -266,12 +264,12 @@ public class AST {
       }
     }
     if (children != null) {
-      for (int i = 0; i < children.length; i++) {
+      for (AST child : children) {
         dt.addEdge(String.valueOf(myNo), String.valueOf(no));
-        no = children[i].toDot(no, dt);
+        no = child.toDot(no, dt);
       }
     }
-    return no++;
+    return no;
   }
 
   protected String getLabel(String value) {
@@ -284,9 +282,9 @@ public class AST {
     if (children == null) {
       return null;
     }
-    for (int i = 0; i < children.length; i++) {
-      if (children[i].type == type) {
-        return children[i];
+    for (AST child : children) {
+      if (child.type == type) {
+        return child;
       }
     }
     return null;

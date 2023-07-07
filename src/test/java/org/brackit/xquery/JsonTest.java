@@ -64,6 +64,17 @@ public final class JsonTest extends XQueryBaseTest {
          .strip();
 
   @Test
+  public void testNoJsoniqUsingXQuerySyntax() throws IOException {
+    final var query ="""
+      xquery version "3.0";
+      let $xml := <foo>bar</foo>
+      return $xml/foo[./text() eq 'bar']
+      """;
+    final var result = query(query);
+    assertEquals("", result);
+  }
+
+  @Test
   public void testStoreFunction1() throws IOException {
     final var doc = JSON_RESOURCES.resolve("user_profiles.json");
     final var storeQuery = "load('mydoc.json', '%s')".formatted(doc);

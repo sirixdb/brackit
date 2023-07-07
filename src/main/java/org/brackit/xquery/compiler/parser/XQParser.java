@@ -52,11 +52,13 @@ import org.brackit.xquery.jdm.Type;
  *
  * @author Sebastian Baechle
  */
+@SuppressWarnings("SameParameterValue")
 public class XQParser extends Tokenizer {
 
-  private static final String[] RESERVED_FUNC_NAMES = new String[] { "attribute", "comment", "document-node", "element",
-      "empty-sequence", "function", "if", "item", "namespace-node", "node", "processing-instruction",
-      "schema-attribute", "schema-element", "switch", "text", "typeswitch, array, object" };
+  private static final String[] RESERVED_FUNC_NAMES =
+      new String[] { "attribute", "comment", "document-node", "element", "empty-sequence", "function", "if", "item",
+          "namespace-node", "node", "processing-instruction", "schema-attribute", "schema-element", "switch", "text",
+          "typeswitch, array, object" };
 
   public class IllegalNestingException extends TokenizerException {
     private final String expected;
@@ -108,9 +110,6 @@ public class XQParser extends Tokenizer {
   public AST parse() {
     try {
       AST module = module();
-      if (module == null) {
-        throw new QueryException(ErrorCode.ERR_PARSING_ERROR, "No module found");
-      }
       consumeEOF();
       AST xquery = new AST(XQ.XQuery);
       xquery.addChild(module);
@@ -125,18 +124,17 @@ public class XQParser extends Tokenizer {
   }
 
   private void setXQVersion(String version) throws TokenizerException {
-    if ("3.0".equals(version)) {
+    if ("3.1".equals(version)) {
+      this.version = version;
+    } else if ("3.0".equals(version)) {
       this.version = version;
     } else if ("1.0".equals(version)) {
       this.version = version;
     } else if ("1.1".equals(version)) {
       this.version = version;
-    } else if ("jsoniq 1.0".equals(version)) {
-      this.version = version;
     } else {
       throw new TokenizerException("unsupported version '%s': %s", version, paraphrase());
     }
-    isJsoniq = version.startsWith("jsoniq");
   }
 
   private void setEncoding(String encoding) {
@@ -152,10 +150,16 @@ public class XQParser extends Tokenizer {
     return module;
   }
 
+  @SuppressWarnings("DataFlowIssue")
   private boolean versionDecl() throws TokenizerException {
     Token la = laSymSkipWS("xquery");
     if (la == null) {
-      return false;
+      la = laSymSkipWS("jsoniq");
+      if (la == null) {
+        return false;
+      }
+    } else {
+      isJsoniq = false;
     }
     Token la2 = laSymSkipWS(la, "version");
     if (la2 != null) {
@@ -198,9 +202,7 @@ public class XQParser extends Tokenizer {
     nsDecl.addChild(uri);
     module.addChild(nsDecl);
     AST prolog = prolog();
-    if (prolog != null) {
-      module.addChild(prolog);
-    }
+    module.addChild(prolog);
     return module;
   }
 
@@ -208,9 +210,7 @@ public class XQParser extends Tokenizer {
     AST prolog = prolog();
     AST body = queryBody();
     AST module = new AST(XQ.MainModule);
-    if (prolog != null) {
-      module.addChild(prolog);
-    }
+    module.addChild(prolog);
     module.addChild(body);
     return module;
   }
@@ -712,9 +712,9 @@ public class XQParser extends Tokenizer {
     }
     // perform look ahead
     if (laSkipWS(la, "%") == null && laSymSkipWS(la, "variable") == null && laSymSkipWS(la, "function") == null
-    // Begin XQuery Update Facility 1.0
+        // Begin XQuery Update Facility 1.0
         && laSymSkipWS(la, "updating") == null
-    // End XQuery Update Facility 1.0
+      // End XQuery Update Facility 1.0
     ) {
       return null;
     }
@@ -818,7 +818,7 @@ public class XQParser extends Tokenizer {
     decl.addChild(stringLiteral);
 
     if ("jn:jsoniq-boolean-and-null-literals".equals(eqnameLiteral.getStringValue())) {
-      jsoniqBooleanAndNullLiterals = Boolean.valueOf(stringLiteral.getStringValue());
+      jsoniqBooleanAndNullLiterals = Boolean.parseBoolean(stringLiteral.getStringValue());
     }
 
     return decl;
@@ -954,9 +954,6 @@ public class XQParser extends Tokenizer {
     consume(la2);
 
     final AST exprSingle = exprSingle();
-    if (exprSingle == null) {
-      throw new TokenizerException("expr single expected");
-    }
     if (!attemptSymSkipWS("into")) {
       throw new MismatchException("into");
     }
@@ -973,9 +970,6 @@ public class XQParser extends Tokenizer {
         throw new MismatchException("position");
       }
       AST position = exprSingle();
-      if (position == null) {
-        throw new IllegalStateException("No position given.");
-      }
       AST expr = new AST(XQ.InsertJsonExpr);
       expr.addChild(exprSingle);
       expr.addChild(target);
@@ -1969,30 +1963,28 @@ public class XQParser extends Tokenizer {
     if (first == null) {
       return null;
     }
-    while (true) {
-      if (laSkipWS("|}") != null) {
-        return first;
-      }
-
-      if (laSymSkipWS("union") != null) {
-        consumeSkipWS("union");
-        first = createUnionAstNode(first);
-      } else {
-        final var token = laSymSkipWS("|");
-        if (token == null) {
-          return first;
-        } else {
-          if (laSymSkipWS(token, "|") != null) {
-            return first;
-          } else {
-            consumeSkipWS("|");
-            first = createUnionAstNode(first);
-          }
-        }
-      }
-
+    if (laSkipWS("|}") != null) {
       return first;
     }
+
+    if (laSymSkipWS("union") != null) {
+      consumeSkipWS("union");
+      first = createUnionAstNode(first);
+    } else {
+      final var token = laSymSkipWS("|");
+      if (token == null) {
+        return first;
+      } else {
+        if (laSymSkipWS(token, "|") != null) {
+          return first;
+        } else {
+          consumeSkipWS("|");
+          first = createUnionAstNode(first);
+        }
+      }
+    }
+
+    return first;
   }
 
   private AST createUnionAstNode(AST first) throws TokenizerException {
@@ -3089,9 +3081,8 @@ public class XQParser extends Tokenizer {
           AST arrayAccess = new AST(XQ.ArrayAccess);
           arrayAccess.addChild(expr);
           if (index.getType() == XQ.ArithmeticExpr && index.getChild(1).getValue() instanceof Int32 int32Index
-              && int32Index.intValue() == -1 && index.getChild(2).getValue() instanceof Int32 int32Index2 && int32Index2
-                                                                                                                        .intValue()
-                  > 0) {
+              && int32Index.intValue() == -1 && index.getChild(2).getValue() instanceof Int32 int32Index2
+              && int32Index2.intValue() > 0) {
             index = new AST(XQ.Int, new Int32(-1 * int32Index2.intValue()));
           }
           arrayAccess.addChild(index);
@@ -3360,6 +3351,7 @@ public class XQParser extends Tokenizer {
     return elem;
   }
 
+  @SuppressWarnings("SameParameterValue")
   private AST dirAttribute(boolean expand) throws TokenizerException {
     skipS();
     // name is expanded later in parent element constructor
@@ -3445,8 +3437,8 @@ public class XQParser extends Tokenizer {
 
   private AST dirElementContent(boolean checkBoundaryWS) throws TokenizerException {
     Token la;
-    if (checkBoundaryWS && ((la = laSkipS("<")) != null || (la = laSkipS("{")) != null && la(la, "{") == null) && (la =
-        laS()) != null) {
+    if (checkBoundaryWS && ((la = laSkipS("<")) != null || (la = laSkipS("{")) != null && la(la, "{") == null)
+        && (la = laS()) != null) {
       consume(la);
       AST boundaryWS = new AST(XQ.Str, la.string());
       boundaryWS.setProperty("boundaryWS", true);
@@ -4106,6 +4098,8 @@ public class XQParser extends Tokenizer {
       if (!attemptSkipS(".")) {
         return null;
       }
+    } else {
+      return null;
     }
 
     Token la = laStringSkipWS(true);

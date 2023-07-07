@@ -149,7 +149,7 @@ public class CompileChain {
 
   public Module compile(String query) throws QueryException {
     if (XQuery.DEBUG) {
-      System.out.println(String.format("Compiling:\n%s", query));
+      System.out.printf("Compiling:\n%s%n", query);
     }
     ModuleResolver resolver = getModuleResolver();
     AST parsed = parse(query);
