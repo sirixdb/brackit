@@ -45,9 +45,9 @@ import org.brackit.xquery.jdm.Sequence;
  */
 public final class TableJoin extends Check implements Operator {
   private class TableJoinCursor implements Cursor {
-    final Cursor lc;
+    final Cursor cursor;
     final Sequence[] padding;
-    final int lSize;
+    final int size;
     private Tuple prev;
     private Tuple next;
     MultiTypeJoinTable table;
@@ -57,21 +57,21 @@ public final class TableJoin extends Check implements Operator {
     int itPos = 0;
     int itSize = 0;
 
-    public TableJoinCursor(Cursor lc, int lSize, int pad) {
-      this.lc = lc;
-      this.lSize = lSize;
+    public TableJoinCursor(Cursor cursor, int size, int pad) {
+      this.cursor = cursor;
+      this.size = size;
       this.padding = new Sequence[pad];
     }
 
     @Override
     public void open(QueryContext ctx) throws QueryException {
-      lc.open(ctx);
+      cursor.open(ctx);
       it = null;
     }
 
     @Override
     public void close(QueryContext ctx) {
-      lc.close(ctx);
+      cursor.close(ctx);
       it = null;
     }
 
@@ -81,7 +81,7 @@ public final class TableJoin extends Check implements Operator {
         return tuple.concat(it.get(itPos++));
       }
 
-      while ((tuple = next) != null || (tuple = lc.next(ctx)) != null) {
+      while ((tuple = next) != null || (tuple = cursor.next(ctx)) != null) {
         next = null;
         if (check && dead(tuple)) {
           prev = tuple.concat(padding);
@@ -116,7 +116,7 @@ public final class TableJoin extends Check implements Operator {
             if (prev != null && !separate(prev, tuple)) {
               continue;
             }
-            next = lc.next(ctx);
+            next = cursor.next(ctx);
             // skip if next tuple is in same iteration group
             if (next != null && !separate(tuple, next)) {
               continue;
@@ -140,26 +140,39 @@ public final class TableJoin extends Check implements Operator {
         tgk = (Atomic) tuple.get(groupVar);
       }
       int pos = 1;
-      Tuple rcTuple;
-      Cursor rc = right.create(ctx, tuple);
+      boolean isLeftSizeBiggerOrEqualToRightSize = leftSize >= rightSize;
+      Tuple cursorTuple;
+
+      Cursor cursor1 = isLeftSizeBiggerOrEqualToRightSize ? right.create(ctx, tuple) : left.create(ctx, tuple);
       try {
-        rc.open(ctx);
-        while ((rcTuple = rc.next(ctx)) != null) {
-          Sequence keys = isGCmp ? rightExpr.evaluate(ctx, rcTuple) : rightExpr.evaluateToItem(ctx, rcTuple);
+        cursor1.open(ctx);
+        while ((cursorTuple = cursor1.next(ctx)) != null) {
+          Sequence keys;
+
+          if (isLeftSizeBiggerOrEqualToRightSize) {
+            keys = isGCmp ? rightExpr.evaluate(ctx, cursorTuple) : rightExpr.evaluateToItem(ctx, cursorTuple);
+          } else {
+            keys = isGCmp ? leftExpr.evaluate(ctx, cursorTuple) : leftExpr.evaluateToItem(ctx, cursorTuple);
+          }
           if (keys != null) {
-            Sequence[] tmp = rcTuple.array();
-            Sequence[] bindings = Arrays.copyOfRange(tmp, lSize, tmp.length);
+            Sequence[] tmp = cursorTuple.array();
+            Sequence[] bindings = Arrays.copyOfRange(tmp, size, tmp.length);
             table.add(keys, bindings, pos++);
           }
         }
       } finally {
-        rc.close(ctx);
+        cursor1.close(ctx);
       }
     }
   }
 
   final Operator left;
   final Operator right;
+
+  int leftSize;
+
+  int rightSize;
+
   final Expr rightExpr;
   final Expr leftExpr;
   final boolean leftJoin;
@@ -182,16 +195,28 @@ public final class TableJoin extends Check implements Operator {
 
   @Override
   public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-    int lSize = left.tupleWidth(tuple.getSize());
-    int pad = right.tupleWidth(tuple.getSize()) - tuple.getSize();
-    return new TableJoinCursor(left.create(ctx, tuple), lSize, pad);
+    leftSize = left.tupleWidth(tuple.getSize());
+    rightSize = right.tupleWidth(tuple.getSize());
+    int lPad = leftSize - tuple.getSize();
+    int rPad = rightSize - tuple.getSize();
+
+    if (leftSize >= rightSize) {
+      return new TableJoinCursor(left.create(ctx, tuple), leftSize, rPad);
+    }
+    return new TableJoinCursor(right.create(ctx, tuple), rightSize, lPad);
   }
 
   @Override
   public Cursor create(QueryContext ctx, Tuple[] buf, int len) throws QueryException {
-    int lSize = left.tupleWidth(buf[0].getSize());
-    int pad = right.tupleWidth(buf[0].getSize()) - buf[0].getSize();
-    return new TableJoinCursor(left.create(ctx, buf, len), lSize, pad);
+    leftSize = left.tupleWidth(buf[0].getSize());
+    rightSize = right.tupleWidth(buf[0].getSize());
+    int lPad = leftSize - buf[0].getSize();
+    int rPad = rightSize - buf[0].getSize();
+
+    if (leftSize > rightSize) {
+      return new TableJoinCursor(left.create(ctx, buf, len), leftSize, rPad);
+    }
+    return new TableJoinCursor(right.create(ctx, buf, len), rightSize, lPad);
   }
 
   @Override
