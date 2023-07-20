@@ -124,58 +124,59 @@ public class DerefDescendantExpr implements Expr {
     return new LazySequence() {
       @Override
       public Iter iterate() {
-        try (var iter = sequence.iterate()) {
-          return new BaseIter() {
-            Iter nestedIter;
+        var iter = sequence.iterate();
 
-            @Override
-            public Item next() {
-              Item item = null;
+        return new BaseIter() {
+          Iter nestedIter;
+
+          @Override
+          public Item next() {
+            Item item = null;
+            if (nestedIter != null) {
+              item = nextItem(nestedIter);
+            }
+            if (item == null) {
               if (nestedIter != null) {
-                item = nextItem(nestedIter);
+                nestedIter.close();
               }
-              if (item == null) {
-                if (nestedIter != null) {
-                  nestedIter.close();
-                }
-                item = nextItem(iter);
-              }
-
-              return item;
+              item = nextItem(iter);
             }
 
-            private Item nextItem(Iter iter) {
-              Item item;
-              while ((item = iter.next()) != null) {
-                if (iter == nestedIter) {
-                  return item;
-                }
-                var resultItem = processSequence(ctx, tuple, item, index);
+            return item;
+          }
+
+          private Item nextItem(Iter iter) {
+            Item item;
+            while ((item = iter.next()) != null) {
+              if (iter == nestedIter) {
+                return item;
+              }
+              var resultItem = processSequence(ctx, tuple, item, index);
+
+              if (resultItem == null) {
+                continue;
+              }
+
+              if (resultItem instanceof LazySequence) {
+                nestedIter = resultItem.iterate();
+                resultItem = next();
 
                 if (resultItem == null) {
                   continue;
                 }
-
-                if (resultItem instanceof LazySequence) {
-                  nestedIter = resultItem.iterate();
-                  resultItem = next();
-
-                  if (resultItem == null) {
-                    continue;
-                  }
-                }
-
-                return resultItem.evaluateToItem(ctx, tuple);
               }
 
-              return null;
+              return resultItem.evaluateToItem(ctx, tuple);
             }
 
-            @Override
-            public void close() {
-            }
-          };
-        }
+            return null;
+          }
+
+          @Override
+          public void close() {
+            iter.close();
+          }
+        };
       }
     };
   }
