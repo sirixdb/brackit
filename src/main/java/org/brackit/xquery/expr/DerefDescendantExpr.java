@@ -95,12 +95,13 @@ public class DerefDescendantExpr implements Expr {
       return item;
     }
 
-    final var iter = resultSequence.iterate();
-    Item item;
-    while ((item = iter.next()) != null) {
-      final var currSeq = processSequence(ctx, tuple, item, index);
+    try (final var iter = resultSequence.iterate()) {
+      final var item = iter.next();
+      if (item != null) {
+        final var currSeq = processSequence(ctx, tuple, item, index);
 
-      return getItem(ctx, tuple, index, currSeq);
+        return getItem(ctx, tuple, index, currSeq);
+      }
     }
 
     return null;
@@ -123,61 +124,58 @@ public class DerefDescendantExpr implements Expr {
     return new LazySequence() {
       @Override
       public Iter iterate() {
-        Iter iter = sequence.iterate();
+        try (var iter = sequence.iterate()) {
+          return new BaseIter() {
+            Iter nestedIter;
 
-        return new BaseIter() {
-          Iter nestedIter;
-
-          @Override
-          public Item next() {
-            Item item = null;
-            if (nestedIter != null) {
-              item = nextItem(nestedIter);
-            }
-            if (item == null) {
-              item = nextItem(iter);
-            }
-
-            return item;
-          }
-
-          private Item nextItem(Iter iter) {
-            Item item;
-            while ((item = iter.next()) != null) {
-              if (iter == nestedIter) {
-                return item;
+            @Override
+            public Item next() {
+              Item item = null;
+              if (nestedIter != null) {
+                item = nextItem(nestedIter);
               }
-              var resultItem = processSequence(ctx, tuple, item, index);
-
-              if (resultItem == null) {
-                continue;
+              if (item == null) {
+                if (nestedIter != null) {
+                  nestedIter.close();
+                }
+                item = nextItem(iter);
               }
 
-              if (resultItem instanceof LazySequence) {
-                nestedIter = resultItem.iterate();
-                resultItem = next();
+              return item;
+            }
+
+            private Item nextItem(Iter iter) {
+              Item item;
+              while ((item = iter.next()) != null) {
+                if (iter == nestedIter) {
+                  return item;
+                }
+                var resultItem = processSequence(ctx, tuple, item, index);
 
                 if (resultItem == null) {
                   continue;
                 }
+
+                if (resultItem instanceof LazySequence) {
+                  nestedIter = resultItem.iterate();
+                  resultItem = next();
+
+                  if (resultItem == null) {
+                    continue;
+                  }
+                }
+
+                return resultItem.evaluateToItem(ctx, tuple);
               }
 
-              return resultItem.evaluateToItem(ctx, tuple);
+              return null;
             }
 
-            return null;
-          }
-
-          @Override
-          public void close() {
-          }
-
-          @Override
-          public Split split(int min, int max) throws QueryException {
-            // TODO Auto-generated method stub
-            return null;
-          }
-        };
+            @Override
+            public void close() {
+            }
+          };
+        }
       }
     };
   }
@@ -227,14 +225,14 @@ public class DerefDescendantExpr implements Expr {
         vals.addAll(getSequenceValues(ctx, t, (Array) val, field1));
         continue;
       }
-      if (!(val instanceof Object object)) {
+      if (!(val instanceof Object obj)) {
         continue;
       }
       Item field = field1.evaluateToItem(ctx, t);
       if (field == null) {
         continue;
       }
-      final var sequenceByRecordField = getSequenceByRecordField(object, field);
+      final var sequenceByRecordField = getSequenceByRecordField(obj, field);
       if (sequenceByRecordField != null) {
         vals.add(sequenceByRecordField);
       }

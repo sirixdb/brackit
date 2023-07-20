@@ -818,6 +818,7 @@ public class XQParser extends Tokenizer {
     decl.addChild(stringLiteral);
 
     if ("jn:jsoniq-boolean-and-null-literals".equals(eqnameLiteral.getStringValue())) {
+      assert stringLiteral != null;
       jsoniqBooleanAndNullLiterals = Boolean.parseBoolean(stringLiteral.getStringValue());
     }
 

@@ -38,6 +38,8 @@ import org.brackit.xquery.jdm.Item;
 import org.brackit.xquery.jdm.Iter;
 import org.brackit.xquery.jdm.Sequence;
 
+import java.util.Arrays;
+
 /**
  * @author Sebastian Baechle
  */
@@ -147,6 +149,6 @@ public class FilterExpr extends PredicateExpr {
   }
 
   public String toString() {
-    return expr.toString() + '[' + filter + ']';
+    return expr.toString() + '[' + Arrays.toString(filter) + ']';
   }
 }

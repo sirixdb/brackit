@@ -62,7 +62,6 @@ public class GCmpExpr extends VCmpExpr {
       case gt -> ">";
       case le -> "<=";
       case lt -> "<";
-      default -> ">=";
     };
   }
 }

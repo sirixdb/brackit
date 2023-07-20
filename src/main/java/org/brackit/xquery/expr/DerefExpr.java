@@ -69,7 +69,7 @@ public class DerefExpr implements Expr {
       return getLazySequence(ctx, tuple, lazySequence.iterate());
     }
 
-    if (!(sequence instanceof Object object)) {
+    if (!(sequence instanceof Object obj)) {
       return null;
     }
 
@@ -77,7 +77,7 @@ public class DerefExpr implements Expr {
     if (itemField == null) {
       return null;
     }
-    return getSequenceByRecordField(object, itemField);
+    return getSequenceByRecordField(obj, itemField);
   }
 
   private LazySequence getLazySequence(final QueryContext ctx, final Tuple tuple, final Iter iter) {
@@ -89,7 +89,7 @@ public class DerefExpr implements Expr {
           public Item next() {
             Item item;
             while ((item = iter.next()) != null) {
-              if (!(item instanceof Object object)) {
+              if (!(item instanceof Object obj)) {
                 continue;
               }
 
@@ -98,7 +98,7 @@ public class DerefExpr implements Expr {
                 continue;
               }
 
-              final var sequenceByRecordField = getSequenceByRecordField(object, itemField);
+              final var sequenceByRecordField = getSequenceByRecordField(obj, itemField);
               if (sequenceByRecordField != null) {
                 return sequenceByRecordField.evaluateToItem(ctx, tuple);
               }
@@ -108,6 +108,7 @@ public class DerefExpr implements Expr {
 
           @Override
           public void close() {
+            iter.close();
           }
         };
       }
@@ -136,10 +137,7 @@ public class DerefExpr implements Expr {
     if (object.isUpdating()) {
       return true;
     }
-    if (field.isUpdating()) {
-      return true;
-    }
-    return false;
+    return field.isUpdating();
   }
 
   @Override

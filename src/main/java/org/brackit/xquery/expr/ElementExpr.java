@@ -129,8 +129,8 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
 
     final Tuple t = bind ? tuple.concat(element) : tuple;
 
-    for (int i = 0; i < contentExprs.length; i++) {
-      Sequence content = contentExprs[i].evaluate(ctx, t);
+    for (final Expr contentExpr : contentExprs) {
+      Sequence content = contentExpr.evaluate(ctx, t);
       buildContentSequence(ctx, sink, content);
     }
     return appendOnly ? null : element;
