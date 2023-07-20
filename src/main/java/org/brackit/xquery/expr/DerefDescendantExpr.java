@@ -136,9 +136,6 @@ public class DerefDescendantExpr implements Expr {
               item = nextItem(nestedIter);
             }
             if (item == null) {
-              if (nestedIter != null) {
-                nestedIter.close();
-              }
               item = nextItem(iter);
             }
 
@@ -158,6 +155,9 @@ public class DerefDescendantExpr implements Expr {
               }
 
               if (resultItem instanceof LazySequence) {
+                if (nestedIter != null) {
+                  nestedIter.close();
+                }
                 nestedIter = resultItem.iterate();
                 resultItem = next();
 
@@ -174,6 +174,9 @@ public class DerefDescendantExpr implements Expr {
 
           @Override
           public void close() {
+            if (nestedIter != null) {
+              nestedIter.close();
+            }
             iter.close();
           }
         };
