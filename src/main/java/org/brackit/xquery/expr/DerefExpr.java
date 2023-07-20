@@ -146,6 +146,6 @@ public class DerefExpr implements Expr {
   }
 
   public String toString() {
-    return "=>" + field;
+    return "." + field;
   }
 }
