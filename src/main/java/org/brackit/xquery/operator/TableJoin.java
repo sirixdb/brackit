@@ -213,7 +213,7 @@ public final class TableJoin extends Check implements Operator {
     int lPad = leftSize - buf[0].getSize();
     int rPad = rightSize - buf[0].getSize();
 
-    if (leftSize > rightSize) {
+    if (leftSize >= rightSize) {
       return new TableJoinCursor(left.create(ctx, buf, len), leftSize, rPad);
     }
     return new TableJoinCursor(right.create(ctx, buf, len), rightSize, lPad);
