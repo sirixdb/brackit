@@ -27,13 +27,13 @@
  */
 package org.brackit.examples;
 
-import org.brackit.xquery.BrackitQueryContext;
-import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.XQuery;
-import org.brackit.xquery.jdm.Item;
-import org.brackit.xquery.jdm.Iter;
-import org.brackit.xquery.jdm.Sequence;
+import org.brackit.query.BrackitQueryContext;
+import org.brackit.query.QueryContext;
+import org.brackit.query.QueryException;
+import org.brackit.query.Query;
+import org.brackit.query.jdm.Item;
+import org.brackit.query.jdm.Iter;
+import org.brackit.query.jdm.Sequence;
 
 /**
  * Basic usage scenarios.
@@ -64,7 +64,7 @@ public class Simple {
         let $d := <no>{$i}</no>
         return $d""";
     System.out.println(xq);
-    new XQuery(xq).prettyPrint().serialize(ctx, System.out);
+    new Query(xq).prettyPrint().serialize(ctx, System.out);
     System.out.println();
   }
 
@@ -79,7 +79,7 @@ public class Simple {
         let $d := <no>{$i}</no>
         return $d""";
     System.out.println(xq);
-    XQuery q = new XQuery(xq);
+    Query q = new Query(xq);
     Sequence res = q.execute(ctx);
     System.out.println("result sequence size: " + res.size());
     try (final Iter it = res.iterate()) {

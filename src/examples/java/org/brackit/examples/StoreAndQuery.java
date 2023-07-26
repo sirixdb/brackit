@@ -27,11 +27,11 @@
  */
 package org.brackit.examples;
 
-import org.brackit.xquery.BrackitQueryContext;
-import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.XQuery;
-import org.brackit.xquery.jdm.node.NodeStore;
+import org.brackit.query.BrackitQueryContext;
+import org.brackit.query.QueryContext;
+import org.brackit.query.QueryException;
+import org.brackit.query.Query;
+import org.brackit.query.jdm.node.NodeStore;
 
 /**
  * Store existing (dynamic) documents and fragments into
@@ -67,14 +67,14 @@ public class StoreAndQuery {
         </log>
         return bit:store('mydoc.xml', $doc)""";
     System.out.println(query);
-    new XQuery(query).evaluate(ctx);
+    new Query(query).evaluate(ctx);
 
     System.out.println();
     System.out.println("Query stored document:");
     query = "doc('mydoc.xml')/log/@severity/string()";
     System.out.println(query);
     QueryContext ctx2 = new BrackitQueryContext(store); // use same store
-    new XQuery(query).prettyPrint().serialize(ctx2, System.out);
+    new Query(query).prettyPrint().serialize(ctx2, System.out);
     System.out.println();
   }
 
@@ -100,7 +100,7 @@ public class StoreAndQuery {
               </log>
         return bit:store('mydocs.col', $docs)""";
     System.out.println(query);
-    new XQuery(query).evaluate(ctx);
+    new Query(query).evaluate(ctx);
 
     QueryContext ctx2 = new BrackitQueryContext(store);
     System.out.println();
@@ -114,7 +114,7 @@ public class StoreAndQuery {
           <body>{$log/msg/text()}</body>
         </message>""";
     System.out.println(xq2);
-    new XQuery(query).prettyPrint().serialize(ctx2, System.out);
+    new Query(query).prettyPrint().serialize(ctx2, System.out);
     System.out.println();
   }
 }
