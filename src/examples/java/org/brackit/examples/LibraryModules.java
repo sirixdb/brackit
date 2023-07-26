@@ -31,13 +31,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.brackit.query.BrackitQueryContext;
-import org.brackit.query.QueryContext;
-import org.brackit.query.QueryException;
-import org.brackit.query.Query;
-import org.brackit.query.compiler.BaseResolver;
-import org.brackit.query.compiler.CompileChain;
-import org.brackit.query.compiler.ModuleResolver;
+import io.brackit.query.BrackitQueryContext;
+import io.brackit.query.QueryContext;
+import io.brackit.query.QueryException;
+import io.brackit.query.Query;
+import io.brackit.query.compiler.BaseResolver;
+import io.brackit.query.compiler.CompileChain;
+import io.brackit.query.compiler.ModuleResolver;
 
 /**
  * Importing and loading of library modules.

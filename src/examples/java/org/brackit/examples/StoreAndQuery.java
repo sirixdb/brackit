@@ -27,11 +27,11 @@
  */
 package org.brackit.examples;
 
-import org.brackit.query.BrackitQueryContext;
-import org.brackit.query.QueryContext;
-import org.brackit.query.QueryException;
-import org.brackit.query.Query;
-import org.brackit.query.jdm.node.NodeStore;
+import io.brackit.query.BrackitQueryContext;
+import io.brackit.query.QueryContext;
+import io.brackit.query.QueryException;
+import io.brackit.query.Query;
+import io.brackit.query.jdm.node.NodeStore;
 
 /**
  * Store existing (dynamic) documents and fragments into
