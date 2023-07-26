@@ -108,7 +108,7 @@
                             <archive>
                                 <manifest>
                                     <mainClass>
-                                        org.brackit.query.Main
+                                        io.brackit.query.Main
                                     </mainClass>
                                 </manifest>
                             </archive>

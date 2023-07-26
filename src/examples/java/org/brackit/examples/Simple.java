@@ -27,13 +27,13 @@
  */
 package org.brackit.examples;
 
-import org.brackit.query.BrackitQueryContext;
-import org.brackit.query.QueryContext;
-import org.brackit.query.QueryException;
-import org.brackit.query.Query;
-import org.brackit.query.jdm.Item;
-import org.brackit.query.jdm.Iter;
-import org.brackit.query.jdm.Sequence;
+import io.brackit.query.BrackitQueryContext;
+import io.brackit.query.QueryContext;
+import io.brackit.query.QueryException;
+import io.brackit.query.Query;
+import io.brackit.query.jdm.Item;
+import io.brackit.query.jdm.Iter;
+import io.brackit.query.jdm.Sequence;
 
 /**
  * Basic usage scenarios.
