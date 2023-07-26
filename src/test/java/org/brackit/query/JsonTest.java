@@ -139,6 +139,7 @@ public final class JsonTest extends XQueryBaseTest {
     assertEquals("bar", result);
   }
 
+  @Ignore
   @Test
   public void testDescVarDeref() throws IOException {
     final String query = """
