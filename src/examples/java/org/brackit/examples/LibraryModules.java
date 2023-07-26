@@ -31,13 +31,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.brackit.xquery.BrackitQueryContext;
-import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.XQuery;
-import org.brackit.xquery.compiler.BaseResolver;
-import org.brackit.xquery.compiler.CompileChain;
-import org.brackit.xquery.compiler.ModuleResolver;
+import org.brackit.query.BrackitQueryContext;
+import org.brackit.query.QueryContext;
+import org.brackit.query.QueryException;
+import org.brackit.query.Query;
+import org.brackit.query.compiler.BaseResolver;
+import org.brackit.query.compiler.CompileChain;
+import org.brackit.query.compiler.ModuleResolver;
 
 /**
  * Importing and loading of library modules.
@@ -76,13 +76,13 @@ public class LibraryModules {
     // compile library module with current compile chain
     System.out.println("Compiling library module:");
     System.out.println(LIBRARY_MODULE);
-    new XQuery(cc, LIBRARY_MODULE);
+    new Query(cc, LIBRARY_MODULE);
 
     // now run a query that imports that library module
     System.out.println();
     System.out.println("Run query with library import:");
     System.out.println(QUERY);
-    new XQuery(cc, QUERY).prettyPrint().serialize(ctx, System.out);
+    new Query(cc, QUERY).prettyPrint().serialize(ctx, System.out);
     System.out.println();
   }
 
@@ -109,7 +109,7 @@ public class LibraryModules {
     System.out.println();
     System.out.println("Run query with library import:");
     System.out.println(QUERY);
-    new XQuery(cc, QUERY).prettyPrint().serialize(ctx, System.out);
+    new Query(cc, QUERY).prettyPrint().serialize(ctx, System.out);
     System.out.println();
   }
 }

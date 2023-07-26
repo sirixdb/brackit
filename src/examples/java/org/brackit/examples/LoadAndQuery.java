@@ -27,11 +27,11 @@
  */
 package org.brackit.examples;
 
-import org.brackit.xquery.BrackitQueryContext;
-import org.brackit.xquery.QueryContext;
-import org.brackit.xquery.QueryException;
-import org.brackit.xquery.XQuery;
-import org.brackit.xquery.jdm.node.NodeStore;
+import org.brackit.query.BrackitQueryContext;
+import org.brackit.query.QueryContext;
+import org.brackit.query.QueryException;
+import org.brackit.query.Query;
+import org.brackit.query.jdm.node.NodeStore;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -79,7 +79,7 @@ public class LoadAndQuery {
     System.out.println("Loading document:");
     String xq1 = String.format("bit:load('mydoc.xml', '%s')", doc);
     System.out.println(xq1);
-    new XQuery(xq1).evaluate(ctx);
+    new Query(xq1).evaluate(ctx);
 
     // reuse store and query loaded document
     QueryContext ctx2 = new BrackitQueryContext(store);
@@ -87,7 +87,7 @@ public class LoadAndQuery {
     System.out.println("Query loaded document:");
     String xq2 = "doc('mydoc.xml')/log/@severity/string()";
     System.out.println(xq2);
-    new XQuery(xq2).serialize(ctx2, System.out);
+    new Query(xq2).serialize(ctx2, System.out);
     System.out.println();
   }
 
@@ -111,7 +111,7 @@ public class LoadAndQuery {
     System.out.println("Load collection from files:");
     String xq1 = String.format("bit:load('mydocs.col', io:ls('%s', '\\.xml$'))", dir);
     System.out.println(xq1);
-    new XQuery(xq1).evaluate(ctx);
+    new Query(xq1).evaluate(ctx);
 
     // reuse store and query loaded collection
     QueryContext ctx2 = new BrackitQueryContext(store);
@@ -126,7 +126,7 @@ public class LoadAndQuery {
           <body>{$log/msg/text()}</body>
         </message>""";
     System.out.println(xq2);
-    new XQuery(xq2).prettyPrint().serialize(ctx2, System.out);
+    new Query(xq2).prettyPrint().serialize(ctx2, System.out);
     System.out.println();
   }
 
