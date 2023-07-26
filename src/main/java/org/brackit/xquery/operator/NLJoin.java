@@ -50,7 +50,6 @@ public class NLJoin implements Operator {
   final boolean isGCmp;
 
   public NLJoin(Operator l, Operator r, Expr lExpr, Expr rExpr, Cmp cmp, boolean isGCmp, boolean leftJoin) {
-    super();
     this.l = l;
     this.r = r;
     this.rExpr = rExpr;

@@ -95,12 +95,13 @@ public class DerefDescendantExpr implements Expr {
       return item;
     }
 
-    final var iter = resultSequence.iterate();
-    Item item;
-    while ((item = iter.next()) != null) {
-      final var currSeq = processSequence(ctx, tuple, item, index);
+    try (final var iter = resultSequence.iterate()) {
+      final var item = iter.next();
+      if (item != null) {
+        final var currSeq = processSequence(ctx, tuple, item, index);
 
-      return getItem(ctx, tuple, index, currSeq);
+        return getItem(ctx, tuple, index, currSeq);
+      }
     }
 
     return null;
@@ -123,7 +124,7 @@ public class DerefDescendantExpr implements Expr {
     return new LazySequence() {
       @Override
       public Iter iterate() {
-        Iter iter = sequence.iterate();
+        var iter = sequence.iterate();
 
         return new BaseIter() {
           Iter nestedIter;
@@ -154,6 +155,9 @@ public class DerefDescendantExpr implements Expr {
               }
 
               if (resultItem instanceof LazySequence) {
+                if (nestedIter != null) {
+                  nestedIter.close();
+                }
                 nestedIter = resultItem.iterate();
                 resultItem = next();
 
@@ -170,12 +174,10 @@ public class DerefDescendantExpr implements Expr {
 
           @Override
           public void close() {
-          }
-
-          @Override
-          public Split split(int min, int max) throws QueryException {
-            // TODO Auto-generated method stub
-            return null;
+            if (nestedIter != null) {
+              nestedIter.close();
+            }
+            iter.close();
           }
         };
       }
@@ -227,14 +229,14 @@ public class DerefDescendantExpr implements Expr {
         vals.addAll(getSequenceValues(ctx, t, (Array) val, field1));
         continue;
       }
-      if (!(val instanceof Object object)) {
+      if (!(val instanceof Object obj)) {
         continue;
       }
       Item field = field1.evaluateToItem(ctx, t);
       if (field == null) {
         continue;
       }
-      final var sequenceByRecordField = getSequenceByRecordField(object, field);
+      final var sequenceByRecordField = getSequenceByRecordField(obj, field);
       if (sequenceByRecordField != null) {
         vals.add(sequenceByRecordField);
       }

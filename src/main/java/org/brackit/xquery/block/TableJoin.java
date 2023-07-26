@@ -367,7 +367,9 @@ public class TableJoin implements Block {
           Sequence[] tmp = t.array();
           Sequence[] bindings = Arrays.copyOfRange(tmp, offset, tmp.length);
           bindings[0] = null;
-          bindings[1] = ((Node<?>) bindings[1].iterate().next()).getFirstChild().getFirstChild().getValue();
+          try (var iter = bindings[1].iterate()) {
+            bindings[1] = ((Node<?>) iter.next()).getFirstChild().getFirstChild().getValue();
+          }
           table.add(keys, bindings, pos++);
         }
       }
