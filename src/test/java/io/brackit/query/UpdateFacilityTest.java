@@ -115,7 +115,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
   @Test
   public void transformModifyFirst() {
     Sequence res = new Query(
-                              "copy $c := <n><a/><a/></n> modify for $a in $c//a return replace node $a with <b/> return $c").execute(ctx);
+                             "copy $c := <n><a/><a/></n> modify for $a in $c//a return replace node $a with <b/> return $c").execute(ctx);
     Node<?> a = ctx.getNodeFactory().element(new QNm("n"));
     a.append(Kind.ELEMENT, new QNm("b"), null);
     a.append(Kind.ELEMENT, new QNm("b"), null);
@@ -135,7 +135,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
   @Test
   public void transformTestTwoCopyVars() {
     Sequence res = new Query(
-                              "let $f := <a att='1'><b/></a> return copy $m := $f, $n := $f, $o := $f modify delete node $n/b return ($m, $n)").execute(ctx);
+                             "let $f := <a att='1'><b/></a> return copy $m := $f, $n := $f, $o := $f modify delete node $n/b return ($m, $n)").execute(ctx);
     Node<?> a1 = ctx.getNodeFactory().element(new QNm("a"));
     a1.setAttribute(new QNm("att"), new Una("1"));
     a1.append(Kind.ELEMENT, new QNm("b"), null);

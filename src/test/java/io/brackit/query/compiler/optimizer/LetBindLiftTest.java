@@ -186,10 +186,10 @@ public class LetBindLiftTest extends XQueryBaseTest {
 
   @Test
   public void doubledNestedWithOrderBy() {
-    Sequence res = new Query("for $z in 1 " + "let $x := " + "for $a in (1 to 5) " + "let $b := "
-        + "	for $c in (2,4) " + "	let $f := if ($c) then (2,4) else () " + "	order by $c " + "	let $d := "
-        + "		for $e in $f " + "		let $g := 'ignore' " + "		where $c = $a " + "		return $e " + "	return $d "
-        + "return ($a,$b) " + "return $x").execute(ctx);
+    Sequence res = new Query("for $z in 1 " + "let $x := " + "for $a in (1 to 5) " + "let $b := " + "	for $c in (2,4) "
+        + "	let $f := if ($c) then (2,4) else () " + "	order by $c " + "	let $d := " + "		for $e in $f "
+        + "		let $g := 'ignore' " + "		where $c = $a " + "		return $e " + "	return $d " + "return ($a,$b) "
+        + "return $x").execute(ctx);
     ResultChecker.dCheck(intSequence(1, 2, 2, 4, 3, 4, 2, 4, 5), res);
   }
 

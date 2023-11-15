@@ -111,28 +111,19 @@ public final class Functions {
 
     // See XQuery Functions and Operators 3 The Error Function
     predefine(new Error(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "error"),
-                        new Signature(new SequenceType(AnyItemType.ANY,
-                                                                                      Cardinality.Zero))));
+                        new Signature(new SequenceType(AnyItemType.ANY, Cardinality.Zero))));
     predefine(new Error(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "error"),
-                        new Signature(new SequenceType(AnyItemType.ANY,
-                                                                                      Cardinality.Zero),
-                                                                     new SequenceType(AtomicType.QNM,
-                                                                                      Cardinality.One))));
+                        new Signature(new SequenceType(AnyItemType.ANY, Cardinality.Zero),
+                                      new SequenceType(AtomicType.QNM, Cardinality.One))));
     predefine(new Error(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "error"),
-                        new Signature(new SequenceType(AnyItemType.ANY,
-                                                                                      Cardinality.Zero),
-                                                                     new SequenceType(AtomicType.QNM,
-                                                                                      Cardinality.ZeroOrOne),
-                                                                     new SequenceType(AtomicType.STR,
-                                                                                      Cardinality.One))));
+                        new Signature(new SequenceType(AnyItemType.ANY, Cardinality.Zero),
+                                      new SequenceType(AtomicType.QNM, Cardinality.ZeroOrOne),
+                                      new SequenceType(AtomicType.STR, Cardinality.One))));
     predefine(new Error(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "error"),
-                        new Signature(new SequenceType(AnyItemType.ANY,
-                                                                                      Cardinality.Zero),
-                                                                     new SequenceType(AtomicType.QNM,
-                                                                                      Cardinality.ZeroOrOne),
-                                                                     new SequenceType(AtomicType.STR, Cardinality.One),
-                                                                     new SequenceType(AnyItemType.ANY,
-                                                                                      Cardinality.ZeroOrMany))));
+                        new Signature(new SequenceType(AnyItemType.ANY, Cardinality.Zero),
+                                      new SequenceType(AtomicType.QNM, Cardinality.ZeroOrOne),
+                                      new SequenceType(AtomicType.STR, Cardinality.One),
+                                      new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany))));
 
     // See XQuery Functions and Operators 4 Trace Function
     predefine(new Trace(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "trace"),

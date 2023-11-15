@@ -51,8 +51,7 @@ public class JoinTest extends XQueryBaseTest {
 
   @Test
   public void simpleNestedFor() {
-    Sequence res = new Query("for $a in (1,2,3) " + "for $b in (2,3,4) " + "where $a = $b " + "return $a").execute(
-                                                                                                                    ctx);
+    Sequence res = new Query("for $a in (1,2,3) " + "for $b in (2,3,4) " + "where $a = $b " + "return $a").execute(ctx);
     ResultChecker.dCheck(intSequence(2, 3), res);
   }
 

@@ -626,42 +626,42 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnMatchesNoMatchSingleLine() {
     Sequence result = new Query(
-                                 "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'Kaum.*krähen')").execute(ctx);
+                                "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'Kaum.*krähen')").execute(ctx);
     ResultChecker.dCheck(Bool.FALSE, result);
   }
 
   @Test
   public void fnMatchesMatchLineSpanning() {
     Sequence result = new Query(
-                                 "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'Kaum.*krähen', 's')").execute(ctx);
+                                "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'Kaum.*krähen', 's')").execute(ctx);
     ResultChecker.dCheck(Bool.TRUE, result);
   }
 
   @Test
   public void fnMatchesNoMatchWholeInput() {
     Sequence result = new Query(
-                                 "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', '^Kaum.*gesehen,$')").execute(ctx);
+                                "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', '^Kaum.*gesehen,$')").execute(ctx);
     ResultChecker.dCheck(Bool.FALSE, result);
   }
 
   @Test
   public void fnMatchesMatchWholeLine() {
     Sequence result = new Query(
-                                 "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', '^Kaum.*gesehen,$', 'm')").execute(ctx);
+                                "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', '^Kaum.*gesehen,$', 'm')").execute(ctx);
     ResultChecker.dCheck(Bool.TRUE, result);
   }
 
   @Test
   public void fnMatchesIgnoreCase() {
     Sequence result = new Query(
-                                 "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'kaum', 'i')").execute(ctx);
+                                "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'kaum', 'i')").execute(ctx);
     ResultChecker.dCheck(Bool.TRUE, result);
   }
 
   @Test
   public void fnMatchesIgnoreWhitespace() {
     Sequence result = new Query(
-                                 "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'K aum', 'x')").execute(ctx);
+                                "fn:matches('Kaum hat dies der Hahn gesehen,\nFängt er auch schon an zu krähen:', 'K aum', 'x')").execute(ctx);
     ResultChecker.dCheck(Bool.TRUE, result);
   }
 
@@ -1263,29 +1263,29 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnAdjustDateTimeToTimezoneEmptyTimezone() {
-    Sequence result = new Query("fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'), ())")
-                                                                                                                .execute(ctx);
+    Sequence result = new Query("fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'), ())").execute(
+                                                                                                                        ctx);
     ResultChecker.dCheck(new io.brackit.query.atomic.DateTime("2002-03-07T10:00:00"), result);
   }
 
   @Test
   public void fnAdjustDateTimeToTimezone() {
     Sequence result = new Query(
-                                 "fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'), xs:dayTimeDuration('PT10H'))").execute(ctx);
+                                "fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'), xs:dayTimeDuration('PT10H'))").execute(ctx);
     ResultChecker.dCheck(new io.brackit.query.atomic.DateTime("2002-03-08T01:00:00+10:00"), result);
   }
 
   @Test
   public void fnAdjustDateTimeToTimezoneWithoutTimezone() {
     Sequence result = new Query(
-                                 "fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00'), xs:dayTimeDuration('PT10H'))").execute(ctx);
+                                "fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00'), xs:dayTimeDuration('PT10H'))").execute(ctx);
     ResultChecker.dCheck(new io.brackit.query.atomic.DateTime("2002-03-07T10:00:00+10:00"), result);
   }
 
   @Test
   public void fnAdjustDateTimeToTimezoneImplicitTimezone() {
     Sequence result = new Query("fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'))").execute(
-                                                                                                                     ctx);
+                                                                                                                    ctx);
     ResultChecker.dCheck(new DateTime("2002-03-07T16:00:00+01:00"), result);
   }
 
@@ -1313,15 +1313,15 @@ public class FnTest extends XQueryBaseTest {
 
   @Test
   public void fnAdjustDateToTimezone() {
-    Sequence result = new Query(
-                                 "fn:adjust-date-to-timezone(xs:date('2002-03-07-05:00'), xs:dayTimeDuration('-PT10H'))").execute(ctx);
+    Sequence result = new Query("fn:adjust-date-to-timezone(xs:date('2002-03-07-05:00'), xs:dayTimeDuration('-PT10H'))")
+                                                                                                                        .execute(ctx);
     ResultChecker.dCheck(new Date("2002-03-06-10:00"), result);
   }
 
   @Test
   public void fnAdjustDateToTimezoneWithoutTimezone() {
     Sequence result = new Query("fn:adjust-date-to-timezone(xs:date('2002-03-07'), xs:dayTimeDuration('-PT10H'))")
-                                                                                                                   .execute(ctx);
+                                                                                                                  .execute(ctx);
     ResultChecker.dCheck(new Date("2002-03-07-10:00"), result);
   }
 
@@ -1356,14 +1356,14 @@ public class FnTest extends XQueryBaseTest {
   @Test
   public void fnAdjustTimeToTimezone() {
     Sequence result = new Query("fn:adjust-time-to-timezone(xs:time('10:00:00-05:00'), xs:dayTimeDuration('PT10H'))")
-                                                                                                                      .execute(ctx);
+                                                                                                                     .execute(ctx);
     ResultChecker.dCheck(new Time("01:00:00+10:00"), result);
   }
 
   @Test
   public void fnAdjustTimeToTimezoneWithoutTimezone() {
-    Sequence result = new Query("fn:adjust-time-to-timezone(xs:time('10:00:00'), xs:dayTimeDuration('PT10H'))")
-                                                                                                                .execute(ctx);
+    Sequence result = new Query("fn:adjust-time-to-timezone(xs:time('10:00:00'), xs:dayTimeDuration('PT10H'))").execute(
+                                                                                                                        ctx);
     ResultChecker.dCheck(new Time("10:00:00+10:00"), result);
   }
 

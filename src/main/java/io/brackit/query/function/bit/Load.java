@@ -109,8 +109,7 @@ public class Load extends AbstractFunction {
     }
   }
 
-  private void add(NodeStore store, NodeCollection<?> coll, Sequence resources)
-      throws DocumentException, IOException {
+  private void add(NodeStore store, NodeCollection<?> coll, Sequence resources) throws DocumentException, IOException {
     if (resources instanceof Atomic) {
       String r = ((Atomic) resources).stringValue();
       coll.add(new DocumentParser(URIHandler.getInputStream(r)));
@@ -124,8 +123,7 @@ public class Load extends AbstractFunction {
     }
   }
 
-  private void create(NodeStore store, String name, Sequence resources)
-      throws DocumentException, IOException {
+  private void create(NodeStore store, String name, Sequence resources) throws DocumentException, IOException {
     if (resources instanceof Atomic) {
       String r = ((Atomic) resources).stringValue();
       store.create(name, new DocumentParser(URIHandler.getInputStream(r)));

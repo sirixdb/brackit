@@ -257,7 +257,9 @@ public abstract class NodeTest<E extends io.brackit.query.jdm.node.Node<E>> exte
       Text text = (Text) domNode;
 
       Assert.assertEquals(node + " is of type text : \"" + text.getNodeValue() + "\"", Kind.TEXT, node.getKind());
-      Assert.assertEquals(String.format("Text of node %s", node), text.getNodeValue().trim(), node.getValue().stringValue());
+      Assert.assertEquals(String.format("Text of node %s", node),
+                          text.getNodeValue().trim(),
+                          node.getValue().stringValue());
     } else {
       throw new DocumentException("Unexpected dom node: %s", domNode.getClass());
     }
@@ -332,7 +334,9 @@ public abstract class NodeTest<E extends io.brackit.query.jdm.node.Node<E>> exte
       Text text = (Text) domNode;
 
       Assert.assertEquals(node + " is of type text", Kind.TEXT, node.getKind());
-      Assert.assertEquals(String.format("Text of node %s", node), text.getNodeValue().trim(), node.getValue().stringValue());
+      Assert.assertEquals(String.format("Text of node %s", node),
+                          text.getNodeValue().trim(),
+                          node.getValue().stringValue());
     } else {
       throw new DocumentException("Unexpected dom node: %s", domNode.getClass());
     }
@@ -372,9 +376,10 @@ public abstract class NodeTest<E extends io.brackit.query.jdm.node.Node<E>> exte
       E attribute = node.getAttribute(new QNm(domAttribute.getName()));
       assertNotNull(String.format("Attribute \"%s\" of node %s", domAttribute.getName(), node), attribute);
       Assert.assertEquals(attribute + " is of type attribute", Kind.ATTRIBUTE, attribute.getKind());
-      Assert.assertEquals(String.format("Value of attribute \"%s\" (%s) of node %s", domAttribute.getName(), attribute, node),
-                          domAttribute.getValue(),
-                          attribute.getValue().stringValue());
+      Assert.assertEquals(String.format("Value of attribute \"%s\" (%s) of node %s",
+                                        domAttribute.getName(),
+                                        attribute,
+                                        node), domAttribute.getValue(), attribute.getValue().stringValue());
     }
   }
 
