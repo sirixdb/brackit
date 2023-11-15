@@ -109,21 +109,21 @@ public class FLWORTest extends XQueryBaseTest {
   @Test
   public void forExprTwoLetBindingsWithWhereClause() throws Exception {
     Sequence result = new Query("for $a in (1,2,3) let $b:=4 let $c:= 1 where $a + $b + $c > 7 return $a + $b + $c")
-                                                                                                                     .execute(ctx);
+                                                                                                                    .execute(ctx);
     ResultChecker.dCheck(new Int32(8), result);
   }
 
   @Test
   public void forExprTwoLetBindingsWithOrderByRunVar() throws Exception {
     Sequence result = new Query("for $a in (3,2,1) let $b:=4 let $c:= 1 order by $a ascending return $a + $b + $c")
-                                                                                                                    .execute(ctx);
+                                                                                                                   .execute(ctx);
     ResultChecker.dCheck(intSequence(6, 7, 8), result);
   }
 
   @Test
   public void forExprTwoLetBindingsWithOrderByLetVarAndRunVar() throws Exception {
     Sequence result = new Query("for $a in (3,2,1) let $b:=4 let $c:= 1 order by $c, $a ascending return $a + $b + $c")
-                                                                                                                        .execute(ctx);
+                                                                                                                       .execute(ctx);
     ResultChecker.dCheck(intSequence(6, 7, 8), result);
   }
 
@@ -154,14 +154,14 @@ public class FLWORTest extends XQueryBaseTest {
   @Test
   public void variableShadowingWithNormalize() throws Exception {
     Sequence result = new Query("for $a in (1,2,3) for $b in (for $a in (4,5,6) return $a) return $a + $b").execute(
-                                                                                                                     ctx);
+                                                                                                                    ctx);
     ResultChecker.dCheck(intSequence(5, 6, 7, 6, 7, 8, 7, 8, 9), result);
   }
 
   @Test
   public void nestedForWithAnotherForInNestedIn() throws Exception {
     Sequence result = new Query("for $a in (1,2,3) return for $b in (for $c in (4,5,6) return $c) return $a + $b")
-                                                                                                                   .execute(ctx);
+                                                                                                                  .execute(ctx);
     ResultChecker.dCheck(intSequence(5, 6, 7, 6, 7, 8, 7, 8, 9), result);
   }
 
@@ -174,14 +174,14 @@ public class FLWORTest extends XQueryBaseTest {
   @Test
   public void sequenceOfLetExpressions() throws Exception {
     Sequence result = new Query("let $a := (1,2,3) let $b := (4,5,6) let $c := (7,8,9) return ($a, $b, $c) ").execute(
-                                                                                                                       ctx);
+                                                                                                                      ctx);
     ResultChecker.dCheck(intSequence(1, 2, 3, 4, 5, 6, 7, 8, 9), result);
   }
 
   @Test
   public void sequenceOfLetAndForExpressions() throws Exception {
     Sequence result = new Query(
-                                 "let $a := (1,2,3) let $b := (4,5,6) let $c := (7,8,9) for $d in $a for $e in $b for $f in $c let $g := ($d + $f) return $d + $d + $f ").execute(ctx);
+                                "let $a := (1,2,3) let $b := (4,5,6) let $c := (7,8,9) for $d in $a for $e in $b for $f in $c let $g := ($d + $f) return $d + $d + $f ").execute(ctx);
     Sequence ints = intSequence(9,
                                 10,
                                 11,

@@ -114,8 +114,7 @@ public class Store extends AbstractFunction {
     }
   }
 
-  private void create(NodeStore store, String name, Sequence nodes)
-      throws DocumentException {
+  private void create(NodeStore store, String name, Sequence nodes) throws DocumentException {
     if (nodes instanceof Node<?> n) {
       store.create(name, new NodeStoreParser(n));
     } else {

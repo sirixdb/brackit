@@ -203,8 +203,8 @@ public class LibraryModulesTest extends XQueryBaseTest {
     };
 
     final Query xq = new Query(chain,
-                               "" + "import module namespace left='left'; "
-                                     + "import module namespace right='right'; " + "right:foo() + left:foo()");
+                               "" + "import module namespace left='left'; " + "import module namespace right='right'; "
+                                   + "right:foo() + left:foo()");
     Sequence result = xq.execute(ctx);
     ResultChecker.check(new Int32(3), result);
   }

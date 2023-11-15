@@ -59,14 +59,14 @@ public class PrologDeclarationTest extends XQueryBaseTest {
   @Test
   public void declareRecursiveFunction() {
     Sequence res = new Query(
-                              "declare function local:countdown($a as xs:integer) { if ($a > 0) then ($a, local:countdown($a - 1)) else $a }; local:countdown(3)").execute(ctx);
+                             "declare function local:countdown($a as xs:integer) { if ($a > 0) then ($a, local:countdown($a - 1)) else $a }; local:countdown(3)").execute(ctx);
     ResultChecker.check(new ItemSequence(new Int32(3), new Int32(2), new Int32(1), new Int32(0)), res);
   }
 
   @Test
   public void declareIndirectRecursiveFunctions() {
     Sequence res = new Query(
-                              "declare function local:a($a as xs:integer) { if ($a > 0) then ('a', $a, local:b($a - 1)) else ('a', $a) }; declare function local:b($b as xs:integer) { if ($b > 0) then ('b', $b, local:a($b - 1)) else ('b', $b) }; local:a(3)").execute(ctx);
+                             "declare function local:a($a as xs:integer) { if ($a > 0) then ('a', $a, local:b($a - 1)) else ('a', $a) }; declare function local:b($b as xs:integer) { if ($b > 0) then ('b', $b, local:a($b - 1)) else ('b', $b) }; local:a(3)").execute(ctx);
     ResultChecker.check(new ItemSequence(new Str("a"),
                                          new Int32(3),
                                          new Str("b"),
@@ -96,7 +96,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
   @Test
   public void twoVariableDeclarationsWithAccess() {
     Sequence result = new Query(
-                                 "declare variable $x := 1; declare variable $y := $x + 2; for $a in (1,2,3) return $a + $x + $y").execute(ctx);
+                                "declare variable $x := 1; declare variable $y := $x + 2; for $a in (1,2,3) return $a + $x + $y").execute(ctx);
     ResultChecker.dCheck(new ItemSequence(new Int32(5), new Int32(6), new Int32(7)), result);
   }
 
@@ -159,7 +159,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
   @Test
   public void declareDefaultFunctionNS() {
     Sequence result = new Query(
-                                 "declare default function namespace \"http://brackit.org/foo\"; declare function inc($i as xs:integer) { $i + 1 }; inc(1)").execute(ctx);
+                                "declare default function namespace \"http://brackit.org/foo\"; declare function inc($i as xs:integer) { $i + 1 }; inc(1)").execute(ctx);
     ResultChecker.dCheck(new Int(2), result);
   }
 

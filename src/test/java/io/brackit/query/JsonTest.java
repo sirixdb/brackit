@@ -60,16 +60,15 @@ public final class JsonTest extends XQueryBaseTest {
   private static final String USER_PROFILES_JSON =
       """
           {"first_name":"Sammy","last_name":"Shark","location":"Ocean","websites":[{"description":"work","URL":"https://www.digitalocean.com/"},{"description":"tutorials","URL":"https://www.digitalocean.com/community/tutorials"}],"social_media":[{"description":"twitter","link":"https://twitter.com/digitalocean"},{"description":"facebook","link":"https://www.facebook.com/DigitalOceanCloudHosting"},{"description":"github","link":"https://github.com/digitalocean"}]}
-          """
-         .strip();
+          """.strip();
 
   @Test
   public void testNoJsoniqUsingXQuerySyntax() throws IOException {
-    final var query ="""
-      xquery version "3.0";
-      let $xml := <foo>bar</foo>
-      return $xml/foo[./text() eq 'bar']
-      """;
+    final var query = """
+        xquery version "3.0";
+        let $xml := <foo>bar</foo>
+        return $xml/foo[./text() eq 'bar']
+        """;
     final var result = query(query);
     assertEquals("", result);
   }
