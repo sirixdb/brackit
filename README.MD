@@ -63,7 +63,7 @@ or use the following dependencies in your Maven or Gradle project if you want to
 
 ## Maven / Gradle
 
-At this stage of development, you should use the latest SNAPSHOT artifacts from [the OSS snapshot repository](https://oss.sonatype.org/content/repositories/snapshots/io/sirix/brackit/) to get the most recent changes. You should use the most recent Maven/Gradle versions as we'll update to the newest Java versions.
+At this stage of development, you should use the latest SNAPSHOT artifacts from [the OSS snapshot repository](https://oss.sonatype.org/content/repositories/snapshots/io/sirix/brackit/) to get the most recent changes. You should use the most recent Maven/Gradle versions, as we'll update to the newest Java versions.
 
 Just add the following repository section to your POM or build.gradle file:
 
@@ -96,21 +96,19 @@ repository {
 <dependency>
   <groupId>io.sirix</groupId>
   <artifactId>brackit</artifactId>
-  <version>0.3-SNAPSHOT</version>
+  <version>0.5-SNAPSHOT</version>
 </dependency>
 ```
 
 ```groovy
-compile group:'io.sirix', name:'brackit', version:'0.3-SNAPSHOT'
+compile group:'io.sirix', name:'brackit', version:'0.5-SNAPSHOT'
 ```
 
 ## What's Brackit?
 
-Brackit is a query engine, which either could be used by different storage/database backends whereas common optimizations are shared as for instance set-oriented processing and hash-joins of FLWOR-clauses. Furthermore, in-memory stores for both processing XML and JSON are supported, thus brackit can simply be used as an in-memory query processor for ad-hoc analysis.
+Brackit is a query engine that different storage/database backends could use, whereas common optimizations are shared, such as set-oriented processing and hash-joins of FLWOR-clauses. Furthermore, in-memory stores for both processing XML and JSON are supported. Thus, brackit can be used as an in-memory query processor for ad-hoc analysis.
 
-At the moment we support XQuery 1.0 including library module support, the XQuery Update Facility 1.0 and some features of XQuery 3.0 like the FLWOR clauses group by and count.
-
-As a speciality, Brackit comes with extensions to work natively with JSON-style arrays and objects mostly as in JSONiq, also supporting all the update statements of JSONiq. Furthermore array index slices as in Python are supported. Another extension allows you to use a special statement syntax for writing query programs in a script-like style.
+Brackit implements JSONiq to query JSON, supporting all the update statements of JSONiq. Furthermore, array index slices, as in Python, are supported. Another extension allows you to use a special statement syntax for writing query programs in a script-like style.
 
 ## Jupyter Notebook / Tutorial
 
@@ -120,13 +118,13 @@ As a speciality, Brackit comes with extensions to work natively with JSON-style 
 
 ### Compiling from source
 
-To build and package change into the root directy of the project and run Maven:
+To build and package change into the root directory of the project and run Maven:
 
 ```
 mvn package
 ```
 
-To skip running the unit tests run instead.
+To skip running the unit tests, execute instead:
 
 ```
 mvn -DskipTests package
@@ -136,7 +134,7 @@ That's all. You find the ready-to-use jar file(s) in the subdirectory _./target_
 
 Step 3: Dependency
 
-If you want to use brackit in your other maven- or gradle-based projects, please have a look into the "Maven / Gradle" section.
+If you want to use brackit in your other maven- or gradle-based projects, please look into the "Maven / Gradle" section.
 
 ## First Steps
 
@@ -148,7 +146,7 @@ Brackit ships with a rudimentary command line interface to run ad-hoc queries. I
 java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar
 ```
 
-where _x.y.z_ is the version number of brackit.
+Where _x.y.z_ is the version number of brackit.
 
 #### Simple queries
 
@@ -184,7 +182,7 @@ Querying documents is as simple as running any other query.
 
 The default "storage" module resolves any referred documents accessed by the XQuery functions `fn:doc()` and `fn:collection()` at query runtime (XML).
 
-To query a document in your local filesytem simply use the path to this document in the fn:doc() function:
+To query a document in your local filesystem simply use the path to this document in the fn:doc() function:
 
 ```java
 java -jar brackit-x.y.z-SNAPSHOT-with-dependencies.jar -q "doc('products.xml')//product[@prodno = '4711']"
@@ -201,7 +199,7 @@ For JSON there's the function `json-doc()`. Let's assume we have the following s
 }
 ```
 
-We can query this first dereferencing the "products" object field with `.`, then unbox the array value via `[]` and add a filter where `$$` denotes the current context item and `{fieldName}` projects the resulting object into a new object, which is returned.
+We can query this first by dereferencing the "products" object field with `.`, then unbox the array value via `[]` and add a filter where `$$` denotes the current context item and `{fieldName}` projects the resulting object into a new object, which is returned.
 
 ```java
 java -jar brackit.jar -q "json-doc('products.json').products[][$$.productno eq 4711]{product}"
@@ -236,24 +234,22 @@ String query = """
 QueryContext ctx = new QueryContext();
 
 // compile the query
-XQuery xq = new XQuery(query);
+Query query = new Query(query);
 
 // enable formatted output
-xq.setPrettyPrint(true);
+query.setPrettyPrint(true);
 
 // run the query and write the result to System.out
-xq.serialize(ctx, System.out);
+query.serialize(ctx, System.out);
 ```
 
 ## JSON
-
-Brackit features a seamless integration of JSON-like objects and arrays directly at the language level.
 
 You can easily mix arbitrary XML and JSON data in a single query or simply use brackit to convert data from one format into the other. This allows you to get the most out of your data.
 
 The language extension allows you to construct and operate JSON data directly; additional utility functions help you to perform typical tasks.
 
-Everything is designed to simplify joint processing of XDM and JSON and to maximize the freedom of developers. Thus, our extension effectively supports some sort of superset of XDM and JSON. That means, it is possible to create arrays and objects which do not strictly conform to the JSON RFC. It's up to you to decide how you want to have your data look like!
+Everything is designed to simplify the joint processing of XML and JSON and to maximize the freedom of developers. It's up to you to decide how you want your data to look like!
 
 ### Arrays
 
@@ -263,11 +259,7 @@ Arrays can be created using an extended version of the standard JSON array synta
 (: statically create an array with 3 elements of different types: 1, 2.0, "3" :)
 [ 1, 2.0, "3" ]
 
-(: for compliance with the JSON syntax we have to use functions to create the values 'true', 'false', and 'null'. They are translated into the XML values xs:bool('true'), xs:bool('false') and an atomic null value.
-:)
-[ true(), false(), jn:null() ]
-
-(: as that's cumbersome per default Brackit will parse the tokens 'true', 'false' to the XDM boolean values and 'null' to the new type js:null. :)
+(: per default, Brackit will parse the tokens 'true', and 'false' to the XDM boolean values and 'null' to the new type js:null. :)
 [ true, false, null ]
 
 (: is different to :)
@@ -363,7 +355,7 @@ let $r := {"x": 1, "y": 2, "z": (3, 4) } return bit:values($r) (: yields the arr
 
 ### JSONiq update expressions
 
-Brackit supports all defined update statements in the JSONiq specification. It makes sense to implement these in a data store backend as for instance in SirixDB.
+Brackit supports all defined update statements in the JSONiq specification. It makes sense to implement these in a data store backend for instance in SirixDB.
 
 ```XQuery
 (: rename a field in an object :)
@@ -407,7 +399,7 @@ let $s := io:read('/data/sample.json') return json:parse($s)
 **IMPORTANT NOTE:**
 
 **
-This extension is only a syntax extension to simplify programmer's life when writing XQuery. It is neither a subset of nor an equivalent to the XQuery Scripting Extension 1.0.
+This extension is only a syntax extension to simplify the programmer's life when writing JSONiq. It is neither a subset of nor an equivalent to the XQuery Scripting Extension 1.0.
 **
 
 Almost any non-trivial data processing task consists of a series of consecutive steps. Unfortunately, the functional style of XQuery makes it a bit cumbersome to write code in a convenient, script-like fashion. Instead, the standard way to express a linear multi-step process (with access to intermediate results) is to write a FLWOR expression with a series of let-clauses.
