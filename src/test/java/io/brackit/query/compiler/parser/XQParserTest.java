@@ -46,58 +46,58 @@ public class XQParserTest extends XQueryBaseTest {
 
   @Test
   public void emptyArray() {
-    new XQParser("[]").parse();
+    new JsoniqParser("[]").parse();
   }
 
   @Test
   public void emptyRecord() {
-    new XQParser("{}").parse();
+    new JsoniqParser("{}").parse();
   }
 
   @Test
   public void ncname() {
-    new XQParser("declare").parse();
+    new JsoniqParser("declare").parse();
   }
 
   @Test
   public void qname() {
-    new XQParser("declare").parse();
+    new JsoniqParser("declare").parse();
   }
 
   @Test
   public void emptyElement() {
-    new XQParser("<a/>").parse();
+    new JsoniqParser("<a/>").parse();
   }
 
   @Test
   public void nestedElements() {
-    new XQParser("<a><b></b></a>").parse();
+    new JsoniqParser("<a><b></b></a>").parse();
   }
 
   @Test
   public void emptyElementWithAttribute() {
-    new XQParser("<a b='a'/>").parse();
+    new JsoniqParser("<a b='a'/>").parse();
   }
 
   @Test
   public void elementWithAttribute() {
-    new XQParser("<a b='a'></a>").parse();
+    new JsoniqParser("<a b='a'></a>").parse();
   }
 
   @Test
   public void elementsWithComplexContent() {
-    new XQParser("<a>1&amp;<b/>12 {'aha'}soso<c/></a>").parse();
+    new JsoniqParser("<a>1&amp;<b/>12 {'aha'}soso<c/></a>").parse();
   }
 
   @Test
   public void elementWithComplexContent2() {
-    new XQParser("string(<elem>{'a'} a {1,2,3} b <![CDATA[ b ]]> c {'a', 'b'}</elem>)").parse();
+    new JsoniqParser("string(<elem>{'a'} a {1,2,3} b <![CDATA[ b ]]> c {'a', 'b'}</elem>)").parse();
   }
 
   @Test
   public void illegallyNestedElements() {
     try {
-      new XQParser("<a><b></a>").parse();
+      new JsoniqParser("<a><b></a>").parse();
     } catch (QueryException e) {
       assertEquals("illegal error code", ErrorCode.ERR_PARSING_ERROR, e.getCode());
     }
@@ -105,46 +105,46 @@ public class XQParserTest extends XQueryBaseTest {
 
   @Test
   public void nestedForBindNameOverlap() {
-    new XQParser("for $a in for $a in 1 return $a return $a").parse();
+    new JsoniqParser("for $a in for $a in 1 return $a return $a").parse();
   }
 
   @Test
   public void nestedForBindRename() {
-    new XQParser("for $a in 1 return for $a in 2 return for $a in $a return $a").parse();
+    new JsoniqParser("for $a in 1 return for $a in 2 return for $a in $a return $a").parse();
   }
 
   @Test
   public void weirdPart2() {
-    new XQParser("else- +-++-**-* instance  of element(*)* * * **---++div- div -div").parse();
+    new JsoniqParser("else- +-++-**-* instance  of element(*)* * * **---++div- div -div").parse();
   }
 
   @Test
   public void weird() throws Exception {
-    new XQParser(Files.readString(PARSER.resolve("weird.xq"))).parse();
+    new JsoniqParser(Files.readString(PARSER.resolve("weird.xq"))).parse();
   }
 
   @Test
   public void constructedAttributeWithEmptyContentSequence() {
-    new XQParser("attribute {'foo'} {}").parse();
+    new JsoniqParser("attribute {'foo'} {}").parse();
   }
 
   @Test
   public void constructedPI() {
-    new XQParser("processing-instruction XmL {'pi'}").parse();
+    new JsoniqParser("processing-instruction XmL {'pi'}").parse();
   }
 
   @Test
   public void onlyWSbetweenToken() {
-    new XQParser("for\n$\na in 1 return $a").parse();
+    new JsoniqParser("for\n$\na in 1 return $a").parse();
   }
 
   @Test
   public void parentAxis() {
-    new XQParser("a/../b").parse();
+    new JsoniqParser("a/../b").parse();
   }
 
   @Test
   public void stringLiteralWithEntityReference() {
-    new XQParser("\"a string &amp;\"").parse();
+    new JsoniqParser("\"a string &amp;\"").parse();
   }
 }

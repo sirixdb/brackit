@@ -229,7 +229,7 @@ public final class JsonTest extends XQueryBaseTest {
     final String query =
         """
             let $array := [true,false,"true",{"foo":["tada",{"baz":["yes","no",null],"bar": null, "foobar":"text"},{"baz":true}]}]
-            let $sequence := $array[].foo[[1]]{baz,foobar}
+            let $sequence := $array[].foo[1]{baz,foobar}
             let $resultArray := for $item in bit:values($sequence)
                                 where $item instance of array()
                                 return $item
@@ -430,7 +430,7 @@ public final class JsonTest extends XQueryBaseTest {
   public void arrayIndex() throws IOException {
     final String query = """
           let $array := [{"foo": 0},"bar",{"baz":true()}]
-          return $array[[1]]
+          return $array[1]
         """;
     final var result = query(query);
     assertEquals("bar", result);
@@ -440,7 +440,7 @@ public final class JsonTest extends XQueryBaseTest {
   public void negativeArrayIndex() throws IOException {
     final String query = """
           let $array := [{"foo": 0},"bar",{"baz":true}]
-          return $array[[-1]]
+          return $array[-1]
         """;
     final var result = query(query);
     assertEquals("{\"baz\":true}", result);
@@ -450,7 +450,7 @@ public final class JsonTest extends XQueryBaseTest {
   public void negativeArrayIndex1() throws IOException {
     final String query = """
           let $array := [{"foo": 0},"bar",{"baz":true}]
-          return $array[[-2]]
+          return $array[-2]
         """;
     final var result = query(query);
     assertEquals("bar", result);
@@ -460,7 +460,7 @@ public final class JsonTest extends XQueryBaseTest {
   public void negativeArrayIndex2() throws IOException {
     final String query = """
           let $array := [{"foo": 0},"bar",{"baz":true}]
-          return $array[[-3]]
+          return $array[-3]
         """;
     final var result = query(query);
     assertEquals("{\"foo\":0}", result);
@@ -470,7 +470,7 @@ public final class JsonTest extends XQueryBaseTest {
   public void negativeArrayIndex3() throws IOException {
     final String query = """
           let $array := [{"foo": 0},"bar",{"baz":true}]
-          return $array[[-1*-1]]
+          return $array[-1*-1]
         """;
     final var result = query(query);
     assertEquals("bar", result);
@@ -488,7 +488,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void derefExprWithNegativeArrayIndexExpr() throws IOException {
     final String query = """
-          [true,false,"true",{"foo":["tada",{"baz":"yes"},{"baz":true}]}][].foo[[-1]].baz
+          [true,false,"true",{"foo":["tada",{"baz":"yes"},{"baz":true}]}][].foo[-1].baz
         """;
     final var result = query(query);
     assertEquals("true", result);
@@ -497,7 +497,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayUnboxing2() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
           return $array[]
         """;
     final var result = query(query);
@@ -507,8 +507,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayUnboxing3() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[]
         """;
     final var result = query(query);
     assertEquals("{\"foo\":0} bar {\"baz\":true}", result);
@@ -518,7 +518,7 @@ public final class JsonTest extends XQueryBaseTest {
   public void arrayIndexSlice1() throws IOException {
     final String query = """
           let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[0:1]]
+          return $array[0:1]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0}]", result);
@@ -551,8 +551,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[0:1:1]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[0:1:1]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0}]", result);
@@ -561,8 +561,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement2() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[0:1:2]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[0:1:2]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0}]", result);
@@ -571,8 +571,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement3() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[0:3:2]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[0:3:2]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0},{\"baz\":true}]", result);
@@ -581,8 +581,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement4() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[0:3:3]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[0:3:3]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0}]", result);
@@ -592,7 +592,7 @@ public final class JsonTest extends XQueryBaseTest {
   public void arrayIndexSlice1WithIncrement5() throws IOException {
     final String query = """
           let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[:3:3]]
+          return $array[:3:3]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0}]", result);
@@ -602,7 +602,7 @@ public final class JsonTest extends XQueryBaseTest {
   public void arrayIndexSlice1WithIncrement6() throws IOException {
     final String query = """
           let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[::1]]
+          return $array[::1]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0},\"bar\",{\"baz\":true}]", result);
@@ -611,8 +611,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement7() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[::2]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[::2]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0},{\"baz\":true}]", result);
@@ -621,8 +621,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement8() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[::3]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[::3]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0}]", result);
@@ -631,8 +631,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement9() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[1::3]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[1::3]
         """;
     final var result = query(query);
     assertEquals("[\"bar\"]", result);
@@ -641,8 +641,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement10() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[:1:3]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[:1:3]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0}]", result);
@@ -651,8 +651,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement11() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[::]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[::]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0},\"bar\",{\"baz\":true}]", result);
@@ -661,8 +661,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement12() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[1::]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[1::]
         """;
     final var result = query(query);
     assertEquals("[\"bar\",{\"baz\":true}]", result);
@@ -671,8 +671,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement13() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[::-1]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[::-1]
         """;
     final var result = query(query);
     assertEquals("[{\"baz\":true},\"bar\",{\"foo\":0}]", result);
@@ -681,8 +681,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement14() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[:-3:-1]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[:-3:-1]
         """;
     final var result = query(query);
     assertEquals("[{\"baz\":true},\"bar\"]", result);
@@ -691,8 +691,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement15() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[:-4:-1]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[:-4:-1]
         """;
     final var result = query(query);
     assertEquals("[{\"baz\":true},\"bar\",{\"foo\":0}]", result);
@@ -701,8 +701,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement16() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[:-5:-1]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[:-5:-1]
         """;
     final var result = query(query);
     assertEquals("[{\"baz\":true},\"bar\",{\"foo\":0}]", result);
@@ -711,8 +711,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement17() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[:-5:-2]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[:-5:-2]
         """;
     final var result = query(query);
     assertEquals("[{\"baz\":true},{\"foo\":0}]", result);
@@ -721,8 +721,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement18() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[-1:-5:-2]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[-1:-5:-2]
         """;
     final var result = query(query);
     assertEquals("[{\"baz\":true},{\"foo\":0}]", result);
@@ -731,8 +731,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement19() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[-2:-5:-2]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[-2:-5:-2]
         """;
     final var result = query(query);
     assertEquals("[\"bar\"]", result);
@@ -741,8 +741,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement20() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[-2:0:-2]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[-2:0:-2]
         """;
     final var result = query(query);
     assertEquals("[\"bar\"]", result);
@@ -751,8 +751,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement21() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[-3::-1]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[-3::-1]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0}]", result);
@@ -761,8 +761,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement22() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[-3:0:-1]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[-3:0:-1]
         """;
     final var result = query(query);
     assertEquals("[]", result);
@@ -771,8 +771,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement23() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[-3:-4:-1]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[-3:-4:-1]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0}]", result);
@@ -781,8 +781,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice1WithIncrement24() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[-3:-1:-1]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[-3:-1:-1]
         """;
     final var result = query(query);
     assertEquals("[]", result);
@@ -792,7 +792,7 @@ public final class JsonTest extends XQueryBaseTest {
   public void arrayIndexSlice() throws IOException {
     final String query = """
           let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[0:-2]]
+          return $array[0:-2]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0}]", result);
@@ -802,7 +802,7 @@ public final class JsonTest extends XQueryBaseTest {
   public void allItemsInArray() throws IOException {
     final String query = """
           let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[:]]
+          return $array[:]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0},\"bar\",{\"baz\":true}]", result);
@@ -812,7 +812,7 @@ public final class JsonTest extends XQueryBaseTest {
   public void emptyArrayIndexSlice1() throws IOException {
     final String query = """
           let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[2:2]]
+          return $array[2:2]
         """;
     final var result = query(query);
     assertEquals("[]", result);
@@ -821,8 +821,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void emptyArrayIndexSlice2() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[3:2]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[3:2]
         """;
     final var result = query(query);
     assertEquals("[]", result);
@@ -831,8 +831,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void emptyArrayIndexSlice3() throws IOException {
     final String query = """
-          let $array := [{"foo": 0}, "bar", {"baz": true()}]
-          return $array[[4:2]]
+          let $array := [{"foo": 0}, "bar", {"baz": true}]
+          return $array[4:2]
         """;
     final var result = query(query);
     assertEquals("[]", result);
@@ -841,8 +841,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice2() throws IOException {
     final String query = """
-          let $array := [{"foo": 0},"bar",{"baz":true()}]
-          return $array[[1:]]
+          let $array := [{"foo": 0},"bar",{"baz":true}]
+          return $array[1:]
         """;
     final var result = query(query);
     assertEquals("[\"bar\",{\"baz\":true}]", result);
@@ -851,8 +851,8 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayIndexSlice3() throws IOException {
     final String query = """
-          let $array := [{"foo": 0},"bar",{"baz":true()}]
-          return $array[[:2]]
+          let $array := [{"foo": 0},"bar",{"baz":true}]
+          return $array[:2]
         """;
     final var result = query(query);
     assertEquals("[{\"foo\":0},\"bar\"]", result);
@@ -912,7 +912,7 @@ public final class JsonTest extends XQueryBaseTest {
             return {
                 xs:string($status): {
                     "count": count($log),
-                    "fraction": count($log) div $total-count[1]
+                    "fraction": count($log) div $total-count[?1]
                 }
             }
         """.stripIndent();
@@ -934,7 +934,7 @@ public final class JsonTest extends XQueryBaseTest {
             return {
                 xs:string($status): {
                     "count": count($log),
-                    "fraction": count($log) div $total-count[1]
+                    "fraction": count($log) div $total-count[?1]
                 }
             }
         """.stripIndent();
@@ -1039,7 +1039,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void removeFromArray() throws IOException {
     final String query = """
-          delete json ["foo", 0, 1][[1]]
+          delete json ["foo", 0, 1][1]
         """;
     query(query);
   }
@@ -1055,7 +1055,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void replaceArrayValue() throws IOException {
     final String query = """
-          replace json value of ["foo", 0, 1][[2]] with "bar"
+          replace json value of ["foo", 0, 1][2] with "bar"
         """;
     query(query);
   }
@@ -1064,7 +1064,7 @@ public final class JsonTest extends XQueryBaseTest {
   public void testNegativeArrayIndex() throws IOException {
     final var query = """
           let $array := [true,false,"true",{"foo":["tada",{"baz":"yes"},{"baz":true}]}]
-          return $array[].foo[[-1]].baz
+          return $array[].foo[-1].baz
         """;
     final var result = query(query);
     assertEquals("true", result);
@@ -1082,7 +1082,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testDerefExpr() throws IOException {
     final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
-    final var query = json + ".sirix[].revision.tada[$$[[4]][].foo[[0]] = true()]";
+    final var query = json + ".sirix[].revision.tada[?$$[4][].foo[0] eq true()]";
     final var result = query(query);
     assertEquals("[{\"foo\":\"bar\"},{\"baz\":false},\"boo\",{},[{\"foo\":[true,{\"baz\":\"bar\"}]}]]", result);
   }
@@ -1090,7 +1090,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testDerefExpr1() throws IOException {
     final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
-    final var query = json + ".sirix[[2]].revision.tada[$$[][].foo[].baz eq 'bar']";
+    final var query = json + ".sirix[2].revision.tada[?$$[][].foo[].baz eq 'bar']";
     final var result = query(query);
     assertEquals("[{\"foo\":\"bar\"},{\"baz\":false},\"boo\",{},[{\"foo\":[true,{\"baz\":\"bar\"}]}]]", result);
   }
@@ -1114,7 +1114,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testDerefExpr4() throws IOException {
     final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
-    final var query = json + ".sirix[[2]].revision.tada[[4]].foo[[1]].baz";
+    final var query = json + ".sirix[2].revision.tada[4].foo[1].baz";
     final var result = query(query);
     assertEquals("", result);
   }
@@ -1122,7 +1122,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void testDerefExpr5() throws IOException {
     final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));
-    final var query = json + ".sirix[[2]].revision.tada[[4]][[0]].foo[]";
+    final var query = json + ".sirix[2].revision.tada[4][0].foo[]";
     final var result = query(query);
     assertEquals("true {\"baz\":\"bar\"}", result);
   }
@@ -1161,7 +1161,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void nestedExpressionsWithPredicateTest() throws IOException {
     final var json = Files.readString(JSON_RESOURCES.resolve("user_profiles.json"));
-    final var query = json + ".websites[[]][$$.description eq \"work\"]{description}";
+    final var query = json + ".websites[][?$$.description eq \"work\"]{description}";
     final var result = query(query);
     assertEquals("{\"description\":\"work\"}", result);
   }
@@ -1217,7 +1217,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayUnboxing1Test() throws IOException {
     final var query =
-        "let $json := [\"Sunday\", \"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\"] return $json[[]]";
+        "let $json := [\"Sunday\", \"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\", \"Saturday\"] return $json[]";
     final var result = query(query);
     assertEquals("Sunday Monday Tuesday Wednesday Thursday Friday Saturday", result);
   }
@@ -1225,7 +1225,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void arrayUnboxing2Test() throws IOException {
     final var query =
-        "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ], [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]] return $json[[]]";
+        "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ], [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]] return $json[]";
     final var result = query(query);
     assertEquals("[\"mercury\",\"venus\",\"earth\",\"mars\"] [\"monday\",\"tuesday\",\"wednesday\",\"thursday\"]",
                  result);
@@ -1241,7 +1241,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void nestedArrayTest() throws IOException {
     final var query =
-        "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ], [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]] return $json[[0]]";
+        "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ], [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]] return $json[0]";
     final var result = query(query);
     assertEquals("[\"mercury\",\"venus\",\"earth\",\"mars\"]", result);
   }
@@ -1249,7 +1249,7 @@ public final class JsonTest extends XQueryBaseTest {
   @Test
   public void comletelyNestedArrayTest() throws IOException {
     final var query =
-        "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ], [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]] return $json[[1]][[1]]";
+        "let $json := [[ \"mercury\", \"venus\", \"earth\", \"mars\" ], [ \"monday\", \"tuesday\", \"wednesday\", \"thursday\" ]] return $json[1][1]";
     final var result = query(query);
     assertEquals("tuesday", result);
   }
@@ -1379,7 +1379,7 @@ public final class JsonTest extends XQueryBaseTest {
 
   @Test
   public void predicateClauseTest() throws IOException {
-    final var query = "{\"key\": 3, \"foo\": 0}[$$.key eq 3]";
+    final var query = "{\"key\": 3, \"foo\": 0}[?$$.key eq 3]";
     final var result = query(query);
     assertEquals("{\"key\":3,\"foo\":0}", result);
   }

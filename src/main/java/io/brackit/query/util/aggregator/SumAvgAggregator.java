@@ -97,8 +97,7 @@ public class SumAvgAggregator implements Aggregator {
 
   private void addSequence(Sequence seq, boolean first) throws QueryException {
     Item item;
-    Iter in = seq.iterate();
-    try {
+    try (Iter in = seq.iterate()) {
       if (first) {
         if ((item = in.next()) != null) {
           addItem(item, first);
@@ -113,8 +112,6 @@ public class SumAvgAggregator implements Aggregator {
       } else if (aggType == AggType.DTD) {
         sum = dtdSum(in, (DTD) sum);
       }
-    } finally {
-      in.close();
     }
   }
 

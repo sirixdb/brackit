@@ -37,7 +37,7 @@ import io.brackit.query.atomic.Str;
 import io.brackit.query.compiler.analyzer.Analyzer;
 import io.brackit.query.compiler.optimizer.Optimizer;
 import io.brackit.query.compiler.optimizer.TopDownOptimizer;
-import io.brackit.query.compiler.parser.XQParser;
+import io.brackit.query.compiler.parser.JsoniqParser;
 import io.brackit.query.compiler.translator.TopDownTranslator;
 import io.brackit.query.compiler.translator.Translator;
 import io.brackit.query.function.json.JSONParse;
@@ -144,7 +144,7 @@ public class CompileChain {
   }
 
   protected AST parse(String query) throws QueryException {
-    return new XQParser(query).parse();
+    return new JsoniqParser(query).parse();
   }
 
   public Module compile(String query) throws QueryException {
