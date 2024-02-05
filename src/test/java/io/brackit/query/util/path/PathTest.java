@@ -41,6 +41,14 @@ import org.junit.Test;
 public class PathTest {
 
   @Test
+  public void testJsonPathMatches() {
+    // //[]
+    Path<QNm> expected = new Path<QNm>().descendantArray();
+    Path<QNm> parsed = (new PathParser("/[]/test/[]", PathParser.Type.JSON)).parse();
+    assertTrue("Path parsed correctly", expected.matches(parsed));
+  }
+
+  @Test
   public void testJsonPathWithArrayMatching() {
     // /paths/\/business_service_providers\/search\///[]/get\/.
     Path<QNm> expected = (new Path<QNm>()).childObjectField(new QNm("paths"))
@@ -207,8 +215,7 @@ public class PathTest {
   @Test
   public void testQualifiedPathPreamble() {
     Path<QNm> expected = (new Path<QNm>()).child(new QNm("http://brackit.org/ns/bit", "bit", "tag"));
-    String path = "namespace foo = 'localhost'; " + "namespace bit = 'http://brackit.org/ns/bit'; " + expected
-                                                                                                              .toString();
+    String path = "namespace foo = 'localhost'; " + "namespace bit = 'http://brackit.org/ns/bit'; " + expected;
     Path<QNm> parsed = (new PathParser(path)).parse();
     assertEquals("Path parsed correctly", expected, parsed);
   }
@@ -216,11 +223,11 @@ public class PathTest {
   @Test
   public void testQualifiedPathMalformedPreamble() {
     Path<QNm> expected = (new Path<QNm>()).child(new QNm("http://brackit.org/ns/bit", "bit", "tag"));
-    String path = "namespace foo = 'localhost'" + expected.toString();
+    String path = "namespace foo = 'localhost'" + expected;
     try {
-      Path<QNm> parsed = (new PathParser(path)).parse();
-      assertTrue("Malformed preamble recognized", false);
-    } catch (PathException e) {
+      new PathParser(path).parse();
+      fail("Malformed preamble recognized");
+    } catch (PathException ignored) {
     }
   }
 
@@ -229,9 +236,9 @@ public class PathTest {
     Path<QNm> expected = (new Path<QNm>()).child(new QNm("http://brackit.org/ns/bit", "xzibit", "tag"));
     String path = "namespace foo = 'localhost'; " + expected;
     try {
-      Path<QNm> parsed = (new PathParser(path)).parse();
-      assertTrue("Missing namespace declaration recognized", false);
-    } catch (PathException e) {
+      new PathParser(path).parse();
+      fail("Missing namespace declaration recognized");
+    } catch (PathException ignored) {
     }
   }
 
@@ -258,7 +265,7 @@ public class PathTest {
   @Test
   public void testInvalidPath1() {
     try {
-      Path<QNm> parsed = (new PathParser("/a/..b/c")).parse();
+      new PathParser("/a/..b/c").parse();
       fail("Parser accepted invalid input");
     } catch (PathException e) {
       // expected
@@ -273,14 +280,14 @@ public class PathTest {
   }
 
   @Test
-  public void testMatchWithDoubleTwoStagedBacktracking() throws Exception {
+  public void testMatchWithDoubleTwoStagedBacktracking() {
     Path<QNm> pattern = (new PathParser("//a/b/c//d")).parse();
     Path<QNm> path = (new PathParser("/a/b/c/a/b/b/c/f/b/c/e/d")).parse();
     assertTrue("Pattern does match path", pattern.matches(path));
   }
 
   @Test
-  public void testNoMatchWithBacktrackingButNoDescendantStartAxis() throws Exception {
+  public void testNoMatchWithBacktrackingButNoDescendantStartAxis() {
     Path<QNm> pattern = (new PathParser("/a/b//c")).parse();
     Path<QNm> path = (new PathParser("/e/a/b/b/f/b/e/c")).parse();
     assertFalse("Pattern matches path", pattern.matches(path));
@@ -294,7 +301,7 @@ public class PathTest {
   }
 
   @Test
-  public void testNoMatchWithDoubleTwoStagedBacktrackingButNoDescendantStartAxis() throws Exception {
+  public void testNoMatchWithDoubleTwoStagedBacktrackingButNoDescendantStartAxis() {
     Path<QNm> pattern = (new PathParser("/a/b/c//d")).parse();
     Path<QNm> path = (new PathParser("/e/a/b/c/a/b/b/c/f/b/c/e/d")).parse();
     assertFalse("Pattern does match path", pattern.matches(path));

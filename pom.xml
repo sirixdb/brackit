@@ -8,7 +8,7 @@
     </parent>
     <groupId>io.sirix</groupId>
     <artifactId>brackit</artifactId>
-    <version>0.5-SNAPSHOT</version>
+    <version>0.6-SNAPSHOT</version>
     <name>Brackit Engine</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -124,9 +124,9 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <release>17</release>
-                    <source>17</source>
-                    <target>17</target>
+                    <release>21</release>
+                    <source>21</source>
+                    <target>21</target>
                 </configuration>
             </plugin>
             <plugin>

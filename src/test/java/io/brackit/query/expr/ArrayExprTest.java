@@ -40,7 +40,7 @@ import org.junit.Test;
 public class ArrayExprTest extends XQueryBaseTest {
   @Test
   public void complexArray() {
-    Sequence result = new Query("[ 1, '2', 3, (1 > 0) cast as xs:boolean, 1.2343 + 5, =(1,2,3)  ][[4]]").execute(ctx);
+    Sequence result = new Query("[ 1, '2', 3, (1 > 0) cast as xs:boolean, 1.2343 + 5, =(1,2,3)  ][4]").execute(ctx);
     ResultChecker.dCheck(new Dec("6.2343"), result);
   }
 }

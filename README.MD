@@ -279,19 +279,19 @@ Arrays can be created using an extended version of the standard JSON array synta
 (: a preceding '=' distributes the items of a sequence to individual array positions :)
 [ =(1 to 5) ] (: yields an array of length 5: [ 1, 2, 3, 4, 5 ] :)
 
-(: array fields can be accessed by the '[[ ]]' postfix operator: :)
-let $a := [ "Jim", "John", "Joe" ] return $a[[1]] (: yields the string "John" :)
+(: array fields can be accessed by the '[ ]' postfix operator: :)
+let $a := [ "Jim", "John", "Joe" ] return $a[1] (: yields the string "John" :)
 
 (: the function bit:len() returns the length of an array :)
 bit:len([ 1, 2 ]) (: yields 2 :)
 
 (: array slices are supported as for instance (as in Python) :)
-let $a := ["Jim", "John", "Joe" ] return $a[[0:2]] (: yields ["Jim", "John"] :)
+let $a := ["Jim", "John", "Joe" ] return $a[0:2] (: yields ["Jim", "John"] :)
 
 (: array slices with a step operator :)
-let $a := ["Jim", "John", "Joe" ] return $a[[0:2:-1]] (: yields ["John", "Jim"] :)
+let $a := ["Jim", "John", "Joe" ] return $a[0:2:-1] (: yields ["John", "Jim"] :)
 
-let $a := [{"foo": 0}, "bar", {"baz":true}] return $a[[::2]] (: yields [{"foo":0},{"baz:true}] :)
+let $a := [{"foo": 0}, "bar", {"baz":true}] return $a[::2] (: yields [{"foo":0},{"baz:true}] :)
 
 (: array unboxing :)
 let $a := ["Jim", "John", "Joe"] return $a[] (: yields the sequence "Jim" "John" "Joe" :)
@@ -302,7 +302,7 @@ for $value in $a
 return $value (: yields the same as above :)
 
 (: negative array index :)
-let $a := ["Jim", "John", "Joe"] return $a[[-1]] (: yields "Joe" :)
+let $a := ["Jim", "John", "Joe"] return $a[-1] (: yields "Joe" :)
 ```
 
 ### Objects
@@ -344,7 +344,7 @@ let $n := yval let $r := {"e" : {"m":'mvalue', "n":$n}} return $r.e.n/y (: yield
 let $r := {"e": {"m": [{"n":"o"}, true, null, {"n": "bar"}] }, "n":"m"}} return $r.e.m[].n (: yields "o" "bar" :)
 
 (: to only retrieve the first item/value in the array you can use an index :)
-let $r := {"e": {"m": [{"n":"o"}, true, null, {"n": "bar"}] }, "n":"m"}} return $r.e.m[[0]].n (: yields "o" :)
+let $r := {"e": {"m": [{"n":"o"}, true, null, {"n": "bar"}] }, "n":"m"}} return $r.e.m[0].n (: yields "o" :)
 
 (: the function bit:fields() returns the field names of an object :)
 let $r := {"x": 1, "y": 2, "z": 3} return bit:fields($r) (: yields the xs:QName array [x,y,z ] :)
@@ -375,13 +375,13 @@ insert json {"foo": not(true), "baz": null} into {"bar": false}   (: inserts/app
 delete json {"foo": not(true), "baz": null}.foo    (: removes the field "foo" from the object :)
 
 (: delete an array item at position 1 in the array :)
-delete json ["foo", 0, 1][[1]]  (: removes the 0 (["foo",1]) :)
+delete json ["foo", 0, 1][1]  (: removes the 0 (["foo",1]) :)
 
 (: replace a JSON value of a field with another value :)
 replace json value of {"foo": not(true), "baz": null}.foo with 1     (: thus, the object is adapted to {"foo":1,"baz":null} :)
 
 (: replace an item in an array at the second position (that is the third) :)
-replace json value of ["foo", 0, 1][[2]] with "bar"   (: thus, the array is adapted to ["foo",0,"bar"]
+replace json value of ["foo", 0, 1][2] with "bar"   (: thus, the array is adapted to ["foo",0,"bar"]
 
 ```
 

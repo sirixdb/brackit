@@ -249,9 +249,9 @@ public final class Path<E> {
     int pLen = p.length;
     int[] matchTable = new int[pLen];
 
-    if (oLen < pLen) {
-      return false;
-    }
+//    if (oLen < pLen) {
+//      return false;
+//    }
 
     int oPos = oLen - 1;
     int pPos = pLen - 1;

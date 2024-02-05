@@ -1,7 +1,7 @@
 declare default
 element namespace "http://tpox-benchmark.com/custacc";
 for $doc in
-( bit:partition min=50 max=50 queue=6 ) { tpox:parse-batch(’batch-1.xml’) }
+(# bit:partition min=50 max=50 queue=6 #) { tpox:parse-batch(’batch-1.xml’) }
 let $customer := $doc/Customer let $balance := (
 for $account in $customer/Accounts/Account
 let $obalance := $account/Balance/OnlineActualBal where $obalance > 900000

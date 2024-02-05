@@ -36,7 +36,7 @@ import io.brackit.query.expr.Variable;
 import io.brackit.query.jdm.Function;
 import io.brackit.query.module.*;
 import io.brackit.query.module.Module;
-import io.brackit.query.compiler.parser.XQParser;
+import io.brackit.query.compiler.parser.JsoniqParser;
 
 import java.io.IOException;
 import java.util.*;
@@ -219,7 +219,7 @@ public class Analyzer {
         throw new QueryException(e, ErrorCode.ERR_SCHEMA_OR_MODULE_NOT_FOUND, "Error loading module '%s'", i.getURI());
       }
       for (String query : loaded) {
-        AST ast = new XQParser(query).parse();
+        AST ast = new JsoniqParser(query).parse();
         toImport.add(module(ast.getChild(0)));
       }
     }

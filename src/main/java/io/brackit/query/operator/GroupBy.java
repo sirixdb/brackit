@@ -48,6 +48,7 @@ import io.brackit.query.util.aggregator.Grouping;
 /**
  * @author Sebastian Baechle
  */
+@SuppressWarnings("StatementWithEmptyBody")
 public class GroupBy extends Check implements Operator {
   final Operator in;
   final int[] groupSpecs; // positions of grouping variables

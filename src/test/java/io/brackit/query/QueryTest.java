@@ -28,13 +28,28 @@
 package io.brackit.query;
 
 import io.brackit.query.jdm.Sequence;
+import org.junit.Ignore;
+import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * @author Johannes Lichtenberger
  */
 public final class QueryTest extends XQueryBaseTest {
+
+  private static final Path TPOX_DIR =
+      Paths.get("src", "test", "resources", "tpox");
+
+  @Test
+  @Ignore
+  public void testExtension() throws IOException {
+    final String query = Files.readString(TPOX_DIR.resolve("expensive_sequential_filter_query.xq"));
+    final Sequence result = query(query);
+  }
 
   private Sequence query(final String query) {
     return new Query(query).execute(ctx);
