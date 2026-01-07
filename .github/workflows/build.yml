@@ -42,7 +42,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-          server-id: sonatype-nexus-snapshots
+          server-id: central
           server-username: SONATYPE_NEXUS_USERNAME
           server-password: SONATYPE_NEXUS_PASSWORD
       - name: Maven deploy
