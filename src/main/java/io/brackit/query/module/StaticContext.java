@@ -29,6 +29,9 @@ package io.brackit.query.module;
 
 import io.brackit.query.atomic.AnyURI;
 import io.brackit.query.atomic.QNm;
+import io.brackit.query.atomic.Str;
+
+import java.util.Map;
 
 /**
  * <p>
@@ -49,6 +52,10 @@ import io.brackit.query.atomic.QNm;
 public interface StaticContext {
 
   String UNICODE_COLLATION = "http://www.w3.org/2005/xpath-functions/collation/codepoint";
+
+  void addOption(QNm name, Str value);
+
+  Map<QNm, Str> getOptions();
 
   /**
    * Returns the mapping of statically known namespaces (mapping of prefixes
