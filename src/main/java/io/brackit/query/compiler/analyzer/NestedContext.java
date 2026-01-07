@@ -29,11 +29,14 @@ package io.brackit.query.compiler.analyzer;
 
 import io.brackit.query.atomic.AnyURI;
 import io.brackit.query.atomic.QNm;
+import io.brackit.query.atomic.Str;
 import io.brackit.query.module.DecimalFormat;
 import io.brackit.query.module.Functions;
 import io.brackit.query.module.Namespaces;
 import io.brackit.query.module.StaticContext;
 import io.brackit.query.module.Types;
+
+import java.util.Map;
 
 /**
  * @author Sebastian Baechle
@@ -137,5 +140,15 @@ public class NestedContext implements StaticContext {
 
   public void setEmptyOrderGreatest(boolean greatest) {
     parent.setEmptyOrderGreatest(greatest);
+  }
+
+  @Override
+  public void addOption(QNm name, Str value) {
+    parent.addOption(name, value);
+  }
+
+  @Override
+  public Map<QNm, Str> getOptions() {
+    return parent.getOptions();
   }
 }

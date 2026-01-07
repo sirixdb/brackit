@@ -41,7 +41,9 @@ import io.brackit.query.jdm.Sequence;
 import io.brackit.query.jdm.json.Array;
 import io.brackit.query.jdm.json.JsonItem;
 import io.brackit.query.jdm.json.Object;
+import io.brackit.query.jdm.json.UpdatableJsonItem;
 import io.brackit.query.update.json.op.ReplaceArrayValueOp;
+import io.brackit.query.update.json.op.ReplaceJsonItemOp;
 import io.brackit.query.update.json.op.ReplaceRecordValueOp;
 
 /**
@@ -92,8 +94,21 @@ public final class ReplaceJsonValue extends ConstructedNodeBuilder implements Ex
                                targetItem);
     }
 
-    final Sequence recordFieldOrArrayIndexSeq = recordFieldOrArrayIndex.evaluateToItem(ctx, tuple);
     final Sequence source = sourceExpr.evaluateToItem(ctx, tuple);
+
+    // Handle direct item replacement (when no field/index is specified, e.g., sdb:select-item)
+    if (recordFieldOrArrayIndex == null) {
+      if (!(targetItem instanceof UpdatableJsonItem)) {
+        throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
+                                 "Target item does not support direct replacement: %s",
+                                 targetItem);
+      }
+      ctx.addPendingUpdate(new ReplaceJsonItemOp((UpdatableJsonItem) targetItem, source));
+      return null;
+    }
+
+    // Standard path-based replacement (parent.field or array[index])
+    final Sequence recordFieldOrArrayIndexSeq = recordFieldOrArrayIndex.evaluateToItem(ctx, tuple);
 
     if (target instanceof Array) {
       final Int32 index = (Int32) recordFieldOrArrayIndexSeq;

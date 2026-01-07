@@ -29,6 +29,10 @@ package io.brackit.query.module;
 
 import io.brackit.query.atomic.AnyURI;
 import io.brackit.query.atomic.QNm;
+import io.brackit.query.atomic.Str;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Sebastian Baechle
@@ -38,6 +42,7 @@ public class ModuleContext implements StaticContext {
   protected final Namespaces namespaces = new Namespaces();
   protected final Functions functions = new Functions();
   protected final Types types = new Types();
+  protected final Map<QNm, Str> options = new HashMap<>();
   protected String defaultElementNamespace = null;
   protected boolean boundarySpaceStrip = true;
   protected String defaultCollation = "http://www.w3.org/2005/xpath-functions/collation/codepoint";
@@ -158,6 +163,16 @@ public class ModuleContext implements StaticContext {
   public void setDefaultDecimalFormat(DecimalFormat df) {
     // TODO Auto-generated method stub
 
+  }
+
+  @Override
+  public void addOption(QNm name, Str value) {
+    options.put(name, value);
+  }
+
+  @Override
+  public Map<QNm, Str> getOptions() {
+    return options;
   }
 
 }
