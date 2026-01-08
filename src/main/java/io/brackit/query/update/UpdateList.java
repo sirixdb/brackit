@@ -53,6 +53,16 @@ public final class UpdateList {
                                                              OpType.REPLACE_VALUE,
                                                              OpType.REPLACE_ELEMENT_CONTENT);
 
+  // Property update operations that should be skipped for deleted nodes
+  // Per XQuery Update Facility 1.0 section 3.2.1:
+  // "If a node is marked for deletion, updates to its properties have no effect."
+  // Note: Insert operations should NOT be skipped - they create new sibling/child
+  // nodes that persist after the target is deleted.
+  private static final EnumSet<OpType> propertyUpdateOps = EnumSet.of(OpType.RENAME,
+                                                                      OpType.REPLACE_NODE,
+                                                                      OpType.REPLACE_VALUE,
+                                                                      OpType.REPLACE_ELEMENT_CONTENT);
+
   private final List<UpdateOp> ops;
 
   public UpdateList() {
@@ -87,8 +97,6 @@ public final class UpdateList {
     }
 
     // Collect all nodes marked for deletion
-    // Per XQuery Update Facility 1.0 section 3.2.1:
-    // "If a node is marked for deletion, updates to its properties have no effect."
     final Set<Item> deletedNodes = new HashSet<>();
     for (final UpdateOp op : ops) {
       if (op.getType() == OpType.DELETE) {
@@ -96,12 +104,13 @@ public final class UpdateList {
       }
     }
 
-    // Apply all updates, skipping those targeting deleted nodes
+    // Apply all updates, skipping only property updates to deleted nodes
     for (final UpdateOp op : ops) {
-      // Skip non-delete updates to nodes that will be deleted
-      if (op.getType() != OpType.DELETE && deletedNodes.contains(op.getTarget())) {
+      // Skip property updates to nodes that will be deleted
+      // Insert operations should NOT be skipped - they create new nodes
+      if (propertyUpdateOps.contains(op.getType()) && deletedNodes.contains(op.getTarget())) {
         if (log.isDebugEnabled()) {
-          log.debug(String.format("Skipping update %s - target node is marked for deletion", op));
+          log.debug(String.format("Skipping property update %s - target node is marked for deletion", op));
         }
         continue;
       }
