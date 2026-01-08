@@ -31,12 +31,15 @@ import io.brackit.query.update.op.OpType;
 import io.brackit.query.update.op.UpdateOp;
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryException;
+import io.brackit.query.jdm.Item;
 import io.brackit.query.util.log.Logger;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Sebastian Baechle
@@ -83,13 +86,31 @@ public final class UpdateList {
       }
     }
 
-    // finally apply all updates
-    ops.forEach(op -> {
+    // Collect all nodes marked for deletion
+    // Per XQuery Update Facility 1.0 section 3.2.1:
+    // "If a node is marked for deletion, updates to its properties have no effect."
+    final Set<Item> deletedNodes = new HashSet<>();
+    for (final UpdateOp op : ops) {
+      if (op.getType() == OpType.DELETE) {
+        deletedNodes.add(op.getTarget());
+      }
+    }
+
+    // Apply all updates, skipping those targeting deleted nodes
+    for (final UpdateOp op : ops) {
+      // Skip non-delete updates to nodes that will be deleted
+      if (op.getType() != OpType.DELETE && deletedNodes.contains(op.getTarget())) {
+        if (log.isDebugEnabled()) {
+          log.debug(String.format("Skipping update %s - target node is marked for deletion", op));
+        }
+        continue;
+      }
+
       if (log.isDebugEnabled()) {
         log.debug(String.format("Applying pending update %s", op));
       }
       op.apply();
-    });
+    }
   }
 
   private void checkCompatibility(final UpdateOp op1, final UpdateOp op2) throws QueryException {
