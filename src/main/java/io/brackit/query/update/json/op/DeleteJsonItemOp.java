@@ -25,33 +25,39 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package io.brackit.query.jdm.json;
+package io.brackit.query.update.json.op;
 
-import io.brackit.query.jdm.Sequence;
+import io.brackit.query.jdm.json.JsonItem;
+import io.brackit.query.jdm.json.UpdatableJsonItem;
+import io.brackit.query.update.op.OpType;
+import io.brackit.query.update.op.UpdateOp;
 
 /**
- * Interface for JSON items that support direct update operations.
- * This allows the use of update expressions with direct item references
- * (e.g., from sdb:select-item) instead of path-based references.
+ * Update operation for deleting a JSON item directly.
+ * This is used when the target is a direct item reference (e.g., from sdb:select-item)
+ * rather than a path-based reference.
  *
  * @author Johannes Lichtenberger
  */
-public interface UpdatableJsonItem extends JsonItem {
+public class DeleteJsonItemOp implements UpdateOp {
+  private final UpdatableJsonItem target;
 
-  /**
-   * Replace this item's value directly.
-   * The implementation navigates to the parent and performs the replacement.
-   *
-   * @param newValue the new value to replace with
-   */
-  void replaceValue(Sequence newValue);
+  public DeleteJsonItemOp(UpdatableJsonItem target) {
+    this.target = target;
+  }
 
-  /**
-   * Delete this item from its parent container.
-   * The implementation navigates to the parent and removes this item.
-   *
-   * @throws io.brackit.query.QueryException if this item cannot be deleted
-   *                                         (e.g., it is the root node or has no parent)
-   */
-  void delete();
+  @Override
+  public void apply() {
+    target.delete();
+  }
+
+  @Override
+  public JsonItem getTarget() {
+    return target;
+  }
+
+  @Override
+  public OpType getType() {
+    return OpType.DELETE;
+  }
 }

@@ -273,11 +273,20 @@ public class Compiler implements Translator {
   }
 
   private Expr deleteJsonExpr(AST node) {
-    AST derefOrArrayIndexNode = node.getChild(0);
-    Expr targetExpr = expr(derefOrArrayIndexNode.getChild(0), true);
-    Expr fieldOrIndex = expr(derefOrArrayIndexNode.getChild(1), true);
+    AST targetNode = node.getChild(0);
 
-    return new DeleteJson(targetExpr, fieldOrIndex);
+    // Check if the target is a DerefExpr or ArrayAccess (has parent + field/index structure)
+    if (targetNode.getType() == XQ.DerefExpr || targetNode.getType() == XQ.ArrayAccess) {
+      // Standard path-based target: parent.field or array[index]
+      Expr targetExpr = expr(targetNode.getChild(0), true);
+      Expr fieldOrIndex = expr(targetNode.getChild(1), true);
+      return new DeleteJson(targetExpr, fieldOrIndex);
+    } else {
+      // Direct item reference (e.g., sdb:select-item(...))
+      // Pass null for fieldOrIndex to signal direct deletion
+      Expr targetExpr = expr(targetNode, true);
+      return new DeleteJson(targetExpr, null);
+    }
   }
 
   private Expr insertJsonExpr(AST node) {
@@ -304,7 +313,7 @@ public class Compiler implements Translator {
   private Expr replaceJsonExpr(AST node) {
     AST targetNode = node.getChild(0);
     Expr sourceExpr = expr(node.getChild(1), true);
-    
+
     // Check if the target is a DerefExpr or ArrayAccess (has parent + field/index structure)
     if (targetNode.getType() == XQ.DerefExpr || targetNode.getType() == XQ.ArrayAccess) {
       // Standard path-based target: parent.field or array[index]
