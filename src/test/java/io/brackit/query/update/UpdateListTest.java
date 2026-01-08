@@ -126,6 +126,81 @@ public class UpdateListTest {
   }
 
   /**
+   * Per XQuery Update Facility 1.0 section 3.2.2:
+   * Insert operations are applied before delete operations.
+   * An INSERT_BEFORE targeting a node that will be deleted should NOT be skipped.
+   * The inserted content becomes a sibling and persists after the delete.
+   */
+  @Test
+  public void insertBeforeDeletedNodeIsNotSkipped() {
+    final List<String> appliedOps = new ArrayList<>();
+    final StructuredItem targetItem = new ArrayObject(new QNm[] { new QNm("name") },
+                                                      new Sequence[] { new Str("test") });
+
+    final UpdateList updateList = new UpdateList();
+
+    // Add an INSERT_BEFORE operation targeting a node
+    updateList.append(new TestUpdateOp(OpType.INSERT_BEFORE, targetItem, () -> appliedOps.add("INSERT_BEFORE")));
+
+    // Add a DELETE operation for the same target
+    updateList.append(new TestUpdateOp(OpType.DELETE, targetItem, () -> appliedOps.add("DELETE")));
+
+    // Apply updates
+    updateList.apply();
+
+    // Both should be applied - INSERT_BEFORE creates a sibling, then DELETE removes the target
+    assertEquals("Both INSERT_BEFORE and DELETE should be applied", List.of("INSERT_BEFORE", "DELETE"), appliedOps);
+  }
+
+  /**
+   * INSERT_INTO targeting a deleted node should also be applied.
+   */
+  @Test
+  public void insertIntoDeletedNodeIsNotSkipped() {
+    final List<String> appliedOps = new ArrayList<>();
+    final StructuredItem targetItem = new ArrayObject(new QNm[] { new QNm("name") },
+                                                      new Sequence[] { new Str("test") });
+
+    final UpdateList updateList = new UpdateList();
+
+    // Add an INSERT_INTO operation
+    updateList.append(new TestUpdateOp(OpType.INSERT_INTO, targetItem, () -> appliedOps.add("INSERT_INTO")));
+
+    // Add a DELETE operation for the same target
+    updateList.append(new TestUpdateOp(OpType.DELETE, targetItem, () -> appliedOps.add("DELETE")));
+
+    // Apply updates
+    updateList.apply();
+
+    // Both should be applied
+    assertEquals("Both INSERT_INTO and DELETE should be applied", List.of("INSERT_INTO", "DELETE"), appliedOps);
+  }
+
+  /**
+   * INSERT_AFTER targeting a deleted node should also be applied.
+   */
+  @Test
+  public void insertAfterDeletedNodeIsNotSkipped() {
+    final List<String> appliedOps = new ArrayList<>();
+    final StructuredItem targetItem = new ArrayObject(new QNm[] { new QNm("name") },
+                                                      new Sequence[] { new Str("test") });
+
+    final UpdateList updateList = new UpdateList();
+
+    // Add an INSERT_AFTER operation
+    updateList.append(new TestUpdateOp(OpType.INSERT_AFTER, targetItem, () -> appliedOps.add("INSERT_AFTER")));
+
+    // Add a DELETE operation for the same target
+    updateList.append(new TestUpdateOp(OpType.DELETE, targetItem, () -> appliedOps.add("DELETE")));
+
+    // Apply updates
+    updateList.apply();
+
+    // Both should be applied
+    assertEquals("Both INSERT_AFTER and DELETE should be applied", List.of("INSERT_AFTER", "DELETE"), appliedOps);
+  }
+
+  /**
    * Simple test implementation of UpdateOp for testing purposes.
    */
   private static class TestUpdateOp implements UpdateOp {
