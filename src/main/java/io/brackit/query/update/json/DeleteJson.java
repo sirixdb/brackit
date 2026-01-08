@@ -41,7 +41,9 @@ import io.brackit.query.jdm.Sequence;
 import io.brackit.query.jdm.json.Array;
 import io.brackit.query.jdm.json.JsonItem;
 import io.brackit.query.jdm.json.Object;
+import io.brackit.query.jdm.json.UpdatableJsonItem;
 import io.brackit.query.update.json.op.DeleteArrayIndexOp;
+import io.brackit.query.update.json.op.DeleteJsonItemOp;
 import io.brackit.query.update.json.op.DeleteRecordFieldOp;
 
 /**
@@ -91,6 +93,19 @@ public final class DeleteJson implements Expr {
                                "Target item for delete is not a json item: %s",
                                item);
     }
+
+    // Direct item deletion (e.g., delete json sdb:select-item(...))
+    if (fieldOrIndex == null) {
+      if (!(item instanceof UpdatableJsonItem)) {
+        throw new QueryException(ErrorCode.ERR_UPDATE_DELETE_TARGET_NOT_A_NODE_SEQUENCE,
+                                 "Target item for direct delete is not an updatable json item: %s",
+                                 item);
+      }
+      ctx.addPendingUpdate(new DeleteJsonItemOp((UpdatableJsonItem) item));
+      return;
+    }
+
+    // Path-based deletion (e.g., delete json $obj.field or delete json $arr[idx])
     if (item instanceof Array) {
       ctx.addPendingUpdate(new DeleteArrayIndexOp((Array) item,
                                                   ((Int32) fieldOrIndex.evaluateToItem(ctx, tuple)).intValue()));
