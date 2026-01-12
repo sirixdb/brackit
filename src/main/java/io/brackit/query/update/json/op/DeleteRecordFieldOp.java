@@ -33,8 +33,6 @@ import io.brackit.query.jdm.json.Object;
 import io.brackit.query.update.op.OpType;
 import io.brackit.query.update.op.UpdateOp;
 
-import java.util.Objects;
-
 /**
  * @author Johannes Lichtenberger
  */
@@ -72,22 +70,4 @@ public class DeleteRecordFieldOp implements UpdateOp {
     return getType() + " " + target;
   }
 
-  /**
-   * Identity object that combines target and field for proper equality comparison.
-   */
-  private record TargetFieldIdentity(Object target, QNm field) {
-    @Override
-    public boolean equals(java.lang.Object o) {
-      if (this == o)
-        return true;
-      if (!(o instanceof TargetFieldIdentity that))
-        return false;
-      return target == that.target && Objects.equals(field, that.field);
-    }
-
-    @Override
-    public int hashCode() {
-      return System.identityHashCode(target) * 31 + Objects.hashCode(field);
-    }
-  }
 }
