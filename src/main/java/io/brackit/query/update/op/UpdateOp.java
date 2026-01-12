@@ -57,4 +57,19 @@ public interface UpdateOp {
    * @return the operation type
    */
   OpType getType();
+
+  /**
+   * Get a unique identity object for the actual target of this operation.
+   * For path-based operations (e.g., $obj.field), this combines both
+   * the parent object and the field/index to form a unique identity.
+   * <p>
+   * This is used to determine if two operations target the same node,
+   * which is important for the "skip updates to deleted nodes" optimization.
+   * </p>
+   *
+   * @return an object that uniquely identifies the actual target
+   */
+  default Object getTargetIdentity() {
+    return getTarget();
+  }
 }

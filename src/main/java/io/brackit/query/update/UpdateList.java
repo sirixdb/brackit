@@ -31,7 +31,6 @@ import io.brackit.query.update.op.OpType;
 import io.brackit.query.update.op.UpdateOp;
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryException;
-import io.brackit.query.jdm.Item;
 import io.brackit.query.util.log.Logger;
 
 import java.util.ArrayList;
@@ -56,8 +55,6 @@ public final class UpdateList {
   // Property update operations that should be skipped for deleted nodes
   // Per XQuery Update Facility 1.0 section 3.2.1:
   // "If a node is marked for deletion, updates to its properties have no effect."
-  // Note: Insert operations should NOT be skipped - they create new sibling/child
-  // nodes that persist after the target is deleted.
   private static final EnumSet<OpType> propertyUpdateOps = EnumSet.of(OpType.RENAME,
                                                                       OpType.REPLACE_NODE,
                                                                       OpType.REPLACE_VALUE,
@@ -96,21 +93,20 @@ public final class UpdateList {
       }
     }
 
-    // Collect all nodes marked for deletion
-    final Set<Item> deletedNodes = new HashSet<>();
+    // Collect all target identities marked for deletion
+    final Set<Object> deletedTargetIdentities = new HashSet<>();
     for (final UpdateOp op : ops) {
       if (op.getType() == OpType.DELETE) {
-        deletedNodes.add(op.getTarget());
+        deletedTargetIdentities.add(op.getTargetIdentity());
       }
     }
 
-    // Apply all updates, skipping only property updates to deleted nodes
+    // Apply all updates, skipping property updates to deleted targets
     for (final UpdateOp op : ops) {
-      // Skip property updates to nodes that will be deleted
-      // Insert operations should NOT be skipped - they create new nodes
-      if (propertyUpdateOps.contains(op.getType()) && deletedNodes.contains(op.getTarget())) {
+      // Skip property updates to nodes that will be deleted (same target identity)
+      if (propertyUpdateOps.contains(op.getType()) && deletedTargetIdentities.contains(op.getTargetIdentity())) {
         if (log.isDebugEnabled()) {
-          log.debug(String.format("Skipping property update %s - target node is marked for deletion", op));
+          log.debug(String.format("Skipping property update %s - target is marked for deletion", op));
         }
         continue;
       }
