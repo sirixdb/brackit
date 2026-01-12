@@ -201,6 +201,128 @@ public class UpdateListTest {
   }
 
   /**
+   * Test that operations on different fields of the same parent use getTargetIdentity()
+   * to correctly differentiate targets. This is crucial for path-based operations like
+   * $doc.field1 and $doc.field2 which share the same parent target but differ by field.
+   */
+  @Test
+  public void replaceAndDeleteDifferentFieldsSameParentAppliesBoth() {
+    final List<String> appliedOps = new ArrayList<>();
+    // Same parent target
+    final StructuredItem parentTarget = new ArrayObject(new QNm[] { new QNm("name") },
+                                                        new Sequence[] { new Str("test") });
+
+    final UpdateList updateList = new UpdateList();
+
+    // Add REPLACE_VALUE for field "first" (uses custom targetIdentity)
+    updateList.append(new FieldBasedTestUpdateOp(OpType.REPLACE_VALUE,
+                                                 parentTarget,
+                                                 "first",
+                                                 () -> appliedOps.add("REPLACE-first")));
+
+    // Add DELETE for field "second" (uses custom targetIdentity, same parent but different field)
+    updateList.append(new FieldBasedTestUpdateOp(OpType.DELETE,
+                                                 parentTarget,
+                                                 "second",
+                                                 () -> appliedOps.add("DELETE-second")));
+
+    // Apply updates
+    updateList.apply();
+
+    // Both should be applied since they have different targetIdentity (different fields)
+    assertEquals("Both operations should be applied for different fields",
+                 List.of("REPLACE-first", "DELETE-second"),
+                 appliedOps);
+  }
+
+  /**
+   * Test that operations on the SAME field of the same parent are correctly identified
+   * as targeting the same node via getTargetIdentity().
+   */
+  @Test
+  public void replaceAndDeleteSameFieldSameParentSkipsReplace() {
+    final List<String> appliedOps = new ArrayList<>();
+    final StructuredItem parentTarget = new ArrayObject(new QNm[] { new QNm("name") },
+                                                        new Sequence[] { new Str("test") });
+
+    final UpdateList updateList = new UpdateList();
+
+    // Add REPLACE_VALUE for field "first"
+    updateList.append(new FieldBasedTestUpdateOp(OpType.REPLACE_VALUE,
+                                                 parentTarget,
+                                                 "first",
+                                                 () -> appliedOps.add("REPLACE-first")));
+
+    // Add DELETE for the same field "first"
+    updateList.append(new FieldBasedTestUpdateOp(OpType.DELETE,
+                                                 parentTarget,
+                                                 "first",
+                                                 () -> appliedOps.add("DELETE-first")));
+
+    // Apply updates
+    updateList.apply();
+
+    // Only DELETE should be applied, REPLACE should be skipped (same targetIdentity)
+    assertEquals("Only DELETE should be applied for same field", List.of("DELETE-first"), appliedOps);
+  }
+
+  /**
+   * Test array index-based operations with different indices.
+   */
+  @Test
+  public void replaceAndDeleteDifferentArrayIndicesAppliesBoth() {
+    final List<String> appliedOps = new ArrayList<>();
+    final StructuredItem parentArray = new ArrayObject(new QNm[] { new QNm("arr") },
+                                                       new Sequence[] { new Str("test") });
+
+    final UpdateList updateList = new UpdateList();
+
+    // Add REPLACE_VALUE for index 0
+    updateList.append(new IndexBasedTestUpdateOp(OpType.REPLACE_VALUE,
+                                                 parentArray,
+                                                 0,
+                                                 () -> appliedOps.add("REPLACE-0")));
+
+    // Add DELETE for index 1 (different index)
+    updateList.append(new IndexBasedTestUpdateOp(OpType.DELETE, parentArray, 1, () -> appliedOps.add("DELETE-1")));
+
+    // Apply updates
+    updateList.apply();
+
+    // Both should be applied since they have different indices
+    assertEquals("Both operations should be applied for different indices",
+                 List.of("REPLACE-0", "DELETE-1"),
+                 appliedOps);
+  }
+
+  /**
+   * Test array index-based operations with same index.
+   */
+  @Test
+  public void replaceAndDeleteSameArrayIndexSkipsReplace() {
+    final List<String> appliedOps = new ArrayList<>();
+    final StructuredItem parentArray = new ArrayObject(new QNm[] { new QNm("arr") },
+                                                       new Sequence[] { new Str("test") });
+
+    final UpdateList updateList = new UpdateList();
+
+    // Add REPLACE_VALUE for index 0
+    updateList.append(new IndexBasedTestUpdateOp(OpType.REPLACE_VALUE,
+                                                 parentArray,
+                                                 0,
+                                                 () -> appliedOps.add("REPLACE-0")));
+
+    // Add DELETE for same index 0
+    updateList.append(new IndexBasedTestUpdateOp(OpType.DELETE, parentArray, 0, () -> appliedOps.add("DELETE-0")));
+
+    // Apply updates
+    updateList.apply();
+
+    // Only DELETE should be applied, REPLACE should be skipped (same index)
+    assertEquals("Only DELETE should be applied for same index", List.of("DELETE-0"), appliedOps);
+  }
+
+  /**
    * Simple test implementation of UpdateOp for testing purposes.
    */
   private static class TestUpdateOp implements UpdateOp {
@@ -227,6 +349,116 @@ public class UpdateListTest {
     @Override
     public OpType getType() {
       return type;
+    }
+  }
+
+  /**
+   * Test UpdateOp that simulates field-based operations (like $obj.field).
+   * Uses a custom targetIdentity that combines target + field name.
+   */
+  private static class FieldBasedTestUpdateOp implements UpdateOp {
+    private final OpType type;
+    private final StructuredItem target;
+    private final String field;
+    private final Runnable applyAction;
+
+    FieldBasedTestUpdateOp(OpType type, StructuredItem target, String field, Runnable applyAction) {
+      this.type = type;
+      this.target = target;
+      this.field = field;
+      this.applyAction = applyAction;
+    }
+
+    @Override
+    public void apply() {
+      applyAction.run();
+    }
+
+    @Override
+    public StructuredItem getTarget() {
+      return target;
+    }
+
+    @Override
+    public Object getTargetIdentity() {
+      // Combine target identity + field name
+      return new TargetFieldIdentity(target, field);
+    }
+
+    @Override
+    public OpType getType() {
+      return type;
+    }
+
+    private record TargetFieldIdentity(StructuredItem target, String field) {
+      @Override
+      public boolean equals(Object o) {
+        if (this == o)
+          return true;
+        if (!(o instanceof TargetFieldIdentity that))
+          return false;
+        return target == that.target && java.util.Objects.equals(field, that.field);
+      }
+
+      @Override
+      public int hashCode() {
+        return System.identityHashCode(target) * 31 + java.util.Objects.hashCode(field);
+      }
+    }
+  }
+
+  /**
+   * Test UpdateOp that simulates index-based operations (like $arr[idx]).
+   * Uses a custom targetIdentity that combines target + index.
+   */
+  private static class IndexBasedTestUpdateOp implements UpdateOp {
+    private final OpType type;
+    private final StructuredItem target;
+    private final int index;
+    private final Runnable applyAction;
+
+    IndexBasedTestUpdateOp(OpType type, StructuredItem target, int index, Runnable applyAction) {
+      this.type = type;
+      this.target = target;
+      this.index = index;
+      this.applyAction = applyAction;
+    }
+
+    @Override
+    public void apply() {
+      applyAction.run();
+    }
+
+    @Override
+    public StructuredItem getTarget() {
+      return target;
+    }
+
+    @Override
+    public Object getTargetIdentity() {
+      // Combine target identity + index
+      return new TargetIndexIdentity(target, index);
+    }
+
+    @Override
+    public OpType getType() {
+      return type;
+    }
+
+    private record TargetIndexIdentity(StructuredItem target, int index) {
+      @Override
+      public boolean equals(Object o) {
+        if (this == o)
+          return true;
+        if (!(o instanceof TargetIndexIdentity that))
+          return false;
+        return target == that.target && index == that.index;
+      }
+
+      @Override
+      public int hashCode() {
+        return System.identityHashCode(target) * 31 + index;
+      }
     }
   }
 }

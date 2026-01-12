@@ -56,11 +56,35 @@ public class DeleteArrayIndexOp implements UpdateOp {
   }
 
   @Override
+  public Object getTargetIdentity() {
+    return new TargetIndexIdentity(target, index);
+  }
+
+  @Override
   public OpType getType() {
     return OpType.DELETE;
   }
 
   public String toString() {
     return getType() + " " + target;
+  }
+
+  /**
+   * Identity object that combines target and index for proper equality comparison.
+   */
+  private record TargetIndexIdentity(Array target, int index) {
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
+      if (!(o instanceof TargetIndexIdentity that))
+        return false;
+      return target == that.target && index == that.index;
+    }
+
+    @Override
+    public int hashCode() {
+      return System.identityHashCode(target) * 31 + index;
+    }
   }
 }
