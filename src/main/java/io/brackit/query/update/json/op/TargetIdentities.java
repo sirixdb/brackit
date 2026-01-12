@@ -28,46 +28,52 @@
 package io.brackit.query.update.json.op;
 
 import io.brackit.query.atomic.QNm;
-import io.brackit.query.jdm.Sequence;
-import io.brackit.query.jdm.json.JsonItem;
+import io.brackit.query.jdm.json.Array;
 import io.brackit.query.jdm.json.Object;
-import io.brackit.query.update.op.OpType;
-import io.brackit.query.update.op.UpdateOp;
+
+import java.util.Objects;
 
 /**
- * @author Johannes Lichtenberger
+ * Shared identity objects for JSON update operations.
+ * <p>
+ * These identities are used by {@code UpdateList.apply()} to skip "property updates"
+ * (e.g., {@code REPLACE_VALUE}) when the same target is marked for {@code DELETE}.
+ * <p>
+ * Important: These must be shared types (not private inner classes) so that
+ * {@code Set.contains()} can match identities across different operation classes.
  */
-public class ReplaceRecordValueOp implements UpdateOp {
-  private final Object target;
-
-  private final QNm field;
-
-  private final Sequence value;
-
-  public ReplaceRecordValueOp(Object target, QNm field, Sequence value) {
-    this.target = target;
-    this.field = field;
-    this.value = value;
+record TargetIndexIdentity(Array target, int index) {
+  @Override
+  public boolean equals(java.lang.Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof TargetIndexIdentity that)) {
+      return false;
+    }
+    return target == that.target && index == that.index;
   }
 
   @Override
-  public void apply() {
-    target.replace(field, value);
+  public int hashCode() {
+    return System.identityHashCode(target) * 31 + index;
+  }
+}
+
+record TargetFieldIdentity(Object target, QNm field) {
+  @Override
+  public boolean equals(java.lang.Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof TargetFieldIdentity that)) {
+      return false;
+    }
+    return target == that.target && Objects.equals(field, that.field);
   }
 
   @Override
-  public JsonItem getTarget() {
-    return target;
+  public int hashCode() {
+    return System.identityHashCode(target) * 31 + Objects.hashCode(field);
   }
-
-  @Override
-  public java.lang.Object getTargetIdentity() {
-    return new TargetFieldIdentity(target, field);
-  }
-
-  @Override
-  public OpType getType() {
-    return OpType.REPLACE_VALUE;
-  }
-
 }
