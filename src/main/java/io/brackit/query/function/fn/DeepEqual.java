@@ -34,6 +34,8 @@ import io.brackit.query.atomic.Atomic;
 import io.brackit.query.atomic.Bool;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.atomic.Str;
+import io.brackit.query.jdm.json.Array;
+import io.brackit.query.jdm.json.Object;
 import io.brackit.query.jdm.node.Node;
 import io.brackit.query.module.StaticContext;
 import io.brackit.query.QueryContext;
@@ -85,6 +87,12 @@ public class DeepEqual extends AbstractFunction {
       }
     }
 
+    // If both are items, compare them directly to preserve JSON item semantics
+    // (arrays and objects should not equal their contents when iterated)
+    if (a instanceof Item aItem && b instanceof Item bItem) {
+      return deepEquals(aItem, bItem) ? Bool.TRUE : Bool.FALSE;
+    }
+
     try (final Iter aIt = a.iterate(); final Iter bIt = b.iterate()) {
       Item aItem;
       Item bItem;
@@ -110,7 +118,17 @@ public class DeepEqual extends AbstractFunction {
         return false;
       }
       return atomicDeepEquals((Atomic) a, (Atomic) b);
-    } else {
+    } else if (a instanceof Array) {
+      if (!(b instanceof Array)) {
+        return false;
+      }
+      return arrayDeepEquals((Array) a, (Array) b);
+    } else if (a instanceof Object) {
+      if (!(b instanceof Object)) {
+        return false;
+      }
+      return objectDeepEquals((Object) a, (Object) b);
+    } else if (a instanceof Node<?>) {
       if (!(b instanceof Node<?>)) {
         return false;
       }
@@ -120,6 +138,7 @@ public class DeepEqual extends AbstractFunction {
         throw new QueryException(e, ErrorCode.BIT_DYN_DOCUMENT_ACCESS_ERROR);
       }
     }
+    return false;
   }
 
   private static boolean nodeDeepEquals(Node<?> a, Node<?> b) {
@@ -235,6 +254,41 @@ public class DeepEqual extends AbstractFunction {
     }
 
     return aSize == bSize ? Bool.TRUE : Bool.FALSE;
+  }
+
+  private static boolean arrayDeepEquals(Array a, Array b) {
+    int len = a.len();
+    if (len != b.len()) {
+      return false;
+    }
+    for (int i = 0; i < len; i++) {
+      Sequence aVal = a.at(i);
+      Sequence bVal = b.at(i);
+      if (deepEquals(aVal, bVal) == Bool.FALSE) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static boolean objectDeepEquals(Object a, Object b) {
+    int len = a.len();
+    if (len != b.len()) {
+      return false;
+    }
+    for (int i = 0; i < len; i++) {
+      QNm name = a.name(i);
+      Sequence aVal = a.value(i);
+      Sequence bVal = b.get(name);
+      if (bVal == null) {
+        if (aVal != null) {
+          return false;
+        }
+      } else if (deepEquals(aVal, bVal) == Bool.FALSE) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private static boolean atomicDeepEquals(Atomic a, Atomic b) throws QueryException {
