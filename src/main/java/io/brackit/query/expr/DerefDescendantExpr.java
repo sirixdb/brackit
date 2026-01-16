@@ -31,233 +31,199 @@ import io.brackit.query.QueryContext;
 import io.brackit.query.QueryException;
 import io.brackit.query.Tuple;
 import io.brackit.query.atomic.Atomic;
-import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.atomic.QNm;
-import io.brackit.query.util.ExprUtil;
 import io.brackit.query.compiler.Bits;
-import io.brackit.query.sequence.BaseIter;
-import io.brackit.query.sequence.ItemSequence;
-import io.brackit.query.sequence.LazySequence;
 import io.brackit.query.jdm.Expr;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.jdm.json.Array;
 import io.brackit.query.jdm.json.Object;
-
-import java.util.ArrayList;
-import java.util.List;
+import io.brackit.query.sequence.BaseIter;
+import io.brackit.query.sequence.LazySequence;
+import io.brackit.query.util.ExprUtil;
 
 /**
+ * Descendant deref expression (=>>).
+ * Performs preorder traversal through JSON structures (arrays and objects),
+ * yielding values of all objects that have the specified field.
+ *
  * @author Sebastian Baechle
+ * @author Johannes Lichtenberger
  */
 public class DerefDescendantExpr implements Expr {
 
-  final Expr object;
-  final Expr[] fields;
+  private static final int INITIAL_STACK_CAPACITY = 32;
 
-  public DerefDescendantExpr(Expr record, Expr[] fields) {
-    this.object = record;
-    this.fields = fields;
+  private final Expr object;
+  private final Expr field;
+
+  public DerefDescendantExpr(Expr object, Expr field) {
+    this.object = object;
+    this.field = field;
   }
 
   @Override
   public Sequence evaluate(QueryContext ctx, Tuple tuple) {
-    final var sequence = object.evaluate(ctx, tuple);
-
-    final List<Item> itemSequence = new ArrayList<>();
-
-    for (int index = 0; index < fields.length && sequence != null; index++) {
-      final var resultSequence = processSequence(ctx, tuple, sequence, index);
-
-      final var item = getItem(ctx, tuple, index, resultSequence);
-
-      if (item != null) {
-        itemSequence.add(item);
-      }
-    }
-
-    if (itemSequence.isEmpty()) {
+    final Sequence sequence = object.evaluate(ctx, tuple);
+    if (sequence == null) {
       return null;
     }
 
-    if (itemSequence.size() == 1) {
-      return itemSequence.get(0);
-    }
-
-    return new ItemSequence(itemSequence.toArray(new Item[0]));
-  }
-
-  private Item getItem(QueryContext ctx, Tuple tuple, int index, Sequence resultSequence) {
-    if (resultSequence == null) {
+    final Item fieldItem = field.evaluateToItem(ctx, tuple);
+    if (fieldItem == null) {
       return null;
     }
 
-    if (resultSequence instanceof Item item) {
-      return item;
-    }
+    // Pre-compute the field name for fast lookup
+    final QNm fieldName = toQNm(fieldItem);
 
-    try (final var iter = resultSequence.iterate()) {
-      final var item = iter.next();
-      if (item != null) {
-        final var currSeq = processSequence(ctx, tuple, item, index);
-
-        return getItem(ctx, tuple, index, currSeq);
-      }
-    }
-
-    return null;
-  }
-
-  private Sequence processSequence(QueryContext ctx, Tuple tuple, Sequence sequence, int index) {
-    if (sequence instanceof Array) {
-      return processArray(ctx, tuple, getSequenceValues(ctx, tuple, (Array) sequence, fields[index]));
-    } else if (sequence instanceof Object) {
-      return processObject(sequence, index, ctx, tuple);
-    } else if (sequence instanceof LazySequence) {
-      return processLazySequence(ctx, tuple, sequence, index);
-    } else if (sequence instanceof ItemSequence) {
-      return sequence;
-    }
-    return null;
-  }
-
-  private Sequence processLazySequence(QueryContext ctx, Tuple tuple, Sequence sequence, int index) {
     return new LazySequence() {
       @Override
       public Iter iterate() {
-        var iter = sequence.iterate();
-
-        return new BaseIter() {
-          Iter nestedIter;
-
-          @Override
-          public Item next() {
-            Item item = null;
-            if (nestedIter != null) {
-              item = nextItem(nestedIter);
-            }
-            if (item == null) {
-              item = nextItem(iter);
-            }
-
-            return item;
-          }
-
-          private Item nextItem(Iter iter) {
-            Item item;
-            while ((item = iter.next()) != null) {
-              if (iter == nestedIter) {
-                return item;
-              }
-              var resultItem = processSequence(ctx, tuple, item, index);
-
-              if (resultItem == null) {
-                continue;
-              }
-
-              if (resultItem instanceof LazySequence) {
-                if (nestedIter != null) {
-                  nestedIter.close();
-                }
-                nestedIter = resultItem.iterate();
-                resultItem = next();
-
-                if (resultItem == null) {
-                  continue;
-                }
-              }
-
-              return resultItem.evaluateToItem(ctx, tuple);
-            }
-
-            return null;
-          }
-
-          @Override
-          public void close() {
-            if (nestedIter != null) {
-              nestedIter.close();
-            }
-            iter.close();
-          }
-        };
+        return new DescendantIter(ctx, tuple, sequence, fieldName);
       }
     };
   }
 
-  private Sequence processArray(QueryContext ctx, Tuple tuple, final List<Sequence> values) {
-    return new LazySequence() {
-      @Override
-      public Iter iterate() {
-        return new BaseIter() {
-          int i;
+  /**
+   * High-performance iterator using array-based stack for preorder traversal.
+   * Avoids allocations in the hot path by using index-based access.
+   */
+  private static final class DescendantIter extends BaseIter {
+    private final QueryContext ctx;
+    private final Tuple tuple;
+    private final QNm fieldName;
 
-          @Override
-          public Item next() {
-            if (i < values.size()) {
-              return values.get(i++).evaluateToItem(ctx, tuple);
-            }
-            return null;
-          }
+    // Array-based stack for better cache locality and no boxing
+    private Sequence[] stack;
+    private int stackSize;
 
-          @Override
-          public void close() {
-          }
-        };
+    // For handling generic sequences
+    private Iter currentIter;
+
+    DescendantIter(QueryContext ctx, Tuple tuple, Sequence initial, QNm fieldName) {
+      this.ctx = ctx;
+      this.tuple = tuple;
+      this.fieldName = fieldName;
+      this.stack = new Sequence[INITIAL_STACK_CAPACITY];
+      this.stackSize = 0;
+      push(initial);
+    }
+
+    private void push(Sequence seq) {
+      if (stackSize == stack.length) {
+        // Grow stack (double capacity)
+        final Sequence[] newStack = new Sequence[stack.length << 1];
+        System.arraycopy(stack, 0, newStack, 0, stackSize);
+        stack = newStack;
       }
-    };
-  }
+      stack[stackSize++] = seq;
+    }
 
-  private Sequence processObject(Sequence sequence, int index, QueryContext ctx, Tuple tuple) {
-    final Object object = (Object) sequence;
-    final Item field = fields[index].evaluateToItem(ctx, tuple);
+    private Sequence pop() {
+      return stack[--stackSize];
+    }
 
-    if (field == null) {
+    @Override
+    public Item next() {
+      while (true) {
+        // First, drain any current iterator
+        if (currentIter != null) {
+          final Item item = currentIter.next();
+          if (item != null) {
+            push(item);
+          } else {
+            currentIter.close();
+            currentIter = null;
+          }
+        }
+
+        if (stackSize == 0) {
+          return null;
+        }
+
+        final Sequence seq = pop();
+
+        if (seq instanceof Object obj) {
+          final Item result = processObject(obj);
+          if (result != null) {
+            return result;
+          }
+          // Continue loop if no match
+        } else if (seq instanceof Array arr) {
+          processArray(arr);
+        } else if (seq instanceof Item) {
+          // Atomic or other non-JSON item - skip
+        } else if (seq != null) {
+          // Generic sequence - iterate
+          currentIter = seq.iterate();
+        }
+      }
+    }
+
+    /**
+     * Process an object: check for field match (preorder), then push children.
+     * Returns the field value if found, null otherwise.
+     */
+    private Item processObject(Object obj) {
+      // First, get the field value (preorder - visit before children)
+      final Sequence fieldValue = obj.get(fieldName);
+
+      // Push all object values for recursive traversal (reverse order for preorder)
+      final int len = obj.len();
+      for (int i = len - 1; i >= 0; i--) {
+        final Sequence value = obj.value(i);
+        if (value != null) {
+          push(value);
+        }
+      }
+
+      // Return field value if found
+      if (fieldValue != null) {
+        return fieldValue.evaluateToItem(ctx, tuple);
+      }
       return null;
     }
 
-    return getSequenceByRecordField(object, field);
-  }
-
-  private List<Sequence> getSequenceValues(QueryContext ctx, Tuple t, Array sequence, Expr field1) {
-    // TODO: Think about if it makes sense to get the result sequence with an
-    // iterator instead of materialize everything
-
-    final var vals = new ArrayList<Sequence>();
-    for (Sequence value : sequence.values()) {
-      Sequence val = value.evaluate(ctx, t);
-      if (val instanceof Array) {
-        vals.addAll(getSequenceValues(ctx, t, (Array) val, field1));
-        continue;
-      }
-      if (!(val instanceof Object obj)) {
-        continue;
-      }
-      Item field = field1.evaluateToItem(ctx, t);
-      if (field == null) {
-        continue;
-      }
-      final var sequenceByRecordField = getSequenceByRecordField(obj, field);
-      if (sequenceByRecordField != null) {
-        vals.add(sequenceByRecordField);
+    /**
+     * Process an array: push all elements for traversal (reverse order for preorder).
+     */
+    private void processArray(Array arr) {
+      final int len = arr.len();
+      for (int i = len - 1; i >= 0; i--) {
+        final Sequence elem = arr.at(i);
+        if (elem != null) {
+          push(elem);
+        }
       }
     }
-    return vals;
+
+    @Override
+    public void close() {
+      if (currentIter != null) {
+        currentIter.close();
+        currentIter = null;
+      }
+      // Help GC
+      for (int i = 0; i < stackSize; i++) {
+        stack[i] = null;
+      }
+      stackSize = 0;
+    }
   }
 
-  private Sequence getSequenceByRecordField(Object record, Item field) {
-    Sequence sequence;
-    if (field instanceof QNm) {
-      sequence = record.get((QNm) field);
-    } else if (field instanceof IntNumeric) {
-      sequence = record.value((IntNumeric) field);
-    } else if (field instanceof Atomic) {
-      sequence = record.get(new QNm(((Atomic) field).asStr().toString()));
+  /**
+   * Convert field item to QNm for efficient repeated lookups.
+   */
+  private static QNm toQNm(Item fieldItem) {
+    if (fieldItem instanceof QNm qnm) {
+      return qnm;
+    } else if (fieldItem instanceof Atomic atomic) {
+      return new QNm(atomic.stringValue());
     } else {
-      throw new QueryException(Bits.BIT_ILLEGAL_OBJECT_FIELD, "Illegal record field reference: %s", field);
+      throw new QueryException(Bits.BIT_ILLEGAL_OBJECT_FIELD, "Illegal object field reference: %s", fieldItem);
     }
-    return sequence;
   }
 
   @Override
@@ -267,15 +233,7 @@ public class DerefDescendantExpr implements Expr {
 
   @Override
   public boolean isUpdating() {
-    if (object.isUpdating()) {
-      return true;
-    }
-    for (final Expr field : fields) {
-      if (field.isUpdating()) {
-        return true;
-      }
-    }
-    return false;
+    return object.isUpdating() || field.isUpdating();
   }
 
   @Override
@@ -283,12 +241,8 @@ public class DerefDescendantExpr implements Expr {
     return false;
   }
 
+  @Override
   public String toString() {
-    StringBuilder s = new StringBuilder();
-    for (Expr f : fields) {
-      s.append("==>");
-      s.append(f);
-    }
-    return s.toString();
+    return "=>>" + field;
   }
 }
