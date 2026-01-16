@@ -100,6 +100,7 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>brackit-assembly</id>
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
@@ -112,6 +113,26 @@
                                     </mainClass>
                                 </manifest>
                             </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>bjq-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>
+                                        io.brackit.query.BrackitJq
+                                    </mainClass>
+                                </manifest>
+                            </archive>
+                            <finalName>bjq</finalName>
                             <descriptorRefs>
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>

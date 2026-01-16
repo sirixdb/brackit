@@ -153,7 +153,7 @@ public class PathExprTest extends XQueryBaseTest {
   public void pathExprTest9b() {
     PrintStream buf = createBuffer();
     new Query("xquery version \"1.0\";let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))//position()[2]").serialize(ctx,
-                                                                                                                                   buf);
+                                                                                                                                                          buf);
     assertEquals("", buf.toString());
   }
 
@@ -161,7 +161,7 @@ public class PathExprTest extends XQueryBaseTest {
   public void pathExprTest9c() {
     PrintStream buf = createBuffer();
     new Query("xquery version \"1.0\";let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))//*[last() - 1]").serialize(ctx,
-                                                                                                                                   buf);
+                                                                                                                                                          buf);
     assertEquals("<b>b1</b>", buf.toString());
   }
 
@@ -169,7 +169,7 @@ public class PathExprTest extends XQueryBaseTest {
   public void pathExprTest9d() {
     PrintStream buf = createBuffer();
     new Query("xquery version \"1.0\";let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))/../*[last() - 1]").serialize(ctx,
-                                                                                                                                     buf);
+                                                                                                                                                            buf);
     assertEquals("<c><b>b1</b><b>b2</b></c>", buf.toString());
   }
 
@@ -177,14 +177,15 @@ public class PathExprTest extends XQueryBaseTest {
   public void pathExprTest9e() {
     PrintStream buf = createBuffer();
     new Query("xquery version \"1.0\";let $doc := (<a><c><b>b1</b><b>b2</b></c><d><b>b3</b></d></a>) return (($doc/d, $doc/c))/..//*[last() - 1]").serialize(ctx,
-                                                                                                                                      buf);
+                                                                                                                                                             buf);
     assertEquals("<c><b>b1</b><b>b2</b></c><b>b1</b>", buf.toString());
   }
 
   @Test
   public void pathExprTest7() {
     PrintStream buf = createBuffer();
-    new Query("xquery version \"1.0\"; (<a><b><c>c1</c><b><c>c2</c></b><c>c3</c></b><b><c>c4</c></b></a>)//c[2]").serialize(ctx, buf);
+    new Query("xquery version \"1.0\"; (<a><b><c>c1</c><b><c>c2</c></b><c>c3</c></b><b><c>c4</c></b></a>)//c[2]").serialize(ctx,
+                                                                                                                            buf);
     assertEquals("<c>c3</c>", buf.toString());
   }
 
@@ -216,7 +217,7 @@ public class PathExprTest extends XQueryBaseTest {
   public void pathExprTestDebug() {
     PrintStream buf = createBuffer();
     new Query("xquery version \"1.0\";(<a><b><c>c1</c><b><c>c2</c></b><c>c3</c></b><b><c>c4</c></b></a>)/descendant-or-self::node()/c[2]").serialize(ctx,
-                                                                                                                              buf);
+                                                                                                                                                     buf);
     assertEquals("<c>c3</c>", buf.toString());
   }
 

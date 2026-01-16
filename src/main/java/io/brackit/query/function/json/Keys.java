@@ -28,6 +28,7 @@
 package io.brackit.query.function.json;
 
 import io.brackit.query.atomic.QNm;
+import io.brackit.query.atomic.Str;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
@@ -83,8 +84,10 @@ public class Keys extends AbstractFunction {
                 try (final var nameIter = object.names().iterate()) {
                   Item name;
                   while ((name = nameIter.next()) != null) {
-                    if (stringKeys.add(name.atomize().stringValue())) {
-                      keys.add(name);
+                    String keyStr = name.atomize().stringValue();
+                    if (stringKeys.add(keyStr)) {
+                      // Return string keys for JSON objects
+                      keys.add(new Str(keyStr));
                     }
                   }
                 }
