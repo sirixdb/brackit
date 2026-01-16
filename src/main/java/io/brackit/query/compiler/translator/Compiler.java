@@ -31,8 +31,11 @@ import io.brackit.query.ErrorCode;
 import io.brackit.query.atomic.*;
 import io.brackit.query.expr.*;
 import io.brackit.query.function.DynamicFunctionExpr;
+import io.brackit.query.function.DynamicPartialFunctionCallExpr;
 import io.brackit.query.function.FunctionExpr;
 import io.brackit.query.function.InlineFunctionExpr;
+import io.brackit.query.function.PartialFunctionCallExpr;
+import io.brackit.query.function.PartiallyAppliedFunction;
 import io.brackit.query.function.UDF;
 import io.brackit.query.function.bit.BitFun;
 import io.brackit.query.function.json.JSONFun;
@@ -265,11 +268,26 @@ public class Compiler implements Translator {
   private Expr dynamicFunctionCall(AST node) {
     final StaticContext sctx = node.getStaticContext();
     final Expr functionExpr = expr(node.getChild(0), true);
-    final Expr[] argumentsExpr = new Expr[node.getChildCount() - 1];
+    final int argCount = node.getChildCount() - 1;
+    final Expr[] argumentsExpr = new Expr[argCount];
+    final List<Integer> placeholderPositions = new ArrayList<>();
+
     for (int i = 1; i < node.getChildCount(); i++) {
-      argumentsExpr[i - 1] = expr(node.getChild(i), true);
+      AST arg = node.getChild(i);
+      if (arg.getType() == XQ.ArgumentPlaceHolder) {
+        placeholderPositions.add(i - 1);
+        argumentsExpr[i - 1] = null;
+      } else {
+        argumentsExpr[i - 1] = expr(arg, true);
+      }
     }
-    return new DynamicFunctionExpr(sctx, functionExpr, argumentsExpr);
+
+    if (placeholderPositions.isEmpty()) {
+      return new DynamicFunctionExpr(sctx, functionExpr, argumentsExpr);
+    } else {
+      int[] positions = placeholderPositions.stream().mapToInt(Integer::intValue).toArray();
+      return new DynamicPartialFunctionCallExpr(functionExpr, argumentsExpr, positions);
+    }
   }
 
   private Expr deleteJsonExpr(AST node) {
@@ -696,20 +714,16 @@ public class Compiler implements Translator {
 
     final var signature = function.getSignature();
 
-    final List<SequenceType> newParamTypes = new ArrayList<>();
-    final var params = signature.getParams();
-
     Expr[] args;
-
-    final List<Expr> argumentPlaceHolderExprs = new ArrayList<>();
+    List<Integer> placeholderPositions = new ArrayList<>();
 
     if (childCount > 0) {
       args = new Expr[childCount];
       for (int i = 0; i < childCount; i++) {
         AST arg = node.getChild(i);
         if (arg.getType() == XQ.ArgumentPlaceHolder) {
-          argumentPlaceHolderExprs.add(new PartialArgumentExpr());
-          newParamTypes.add(params[i]);
+          placeholderPositions.add(i);
+          args[i] = null;
         } else {
           args[i] = expr(arg, true);
         }
@@ -721,14 +735,11 @@ public class Compiler implements Translator {
       args = new Expr[0];
     }
 
-    if (argumentPlaceHolderExprs.isEmpty()) {
+    if (placeholderPositions.isEmpty()) {
       return new FunctionExpr(node.getStaticContext(), function, args);
     } else {
-      final UDF udf = new UDF(name,
-                              new Signature(signature.getResultType(), newParamTypes.toArray(new SequenceType[0])),
-                              function.isUpdating());
-      udf.setExpr(function);
-      return new FunctionExpr(node.getStaticContext(), udf, args);
+      int[] positions = placeholderPositions.stream().mapToInt(Integer::intValue).toArray();
+      return new PartialFunctionCallExpr(function, args, positions);
     }
   }
 
