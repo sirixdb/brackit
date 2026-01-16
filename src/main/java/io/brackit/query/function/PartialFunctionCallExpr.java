@@ -34,7 +34,6 @@ import io.brackit.query.jdm.Expr;
 import io.brackit.query.jdm.Function;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Sequence;
-import io.brackit.query.util.ExprUtil;
 
 /**
  * Expression that creates a partially applied function.
@@ -76,7 +75,7 @@ public class PartialFunctionCallExpr implements Expr {
 
   @Override
   public Item evaluateToItem(QueryContext ctx, Tuple tuple) throws QueryException {
-    return ExprUtil.asItem(evaluate(ctx, tuple));
+    return (Item) evaluate(ctx, tuple);
   }
 
   @Override

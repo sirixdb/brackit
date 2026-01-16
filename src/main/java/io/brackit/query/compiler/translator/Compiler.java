@@ -270,22 +270,25 @@ public class Compiler implements Translator {
     final Expr functionExpr = expr(node.getChild(0), true);
     final int argCount = node.getChildCount() - 1;
     final Expr[] argumentsExpr = new Expr[argCount];
-    final List<Integer> placeholderPositions = new ArrayList<>();
+    final int[] placeholderPositions = new int[argCount];
+    int placeholderCount = 0;
 
     for (int i = 1; i < node.getChildCount(); i++) {
       AST arg = node.getChild(i);
       if (arg.getType() == XQ.ArgumentPlaceHolder) {
-        placeholderPositions.add(i - 1);
+        placeholderPositions[placeholderCount++] = i - 1;
         argumentsExpr[i - 1] = null;
       } else {
         argumentsExpr[i - 1] = expr(arg, true);
       }
     }
 
-    if (placeholderPositions.isEmpty()) {
+    if (placeholderCount == 0) {
       return new DynamicFunctionExpr(sctx, functionExpr, argumentsExpr);
     } else {
-      int[] positions = placeholderPositions.stream().mapToInt(Integer::intValue).toArray();
+      int[] positions = placeholderCount == argCount
+          ? placeholderPositions
+          : Arrays.copyOf(placeholderPositions, placeholderCount);
       return new DynamicPartialFunctionCallExpr(functionExpr, argumentsExpr, positions);
     }
   }
@@ -715,14 +718,16 @@ public class Compiler implements Translator {
     final var signature = function.getSignature();
 
     Expr[] args;
-    List<Integer> placeholderPositions = new ArrayList<>();
+    int[] placeholderPositions = null;
+    int placeholderCount = 0;
 
     if (childCount > 0) {
       args = new Expr[childCount];
+      placeholderPositions = new int[childCount];
       for (int i = 0; i < childCount; i++) {
         AST arg = node.getChild(i);
         if (arg.getType() == XQ.ArgumentPlaceHolder) {
-          placeholderPositions.add(i);
+          placeholderPositions[placeholderCount++] = i;
           args[i] = null;
         } else {
           args[i] = expr(arg, true);
@@ -735,10 +740,12 @@ public class Compiler implements Translator {
       args = new Expr[0];
     }
 
-    if (placeholderPositions.isEmpty()) {
+    if (placeholderCount == 0) {
       return new FunctionExpr(node.getStaticContext(), function, args);
     } else {
-      int[] positions = placeholderPositions.stream().mapToInt(Integer::intValue).toArray();
+      int[] positions = placeholderCount == childCount
+          ? placeholderPositions
+          : Arrays.copyOf(placeholderPositions, placeholderCount);
       return new PartialFunctionCallExpr(function, args, positions);
     }
   }

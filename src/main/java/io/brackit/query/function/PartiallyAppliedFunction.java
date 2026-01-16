@@ -36,9 +36,6 @@ import io.brackit.query.jdm.type.SequenceType;
 import io.brackit.query.module.StaticContext;
 import io.brackit.query.QueryException;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * A function that wraps another function with some arguments pre-bound.
  * Used for partial function application, e.g., func(2, ?, 7) creates a
@@ -78,15 +75,12 @@ public class PartiallyAppliedFunction extends AbstractFunction {
 
   private static Signature createSignature(Function originalFunction, int[] placeholderPositions) {
     SequenceType[] origParams = originalFunction.getSignature().getParams();
-    List<SequenceType> newParams = new ArrayList<>();
-    for (int pos : placeholderPositions) {
-      if (pos < origParams.length) {
-        newParams.add(origParams[pos]);
-      } else {
-        newParams.add(SequenceType.ITEM_SEQUENCE);
-      }
+    SequenceType[] newParams = new SequenceType[placeholderPositions.length];
+    for (int i = 0; i < placeholderPositions.length; i++) {
+      int pos = placeholderPositions[i];
+      newParams[i] = pos < origParams.length ? origParams[pos] : SequenceType.ITEM_SEQUENCE;
     }
-    return new Signature(originalFunction.getSignature().getResultType(), newParams.toArray(new SequenceType[0]));
+    return new Signature(originalFunction.getSignature().getResultType(), newParams);
   }
 
   @Override
