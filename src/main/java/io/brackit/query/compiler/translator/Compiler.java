@@ -1508,11 +1508,8 @@ public class Compiler implements Translator {
 
   protected Expr derefDescendantExpr(AST node) throws QueryException {
     Expr object = expr(node.getChild(0), true);
-    Expr[] fields = new Expr[node.getChildCount() - 1];
-    for (int i = 1; i < node.getChildCount(); i++) {
-      fields[i - 1] = expr(node.getChild(i), true);
-    }
-    return new DerefDescendantExpr(object, fields);
+    Expr field = expr(node.getChild(1), true);
+    return new DerefDescendantExpr(object, field);
   }
 
   protected Expr projectionExpr(AST node) throws QueryException {

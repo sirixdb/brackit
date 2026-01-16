@@ -138,17 +138,278 @@ public final class JsonTest extends XQueryBaseTest {
     assertEquals("bar", result);
   }
 
-  @Ignore
+  // ==================== Descendant Deref (=>>)Tests ====================
+
   @Test
-  public void testDescVarDeref() throws IOException {
+  public void testDescendantDerefSimple() throws IOException {
+    // Simple case: find "foo" field at root level
     final String query = """
-        let $object := {"blabla":{"foo":{"baz":{"foo":"bar"}}}}
-        let $foo := "foo"
-        let $baz := "baz"
-        return $object=>>$foo.$baz.foo
+        let $obj := {"foo": "bar"}
+        return $obj=>>foo
         """;
     final var result = query(query);
     assertEquals("bar", result);
+  }
+
+  @Test
+  public void testDescendantDerefNested() throws IOException {
+    // Find "foo" nested one level deep
+    final String query = """
+        let $obj := {"a": {"foo": "found"}}
+        return $obj=>>foo
+        """;
+    final var result = query(query);
+    assertEquals("found", result);
+  }
+
+  @Test
+  public void testDescendantDerefDeeplyNested() throws IOException {
+    // Find "foo" deeply nested
+    final String query = """
+        let $obj := {"a": {"b": {"c": {"foo": "deep"}}}}
+        return $obj=>>foo
+        """;
+    final var result = query(query);
+    assertEquals("deep", result);
+  }
+
+  @Test
+  public void testDescendantDerefMultipleMatches() throws IOException {
+    // Multiple "foo" fields at different levels - should return all in preorder
+    final String query = """
+        let $obj := {"foo": 1, "nested": {"foo": 2, "deeper": {"foo": 3}}}
+        return $obj=>>foo
+        """;
+    final var result = query(query);
+    assertEquals("1 2 3", result);
+  }
+
+  @Test
+  public void testDescendantDerefInArray() throws IOException {
+    // Find "foo" inside array elements
+    final String query = """
+        let $obj := {"arr": [{"foo": "first"}, {"foo": "second"}]}
+        return $obj=>>foo
+        """;
+    final var result = query(query);
+    assertEquals("first second", result);
+  }
+
+  @Test
+  public void testDescendantDerefMixedArrayAndObject() throws IOException {
+    // Mixed arrays and objects
+    final String query = """
+        let $obj := {"foo": 1, "arr": [{"foo": 2}, {"nested": {"foo": 3}}]}
+        return $obj=>>foo
+        """;
+    final var result = query(query);
+    assertEquals("1 2 3", result);
+  }
+
+  @Test
+  public void testDescendantDerefNoMatch() throws IOException {
+    // No matching field - should return empty
+    final String query = """
+        let $obj := {"a": {"b": {"c": "value"}}}
+        return $obj=>>nonexistent
+        """;
+    final var result = query(query);
+    assertEquals("", result);
+  }
+
+  @Test
+  public void testDescendantDerefEmptyObject() throws IOException {
+    // Empty object
+    final String query = """
+        let $obj := {}
+        return $obj=>>foo
+        """;
+    final var result = query(query);
+    assertEquals("", result);
+  }
+
+  @Test
+  public void testDescendantDerefEmptyArray() throws IOException {
+    // Empty array
+    final String query = """
+        let $arr := []
+        return $arr=>>foo
+        """;
+    final var result = query(query);
+    assertEquals("", result);
+  }
+
+  @Test
+  public void testDescendantDerefNestedArrays() throws IOException {
+    // Nested arrays
+    final String query = """
+        let $obj := {"arr": [[{"foo": "nested"}], [{"foo": "also"}]]}
+        return $obj=>>foo
+        """;
+    final var result = query(query);
+    assertEquals("nested also", result);
+  }
+
+  @Test
+  public void testDescendantDerefPreorderVerification() throws IOException {
+    // Verify preorder traversal: parent before children, left before right
+    final String query = """
+        let $obj := {
+          "foo": "A",
+          "left": {"foo": "B", "child": {"foo": "C"}},
+          "right": {"foo": "D"}
+        }
+        return $obj=>>foo
+        """;
+    final var result = query(query);
+    assertEquals("A B C D", result);
+  }
+
+  @Test
+  public void testDescendantDerefWithVarField() throws IOException {
+    // Dynamic field name from variable
+    final String query = """
+        let $obj := {"target": "found", "nested": {"target": "also"}}
+        let $field := "target"
+        return $obj=>>$field
+        """;
+    final var result = query(query);
+    assertEquals("found also", result);
+  }
+
+  @Test
+  public void testDescendantDerefChained() throws IOException {
+    // Chained descendant deref: find all "id" then all "name" in those
+    final String query = """
+        let $obj := {
+          "items": [
+            {"id": {"name": "first"}},
+            {"id": {"name": "second"}}
+          ]
+        }
+        return $obj=>>id=>>name
+        """;
+    final var result = query(query);
+    assertEquals("first second", result);
+  }
+
+  @Test
+  public void testDescendantDerefThenRegularDeref() throws IOException {
+    // Descendant deref followed by regular deref
+    final String query = """
+        let $obj := {"a": {"target": {"value": "found"}}}
+        return $obj=>>target.value
+        """;
+    final var result = query(query);
+    assertEquals("found", result);
+  }
+
+  @Test
+  public void testDescendantDerefOnArray() throws IOException {
+    // Apply descendant deref directly on array
+    final String query = """
+        let $arr := [{"foo": 1}, {"bar": {"foo": 2}}]
+        return $arr=>>foo
+        """;
+    final var result = query(query);
+    assertEquals("1 2", result);
+  }
+
+  @Test
+  public void testDescendantDerefWithNullValues() throws IOException {
+    // Objects containing null values
+    final String query = """
+        let $obj := {"foo": null, "nested": {"foo": "value"}}
+        return $obj=>>foo
+        """;
+    final var result = query(query);
+    assertEquals("null value", result);
+  }
+
+  @Test
+  public void testDescendantDerefWithNumericValues() throws IOException {
+    // Various numeric values
+    final String query = """
+        let $obj := {"n": {"num": 42}, "arr": [{"num": 3.14}, {"num": -1}]}
+        return $obj=>>num
+        """;
+    final var result = query(query);
+    assertEquals("42 3.14 -1", result);
+  }
+
+  @Test
+  public void testDescendantDerefWithBooleanValues() throws IOException {
+    // Boolean values
+    final String query = """
+        let $obj := {"a": {"flag": true}, "b": {"flag": false}}
+        return $obj=>>flag
+        """;
+    final var result = query(query);
+    assertEquals("true false", result);
+  }
+
+  @Test
+  public void testDescendantDerefWithObjectValue() throws IOException {
+    // Field value is an object
+    final String query = """
+        let $obj := {"data": {"inner": {"key": "val"}}}
+        return $obj=>>inner
+        """;
+    final var result = query(query);
+    assertEquals("{\"key\":\"val\"}", result);
+  }
+
+  @Test
+  public void testDescendantDerefWithArrayValue() throws IOException {
+    // Field value is an array
+    final String query = """
+        let $obj := {"data": {"items": [1, 2, 3]}}
+        return $obj=>>items
+        """;
+    final var result = query(query);
+    assertEquals("[1,2,3]", result);
+  }
+
+  @Test
+  public void testDescendantDerefLargeStructure() throws IOException {
+    // Larger structure to test performance
+    final String query = """
+        let $obj := {
+          "level1": {
+            "a": {"id": 1, "sub": {"id": 2}},
+            "b": {"id": 3, "arr": [{"id": 4}, {"id": 5}]}
+          },
+          "level2": [
+            {"id": 6},
+            {"nested": {"id": 7, "deep": {"id": 8}}}
+          ]
+        }
+        return $obj=>>id
+        """;
+    final var result = query(query);
+    assertEquals("1 2 3 4 5 6 7 8", result);
+  }
+
+  @Test
+  public void testDescendantDerefQuotedFieldName() throws IOException {
+    // Field name with special characters (quoted)
+    final String query = """
+        let $obj := {"data": {"field-name": "found"}}
+        return $obj=>>"field-name"
+        """;
+    final var result = query(query);
+    assertEquals("found", result);
+  }
+
+  @Test
+  public void testDescendantDerefFieldWithDot() throws IOException {
+    // Field name containing a dot
+    final String query = """
+        let $obj := {"data": {"field.name": "found"}}
+        return $obj=>>"field.name"
+        """;
+    final var result = query(query);
+    assertEquals("found", result);
   }
 
   @Test
