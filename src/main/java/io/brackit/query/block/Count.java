@@ -30,18 +30,30 @@ package io.brackit.query.block;
 import java.util.concurrent.Semaphore;
 
 import io.brackit.query.atomic.Counter;
+import io.brackit.query.atomic.Int32;
 import io.brackit.query.QueryContext;
 import io.brackit.query.QueryException;
 import io.brackit.query.Tuple;
+import io.brackit.query.jdm.Sequence;
+import io.brackit.query.operator.Check;
 
 /**
  * @author Sebastian Baechle
  */
 public class Count implements Block {
+  final Check check;
+
+  public Count() {
+    this(null);
+  }
+
+  public Count(Check check) {
+    this.check = check;
+  }
 
   @Override
   public Sink create(QueryContext ctx, Sink sink) throws QueryException {
-    return new CountSink(sink);
+    return new CountSink(sink, check);
   }
 
   @Override
@@ -50,37 +62,69 @@ public class Count implements Block {
   }
 
   static class CountSink extends SerialSink {
-    final Sink sink;
-    final Counter pos;
+    // Reusable output buffer to reduce GC pressure - grows as needed
+    private static final int INITIAL_BUFFER_SIZE = 512;
+    private Tuple[] outBuffer = new Tuple[INITIAL_BUFFER_SIZE];
 
-    CountSink(Sink sink) {
+    final Sink sink;
+    final Check check;
+    final Counter pos;
+    Tuple prev;
+
+    CountSink(Sink sink, Check check) {
       super(FJControl.PERMITS);
       this.sink = sink;
+      this.check = check;
       this.pos = new Counter();
+      this.prev = null;
     }
 
-    CountSink(Semaphore sem, Sink sink, Counter pos) {
+    CountSink(Semaphore sem, Sink sink, Check check, Counter pos, Tuple prev) {
       super(sem);
       this.sink = sink;
+      this.check = check;
       this.pos = pos;
+      this.prev = prev;
     }
 
     @Override
     protected ChainedSink doPartition(Sink stopAt) {
-      return new CountSink(sem, sink.partition(stopAt), new Counter());
+      return new CountSink(sem, sink.partition(stopAt), check, new Counter(), null);
     }
 
     @Override
     protected SerialSink doFork() {
-      return new CountSink(sem, sink, pos);
+      return new CountSink(sem, sink, check, pos, prev);
     }
 
     @Override
     protected void doOutput(Tuple[] buf, int len) throws QueryException {
-      Tuple[] out = new Tuple[len];
+      // Ensure output buffer is large enough, grow if needed
+      if (outBuffer.length < len) {
+        outBuffer = new Tuple[len];
+      }
+      Tuple[] out = outBuffer;
+
       for (int i = 0; i < len; i++) {
+        Tuple t = buf[i];
+
+        if (check != null) {
+          // Handle dead tuple - append null position
+          if (check.dead(t)) {
+            pos.reset();
+            out[i] = t.concat((Sequence) null);
+            prev = t;
+            continue;
+          }
+          // Reset position on group boundary
+          if (prev == null || check.separate(prev, t)) {
+            pos.reset();
+          }
+        }
+
         pos.inc();
-        out[i] = buf[i].concat(pos.asIntNumeric());
+        out[i] = t.concat(pos.asIntNumeric());
+        prev = t;
       }
       sink.output(out, len);
     }

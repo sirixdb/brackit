@@ -145,13 +145,15 @@ public class ForBind implements Block {
       sink.begin();
       try (it) {
         Item i;
-        Tuple[] buf = new Tuple[max];
+        // Use larger buffer for better throughput (powers of 2 for cache efficiency)
+        int bufSize = Math.max(max, 256);
+        Tuple[] buf = new Tuple[bufSize];
         int len = 0;
         while ((i = it.next()) != null) {
           buf[len++] = emit(t, i);
-          if (len == max) {
+          if (len == bufSize) {
             sink.output(buf, len);
-            buf = new Tuple[max];
+            // Reuse buffer instead of allocating new one
             len = 0;
           }
         }

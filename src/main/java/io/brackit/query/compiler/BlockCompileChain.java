@@ -25,50 +25,53 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package io.brackit.query.atomic;
+package io.brackit.query.compiler;
 
-import java.math.BigDecimal;
+import java.util.Map;
+
+import io.brackit.query.atomic.AnyURI;
+import io.brackit.query.atomic.QNm;
+import io.brackit.query.atomic.Str;
+import io.brackit.query.compiler.translator.BlockTranslator;
+import io.brackit.query.compiler.translator.Translator;
 
 /**
+ * Compile chain that uses block-based (parallel) execution model.
+ *
  * @author Sebastian Baechle
  */
-public class Counter {
+public class BlockCompileChain extends CompileChain {
 
-  private long lv;
-  private BigDecimal bdv;
+  private final boolean ordered;
 
-  public IntNumeric asIntNumeric() {
-    return bdv == null ? new Int64(lv) : new Int(bdv);
+  public BlockCompileChain() {
+    this(true);
   }
 
-  public Counter inc() {
-    if (bdv == null) {
-      if (lv < Long.MAX_VALUE) {
-        lv++;
-        return this;
-      }
-      bdv = new BigDecimal(lv);
-      lv = -1;
-    }
-
-    bdv = bdv.add(BigDecimal.ONE);
-    return this;
+  public BlockCompileChain(boolean ordered) {
+    super();
+    this.ordered = ordered;
   }
 
-  public int cmp(IntNumeric i) {
-    if (bdv == null) {
-      if (i instanceof LonNumeric) {
-        long ov = i.longValue();
-        return Long.compare(lv, ov);
-      }
-      return new BigDecimal(lv).compareTo(i.integerValue());
-    }
-    return bdv.compareTo(i.integerValue());
+  public BlockCompileChain(AnyURI baseURI, boolean ordered) {
+    super(baseURI);
+    this.ordered = ordered;
   }
 
-  public Counter reset() {
-    lv = 0;
-    bdv = null;
-    return this;
+  public BlockCompileChain(ModuleResolver resolver, boolean ordered) {
+    super(resolver);
+    this.ordered = ordered;
+  }
+
+  public BlockCompileChain(ModuleResolver resolver, AnyURI baseURI, boolean ordered) {
+    super(resolver, baseURI);
+    this.ordered = ordered;
+  }
+
+  @Override
+  protected Translator getTranslator(Map<QNm, Str> options) {
+    BlockTranslator translator = new BlockTranslator(options);
+    translator.setOrdered(ordered);
+    return translator;
   }
 }

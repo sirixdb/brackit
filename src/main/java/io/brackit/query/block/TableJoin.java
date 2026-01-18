@@ -151,9 +151,7 @@ public class TableJoin implements Block {
           if (hasToken) {
             // load table with first tuple in probe window
             Tuple t = buf[start];
-            System.out.println("START LOAD");
             load(t);
-            System.out.println("END LOAD");
             end = start;
             continue;
           } else {
@@ -368,8 +366,19 @@ public class TableJoin implements Block {
           Sequence[] tmp = t.array();
           Sequence[] bindings = Arrays.copyOfRange(tmp, offset, tmp.length);
           bindings[0] = null;
-          try (var iter = bindings[1].iterate()) {
-            bindings[1] = ((Node<?>) iter.next()).getFirstChild().getFirstChild().getValue();
+          if (bindings[1] != null) {
+            try (var iter = bindings[1].iterate()) {
+              var item = iter.next();
+              if (item instanceof Node<?> node) {
+                Node<?> child = node.getFirstChild();
+                if (child != null) {
+                  Node<?> grandchild = child.getFirstChild();
+                  if (grandchild != null) {
+                    bindings[1] = grandchild.getValue();
+                  }
+                }
+              }
+            }
           }
           table.add(keys, bindings, pos++);
         }
