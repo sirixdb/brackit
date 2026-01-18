@@ -30,14 +30,31 @@ package io.brackit.query.atomic;
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryException;
 import io.brackit.query.jdm.Type;
+import io.brackit.query.util.simd.VectorOps;
+
+import java.nio.charset.StandardCharsets;
 
 /**
+ * String atomic type with SIMD-accelerated comparison operations.
+ *
  * @author Sebastian Baechle
  */
 public class Str extends AbstractAtomic {
   public static final Str EMPTY = new Str("");
 
+  /**
+   * Threshold in bytes above which SIMD operations are used.
+   * Below this threshold, scalar operations are typically faster due to SIMD overhead.
+   */
+  private static final int SIMD_THRESHOLD = 32;
+
   private final String str;
+
+  /**
+   * Lazily cached UTF-8 bytes for SIMD operations.
+   * Thread-safe via immutable String + volatile write pattern.
+   */
+  private volatile byte[] utf8Cache;
 
   private class DStr extends Str {
     private final Type type;
@@ -57,6 +74,21 @@ public class Str extends AbstractAtomic {
     if (str == null)
       str = "";
     this.str = str;
+  }
+
+  /**
+   * Get UTF-8 bytes with lazy caching.
+   * Thread-safe via immutable String + volatile write.
+   *
+   * @return UTF-8 encoded bytes of this string
+   */
+  public byte[] getUtf8Bytes() {
+    byte[] cached = utf8Cache;
+    if (cached == null) {
+      cached = str.getBytes(StandardCharsets.UTF_8);
+      utf8Cache = cached;
+    }
+    return cached;
   }
 
   @Override
@@ -81,16 +113,15 @@ public class Str extends AbstractAtomic {
 
   @Override
   public int cmp(Atomic other) throws QueryException {
-    if ((other instanceof Str) || (other instanceof Una)) // Optimization
-    // treat
-    // xs:untypedAtomic
-    // as string to
-    // avoid cast
-    {
-      return (str.compareTo(other.stringValue()));
+    if ((other instanceof Str s) || (other instanceof Una)) {
+      // Try SIMD path for longer strings when both are Str
+      if (other instanceof Str s2) {
+        return cmpStr(s2);
+      }
+      return str.compareTo(other.stringValue());
     }
     if (other instanceof AnyURI) {
-      return (str.compareTo(other.stringValue()));
+      return str.compareTo(other.stringValue());
     }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                              "Cannot compare '%s' with '%s'",
@@ -98,9 +129,75 @@ public class Str extends AbstractAtomic {
                              other.type());
   }
 
+  /**
+   * SIMD-accelerated string comparison.
+   * Uses vectorized comparison for strings longer than SIMD_THRESHOLD.
+   *
+   * @param other the string to compare with
+   * @return negative if this < other, 0 if equal, positive if this > other
+   */
+  private int cmpStr(Str other) {
+    if (this == other)
+      return 0;
+
+    // Fast path: use cached UTF-8 if both are available
+    byte[] a = utf8Cache;
+    byte[] b = other.utf8Cache;
+
+    if (a != null && b != null) {
+      return VectorOps.stringCompare(a, b);
+    }
+
+    // Short string optimization - use scalar comparison
+    String s1 = this.str;
+    String s2 = other.str;
+    if (s1.length() < SIMD_THRESHOLD && s2.length() < SIMD_THRESHOLD) {
+      return s1.compareTo(s2);
+    }
+
+    // SIMD path for longer strings
+    return VectorOps.stringCompare(getUtf8Bytes(), other.getUtf8Bytes());
+  }
+
   @Override
   public int atomicCmpInternal(Atomic atomic) {
-    return (str.compareTo(atomic.stringValue()));
+    // Use SIMD for Str-to-Str comparison
+    if (atomic instanceof Str s) {
+      return cmpStr(s);
+    }
+    return str.compareTo(atomic.stringValue());
+  }
+
+  /**
+   * SIMD-accelerated equality check.
+   * More efficient than cmp() == 0 due to early exit on length mismatch.
+   */
+  @Override
+  public boolean eq(Atomic other) throws QueryException {
+    if (this == other)
+      return true;
+    if (!(other instanceof Str s))
+      return false;
+
+    // Quick length check on underlying strings
+    if (str.length() != s.str.length())
+      return false;
+
+    // Short string optimization
+    if (str.length() < SIMD_THRESHOLD) {
+      return str.equals(s.str);
+    }
+
+    // Fast path: use cached UTF-8 if available
+    byte[] a = utf8Cache;
+    byte[] b = s.utf8Cache;
+
+    if (a != null && b != null) {
+      return VectorOps.stringEquals(a, b);
+    }
+
+    // SIMD path for longer strings
+    return VectorOps.stringEquals(getUtf8Bytes(), s.getUtf8Bytes());
   }
 
   @Override

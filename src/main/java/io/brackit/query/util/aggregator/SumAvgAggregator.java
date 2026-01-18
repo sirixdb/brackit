@@ -32,6 +32,7 @@ import io.brackit.query.QueryException;
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.atomic.DTD;
 import io.brackit.query.atomic.Dbl;
+import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.Int64;
 import io.brackit.query.atomic.Numeric;
 import io.brackit.query.atomic.YMD;
@@ -40,9 +41,11 @@ import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.jdm.Type;
+import io.brackit.query.util.simd.VectorOps;
 
 /**
  * Aggregator for operations with fn:sum() and fn:avg() semantics.
+ * Enhanced with SIMD-accelerated batch operations for homogeneous numeric sequences.
  *
  * @author Sebastian Baechle
  */
@@ -51,11 +54,27 @@ public class SumAvgAggregator implements Aggregator {
     NUMERIC, YMD, DTD
   }
 
+  /**
+   * Buffer size for batch operations.
+   * Chosen to balance SIMD efficiency with memory overhead.
+   */
+  private static final int BATCH_SIZE = 1024;
+
   final boolean avg;
   final Sequence defaultValue;
   long count;
   Atomic sum = null;
   AggType aggType = null;
+
+  // SIMD batch buffers (lazily allocated)
+  private long[] longBuffer;
+  private double[] doubleBuffer;
+
+  // Tracking for optimized numeric accumulation
+  private long longSum = 0;
+  private double doubleSum = 0.0;
+  private boolean usingLongAccumulator = false;
+  private boolean usingDoubleAccumulator = false;
 
   public SumAvgAggregator(boolean avg, Sequence defaultValue) {
     this.avg = avg;
@@ -64,8 +83,19 @@ public class SumAvgAggregator implements Aggregator {
 
   @Override
   public Sequence getAggregate() throws QueryException {
+    // Handle optimized accumulator paths first
+    if (usingLongAccumulator) {
+      Numeric result = avg ? new Dbl((double) longSum / count) : new Int64(longSum);
+      return result;
+    }
+    if (usingDoubleAccumulator) {
+      Numeric result = avg ? new Dbl(doubleSum / count) : new Dbl(doubleSum);
+      return result;
+    }
+
+    // Original path for mixed types
     if (sum == null) {
-      return (avg) ? null : defaultValue;
+      return avg ? null : defaultValue;
     }
     if (aggType == AggType.NUMERIC) {
       sum = numericAggCalc((Numeric) sum, count);
@@ -82,6 +112,10 @@ public class SumAvgAggregator implements Aggregator {
     count = 0;
     sum = null;
     aggType = null;
+    longSum = 0;
+    doubleSum = 0.0;
+    usingLongAccumulator = false;
+    usingDoubleAccumulator = false;
   }
 
   public void add(Sequence seq) throws QueryException {
@@ -148,12 +182,139 @@ public class SumAvgAggregator implements Aggregator {
   }
 
   private Atomic numericSum(Iter in, Numeric sum) throws QueryException {
-    Item item;
+    Item item = in.next();
+    if (item == null) {
+      return sum;
+    }
+
+    // Detect type from first item
+    Atomic first = item.atomize();
+    Type firstType = first.type();
+    if (firstType == Type.UNA) {
+      first = Cast.cast(null, first, Type.DBL, false);
+      firstType = Type.DBL;
+    }
+
+    // Try optimized Int64 batch path
+    if (first instanceof Int64 i64 && sum instanceof Int64 sumI64) {
+      return numericSumInt64Batch(in, sumI64.longValue(), i64.longValue());
+    }
+
+    // Try optimized Dbl batch path
+    if (first instanceof Dbl dbl && sum instanceof Dbl sumDbl) {
+      return numericSumDoubleBatch(in, sumDbl.doubleValue(), dbl.doubleValue());
+    }
+
+    // Fallback to original loop for mixed types
+    sum = sum.add((Numeric) first);
+    count++;
     while ((item = in.next()) != null) {
       sum = numericSum(sum, item);
       count++;
     }
     return sum;
+  }
+
+  /**
+   * SIMD-optimized batch sum for Int64 sequences.
+   * Buffers values and processes them in SIMD batches.
+   */
+  private Atomic numericSumInt64Batch(Iter in, long currentSum, long firstValue) throws QueryException {
+    if (longBuffer == null) {
+      longBuffer = new long[BATCH_SIZE];
+    }
+
+    longBuffer[0] = firstValue;
+    int bufferLen = 1;
+    count++;
+
+    Item item;
+    while ((item = in.next()) != null) {
+      Atomic a = item.atomize();
+
+      // Check if we're still getting Int64 values
+      if (!(a instanceof Int64 i64)) {
+        // Type changed - flush buffer and fall back to object path
+        if (bufferLen > 0) {
+          currentSum += VectorOps.sumLong(longBuffer, 0, bufferLen);
+        }
+        // Continue with mixed-type processing
+        Numeric sum = new Int64(currentSum);
+        sum = numericSum(sum, item);
+        count++;
+        while ((item = in.next()) != null) {
+          sum = numericSum(sum, item);
+          count++;
+        }
+        return sum;
+      }
+
+      longBuffer[bufferLen++] = i64.longValue();
+      count++;
+
+      if (bufferLen == BATCH_SIZE) {
+        currentSum += VectorOps.sumLong(longBuffer, 0, bufferLen);
+        bufferLen = 0;
+      }
+    }
+
+    // Flush remaining
+    if (bufferLen > 0) {
+      currentSum += VectorOps.sumLong(longBuffer, 0, bufferLen);
+    }
+
+    return new Int64(currentSum);
+  }
+
+  /**
+   * SIMD-optimized batch sum for Dbl sequences.
+   * Buffers values and processes them in SIMD batches.
+   */
+  private Atomic numericSumDoubleBatch(Iter in, double currentSum, double firstValue) throws QueryException {
+    if (doubleBuffer == null) {
+      doubleBuffer = new double[BATCH_SIZE];
+    }
+
+    doubleBuffer[0] = firstValue;
+    int bufferLen = 1;
+    count++;
+
+    Item item;
+    while ((item = in.next()) != null) {
+      Atomic a = item.atomize();
+
+      // Check if we're still getting Dbl values
+      if (!(a instanceof Dbl dbl)) {
+        // Type changed - flush buffer and fall back to object path
+        if (bufferLen > 0) {
+          currentSum += VectorOps.sumDouble(doubleBuffer, 0, bufferLen);
+        }
+        // Continue with mixed-type processing
+        Numeric sum = new Dbl(currentSum);
+        sum = numericSum(sum, item);
+        count++;
+        while ((item = in.next()) != null) {
+          sum = numericSum(sum, item);
+          count++;
+        }
+        return sum;
+      }
+
+      doubleBuffer[bufferLen++] = dbl.doubleValue();
+      count++;
+
+      if (bufferLen == BATCH_SIZE) {
+        currentSum += VectorOps.sumDouble(doubleBuffer, 0, bufferLen);
+        bufferLen = 0;
+      }
+    }
+
+    // Flush remaining
+    if (bufferLen > 0) {
+      currentSum += VectorOps.sumDouble(doubleBuffer, 0, bufferLen);
+    }
+
+    return new Dbl(currentSum);
   }
 
   private Numeric numericSum(Numeric sum, Item item) throws QueryException {
