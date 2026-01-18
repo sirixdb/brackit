@@ -28,16 +28,19 @@
 package io.brackit.query.block;
 
 import io.brackit.query.util.Cfg;
-import io.brackit.query.util.forkjoin.Pool;
-import io.brackit.query.util.forkjoin.WorkerFactory;
+import io.brackit.query.util.forkjoin.Task;
+
+import java.util.concurrent.ForkJoinPool;
 
 /**
+ * Control for fork/join parallel execution.
+ * Now uses Java's optimized ForkJoinPool for better performance.
+ *
  * @author Sebastian Baechle
  */
 public class FJControl {
   public static int POOL_SIZE = Cfg.asInt("org.brackit.xquery.poolsize", Runtime.getRuntime().availableProcessors());
-  public static WorkerFactory FACTORY = new WorkerFactory();
-  public static Pool POOL = new Pool(POOL_SIZE, FACTORY);
+  public static ForkJoinPool POOL = new ForkJoinPool(POOL_SIZE);
   public static int PERMITS = 30000;
 
   public static void resizePool(int newSize) {
@@ -46,6 +49,21 @@ public class FJControl {
     }
     POOL.shutdown();
     POOL_SIZE = newSize;
-    POOL = new Pool(POOL_SIZE, FACTORY);
+    POOL = new ForkJoinPool(POOL_SIZE);
+  }
+
+  /**
+   * Submit a task for execution.
+   */
+  public static Task submit(Task task) {
+    POOL.execute(task);
+    return task;
+  }
+
+  /**
+   * Dispatch a task - equivalent to submit for ForkJoinPool.
+   */
+  public static void dispatch(Task task) {
+    POOL.execute(task);
   }
 }

@@ -27,139 +27,59 @@
  */
 package io.brackit.query.util.forkjoin;
 
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.RecursiveAction;
 
 /**
+ * Task abstraction for parallel execution.
+ * Extends Java's RecursiveAction for better performance and JVM optimization.
+ *
  * @author Sebastian Baechle
  */
-public abstract class Task {
+public abstract class Task extends RecursiveAction {
 
-  private static final AtomicIntegerFieldUpdater<Task> STATUS_CAS = AtomicIntegerFieldUpdater.newUpdater(Task.class,
-                                                                                                         "status");
+  private volatile Throwable throwable;
 
-  private static final AtomicIntegerFieldUpdater<Task> PROCESS_CAS = AtomicIntegerFieldUpdater.newUpdater(Task.class,
-                                                                                                          "process");
+  /**
+   * The computation to be performed by this task.
+   * Subclasses must implement this method.
+   */
+  protected abstract void doCompute() throws Throwable;
 
-  private static final int NOTIFY = -1;
-  private static final int NEW = 0;
-  private static final int SUCCESS = 1;
-  private static final int ERROR = 2;
-
-  volatile Thread join;
-  volatile int status = NEW;
-  volatile int process = 0;
-  Throwable throwable;
-
-  public abstract void compute() throws Throwable;
-
-  boolean exec() {
-    if (!PROCESS_CAS.compareAndSet(this, 0, 1)) {
-      return false;
-    }
+  @Override
+  protected final void compute() {
     try {
-      int s = status;
-      if (s > 0) {
-        throw new RuntimeException("Illegal state: " + s);
-      }
-      compute();
-      setStatus(SUCCESS);
+      doCompute();
     } catch (Throwable e) {
-      e.printStackTrace();
       throwable = e;
-      setStatus(ERROR);
-    }
-    return true;
-  }
-
-  private int setStatus(int newStatus) {
-    int s;
-    while (true) {
-      s = status;
-      if (s > 0) {
-        // job is done
-        return s;
-      }
-      if (STATUS_CAS.compareAndSet(this, s, newStatus)) {
-        if (s < 0) {
-          synchronized (this) {
-            notifyAll();
-            if (join != null) {
-              LockSupport.unpark(join);
-            }
-          }
-        }
-        return s;
-      }
+      completeExceptionally(e);
     }
   }
 
-  public void fork() {
-    ((Worker) Thread.currentThread()).fork(this);
-  }
-
-  public void join() {
-    Thread me;
-    if ((me = Thread.currentThread()) instanceof Worker) {
-      Worker w = (Worker) me;
-      w.join(this, false);
-    } else {
-      externalWaitForFinish();
-    }
-  }
-
+  /**
+   * Serial join - for compatibility with existing code.
+   * Blocks until task completes.
+   */
   public void joinSerial() {
-    Thread me;
-    if ((me = Thread.currentThread()) instanceof Worker) {
-      Worker w = (Worker) me;
-      w.join(this, true);
-    } else {
-      externalWaitForFinish();
-    }
+    join();
   }
 
+  /**
+   * Check if task has finished.
+   */
   public boolean finished() {
-    int s = status;
-    return (s > 0);
+    return isDone();
   }
 
+  /**
+   * Get any error that occurred during execution.
+   */
   public Throwable getError() {
-    return throwable;
-  }
-
-  private void externalWaitForFinish() {
-    int s = status;
-    if (s <= 0) {
-      synchronized (this) {
-        while ((s = status) <= 0) {
-          if (s == 0) {
-            setStatus(NOTIFY);
-          } else {
-            try {
-              wait();
-            } catch (InterruptedException ignored) {
-            }
-          }
-        }
-      }
+    if (throwable != null) {
+      return throwable;
     }
-  }
-
-  public void park(Thread t) {
-    int s = status;
-    if (s <= 0) {
-      return;
+    if (isCompletedAbnormally()) {
+      return getException();
     }
-    synchronized (this) {
-      if (status <= 0) {
-        Thread o = join;
-        join = t;
-        LockSupport.park();
-        if (o != null) {
-          join = o;
-          LockSupport.unpark(o);
-        }
-      }
-    }
+    return null;
   }
 }

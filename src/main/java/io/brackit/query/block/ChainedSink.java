@@ -32,18 +32,14 @@ import java.util.concurrent.locks.LockSupport;
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryException;
 import io.brackit.query.Tuple;
-import io.brackit.query.util.forkjoin.Deque;
-import io.brackit.query.util.forkjoin.Task;
-import io.brackit.query.util.forkjoin.Worker;
 
 /**
- * A {@link ChainedSink}.
+ * A {@link ChainedSink} for coordinated parallel sink processing.
+ * Uses Java's ForkJoinPool for work-stealing.
  *
  * @author Sebastian Baechle
  */
 public abstract class ChainedSink implements Sink {
-
-  private static final boolean SUSPEND = true;
 
   private static final int NO_TOKEN = 0;
   private static final int WAIT_TOKEN = 1;
@@ -53,7 +49,6 @@ public abstract class ChainedSink implements Sink {
 
   private ChainedSink next;
   private volatile int state;
-  private volatile Deque<Task> deposit;
   private volatile Thread blocked;
 
   public ChainedSink() {
@@ -160,33 +155,17 @@ public abstract class ChainedSink implements Sink {
     int s = state;
     if (s == NO_TOKEN) {
       boolean hasPending = hasPending();
-      Worker worker = null;
-      Deque<Task> queue = null;
 
       if (hasPending) {
-        // deposit reference to work queue
-        // for expected hand-over
-        worker = (Worker) Thread.currentThread();
-        if (!SUSPEND) {
-          queue = worker.getQueue();
-          deposit = queue;
-        } else {
-          blocked = worker;
-        }
+        // deposit reference to current thread for wakeup
+        blocked = Thread.currentThread();
       }
 
-      // attempt to put predecessor in
-      // charge of pending work
+      // attempt to put predecessor in charge of pending work
       if (compareAndSet(NO_TOKEN, WAIT_TOKEN)) {
-        // drop local work queue only if necessary
-        // or token was not granted concurrently
-        if (hasPending && (this.yield() || !compareAndSet(queue, null))) {
-          if (!SUSPEND) {
-            // drop local queue
-            worker.dropQueue();
-          } else {
-            LockSupport.park(this);
-          }
+        // wait for token if we have pending work and didn't yield it
+        if (hasPending && this.yield()) {
+          LockSupport.park(this);
         }
         return;
       }
@@ -241,29 +220,17 @@ public abstract class ChainedSink implements Sink {
         break;
       }
       n.clearPending(); // allow gc
-      // synchronized (n)
-      {
-        if (n.deposit != null) {
-          // TODO cleanup tasks
-        }
-      }
       doFail();
       n = n.next;
     }
   }
 
   private void takeover(ChainedSink n) throws QueryException {
-    if (SUSPEND) {
-      LockSupport.unpark(n.blocked);
-    }
+    LockSupport.unpark(n.blocked);
     if (n.hasPending()) {
       n.processPending();
     }
-    Deque<Task> queue = n.deposit;
-    if (queue != null && n.compareAndSet(queue, null)) {
-      n.unyield();
-      ((Worker) Thread.currentThread()).adopt(queue);
-    }
+    n.unyield();
     n.doEnd();
   }
 
@@ -271,16 +238,6 @@ public abstract class ChainedSink implements Sink {
     synchronized (this) {
       if (state == expected) {
         state = set;
-        return true;
-      }
-      return false;
-    }
-  }
-
-  private boolean compareAndSet(Deque<Task> expected, Deque<Task> set) {
-    synchronized (this) {
-      if (deposit == expected) {
-        deposit = set;
         return true;
       }
       return false;

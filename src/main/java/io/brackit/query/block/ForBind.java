@@ -108,7 +108,7 @@ public class ForBind implements Block {
     }
 
     @Override
-    public void compute() throws QueryException {
+    protected void doCompute() throws QueryException {
       Split split = it.split(min, max);
       if (split.tail == null) {
         process(split.head);
@@ -116,7 +116,7 @@ public class ForBind implements Block {
         ForBindTask task1 = new ForBindTask(sink, t, split.head);
         ForBindTask task2 = new ForBindTask(sink.fork(), t, split.tail);
         task2.fork();
-        task1.compute();
+        task1.doCompute();
         task2.join();
       } else {
         final Deque<Task> queue = new ArrayDeque<>();
@@ -125,7 +125,7 @@ public class ForBind implements Block {
           if (split.tail != null) {
             sink = sink.fork();
           }
-          FJControl.POOL.dispatch(task);
+          FJControl.dispatch(task);
           queue.add(task);
           if (split.tail == null) {
             break;
@@ -198,13 +198,13 @@ public class ForBind implements Block {
     }
 
     @Override
-    public void compute() throws QueryException {
+    protected void doCompute() throws QueryException {
       if (end - start > splitIn) {
         int mid = start + ((end - start) / 2);
         OutputTask a = new OutputTask(ctx, sink.fork(), buf, mid, end);
         OutputTask b = new OutputTask(ctx, sink, buf, start, mid);
         a.fork();
-        b.compute();
+        b.doCompute();
         a.join();
       } else {
         for (int i = start; i < end; i++) {
@@ -213,7 +213,7 @@ public class ForBind implements Block {
             Sink ss = sink;
             sink = sink.fork();
             ForBindTask t = new ForBindTask(ss, buf[i], s.iterate());
-            t.compute();
+            t.doCompute();
           }
         }
         sink.begin();
@@ -237,7 +237,7 @@ public class ForBind implements Block {
       Sink ss = s;
       s = s.fork();
       OutputTask task = new OutputTask(ctx, ss, t, 0, len);
-      task.compute();
+      task.doCompute();
     }
 
     @Override

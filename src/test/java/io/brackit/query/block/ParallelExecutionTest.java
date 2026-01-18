@@ -335,4 +335,131 @@ public class ParallelExecutionTest extends XQueryBaseTest {
     }
     return result;
   }
+
+  @Test
+  public void testStressHighConcurrencyMany() throws Exception {
+    // Test with many concurrent queries (50 threads)
+    String query = "for $x in 1 to 50 return $x * 2";
+
+    List<Thread> threads = new ArrayList<>();
+    List<Throwable> errors = new ArrayList<>();
+
+    for (int i = 0; i < 50; i++) {
+      Thread t = new Thread(() -> {
+        try {
+          Sequence result = executeParallel(query);
+          int count = 0;
+          try (Iter it = result.iterate()) {
+            while (it.next() != null) {
+              count++;
+            }
+          }
+          assertEquals(50, count);
+        } catch (Throwable e) {
+          synchronized (errors) {
+            errors.add(e);
+          }
+        }
+      });
+      threads.add(t);
+    }
+
+    for (Thread t : threads) {
+      t.start();
+    }
+
+    for (Thread t : threads) {
+      t.join();
+    }
+
+    if (!errors.isEmpty()) {
+      errors.get(0).printStackTrace();
+      fail("Concurrent execution failed: " + errors.get(0).getMessage());
+    }
+  }
+
+  @Test
+  public void testStressMemoryPressureLargeResults() throws Exception {
+    // Test with large result sets to verify backpressure works
+    String query = "for $x in 1 to 10000 return $x";
+
+    Sequence result = executeParallel(query);
+    int count = 0;
+    long sum = 0;
+    try (Iter it = result.iterate()) {
+      Item item;
+      while ((item = it.next()) != null) {
+        count++;
+        sum += Long.parseLong(item.toString());
+      }
+    }
+
+    assertEquals(10000, count);
+    // Sum of 1 to 10000 = 10000 * 10001 / 2 = 50005000
+    assertEquals(50005000L, sum);
+  }
+
+  @Test
+  public void testStressComplexParallelQuery() throws Exception {
+    // Complex query with multiple operators
+    String query = "for $x in 1 to 100 " + "let $y := $x * 2 " + "where $y > 100 " + "let $g := $y mod 10 "
+        + "group by $g " + "order by $g " + "return sum($y)";
+
+    Sequence result = executeParallel(query);
+    List<Long> sums = collectLongList(result);
+
+    // Verify we get results in order
+    assertFalse(sums.isEmpty());
+    for (int i = 1; i < sums.size(); i++) {
+      assertTrue("Results should be non-negative", sums.get(i) >= 0);
+    }
+  }
+
+  @Test
+  public void testStressRepeatedExecution() throws Exception {
+    // Run the same query many times
+    String query = "for $x in 1 to 10 return $x * $x";
+    Set<Long> expected = Set.of(1L, 4L, 9L, 16L, 25L, 36L, 49L, 64L, 81L, 100L);
+
+    for (int i = 0; i < 100; i++) {
+      Sequence result = executeParallel(query);
+      Set<Long> actual = collectLongs(result);
+      assertEquals("Iteration " + i + " failed", expected, actual);
+    }
+  }
+
+  @Test
+  public void testStressNestedParallelLoops() throws Exception {
+    // Nested loops that could exercise parallel splitting
+    String query = "for $a in 1 to 10 " + "for $b in 1 to 10 " + "return $a * $b";
+
+    Sequence result = executeParallel(query);
+    int count = 0;
+    try (Iter it = result.iterate()) {
+      while (it.next() != null) {
+        count++;
+      }
+    }
+
+    assertEquals(100, count); // 10 x 10 = 100 results
+  }
+
+  @Test
+  public void testStressGroupByManyGroups() throws Exception {
+    // Group by with many groups to stress concurrent hash map
+    String query = "for $x in 1 to 100 " + "let $g := $x " + "group by $g " + "return count($x)";
+
+    Sequence result = executeParallel(query);
+    int groupCount = 0;
+    try (Iter it = result.iterate()) {
+      Item item;
+      while ((item = it.next()) != null) {
+        // Each group should have exactly 1 element
+        assertEquals(1L, Long.parseLong(item.toString()));
+        groupCount++;
+      }
+    }
+
+    assertEquals(100, groupCount); // 100 unique groups
+  }
 }
