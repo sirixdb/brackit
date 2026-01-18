@@ -30,11 +30,13 @@ package io.brackit.query.block;
 import io.brackit.query.QueryContext;
 import io.brackit.query.QueryException;
 import io.brackit.query.Tuple;
+import io.brackit.query.atomic.Int64;
 import io.brackit.query.jdm.Expr;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.util.Cmp;
 import io.brackit.query.util.join.FastList;
+import io.brackit.query.util.simd.VectorOps;
 
 import java.util.Arrays;
 
@@ -169,6 +171,9 @@ public class NLJoin implements Block {
       FastList<Tuple> matches;
       // Reusable binding array to avoid repeated allocations
       private Sequence[] bindingsBuffer;
+      // Batch buffer for SIMD comparisons
+      private long[] rightKeyBuffer;
+      private static final int SIMD_THRESHOLD = 16;
 
       Tuple leftTuple;
       int leftSize;
@@ -191,6 +196,13 @@ public class NLJoin implements Block {
         // Pre-ensure capacity for potential matches
         matches.ensureAdditional(len);
 
+        // Try SIMD-optimized path for Int64 equality comparisons
+        if (!isGCmp && cmp == Cmp.eq && lKey instanceof Int64 lKeyInt && len >= SIMD_THRESHOLD) {
+          outputVectorizedInt64(buf, len, lKeyInt.longValue());
+          return;
+        }
+
+        // Standard path
         for (int i = 0; i < len; i++) {
           Tuple rightTuple = buf[i];
           Sequence rKey = isGCmp ? rExpr.evaluate(ctx, rightTuple) : rExpr.evaluateToItem(ctx, rightTuple);
@@ -198,17 +210,62 @@ public class NLJoin implements Block {
           boolean match = isGCmp ? cmp.gCmp(ctx, lKey, rKey) : cmp.vCmp(ctx, (Item) lKey, (Item) rKey);
 
           if (match) {
-            // Extract right-side bindings (everything after left tuple)
-            Sequence[] tmp = rightTuple.array();
-            int bindingsLen = tmp.length - leftSize;
-            // Reuse bindings buffer if possible
-            if (bindingsBuffer == null || bindingsBuffer.length != bindingsLen) {
-              bindingsBuffer = new Sequence[bindingsLen];
-            }
-            System.arraycopy(tmp, leftSize, bindingsBuffer, 0, bindingsLen);
-            matches.add(leftTuple.concat(bindingsBuffer));
+            addMatch(rightTuple);
           }
         }
+      }
+
+      /**
+       * SIMD-optimized equality comparison for Int64 keys.
+       */
+      private void outputVectorizedInt64(Tuple[] buf, int len, long leftKey) throws QueryException {
+        // Allocate or reuse buffer
+        if (rightKeyBuffer == null || rightKeyBuffer.length < len) {
+          rightKeyBuffer = new long[Math.max(len, 256)];
+        }
+
+        // Extract right keys to primitive array
+        int validCount = 0;
+        int[] validIndices = new int[len];
+        for (int i = 0; i < len; i++) {
+          Tuple rightTuple = buf[i];
+          Sequence rKey = rExpr.evaluateToItem(ctx, rightTuple);
+          if (rKey instanceof Int64 rKeyInt) {
+            rightKeyBuffer[validCount] = rKeyInt.longValue();
+            validIndices[validCount] = i;
+            validCount++;
+          } else {
+            // Mixed types - fall back to scalar comparison for this tuple
+            boolean match = cmp.vCmp(ctx, (Item) lKey, (Item) rKey);
+            if (match) {
+              addMatch(buf[i]);
+            }
+          }
+        }
+
+        // Count matches using SIMD
+        int matchCount = VectorOps.countEquals(rightKeyBuffer, 0, validCount, leftKey);
+
+        if (matchCount > 0) {
+          // Collect matching tuples
+          for (int i = 0; i < validCount; i++) {
+            if (rightKeyBuffer[i] == leftKey) {
+              addMatch(buf[validIndices[i]]);
+            }
+          }
+        }
+      }
+
+      private void addMatch(Tuple rightTuple) {
+        // Extract right-side bindings (everything after left tuple)
+        Sequence[] tmp = rightTuple.array();
+        int bindingsLen = tmp.length - leftSize;
+        // Reuse bindings buffer if possible
+        if (bindingsBuffer == null || bindingsBuffer.length != bindingsLen) {
+          bindingsBuffer = new Sequence[bindingsLen];
+        }
+        System.arraycopy(tmp, leftSize, bindingsBuffer, 0, bindingsLen);
+        matches.add(leftTuple.concat(bindingsBuffer));
       }
 
       @Override

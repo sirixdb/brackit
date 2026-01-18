@@ -34,8 +34,10 @@ import java.util.concurrent.Semaphore;
 
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.atomic.Int32;
+import io.brackit.query.atomic.Int64;
 import io.brackit.query.atomic.Str;
 import io.brackit.query.BrackitQueryContext;
+import io.brackit.query.util.simd.VectorOps;
 import io.brackit.query.QueryContext;
 import io.brackit.query.QueryException;
 import io.brackit.query.Tuple;
@@ -122,6 +124,9 @@ public class GroupBy implements Block {
     }
   }
 
+  /**
+   * Grouping key with SIMD-optimized comparison for string and numeric keys.
+   */
   private static class Key {
     final int hash;
     final Atomic[] val;
@@ -154,24 +159,62 @@ public class GroupBy implements Block {
       if (obj == this) {
         return true;
       }
-      if (obj instanceof Key k) {
-        // Quick hash check before expensive comparison
-        if (this.hash != k.hash) {
-          return false;
-        }
-        for (int i = 0; i < val.length; i++) {
-          Atomic a1 = val[i];
-          Atomic a2 = k.val[i];
-          if (a1 == a2) {
-            continue; // Same reference or both null
-          }
-          if (a1 == null || a2 == null || a1.atomicCmp(a2) != 0) {
-            return false;
-          }
-        }
+      if (!(obj instanceof Key k)) {
+        return false;
+      }
+
+      // Fast path: hash mismatch
+      if (this.hash != k.hash) {
+        return false;
+      }
+
+      // Fast path: same array reference
+      if (val == k.val) {
         return true;
       }
-      return false;
+
+      // Length check
+      if (val.length != k.val.length) {
+        return false;
+      }
+
+      // Single-key optimization with SIMD
+      if (val.length == 1) {
+        Atomic a = val[0];
+        Atomic b = k.val[0];
+
+        if (a == b) {
+          return true;
+        }
+        if (a == null || b == null) {
+          return false;
+        }
+
+        // SIMD-optimized string comparison
+        if (a instanceof Str s1 && b instanceof Str s2) {
+          return VectorOps.stringEquals(s1.getUtf8Bytes(), s2.getUtf8Bytes());
+        }
+
+        // Fast path for Int64 comparison
+        if (a instanceof Int64 i1 && b instanceof Int64 i2) {
+          return i1.longValue() == i2.longValue();
+        }
+
+        return a.atomicCmp(b) == 0;
+      }
+
+      // General multi-key path
+      for (int i = 0; i < val.length; i++) {
+        Atomic a1 = val[i];
+        Atomic a2 = k.val[i];
+        if (a1 == a2) {
+          continue; // Same reference or both null
+        }
+        if (a1 == null || a2 == null || a1.atomicCmp(a2) != 0) {
+          return false;
+        }
+      }
+      return true;
     }
   }
 

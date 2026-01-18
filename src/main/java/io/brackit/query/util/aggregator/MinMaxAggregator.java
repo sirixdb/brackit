@@ -27,18 +27,22 @@
  */
 package io.brackit.query.util.aggregator;
 
-import io.brackit.query.atomic.Atomic;
-import io.brackit.query.atomic.Numeric;
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryException;
+import io.brackit.query.atomic.Atomic;
+import io.brackit.query.atomic.Dbl;
+import io.brackit.query.atomic.Int64;
+import io.brackit.query.atomic.Numeric;
 import io.brackit.query.expr.Cast;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.jdm.Type;
+import io.brackit.query.util.simd.VectorOps;
 
 /**
  * Aggregator for operations with fn:min() and fn:max() semantics.
+ * Enhanced with SIMD-accelerated batch operations for homogeneous numeric sequences.
  *
  * @author Sebastian Baechle
  */
@@ -47,10 +51,18 @@ public class MinMaxAggregator implements Aggregator {
     NUMERIC, STRING, GENERIC
   }
 
+  /**
+   * Buffer size for batch operations.
+   */
+  private static final int BATCH_SIZE = 1024;
+
   final boolean min;
   AggType aggType;
   Atomic minmax = null;
   Type minmaxType = null;
+
+  // SIMD batch buffer (lazily allocated)
+  private long[] longBuffer;
 
   public MinMaxAggregator(boolean min) {
     this.min = min;
@@ -201,14 +213,92 @@ public class MinMaxAggregator implements Aggregator {
   }
 
   private Atomic numericMinmax(Iter in, Atomic minmax) throws QueryException {
-    Item item;
-    final Type minmaxType = minmax.type();
-
-    while ((item = in.next()) != null) {
-      minmax = numericMinmax(minmax, item, minmaxType);
+    Item item = in.next();
+    if (item == null) {
+      return minmax;
     }
 
+    // Detect type from first item for potential SIMD optimization
+    Atomic first = item.atomize();
+    Type firstType = first.type();
+    if (firstType == Type.UNA) {
+      first = Cast.cast(null, first, Type.DBL, false);
+      firstType = Type.DBL;
+    }
+
+    // Try optimized Int64 batch path
+    if (first instanceof Int64 i64 && minmax instanceof Int64 minmaxI64) {
+      return numericMinmaxInt64Batch(in, minmaxI64.longValue(), i64.longValue());
+    }
+
+    // Fallback to original loop for other types
+    final Type minmaxTypeLocal = minmax.type();
+    minmax = numericMinmax(minmax, first, minmaxTypeLocal);
+    while ((item = in.next()) != null) {
+      minmax = numericMinmax(minmax, item, minmaxTypeLocal);
+    }
     return minmax;
+  }
+
+  /**
+   * SIMD-optimized batch min/max for Int64 sequences.
+   */
+  private Atomic numericMinmaxInt64Batch(Iter in, long currentMinmax, long firstValue) throws QueryException {
+    if (longBuffer == null) {
+      longBuffer = new long[BATCH_SIZE];
+    }
+
+    // Compare first value with current
+    if (min) {
+      currentMinmax = Math.min(currentMinmax, firstValue);
+    } else {
+      currentMinmax = Math.max(currentMinmax, firstValue);
+    }
+
+    int bufferLen = 0;
+    Item item;
+    while ((item = in.next()) != null) {
+      Atomic a = item.atomize();
+
+      // Check if we're still getting Int64 values
+      if (!(a instanceof Int64 i64)) {
+        // Type changed - flush buffer and fall back to object path
+        if (bufferLen > 0) {
+          long batchResult = min
+              ? VectorOps.minLong(longBuffer, 0, bufferLen)
+              : VectorOps.maxLong(longBuffer, 0, bufferLen);
+          currentMinmax = min ? Math.min(currentMinmax, batchResult) : Math.max(currentMinmax, batchResult);
+        }
+        // Continue with mixed-type processing
+        Atomic minmaxAtomic = new Int64(currentMinmax);
+        Type minmaxTypeLocal = minmaxAtomic.type();
+        minmaxAtomic = numericMinmax(minmaxAtomic, item, minmaxTypeLocal);
+        while ((item = in.next()) != null) {
+          minmaxAtomic = numericMinmax(minmaxAtomic, item, minmaxTypeLocal);
+        }
+        return minmaxAtomic;
+      }
+
+      longBuffer[bufferLen++] = i64.longValue();
+
+      if (bufferLen == BATCH_SIZE) {
+        long batchResult = min
+            ? VectorOps.minLong(longBuffer, 0, bufferLen)
+            : VectorOps.maxLong(longBuffer, 0, bufferLen);
+        currentMinmax = min ? Math.min(currentMinmax, batchResult) : Math.max(currentMinmax, batchResult);
+        bufferLen = 0;
+      }
+    }
+
+    // Flush remaining
+    if (bufferLen > 0) {
+      long batchResult = min
+          ? VectorOps.minLong(longBuffer, 0, bufferLen)
+          : VectorOps.maxLong(longBuffer, 0, bufferLen);
+      currentMinmax = min ? Math.min(currentMinmax, batchResult) : Math.max(currentMinmax, batchResult);
+    }
+
+    return new Int64(currentMinmax);
   }
 
   private Atomic numericMinmax(Atomic minmax, Item item, final Type minmaxType) throws QueryException {
