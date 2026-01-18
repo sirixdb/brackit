@@ -67,7 +67,7 @@ public class BlockExpr implements Expr {
     Sink start = block.create(ctx, end);
 
     EvalBlock task = new EvalBlock(t, start);
-    FJControl.POOL.submit(task).join();
+    FJControl.submit(task).join();
 
     return rs.asSequence();
   }
@@ -78,7 +78,7 @@ public class BlockExpr implements Expr {
     Sink start = block.create(ctx, end);
 
     EvalBlock task = new EvalBlock(t, start);
-    FJControl.POOL.submit(task).join();
+    FJControl.submit(task).join();
   }
 
   @Override
@@ -108,7 +108,7 @@ public class BlockExpr implements Expr {
     }
 
     @Override
-    public void compute() throws QueryException {
+    protected void doCompute() throws QueryException {
       start.begin();
       try {
         start.output(new Tuple[] { t }, 1);
