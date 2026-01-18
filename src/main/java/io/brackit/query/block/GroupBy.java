@@ -128,7 +128,15 @@ public class GroupBy implements Block {
 
     Key(Atomic[] val) {
       this.val = val;
-      this.hash = Arrays.hashCode(val);
+      this.hash = computeHash(val);
+    }
+
+    private static int computeHash(Atomic[] val) {
+      int h = 1;
+      for (Atomic a : val) {
+        h = 31 * h + (a != null ? a.hashCode() : 0);
+      }
+      return h;
     }
 
     @Override
@@ -147,10 +155,17 @@ public class GroupBy implements Block {
         return true;
       }
       if (obj instanceof Key k) {
+        // Quick hash check before expensive comparison
+        if (this.hash != k.hash) {
+          return false;
+        }
         for (int i = 0; i < val.length; i++) {
           Atomic a1 = val[i];
           Atomic a2 = k.val[i];
-          if (((a1 == null) && (a2 != null)) || (a2 == null) || (a1.atomicCmp(a2) != 0)) {
+          if (a1 == a2) {
+            continue; // Same reference or both null
+          }
+          if (a1 == null || a2 == null || a1.atomicCmp(a2) != 0) {
             return false;
           }
         }
@@ -195,7 +210,8 @@ public class GroupBy implements Block {
       try {
         sink.begin();
         Iterator<Key> it = map.keySet().iterator();
-        int bufSize = 20;
+        // Use larger buffer for better throughput (matches typical L1 cache line sizes)
+        int bufSize = 512;
         Tuple[] buf = new Tuple[bufSize];
         int len = 0;
         while (it.hasNext()) {
@@ -205,7 +221,7 @@ public class GroupBy implements Block {
           buf[len++] = emit(grp);
           if (len == bufSize) {
             sink.output(buf, len);
-            buf = new Tuple[bufSize];
+            // Reuse buffer - just reset length (entries will be overwritten)
             len = 0;
           }
         }

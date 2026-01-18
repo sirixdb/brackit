@@ -145,7 +145,7 @@ public class Grouping {
     size = 0;
   }
 
-  public boolean add(Tuple t) throws QueryException {
+  public synchronized boolean add(Tuple t) throws QueryException {
     if (tupleSize == -1) {
       init(t.getSize());
     }
@@ -158,7 +158,7 @@ public class Grouping {
     return true;
   }
 
-  public boolean add(Atomic[] gk, Tuple t) throws QueryException {
+  public synchronized boolean add(Atomic[] gk, Tuple t) throws QueryException {
     if (tupleSize == -1) {
       init(t.getSize());
     }

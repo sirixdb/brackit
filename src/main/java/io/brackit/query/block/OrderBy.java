@@ -109,14 +109,15 @@ public class OrderBy implements Block {
       try {
         sink.begin();
         Tuple t;
-        int bufSize = 20;
+        // Use larger buffer for better throughput and reuse it
+        int bufSize = 512;
         Tuple[] buf = new Tuple[bufSize];
         int len = 0;
         while ((t = s.next()) != null) {
           buf[len++] = t;
           if (len == bufSize) {
             sink.output(buf, len);
-            buf = new Tuple[bufSize];
+            // Reuse buffer instead of allocating new one
             len = 0;
           }
         }

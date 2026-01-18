@@ -32,15 +32,22 @@ import io.brackit.query.QueryException;
 import io.brackit.query.Tuple;
 import io.brackit.query.jdm.Expr;
 import io.brackit.query.jdm.Sequence;
+import io.brackit.query.operator.Check;
 
 /**
  * @author Sebastian Baechle
  */
 public class Select implements Block {
   final Expr pred;
+  final Check check;
 
   public Select(Expr pred) {
+    this(pred, null);
+  }
+
+  public Select(Expr pred, Check check) {
     this.pred = pred;
+    this.check = check;
   }
 
   @Override
@@ -68,6 +75,13 @@ public class Select implements Block {
       for (int i = 0; i < len; i++) {
         Tuple t = buf[i];
         buf[i] = null;
+
+        // Check for dead tuple (left-join semantics) - pass through dead tuples
+        if (check != null && check.dead(t)) {
+          buf[nlen++] = t;
+          continue;
+        }
+
         Sequence p = pred.evaluate(ctx, t);
         if ((p != null) && (p.booleanValue())) {
           buf[nlen++] = t;
