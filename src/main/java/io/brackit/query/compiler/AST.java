@@ -321,4 +321,110 @@ public class AST {
     String value = getStringValue();
     return getLabel(value);
   }
+
+  /**
+   * Converts this AST node and its children to a JSON representation.
+   * This is useful for query plan visualization and debugging.
+   *
+   * @return a JSON string representation of this AST
+   */
+  public String toJSON() {
+    StringBuilder sb = new StringBuilder();
+    toJSON(sb);
+    return sb.toString();
+  }
+
+  private void toJSON(StringBuilder sb) {
+    sb.append("{");
+
+    // Type name
+    String typeName = (type > 0 && type < XQ.NAMES.length) ? XQ.NAMES[type] : "UNKNOWN";
+    sb.append("\"type\":\"").append(escapeJson(typeName)).append("\"");
+
+    // Value (if different from type name and not null)
+    if (value != null) {
+      String valueStr = value.toString();
+      if (!valueStr.equals(typeName)) {
+        sb.append(",\"value\":\"").append(escapeJson(valueStr)).append("\"");
+      }
+    }
+
+    // Properties
+    if (properties != null && !properties.isEmpty()) {
+      sb.append(",\"properties\":{");
+      boolean first = true;
+      for (Entry<String, Object> entry : properties.entrySet()) {
+        if (!first) {
+          sb.append(",");
+        }
+        first = false;
+        sb.append("\"").append(escapeJson(entry.getKey())).append("\":");
+        Object propValue = entry.getValue();
+        if (propValue == null) {
+          sb.append("null");
+        } else if (propValue instanceof Boolean) {
+          sb.append(propValue);
+        } else if (propValue instanceof Number) {
+          sb.append(propValue);
+        } else {
+          sb.append("\"").append(escapeJson(propValue.toString())).append("\"");
+        }
+      }
+      sb.append("}");
+    }
+
+    // Children
+    if (children != null && children.length > 0) {
+      sb.append(",\"children\":[");
+      for (int i = 0; i < children.length; i++) {
+        if (i > 0) {
+          sb.append(",");
+        }
+        children[i].toJSON(sb);
+      }
+      sb.append("]");
+    }
+
+    sb.append("}");
+  }
+
+  private static String escapeJson(String str) {
+    if (str == null) {
+      return "";
+    }
+    StringBuilder sb = new StringBuilder(str.length());
+    for (int i = 0; i < str.length(); i++) {
+      char c = str.charAt(i);
+      switch (c) {
+        case '"':
+          sb.append("\\\"");
+          break;
+        case '\\':
+          sb.append("\\\\");
+          break;
+        case '\b':
+          sb.append("\\b");
+          break;
+        case '\f':
+          sb.append("\\f");
+          break;
+        case '\n':
+          sb.append("\\n");
+          break;
+        case '\r':
+          sb.append("\\r");
+          break;
+        case '\t':
+          sb.append("\\t");
+          break;
+        default:
+          if (c < ' ') {
+            sb.append(String.format("\\u%04x", (int) c));
+          } else {
+            sb.append(c);
+          }
+      }
+    }
+    return sb.toString();
+  }
 }

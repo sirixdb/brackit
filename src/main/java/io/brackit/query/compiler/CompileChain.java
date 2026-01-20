@@ -75,6 +75,24 @@ import io.brackit.query.function.io.Writeline;
  */
 public class CompileChain {
 
+  /**
+   * Enum representing the stage of the query plan to retrieve.
+   */
+  public enum PlanStage {
+    /** After parsing, before optimization */
+    PARSED,
+    /** After optimization (default) */
+    OPTIMIZED,
+    /** Both parsed and optimized stages */
+    BOTH
+  }
+
+  /** Stored AST after parsing, before optimization */
+  private AST parsedAST;
+
+  /** Stored AST after optimization */
+  private AST optimizedAST;
+
   static {
     // IO
     Functions.predefine(new Readline());
@@ -153,6 +171,10 @@ public class CompileChain {
     }
     ModuleResolver resolver = getModuleResolver();
     AST parsed = parse(query);
+
+    // Store the parsed AST (before analysis/optimization)
+    this.parsedAST = parsed.copyTree();
+
     if (Query.DEBUG) {
       DotUtil.drawDotToFile(parsed.dot(), Query.DEBUG_DIR, "parsed");
     }
@@ -164,6 +186,10 @@ public class CompileChain {
     for (Target t : analyzer.getTargets()) {
       t.optimize(getOptimizer(options));
     }
+
+    // Store the optimized AST (after optimization)
+    this.optimizedAST = xquery.copyTree();
+
     if (Query.DEBUG) {
       DotUtil.drawDotToFile(xquery.dot(), Query.DEBUG_DIR, "xquery");
     }
@@ -178,5 +204,50 @@ public class CompileChain {
       }
     }
     return module;
+  }
+
+  /**
+   * Returns the AST captured after parsing, before optimization.
+   * Only available after {@link #compile(String)} has been called.
+   *
+   * @return the parsed AST, or null if compile has not been called
+   */
+  public AST getParsedAST() {
+    return parsedAST;
+  }
+
+  /**
+   * Returns the AST captured after optimization.
+   * Only available after {@link #compile(String)} has been called.
+   *
+   * @return the optimized AST, or null if compile has not been called
+   */
+  public AST getOptimizedAST() {
+    return optimizedAST;
+  }
+
+  /**
+   * Returns the query plan as a JSON string for the specified stage.
+   *
+   * @param stage the compilation stage to get the plan for
+   * @return JSON string of the query plan, or null if not available
+   */
+  public String getPlanAsJSON(PlanStage stage) {
+    switch (stage) {
+      case PARSED:
+        return parsedAST != null ? parsedAST.toJSON() : null;
+      case OPTIMIZED:
+        return optimizedAST != null ? optimizedAST.toJSON() : null;
+      case BOTH:
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"parsed\":");
+        sb.append(parsedAST != null ? parsedAST.toJSON() : "null");
+        sb.append(",\"optimized\":");
+        sb.append(optimizedAST != null ? optimizedAST.toJSON() : "null");
+        sb.append("}");
+        return sb.toString();
+      default:
+        return null;
+    }
   }
 }
