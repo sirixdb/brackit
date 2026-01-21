@@ -29,6 +29,7 @@ package io.brackit.query.compiler.optimizer;
 
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.atomic.Str;
+import io.brackit.query.compiler.optimizer.walker.ConstantFolding;
 import io.brackit.query.compiler.optimizer.walker.DoSNStepMerger;
 import io.brackit.query.compiler.optimizer.walker.OrderForGroupBy;
 import io.brackit.query.compiler.optimizer.walker.PathDDOElimination;
@@ -86,6 +87,7 @@ public class DefaultOptimizer implements Optimizer {
 
   protected class Simplification implements Stage {
     public AST rewrite(StaticContext sctx, AST ast) {
+      ast = ConstantFolding.walkUntilStable(ast);
       ast = new DoSNStepMerger().walk(ast);
       if (enabled(SEQUENTIAL_GROUPBY)) {
         ast = new OrderForGroupBy().walk(ast);
