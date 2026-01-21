@@ -81,7 +81,7 @@
   "methods":[{"name":"<init>","parameterTypes":["sun.security.x509.X500Name"] }]
 },
 {
-  "name":"org.brackit.xquery.util.log.UtilLogFactory",
+  "name":"io.brackit.query.util.log.UtilLogFactory",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
