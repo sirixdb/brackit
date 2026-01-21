@@ -42,9 +42,11 @@ java -jar brackit-with-dependencies.jar -q "json-doc('data.json').users[].name"
 ```bash
 alias bjq='java -jar /path/to/bjq-jar-with-dependencies.jar'
 
-# Now use it like jq
+# Simple field access
 echo '{"name": "Alice"}' | bjq '$$.name'
-bjq '$$.users[].email' data.json
+
+# FLWOR expressions - the killer feature!
+bjq 'for $u in $$.users[] where $u.age > 21 order by $u.name return $u' data.json
 ```
 
 ### Option 2: Build from Source
@@ -58,6 +60,10 @@ mvn package
 
 # Set up bjq alias
 alias bjq='java -jar '$(pwd)'/target/bjq-jar-with-dependencies.jar'
+
+# Try it out - FLWOR with grouping!
+echo '[{"cat":"A","v":1},{"cat":"B","v":2},{"cat":"A","v":3}]' | \
+  bjq 'for $x in $$[] group by $c := $x.cat return {$c: sum($x.v)}'
 ```
 
 ## Features at a Glance
