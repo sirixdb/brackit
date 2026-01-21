@@ -27,7 +27,7 @@ echo '{"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]}' | \
 
 ### Option 1: Download and Run
 
-Download the latest release from [GitHub Releases](https://github.com/sirixdb/brackit/releases) and run:
+Download from [GitHub Releases](https://github.com/sirixdb/brackit/releases):
 
 ```bash
 # Interactive mode
@@ -35,9 +35,18 @@ java -jar brackit-with-dependencies.jar -iq
 
 # Query a JSON file
 java -jar brackit-with-dependencies.jar -q "json-doc('data.json').users[].name"
+```
 
-# Use bjq (jq-like interface)
-java -jar bjq-jar-with-dependencies.jar '$$.name' data.json
+**For jq-style usage**, create an alias for the bjq jar:
+
+```bash
+alias bjq='java -jar /path/to/bjq-jar-with-dependencies.jar'
+
+# Simple field access
+echo '{"name": "Alice"}' | bjq '$$.name'
+
+# FLWOR expressions - the killer feature!
+bjq 'for $u in $$.users[] where $u.age > 21 order by $u.name return $u' data.json
 ```
 
 ### Option 2: Build from Source
@@ -48,6 +57,13 @@ Requires **Java 25** or later.
 git clone https://github.com/sirixdb/brackit.git
 cd brackit
 mvn package
+
+# Set up bjq alias
+alias bjq='java -jar '$(pwd)'/target/bjq-jar-with-dependencies.jar'
+
+# Try it out - FLWOR with grouping!
+echo '[{"cat":"A","v":1},{"cat":"B","v":2},{"cat":"A","v":3}]' | \
+  bjq 'for $x in $$[] group by $c := $x.cat return {$c: sum($x.v)}'
 ```
 
 ## Features at a Glance
