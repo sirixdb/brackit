@@ -79,3 +79,9 @@ Brackit implements JSONiq with some differences:
 ## Code Style
 
 Code formatting is enforced by `formatter-maven-plugin` using `src/main/tools/brackit-formatter.xml`. Formatting runs automatically during `process-sources` phase.
+
+## Git Commits
+
+- Do NOT include any "Co-Authored-By" lines mentioning Claude or Anthropic
+- Do NOT mention Claude, AI, or LLM assistance in commit messages
+- Write commit messages as if authored solely by a human developer
