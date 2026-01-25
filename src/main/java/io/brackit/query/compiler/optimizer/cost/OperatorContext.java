@@ -273,7 +273,7 @@ public final class OperatorContext {
   public OperatorContext forArrayAccess(long input, long avgArraySize, boolean isSingleAccess) {
     this.inputCardinality = input;
     this.avgArraySize = avgArraySize;
-    this.isArrayAccess = true;
+    this.isArrayAccess = !isSingleAccess; // false = single access, true = full unboxing
     this.isDescendantDeref = false;
     if (isSingleAccess) {
       this.outputCardinality = input; // Single access returns 1 per input
