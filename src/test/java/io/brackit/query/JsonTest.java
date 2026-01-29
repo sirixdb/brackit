@@ -35,8 +35,8 @@ import io.brackit.query.jsonitem.array.DArray;
 import io.brackit.query.jsonitem.object.ArrayObject;
 import io.brackit.query.sequence.ItemSequence;
 import io.brackit.query.jdm.Sequence;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -48,7 +48,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Johannes Lichtenberger
@@ -535,7 +535,7 @@ public final class JsonTest extends XQueryBaseTest {
     assertEquals(Files.readString(JSON_RESOURCES.resolve("joinresult.json")), result);
   }
 
-  @Ignore
+  @Disabled
   @Test
   public void testDynamicFunction() throws IOException {
     final String query = """
@@ -1328,7 +1328,7 @@ public final class JsonTest extends XQueryBaseTest {
     assertEquals("true", result);
   }
 
-  @Ignore
+  @Disabled
   @Test
   public void testDescendantDerefExpr() throws IOException {
     final String json = Files.readString(JSON_RESOURCES.resolve("multiple-revisions.json"));

@@ -27,13 +27,13 @@
  */
 package io.brackit.query.util.path;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.brackit.query.atomic.QNm;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Sebastian Baechle, Max Bechtold
@@ -45,7 +45,7 @@ public class PathTest {
     // //[]
     Path<QNm> expected = new Path<QNm>().descendantArray();
     Path<QNm> parsed = (new PathParser("/[]/test/[]", PathParser.Type.JSON)).parse();
-    assertTrue("Path parsed correctly", expected.matches(parsed));
+    assertTrue(expected.matches(parsed), "Path parsed correctly");
   }
 
   @Test
@@ -56,7 +56,7 @@ public class PathTest {
                                           .descendantArray()
                                           .childObjectField(new QNm("get/"));
     Path<QNm> parsed = (new PathParser(expected.toString(), PathParser.Type.JSON)).parse();
-    assertEquals("Path parsed correctly", expected, parsed);
+    assertEquals(expected, parsed, "Path parsed correctly");
 
     Path<QNm> toCheck = (new Path<QNm>()).childObjectField(new QNm("paths"))
                                          .childObjectField(new QNm("/business_service_providers/search/"))
@@ -75,7 +75,7 @@ public class PathTest {
                                           .childObjectField(new QNm("search"))
                                           .childObjectField(new QNm("get"));
     Path<QNm> parsed = (new PathParser(expected.toString(), PathParser.Type.JSON)).parse();
-    assertEquals("Path parsed correctly", expected, parsed);
+    assertEquals(expected, parsed, "Path parsed correctly");
   }
 
   @Test
@@ -88,7 +88,7 @@ public class PathTest {
                                           .childObjectField(new QNm("get"))
                                           .childObjectField(new QNm("/"));
     Path<QNm> parsed = (new PathParser(expected.toString(), PathParser.Type.JSON)).parse();
-    assertEquals("Path parsed correctly", expected, parsed);
+    assertEquals(expected, parsed, "Path parsed correctly");
   }
 
   @Test
@@ -102,7 +102,7 @@ public class PathTest {
                                           .childObjectField(new QNm("get"))
                                           .childObjectField(new QNm("/"));
     Path<QNm> parsed = (new PathParser(expected.toString(), PathParser.Type.JSON)).parse();
-    assertEquals("Path parsed correctly", expected, parsed);
+    assertEquals(expected, parsed, "Path parsed correctly");
   }
 
   @Test
@@ -133,7 +133,7 @@ public class PathTest {
                                           .descendantArray()
                                           .childObjectField(new QNm("get"));
     Path<QNm> parsed = (new PathParser(expected.toString(), PathParser.Type.JSON)).parse();
-    assertEquals("Path parsed correctly", expected, parsed);
+    assertEquals(expected, parsed, "Path parsed correctly");
 
     Path<QNm> toCheck = (new Path<QNm>()).childObjectField(new QNm("paths"))
                                          .childArray()
@@ -151,7 +151,7 @@ public class PathTest {
                                           .childObjectField(new QNm("/business_service_providers/search"))
                                           .childObjectField(new QNm("get"));
     Path<QNm> parsed = (new PathParser(expected.toString(), PathParser.Type.JSON)).parse();
-    assertEquals("Path parsed correctly", expected, parsed);
+    assertEquals(expected, parsed, "Path parsed correctly");
   }
 
   @Test
@@ -160,21 +160,21 @@ public class PathTest {
     Path<QNm> expected = (new Path<QNm>()).childObjectField(new QNm("paths"))
                                           .childObjectField(new QNm("/business_service_providers\\"));
     Path<QNm> parsed = (new PathParser(expected.toString(), PathParser.Type.JSON)).parse();
-    assertEquals("Path parsed correctly", expected, parsed);
+    assertEquals(expected, parsed, "Path parsed correctly");
   }
 
   @Test
   public void testSimplePath() {
     Path<QNm> expected = (new Path<QNm>()).child(new QNm("tag"));
     Path<QNm> parsed = (new PathParser(expected.toString())).parse();
-    assertEquals("Path parsed correctly", expected, parsed);
+    assertEquals(expected, parsed, "Path parsed correctly");
   }
 
   @Test
   public void testSimplePath2() {
     Path<QNm> expected = (new Path<QNm>()).child(new QNm("tag")).child(new QNm("hallo")).descendant(new QNm("aha"));
     Path<QNm> parsed = (new PathParser(expected.toString())).parse();
-    assertEquals("Path parsed correctly", expected, parsed);
+    assertEquals(expected, parsed, "Path parsed correctly");
   }
 
   @Test
@@ -184,7 +184,7 @@ public class PathTest {
                                           .child(new QNm("hallo"))
                                           .descendant(new QNm("aha"));
     Path<QNm> parsed = (new PathParser(expected.toString())).parse();
-    assertEquals("Path parsed correctly", expected, parsed);
+    assertEquals(expected, parsed, "Path parsed correctly");
   }
 
   @Test
@@ -195,21 +195,21 @@ public class PathTest {
                                           .descendant(new QNm("aha"));
     String implicitSelfPath = expected.toString().substring(2);
     Path<QNm> parsed = (new PathParser(implicitSelfPath)).parse();
-    assertEquals("Path parsed correctly", expected, parsed);
+    assertEquals(expected, parsed, "Path parsed correctly");
   }
 
   @Test
   public void testSelfPath4() {
     Path<QNm> expected = (new Path<QNm>()).self().self().descendant(new QNm("aha"));
     Path<QNm> parsed = (new PathParser(expected.toString())).parse();
-    assertEquals("Path parsed correctly", expected, parsed);
+    assertEquals(expected, parsed, "Path parsed correctly");
   }
 
   @Test
   public void testQualifiedPath() {
     Path<QNm> expected = (new Path<QNm>()).child(new QNm(null, "foo", "tag"));
     Path<QNm> parsed = (new PathParser(expected.toString())).parse();
-    assertEquals("Path parsed correctly", expected, parsed);
+    assertEquals(expected, parsed, "Path parsed correctly");
   }
 
   @Test
@@ -217,7 +217,7 @@ public class PathTest {
     Path<QNm> expected = (new Path<QNm>()).child(new QNm("http://brackit.org/ns/bit", "bit", "tag"));
     String path = "namespace foo = 'localhost'; " + "namespace bit = 'http://brackit.org/ns/bit'; " + expected;
     Path<QNm> parsed = (new PathParser(path)).parse();
-    assertEquals("Path parsed correctly", expected, parsed);
+    assertEquals(expected, parsed, "Path parsed correctly");
   }
 
   @Test
@@ -245,21 +245,21 @@ public class PathTest {
   @Test
   public void testFilePath() {
     Path<QNm> parsed = (new PathParser("/'test.xml'")).parse();
-    assertEquals("Path parsed correctly", new Path<QNm>().child(new QNm("test.xml")), parsed);
+    assertEquals(new Path<QNm>().child(new QNm("test.xml")), parsed, "Path parsed correctly");
   }
 
   @Test
   public void testFile2Path() {
     Path<QNm> parsed = (new PathParser("'_test.xml'")).parse();
-    assertEquals("Path parsed correctly", new Path<QNm>().self().child(new QNm("_test.xml")), parsed);
+    assertEquals(new Path<QNm>().self().child(new QNm("_test.xml")), parsed, "Path parsed correctly");
   }
 
   @Test
   public void testFilePath2() {
     Path<QNm> parsed = (new PathParser("../'conf.d'//'test.xml'")).parse();
-    assertEquals("Path parsed correctly",
-                 new Path<QNm>().parent().child(new QNm("conf.d")).descendant(new QNm("test.xml")),
-                 parsed);
+    assertEquals(new Path<QNm>().parent().child(new QNm("conf.d")).descendant(new QNm("test.xml")),
+                 parsed,
+                 "Path parsed correctly");
   }
 
   @Test
@@ -276,49 +276,49 @@ public class PathTest {
   public void testMatchWithBacktracking() {
     Path<QNm> pattern = (new PathParser("//a/b//c")).parse();
     Path<QNm> path = (new PathParser("/e/a/b/b/f/b/e/c")).parse();
-    assertTrue("Pattern matches path", pattern.matches(path));
+    assertTrue(pattern.matches(path), "Pattern matches path");
   }
 
   @Test
   public void testMatchWithDoubleTwoStagedBacktracking() {
     Path<QNm> pattern = (new PathParser("//a/b/c//d")).parse();
     Path<QNm> path = (new PathParser("/a/b/c/a/b/b/c/f/b/c/e/d")).parse();
-    assertTrue("Pattern does match path", pattern.matches(path));
+    assertTrue(pattern.matches(path), "Pattern does match path");
   }
 
   @Test
   public void testNoMatchWithBacktrackingButNoDescendantStartAxis() {
     Path<QNm> pattern = (new PathParser("/a/b//c")).parse();
     Path<QNm> path = (new PathParser("/e/a/b/b/f/b/e/c")).parse();
-    assertFalse("Pattern matches path", pattern.matches(path));
+    assertFalse(pattern.matches(path), "Pattern matches path");
   }
 
   @Test
   public void testNoMatchWithDoubleTwoStagedBacktracking() {
     Path<QNm> pattern = (new PathParser("//a/b/c//d")).parse();
     Path<QNm> path = (new PathParser("/a/b/b/c/f/b/c/e/d")).parse();
-    assertFalse("Pattern does not match path", pattern.matches(path));
+    assertFalse(pattern.matches(path), "Pattern does not match path");
   }
 
   @Test
   public void testNoMatchWithDoubleTwoStagedBacktrackingButNoDescendantStartAxis() {
     Path<QNm> pattern = (new PathParser("/a/b/c//d")).parse();
     Path<QNm> path = (new PathParser("/e/a/b/c/a/b/b/c/f/b/c/e/d")).parse();
-    assertFalse("Pattern does match path", pattern.matches(path));
+    assertFalse(pattern.matches(path), "Pattern does match path");
   }
 
   @Test
   public void testMatch() {
     Path<QNm> pattern = (new PathParser("//c")).parse();
     Path<QNm> path = (new PathParser("//a/b/c")).parse();
-    assertTrue("Pattern does match path", pattern.matches(path));
+    assertTrue(pattern.matches(path), "Pattern does match path");
   }
 
   @Test
   public void testMatchWithWildcard() {
     Path<QNm> pattern = (new PathParser("//*")).parse();
     Path<QNm> path = (new PathParser("//a/b/c")).parse();
-    assertTrue("Pattern does match path", pattern.matches(path));
+    assertTrue(pattern.matches(path), "Pattern does match path");
   }
 
   @Test

@@ -61,7 +61,7 @@ Data stores can add custom optimizations by extending the compile chain. Physica
 
 ## Testing
 
-Tests use JUnit 4. Extend `XQueryBaseTest` for new expression tests - it provides:
+Tests use JUnit 5. Extend `XQueryBaseTest` for new expression tests - it provides:
 - `ctx` (QueryContext)
 - `store` (NodeStore)
 - Helper methods: `storeDocument()`, `xquery()`, `print()`

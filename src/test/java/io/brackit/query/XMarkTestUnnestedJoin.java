@@ -29,6 +29,7 @@ package io.brackit.query;
 
 import io.brackit.query.util.Cfg;
 import io.brackit.query.compiler.optimizer.DefaultOptimizer;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * @author Sebastian Baechle
@@ -36,6 +37,7 @@ import io.brackit.query.compiler.optimizer.DefaultOptimizer;
 public class XMarkTestUnnestedJoin extends XMarkTest {
 
   @Override
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     Cfg.set(DefaultOptimizer.UNNEST_CFG, true);

@@ -35,11 +35,11 @@ import io.brackit.query.jdm.node.Node;
 import io.brackit.query.jdm.node.NodeCollection;
 import io.brackit.query.node.parser.DocumentParser;
 import io.brackit.query.sequence.ItemSequence;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class FnTest extends XQueryBaseTest {
 
@@ -1301,7 +1301,7 @@ public class FnTest extends XQueryBaseTest {
       new Query("fn:adjust-dateTime-to-timezone(xs:dateTime('2002-03-07T10:00:00-05:00'), xs:dayTimeDuration('PT15H'))").execute(ctx);
       fail("Accepted illegal timezone.");
     } catch (QueryException e) {
-      assertEquals("Wrong error code", ErrorCode.ERR_INVALID_TIMEZONE, e.getCode());
+      assertEquals(ErrorCode.ERR_INVALID_TIMEZONE, e.getCode(), "Wrong error code");
     }
   }
 
@@ -1343,7 +1343,7 @@ public class FnTest extends XQueryBaseTest {
       new Query("fn:adjust-date-to-timezone(xs:date('2002-03-07-05:00'), xs:dayTimeDuration('PT15H'))").execute(ctx);
       fail("Accepted illegal timezone.");
     } catch (QueryException e) {
-      assertEquals("Wrong error code", ErrorCode.ERR_INVALID_TIMEZONE, e.getCode());
+      assertEquals(ErrorCode.ERR_INVALID_TIMEZONE, e.getCode(), "Wrong error code");
     }
   }
 
@@ -1385,7 +1385,7 @@ public class FnTest extends XQueryBaseTest {
       new Query("fn:adjust-time-to-timezone(xs:time('10:00:00-05:00'), xs:dayTimeDuration('PT15H'))").execute(ctx);
       fail("Accepted illegal timezone.");
     } catch (QueryException e) {
-      assertEquals("Wrong error code", ErrorCode.ERR_INVALID_TIMEZONE, e.getCode());
+      assertEquals(ErrorCode.ERR_INVALID_TIMEZONE, e.getCode(), "Wrong error code");
     }
   }
 
@@ -1456,7 +1456,7 @@ public class FnTest extends XQueryBaseTest {
   }
 
   @Override
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     storeDocument("test.xml", "<a><b>text1<b>text2</b></b><c>text2</c></a>");

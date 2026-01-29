@@ -33,8 +33,8 @@ import io.brackit.query.jdm.Sequence;
 import io.brackit.query.ResultChecker;
 import io.brackit.query.Query;
 import io.brackit.query.sequence.ItemSequence;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -132,7 +132,7 @@ public class JoinTest extends XQueryBaseTest {
   }
 
   @Override
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     DefaultOptimizer.UNNEST = true;

@@ -31,8 +31,8 @@ import io.brackit.query.atomic.Atomic;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.jdm.DocumentException;
 import io.brackit.query.jdm.Kind;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Sebastian Baechle
@@ -75,9 +75,9 @@ public class D2NodeDivisionTest extends D2Node {
   }
 
   private void verify(int[] expected, int[] actual) {
-    Assert.assertEquals("correct size", expected.length, actual.length);
+    Assertions.assertEquals(expected.length, actual.length, "correct size");
     for (int i = 0; i < expected.length; i++) {
-      Assert.assertEquals("division " + i, expected[i], actual[i]);
+      Assertions.assertEquals(expected[i], actual[i], "division " + i);
     }
   }
 

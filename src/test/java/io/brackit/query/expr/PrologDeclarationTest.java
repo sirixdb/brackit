@@ -27,8 +27,8 @@
  */
 package io.brackit.query.expr;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.brackit.query.XQueryBaseTest;
 import io.brackit.query.jdm.Sequence;
@@ -43,7 +43,7 @@ import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.atomic.Str;
 import io.brackit.query.sequence.ItemSequence;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Sebastian Baechle
@@ -83,7 +83,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
       new Query("declare function xs:addOne($a as item()) { $a + 1 }; 1");
       fail("Illegal declaration not detected");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_FUNCTION_DECL_IN_ILLEGAL_NAMESPACE, e.getCode());
+      assertEquals(ErrorCode.ERR_FUNCTION_DECL_IN_ILLEGAL_NAMESPACE, e.getCode(), "Correct error code");
     }
   }
 
@@ -116,7 +116,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
       new Query("declare variable $a := $a + 1; $a");
       fail("Illegal cycle in initializer not detected");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_CIRCULAR_VARIABLE_DEPENDENCY, e.getCode());
+      assertEquals(ErrorCode.ERR_CIRCULAR_VARIABLE_DEPENDENCY, e.getCode(), "Correct error code");
     }
   }
 
@@ -128,7 +128,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
       new Query("declare variable $a := $b + 1; declare variable $b := $a + 1; $a + $b");
       fail("Illegal cycle in initializer not detected");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_CIRCULAR_VARIABLE_DEPENDENCY, e.getCode());
+      assertEquals(ErrorCode.ERR_CIRCULAR_VARIABLE_DEPENDENCY, e.getCode(), "Correct error code");
     }
   }
 
@@ -140,7 +140,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
       new Query("declare variable $a := local:foo(); declare variable $b := $a + 1; declare function local:foo() { $b + 1 }; $a + $b");
       fail("Illegal cycle in initializer not detected");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_CIRCULAR_VARIABLE_DEPENDENCY, e.getCode());
+      assertEquals(ErrorCode.ERR_CIRCULAR_VARIABLE_DEPENDENCY, e.getCode(), "Correct error code");
     }
   }
 
@@ -185,7 +185,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
       new Query("declare context item as node() external; $$").execute(ctx);
       fail("Illegal context item access accepted");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, e.getCode());
+      assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, e.getCode(), "Correct error code");
     }
   }
 
@@ -203,7 +203,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
       new Query("declare context item as item() := 1 + $$; $$");
       fail("Illegal context item declaration accepted");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER, e.getCode());
+      assertEquals(ErrorCode.ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER, e.getCode(), "Correct error code");
     }
   }
 
@@ -213,7 +213,7 @@ public class PrologDeclarationTest extends XQueryBaseTest {
       new Query("declare context item as item() := 1 + a; $$");
       fail("Illegal context item declaration accepted");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER, e.getCode());
+      assertEquals(ErrorCode.ERR_CIRCULAR_CONTEXT_ITEM_INITIALIZER, e.getCode(), "Correct error code");
     }
   }
 

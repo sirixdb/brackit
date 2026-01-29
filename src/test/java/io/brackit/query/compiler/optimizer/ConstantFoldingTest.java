@@ -36,7 +36,7 @@ import io.brackit.query.atomic.Dec;
 import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.Str;
 import io.brackit.query.jdm.Sequence;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for the constant folding optimization pass.

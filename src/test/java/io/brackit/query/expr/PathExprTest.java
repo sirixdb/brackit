@@ -27,8 +27,8 @@
  */
 package io.brackit.query.expr;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.PrintStream;
 
@@ -46,7 +46,7 @@ import io.brackit.query.QueryException;
 import io.brackit.query.ResultChecker;
 import io.brackit.query.Query;
 import io.brackit.query.sequence.ItemSequence;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Sebastian Baechle
@@ -291,7 +291,7 @@ public class PathExprTest extends XQueryBaseTest {
       new Query("(<a><b/></a>)/schema-element(b)");
       fail("missing imported schema not detected");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_UNDEFINED_REFERENCE, e.getCode());
+      assertEquals(ErrorCode.ERR_UNDEFINED_REFERENCE, e.getCode(), "Correct error code");
     }
   }
 
@@ -301,7 +301,7 @@ public class PathExprTest extends XQueryBaseTest {
       new Query("(<a b=''/>)/schema-attribute(b)");
       fail("missing imported schema not detected");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_UNDEFINED_REFERENCE, e.getCode());
+      assertEquals(ErrorCode.ERR_UNDEFINED_REFERENCE, e.getCode(), "Correct error code");
     }
   }
 
@@ -318,7 +318,7 @@ public class PathExprTest extends XQueryBaseTest {
       }
       fail("mixed output sequence not detected");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_PATH_STEP_RETURNED_NODE_AND_NON_NODE_VALUES, e.getCode());
+      assertEquals(ErrorCode.ERR_PATH_STEP_RETURNED_NODE_AND_NON_NODE_VALUES, e.getCode(), "Correct error code");
     }
   }
 
@@ -335,7 +335,7 @@ public class PathExprTest extends XQueryBaseTest {
       }
       fail("mixed output sequence not detected");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_PATH_STEP_RETURNED_NODE_AND_NON_NODE_VALUES, e.getCode());
+      assertEquals(ErrorCode.ERR_PATH_STEP_RETURNED_NODE_AND_NON_NODE_VALUES, e.getCode(), "Correct error code");
     }
   }
 }

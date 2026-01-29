@@ -1,7 +1,7 @@
 package io.brackit.query.util.serialize;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -12,7 +12,7 @@ import io.brackit.query.util.io.IOUtils;
 import io.brackit.query.BrackitQueryContext;
 import io.brackit.query.Query;
 import io.brackit.query.function.json.JSONParser;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests of {@code org.brackit.xquery.util.StringSerializer}.

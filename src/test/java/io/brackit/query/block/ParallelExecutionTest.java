@@ -37,14 +37,14 @@ import io.brackit.query.jdm.Sequence;
 import io.brackit.query.operator.TupleImpl;
 import io.brackit.query.expr.BlockExpr;
 import io.brackit.query.jdm.Expr;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for the block-based (parallel) execution model.
@@ -288,7 +288,7 @@ public class ParallelExecutionTest extends XQueryBaseTest {
     for (String query : queries) {
       Set<Long> seqResult = collectLongs(executeSequential(query));
       Set<Long> parResult = collectLongs(executeParallel(query));
-      assertEquals("Results differ for query: " + query, seqResult, parResult);
+      assertEquals(seqResult, parResult, "Results differ for query: " + query);
     }
   }
 
@@ -411,7 +411,7 @@ public class ParallelExecutionTest extends XQueryBaseTest {
     // Verify we get results in order
     assertFalse(sums.isEmpty());
     for (int i = 1; i < sums.size(); i++) {
-      assertTrue("Results should be non-negative", sums.get(i) >= 0);
+      assertTrue(sums.get(i) >= 0, "Results should be non-negative");
     }
   }
 
@@ -424,7 +424,7 @@ public class ParallelExecutionTest extends XQueryBaseTest {
     for (int i = 0; i < 100; i++) {
       Sequence result = executeParallel(query);
       Set<Long> actual = collectLongs(result);
-      assertEquals("Iteration " + i + " failed", expected, actual);
+      assertEquals(expected, actual, "Iteration " + i + " failed");
     }
   }
 

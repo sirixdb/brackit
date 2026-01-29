@@ -48,13 +48,13 @@ import io.brackit.query.jdm.Sequence;
 import io.brackit.query.jdm.node.Node;
 import io.brackit.query.jdm.node.NodeCollection;
 import io.brackit.query.jdm.node.NodeStore;
-import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * @author Sebastian Baechle
  */
-@Ignore
+@Disabled
 public class XQueryBaseTest {
 
   /**
@@ -133,7 +133,7 @@ public class XQueryBaseTest {
     };
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     store = createStore();
     ctx = createContext();

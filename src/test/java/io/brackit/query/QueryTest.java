@@ -28,8 +28,8 @@
 package io.brackit.query;
 
 import io.brackit.query.jdm.Sequence;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -44,7 +44,7 @@ public final class QueryTest extends XQueryBaseTest {
   private static final Path TPOX_DIR = Paths.get("src", "test", "resources", "tpox");
 
   @Test
-  @Ignore
+  @Disabled
   public void testExtension() throws IOException {
     final String query = Files.readString(TPOX_DIR.resolve("expensive_sequential_filter_query.xq"));
     final Sequence result = query(query);

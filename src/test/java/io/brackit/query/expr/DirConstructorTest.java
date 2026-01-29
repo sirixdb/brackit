@@ -38,9 +38,10 @@ import io.brackit.query.jdm.node.Node;
 import io.brackit.query.node.parser.DocumentParser;
 import io.brackit.query.ResultChecker;
 import io.brackit.query.Query;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Sebastian Baechle
@@ -50,70 +51,70 @@ public class DirConstructorTest extends XQueryBaseTest {
   public void dirAttributeContent1() throws Exception {
     PrintStream buf = createBuffer();
     new Query("<shoe size=\"7\"/>").serialize(ctx, buf);
-    Assert.assertEquals("serialized result differs", "<shoe size=\"7\"/>", buf.toString());
+    assertEquals("<shoe size=\"7\"/>", buf.toString(), "serialized result differs");
   }
 
   @Test
   public void dirAttributeContent2() throws Exception {
     PrintStream buf = createBuffer();
     new Query("<shoe size=\"{7}\"/>").serialize(ctx, buf);
-    Assert.assertEquals("serialized result differs", "<shoe size=\"7\"/>", buf.toString());
+    assertEquals("<shoe size=\"7\"/>", buf.toString(), "serialized result differs");
   }
 
   @Test
   public void dirAttributeContent3() throws Exception {
     PrintStream buf = createBuffer();
     new Query("<shoe size=\"{()}\"/>").serialize(ctx, buf);
-    Assert.assertEquals("serialized result differs", "<shoe size=\"\"/>", buf.toString());
+    assertEquals("<shoe size=\"\"/>", buf.toString(), "serialized result differs");
   }
 
   @Test
   public void dirAttributeContent4() throws Exception {
     PrintStream buf = createBuffer();
     new Query("<shoe size=\"[{1, 5 to 7, 9}]\"/>").serialize(ctx, buf);
-    Assert.assertEquals("serialized result differs", "<shoe size=\"[1 5 6 7 9]\"/>", buf.toString());
+    assertEquals("<shoe size=\"[1 5 6 7 9]\"/>", buf.toString(), "serialized result differs");
   }
 
   @Test
   public void dirElementContent1() throws Exception {
     PrintStream buf = createBuffer();
     new Query("<a>{1}</a>").serialize(ctx, buf);
-    Assert.assertEquals("serialized result differs", "<a>1</a>", buf.toString());
+    assertEquals("<a>1</a>", buf.toString(), "serialized result differs");
   }
 
   @Test
   public void dirElementContent2() throws Exception {
     PrintStream buf = createBuffer();
     new Query("<a>{1, 2, 3}</a>").serialize(ctx, buf);
-    Assert.assertEquals("serialized result differs", "<a>1 2 3</a>", buf.toString());
+    assertEquals("<a>1 2 3</a>", buf.toString(), "serialized result differs");
   }
 
   @Test
   public void dirElementContent3() throws Exception {
     PrintStream buf = createBuffer();
     new Query("<a>{1}{2}{3}</a>").serialize(ctx, buf);
-    Assert.assertEquals("serialized result differs", "<a>123</a>", buf.toString());
+    assertEquals("<a>123</a>", buf.toString(), "serialized result differs");
   }
 
   @Test
   public void dirElementContent4() throws Exception {
     PrintStream buf = createBuffer();
     new Query("<a>{1, \"2\", \"3\"}</a>").serialize(ctx, buf);
-    Assert.assertEquals("serialized result differs", "<a>1 2 3</a>", buf.toString());
+    assertEquals("<a>1 2 3</a>", buf.toString(), "serialized result differs");
   }
 
   @Test
   public void dirElementContent5() throws Exception {
     PrintStream buf = createBuffer();
     new Query("<fact>I saw {5 + 3} cats.</fact>").serialize(ctx, buf);
-    Assert.assertEquals("serialized result differs", "<fact>I saw 8 cats.</fact>", buf.toString());
+    assertEquals("<fact>I saw 8 cats.</fact>", buf.toString(), "serialized result differs");
   }
 
   @Test
   public void dirElementContent6a() throws Exception {
     PrintStream buf = createBuffer();
     new Query("<fact>I saw <howmany>{5 + 3}</howmany> cats.</fact>").serialize(ctx, buf);
-    Assert.assertEquals("serialized result differs", "<fact>I saw <howmany>8</howmany> cats.</fact>", buf.toString());
+    assertEquals("<fact>I saw <howmany>8</howmany> cats.</fact>", buf.toString(), "serialized result differs");
   }
 
   @Test
@@ -131,9 +132,7 @@ public class DirConstructorTest extends XQueryBaseTest {
     PrintStream buf = createBuffer();
     new Query("declare boundary-space strip; <cat>\n    <breed>2</breed>\n    <color>4</color>2 	\n</cat>").serialize(ctx,
                                                                                                                        buf);
-    Assert.assertEquals("serialized result differs",
-                        "<cat><breed>2</breed><color>4</color>2 	\n</cat>",
-                        buf.toString());
+    assertEquals("<cat><breed>2</breed><color>4</color>2 	\n</cat>", buf.toString(), "serialized result differs");
   }
 
   @Test
@@ -231,43 +230,43 @@ public class DirConstructorTest extends XQueryBaseTest {
   public void boundarySpace1() throws Exception {
     PrintStream buf = createBuffer();
     new Query("declare boundary-space strip; <a> {\"abc\"} </a>").serialize(ctx, buf);
-    Assert.assertEquals("serialized result differs", "<a>abc</a>", buf.toString());
+    assertEquals("<a>abc</a>", buf.toString(), "serialized result differs");
   }
 
   @Test
   public void boundarySpace2() throws Exception {
     PrintStream buf = createBuffer();
     new Query("declare boundary-space preserve; <a> {\"abc\"} </a>").serialize(ctx, buf);
-    Assert.assertEquals("serialized result differs", "<a> abc </a>", buf.toString());
+    assertEquals("<a> abc </a>", buf.toString(), "serialized result differs");
   }
 
   @Test
   public void boundarySpace3() throws Exception {
     PrintStream buf = createBuffer();
     new Query("declare boundary-space preserve; <a> z {\"abc\"}</a>").serialize(ctx, buf);
-    Assert.assertEquals("serialized result differs", "<a> z abc</a>", buf.toString());
+    assertEquals("<a> z abc</a>", buf.toString(), "serialized result differs");
   }
 
   @Test
   public void boundarySpace4() throws Exception {
     PrintStream buf = createBuffer();
     new Query("declare boundary-space preserve; <a>&#x20;{\"abc\"}</a>").serialize(ctx, buf);
-    Assert.assertEquals("serialized result differs", "<a> abc</a>", buf.toString());
+    assertEquals("<a> abc</a>", buf.toString(), "serialized result differs");
   }
 
   @Test
   public void boundarySpace5() throws Exception {
     PrintStream buf = createBuffer();
     new Query("declare boundary-space preserve; <a>  &#x20;  {\"abc\"}</a>").serialize(ctx, buf);
-    Assert.assertEquals("serialized result differs", "<a>     abc</a>", buf.toString());
+    assertEquals("<a>     abc</a>", buf.toString(), "serialized result differs");
   }
 
-  @Ignore
+  @Disabled
   @Test
   public void boundarySpace6() throws Exception {
     PrintStream buf = createBuffer();
     new Query("declare boundary-space preserve; <a> &#8364; </a>").serialize(ctx, buf);
-    Assert.assertEquals("serialized result differs", "<a> € </a>", buf.toString());
+    assertEquals("<a> \u20AC </a>", buf.toString(), "serialized result differs");
   }
 
   @Test
