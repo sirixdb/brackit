@@ -27,12 +27,12 @@
  */
 package io.brackit.query;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.atomic.Int32;
@@ -48,7 +48,7 @@ import io.brackit.query.jdm.Kind;
 import io.brackit.query.jdm.OperationNotSupportedException;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.jdm.Stream;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author Sebastian Baechle
@@ -78,17 +78,17 @@ public class ResultChecker {
     Tuple next;
     op.open(ctx);
     for (int i = 0; i < expected.length; i++) {
-      assertNotNull("Result is empty", next = op.next(ctx));
+      assertNotNull(next = op.next(ctx), "Result is empty");
       checkTuple(ctx, expected[i], next);
     }
-    assertNull("No more results delivered", op.next(ctx));
+    assertNull(op.next(ctx), "No more results delivered");
     op.close(ctx);
   }
 
   public static void checkTuple(QueryContext ctx, Tuple expected, Tuple result) throws QueryException {
     int eSize = expected.getSize();
     int rSize = result.getSize();
-    assertEquals("Result tuple has same size", eSize, rSize);
+    assertEquals(eSize, rSize, "Result tuple has same size");
     for (int i = 0; i < eSize; i++) {
       Sequence eSequence = expected.get(i);
       Sequence rSequence = result.get(i);
@@ -123,15 +123,15 @@ public class ResultChecker {
       {
         Iter s = result.iterate();
         try {
-          assertNull("Result sequence is empty", s.next());
+          assertNull(s.next(), "Result sequence is empty");
         } finally {
           s.close();
         }
-        assertFalse("Result has boolean value of empty sequence", result.booleanValue());
-        assertTrue("Result has size of empty sequence", Int32.ZERO.cmp(result.size()) == 0);
+        assertFalse(result.booleanValue(), "Result has boolean value of empty sequence");
+        assertTrue(Int32.ZERO.cmp(result.size()) == 0, "Result has size of empty sequence");
       }
     } else {
-      assertNotNull("Result sequence is not empty", result);
+      assertNotNull(result, "Result sequence is not empty");
       Iter es = expected.iterate();
       try {
         Iter rs = result.iterate();
@@ -139,9 +139,9 @@ public class ResultChecker {
           Item eItem;
           Item rItem;
           while ((eItem = es.next()) != null) {
-            assertNotNull("Result sequence has more results", rItem = rs.next());
+            assertNotNull(rItem = rs.next(), "Result sequence has more results");
             try {
-              assertEquals("Result item has same type", eItem.itemType(), rItem.itemType());
+              assertEquals(eItem.itemType(), rItem.itemType(), "Result item has same type");
 
               if (eItem instanceof Node<?>) {
                 compareNode(eItem, rItem, nodeIdentity);
@@ -162,7 +162,7 @@ public class ResultChecker {
               throw e;
             }
           }
-          assertNull("Result sequence has not more results than expected", rs.next());
+          assertNull(rs.next(), "Result sequence has not more results than expected");
         } finally {
           rs.close();
         }
@@ -180,15 +180,15 @@ public class ResultChecker {
           fail("Result does not have defined boolean value");
         }
 
-        assertEquals("Result has expected boolean value", expectedBooleanValue, resultBooleanValue);
+        assertEquals(expectedBooleanValue, resultBooleanValue, "Result has expected boolean value");
       } catch (QueryException e) {
-        assertEquals("Correct error code", ErrorCode.ERR_INVALID_ARGUMENT_TYPE, e.getCode());
+        assertEquals(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, e.getCode(), "Correct error code");
 
         try {
           result.booleanValue();
           fail("Result has defined boolean value");
         } catch (QueryException e1) {
-          assertEquals("Correct error code", ErrorCode.ERR_INVALID_ARGUMENT_TYPE, e1.getCode());
+          assertEquals(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, e1.getCode(), "Correct error code");
         }
       }
     }
@@ -198,26 +198,26 @@ public class ResultChecker {
   }
 
   private static void compareAtomic(Item eItem, Item rItem) throws QueryException {
-    assertTrue("Result item is atomic", rItem instanceof Atomic);
-    assertTrue("Result atomic is equal to expected", ((Atomic) eItem).eq((Atomic) rItem));
+    assertTrue(rItem instanceof Atomic, "Result item is atomic");
+    assertTrue(((Atomic) eItem).eq((Atomic) rItem), "Result atomic is equal to expected");
   }
 
   private static void compareRecord(Item eItem, Item rItem) throws DocumentException {
-    assertTrue("Result item is record", rItem instanceof Object);
+    assertTrue(rItem instanceof Object, "Result item is record");
     Object eNode = (Object) eItem;
     Object rNode = (Object) rItem;
 
-    Assert.assertEquals(eNode.size(), rNode.size());
+    Assertions.assertEquals(eNode.size(), rNode.size());
 
     // TODO
   }
 
   private static void compareNode(Item eItem, Item rItem, boolean nodeIdentity) throws DocumentException {
-    assertTrue("Result item is node", rItem instanceof Node<?>);
+    assertTrue(rItem instanceof Node<?>, "Result item is node");
     Node<?> eNode = (Node<?>) eItem;
     Node<?> rNode = (Node<?>) rItem;
     if (nodeIdentity) {
-      assertTrue("Result node is equal to expected", eNode.isSelfOf(rNode));
+      assertTrue(eNode.isSelfOf(rNode), "Result node is equal to expected");
     } else {
       compareNode(eNode, rNode);
     }
@@ -225,16 +225,16 @@ public class ResultChecker {
 
   private static void compareNode(Node<?> eNode, Node<?> rNode) throws DocumentException,
       OperationNotSupportedException {
-    Assert.assertEquals("Node kind is correct", eNode.getKind(), rNode.getKind());
+    Assertions.assertEquals(eNode.getKind(), rNode.getKind(), "Node kind is correct");
     if (eNode.getKind() == Kind.DOCUMENT) {
       compareChildren(eNode, rNode);
     } else {
-      Assert.assertEquals("Node name is correct", eNode.getName(), rNode.getName());
+      Assertions.assertEquals(eNode.getName(), rNode.getName(), "Node name is correct");
       if (eNode.getKind() == Kind.ELEMENT) {
         compareAttributes(eNode, rNode);
         compareChildren(eNode, rNode);
       } else {
-        Assert.assertEquals("Node value correct", eNode.getValue(), rNode.getValue());
+        Assertions.assertEquals(eNode.getValue(), rNode.getValue(), "Node value correct");
       }
     }
   }
@@ -247,10 +247,10 @@ public class ResultChecker {
         Node<?> eChild;
         Node<?> rChild;
         while ((eChild = eChildren.next()) != null) {
-          assertNotNull("Child is in result", rChild = rChildren.next());
+          assertNotNull(rChild = rChildren.next(), "Child is in result");
           compareNode(eChild, rChild);
         }
-        assertNull("Result has no further children", rChildren.next());
+        assertNull(rChildren.next(), "Result has no further children");
       } finally {
         rChildren.close();
       }
@@ -267,12 +267,12 @@ public class ResultChecker {
         Node<?> eAtt;
         Node<?> rAtt;
         while ((eAtt = eAtts.next()) != null) {
-          assertNotNull("Attribute is in result", rAtt = rAtts.next());
-          Assert.assertEquals("Node kind is correct", Kind.ATTRIBUTE, rAtt.getKind());
-          Assert.assertEquals("Node name is correct", eAtt.getName(), rAtt.getName());
-          Assert.assertEquals("Node name value correct", eAtt.getValue(), rAtt.getValue());
+          assertNotNull(rAtt = rAtts.next(), "Attribute is in result");
+          Assertions.assertEquals(Kind.ATTRIBUTE, rAtt.getKind(), "Node kind is correct");
+          Assertions.assertEquals(eAtt.getName(), rAtt.getName(), "Node name is correct");
+          Assertions.assertEquals(eAtt.getValue(), rAtt.getValue(), "Node name value correct");
         }
-        assertNull("Result has no further attributes", rAtts.next());
+        assertNull(rAtts.next(), "Result has no further attributes");
       } finally {
         rAtts.close();
       }

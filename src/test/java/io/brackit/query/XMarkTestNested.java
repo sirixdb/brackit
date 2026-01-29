@@ -31,6 +31,7 @@ import java.io.FileNotFoundException;
 
 import io.brackit.query.util.Cfg;
 import io.brackit.query.compiler.optimizer.DefaultOptimizer;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * @author Sebastian Baechle
@@ -38,6 +39,7 @@ import io.brackit.query.compiler.optimizer.DefaultOptimizer;
 public class XMarkTestNested extends XMarkTest {
 
   @Override
+  @BeforeEach
   public void setUp() throws Exception, FileNotFoundException {
     super.setUp();
     Cfg.set(DefaultOptimizer.UNNEST_CFG, false);

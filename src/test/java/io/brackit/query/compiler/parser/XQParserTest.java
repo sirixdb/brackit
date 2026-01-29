@@ -30,12 +30,12 @@ package io.brackit.query.compiler.parser;
 import io.brackit.query.XQueryBaseTest;
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Sebastian Baechle
@@ -99,7 +99,7 @@ public class XQParserTest extends XQueryBaseTest {
     try {
       new JsoniqParser("<a><b></a>").parse();
     } catch (QueryException e) {
-      assertEquals("illegal error code", ErrorCode.ERR_PARSING_ERROR, e.getCode());
+      assertEquals(ErrorCode.ERR_PARSING_ERROR, e.getCode(), "illegal error code");
     }
   }
 

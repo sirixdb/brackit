@@ -44,8 +44,9 @@ import io.brackit.query.node.stream.StreamUtil;
 import io.brackit.query.node.stream.filter.Filter;
 import io.brackit.query.node.stream.filter.FilteredStream;
 import io.brackit.query.QueryException;
-import org.junit.Test;
-import junit.framework.Assert;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author Sebastian Baechle
@@ -91,11 +92,11 @@ public abstract class AxisTest extends XQueryBaseTest {
         final Node<?> b = nodes.get(j);
         try {
           if (i < j)
-            Assert.assertTrue("a < b", a.cmp(b) < 0);
+            Assertions.assertTrue(a.cmp(b) < 0, "a < b");
           else if (i == j)
-            Assert.assertEquals("a == b", 0, a.cmp(b));
+            Assertions.assertEquals(0, a.cmp(b), "a == b");
           else
-            Assert.assertTrue("a > b", a.cmp(b) > 0);
+            Assertions.assertTrue(a.cmp(b) > 0, "a > b");
         } catch (AssertionError e) {
           // SubtreePrinter.print(collection.getDocument(), System.out);
           // System.err.println(nodes);
@@ -207,12 +208,12 @@ public abstract class AxisTest extends XQueryBaseTest {
     Set<Node<?>> delivered = new TreeSet<>(COMPARATOR);
     Node<?> node;
     while ((node = nodes.next()) != null) {
-      Assert.assertTrue("Node not delivered yet.", delivered.add(node));
+      Assertions.assertTrue(delivered.add(node), "Node not delivered yet.");
       // System.out.println(node);
     }
     nodes.close();
     try {
-      Assert.assertEquals("Expected number of nodes delivered", expected.size(), delivered.size());
+      Assertions.assertEquals(expected.size(), delivered.size(), "Expected number of nodes delivered");
 
       for (Node<?> n : delivered) {
         // System.err.println("CHECKING " + n);
@@ -225,7 +226,7 @@ public abstract class AxisTest extends XQueryBaseTest {
         }
       }
 
-      Assert.assertTrue("Expected nodes delivered", expected.containsAll(delivered));
+      Assertions.assertTrue(expected.containsAll(delivered), "Expected nodes delivered");
     } catch (Error e) {
       // System.out.println("Expected:\t" + expected);
       // System.out.println("Delivered:\t" + delivered);
@@ -237,6 +238,7 @@ public abstract class AxisTest extends XQueryBaseTest {
   protected abstract NodeStore createStore() throws Exception;
 
   @Override
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     collection = storeFile("text.xml", RESOURCES.resolve("docs").resolve("orga.xml"));

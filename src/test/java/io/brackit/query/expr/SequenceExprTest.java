@@ -33,7 +33,7 @@ import io.brackit.query.BrackitQueryContext;
 import io.brackit.query.QueryContext;
 import io.brackit.query.ResultChecker;
 import io.brackit.query.sequence.ItemSequence;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Sebastian Baechle

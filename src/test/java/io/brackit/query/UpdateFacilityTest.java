@@ -36,8 +36,9 @@ import io.brackit.query.jdm.Sequence;
 import io.brackit.query.jdm.node.Node;
 import io.brackit.query.node.parser.DocumentParser;
 import io.brackit.query.sequence.ItemSequence;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author Sebastian Baechle
@@ -100,16 +101,18 @@ public class UpdateFacilityTest extends XQueryBaseTest {
     ResultChecker.dCheck(a, res, false);
   }
 
-  @Test(expected = DocumentException.class)
+  @Test
   public void transformIllegalExpression() {
     // Two attributes with the same name (insert applied before delete).
-    new Query("copy $c := <x a='a'/> modify (delete node $c/@a, insert node attribute a { 'b' } into $c) return $c").execute(ctx);
+    assertThrows(DocumentException.class,
+                 () -> new Query("copy $c := <x a='a'/> modify (delete node $c/@a, insert node attribute a { 'b' } into $c) return $c").execute(ctx));
   }
 
-  @Test(expected = QueryException.class)
+  @Test
   public void transformIllegalExpressionSecond() {
     // Two attributes with the same name (insert applied before delete).
-    new Query("copy $c := <x a='a'/> modify (delete node $c/@a, insert node attribute a { 'b' } into $c, replace node $c/@a with attribute a { 'b' }) return $c").execute(ctx);
+    assertThrows(QueryException.class,
+                 () -> new Query("copy $c := <x a='a'/> modify (delete node $c/@a, insert node attribute a { 'b' } into $c, replace node $c/@a with attribute a { 'b' }) return $c").execute(ctx));
   }
 
   @Test
@@ -145,7 +148,7 @@ public class UpdateFacilityTest extends XQueryBaseTest {
   }
 
   @Override
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     doc = ctx.getNodeFactory().build(new DocumentParser(DOCUMENT));

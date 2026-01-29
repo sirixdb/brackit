@@ -34,12 +34,12 @@ import io.brackit.query.atomic.Str;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.update.op.OpType;
 import io.brackit.query.update.op.UpdateOp;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests for {@link UpdateList}.
@@ -74,7 +74,7 @@ public class UpdateListTest {
     updateList.apply();
 
     // Only DELETE should be applied, REPLACE should be skipped
-    assertEquals("Only DELETE should be applied", List.of("DELETE"), appliedOps);
+    assertEquals(List.of("DELETE"), appliedOps, "Only DELETE should be applied");
   }
 
   /**
@@ -98,7 +98,7 @@ public class UpdateListTest {
     updateList.apply();
 
     // Only DELETE should be applied, REPLACE should be skipped
-    assertEquals("Only DELETE should be applied", List.of("DELETE"), appliedOps);
+    assertEquals(List.of("DELETE"), appliedOps, "Only DELETE should be applied");
   }
 
   /**
@@ -122,7 +122,7 @@ public class UpdateListTest {
     updateList.apply();
 
     // Both should be applied since they target different items
-    assertEquals("Both operations should be applied", 2, appliedOps.size());
+    assertEquals(2, appliedOps.size(), "Both operations should be applied");
   }
 
   /**
@@ -149,7 +149,7 @@ public class UpdateListTest {
     updateList.apply();
 
     // Both should be applied - INSERT_BEFORE creates a sibling, then DELETE removes the target
-    assertEquals("Both INSERT_BEFORE and DELETE should be applied", List.of("INSERT_BEFORE", "DELETE"), appliedOps);
+    assertEquals(List.of("INSERT_BEFORE", "DELETE"), appliedOps, "Both INSERT_BEFORE and DELETE should be applied");
   }
 
   /**
@@ -173,7 +173,7 @@ public class UpdateListTest {
     updateList.apply();
 
     // Both should be applied
-    assertEquals("Both INSERT_INTO and DELETE should be applied", List.of("INSERT_INTO", "DELETE"), appliedOps);
+    assertEquals(List.of("INSERT_INTO", "DELETE"), appliedOps, "Both INSERT_INTO and DELETE should be applied");
   }
 
   /**
@@ -197,7 +197,7 @@ public class UpdateListTest {
     updateList.apply();
 
     // Both should be applied
-    assertEquals("Both INSERT_AFTER and DELETE should be applied", List.of("INSERT_AFTER", "DELETE"), appliedOps);
+    assertEquals(List.of("INSERT_AFTER", "DELETE"), appliedOps, "Both INSERT_AFTER and DELETE should be applied");
   }
 
   /**
@@ -230,9 +230,9 @@ public class UpdateListTest {
     updateList.apply();
 
     // Both should be applied since they have different targetIdentity (different fields)
-    assertEquals("Both operations should be applied for different fields",
-                 List.of("REPLACE-first", "DELETE-second"),
-                 appliedOps);
+    assertEquals(List.of("REPLACE-first", "DELETE-second"),
+                 appliedOps,
+                 "Both operations should be applied for different fields");
   }
 
   /**
@@ -263,7 +263,7 @@ public class UpdateListTest {
     updateList.apply();
 
     // Only DELETE should be applied, REPLACE should be skipped (same targetIdentity)
-    assertEquals("Only DELETE should be applied for same field", List.of("DELETE-first"), appliedOps);
+    assertEquals(List.of("DELETE-first"), appliedOps, "Only DELETE should be applied for same field");
   }
 
   /**
@@ -290,9 +290,9 @@ public class UpdateListTest {
     updateList.apply();
 
     // Both should be applied since they have different indices
-    assertEquals("Both operations should be applied for different indices",
-                 List.of("REPLACE-0", "DELETE-1"),
-                 appliedOps);
+    assertEquals(List.of("REPLACE-0", "DELETE-1"),
+                 appliedOps,
+                 "Both operations should be applied for different indices");
   }
 
   /**
@@ -319,7 +319,7 @@ public class UpdateListTest {
     updateList.apply();
 
     // Only DELETE should be applied, REPLACE should be skipped (same index)
-    assertEquals("Only DELETE should be applied for same index", List.of("DELETE-0"), appliedOps);
+    assertEquals(List.of("DELETE-0"), appliedOps, "Only DELETE should be applied for same index");
   }
 
   /**

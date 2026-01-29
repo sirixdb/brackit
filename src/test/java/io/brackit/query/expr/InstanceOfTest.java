@@ -5,7 +5,7 @@ import io.brackit.query.atomic.Bool;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.ResultChecker;
 import io.brackit.query.Query;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public final class InstanceOfTest extends XQueryBaseTest {
   @Test

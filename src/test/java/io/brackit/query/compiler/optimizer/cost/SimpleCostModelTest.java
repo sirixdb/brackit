@@ -6,11 +6,11 @@
 package io.brackit.query.compiler.optimizer.cost;
 
 import io.brackit.query.compiler.XQ;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for {@link SimpleCostModel}.
@@ -23,7 +23,7 @@ public class SimpleCostModelTest {
 
   private SimpleCostModel costModel;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     costModel = new SimpleCostModel();
   }
@@ -36,7 +36,7 @@ public class SimpleCostModelTest {
     double costLow = costModel.estimateCost(XQ.ForBind, OperatorContext.acquire().forScan(10));
     double costHigh = costModel.estimateCost(XQ.ForBind, OperatorContext.acquire().forScan(1000));
 
-    assertTrue("Higher cardinality should have higher cost", costHigh > costLow);
+    assertTrue(costHigh > costLow, "Higher cardinality should have higher cost");
   }
 
   @Test
@@ -44,28 +44,28 @@ public class SimpleCostModelTest {
     double fullCost = costModel.estimateCost(XQ.ForBind, OperatorContext.acquire().forScan(10000));
     double indexCost = costModel.estimateCost(XQ.ForBind, OperatorContext.acquire().forIndexScan(10000, 100, 1));
 
-    assertTrue("Index scan should be cheaper than full scan for selective queries", indexCost < fullCost);
+    assertTrue(indexCost < fullCost, "Index scan should be cheaper than full scan for selective queries");
   }
 
   @Test
   public void testSelectionCost() {
     double cost = costModel.estimateCost(XQ.Selection, OperatorContext.acquire().forSelection(1000, 0.1));
 
-    assertTrue("Selection cost should be positive", cost > 0.0);
+    assertTrue(cost > 0.0, "Selection cost should be positive");
   }
 
   @Test
   public void testJoinCost() {
     double cost = costModel.estimateCost(XQ.Join, OperatorContext.acquire().forJoin(100, 1000, 0.01));
 
-    assertTrue("Join cost should be positive", cost > 0.0);
+    assertTrue(cost > 0.0, "Join cost should be positive");
   }
 
   @Test
   public void testLetBindZeroCost() {
     double cost = costModel.estimateCost(XQ.LetBind, OperatorContext.acquire().forScan(100));
 
-    assertEquals("LetBind should have zero cost", 0.0, cost, 0.0);
+    assertEquals(0.0, cost, 0.0, "LetBind should have zero cost");
   }
 
   @Test
@@ -75,7 +75,7 @@ public class SimpleCostModelTest {
 
     // n log n growth: 1000 * log(1000) / (10 * log(10)) ≈ 300
     double ratio = cost1000 / cost10;
-    assertTrue("Sort cost should grow faster than linear, ratio=" + ratio, ratio > 100 && ratio < 500);
+    assertTrue(ratio > 100 && ratio < 500, "Sort cost should grow faster than linear, ratio=" + ratio);
   }
 
   // Deref Operations
@@ -85,7 +85,7 @@ public class SimpleCostModelTest {
     double costDepth1 = costModel.estimateCost(XQ.DerefExpr, OperatorContext.acquire().forDeref(100, 1, false));
     double costDepth3 = costModel.estimateCost(XQ.DerefExpr, OperatorContext.acquire().forDeref(100, 3, false));
 
-    assertTrue("Deeper deref should cost more", costDepth3 > costDepth1);
+    assertTrue(costDepth3 > costDepth1, "Deeper deref should cost more");
   }
 
   @Test
@@ -94,7 +94,7 @@ public class SimpleCostModelTest {
     double costDescendant = costModel.estimateCost(XQ.DerefDescendantExpr,
                                                    OperatorContext.acquire().forDeref(100, 1, true));
 
-    assertTrue("Descendant deref should be more expensive", costDescendant > costDirect);
+    assertTrue(costDescendant > costDirect, "Descendant deref should be more expensive");
   }
 
   @Test
@@ -102,7 +102,7 @@ public class SimpleCostModelTest {
     double costLow = costModel.estimateCost(XQ.DerefExpr, OperatorContext.acquire().forDeref(10, 1, false));
     double costHigh = costModel.estimateCost(XQ.DerefExpr, OperatorContext.acquire().forDeref(1000, 1, false));
 
-    assertTrue("Higher cardinality should have higher cost", costHigh > costLow);
+    assertTrue(costHigh > costLow, "Higher cardinality should have higher cost");
   }
 
   // Array Operations
@@ -112,7 +112,7 @@ public class SimpleCostModelTest {
     double costSingle = costModel.estimateCost(XQ.ArrayAccess, OperatorContext.acquire().forArrayAccess(100, 10, true));
     double costFull = costModel.estimateCost(XQ.ArrayAccess, OperatorContext.acquire().forArrayAccess(100, 10, false));
 
-    assertTrue("Single element access should be cheaper", costSingle < costFull);
+    assertTrue(costSingle < costFull, "Single element access should be cheaper");
   }
 
   @Test
@@ -120,14 +120,14 @@ public class SimpleCostModelTest {
     double costSmall = costModel.estimateCost(XQ.ArrayAccess, OperatorContext.acquire().forArrayAccess(100, 5, false));
     double costLarge = costModel.estimateCost(XQ.ArrayAccess, OperatorContext.acquire().forArrayAccess(100, 50, false));
 
-    assertTrue("Larger arrays should cost more to unbox", costLarge > costSmall);
+    assertTrue(costLarge > costSmall, "Larger arrays should cost more to unbox");
   }
 
   @Test
   public void testFlattenedFieldCost() {
     double cost = costModel.estimateCost(XQ.FlattenedField, OperatorContext.acquire().forFlattenedField(100, 10, 1));
 
-    assertTrue("Flattened field should have positive cost", cost > 0.0);
+    assertTrue(cost > 0.0, "Flattened field should have positive cost");
   }
 
   @Test
@@ -146,7 +146,7 @@ public class SimpleCostModelTest {
     ctxLarge.isArrayAccess = false;
     double costLarge = costModel.estimateCost(XQ.ArrayIndexSlice, ctxLarge);
 
-    assertTrue("Larger slice should cost more", costLarge > costSmall);
+    assertTrue(costLarge > costSmall, "Larger slice should cost more");
   }
 
   // Cost Clamping
@@ -154,26 +154,26 @@ public class SimpleCostModelTest {
   @Test
   public void testNegativeCostClamped() {
     double clamped = costModel.clampCost(-10.0);
-    assertEquals("Negative cost should be clamped to 0", 0.0, clamped, 0.0);
+    assertEquals(0.0, clamped, 0.0, "Negative cost should be clamped to 0");
   }
 
   @Test
   public void testNaNCostClamped() {
     double clamped = costModel.clampCost(Double.NaN);
-    assertEquals("NaN cost should be clamped to 0", 0.0, clamped, 0.0);
+    assertEquals(0.0, clamped, 0.0, "NaN cost should be clamped to 0");
   }
 
   @Test
   public void testInfiniteCostClamped() {
     double clamped = costModel.clampCost(Double.POSITIVE_INFINITY);
-    assertTrue("Infinite cost should be clamped to finite value", Double.isFinite(clamped));
+    assertTrue(Double.isFinite(clamped), "Infinite cost should be clamped to finite value");
   }
 
   @Test
   public void testNormalCostUnchanged() {
     double cost = 100.0;
     double clamped = costModel.clampCost(cost);
-    assertEquals("Normal cost should be unchanged", cost, clamped, 0.0);
+    assertEquals(cost, clamped, 0.0, "Normal cost should be unchanged");
   }
 
   @Test
@@ -191,6 +191,6 @@ public class SimpleCostModelTest {
     double customCost = customModel.estimateCost(XQ.ForBind, OperatorContext.acquire().forScan(100));
 
     // Custom scan cost is 2x default
-    assertTrue("Custom cost should be 2x default", Math.abs(customCost - 2 * defaultCost) < 0.001);
+    assertTrue(Math.abs(customCost - 2 * defaultCost) < 0.001, "Custom cost should be 2x default");
   }
 }

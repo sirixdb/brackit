@@ -27,14 +27,14 @@
  */
 package io.brackit.query.util.simd;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Random;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link VectorOps} SIMD operations.
@@ -98,9 +98,9 @@ public class VectorOpsTest {
       byte[] b = new byte[len];
       Arrays.fill(a, (byte) 'x');
       Arrays.fill(b, (byte) 'x');
-      assertTrue("Failed at length " + len, VectorOps.stringEquals(a, b));
+      assertTrue(VectorOps.stringEquals(a, b), "Failed at length " + len);
       b[len - 1] = 'y';
-      assertFalse("Should differ at length " + len, VectorOps.stringEquals(a, b));
+      assertFalse(VectorOps.stringEquals(a, b), "Should differ at length " + len);
     }
   }
 
@@ -116,7 +116,7 @@ public class VectorOpsTest {
       byte[] b = new byte[len];
       Arrays.fill(a, (byte) 'x');
       Arrays.fill(b, (byte) 'x');
-      assertTrue("Failed at length " + len, VectorOps.stringEquals(a, b));
+      assertTrue(VectorOps.stringEquals(a, b), "Failed at length " + len);
     }
   }
 
@@ -195,9 +195,9 @@ public class VectorOpsTest {
       for (String s2 : testCases) {
         int javaResult = s1.compareTo(s2);
         int simdResult = VectorOps.stringCompare(s1.getBytes(UTF_8), s2.getBytes(UTF_8));
-        assertEquals("Mismatch for '" + s1 + "' vs '" + s2 + "'",
-                     Integer.signum(javaResult),
-                     Integer.signum(simdResult));
+        assertEquals(Integer.signum(javaResult),
+                     Integer.signum(simdResult),
+                     "Mismatch for '" + s1 + "' vs '" + s2 + "'");
       }
     }
   }
@@ -303,7 +303,7 @@ public class VectorOpsTest {
         values[i] = i + 1;
         expected += values[i];
       }
-      assertEquals("Failed at length " + len, expected, VectorOps.sumLong(values, 0, len));
+      assertEquals(expected, VectorOps.sumLong(values, 0, len), "Failed at length " + len);
     }
   }
 
@@ -587,7 +587,7 @@ public class VectorOpsTest {
 
     for (int i = 0; i < keys.length; i++) {
       int expectedHash = (int) (keys[i] ^ (keys[i] >>> 32)) & tableMask;
-      assertEquals("Hash mismatch at index " + i, expectedHash, hashes[i]);
+      assertEquals(expectedHash, hashes[i], "Hash mismatch at index " + i);
     }
   }
 
@@ -605,7 +605,7 @@ public class VectorOpsTest {
     VectorOps.computeHashes(keys, 0, keys.length, hashes, tableMask);
 
     for (int hash : hashes) {
-      assertTrue("Hash out of bounds: " + hash, hash >= 0 && hash < tableSize);
+      assertTrue(hash >= 0 && hash < tableSize, "Hash out of bounds: " + hash);
     }
   }
 

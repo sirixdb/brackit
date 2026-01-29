@@ -27,13 +27,13 @@
  */
 package io.brackit.query;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test of slightly modified XMark queries against stored documents.
@@ -212,7 +212,7 @@ public class XMarkFnDocTest extends XQueryBaseTest {
   }
 
   @Override
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     storeFile("auction.xml", RESOURCES.resolve("xmark").resolve("auction.xml"));

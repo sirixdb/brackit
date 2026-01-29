@@ -32,13 +32,13 @@ import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.Str;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.sequence.ItemSequence;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Sebastian Baechle

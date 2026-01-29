@@ -28,8 +28,8 @@
  */
 package io.brackit.query.expr;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.brackit.query.XQueryBaseTest;
 import io.brackit.query.jdm.Sequence;
@@ -47,7 +47,7 @@ import io.brackit.query.atomic.Dbl;
 import io.brackit.query.atomic.Dur;
 import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.YMD;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Sebastian Baechle
@@ -83,7 +83,7 @@ public class CastTest extends XQueryBaseTest {
       new Query("xs:duration('P1YM')").execute(ctx);
       fail("Invalid duration parsed");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_INVALID_VALUE_FOR_CAST, e.getCode());
+      assertEquals(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, e.getCode(), "Correct error code");
     }
   }
 
@@ -167,7 +167,7 @@ public class CastTest extends XQueryBaseTest {
       new Query("'0000-03-01T09:05:35Z' cast as xs:dateTime").execute(ctx);
       fail("Invalid dateTime parsed");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_INVALID_VALUE_FOR_CAST, e.getCode());
+      assertEquals(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, e.getCode(), "Correct error code");
     }
   }
 
@@ -213,7 +213,7 @@ public class CastTest extends XQueryBaseTest {
       new Query("'0000-03-01T24:01:00Z' cast as xs:dateTime").execute(ctx);
       fail("Invalid dateTime parsed");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_INVALID_VALUE_FOR_CAST, e.getCode());
+      assertEquals(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, e.getCode(), "Correct error code");
     }
   }
 
@@ -277,7 +277,7 @@ public class CastTest extends XQueryBaseTest {
       new Query("'256' cast as xs:unsignedByte").execute(ctx);
       fail("Illegal cast not detected");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_INVALID_VALUE_FOR_CAST, e.getCode());
+      assertEquals(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, e.getCode(), "Correct error code");
     }
   }
 
@@ -305,7 +305,7 @@ public class CastTest extends XQueryBaseTest {
       new Query("'foo' treat as xs:double").execute(ctx);
       fail("Illegal treat not detected");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE, e.getCode());
+      assertEquals(ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE, e.getCode(), "Correct error code");
     }
   }
 
@@ -327,7 +327,7 @@ public class CastTest extends XQueryBaseTest {
       new Query("() cast as xs:double").execute(ctx);
       fail("Illegal case not detected");
     } catch (QueryException e) {
-      assertEquals("Correct error code", ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, e.getCode());
+      assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, e.getCode(), "Correct error code");
     }
   }
 }

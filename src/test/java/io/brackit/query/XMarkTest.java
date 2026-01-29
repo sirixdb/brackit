@@ -26,13 +26,13 @@ import io.brackit.query.node.d2linked.D2NodeBuilder;
 import io.brackit.query.node.parser.DocumentParser;
 import io.brackit.query.jdm.DocumentException;
 import io.brackit.query.jdm.node.NodeCollection;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test XMark queries against default context item.
@@ -242,7 +242,7 @@ public abstract class XMarkTest extends XQueryBaseTest {
   }
 
   @Override
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     final DocumentParser parser = new DocumentParser(xmarkAuction.toFile());

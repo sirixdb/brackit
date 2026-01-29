@@ -1,9 +1,9 @@
 package io.brackit.query.util.path;
 
 import io.brackit.query.atomic.QNm;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public final class PathParserTest {
 

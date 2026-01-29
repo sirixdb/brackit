@@ -27,8 +27,8 @@
  */
 package io.brackit.query.expr;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.brackit.query.XQueryBaseTest;
 import io.brackit.query.atomic.Int32;
@@ -39,7 +39,7 @@ import io.brackit.query.QueryException;
 import io.brackit.query.ResultChecker;
 import io.brackit.query.Query;
 import io.brackit.query.sequence.ItemSequence;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Sebastian Baechle

@@ -36,9 +36,9 @@ import io.brackit.query.jdm.Stream;
 import io.brackit.query.jdm.node.NodeCollection;
 import io.brackit.query.node.parser.DocumentParser;
 import io.brackit.query.ResultChecker;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 
@@ -49,7 +49,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Sebastian Baechle
@@ -66,17 +66,17 @@ public abstract class NodeTest<E extends io.brackit.query.jdm.node.Node<E>> exte
   @Test
   public void testGetFirstChildForDocumentNode() throws Exception {
     NodeCollection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
-    assertEquals("First child is document root node",
+    assertEquals(coll.getDocument().getFirstChild(),
                  coll.getDocument().getFirstChild(),
-                 coll.getDocument().getFirstChild());
+                 "First child is document root node");
   }
 
   @Test
   public void testGetLastChildForDocumentNode() throws Exception {
     NodeCollection<E> coll = createDocument(new DocumentParser("<a><b/><c/></a>"));
-    assertEquals("Last child is document root node",
-                 coll.getDocument().getFirstChild(),
-                 coll.getDocument().getLastChild());
+    assertEquals(coll.getDocument().getFirstChild(),
+                 coll.getDocument().getLastChild(),
+                 "Last child is document root node");
   }
 
   @Test
@@ -85,9 +85,9 @@ public abstract class NodeTest<E extends io.brackit.query.jdm.node.Node<E>> exte
 
     Stream<? extends E> children = coll.getDocument().getChildren();
     E n;
-    assertNotNull("Document node has a child node", n = children.next());
-    assertEquals("First child is document root node", coll.getDocument().getFirstChild(), n);
-    assertNull("Document node no further children", n = children.next());
+    assertNotNull(n = children.next(), "Document node has a child node");
+    assertEquals(coll.getDocument().getFirstChild(), n, "First child is document root node");
+    assertNull(n = children.next(), "Document node no further children");
     children.close();
   }
 
@@ -98,18 +98,18 @@ public abstract class NodeTest<E extends io.brackit.query.jdm.node.Node<E>> exte
     Stream<? extends E> subtree = coll.getDocument().getSubtree();
 
     E n;
-    assertNotNull("Stream not empty", n = subtree.next());
-    assertEquals("First node is document node", coll.getDocument(), n);
-    assertNotNull("Stream not empty", n = subtree.next());
-    assertEquals("Second node is document root node", coll.getDocument().getFirstChild(), n);
-    assertNotNull("Stream not empty", n = subtree.next());
-    assertEquals("Third node is document root node's first child",
-                 coll.getDocument().getFirstChild().getFirstChild(),
-                 n);
-    assertNotNull("Stream not empty", n = subtree.next());
-    assertEquals("Fourth node is document root node's last child",
-                 coll.getDocument().getFirstChild().getLastChild(),
-                 n);
+    assertNotNull(n = subtree.next(), "Stream not empty");
+    assertEquals(coll.getDocument(), n, "First node is document node");
+    assertNotNull(n = subtree.next(), "Stream not empty");
+    assertEquals(coll.getDocument().getFirstChild(), n, "Second node is document root node");
+    assertNotNull(n = subtree.next(), "Stream not empty");
+    assertEquals(coll.getDocument().getFirstChild().getFirstChild(),
+                 n,
+                 "Third node is document root node's first child");
+    assertNotNull(n = subtree.next(), "Stream not empty");
+    assertEquals(coll.getDocument().getFirstChild().getLastChild(),
+                 n,
+                 "Fourth node is document root node's last child");
     subtree.close();
   }
 
@@ -120,14 +120,14 @@ public abstract class NodeTest<E extends io.brackit.query.jdm.node.Node<E>> exte
     Stream<? extends E> subtree = coll.getDocument().getFirstChild().getSubtree();
 
     E n;
-    assertNotNull("Stream not empty", n = subtree.next());
-    assertEquals("First node is document root node", coll.getDocument().getFirstChild(), n);
-    assertNotNull("Stream not empty", n = subtree.next());
-    assertEquals("Second node is document root node's first child",
-                 coll.getDocument().getFirstChild().getFirstChild(),
-                 n);
-    assertNotNull("Stream not empty", n = subtree.next());
-    assertEquals("Third node is document root node's last child", coll.getDocument().getFirstChild().getLastChild(), n);
+    assertNotNull(n = subtree.next(), "Stream not empty");
+    assertEquals(coll.getDocument().getFirstChild(), n, "First node is document root node");
+    assertNotNull(n = subtree.next(), "Stream not empty");
+    assertEquals(coll.getDocument().getFirstChild().getFirstChild(),
+                 n,
+                 "Second node is document root node's first child");
+    assertNotNull(n = subtree.next(), "Stream not empty");
+    assertEquals(coll.getDocument().getFirstChild().getLastChild(), n, "Third node is document root node's last child");
     subtree.close();
   }
 
@@ -138,16 +138,16 @@ public abstract class NodeTest<E extends io.brackit.query.jdm.node.Node<E>> exte
     Stream<? extends E> subtree = coll.getDocument().getFirstChild().getFirstChild().getSubtree();
 
     E n;
-    assertNotNull("Stream not empty", n = subtree.next());
-    assertEquals("First node is document root node", coll.getDocument().getFirstChild().getFirstChild(), n);
-    assertNotNull("Stream not empty", n = subtree.next());
-    assertEquals("Second node is document root node's first child first child",
-                 coll.getDocument().getFirstChild().getFirstChild().getFirstChild(),
-                 n);
-    assertNotNull("Stream not empty", n = subtree.next());
-    assertEquals("Third node is document root node's first child last child",
-                 coll.getDocument().getFirstChild().getFirstChild().getLastChild(),
-                 n);
+    assertNotNull(n = subtree.next(), "Stream not empty");
+    assertEquals(coll.getDocument().getFirstChild().getFirstChild(), n, "First node is document root node");
+    assertNotNull(n = subtree.next(), "Stream not empty");
+    assertEquals(coll.getDocument().getFirstChild().getFirstChild().getFirstChild(),
+                 n,
+                 "Second node is document root node's first child first child");
+    assertNotNull(n = subtree.next(), "Stream not empty");
+    assertEquals(coll.getDocument().getFirstChild().getFirstChild().getLastChild(),
+                 n,
+                 "Third node is document root node's first child last child");
     subtree.close();
   }
 
@@ -178,13 +178,13 @@ public abstract class NodeTest<E extends io.brackit.query.jdm.node.Node<E>> exte
 
     if (domNode instanceof Element) {
       Element element = (Element) domNode;
-      Assert.assertEquals(node + " is of type element", Kind.ELEMENT, node.getKind());
+      Assertions.assertEquals(Kind.ELEMENT, node.getKind(), node + " is of type element");
 
       // System.out.println("Checking name of element " +
       // node.getDeweyID() + " level " + node.getDeweyID().getLevel() +
       // " is " + element.getNodeName());
 
-      Assert.assertEquals(String.format("Name of node %s", node), element.getNodeName(), node.getName().toString());
+      Assertions.assertEquals(element.getNodeName(), node.getName().toString(), String.format("Name of node %s", node));
       compareAttributes(node, element);
 
       NodeList domChildNodes = element.getChildNodes();
@@ -197,33 +197,33 @@ public abstract class NodeTest<E extends io.brackit.query.jdm.node.Node<E>> exte
         int ancestorLevel = 0;
         for (E ancestor = node; ancestor != null; ancestor = ancestor.getParent()) {
           if (ancestorLevel == 0) {
-            assertTrue(String.format("node %s is child of %s", c, ancestor), c.isChildOf(ancestor));
-            assertTrue(String.format("node %s is parent of %s", ancestor, c), ancestor.isParentOf(c));
+            assertTrue(c.isChildOf(ancestor), String.format("node %s is child of %s", c, ancestor));
+            assertTrue(ancestor.isParentOf(c), String.format("node %s is parent of %s", ancestor, c));
           }
-          assertTrue(String.format("node %s is descendant of %s", c, ancestor), c.isDescendantOf(ancestor));
-          assertTrue(String.format("node %s is ancestor of %s", ancestor, c), ancestor.isAncestorOf(c));
+          assertTrue(c.isDescendantOf(ancestor), String.format("node %s is descendant of %s", c, ancestor));
+          assertTrue(ancestor.isAncestorOf(c), String.format("node %s is ancestor of %s", ancestor, c));
           ancestorLevel++;
         }
 
         for (E sibling : children) {
-          assertTrue(String.format("node %s is sibling of %s", c, sibling), c.isSiblingOf(sibling));
-          assertTrue(String.format("node %s is sibling of %s", sibling, c), sibling.isSiblingOf(c));
-          assertTrue(String.format("node %s is preceding sibling of %s", sibling, c), sibling.isPrecedingSiblingOf(c));
-          assertTrue(String.format("node %s is following sibling of %s", c, sibling), c.isFollowingSiblingOf(sibling));
-          assertTrue(String.format("node %s is preceding of %s", sibling, c), sibling.isPrecedingOf(c));
-          assertTrue(String.format("node %s is following of %s", c, sibling), c.isFollowingOf(sibling));
+          assertTrue(c.isSiblingOf(sibling), String.format("node %s is sibling of %s", c, sibling));
+          assertTrue(sibling.isSiblingOf(c), String.format("node %s is sibling of %s", sibling, c));
+          assertTrue(sibling.isPrecedingSiblingOf(c), String.format("node %s is preceding sibling of %s", sibling, c));
+          assertTrue(c.isFollowingSiblingOf(sibling), String.format("node %s is following sibling of %s", c, sibling));
+          assertTrue(sibling.isPrecedingOf(c), String.format("node %s is preceding of %s", sibling, c));
+          assertTrue(c.isFollowingOf(sibling), String.format("node %s is following of %s", c, sibling));
 
           try {
-            assertFalse(String.format("node %s is not preceding sibling of %s", c, sibling),
-                        c.isPrecedingSiblingOf(sibling));
+            assertFalse(c.isPrecedingSiblingOf(sibling),
+                        String.format("node %s is not preceding sibling of %s", c, sibling));
           } catch (AssertionError e) {
             c.isPrecedingSiblingOf(sibling);
             throw e;
           }
-          assertFalse(String.format("node %s is following sibling of %s", sibling, c), sibling.isFollowingSiblingOf(c));
+          assertFalse(sibling.isFollowingSiblingOf(c), String.format("node %s is following sibling of %s", sibling, c));
 
-          assertFalse(String.format("node %s is not preceding of %s", c, sibling), c.isPrecedingOf(sibling));
-          assertFalse(String.format("node %s is following of %s", sibling, c), sibling.isFollowingOf(c));
+          assertFalse(c.isPrecedingOf(sibling), String.format("node %s is not preceding of %s", c, sibling));
+          assertFalse(sibling.isFollowingOf(c), String.format("node %s is following of %s", sibling, c));
         }
 
         children.add(c);
@@ -246,20 +246,20 @@ public abstract class NodeTest<E extends io.brackit.query.jdm.node.Node<E>> exte
           // oldChild, child));
         }
 
-        assertNotNull(String.format("child node %s of node %s", i, node), child);
+        assertNotNull(child, String.format("child node %s of node %s", i, node));
 
         checkSubtreePreOrder(child, domChild);
       }
 
-      assertEquals(String.format("child count of element %s", node), domChildNodes.getLength(), children.size());
+      assertEquals(domChildNodes.getLength(), children.size(), String.format("child count of element %s", node));
 
     } else if (domNode instanceof Text) {
       Text text = (Text) domNode;
 
-      Assert.assertEquals(node + " is of type text : \"" + text.getNodeValue() + "\"", Kind.TEXT, node.getKind());
-      Assert.assertEquals(String.format("Text of node %s", node),
-                          text.getNodeValue().trim(),
-                          node.getValue().stringValue());
+      Assertions.assertEquals(Kind.TEXT, node.getKind(), node + " is of type text : \"" + text.getNodeValue() + "\"");
+      Assertions.assertEquals(text.getNodeValue().trim(),
+                              node.getValue().stringValue(),
+                              String.format("Text of node %s", node));
     } else {
       throw new DocumentException("Unexpected dom node: %s", domNode.getClass());
     }
@@ -288,12 +288,14 @@ public abstract class NodeTest<E extends io.brackit.query.jdm.node.Node<E>> exte
 
     if (domNode instanceof Element) {
       Element element = (Element) domNode;
-      Assert.assertEquals(node + " is of type element", Kind.ELEMENT, node.getKind());
+      Assertions.assertEquals(Kind.ELEMENT, node.getKind(), node + " is of type element");
 
       // //System.out.println("Checking name of element " + node +
       // " level " + node.getLevel() + " is " + element.getNodeName());
 
-      Assert.assertEquals(String.format("Name of node %s", node), element.getNodeName(), node.getName().stringValue());
+      Assertions.assertEquals(element.getNodeName(),
+                              node.getName().stringValue(),
+                              String.format("Name of node %s", node));
       compareAttributes(node, element);
 
       NodeList domChildNodes = element.getChildNodes();
@@ -323,20 +325,20 @@ public abstract class NodeTest<E extends io.brackit.query.jdm.node.Node<E>> exte
           // oldChild, child));
         }
 
-        assertNotNull(String.format("child node %s of node %s", i, node), child);
+        assertNotNull(child, String.format("child node %s of node %s", i, node));
 
         checkSubtreePostOrder(child, domChild);
       }
 
-      assertEquals(String.format("child count of element %s", node), domChildNodes.getLength(), children.size());
+      assertEquals(domChildNodes.getLength(), children.size(), String.format("child count of element %s", node));
 
     } else if (domNode instanceof Text) {
       Text text = (Text) domNode;
 
-      Assert.assertEquals(node + " is of type text", Kind.TEXT, node.getKind());
-      Assert.assertEquals(String.format("Text of node %s", node),
-                          text.getNodeValue().trim(),
-                          node.getValue().stringValue());
+      Assertions.assertEquals(Kind.TEXT, node.getKind(), node + " is of type text");
+      Assertions.assertEquals(text.getNodeValue().trim(),
+                              node.getValue().stringValue(),
+                              String.format("Text of node %s", node));
     } else {
       throw new DocumentException("Unexpected dom node: %s", domNode.getClass());
     }
@@ -355,31 +357,33 @@ public abstract class NodeTest<E extends io.brackit.query.jdm.node.Node<E>> exte
       for (E ancestor = node; ancestor != null; ancestor = ancestor.getParent()) {
         if (ancestorLevel == 0) {
           try {
-            assertTrue(String.format("node %s is attribute of %s", c, ancestor), c.isAttributeOf(ancestor));
+            assertTrue(c.isAttributeOf(ancestor), String.format("node %s is attribute of %s", c, ancestor));
           } catch (AssertionError e) {
             c.isAttributeOf(ancestor);
             throw e;
           }
-          assertTrue(String.format("node %s is parent of %s", ancestor, c), ancestor.isParentOf(c));
+          assertTrue(ancestor.isParentOf(c), String.format("node %s is parent of %s", ancestor, c));
         }
-        assertTrue(String.format("node %s is ancestor of %s", ancestor, c), ancestor.isAncestorOf(c));
+        assertTrue(ancestor.isAncestorOf(c), String.format("node %s is ancestor of %s", ancestor, c));
         ancestorLevel++;
       }
     }
     attributes.close();
 
-    assertEquals(String.format("attribute count of element %s", node), domAttributes.getLength(), attributesSize);
+    assertEquals(domAttributes.getLength(), attributesSize, String.format("attribute count of element %s", node));
 
     // check if all stored attributes really exist
     for (int i = 0; i < domAttributes.getLength(); i++) {
       Attr domAttribute = (Attr) domAttributes.item(i);
       E attribute = node.getAttribute(new QNm(domAttribute.getName()));
-      assertNotNull(String.format("Attribute \"%s\" of node %s", domAttribute.getName(), node), attribute);
-      Assert.assertEquals(attribute + " is of type attribute", Kind.ATTRIBUTE, attribute.getKind());
-      Assert.assertEquals(String.format("Value of attribute \"%s\" (%s) of node %s",
-                                        domAttribute.getName(),
-                                        attribute,
-                                        node), domAttribute.getValue(), attribute.getValue().stringValue());
+      assertNotNull(attribute, String.format("Attribute \"%s\" of node %s", domAttribute.getName(), node));
+      Assertions.assertEquals(Kind.ATTRIBUTE, attribute.getKind(), attribute + " is of type attribute");
+      Assertions.assertEquals(domAttribute.getValue(),
+                              attribute.getValue().stringValue(),
+                              String.format("Value of attribute \"%s\" (%s) of node %s",
+                                            domAttribute.getName(),
+                                            attribute,
+                                            node));
     }
   }
 
@@ -429,10 +433,12 @@ public abstract class NodeTest<E extends io.brackit.query.jdm.node.Node<E>> exte
     node = node.getNextSibling();
     node = node.getNextSibling();
     node.setAttribute(new QNm("new"), new Una("CHECKME"));
-    Assert.assertEquals("updated attribute value", new Una("CHECKME"), node.getAttribute(new QNm("new")).getValue());
+    Assertions.assertEquals(new Una("CHECKME"),
+                            node.getAttribute(new QNm("new")).getValue(),
+                            "updated attribute value");
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
   }
 
