@@ -100,9 +100,15 @@ public class Compiler implements Translator {
   protected VariableTable table;
   protected StaticContext ctx;
   protected final Map<QNm, Str> options;
+  protected PipelineStrategy pipelineStrategy;
 
   public Compiler(Map<QNm, Str> options) {
+    this(options, new SequentialPipelineStrategy());
+  }
+
+  public Compiler(Map<QNm, Str> options, PipelineStrategy pipelineStrategy) {
     this.options = options;
+    this.pipelineStrategy = pipelineStrategy;
   }
 
   @Override
@@ -180,6 +186,7 @@ public class Compiler implements Translator {
 
   protected Expr anyExpr(AST node) throws QueryException {
     return switch (node.getType()) {
+      case XQ.PipeExpr -> pipelineStrategy.compilePipeExpr(node, this);
       case XQ.FlowrExpr -> flowrExpr(node);
       case XQ.QuantifiedExpr -> quantifiedExpr(node);
       case XQ.EnclosedExpr, XQ.ParenthesizedExpr, XQ.SequenceExpr -> sequenceExpr(node);
