@@ -34,6 +34,8 @@ import io.brackit.query.Query;
 import io.brackit.query.QueryException;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.atomic.Str;
+import io.brackit.query.compiler.translator.Compiler;
+import io.brackit.query.compiler.translator.SequentialPipelineStrategy;
 import io.brackit.query.compiler.translator.TopDownTranslator;
 import io.brackit.query.jdm.Expr;
 import io.brackit.query.module.MainModule;
@@ -50,12 +52,9 @@ public class ProfilingCompiler extends TopDownTranslator {
 
   private ProfilingNode parent; // used to chain expressions
 
-  private ProfilingNode child; // used to chain operators
-
-  private ProfileOperator pending; // "upcoming" parent operator to
-
   public ProfilingCompiler(Map<QNm, Str> options) {
     super(options);
+    this.pipelineStrategy = new ProfilingStrategy(this);
   }
 
   @Override
@@ -72,18 +71,26 @@ public class ProfilingCompiler extends TopDownTranslator {
     return profileExpr;
   }
 
-  @Override
-  protected Operator anyOp(Operator in, AST node) throws QueryException {
-    ProfileOperator profileOp = new ProfileOperator();
-    ProfilingNode savedParent = parent;
-    parent = profileOp;
-    Operator op = super.anyOp(in, node);
-    profileOp.setOp(op);
-    parent = savedParent;
-    if (parent != null) {
-      parent.addChild(profileOp);
+  private static class ProfilingStrategy extends SequentialPipelineStrategy {
+    private final ProfilingCompiler profilingCompiler;
+
+    ProfilingStrategy(ProfilingCompiler profilingCompiler) {
+      this.profilingCompiler = profilingCompiler;
     }
-    return profileOp;
+
+    @Override
+    protected Operator anyOp(Operator in, AST node, Compiler compiler) throws QueryException {
+      ProfileOperator profileOp = new ProfileOperator();
+      ProfilingNode savedParent = profilingCompiler.parent;
+      profilingCompiler.parent = profileOp;
+      Operator op = super.anyOp(in, node, compiler);
+      profileOp.setOp(op);
+      profilingCompiler.parent = savedParent;
+      if (profilingCompiler.parent != null) {
+        profilingCompiler.parent.addChild(profileOp);
+      }
+      return profileOp;
+    }
   }
 
   public static void visualize(Query xq, String outputDir) {

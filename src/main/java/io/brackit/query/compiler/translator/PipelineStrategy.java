@@ -27,40 +27,14 @@
  */
 package io.brackit.query.compiler.translator;
 
-import java.util.Map;
-
-import io.brackit.query.atomic.QNm;
-import io.brackit.query.atomic.Str;
+import io.brackit.query.QueryException;
+import io.brackit.query.compiler.AST;
+import io.brackit.query.jdm.Expr;
 
 /**
- * Translator for block-based (parallel) execution model.
- * Delegates PipeExpr compilation to {@link BlockPipelineStrategy}.
- *
- * @author Sebastian Baechle
+ * Strategy for compiling PipeExpr AST nodes into executable expressions.
+ * Implementations provide different execution models (sequential vs. parallel/block).
  */
-public class BlockTranslator extends Compiler {
-
-  private final BlockPipelineStrategy blockStrategy;
-
-  public BlockTranslator(Map<QNm, Str> options) {
-    this(options, createStrategy(options));
-  }
-
-  private BlockTranslator(Map<QNm, Str> options, BlockPipelineStrategy strategy) {
-    super(options, strategy);
-    this.blockStrategy = strategy;
-  }
-
-  private static BlockPipelineStrategy createStrategy(Map<QNm, Str> options) {
-    BlockPipelineStrategy strategy = new BlockPipelineStrategy();
-    Str parallelOpt = options.get(new QNm("parallel"));
-    if (parallelOpt != null && "true".equalsIgnoreCase(parallelOpt.stringValue())) {
-      strategy.setOrdered(false);
-    }
-    return strategy;
-  }
-
-  public void setOrdered(boolean ordered) {
-    blockStrategy.setOrdered(ordered);
-  }
+public interface PipelineStrategy {
+  Expr compilePipeExpr(AST node, Compiler compiler) throws QueryException;
 }
