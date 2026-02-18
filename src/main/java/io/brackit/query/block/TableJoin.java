@@ -41,7 +41,6 @@ import io.brackit.query.util.join.FastList;
 import io.brackit.query.util.join.MultiTypeJoinTable;
 import io.brackit.query.jdm.Expr;
 import io.brackit.query.jdm.Sequence;
-import io.brackit.query.jdm.node.Node;
 
 /**
  * @author Sebastian Baechle
@@ -173,6 +172,15 @@ public class TableJoin implements Block {
     }
 
     private void load(Tuple t) throws QueryException {
+      // Pad input tuple to match left output width. The right branch was
+      // compiled with left-side bindings in scope, so variable positions
+      // (e.g., $fs:dot in path expressions) assume the left output structure.
+      // This mirrors the sequential pipeline where buildTable() passes the
+      // full left output tuple to the right side.
+      int leftWidth = l.outputWidth(t.getSize());
+      if (leftWidth > t.getSize()) {
+        t = t.concat(new Sequence[leftWidth - t.getSize()]);
+      }
       int offset = t.getSize();
       MultiTypeJoinTable table = new MultiTypeJoinTable(cmp, isGCmp, skipSort);
       Sink load = new Load(ctx, table, offset);
@@ -186,7 +194,7 @@ public class TableJoin implements Block {
         rightIn.fail();
         throw e;
       }
-      join.gk = (groupVar >= 0) ? (Atomic) t.get(groupVar) : null;
+      join.gk = (groupVar >= 0 && groupVar < t.getSize()) ? (Atomic) t.get(groupVar) : null;
       join.table = table;
     }
 
@@ -195,6 +203,12 @@ public class TableJoin implements Block {
         return 0;
       }
       if (groupVar >= 0) {
+        // The group variable may reference a position added by the left block
+        // chain which is not present in the input tuples. In that case we must
+        // rebuild the table for every batch (safe but less efficient).
+        if (groupVar >= buf[end].getSize()) {
+          return 0;
+        }
         Atomic pgk = join.gk;
         Atomic gk = (Atomic) buf[end++].get(groupVar);
         if ((pgk == null) || (pgk.atomicCmp(gk) != 0)) {
@@ -365,21 +379,6 @@ public class TableJoin implements Block {
         if (keys != null) {
           Sequence[] tmp = t.array();
           Sequence[] bindings = Arrays.copyOfRange(tmp, offset, tmp.length);
-          bindings[0] = null;
-          if (bindings[1] != null) {
-            try (var iter = bindings[1].iterate()) {
-              var item = iter.next();
-              if (item instanceof Node<?> node) {
-                Node<?> child = node.getFirstChild();
-                if (child != null) {
-                  Node<?> grandchild = child.getFirstChild();
-                  if (grandchild != null) {
-                    bindings[1] = grandchild.getValue();
-                  }
-                }
-              }
-            }
-          }
           table.add(keys, bindings, pos++);
         }
       }
