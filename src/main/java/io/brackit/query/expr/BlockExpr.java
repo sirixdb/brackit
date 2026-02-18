@@ -88,14 +88,12 @@ public class BlockExpr implements Expr {
 
   @Override
   public boolean isUpdating() {
-    // TODO
-    return false;
+    return expr.isUpdating();
   }
 
   @Override
   public boolean isVacuous() {
-    // TODO
-    return false;
+    return expr.isVacuous();
   }
 
   private static final class EvalBlock extends Task {

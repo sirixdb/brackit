@@ -82,11 +82,6 @@ public abstract class AbstractJsonItemCollection<E extends JsonItem> extends Laz
         return docs.next();
       }
 
-      @Override
-      public Iter.Split split(int min, int max) throws QueryException {
-        // TODO Auto-generated method stub
-        return null;
-      }
     };
   }
 }

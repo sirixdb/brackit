@@ -226,11 +226,6 @@ public class PathStepExpr implements Expr {
       }
     }
 
-    @Override
-    public Split split(int min, int max) throws QueryException {
-      // TODO Auto-generated method stub
-      return null;
-    }
   }
 
   private class SequenceContextPathStepIter extends BaseIter {
@@ -308,11 +303,6 @@ public class PathStepExpr implements Expr {
       }
     }
 
-    @Override
-    public Split split(int min, int max) throws QueryException {
-      // TODO Auto-generated method stub
-      return null;
-    }
   }
 
   @Override
