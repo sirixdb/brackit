@@ -102,11 +102,6 @@ public abstract class AbstractArray extends AbstractItem implements Array {
       public void close() {
       }
 
-      @Override
-      public Split split(int min, int max) throws QueryException {
-        // TODO Auto-generated method stub
-        return null;
-      }
     };
   }
 }

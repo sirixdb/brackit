@@ -172,11 +172,6 @@ public final class ArrayAccessExpr implements Expr {
           public void close() {
           }
 
-          @Override
-          public Split split(int min, int max) throws QueryException {
-            // TODO Auto-generated method stub
-            return null;
-          }
         };
       }
     };

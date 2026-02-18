@@ -110,6 +110,11 @@ public class ForBind implements Block {
     @Override
     protected void doCompute() throws QueryException {
       Split split = it.split(min, max);
+      if (split == null) {
+        // Iterator does not support splitting — process sequentially
+        process(it);
+        return;
+      }
       if (split.tail == null) {
         process(split.head);
       } else if (!split.serial) {
@@ -133,7 +138,12 @@ public class ForBind implements Block {
           if (queue.size() == maxQueue) {
             queue.poll().joinSerial();
           }
-          split = split.tail.split(min, max);
+          Iter tail = split.tail;
+          split = tail.split(min, max);
+          if (split == null) {
+            // Tail does not support splitting — enqueue as final chunk
+            split = new Split(tail, null, true);
+          }
         }
         for (Task t = queue.poll(); t != null; t = queue.poll()) {
           t.joinSerial();
