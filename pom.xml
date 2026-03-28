@@ -1,15 +1,20 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>7</version>
-    </parent>
     <groupId>io.sirix</groupId>
     <artifactId>brackit</artifactId>
     <version>0.6-SNAPSHOT</version>
     <name>Brackit Engine</name>
+    <description>A retargetable JSONiq query engine for semi-structured data</description>
+    <url>https://github.com/sirixdb/brackit</url>
+    <developers>
+        <developer>
+            <name>Johannes Lichtenberger</name>
+            <email>johannes.lichtenberger@sirix.io</email>
+            <organization>SirixDB</organization>
+            <organizationUrl>https://sirix.io</organizationUrl>
+        </developer>
+    </developers>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>25</maven.compiler.source>
@@ -26,7 +31,7 @@
         <connection>scm:git:git@github.com:sirixdb/brackit.git</connection>
         <developerConnection>scm:git:git@github.com:sirixdb/brackit.git</developerConnection>
         <url>https://github.com/sirixdb/brackit</url>
-        <tag>brackit-0.1.8</tag>
+        <tag>HEAD</tag>
     </scm>
     <issueManagement>
         <url>https://github.com/sirixdb/brackit/issues</url>
@@ -213,6 +218,37 @@
         </dependency>
     </dependencies>
     <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.7</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.7.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>native</id>
             <build>
