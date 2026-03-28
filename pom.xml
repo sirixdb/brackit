@@ -170,10 +170,23 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.1.1</version>
+                <version>3.11.2</version>
                 <configuration>
                     <doclint>none</doclint>
+                    <additionalJOption>--enable-preview</additionalJOption>
+                    <additionalOptions>
+                        <additionalOption>--add-modules=jdk.incubator.vector</additionalOption>
+                    </additionalOptions>
+                    <source>25</source>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
