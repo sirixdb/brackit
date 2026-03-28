@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.sirix</groupId>
     <artifactId>brackit</artifactId>
-    <version>0.6</version>
+    <version>0.7-SNAPSHOT</version>
     <name>Brackit Engine</name>
     <description>A retargetable JSONiq query engine for semi-structured data</description>
     <url>https://github.com/sirixdb/brackit</url>
