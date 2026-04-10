@@ -51,6 +51,10 @@ package io.brackit.query.util.vector;
  */
 public final class SaltedHashTable {
 
+  /**
+   * Empty sentinel. We store index+1 in the low 32 bits (so index 0 maps to 1),
+   * making 0 a safe empty marker that no valid entry can produce.
+   */
   private static final long EMPTY = 0L;
   private static final int SALT_SHIFT = 48;
   private static final long SALT_MASK = 0xFFFF_0000_0000_0000L;
@@ -97,8 +101,8 @@ public final class SaltedHashTable {
       long entry = directory[slot];
 
       if (entry == EMPTY) {
-        // Empty slot - insert
-        directory[slot] = salt | (size & INDEX_MASK);
+        // Empty slot - insert. Store index+1 so that index 0 maps to 1, avoiding collision with EMPTY.
+        directory[slot] = salt | ((size + 1) & INDEX_MASK);
         keys[size] = key;
         payloads[size] = payload;
         size++;
@@ -107,7 +111,7 @@ public final class SaltedHashTable {
 
       // Salt check: fast rejection without reading the key
       if ((entry & SALT_MASK) == salt) {
-        int idx = (int) (entry & INDEX_MASK);
+        int idx = (int) (entry & INDEX_MASK) - 1;
         if (keys[idx] == key) {
           return payloads[idx]; // existing entry
         }
@@ -135,7 +139,7 @@ public final class SaltedHashTable {
 
       // Salt check first - rejects most non-matching slots without a cache miss
       if ((entry & SALT_MASK) == salt) {
-        int idx = (int) (entry & INDEX_MASK);
+        int idx = (int) (entry & INDEX_MASK) - 1;
         if (keys[idx] == key) {
           return payloads[idx];
         }
@@ -162,7 +166,7 @@ public final class SaltedHashTable {
       long entry = directory[slot];
 
       if (entry == EMPTY) {
-        directory[slot] = salt | (size & INDEX_MASK);
+        directory[slot] = salt | ((size + 1) & INDEX_MASK);
         keys[size] = key;
         payloads[size] = defaultPayload;
         size++;
@@ -170,7 +174,7 @@ public final class SaltedHashTable {
       }
 
       if ((entry & SALT_MASK) == salt) {
-        int idx = (int) (entry & INDEX_MASK);
+        int idx = (int) (entry & INDEX_MASK) - 1;
         if (keys[idx] == key) {
           return payloads[idx];
         }
@@ -236,7 +240,7 @@ public final class SaltedHashTable {
         slot = (slot + 1) & mask;
       }
 
-      directory[slot] = salt | (size & INDEX_MASK);
+      directory[slot] = salt | ((size + 1) & INDEX_MASK);
       keys[size] = key;
       payloads[size] = oldPayloads[i];
       size++;
