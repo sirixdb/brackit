@@ -1,0 +1,12 @@
+{
+  "users": [
+    {"id": 1, "name": "Alice", "age": 30, "department": "Engineering", "active": true},
+    {"id": 2, "name": "Bob", "age": 25, "department": "Marketing", "active": true},
+    {"id": 3, "name": "Charlie", "age": 35, "department": "Engineering", "active": false},
+    {"id": 4, "name": "Diana", "age": 28, "department": "Marketing", "active": true},
+    {"id": 5, "name": "Eve", "age": 32, "department": "Sales", "active": true},
+    {"id": 6, "name": "Frank", "age": 45, "department": "Engineering", "active": true},
+    {"id": 7, "name": "Grace", "age": 27, "department": "Sales", "active": false},
+    {"id": 8, "name": "Hank", "age": 38, "department": "Marketing", "active": true}
+  ]
+}

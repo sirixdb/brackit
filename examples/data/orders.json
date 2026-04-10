@@ -1,0 +1,22 @@
+{
+  "orders": [
+    {"id": 101, "customer_id": 1, "product": "Laptop",  "amount": 1200, "category": "Electronics"},
+    {"id": 102, "customer_id": 2, "product": "Desk",    "amount": 350,  "category": "Furniture"},
+    {"id": 103, "customer_id": 1, "product": "Monitor", "amount": 450,  "category": "Electronics"},
+    {"id": 104, "customer_id": 3, "product": "Chair",   "amount": 275,  "category": "Furniture"},
+    {"id": 105, "customer_id": 4, "product": "Keyboard","amount": 85,   "category": "Electronics"},
+    {"id": 106, "customer_id": 2, "product": "Lamp",    "amount": 60,   "category": "Furniture"},
+    {"id": 107, "customer_id": 5, "product": "Tablet",  "amount": 600,  "category": "Electronics"},
+    {"id": 108, "customer_id": 1, "product": "Bookshelf","amount": 180, "category": "Furniture"},
+    {"id": 109, "customer_id": 6, "product": "Phone",   "amount": 900,  "category": "Electronics"},
+    {"id": 110, "customer_id": 3, "product": "Mouse",   "amount": 40,   "category": "Electronics"}
+  ],
+  "customers": [
+    {"id": 1, "name": "Alice",   "tier": "gold"},
+    {"id": 2, "name": "Bob",     "tier": "silver"},
+    {"id": 3, "name": "Charlie", "tier": "bronze"},
+    {"id": 4, "name": "Diana",   "tier": "silver"},
+    {"id": 5, "name": "Eve",     "tier": "gold"},
+    {"id": 6, "name": "Frank",   "tier": "bronze"}
+  ]
+}
