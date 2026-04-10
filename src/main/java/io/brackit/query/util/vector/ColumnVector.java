@@ -226,19 +226,19 @@ public final class ColumnVector {
     if (vectorType == VectorType.CONSTANT) {
       switch (dataType) {
         case INT64 -> {
-          if (longData == null) {
+          if (longData == null || longData.length < size) {
             longData = new long[size];
           }
           java.util.Arrays.fill(longData, 0, size, constantLong);
         }
         case DOUBLE -> {
-          if (doubleData == null) {
+          if (doubleData == null || doubleData.length < size) {
             doubleData = new double[size];
           }
           java.util.Arrays.fill(doubleData, 0, size, constantDouble);
         }
         case STRING, GENERIC -> {
-          if (genericData == null) {
+          if (genericData == null || genericData.length < size) {
             genericData = new Sequence[size];
           }
           java.util.Arrays.fill(genericData, 0, size, constantGeneric);
@@ -247,18 +247,27 @@ public final class ColumnVector {
     } else if (vectorType == VectorType.DICTIONARY) {
       switch (dataType) {
         case INT64 -> {
+          if (longData == null || longData.length < size) {
+            longData = new long[size];
+          }
           long[] src = dictData.longData;
           for (int i = 0; i < size; i++) {
             longData[i] = src[dictIndices[i]];
           }
         }
         case DOUBLE -> {
+          if (doubleData == null || doubleData.length < size) {
+            doubleData = new double[size];
+          }
           double[] src = dictData.doubleData;
           for (int i = 0; i < size; i++) {
             doubleData[i] = src[dictIndices[i]];
           }
         }
         case STRING, GENERIC -> {
+          if (genericData == null || genericData.length < size) {
+            genericData = new Sequence[size];
+          }
           Sequence[] src = dictData.genericData;
           for (int i = 0; i < size; i++) {
             genericData[i] = src[dictIndices[i]];
