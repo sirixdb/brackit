@@ -595,24 +595,10 @@ public final class VectorOps {
   }
 
   // ==================== Branchless Filtering ====================
-
-  private static int filterLong(long[] values, int offset, int length, java.util.function.LongPredicate pred, int[] selected) {
-    int count = 0;
-    for (int i = 0; i < length; i++) {
-      selected[count] = i;
-      count += pred.test(values[offset + i]) ? 1 : 0;
-    }
-    return count;
-  }
-
-  private static int filterDouble(double[] values, int offset, int length, java.util.function.DoublePredicate pred, int[] selected) {
-    int count = 0;
-    for (int i = 0; i < length; i++) {
-      selected[count] = i;
-      count += pred.test(values[offset + i]) ? 1 : 0;
-    }
-    return count;
-  }
+  // NOTE: Each method inlines the comparison directly rather than delegating
+  // through a lambda. This is intentional -- the JIT can only auto-vectorize
+  // tight primitive loops when the comparison is inlined. A lambda indirection
+  // prevents the branchless optimization that is the purpose of these methods.
 
   /**
    * Branchless filter: select indices where values[i] == target.
@@ -620,43 +606,64 @@ public final class VectorOps {
    * This eliminates branch mispredictions since the write always happens
    * and only the counter conditionally increments.
    */
+  @SuppressWarnings("DuplicatedCode")
   public static int filterEqLong(long[] values, int offset, int length, long target, int[] selected) {
-    return filterLong(values, offset, length, v -> v == target, selected);
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += (values[offset + i] == target) ? 1 : 0;
+    }
+    return count;
   }
 
-  /**
-   * Branchless filter: select indices where values[i] < target.
-   */
+  @SuppressWarnings("DuplicatedCode")
   public static int filterLtLong(long[] values, int offset, int length, long target, int[] selected) {
-    return filterLong(values, offset, length, v -> v < target, selected);
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += (values[offset + i] < target) ? 1 : 0;
+    }
+    return count;
   }
 
-  /**
-   * Branchless filter: select indices where values[i] <= target.
-   */
+  @SuppressWarnings("DuplicatedCode")
   public static int filterLeLong(long[] values, int offset, int length, long target, int[] selected) {
-    return filterLong(values, offset, length, v -> v <= target, selected);
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += (values[offset + i] <= target) ? 1 : 0;
+    }
+    return count;
   }
 
-  /**
-   * Branchless filter: select indices where values[i] >= target.
-   */
+  @SuppressWarnings("DuplicatedCode")
   public static int filterGeLong(long[] values, int offset, int length, long target, int[] selected) {
-    return filterLong(values, offset, length, v -> v >= target, selected);
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += (values[offset + i] >= target) ? 1 : 0;
+    }
+    return count;
   }
 
-  /**
-   * Branchless filter for double values: select indices where values[i] > target.
-   */
+  @SuppressWarnings("DuplicatedCode")
   public static int filterGtDouble(double[] values, int offset, int length, double target, int[] selected) {
-    return filterDouble(values, offset, length, v -> v > target, selected);
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += (values[offset + i] > target) ? 1 : 0;
+    }
+    return count;
   }
 
-  /**
-   * Branchless filter for double values: select indices where values[i] < target.
-   */
+  @SuppressWarnings("DuplicatedCode")
   public static int filterLtDouble(double[] values, int offset, int length, double target, int[] selected) {
-    return filterDouble(values, offset, length, v -> v < target, selected);
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += (values[offset + i] < target) ? 1 : 0;
+    }
+    return count;
   }
 
   // ==================== Selection-Aware Aggregation ====================

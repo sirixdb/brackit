@@ -27,9 +27,6 @@
  */
 package io.brackit.query.util.vector;
 
-import java.util.function.DoublePredicate;
-import java.util.function.LongPredicate;
-
 /**
  * DuckDB-style selection vector for branchless filtering.
  *
@@ -41,8 +38,15 @@ import java.util.function.LongPredicate;
  * which rows pass the filter. Downstream operators iterate only over the
  * selected indices.
  *
+ * NOTE: Each filter method inlines the comparison directly in the loop body
+ * rather than delegating through a lambda/predicate. This is intentional --
+ * the JIT compiler can only auto-vectorize and eliminate branches in tight
+ * loops over primitives when the comparison is inlined. A lambda indirection
+ * would defeat the branchless optimization that is the entire point of this class.
+ *
  * @author Brackit Project Team
  */
+@SuppressWarnings("DuplicatedCode") // Intentional: inlined comparisons for JIT optimization
 public final class SelectionVector {
 
   public static final int DEFAULT_CAPACITY = 2048;
@@ -84,119 +88,151 @@ public final class SelectionVector {
 
   // ==================== Branchless Long Filters ====================
 
-  private int filterLong(long[] values, int length, LongPredicate predicate) {
+  public int filterEqLong(long[] values, int length, long target) {
     int count = 0;
     for (int i = 0; i < length; i++) {
       selected[count] = i;
-      count += predicate.test(values[i]) ? 1 : 0;
+      count += (values[i] == target) ? 1 : 0;
     }
     this.size = count;
     return count;
   }
 
-  /**
-   * Branchless filter: select indices where values[i] == target.
-   * The key pattern is: sel[count] = i; count += (cond ? 1 : 0)
-   * This avoids branch mispredictions entirely.
-   */
-  public int filterEqLong(long[] values, int length, long target) {
-    return filterLong(values, length, v -> v == target);
-  }
-
-  /**
-   * Branchless filter: select indices where values[i] != target.
-   */
   public int filterNeLong(long[] values, int length, long target) {
-    return filterLong(values, length, v -> v != target);
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += (values[i] != target) ? 1 : 0;
+    }
+    this.size = count;
+    return count;
   }
 
-  /**
-   * Branchless filter: select indices where values[i] < target.
-   */
   public int filterLtLong(long[] values, int length, long target) {
-    return filterLong(values, length, v -> v < target);
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += (values[i] < target) ? 1 : 0;
+    }
+    this.size = count;
+    return count;
   }
 
-  /**
-   * Branchless filter: select indices where values[i] <= target.
-   */
   public int filterLeLong(long[] values, int length, long target) {
-    return filterLong(values, length, v -> v <= target);
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += (values[i] <= target) ? 1 : 0;
+    }
+    this.size = count;
+    return count;
   }
 
-  /**
-   * Branchless filter: select indices where values[i] > target.
-   */
   public int filterGtLong(long[] values, int length, long target) {
-    return filterLong(values, length, v -> v > target);
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += (values[i] > target) ? 1 : 0;
+    }
+    this.size = count;
+    return count;
   }
 
-  /**
-   * Branchless filter: select indices where values[i] >= target.
-   */
   public int filterGeLong(long[] values, int length, long target) {
-    return filterLong(values, length, v -> v >= target);
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += (values[i] >= target) ? 1 : 0;
+    }
+    this.size = count;
+    return count;
   }
 
   // ==================== Branchless Double Filters ====================
 
-  private int filterDouble(double[] values, int length, DoublePredicate predicate) {
+  public int filterEqDouble(double[] values, int length, double target) {
     int count = 0;
     for (int i = 0; i < length; i++) {
       selected[count] = i;
-      count += predicate.test(values[i]) ? 1 : 0;
+      count += (values[i] == target) ? 1 : 0;
     }
     this.size = count;
     return count;
   }
 
-  public int filterEqDouble(double[] values, int length, double target) {
-    return filterDouble(values, length, v -> v == target);
-  }
-
   public int filterLtDouble(double[] values, int length, double target) {
-    return filterDouble(values, length, v -> v < target);
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += (values[i] < target) ? 1 : 0;
+    }
+    this.size = count;
+    return count;
   }
 
   public int filterLeDouble(double[] values, int length, double target) {
-    return filterDouble(values, length, v -> v <= target);
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += (values[i] <= target) ? 1 : 0;
+    }
+    this.size = count;
+    return count;
   }
 
   public int filterGtDouble(double[] values, int length, double target) {
-    return filterDouble(values, length, v -> v > target);
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += (values[i] > target) ? 1 : 0;
+    }
+    this.size = count;
+    return count;
   }
 
   public int filterGeDouble(double[] values, int length, double target) {
-    return filterDouble(values, length, v -> v >= target);
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += (values[i] >= target) ? 1 : 0;
+    }
+    this.size = count;
+    return count;
   }
 
   // ==================== Cascading Selection ====================
 
-  private int tightenLong(long[] values, LongPredicate predicate) {
+  public int tightenEqLong(long[] values, long target) {
     int count = 0;
     for (int i = 0; i < size; i++) {
       int idx = selected[i];
       selected[count] = idx;
-      count += predicate.test(values[idx]) ? 1 : 0;
+      count += (values[idx] == target) ? 1 : 0;
     }
     this.size = count;
     return count;
   }
 
-  /**
-   * Apply a secondary filter on an already-selected set (tighten the selection).
-   * Uses branchless pattern on the selected indices only.
-   */
-  public int tightenEqLong(long[] values, long target) {
-    return tightenLong(values, v -> v == target);
-  }
-
   public int tightenGtLong(long[] values, long target) {
-    return tightenLong(values, v -> v > target);
+    int count = 0;
+    for (int i = 0; i < size; i++) {
+      int idx = selected[i];
+      selected[count] = idx;
+      count += (values[idx] > target) ? 1 : 0;
+    }
+    this.size = count;
+    return count;
   }
 
   public int tightenLtLong(long[] values, long target) {
-    return tightenLong(values, v -> v < target);
+    int count = 0;
+    for (int i = 0; i < size; i++) {
+      int idx = selected[i];
+      selected[count] = idx;
+      count += (values[idx] < target) ? 1 : 0;
+    }
+    this.size = count;
+    return count;
   }
 
   // ==================== Validity Mask Integration ====================
