@@ -181,10 +181,7 @@ public final class ValidityMask {
     if (mask == null) {
       int words = (capacity + 63) >>> 6;
       mask = new long[words];
-      // Set all bits to 1 (all valid) since we were in the "all valid" state
-      for (int i = 0; i < words; i++) {
-        mask[i] = -1L;
-      }
+      java.util.Arrays.fill(mask, -1L);
     }
   }
 }

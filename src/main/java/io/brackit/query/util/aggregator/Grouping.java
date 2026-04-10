@@ -181,66 +181,37 @@ public class Grouping {
   }
 
   private void addInternal(Tuple t) throws QueryException {
+    for (int i = 0; i < tupleSize; i++) {
+      if ((size > 0) && (onlyFirst[i])) {
+        continue;
+      }
+      Sequence s = t.get(i);
+      if (s == null) {
+        continue;
+      }
+      addToAggregator(aggs[i], s);
+    }
+    for (int i = 0; i < addAggsSpecs.length; i++) {
+      if ((size > 0) && (onlyFirst[tupleSize + i])) {
+        continue;
+      }
+      Sequence s = t.get(addAggsSpecs[i]);
+      if (s == null) {
+        continue;
+      }
+      addToAggregator(aggs[tupleSize + i], s);
+    }
+    size++;
+  }
+
+  private void addToAggregator(Aggregator agg, Sequence s) throws QueryException {
     if (threadSafe) {
-      addInternalSync(t);
+      synchronized (agg) {
+        agg.add(s);
+      }
     } else {
-      addInternalUnsync(t);
+      agg.add(s);
     }
-  }
-
-  private void addInternalSync(Tuple t) throws QueryException {
-    for (int i = 0; i < tupleSize; i++) {
-      if ((size > 0) && (onlyFirst[i])) {
-        continue;
-      }
-      Sequence s = t.get(i);
-      if (s == null) {
-        continue;
-      }
-      synchronized (aggs[i]) {
-        aggs[i].add(s);
-      }
-    }
-    for (int i = 0; i < addAggsSpecs.length; i++) {
-      if ((size > 0) && (onlyFirst[tupleSize + i])) {
-        continue;
-      }
-      Sequence s = t.get(addAggsSpecs[i]);
-      if (s == null) {
-        continue;
-      }
-      synchronized (aggs[tupleSize + i]) {
-        aggs[tupleSize + i].add(s);
-      }
-    }
-    size++;
-  }
-
-  /**
-   * Fast path without synchronization for single-threaded execution.
-   */
-  private void addInternalUnsync(Tuple t) throws QueryException {
-    for (int i = 0; i < tupleSize; i++) {
-      if ((size > 0) && (onlyFirst[i])) {
-        continue;
-      }
-      Sequence s = t.get(i);
-      if (s == null) {
-        continue;
-      }
-      aggs[i].add(s);
-    }
-    for (int i = 0; i < addAggsSpecs.length; i++) {
-      if ((size > 0) && (onlyFirst[tupleSize + i])) {
-        continue;
-      }
-      Sequence s = t.get(addAggsSpecs[i]);
-      if (s == null) {
-        continue;
-      }
-      aggs[tupleSize + i].add(s);
-    }
-    size++;
   }
 
   public Tuple emit() throws QueryException {

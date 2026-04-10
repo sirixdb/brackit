@@ -596,6 +596,24 @@ public final class VectorOps {
 
   // ==================== Branchless Filtering ====================
 
+  private static int filterLong(long[] values, int offset, int length, java.util.function.LongPredicate pred, int[] selected) {
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += pred.test(values[offset + i]) ? 1 : 0;
+    }
+    return count;
+  }
+
+  private static int filterDouble(double[] values, int offset, int length, java.util.function.DoublePredicate pred, int[] selected) {
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      selected[count] = i;
+      count += pred.test(values[offset + i]) ? 1 : 0;
+    }
+    return count;
+  }
+
   /**
    * Branchless filter: select indices where values[i] == target.
    * Uses the pattern: sel[count] = i; count += (cond ? 1 : 0)
@@ -603,72 +621,42 @@ public final class VectorOps {
    * and only the counter conditionally increments.
    */
   public static int filterEqLong(long[] values, int offset, int length, long target, int[] selected) {
-    int count = 0;
-    for (int i = 0; i < length; i++) {
-      selected[count] = i;
-      count += (values[offset + i] == target) ? 1 : 0;
-    }
-    return count;
+    return filterLong(values, offset, length, v -> v == target, selected);
   }
 
   /**
    * Branchless filter: select indices where values[i] < target.
    */
   public static int filterLtLong(long[] values, int offset, int length, long target, int[] selected) {
-    int count = 0;
-    for (int i = 0; i < length; i++) {
-      selected[count] = i;
-      count += (values[offset + i] < target) ? 1 : 0;
-    }
-    return count;
+    return filterLong(values, offset, length, v -> v < target, selected);
   }
 
   /**
    * Branchless filter: select indices where values[i] <= target.
    */
   public static int filterLeLong(long[] values, int offset, int length, long target, int[] selected) {
-    int count = 0;
-    for (int i = 0; i < length; i++) {
-      selected[count] = i;
-      count += (values[offset + i] <= target) ? 1 : 0;
-    }
-    return count;
+    return filterLong(values, offset, length, v -> v <= target, selected);
   }
 
   /**
    * Branchless filter: select indices where values[i] >= target.
    */
   public static int filterGeLong(long[] values, int offset, int length, long target, int[] selected) {
-    int count = 0;
-    for (int i = 0; i < length; i++) {
-      selected[count] = i;
-      count += (values[offset + i] >= target) ? 1 : 0;
-    }
-    return count;
+    return filterLong(values, offset, length, v -> v >= target, selected);
   }
 
   /**
    * Branchless filter for double values: select indices where values[i] > target.
    */
   public static int filterGtDouble(double[] values, int offset, int length, double target, int[] selected) {
-    int count = 0;
-    for (int i = 0; i < length; i++) {
-      selected[count] = i;
-      count += (values[offset + i] > target) ? 1 : 0;
-    }
-    return count;
+    return filterDouble(values, offset, length, v -> v > target, selected);
   }
 
   /**
    * Branchless filter for double values: select indices where values[i] < target.
    */
   public static int filterLtDouble(double[] values, int offset, int length, double target, int[] selected) {
-    int count = 0;
-    for (int i = 0; i < length; i++) {
-      selected[count] = i;
-      count += (values[offset + i] < target) ? 1 : 0;
-    }
-    return count;
+    return filterDouble(values, offset, length, v -> v < target, selected);
   }
 
   // ==================== Selection-Aware Aggregation ====================
@@ -728,6 +716,75 @@ public final class VectorOps {
 
   // ==================== Branchless Min/Max for Doubles ====================
 
+  private static double reduceDouble(double[] values, int offset, int length, boolean findMin) {
+    double result = findMin ? values[offset] : values[offset];
+    int i = 0;
+
+    int vectorLength = DOUBLE_SPECIES.length();
+    int step = vectorLength * 4;
+    int limit4 = length - (length % step);
+    double identity = findMin ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
+    VectorOperators.Associative reduceOp = findMin ? VectorOperators.MIN : VectorOperators.MAX;
+
+    if (limit4 > 0) {
+      DoubleVector acc0 = DoubleVector.broadcast(DOUBLE_SPECIES, identity);
+      DoubleVector acc1 = DoubleVector.broadcast(DOUBLE_SPECIES, identity);
+      DoubleVector acc2 = DoubleVector.broadcast(DOUBLE_SPECIES, identity);
+      DoubleVector acc3 = DoubleVector.broadcast(DOUBLE_SPECIES, identity);
+
+      for (; i < limit4; i += step) {
+        DoubleVector v0 = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i);
+        DoubleVector v1 = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i + vectorLength);
+        DoubleVector v2 = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i + vectorLength * 2);
+        DoubleVector v3 = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i + vectorLength * 3);
+
+        if (findMin) {
+          acc0 = acc0.blend(v0, v0.lt(acc0));
+          acc1 = acc1.blend(v1, v1.lt(acc1));
+          acc2 = acc2.blend(v2, v2.lt(acc2));
+          acc3 = acc3.blend(v3, v3.lt(acc3));
+        } else {
+          acc0 = acc0.blend(v0, v0.compare(VectorOperators.GT, acc0));
+          acc1 = acc1.blend(v1, v1.compare(VectorOperators.GT, acc1));
+          acc2 = acc2.blend(v2, v2.compare(VectorOperators.GT, acc2));
+          acc3 = acc3.blend(v3, v3.compare(VectorOperators.GT, acc3));
+        }
+      }
+
+      DoubleVector combined;
+      if (findMin) {
+        combined = acc0.blend(acc1, acc1.lt(acc0));
+        combined = combined.blend(acc2, acc2.lt(combined));
+        combined = combined.blend(acc3, acc3.lt(combined));
+      } else {
+        combined = acc0.blend(acc1, acc1.compare(VectorOperators.GT, acc0));
+        combined = combined.blend(acc2, acc2.compare(VectorOperators.GT, combined));
+        combined = combined.blend(acc3, acc3.compare(VectorOperators.GT, combined));
+      }
+      result = combined.reduceLanes(reduceOp);
+    }
+
+    int limit = length - (length % vectorLength);
+    for (; i < limit; i += vectorLength) {
+      DoubleVector v = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i);
+      DoubleVector accVec = DoubleVector.broadcast(DOUBLE_SPECIES, result);
+      if (findMin) {
+        accVec = accVec.blend(v, v.lt(accVec));
+      } else {
+        accVec = accVec.blend(v, v.compare(VectorOperators.GT, accVec));
+      }
+      result = accVec.reduceLanes(reduceOp);
+    }
+
+    for (; i < length; i++) {
+      if (findMin ? values[offset + i] < result : values[offset + i] > result) {
+        result = values[offset + i];
+      }
+    }
+
+    return result;
+  }
+
   /**
    * Vectorized minimum of double array.
    * Uses compare+blend with 4x loop unrolling.
@@ -736,53 +793,7 @@ public final class VectorOps {
     if (length == 0) {
       return Double.POSITIVE_INFINITY;
     }
-
-    double min = values[offset];
-    int i = 0;
-
-    int vectorLength = DOUBLE_SPECIES.length();
-    int step = vectorLength * 4;
-    int limit4 = length - (length % step);
-
-    if (limit4 > 0) {
-      DoubleVector min0 = DoubleVector.broadcast(DOUBLE_SPECIES, Double.POSITIVE_INFINITY);
-      DoubleVector min1 = DoubleVector.broadcast(DOUBLE_SPECIES, Double.POSITIVE_INFINITY);
-      DoubleVector min2 = DoubleVector.broadcast(DOUBLE_SPECIES, Double.POSITIVE_INFINITY);
-      DoubleVector min3 = DoubleVector.broadcast(DOUBLE_SPECIES, Double.POSITIVE_INFINITY);
-
-      for (; i < limit4; i += step) {
-        DoubleVector v0 = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i);
-        DoubleVector v1 = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i + vectorLength);
-        DoubleVector v2 = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i + vectorLength * 2);
-        DoubleVector v3 = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i + vectorLength * 3);
-
-        min0 = min0.blend(v0, v0.lt(min0));
-        min1 = min1.blend(v1, v1.lt(min1));
-        min2 = min2.blend(v2, v2.lt(min2));
-        min3 = min3.blend(v3, v3.lt(min3));
-      }
-
-      DoubleVector result = min0.blend(min1, min1.lt(min0));
-      result = result.blend(min2, min2.lt(result));
-      result = result.blend(min3, min3.lt(result));
-      min = result.reduceLanes(VectorOperators.MIN);
-    }
-
-    int limit = length - (length % vectorLength);
-    for (; i < limit; i += vectorLength) {
-      DoubleVector v = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i);
-      DoubleVector minVec = DoubleVector.broadcast(DOUBLE_SPECIES, min);
-      minVec = minVec.blend(v, v.lt(minVec));
-      min = minVec.reduceLanes(VectorOperators.MIN);
-    }
-
-    for (; i < length; i++) {
-      if (values[offset + i] < min) {
-        min = values[offset + i];
-      }
-    }
-
-    return min;
+    return reduceDouble(values, offset, length, true);
   }
 
   /**
@@ -793,53 +804,7 @@ public final class VectorOps {
     if (length == 0) {
       return Double.NEGATIVE_INFINITY;
     }
-
-    double max = values[offset];
-    int i = 0;
-
-    int vectorLength = DOUBLE_SPECIES.length();
-    int step = vectorLength * 4;
-    int limit4 = length - (length % step);
-
-    if (limit4 > 0) {
-      DoubleVector max0 = DoubleVector.broadcast(DOUBLE_SPECIES, Double.NEGATIVE_INFINITY);
-      DoubleVector max1 = DoubleVector.broadcast(DOUBLE_SPECIES, Double.NEGATIVE_INFINITY);
-      DoubleVector max2 = DoubleVector.broadcast(DOUBLE_SPECIES, Double.NEGATIVE_INFINITY);
-      DoubleVector max3 = DoubleVector.broadcast(DOUBLE_SPECIES, Double.NEGATIVE_INFINITY);
-
-      for (; i < limit4; i += step) {
-        DoubleVector v0 = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i);
-        DoubleVector v1 = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i + vectorLength);
-        DoubleVector v2 = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i + vectorLength * 2);
-        DoubleVector v3 = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i + vectorLength * 3);
-
-        max0 = max0.blend(v0, v0.compare(VectorOperators.GT, max0));
-        max1 = max1.blend(v1, v1.compare(VectorOperators.GT, max1));
-        max2 = max2.blend(v2, v2.compare(VectorOperators.GT, max2));
-        max3 = max3.blend(v3, v3.compare(VectorOperators.GT, max3));
-      }
-
-      DoubleVector result = max0.blend(max1, max1.compare(VectorOperators.GT, max0));
-      result = result.blend(max2, max2.compare(VectorOperators.GT, result));
-      result = result.blend(max3, max3.compare(VectorOperators.GT, result));
-      max = result.reduceLanes(VectorOperators.MAX);
-    }
-
-    int limit = length - (length % vectorLength);
-    for (; i < limit; i += vectorLength) {
-      DoubleVector v = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i);
-      DoubleVector maxVec = DoubleVector.broadcast(DOUBLE_SPECIES, max);
-      maxVec = maxVec.blend(v, v.compare(VectorOperators.GT, maxVec));
-      max = maxVec.reduceLanes(VectorOperators.MAX);
-    }
-
-    for (; i < length; i++) {
-      if (values[offset + i] > max) {
-        max = values[offset + i];
-      }
-    }
-
-    return max;
+    return reduceDouble(values, offset, length, false);
   }
 
   // ==================== Utility Methods ====================

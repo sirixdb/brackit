@@ -59,6 +59,8 @@ public final class SaltedHashTable {
   private static final int SALT_SHIFT = 48;
   private static final long SALT_MASK = 0xFFFF_0000_0000_0000L;
   private static final long INDEX_MASK = 0x0000_0000_FFFF_FFFFL;
+  private static final long MURMUR_C1 = 0xFF51AFD7ED558CCDL;
+  private static final long MURMUR_C2 = 0xC4CEB9FE1A85EC53L;
 
   private static final float LOAD_FACTOR = 0.7f;
   private static final int MIN_CAPACITY = 64;
@@ -215,9 +217,23 @@ public final class SaltedHashTable {
     size = 0;
   }
 
+  private void insertEntry(long key, int payload) {
+    int hash = hash(key);
+    long salt = extractSalt(hash);
+    int slot = hash & mask;
+
+    while (directory[slot] != EMPTY) {
+      slot = (slot + 1) & mask;
+    }
+
+    directory[slot] = salt | ((size + 1) & INDEX_MASK);
+    keys[size] = key;
+    payloads[size] = payload;
+    size++;
+  }
+
   private void resize() {
     int newCapacity = capacity * 2;
-    long[] oldDirectory = directory;
     long[] oldKeys = keys;
     int[] oldPayloads = payloads;
     int oldSize = size;
@@ -229,21 +245,8 @@ public final class SaltedHashTable {
     this.payloads = new int[newCapacity];
     this.size = 0;
 
-    // Reinsert all existing entries
     for (int i = 0; i < oldSize; i++) {
-      long key = oldKeys[i];
-      int hash = hash(key);
-      long salt = extractSalt(hash);
-      int slot = hash & mask;
-
-      while (directory[slot] != EMPTY) {
-        slot = (slot + 1) & mask;
-      }
-
-      directory[slot] = salt | ((size + 1) & INDEX_MASK);
-      keys[size] = key;
-      payloads[size] = oldPayloads[i];
-      size++;
+      insertEntry(oldKeys[i], oldPayloads[i]);
     }
   }
 
@@ -253,9 +256,9 @@ public final class SaltedHashTable {
    */
   private static int hash(long key) {
     key ^= key >>> 33;
-    key *= 0xFF51AFD7ED558CCDL;
+    key *= MURMUR_C1;
     key ^= key >>> 33;
-    key *= 0xC4CEB9FE1A85EC53L;
+    key *= MURMUR_C2;
     key ^= key >>> 33;
     return (int) key;
   }

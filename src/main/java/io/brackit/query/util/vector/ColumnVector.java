@@ -92,6 +92,13 @@ public final class ColumnVector {
     }
   }
 
+  private ColumnVector(DataType dataType) {
+    this.dataType = dataType;
+    this.vectorType = VectorType.CONSTANT;
+    this.size = 0;
+    this.validity = new ValidityMask(0);
+  }
+
   public static ColumnVector ofLong(int capacity) {
     return new ColumnVector(DataType.INT64, capacity);
   }
@@ -121,16 +128,14 @@ public final class ColumnVector {
    * No array allocation needed - extremely memory efficient for literal values.
    */
   public static ColumnVector constantLong(long value, int size) {
-    ColumnVector v = new ColumnVector(DataType.INT64, 0);
-    v.vectorType = VectorType.CONSTANT;
+    ColumnVector v = new ColumnVector(DataType.INT64);
     v.constantLong = value;
     v.size = size;
     return v;
   }
 
   public static ColumnVector constantDouble(double value, int size) {
-    ColumnVector v = new ColumnVector(DataType.DOUBLE, 0);
-    v.vectorType = VectorType.CONSTANT;
+    ColumnVector v = new ColumnVector(DataType.DOUBLE);
     v.constantDouble = value;
     v.size = size;
     return v;
@@ -224,58 +229,66 @@ public final class ColumnVector {
       return;
     }
     if (vectorType == VectorType.CONSTANT) {
-      switch (dataType) {
-        case INT64 -> {
-          if (longData == null || longData.length < size) {
-            longData = new long[size];
-          }
-          java.util.Arrays.fill(longData, 0, size, constantLong);
+      flattenConstant();
+    } else if (vectorType == VectorType.DICTIONARY) {
+      flattenDictionary();
+    }
+    vectorType = VectorType.FLAT;
+  }
+
+  private void flattenConstant() {
+    switch (dataType) {
+      case INT64 -> {
+        if (longData == null || longData.length < size) {
+          longData = new long[size];
         }
-        case DOUBLE -> {
-          if (doubleData == null || doubleData.length < size) {
-            doubleData = new double[size];
-          }
-          java.util.Arrays.fill(doubleData, 0, size, constantDouble);
+        java.util.Arrays.fill(longData, 0, size, constantLong);
+      }
+      case DOUBLE -> {
+        if (doubleData == null || doubleData.length < size) {
+          doubleData = new double[size];
         }
-        case STRING, GENERIC -> {
-          if (genericData == null || genericData.length < size) {
-            genericData = new Sequence[size];
-          }
-          java.util.Arrays.fill(genericData, 0, size, constantGeneric);
+        java.util.Arrays.fill(doubleData, 0, size, constantDouble);
+      }
+      case STRING, GENERIC -> {
+        if (genericData == null || genericData.length < size) {
+          genericData = new Sequence[size];
+        }
+        java.util.Arrays.fill(genericData, 0, size, constantGeneric);
+      }
+    }
+  }
+
+  private void flattenDictionary() {
+    switch (dataType) {
+      case INT64 -> {
+        if (longData == null || longData.length < size) {
+          longData = new long[size];
+        }
+        long[] src = dictData.longData;
+        for (int i = 0; i < size; i++) {
+          longData[i] = src[dictIndices[i]];
         }
       }
-    } else if (vectorType == VectorType.DICTIONARY) {
-      switch (dataType) {
-        case INT64 -> {
-          if (longData == null || longData.length < size) {
-            longData = new long[size];
-          }
-          long[] src = dictData.longData;
-          for (int i = 0; i < size; i++) {
-            longData[i] = src[dictIndices[i]];
-          }
+      case DOUBLE -> {
+        if (doubleData == null || doubleData.length < size) {
+          doubleData = new double[size];
         }
-        case DOUBLE -> {
-          if (doubleData == null || doubleData.length < size) {
-            doubleData = new double[size];
-          }
-          double[] src = dictData.doubleData;
-          for (int i = 0; i < size; i++) {
-            doubleData[i] = src[dictIndices[i]];
-          }
+        double[] src = dictData.doubleData;
+        for (int i = 0; i < size; i++) {
+          doubleData[i] = src[dictIndices[i]];
         }
-        case STRING, GENERIC -> {
-          if (genericData == null || genericData.length < size) {
-            genericData = new Sequence[size];
-          }
-          Sequence[] src = dictData.genericData;
-          for (int i = 0; i < size; i++) {
-            genericData[i] = src[dictIndices[i]];
-          }
+      }
+      case STRING, GENERIC -> {
+        if (genericData == null || genericData.length < size) {
+          genericData = new Sequence[size];
+        }
+        Sequence[] src = dictData.genericData;
+        for (int i = 0; i < size; i++) {
+          genericData[i] = src[dictIndices[i]];
         }
       }
     }
-    vectorType = VectorType.FLAT;
   }
 
   /**
