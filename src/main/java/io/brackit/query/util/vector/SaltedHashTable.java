@@ -99,11 +99,10 @@ public final class SaltedHashTable {
     long salt = extractSalt(hash);
     int slot = hash & mask;
 
-    while (true) {
+    for (int probes = 0; probes < capacity; probes++) {
       long entry = directory[slot];
 
       if (entry == EMPTY) {
-        // Empty slot - insert. Store index+1 so that index 0 maps to 1, avoiding collision with EMPTY.
         directory[slot] = salt | ((size + 1) & INDEX_MASK);
         keys[size] = key;
         payloads[size] = payload;
@@ -111,7 +110,6 @@ public final class SaltedHashTable {
         return -1; // new entry
       }
 
-      // Salt check: fast rejection without reading the key
       if ((entry & SALT_MASK) == salt) {
         int idx = (int) (entry & INDEX_MASK) - 1;
         if (keys[idx] == key) {
@@ -119,9 +117,9 @@ public final class SaltedHashTable {
         }
       }
 
-      // Linear probe - sequential memory access, cache-line friendly
       slot = (slot + 1) & mask;
     }
+    throw new IllegalStateException("Hash table is full");
   }
 
   /**
@@ -132,14 +130,13 @@ public final class SaltedHashTable {
     long salt = extractSalt(hash);
     int slot = hash & mask;
 
-    while (true) {
+    for (int probes = 0; probes < capacity; probes++) {
       long entry = directory[slot];
 
       if (entry == EMPTY) {
         return -1; // not found
       }
 
-      // Salt check first - rejects most non-matching slots without a cache miss
       if ((entry & SALT_MASK) == salt) {
         int idx = (int) (entry & INDEX_MASK) - 1;
         if (keys[idx] == key) {
@@ -149,6 +146,7 @@ public final class SaltedHashTable {
 
       slot = (slot + 1) & mask;
     }
+    return -1; // not found after full scan
   }
 
   /**
@@ -164,7 +162,7 @@ public final class SaltedHashTable {
     long salt = extractSalt(hash);
     int slot = hash & mask;
 
-    while (true) {
+    for (int probes = 0; probes < capacity; probes++) {
       long entry = directory[slot];
 
       if (entry == EMPTY) {
@@ -184,6 +182,7 @@ public final class SaltedHashTable {
 
       slot = (slot + 1) & mask;
     }
+    throw new IllegalStateException("Hash table is full");
   }
 
   /**
@@ -222,14 +221,16 @@ public final class SaltedHashTable {
     long salt = extractSalt(hash);
     int slot = hash & mask;
 
-    while (directory[slot] != EMPTY) {
+    for (int probes = 0; probes < capacity; probes++) {
+      if (directory[slot] == EMPTY) {
+        directory[slot] = salt | ((size + 1) & INDEX_MASK);
+        keys[size] = key;
+        payloads[size] = payload;
+        size++;
+        return;
+      }
       slot = (slot + 1) & mask;
     }
-
-    directory[slot] = salt | ((size + 1) & INDEX_MASK);
-    keys[size] = key;
-    payloads[size] = payload;
-    size++;
   }
 
   private void resize() {
