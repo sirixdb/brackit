@@ -76,6 +76,7 @@ public class GroupBy extends Check implements Operator {
     public SequentialGroupBy(Cursor c, int tupleSize) {
       this.c = c;
       this.grp = new Grouping(groupSpecs, addAggSpecs, defaultAgg, addAggs, tupleSize);
+      this.grp.setThreadSafe(false);
     }
 
     @Override
@@ -288,6 +289,7 @@ public class GroupBy extends Check implements Operator {
       Grouping grp = map.get(key);
       if (grp == null) {
         grp = new Grouping(groupSpecs, addAggSpecs, defaultAgg, addAggs, tupleSize);
+        grp.setThreadSafe(false);
         map.put(key, grp);
       }
       grp.add(gks, t);
@@ -308,6 +310,7 @@ public class GroupBy extends Check implements Operator {
     public AllGroupBy(Cursor c, int tupleSize) {
       this.c = c;
       this.grp = new Grouping(groupSpecs, addAggSpecs, defaultAgg, addAggs, tupleSize);
+      this.grp.setThreadSafe(false);
     }
 
     @Override
