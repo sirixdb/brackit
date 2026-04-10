@@ -107,20 +107,17 @@ public interface VectorizedPredicate {
     @Override
     public int filterIndices(long[] values, int offset, int length, int[] indices) {
       return switch (op) {
-        case EQ -> VectorOps.filterEqLong(values, offset, length, threshold, indices);
-        case LT -> VectorOps.filterLtLong(values, offset, length, threshold, indices);
-        case LE -> VectorOps.filterLeLong(values, offset, length, threshold, indices);
         case GT -> VectorOps.filterIndicesGreaterThan(values, offset, length, threshold, indices);
-        case GE -> VectorOps.filterGeLong(values, offset, length, threshold, indices);
-        case NE -> filterIndicesBranchless(values, offset, length, indices);
+        default -> filterIndicesGeneric(values, offset, length, indices);
       };
     }
 
-    private int filterIndicesBranchless(long[] values, int offset, int length, int[] indices) {
+    private int filterIndicesGeneric(long[] values, int offset, int length, int[] indices) {
       int count = 0;
       for (int i = 0; i < length; i++) {
-        indices[count] = offset + i;
-        count += evaluate(values[offset + i]) ? 1 : 0;
+        if (evaluate(values[offset + i])) {
+          indices[count++] = offset + i;
+        }
       }
       return count;
     }
