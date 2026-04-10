@@ -717,7 +717,7 @@ public final class VectorOps {
   // ==================== Branchless Min/Max for Doubles ====================
 
   private static double reduceDouble(double[] values, int offset, int length, boolean findMin) {
-    double result = findMin ? values[offset] : values[offset];
+    double result = values[offset];
     int i = 0;
 
     int vectorLength = DOUBLE_SPECIES.length();
