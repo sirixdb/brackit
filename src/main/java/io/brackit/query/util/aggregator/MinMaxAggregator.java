@@ -61,8 +61,9 @@ public class MinMaxAggregator implements Aggregator {
   Atomic minmax = null;
   Type minmaxType = null;
 
-  // SIMD batch buffer (lazily allocated)
+  // SIMD batch buffers (lazily allocated)
   private long[] longBuffer;
+  private double[] doubleBuffer;
 
   public MinMaxAggregator(boolean min) {
     this.min = min;
@@ -231,6 +232,11 @@ public class MinMaxAggregator implements Aggregator {
       return numericMinmaxInt64Batch(in, minmaxI64.longValue(), i64.longValue());
     }
 
+    // Try optimized Dbl batch path
+    if (first instanceof Dbl dbl && minmax instanceof Dbl minmaxDbl) {
+      return numericMinmaxDoubleBatch(in, minmaxDbl.doubleValue(), dbl.doubleValue());
+    }
+
     // Fallback to original loop for other types
     final Type minmaxTypeLocal = minmax.type();
     minmax = numericMinmax(minmax, first, minmaxTypeLocal);
@@ -299,6 +305,63 @@ public class MinMaxAggregator implements Aggregator {
     }
 
     return new Int64(currentMinmax);
+  }
+
+  /**
+   * SIMD-optimized batch min/max for Dbl sequences.
+   */
+  private Atomic numericMinmaxDoubleBatch(Iter in, double currentMinmax, double firstValue) throws QueryException {
+    if (doubleBuffer == null) {
+      doubleBuffer = new double[BATCH_SIZE];
+    }
+
+    if (min) {
+      currentMinmax = Math.min(currentMinmax, firstValue);
+    } else {
+      currentMinmax = Math.max(currentMinmax, firstValue);
+    }
+
+    int bufferLen = 0;
+    Item item;
+    while ((item = in.next()) != null) {
+      Atomic a = item.atomize();
+
+      if (!(a instanceof Dbl dbl)) {
+        // Type changed - flush and fall back
+        if (bufferLen > 0) {
+          double batchResult = min
+              ? VectorOps.minDouble(doubleBuffer, 0, bufferLen)
+              : VectorOps.maxDouble(doubleBuffer, 0, bufferLen);
+          currentMinmax = min ? Math.min(currentMinmax, batchResult) : Math.max(currentMinmax, batchResult);
+        }
+        Atomic minmaxAtomic = new Dbl(currentMinmax);
+        Type minmaxTypeLocal = minmaxAtomic.type();
+        minmaxAtomic = numericMinmax(minmaxAtomic, item, minmaxTypeLocal);
+        while ((item = in.next()) != null) {
+          minmaxAtomic = numericMinmax(minmaxAtomic, item, minmaxTypeLocal);
+        }
+        return minmaxAtomic;
+      }
+
+      doubleBuffer[bufferLen++] = dbl.doubleValue();
+
+      if (bufferLen == BATCH_SIZE) {
+        double batchResult = min
+            ? VectorOps.minDouble(doubleBuffer, 0, bufferLen)
+            : VectorOps.maxDouble(doubleBuffer, 0, bufferLen);
+        currentMinmax = min ? Math.min(currentMinmax, batchResult) : Math.max(currentMinmax, batchResult);
+        bufferLen = 0;
+      }
+    }
+
+    if (bufferLen > 0) {
+      double batchResult = min
+          ? VectorOps.minDouble(doubleBuffer, 0, bufferLen)
+          : VectorOps.maxDouble(doubleBuffer, 0, bufferLen);
+      currentMinmax = min ? Math.min(currentMinmax, batchResult) : Math.max(currentMinmax, batchResult);
+    }
+
+    return new Dbl(currentMinmax);
   }
 
   private Atomic numericMinmax(Atomic minmax, Item item, final Type minmaxType) throws QueryException {
