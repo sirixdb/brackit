@@ -42,6 +42,7 @@ import io.brackit.query.atomic.Str;
 import io.brackit.query.compiler.CompileChain;
 import io.brackit.query.function.json.FastJSONParser;
 import io.brackit.query.function.json.JSONParser;
+import io.brackit.query.function.json.StreamingJSONParser;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
@@ -208,21 +209,23 @@ public class BrackitJq {
     List<Item> items = new ArrayList<>();
 
     if (config.inputFiles().isEmpty()) {
-      // Read from stdin
-      String json = readString(in);
+      // Read from stdin — use streaming parser
       if (config.slurp()) {
+        String json = readString(in);
         items.addAll(parseMultipleJson(json));
       } else {
-        return parseJson(json);
+        return parseStreaming(java.io.BufferedInputStream.class.isInstance(in)
+            ? in
+            : new java.io.BufferedInputStream(in));
       }
     } else {
-      // Read from files
+      // Read from files — use streaming parser for large files
       for (String file : config.inputFiles()) {
-        String json = readFile(file);
         if (config.slurp()) {
+          String json = readFile(file);
           items.addAll(parseMultipleJson(json));
         } else {
-          items.add(parseJson(json));
+          items.add(parseStreaming(new java.io.BufferedInputStream(new FileInputStream(file), 8 * 1024 * 1024)));
         }
       }
     }
@@ -232,9 +235,21 @@ public class BrackitJq {
       return new DArray(items);
     }
 
-    // For multiple files without slurp, return just the first (jq processes each separately,
-    // but for simplicity we'll use the first one as context)
+    // For multiple files without slurp, return just the first
     return items.isEmpty() ? null : items.getFirst();
+  }
+
+  /**
+   * Parse JSON from an InputStream using the streaming parser.
+   * Returns a StreamingArray for top-level arrays, enabling lazy element-by-element parsing
+   * without loading the entire file into memory.
+   */
+  private static Item parseStreaming(InputStream in) throws JsonParseException {
+    try {
+      return new StreamingJSONParser(in).parse();
+    } catch (QueryException e) {
+      throw new JsonParseException(e.getMessage(), e);
+    }
   }
 
   /**
