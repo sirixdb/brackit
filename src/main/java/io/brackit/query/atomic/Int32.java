@@ -52,10 +52,28 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
 
   public static final Int32 ONE = new Int32(1);
 
-  public static final Int32[] ZERO_TO_TWENTY = new Int32[] { ZERO, ONE, new Int32(2), new Int32(3), new Int32(4),
-      new Int32(5), new Int32(6), new Int32(7), new Int32(8), new Int32(9), new Int32(10), new Int32(11), new Int32(12),
-      new Int32(13), new Int32(14), new Int32(15), new Int32(16), new Int32(17), new Int32(18), new Int32(19),
-      new Int32(20) };
+  private static final int CACHE_SIZE = 256;
+  private static final Int32[] CACHE;
+
+  static {
+    CACHE = new Int32[CACHE_SIZE];
+    for (int i = 0; i < CACHE_SIZE; i++) {
+      CACHE[i] = new Int32(i);
+    }
+  }
+
+  /** @deprecated Use {@link #cached(int)} instead for values beyond 20. */
+  public static final Int32[] ZERO_TO_TWENTY = CACHE;
+
+  /**
+   * Return a cached Int32 for values 0..255, or a new instance otherwise.
+   */
+  public static Int32 cached(int v) {
+    if (v >= 0 && v < CACHE_SIZE) {
+      return CACHE[v];
+    }
+    return new Int32(v);
+  }
 
   private final int v;
 

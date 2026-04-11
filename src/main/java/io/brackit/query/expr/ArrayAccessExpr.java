@@ -160,18 +160,23 @@ public final class ArrayAccessExpr implements Expr {
     return new LazySequence() {
       @Override
       public Iter iterate() {
+        // Use the array's own iterator for streaming support.
+        // This avoids calling len() which would force materialization of StreamingArrays.
+        final Iter arrayIter = array.iterate();
         return new BaseIter() {
-          int i = 0;
-
           @Override
           public Item next() {
-            return i < array.len() ? array.at(i++).evaluateToItem(ctx, tuple) : null;
+            Item item = arrayIter.next();
+            if (item == null) {
+              return null;
+            }
+            return item.evaluateToItem(ctx, tuple);
           }
 
           @Override
           public void close() {
+            arrayIter.close();
           }
-
         };
       }
     };

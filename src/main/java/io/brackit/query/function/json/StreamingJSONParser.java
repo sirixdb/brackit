@@ -61,6 +61,9 @@ public final class StreamingJSONParser {
   private int limit; // number of valid bytes in buf
   private boolean eof;
 
+  // Reusable parser for element-by-element parsing — avoids per-element allocation
+  private FastJSONParser reusableParser;
+
   public StreamingJSONParser(InputStream in) {
     this(in, DEFAULT_BUFFER_SIZE);
   }
@@ -150,15 +153,25 @@ public final class StreamingJSONParser {
       // Fast path: try to find the element boundary within the current buffer
       int elementEnd = findValueEnd(pos);
       if (elementEnd > 0) {
-        // Element fits in buffer — parse directly from slice (zero-copy)
-        Item result = new FastJSONParser(buf, pos, elementEnd - pos).parse();
+        // Element fits in buffer — parse directly from slice (zero-copy, reuse parser)
+        if (reusableParser == null) {
+          reusableParser = new FastJSONParser(buf, pos, elementEnd - pos);
+        } else {
+          reusableParser.reset(buf, pos, elementEnd - pos);
+        }
+        Item result = reusableParser.parse();
         pos = elementEnd;
         return result;
       }
 
       // Slow path: element spans buffer boundary, must copy
       byte[] elementBytes = extractValue();
-      return new FastJSONParser(elementBytes).parse();
+      if (reusableParser == null) {
+        reusableParser = new FastJSONParser(elementBytes);
+      } else {
+        reusableParser.reset(elementBytes, 0, elementBytes.length);
+      }
+      return reusableParser.parse();
     } catch (IOException e) {
       throw new QueryException(JSONFun.ERR_PARSING_ERROR, "I/O error: %s", e.getMessage());
     }

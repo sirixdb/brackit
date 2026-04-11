@@ -88,8 +88,9 @@ public final class StreamingArray extends AbstractArray {
       };
     }
 
-    // Stream from parser. If some elements were already materialized (partial access),
-    // replay those first, then continue from the parser.
+    // Stream from parser without caching — enables constant-memory iteration
+    // over arbitrarily large arrays. Only materializeAll()/materializeUpTo()
+    // populate the cache for random access.
     return new BaseIter() {
       private int index = 0;
       private boolean done = false;
@@ -100,12 +101,12 @@ public final class StreamingArray extends AbstractArray {
           return null;
         }
 
-        // Replay already-materialized elements
+        // Replay already-materialized elements (from prior random access)
         if (index < materialized.size()) {
           return (Item) materialized.get(index++);
         }
 
-        // Pull next from parser
+        // Pull next from parser — do NOT cache (streaming mode)
         Item item = parser.nextArrayElement();
         if (item == null) {
           done = true;
@@ -115,7 +116,6 @@ public final class StreamingArray extends AbstractArray {
           }
           return null;
         }
-        materialized.add(item);
         index++;
         return item;
       }
