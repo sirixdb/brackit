@@ -157,6 +157,29 @@ public final class ArrayAccessExpr implements Expr {
   }
 
   private LazySequence getLazySequence(final QueryContext ctx, final Tuple tuple, final Array array) {
+    // For StreamingArray, use iterate() to avoid materialization via len().
+    // For regular arrays (DArray), use len()+at() which is the proven path.
+    if (array instanceof io.brackit.query.jsonitem.array.StreamingArray) {
+      return new LazySequence() {
+        @Override
+        public Iter iterate() {
+          final Iter arrayIter = array.iterate();
+          return new BaseIter() {
+            @Override
+            public Item next() {
+              Item item = arrayIter.next();
+              return item != null ? item.evaluateToItem(ctx, tuple) : null;
+            }
+
+            @Override
+            public void close() {
+              arrayIter.close();
+            }
+          };
+        }
+      };
+    }
+
     return new LazySequence() {
       @Override
       public Iter iterate() {
