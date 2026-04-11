@@ -210,8 +210,13 @@ public class BrackitJq {
   private static Item readJsonInput(Config config, InputStream in) throws IOException, JsonParseException {
     List<Item> items = new ArrayList<>();
 
+    // Threshold for switching from in-memory FastJSONParser to StreamingJSONParser.
+    // Files under this size are read entirely into memory for maximum parse speed.
+    // Files above this size (or stdin) use streaming to avoid OOM.
+    long streamingThreshold = 1_500_000_000L; // ~1.5 GB (below Java's 2GB array limit)
+
     if (config.inputFiles().isEmpty()) {
-      // Read from stdin — use streaming parser
+      // Read from stdin — use streaming parser (can't know size ahead of time)
       if (config.slurp()) {
         String json = readString(in);
         items.addAll(parseMultipleJson(json));
@@ -221,13 +226,20 @@ public class BrackitJq {
             : new java.io.BufferedInputStream(in));
       }
     } else {
-      // Read from files — use streaming parser for large files
       for (String file : config.inputFiles()) {
         if (config.slurp()) {
           String json = readFile(file);
           items.addAll(parseMultipleJson(json));
         } else {
-          items.add(parseStreaming(new java.io.BufferedInputStream(new FileInputStream(file), 8 * 1024 * 1024)));
+          long fileSize = new java.io.File(file).length();
+          if (fileSize > streamingThreshold) {
+            // Large file — use streaming parser to avoid OOM
+            items.add(parseStreaming(new java.io.BufferedInputStream(new FileInputStream(file), 8 * 1024 * 1024)));
+          } else {
+            // Small/medium file — use fast in-memory parser
+            String json = readFile(file);
+            items.add(parseJson(json));
+          }
         }
       }
     }
@@ -329,8 +341,7 @@ public class BrackitJq {
   /**
    * Execute a JSONiq query with the given context item.
    */
-  private static final boolean PARALLEL = Cfg.asBool("io.brackit.query.parallel",
-                                                     Runtime.getRuntime().availableProcessors() > 1);
+  private static final boolean PARALLEL = Cfg.asBool("io.brackit.query.parallel", false);
 
   private static Sequence executeQuery(String queryString, Item contextItem) throws QueryException {
     QueryContext ctx = new BrackitQueryContext();
