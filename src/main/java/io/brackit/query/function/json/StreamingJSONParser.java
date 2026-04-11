@@ -110,6 +110,10 @@ public final class StreamingJSONParser {
   /**
    * Called by StreamingArray to get the next array element's bytes.
    * Returns null when the array is exhausted (']' found).
+   * <p>
+   * Fast path: if the element fits entirely within the current buffer,
+   * parse directly from the buffer slice (zero-copy). Falls back to
+   * extractValue() only for elements that span buffer boundaries.
    */
   public Item nextArrayElement() throws QueryException {
     try {
@@ -143,12 +147,94 @@ public final class StreamingJSONParser {
         }
       }
 
-      // Extract the next complete JSON value
+      // Fast path: try to find the element boundary within the current buffer
+      int elementEnd = findValueEnd(pos);
+      if (elementEnd > 0) {
+        // Element fits in buffer — parse directly from slice (zero-copy)
+        Item result = new FastJSONParser(buf, pos, elementEnd - pos).parse();
+        pos = elementEnd;
+        return result;
+      }
+
+      // Slow path: element spans buffer boundary, must copy
       byte[] elementBytes = extractValue();
       return new FastJSONParser(elementBytes).parse();
     } catch (IOException e) {
       throw new QueryException(JSONFun.ERR_PARSING_ERROR, "I/O error: %s", e.getMessage());
     }
+  }
+
+  /**
+   * Try to find the end position of a JSON value starting at {@code start}
+   * within the current buffer. Returns the position after the value, or -1
+   * if the value extends beyond the buffer (needs slow path).
+   */
+  private int findValueEnd(int start) {
+    int depth = 0;
+    boolean inString = false;
+    int i = start;
+
+    while (i < limit) {
+      byte b = buf[i];
+
+      if (inString) {
+        if (b == '\\') {
+          i += 2; // skip escape + next char
+          continue;
+        }
+        if (b == '"') {
+          inString = false;
+          if (depth == 0) {
+            return i + 1; // end of top-level string value
+          }
+        }
+        i++;
+        continue;
+      }
+
+      switch (b) {
+        case '"':
+          inString = true;
+          i++;
+          break;
+        case '{':
+        case '[':
+          depth++;
+          i++;
+          break;
+        case '}':
+        case ']':
+          if (depth == 0) {
+            return (i > start) ? i : -1; // end of scalar before structural char
+          }
+          depth--;
+          i++;
+          if (depth == 0) {
+            return i; // end of object/array
+          }
+          break;
+        case ',':
+          if (depth == 0) {
+            return i; // end of scalar value
+          }
+          i++;
+          break;
+        case ' ':
+        case '\t':
+        case '\n':
+        case '\r':
+          if (depth == 0 && i > start) {
+            return i; // whitespace after scalar
+          }
+          i++;
+          break;
+        default:
+          i++;
+          break;
+      }
+    }
+
+    return -1; // extends beyond buffer
   }
 
   /**

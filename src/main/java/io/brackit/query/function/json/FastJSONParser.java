@@ -71,6 +71,16 @@ public final class FastJSONParser {
     this.end = input.length;
   }
 
+  /**
+   * Parse a slice of a byte array without copying. The caller guarantees
+   * that {@code input[offset..offset+length)} contains a complete JSON value.
+   */
+  public FastJSONParser(byte[] input, int offset, int length) {
+    this.input = input;
+    this.pos = offset;
+    this.end = offset + length;
+  }
+
   public FastJSONParser(String input) {
     this(input.getBytes(StandardCharsets.UTF_8));
   }
