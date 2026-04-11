@@ -83,6 +83,9 @@ public final class StreamingJSONParser {
     this.eof = false;
   }
 
+  // mmap for files > 2GB requires ByteBuffer-based parsing (future work).
+  // For now, the streaming path with 8MB buffer and zero-copy slices is used.
+
   /**
    * Parse the top-level JSON value. If it's an array or an object containing a single
    * array value, returns a {@link StreamingArray} for lazy element-by-element parsing.
@@ -123,6 +126,79 @@ public final class StreamingJSONParser {
    * without creating any JSON objects.
    * Returns null when the array is exhausted.
    */
+  // Shared slice state for zero-copy element access
+  private int sliceStart;
+  private int sliceEnd;
+
+  /**
+   * Advance to the next array element and return its boundaries as a slice
+   * of the internal buffer. Call {@link #getBuffer()}, {@link #getSliceStart()},
+   * {@link #getSliceEnd()} to access the element bytes without copying.
+   * <p>
+   * Returns true if an element was found, false if the array is exhausted.
+   * The slice is valid until the next call to any parser method.
+   */
+  public boolean nextArrayElementSlice() throws QueryException {
+    try {
+      ensureAvailable();
+      skipWhitespace();
+
+      if (pos >= limit && eof)
+        return false;
+
+      byte b = buf[pos];
+      if (b == ']') {
+        pos++;
+        return false;
+      }
+      if (b == ',') {
+        pos++;
+        ensureAvailable();
+        skipWhitespace();
+        if (pos >= limit && eof)
+          return false;
+        if (buf[pos] == ']') {
+          pos++;
+          return false;
+        }
+      }
+
+      int elementEnd = findValueEnd(pos);
+      if (elementEnd > 0) {
+        sliceStart = pos;
+        sliceEnd = elementEnd;
+        pos = elementEnd;
+        return true;
+      }
+
+      // Slow path: element spans buffer — can't use zero-copy slice
+      sliceStart = -1;
+      sliceEnd = -1;
+      return true;
+    } catch (IOException e) {
+      throw new QueryException(JSONFun.ERR_PARSING_ERROR, "I/O error: %s", e.getMessage());
+    }
+  }
+
+  /** The internal buffer. Valid after nextArrayElementSlice() returns true. */
+  public byte[] getBuffer() {
+    return buf;
+  }
+
+  /** Start offset of the current element in the buffer. -1 if element spans buffers. */
+  public int getSliceStart() {
+    return sliceStart;
+  }
+
+  /** End offset (exclusive) of the current element in the buffer. */
+  public int getSliceEnd() {
+    return sliceEnd;
+  }
+
+  /**
+   * Return the raw bytes of the next array element (allocates a copy).
+   * Use {@link #nextArrayElementSlice()} for zero-copy access.
+   */
   public byte[] nextArrayElementBytes() throws QueryException {
     try {
       ensureAvailable();
@@ -148,7 +224,6 @@ public final class StreamingJSONParser {
         }
       }
 
-      // Fast path: find element boundary in buffer
       int elementEnd = findValueEnd(pos);
       if (elementEnd > 0) {
         byte[] result = new byte[elementEnd - pos];
@@ -157,7 +232,6 @@ public final class StreamingJSONParser {
         return result;
       }
 
-      // Slow path: element spans buffer
       return extractValue();
     } catch (IOException e) {
       throw new QueryException(JSONFun.ERR_PARSING_ERROR, "I/O error: %s", e.getMessage());

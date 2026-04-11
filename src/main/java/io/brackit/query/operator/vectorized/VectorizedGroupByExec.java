@@ -76,14 +76,24 @@ public final class VectorizedGroupByExec {
     String[] batchKeys = new String[BATCH_SIZE];
     int batchSize = 0;
 
-    // Pre-compute the field pattern for direct byte-level extraction
     byte[] fieldPattern = ("\"" + groupField + "\":").getBytes(java.nio.charset.StandardCharsets.UTF_8);
     byte[] fieldPatternSpaced = ("\"" + groupField + "\" :").getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
-    // Direct byte-level field extraction — no CompactObject creation
-    byte[] elementBytes;
-    while ((elementBytes = parser.nextArrayElementBytes()) != null) {
-      String key = extractFieldFromBytes(elementBytes, fieldPattern, fieldPatternSpaced);
+    // Zero-copy path: scan directly in the parser's buffer
+    while (parser.nextArrayElementSlice()) {
+      int start = parser.getSliceStart();
+      int end = parser.getSliceEnd();
+
+      String key;
+      if (start >= 0) {
+        // Fast path: element is in the buffer — scan in-place, no copy
+        key = extractFieldFromBuffer(parser.getBuffer(), start, end, fieldPattern, fieldPatternSpaced);
+      } else {
+        // Slow path: element spans buffers — fall back to copy
+        byte[] elementBytes = parser.nextArrayElementBytes();
+        key = elementBytes != null ? extractFieldFromBytes(elementBytes, fieldPattern, fieldPatternSpaced) : null;
+      }
+
       if (key != null) {
         batchKeys[batchSize++] = key;
       }
@@ -99,6 +109,38 @@ public final class VectorizedGroupByExec {
     }
 
     return buildResult(groups, groupField);
+  }
+
+  /**
+   * Extract a string field value directly from a buffer range without copying.
+   */
+  private static String extractFieldFromBuffer(byte[] buf, int start, int end, byte[] pattern, byte[] patternSpaced) {
+    int pos = indexOf(buf, pattern, start, end);
+    if (pos < 0) {
+      pos = indexOf(buf, patternSpaced, start, end);
+    }
+    if (pos < 0)
+      return null;
+
+    pos += pattern.length;
+    if (pos < end && buf[pos] == ' ')
+      pos++;
+    if (pos >= end || buf[pos] != '"')
+      return null;
+    pos++;
+
+    int valStart = pos;
+    while (pos < end) {
+      if (buf[pos] == '\\') {
+        pos += 2;
+        continue;
+      }
+      if (buf[pos] == '"') {
+        return new String(buf, valStart, pos - valStart, java.nio.charset.StandardCharsets.UTF_8);
+      }
+      pos++;
+    }
+    return null;
   }
 
   /**
@@ -139,8 +181,12 @@ public final class VectorizedGroupByExec {
   }
 
   private static int indexOf(byte[] haystack, byte[] needle, int from) {
+    return indexOf(haystack, needle, from, haystack.length);
+  }
+
+  private static int indexOf(byte[] haystack, byte[] needle, int from, int limit) {
     outer:
-    for (int i = from; i <= haystack.length - needle.length; i++) {
+    for (int i = from; i <= limit - needle.length; i++) {
       for (int j = 0; j < needle.length; j++) {
         if (haystack[i + j] != needle[j])
           continue outer;
@@ -214,9 +260,22 @@ public final class VectorizedGroupByExec {
     byte[] fieldPattern = ("\"" + filterField + "\":").getBytes(java.nio.charset.StandardCharsets.UTF_8);
     byte[] fieldPatternSpaced = ("\"" + filterField + "\" :").getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
-    byte[] elementBytes;
-    while ((elementBytes = parser.nextArrayElementBytes()) != null) {
-      batchValues[batchSize++] = extractLongFromBytes(elementBytes, fieldPattern, fieldPatternSpaced);
+    while (parser.nextArrayElementSlice()) {
+      int start = parser.getSliceStart();
+      int end = parser.getSliceEnd();
+
+      if (start >= 0) {
+        batchValues[batchSize++] = extractLongFromBuffer(parser.getBuffer(),
+                                                         start,
+                                                         end,
+                                                         fieldPattern,
+                                                         fieldPatternSpaced);
+      } else {
+        byte[] elementBytes = parser.nextArrayElementBytes();
+        if (elementBytes != null) {
+          batchValues[batchSize++] = extractLongFromBytes(elementBytes, fieldPattern, fieldPatternSpaced);
+        }
+      }
 
       if (batchSize == BATCH_SIZE) {
         count += countFiltered(batchValues, batchSize, filterOp, filterValue);
@@ -229,6 +288,34 @@ public final class VectorizedGroupByExec {
     }
 
     return count;
+  }
+
+  /**
+   * Extract a long field value directly from a buffer range without copying.
+   */
+  private static long extractLongFromBuffer(byte[] buf, int start, int end, byte[] pattern, byte[] patternSpaced) {
+    int pos = indexOf(buf, pattern, start, end);
+    if (pos < 0) {
+      pos = indexOf(buf, patternSpaced, start, end);
+    }
+    if (pos < 0)
+      return 0;
+
+    pos += pattern.length;
+    while (pos < end && (buf[pos] == ' ' || buf[pos] == '\t'))
+      pos++;
+
+    boolean negative = false;
+    if (pos < end && buf[pos] == '-') {
+      negative = true;
+      pos++;
+    }
+    long value = 0;
+    while (pos < end && buf[pos] >= '0' && buf[pos] <= '9') {
+      value = value * 10 + (buf[pos] - '0');
+      pos++;
+    }
+    return negative ? -value : value;
   }
 
   /**
