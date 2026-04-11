@@ -27,10 +27,20 @@
  */
 package io.brackit.query.block;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicLong;
 
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.atomic.Int32;
@@ -49,8 +59,10 @@ import io.brackit.query.expr.SequenceExpr;
 import io.brackit.query.function.FunctionExpr;
 import io.brackit.query.function.bit.Delay;
 import io.brackit.query.operator.TupleImpl;
+import io.brackit.query.util.Cfg;
 import io.brackit.query.util.aggregator.Aggregate;
 import io.brackit.query.util.aggregator.Grouping;
+import io.brackit.query.util.sort.TupleSerializer;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
@@ -60,11 +72,15 @@ import io.brackit.query.jdm.Sequence;
  */
 public class GroupBy implements Block {
 
+  private static final long DEFAULT_MEMORY_BUDGET = Cfg.asLong("io.brackit.query.groupby.memory_budget",
+                                                               Runtime.getRuntime().maxMemory() / 4);
+
   final int[] groupSpecs; // positions of grouping variables
   final int[] addAggSpecs;
   final Aggregate defaultAgg;
   final Aggregate[] addAggs;
   final boolean sequential;
+  final long memoryBudget;
 
   private class SequentialGroupBy extends SerialSink {
     final Sink sink;
@@ -221,6 +237,13 @@ public class GroupBy implements Block {
   private class HashGroupBy extends ConcurrentSink {
     final Sink sink;
     final ConcurrentHashMap<Key, Grouping> map;
+    final AtomicLong currentSize = new AtomicLong();
+
+    // Spill state
+    private static final int NUM_PARTITIONS = 64;
+    volatile boolean spilled;
+    File[] partitionFiles;
+    OutputStream[] partitionStreams;
 
     HashGroupBy(Sink sink) {
       this.sink = sink;
@@ -245,6 +268,42 @@ public class GroupBy implements Block {
           }
         }
         grp.add(key.val, buf[i]);
+        currentSize.addAndGet(TupleSerializer.estimateSize(buf[i]));
+      }
+
+      if (currentSize.get() > memoryBudget) {
+        spillPartitions();
+      }
+    }
+
+    private synchronized void spillPartitions() throws QueryException {
+      if (currentSize.get() <= memoryBudget) {
+        return; // another thread already spilled
+      }
+      try {
+        if (partitionFiles == null) {
+          partitionFiles = new File[NUM_PARTITIONS];
+          partitionStreams = new OutputStream[NUM_PARTITIONS];
+          for (int i = 0; i < NUM_PARTITIONS; i++) {
+            partitionFiles[i] = File.createTempFile("blk-grp-" + i + "-", ".spill");
+            partitionFiles[i].deleteOnExit();
+            partitionStreams[i] = new BufferedOutputStream(new FileOutputStream(partitionFiles[i], true));
+          }
+        }
+        // Emit partial aggregates and write to partition files
+        for (var entry : map.entrySet()) {
+          Key key = entry.getKey();
+          Grouping grp = entry.getValue();
+          Tuple emitted = grp.emit();
+          grp.clear();
+          int partition = (key.hash & 0x7FFFFFFF) % NUM_PARTITIONS;
+          TupleSerializer.write(partitionStreams[partition], emitted);
+        }
+        map.clear();
+        currentSize.set(0);
+        spilled = true;
+      } catch (IOException e) {
+        throw new QueryException(e, io.brackit.query.ErrorCode.BIT_DYN_INT_ERROR);
       }
     }
 
@@ -252,28 +311,77 @@ public class GroupBy implements Block {
     protected void doEnd() throws QueryException {
       try {
         sink.begin();
-        Iterator<Key> it = map.keySet().iterator();
-        // Use larger buffer for better throughput (matches typical L1 cache line sizes)
-        int bufSize = 512;
-        Tuple[] buf = new Tuple[bufSize];
-        int len = 0;
-        while (it.hasNext()) {
-          Key key = it.next();
-          Grouping grp = map.get(key);
-          it.remove();
-          buf[len++] = emit(grp);
-          if (len == bufSize) {
+
+        if (spilled) {
+          // Flush remaining in-memory groups to partitions
+          if (!map.isEmpty()) {
+            spillPartitions();
+          }
+          // Close partition streams
+          for (int i = 0; i < NUM_PARTITIONS; i++) {
+            if (partitionStreams[i] != null) {
+              partitionStreams[i].close();
+              partitionStreams[i] = null;
+            }
+          }
+          // Process each partition: read, re-aggregate, emit
+          int bufSize = 512;
+          Tuple[] buf = new Tuple[bufSize];
+          for (int p = 0; p < NUM_PARTITIONS; p++) {
+            if (partitionFiles[p] == null || !partitionFiles[p].exists() || partitionFiles[p].length() == 0) {
+              continue;
+            }
+            Map<Key, Grouping> partMap = new LinkedHashMap<>();
+            try (var in = new BufferedInputStream(new FileInputStream(partitionFiles[p]))) {
+              Tuple t;
+              while ((t = TupleSerializer.read(in)) != null) {
+                Atomic[] gks = Grouping.groupingKeys(groupSpecs, t);
+                Key key = new Key(gks);
+                Grouping grp = partMap.computeIfAbsent(key,
+                                                       k -> new Grouping(groupSpecs, addAggSpecs, defaultAgg, addAggs));
+                grp.add(gks, t);
+              }
+            }
+            partitionFiles[p].delete();
+            int len = 0;
+            for (var entry : partMap.entrySet()) {
+              buf[len++] = emit(entry.getValue());
+              if (len == bufSize) {
+                sink.output(buf, len);
+                len = 0;
+              }
+            }
+            if (len > 0) {
+              sink.output(buf, len);
+            }
+            partMap.clear();
+          }
+        } else {
+          // No spill — emit directly from in-memory map
+          Iterator<Key> it = map.keySet().iterator();
+          int bufSize = 512;
+          Tuple[] buf = new Tuple[bufSize];
+          int len = 0;
+          while (it.hasNext()) {
+            Key key = it.next();
+            Grouping grp = map.get(key);
+            it.remove();
+            buf[len++] = emit(grp);
+            if (len == bufSize) {
+              sink.output(buf, len);
+              len = 0;
+            }
+          }
+          if (len > 0) {
             sink.output(buf, len);
-            // Reuse buffer - just reset length (entries will be overwritten)
-            len = 0;
           }
         }
-        if (len > 0) {
-          sink.output(buf, len);
-        }
         sink.end();
+      } catch (IOException e) {
+        throw new QueryException(e, io.brackit.query.ErrorCode.BIT_DYN_INT_ERROR);
       } finally {
         map.clear();
+        cleanupPartitions();
       }
     }
 
@@ -281,6 +389,29 @@ public class GroupBy implements Block {
     protected void doFail() throws QueryException {
       sink.fail();
       map.clear();
+      cleanupPartitions();
+    }
+
+    private void cleanupPartitions() {
+      if (partitionStreams != null) {
+        for (int i = 0; i < partitionStreams.length; i++) {
+          if (partitionStreams[i] != null) {
+            try {
+              partitionStreams[i].close();
+            } catch (IOException ignored) {
+            }
+            partitionStreams[i] = null;
+          }
+        }
+      }
+      if (partitionFiles != null) {
+        for (File f : partitionFiles) {
+          if (f != null && f.exists()) {
+            f.delete();
+          }
+        }
+        partitionFiles = null;
+      }
     }
 
     private Tuple emit(Grouping grp) throws QueryException {
@@ -291,11 +422,16 @@ public class GroupBy implements Block {
   }
 
   public GroupBy(Aggregate dftAgg, Aggregate[] addAggs, int grpSpecCnt, boolean sequential) {
+    this(dftAgg, addAggs, grpSpecCnt, sequential, DEFAULT_MEMORY_BUDGET);
+  }
+
+  public GroupBy(Aggregate dftAgg, Aggregate[] addAggs, int grpSpecCnt, boolean sequential, long memoryBudget) {
     this.defaultAgg = dftAgg;
     this.addAggs = addAggs;
     this.groupSpecs = new int[grpSpecCnt];
     this.addAggSpecs = new int[addAggs.length];
     this.sequential = sequential;
+    this.memoryBudget = memoryBudget;
   }
 
   @Override
