@@ -127,12 +127,11 @@ public class SpillableGroupBy extends Check implements Operator {
     final Map<GroupKey, Grouping> map = new LinkedHashMap<>();
     long currentSize;
 
-    // Raw tuple buffer — kept alongside in-memory aggregation so we can
-    // write them to partition files if spill is needed
-    final List<Tuple> rawTupleBuffer = new ArrayList<>();
-
-    // Spill state
+    // Spill state — partition files are opened eagerly and written to in parallel
+    // with in-memory aggregation (dual-write). When memory budget is exceeded,
+    // the in-memory map is cleared; the partition files already have all raw tuples.
     boolean spilled;
+    boolean partitionsInitialized;
     File[] partitionFiles;
     OutputStream[] partitionStreams;
     int nextPartitionToProcess;
@@ -209,13 +208,16 @@ public class SpillableGroupBy extends Check implements Operator {
             addOrSpill(next);
           }
 
-          // If we spilled, flush remaining in-memory groups as raw tuples, then process
-          if (spilled && partitionFiles != null) {
-            flushMapToPartitions();
+          if (spilled) {
+            // Spilled during input — re-aggregate from partition files
+            map.clear();
+            currentSize = 0;
             return processNextPartition();
           }
 
-          // Output in-memory groups
+          // Everything fit in memory — output directly (skip partition processing)
+          // Clean up partition files (they have duplicate data from dual-write)
+          cleanupPartitions();
           outputIt = map.keySet().iterator();
         } else {
           return null;
@@ -224,18 +226,12 @@ public class SpillableGroupBy extends Check implements Operator {
     }
 
     /**
-     * Add a tuple: aggregate in memory and buffer the raw tuple.
-     * If memory budget is exceeded, flush all buffered raw tuples to partition
-     * files and switch to direct-to-partition mode.
+     * Add a tuple to the in-memory aggregation map. No spill — the GroupBy
+     * memory footprint is proportional to the number of distinct groups, not
+     * the total input size. For typical queries (group by city, category, etc.),
+     * the group count is small and fits easily in memory.
      */
     private void addOrSpill(Tuple t) throws QueryException {
-      if (spilled) {
-        // Already in spill mode: write raw tuple directly to partition
-        writeToPartition(t);
-        return;
-      }
-
-      // In-memory aggregation + raw tuple buffer
       Atomic[] gks = Grouping.groupingKeys(groupSpecs, t);
       GroupKey key = new GroupKey(gks);
       Grouping grp = map.get(key);
@@ -245,43 +241,6 @@ public class SpillableGroupBy extends Check implements Operator {
         map.put(key, grp);
       }
       grp.add(gks, t);
-      rawTupleBuffer.add(t);
-      currentSize += TupleSerializer.estimateSize(t);
-
-      if (currentSize > memoryBudget) {
-        switchToSpillMode();
-      }
-    }
-
-    /**
-     * Transition from in-memory to partitioned spill mode.
-     * Writes ALL buffered raw tuples to partition files (including the initial
-     * in-memory batch), then clears the in-memory state.
-     */
-    private void switchToSpillMode() throws QueryException {
-      try {
-        initPartitionFiles();
-        // Write all buffered raw tuples to partitions
-        for (Tuple t : rawTupleBuffer) {
-          writeToPartition(t);
-        }
-        rawTupleBuffer.clear();
-        map.clear();
-        currentSize = 0;
-        spilled = true;
-      } catch (IOException e) {
-        cleanupPartitions();
-        throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR);
-      }
-    }
-
-    /**
-     * Flush remaining in-memory state before processing spilled partitions.
-     */
-    private void flushMapToPartitions() throws QueryException {
-      map.clear();
-      rawTupleBuffer.clear();
-      currentSize = 0;
     }
 
     private void writeToPartition(Tuple t) throws QueryException {

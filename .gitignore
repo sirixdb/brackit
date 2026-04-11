@@ -6,3 +6,5 @@
 .project
 .settings
 target
+.idea/
+default.iprof
