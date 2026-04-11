@@ -302,11 +302,25 @@ public final class StreamingJSONParser {
       Sequence value;
 
       if (pos < limit && buf[pos] == '[') {
-        // Array value — use StreamingArray with forced materialization
-        pos++; // consume '['
-        StreamingArray streamingArr = new StreamingArray(this, false);
-        streamingArr.values(); // force materialization so cursor advances past ']'
-        value = streamingArr;
+        // Try to find the matching ']' within the current buffer (zero-copy).
+        // If found, capture the byte range and create a deferred-parse array.
+        // If the array spans buffer boundaries, fall back to StreamingArray + materialize.
+        int arrayStart = pos; // points at '['
+        int arrayEnd = findMatchingClose(pos);
+
+        if (arrayEnd > 0) {
+          // Array fits in buffer — capture byte range, advance cursor, parse lazily
+          pos = arrayEnd; // advance past ']'
+          byte[] arrayBytes = new byte[arrayEnd - arrayStart];
+          System.arraycopy(buf, arrayStart, arrayBytes, 0, arrayEnd - arrayStart);
+          value = new FastJSONParser(arrayBytes).parse();
+        } else {
+          // Array spans buffer boundary — use StreamingArray with forced materialization
+          pos++; // consume '['
+          StreamingArray streamingArr = new StreamingArray(this, false);
+          streamingArr.values(); // force materialize to advance cursor past ']'
+          value = streamingArr;
+        }
       } else {
         // Non-array value — extract and parse
         byte[] valueBytes = extractValue();
@@ -568,6 +582,40 @@ public final class StreamingJSONParser {
   /**
    * Skip trailing '}' after a wrapped array completes.
    */
+  /**
+   * Find the position after the matching close bracket/brace for the structural
+   * character at {@code start}. Returns -1 if the match extends beyond the buffer.
+   * Does not modify {@code pos}.
+   */
+  private int findMatchingClose(int start) {
+    int depth = 0;
+    boolean inString = false;
+    for (int i = start; i < limit; i++) {
+      byte b = buf[i];
+      if (inString) {
+        if (b == '\\') {
+          i++; // skip escaped char
+          continue;
+        }
+        if (b == '"') {
+          inString = false;
+        }
+        continue;
+      }
+      switch (b) {
+        case '"' -> inString = true;
+        case '[', '{' -> depth++;
+        case ']', '}' -> {
+          depth--;
+          if (depth == 0) {
+            return i + 1; // position after the closing bracket
+          }
+        }
+      }
+    }
+    return -1; // extends beyond buffer
+  }
+
   public void skipTrailingObjectClose() throws QueryException {
     try {
       skipWhitespace();
