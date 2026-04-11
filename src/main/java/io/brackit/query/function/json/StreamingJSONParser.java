@@ -118,6 +118,53 @@ public final class StreamingJSONParser {
   }
 
   /**
+   * Return the raw bytes of the next array element without parsing.
+   * Zero allocation — returns a byte[] that can be scanned for field values
+   * without creating any JSON objects.
+   * Returns null when the array is exhausted.
+   */
+  public byte[] nextArrayElementBytes() throws QueryException {
+    try {
+      ensureAvailable();
+      skipWhitespace();
+
+      if (pos >= limit && eof)
+        return null;
+
+      byte b = buf[pos];
+      if (b == ']') {
+        pos++;
+        return null;
+      }
+      if (b == ',') {
+        pos++;
+        ensureAvailable();
+        skipWhitespace();
+        if (pos >= limit && eof)
+          return null;
+        if (buf[pos] == ']') {
+          pos++;
+          return null;
+        }
+      }
+
+      // Fast path: find element boundary in buffer
+      int elementEnd = findValueEnd(pos);
+      if (elementEnd > 0) {
+        byte[] result = new byte[elementEnd - pos];
+        System.arraycopy(buf, pos, result, 0, elementEnd - pos);
+        pos = elementEnd;
+        return result;
+      }
+
+      // Slow path: element spans buffer
+      return extractValue();
+    } catch (IOException e) {
+      throw new QueryException(JSONFun.ERR_PARSING_ERROR, "I/O error: %s", e.getMessage());
+    }
+  }
+
+  /**
    * Called by StreamingArray to get the next array element's bytes.
    * Returns null when the array is exhausted (']' found).
    * <p>

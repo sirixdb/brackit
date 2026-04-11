@@ -72,39 +72,82 @@ public final class VectorizedGroupByExec {
    * @return list of {"field": key, "count": N} result objects
    */
   public static List<Item> executeGroupByCount(StreamingJSONParser parser, String groupField) throws QueryException {
-    // Group state: key → count. Only as many entries as distinct groups.
     HashMap<String, long[]> groups = new HashMap<>();
-
-    // Reusable batch buffer — parsed field values, no per-record object allocation
     String[] batchKeys = new String[BATCH_SIZE];
     int batchSize = 0;
 
-    // Reusable parser for per-element parsing
-    FastJSONParser reusableParser = null;
+    // Pre-compute the field pattern for direct byte-level extraction
+    byte[] fieldPattern = ("\"" + groupField + "\":").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    byte[] fieldPatternSpaced = ("\"" + groupField + "\" :").getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
-    // Process all elements from the streaming array
-    Item element;
-    while ((element = parser.nextArrayElement()) != null) {
-      // Extract the group key from the parsed object
-      String key = extractStringField(element, groupField);
+    // Direct byte-level field extraction — no CompactObject creation
+    byte[] elementBytes;
+    while ((elementBytes = parser.nextArrayElementBytes()) != null) {
+      String key = extractFieldFromBytes(elementBytes, fieldPattern, fieldPatternSpaced);
       if (key != null) {
         batchKeys[batchSize++] = key;
       }
 
-      // Process batch when full
       if (batchSize == BATCH_SIZE) {
         aggregateBatch(groups, batchKeys, batchSize);
         batchSize = 0;
       }
     }
 
-    // Flush remaining
     if (batchSize > 0) {
       aggregateBatch(groups, batchKeys, batchSize);
     }
 
-    // Build result
     return buildResult(groups, groupField);
+  }
+
+  /**
+   * Extract a string field value directly from JSON bytes without creating any objects.
+   * Scans for the field pattern (e.g., "city":) and extracts the value string.
+   */
+  private static String extractFieldFromBytes(byte[] bytes, byte[] pattern, byte[] patternSpaced) {
+    int pos = indexOf(bytes, pattern, 0);
+    if (pos < 0) {
+      pos = indexOf(bytes, patternSpaced, 0);
+    }
+    if (pos < 0)
+      return null;
+
+    // Advance past the pattern to the value
+    pos += pattern.length;
+    if (pos < bytes.length && bytes[pos] == ' ')
+      pos++; // skip optional space
+
+    // Value should start with '"'
+    if (pos >= bytes.length || bytes[pos] != '"')
+      return null;
+    pos++; // skip opening quote
+
+    // Find closing quote (handle escapes)
+    int start = pos;
+    while (pos < bytes.length) {
+      if (bytes[pos] == '\\') {
+        pos += 2; // skip escape
+        continue;
+      }
+      if (bytes[pos] == '"') {
+        return new String(bytes, start, pos - start, java.nio.charset.StandardCharsets.UTF_8);
+      }
+      pos++;
+    }
+    return null;
+  }
+
+  private static int indexOf(byte[] haystack, byte[] needle, int from) {
+    outer:
+    for (int i = from; i <= haystack.length - needle.length; i++) {
+      for (int j = 0; j < needle.length; j++) {
+        if (haystack[i + j] != needle[j])
+          continue outer;
+      }
+      return i;
+    }
+    return -1;
   }
 
   /**
@@ -168,9 +211,12 @@ public final class VectorizedGroupByExec {
     long[] batchValues = new long[BATCH_SIZE];
     int batchSize = 0;
 
-    Item element;
-    while ((element = parser.nextArrayElement()) != null) {
-      batchValues[batchSize++] = extractLongField(element, filterField);
+    byte[] fieldPattern = ("\"" + filterField + "\":").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    byte[] fieldPatternSpaced = ("\"" + filterField + "\" :").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
+    byte[] elementBytes;
+    while ((elementBytes = parser.nextArrayElementBytes()) != null) {
+      batchValues[batchSize++] = extractLongFromBytes(elementBytes, fieldPattern, fieldPatternSpaced);
 
       if (batchSize == BATCH_SIZE) {
         count += countFiltered(batchValues, batchSize, filterOp, filterValue);
@@ -183,6 +229,35 @@ public final class VectorizedGroupByExec {
     }
 
     return count;
+  }
+
+  /**
+   * Extract a long field value directly from JSON bytes.
+   */
+  private static long extractLongFromBytes(byte[] bytes, byte[] pattern, byte[] patternSpaced) {
+    int pos = indexOf(bytes, pattern, 0);
+    if (pos < 0) {
+      pos = indexOf(bytes, patternSpaced, 0);
+    }
+    if (pos < 0)
+      return 0;
+
+    pos += pattern.length;
+    while (pos < bytes.length && (bytes[pos] == ' ' || bytes[pos] == '\t'))
+      pos++;
+
+    // Parse integer directly from bytes
+    boolean negative = false;
+    if (pos < bytes.length && bytes[pos] == '-') {
+      negative = true;
+      pos++;
+    }
+    long value = 0;
+    while (pos < bytes.length && bytes[pos] >= '0' && bytes[pos] <= '9') {
+      value = value * 10 + (bytes[pos] - '0');
+      pos++;
+    }
+    return negative ? -value : value;
   }
 
   // ==================== Batch aggregation ====================
