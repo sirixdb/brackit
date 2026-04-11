@@ -507,10 +507,10 @@ public final class StreamingJSONParser {
       structuralValid = true;
       return;
     }
-    // Allocate index array (worst case: every byte is structural)
-    // In practice, ~10-15% of JSON bytes are structural, so limit/4 is generous
-    if (structuralIndices == null || structuralIndices.length < limit / 4) {
-      structuralIndices = new int[Math.max(limit / 4, 1024)];
+    // Allocate index array — worst case every byte is structural.
+    int needed = limit;
+    if (structuralIndices == null || structuralIndices.length < needed) {
+      structuralIndices = new int[needed];
     }
     structuralCount = io.brackit.query.util.simd.VectorOps.findStructuralIndices(buf, 0, limit, structuralIndices);
     structuralPos = 0;
