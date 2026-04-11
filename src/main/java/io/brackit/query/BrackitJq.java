@@ -39,7 +39,9 @@ import java.util.List;
 import io.brackit.query.atomic.Bool;
 import io.brackit.query.atomic.Null;
 import io.brackit.query.atomic.Str;
+import io.brackit.query.compiler.BlockCompileChain;
 import io.brackit.query.compiler.CompileChain;
+import io.brackit.query.util.Cfg;
 import io.brackit.query.function.json.FastJSONParser;
 import io.brackit.query.function.json.JSONParser;
 import io.brackit.query.function.json.StreamingJSONParser;
@@ -327,9 +329,12 @@ public class BrackitJq {
   /**
    * Execute a JSONiq query with the given context item.
    */
+  private static final boolean PARALLEL = Cfg.asBool("io.brackit.query.parallel",
+                                                     Runtime.getRuntime().availableProcessors() > 1);
+
   private static Sequence executeQuery(String queryString, Item contextItem) throws QueryException {
     QueryContext ctx = new BrackitQueryContext();
-    CompileChain compileChain = new CompileChain();
+    CompileChain compileChain = PARALLEL ? new BlockCompileChain() : new CompileChain();
 
     if (contextItem != null) {
       ctx.setContextItem(contextItem);

@@ -33,6 +33,7 @@ import java.util.List;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.block.Block;
 import io.brackit.query.block.BlockChain;
+import io.brackit.query.block.MorselBlock;
 import io.brackit.query.block.Count;
 import io.brackit.query.block.ForBind;
 import io.brackit.query.block.GroupBy;
@@ -60,6 +61,7 @@ import io.brackit.query.util.sort.Ordering;
 public class BlockPipelineStrategy implements PipelineStrategy {
 
   private boolean ordered = true;
+  private boolean morselParallel = false;
 
   public BlockPipelineStrategy() {
   }
@@ -70,6 +72,10 @@ public class BlockPipelineStrategy implements PipelineStrategy {
 
   public void setOrdered(boolean ordered) {
     this.ordered = ordered;
+  }
+
+  public void setMorselParallel(boolean morselParallel) {
+    this.morselParallel = morselParallel;
   }
 
   @Override
@@ -109,6 +115,11 @@ public class BlockPipelineStrategy implements PipelineStrategy {
       }
       case XQ.ForBind -> {
         blocks.add(forBindBlock(node, compiler));
+        if (morselParallel) {
+          // Insert morsel parallelism boundary after the scan (ForBind).
+          // Dispatches morsel-sized batches to ForkJoinPool workers.
+          blocks.add(new MorselBlock());
+        }
         collectBlocks(blocks, node.getLastChild(), compiler);
       }
       case XQ.LetBind -> {

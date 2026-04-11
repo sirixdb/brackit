@@ -57,10 +57,18 @@ public class BlockTranslator extends Compiler {
     if (parallelOpt != null && "true".equalsIgnoreCase(parallelOpt.stringValue())) {
       strategy.setOrdered(false);
     }
+    Str morselOpt = options.get(new QNm("morsel"));
+    if (morselOpt != null && "true".equalsIgnoreCase(morselOpt.stringValue())) {
+      strategy.setMorselParallel(true);
+    }
     return strategy;
   }
 
   public void setOrdered(boolean ordered) {
     blockStrategy.setOrdered(ordered);
+  }
+
+  public void setMorselParallel(boolean morselParallel) {
+    blockStrategy.setMorselParallel(morselParallel);
   }
 }

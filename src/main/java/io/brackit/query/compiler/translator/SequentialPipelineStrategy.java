@@ -36,6 +36,7 @@ import io.brackit.query.operator.Count;
 import io.brackit.query.operator.ForBind;
 import io.brackit.query.operator.GroupBy;
 import io.brackit.query.operator.NLJoin;
+import io.brackit.query.operator.SpillableGroupBy;
 import io.brackit.query.util.Cmp;
 import io.brackit.query.util.aggregator.Aggregate;
 import io.brackit.query.util.sort.Ordering;
@@ -157,7 +158,7 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       addAggs[i] = bnd.agg;
     }
     boolean sequential = node.checkProperty("sequential");
-    GroupBy groupBy = new GroupBy(in, dftAgg, addAggs, grpSpecCnt, sequential);
+    SpillableGroupBy groupBy = new SpillableGroupBy(in, dftAgg, addAggs, grpSpecCnt, sequential);
     // resolve positions grouping variables
     for (int i = 0; i < grpSpecCnt; i++) {
       QNm grpVarName = (QNm) node.getChild(i).getChild(0).getValue();

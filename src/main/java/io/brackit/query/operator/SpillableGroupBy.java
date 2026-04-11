@@ -46,6 +46,7 @@ import io.brackit.query.QueryContext;
 import io.brackit.query.QueryException;
 import io.brackit.query.Tuple;
 import io.brackit.query.atomic.Atomic;
+import io.brackit.query.compiler.translator.Reference;
 import io.brackit.query.util.Cfg;
 import io.brackit.query.util.aggregator.Aggregate;
 import io.brackit.query.util.aggregator.Grouping;
@@ -77,11 +78,12 @@ public class SpillableGroupBy extends Check implements Operator {
   final Aggregate[] addAggs;
   final long memoryBudget;
 
-  public SpillableGroupBy(Operator in, Aggregate dftAgg, Aggregate[] addAggs, int grpSpecCnt) {
-    this(in, dftAgg, addAggs, grpSpecCnt, DEFAULT_MEMORY_BUDGET);
+  public SpillableGroupBy(Operator in, Aggregate dftAgg, Aggregate[] addAggs, int grpSpecCnt, boolean sequential) {
+    this(in, dftAgg, addAggs, grpSpecCnt, sequential, DEFAULT_MEMORY_BUDGET);
   }
 
-  public SpillableGroupBy(Operator in, Aggregate dftAgg, Aggregate[] addAggs, int grpSpecCnt, long memoryBudget) {
+  public SpillableGroupBy(Operator in, Aggregate dftAgg, Aggregate[] addAggs, int grpSpecCnt, boolean sequential,
+      long memoryBudget) {
     this.in = in;
     this.defaultAgg = dftAgg;
     this.addAggs = addAggs;
@@ -90,23 +92,31 @@ public class SpillableGroupBy extends Check implements Operator {
     this.memoryBudget = memoryBudget;
   }
 
+  public Reference group(final int groupSpecNo) {
+    return pos -> groupSpecs[groupSpecNo] = pos;
+  }
+
+  public Reference aggregate(final int addAggNo) {
+    return pos -> addAggSpecs[addAggNo] = pos;
+  }
+
   @Override
   public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-    int tupleSize = Math.max(tuple.getSize(), 1);
     Cursor c = in.create(ctx, tuple);
+    int tupleSize = in.tupleWidth(tuple.getSize());
     return new SpillableHashGroupByCursor(c, tupleSize);
   }
 
   @Override
   public Cursor create(QueryContext ctx, Tuple[] buf, int len) throws QueryException {
-    int tupleSize = Math.max(buf[0].getSize(), 1);
     Cursor c = in.create(ctx, buf, len);
+    int tupleSize = in.tupleWidth(buf[0].getSize());
     return new SpillableHashGroupByCursor(c, tupleSize);
   }
 
   @Override
   public int tupleWidth(int initSize) {
-    return in.tupleWidth(initSize);
+    return in.tupleWidth(initSize) + addAggs.length;
   }
 
   private class SpillableHashGroupByCursor implements Cursor {
@@ -125,6 +135,7 @@ public class SpillableGroupBy extends Check implements Operator {
 
     // Output iteration
     Iterator<GroupKey> outputIt;
+    Tuple next;
 
     SpillableHashGroupByCursor(Cursor c, int tupleSize) {
       this.c = c;
@@ -146,51 +157,75 @@ public class SpillableGroupBy extends Check implements Operator {
 
     @Override
     public Tuple next(QueryContext ctx) throws QueryException {
-      // Phase 1: Output from in-memory aggregation or current partition
-      if (outputIt != null) {
-        if (outputIt.hasNext()) {
-          GroupKey key = outputIt.next();
-          Grouping grp = map.get(key);
-          outputIt.remove();
-          Tuple result = grp.emit();
-          grp.clear();
-          return result;
+      while (true) {
+        // Phase 1: Output from in-memory aggregation or current partition
+        if (outputIt != null) {
+          if (outputIt.hasNext()) {
+            GroupKey key = outputIt.next();
+            Grouping grp = map.get(key);
+            outputIt.remove();
+            Tuple result = grp.emit();
+            grp.clear();
+            return result;
+          }
+          outputIt = null;
+          map.clear();
+          currentSize = 0;
         }
-        outputIt = null;
-        map.clear();
-        currentSize = 0;
-      }
 
-      // Phase 2: If we have spilled partitions, process the next one
-      if (spilled && partitionFiles != null) {
-        return processNextPartition();
-      }
+        // Phase 2: If we have spilled partitions, process the next one
+        if (spilled && partitionFiles != null) {
+          return processNextPartition();
+        }
 
-      // Phase 3: Read all input, aggregating in memory or spilling
-      Tuple t;
-      while ((t = c.next(ctx)) != null) {
-        long tupleEstimate = TupleSerializer.estimateSize(t);
-        addToMap(t);
-        currentSize += tupleEstimate;
+        // Phase 3: Read input, respecting check/dead/separate semantics
+        Tuple t;
+        if ((t = next) != null || (t = c.next(ctx)) != null) {
+          // Dead tuple pass-through (matches GroupBy.HashGroupBy behavior)
+          if (check && dead(t)) {
+            if (map.isEmpty()) {
+              next = null;
+              Grouping grp = new Grouping(groupSpecs, addAggSpecs, defaultAgg, addAggs, tupleSize);
+              grp.add(t);
+              return grp.emit();
+            } else {
+              // Output accumulated groups first, keep this tuple for next call
+              outputIt = map.keySet().iterator();
+              continue;
+            }
+          }
 
-        if (currentSize > memoryBudget) {
-          spillAllPartitions();
+          addToMap(t);
+          currentSize += TupleSerializer.estimateSize(t);
+
+          // Read remaining tuples for this group segment
+          while ((next = c.next(ctx)) != null) {
+            if (check && separate(t, next)) {
+              break;
+            }
+            addToMap(next);
+            currentSize += TupleSerializer.estimateSize(next);
+
+            if (currentSize > memoryBudget) {
+              spillAllPartitions();
+            }
+          }
+
+          // If we spilled, process partitions
+          if (spilled && partitionFiles != null) {
+            // Flush remaining in-memory groups to partitions too
+            if (!map.isEmpty()) {
+              spillAllPartitions();
+            }
+            return processNextPartition();
+          }
+
+          // Output in-memory groups
+          outputIt = map.keySet().iterator();
+        } else {
+          return null;
         }
       }
-
-      // All input consumed
-      if (spilled && partitionFiles != null) {
-        // Process spilled partitions
-        return processNextPartition();
-      }
-
-      // Everything fit in memory — emit directly
-      if (!map.isEmpty()) {
-        outputIt = map.keySet().iterator();
-        return next(ctx);
-      }
-
-      return null;
     }
 
     private void addToMap(Tuple t) throws QueryException {
