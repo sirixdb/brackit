@@ -32,19 +32,19 @@ package io.brackit.query.util.vector;
  *
  * Inspired by DuckDB's aggregate hash table design:
  * <ul>
- *   <li><b>Linear probing</b> for cache-line friendly collision resolution.
- *       Sequential memory access during probing benefits from hardware prefetching.</li>
- *   <li><b>Salt bits</b> in each slot for fast rejection without following pointers.
- *       The upper 16 bits of the hash are stored as a "salt". During probing,
- *       salt is compared first; with a uniform hash, this rejects 65535/65536
- *       of false positives without a cache miss to the actual key.</li>
- *   <li><b>Flat arrays</b> instead of linked entries. The directory is a single
- *       {@code long[]} where each entry packs salt + index into 8 bytes.</li>
+ * <li><b>Linear probing</b> for cache-line friendly collision resolution.
+ * Sequential memory access during probing benefits from hardware prefetching.</li>
+ * <li><b>Salt bits</b> in each slot for fast rejection without following pointers.
+ * The upper 16 bits of the hash are stored as a "salt". During probing,
+ * salt is compared first; with a uniform hash, this rejects 65535/65536
+ * of false positives without a cache miss to the actual key.</li>
+ * <li><b>Flat arrays</b> instead of linked entries. The directory is a single
+ * {@code long[]} where each entry packs salt + index into 8 bytes.</li>
  * </ul>
  *
  * Entry format (64 bits):
  * <pre>
- *   [16 bits: salt] [16 bits: reserved] [32 bits: payload index]
+ * [16 bits: salt] [16 bits: reserved] [32 bits: payload index]
  * </pre>
  *
  * @author Brackit Project Team

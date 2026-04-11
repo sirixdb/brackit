@@ -39,9 +39,9 @@ import io.brackit.query.jdm.Sequence;
  *
  * Supports multiple vector types for compressed execution:
  * <ul>
- *   <li>{@link VectorType#FLAT} - Standard contiguous array</li>
- *   <li>{@link VectorType#CONSTANT} - Single value for all entries (broadcasts)</li>
- *   <li>{@link VectorType#DICTIONARY} - Index array into a compact dictionary</li>
+ * <li>{@link VectorType#FLAT} - Standard contiguous array</li>
+ * <li>{@link VectorType#CONSTANT} - Single value for all entries (broadcasts)</li>
+ * <li>{@link VectorType#DICTIONARY} - Index array into a compact dictionary</li>
  * </ul>
  *
  * @author Brackit Project Team

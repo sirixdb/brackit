@@ -370,9 +370,7 @@ public class MechanicalSympathyTest {
 
   @Test
   public void testDataChunk_create() {
-    DataChunk chunk = DataChunk.create(
-        ColumnVector.DataType.INT64,
-        ColumnVector.DataType.DOUBLE);
+    DataChunk chunk = DataChunk.create(ColumnVector.DataType.INT64, ColumnVector.DataType.DOUBLE);
     assertEquals(2, chunk.getColumnCount());
     assertNotNull(chunk.getColumn(0));
     assertNotNull(chunk.getColumn(1));

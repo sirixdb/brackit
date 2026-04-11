@@ -47,8 +47,8 @@ import io.brackit.query.jdm.Sequence;
  * <p>Run with:
  * <pre>
  * mvn test-compile exec:java \
- *   -Dexec.mainClass="io.brackit.query.QueryBenchmark" \
- *   -Dexec.classpathScope=test
+ * -Dexec.mainClass="io.brackit.query.QueryBenchmark" \
+ * -Dexec.classpathScope=test
  * </pre>
  *
  * <p>Override sizes with -Dexec.args="10000 50000 100000"</p>
@@ -59,17 +59,16 @@ public class QueryBenchmark {
 
   private static final int WARMUP = 3;
   private static final int ITERATIONS = 10;
-  private static final int[] DEFAULT_SIZES = {10_000, 100_000, 500_000, 1_000_000};
+  private static final int[] DEFAULT_SIZES = { 10_000, 100_000, 500_000, 1_000_000 };
 
-  private static final String[] DEPTS =
-      {"Engineering", "Sales", "Marketing", "Operations", "HR", "Finance", "Legal", "Support"};
-  private static final String[] CITIES =
-      {"New York", "London", "Tokyo", "Berlin", "Sydney", "Toronto", "Mumbai", "Sao Paulo"};
-  private static final String[] TIERS = {"platinum", "gold", "silver", "bronze"};
-  private static final String[] CATEGORIES =
-      {"Electronics", "Furniture", "Clothing", "Food", "Books", "Sports", "Tools", "Garden"};
-  private static final String[] REGIONS =
-      {"NA-East", "NA-West", "EU-West", "EU-East", "APAC", "LATAM"};
+  private static final String[] DEPTS = { "Engineering", "Sales", "Marketing", "Operations", "HR", "Finance", "Legal",
+      "Support" };
+  private static final String[] CITIES = { "New York", "London", "Tokyo", "Berlin", "Sydney", "Toronto", "Mumbai",
+      "Sao Paulo" };
+  private static final String[] TIERS = { "platinum", "gold", "silver", "bronze" };
+  private static final String[] CATEGORIES = { "Electronics", "Furniture", "Clothing", "Food", "Books", "Sports",
+      "Tools", "Garden" };
+  private static final String[] REGIONS = { "NA-East", "NA-West", "EU-West", "EU-East", "APAC", "LATAM" };
 
   public static void main(String[] args) throws Exception {
     int[] sizes = DEFAULT_SIZES;
@@ -85,8 +84,7 @@ public class QueryBenchmark {
     System.out.println("==================================================================");
     System.out.println();
     System.out.printf("  Warmup: %d iterations, Measurement: %d iterations%n", WARMUP, ITERATIONS);
-    System.out.printf("  JVM: %s %s%n", System.getProperty("java.vm.name"),
-        System.getProperty("java.vm.version"));
+    System.out.printf("  JVM: %s %s%n", System.getProperty("java.vm.name"), System.getProperty("java.vm.version"));
     long maxMem = Runtime.getRuntime().maxMemory();
     System.out.printf("  Max heap: %,d MB%n", maxMem / (1024 * 1024));
     System.out.println();
@@ -123,8 +121,7 @@ public class QueryBenchmark {
     flatJson = null;
     long flatGenMs = (System.nanoTime() - genStart) / 1_000_000;
 
-    System.out.printf("  Generating join data (%,d customers, %,d orders)...%n", size,
-        orderCount);
+    System.out.printf("  Generating join data (%,d customers, %,d orders)...%n", size, orderCount);
     genStart = System.nanoTime();
     String joinJson = generateJoinData(size);
     Item joinItem = new JSONParser(joinJson).parse();
@@ -132,59 +129,60 @@ public class QueryBenchmark {
     long joinGenMs = (System.nanoTime() - genStart) / 1_000_000;
 
     long afterMem = usedMemoryMB();
-    System.out.printf("  Data generated in %,dms + %,dms (mem: ~%,d MB)%n%n", flatGenMs,
-        joinGenMs, afterMem - beforeMem);
+    System.out.printf("  Data generated in %,dms + %,dms (mem: ~%,d MB)%n%n",
+                      flatGenMs,
+                      joinGenMs,
+                      afterMem - beforeMem);
 
     System.out.printf("  %-30s  %10s  %10s  %10s%n", "Query", "Avg (ms)", "Min (ms)", "ops/s");
-    System.out.println(
-        "  ------------------------------------------------------------------------------------");
+    System.out.println("  ------------------------------------------------------------------------------------");
 
     // -- Flat array queries --
 
-    benchQuery("filter (scan + predicate)", flatItem,
-        "for $u in $$[] where $u.age > 40 and $u.active return $u.name");
+    benchQuery("filter (scan + predicate)", flatItem, "for $u in $$[] where $u.age > 40 and $u.active return $u.name");
 
-    benchQuery("group by + 3 aggregates", flatItem,
-        "for $u in $$[] " + "group by $d := $u.dept "
-            + "return {\"dept\": $d, \"count\": count($u), "
-            + "\"avg_salary\": avg($u.salary), \"avg_score\": avg($u.score)}");
+    benchQuery("group by + 3 aggregates",
+               flatItem,
+               "for $u in $$[] " + "group by $d := $u.dept " + "return {\"dept\": $d, \"count\": count($u), "
+                   + "\"avg_salary\": avg($u.salary), \"avg_score\": avg($u.score)}");
 
-    benchQuery("group by 2 keys + sort", flatItem,
-        "for $u in $$[] where $u.active " + "group by $d := $u.dept, $c := $u.city "
-            + "let $total := sum($u.salary) " + "order by $total descending "
-            + "return {\"dept\": $d, \"city\": $c, \"headcount\": count($u), "
-            + "\"total_salary\": $total}");
+    benchQuery("group by 2 keys + sort",
+               flatItem,
+               "for $u in $$[] where $u.active " + "group by $d := $u.dept, $c := $u.city "
+                   + "let $total := sum($u.salary) " + "order by $total descending "
+                   + "return {\"dept\": $d, \"city\": $c, \"headcount\": count($u), " + "\"total_salary\": $total}");
 
-    benchQuery("5-way aggregation", flatItem,
-        "let $data := $$[] " + "return {\"total_salary\": sum($data.salary), "
-            + "\"avg_age\": avg($data.age), " + "\"min_score\": min($data.score), "
-            + "\"max_score\": max($data.score), " + "\"count\": count($data)}");
+    benchQuery("5-way aggregation",
+               flatItem,
+               "let $data := $$[] " + "return {\"total_salary\": sum($data.salary), " + "\"avg_age\": avg($data.age), "
+                   + "\"min_score\": min($data.score), " + "\"max_score\": max($data.score), "
+                   + "\"count\": count($data)}");
 
     // -- Join queries --
 
-    benchQuery("hash-join", joinItem,
-        "for $o in $$.orders[], $c in $$.customers[] " + "where $o.customer_id eq $c.id "
-            + "return {\"order\": $o.id, \"customer\": $c.name, \"amount\": $o.amount}");
+    benchQuery("hash-join",
+               joinItem,
+               "for $o in $$.orders[], $c in $$.customers[] " + "where $o.customer_id eq $c.id "
+                   + "return {\"order\": $o.id, \"customer\": $c.name, \"amount\": $o.amount}");
 
-    benchQuery("join + group + agg + sort", joinItem,
-        "for $o in $$.orders[], $c in $$.customers[] " + "where $o.customer_id eq $c.id "
-            + "group by $tier := $c.tier, $cat := $o.category "
-            + "let $revenue := sum($o.amount) " + "let $qty := sum($o.quantity) "
-            + "order by $revenue descending "
-            + "return {\"tier\": $tier, \"category\": $cat, \"revenue\": $revenue, "
-            + "\"units\": $qty, \"orders\": count($o)}");
+    benchQuery("join + group + agg + sort",
+               joinItem,
+               "for $o in $$.orders[], $c in $$.customers[] " + "where $o.customer_id eq $c.id "
+                   + "group by $tier := $c.tier, $cat := $o.category " + "let $revenue := sum($o.amount) "
+                   + "let $qty := sum($o.quantity) " + "order by $revenue descending "
+                   + "return {\"tier\": $tier, \"category\": $cat, \"revenue\": $revenue, "
+                   + "\"units\": $qty, \"orders\": count($o)}");
 
-    benchQuery("join + filter + top-N", joinItem,
-        "(for $o in $$.orders[], $c in $$.customers[] " + "where $o.customer_id eq $c.id "
-            + "and $c.tier eq \"platinum\" " + "and $o.amount > 500 "
-            + "order by $o.amount descending " + "return {\"customer\": $c.name, "
-            + "\"amount\": $o.amount, \"category\": $o.category})[0:20]");
+    benchQuery("join + filter + top-N",
+               joinItem,
+               "(for $o in $$.orders[], $c in $$.customers[] " + "where $o.customer_id eq $c.id "
+                   + "and $c.tier eq \"platinum\" " + "and $o.amount > 500 " + "order by $o.amount descending "
+                   + "return {\"customer\": $c.name, " + "\"amount\": $o.amount, \"category\": $o.category})[0:20]");
 
     System.out.println();
   }
 
-  private static void benchQuery(String label, Item contextItem, String queryString)
-      throws Exception {
+  private static void benchQuery(String label, Item contextItem, String queryString) throws Exception {
     CompileChain chain = new CompileChain();
     Query query = new Query(chain, queryString);
 
