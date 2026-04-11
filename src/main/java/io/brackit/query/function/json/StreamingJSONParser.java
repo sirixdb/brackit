@@ -64,6 +64,13 @@ public final class StreamingJSONParser {
   // Reusable parser for element-by-element parsing — avoids per-element allocation
   private FastJSONParser reusableParser;
 
+  // SIMD structural index — pre-computed positions of structural characters
+  // in the current buffer region. Rebuilt after each refill.
+  private int[] structuralIndices;
+  private int structuralCount;
+  private int structuralPos; // current position in the structural index
+  private boolean structuralValid; // whether the index covers [pos..limit)
+
   public StreamingJSONParser(InputStream in) {
     this(in, DEFAULT_BUFFER_SIZE);
   }
@@ -178,76 +185,122 @@ public final class StreamingJSONParser {
   }
 
   /**
-   * Try to find the end position of a JSON value starting at {@code start}
-   * within the current buffer. Returns the position after the value, or -1
-   * if the value extends beyond the buffer (needs slow path).
+   * Find the end position of a JSON value starting at {@code start} using the
+   * SIMD-precomputed structural index. Walks structural characters (skipping
+   * those inside strings) instead of scanning every byte.
+   * <p>
+   * Falls back to byte-by-byte scanning if the structural index is invalid.
+   * Returns -1 if the value extends beyond the buffer.
    */
   private int findValueEnd(int start) {
+    if (!structuralValid || structuralCount == 0) {
+      return findValueEndScalar(start);
+    }
+
+    // Advance structuralPos to the first index >= start
+    while (structuralPos < structuralCount && structuralIndices[structuralPos] < start) {
+      structuralPos++;
+    }
+
+    // Walk the structural index tracking depth and string state
+    int depth = 0;
+    boolean inString = false;
+
+    for (int si = structuralPos; si < structuralCount; si++) {
+      int idx = structuralIndices[si];
+      if (idx >= limit)
+        break;
+      byte b = buf[idx];
+
+      if (b == '"') {
+        // Check for escape: look at preceding byte
+        if (inString && idx > 0 && buf[idx - 1] == '\\') {
+          continue; // escaped quote
+        }
+        inString = !inString;
+        if (!inString && depth == 0) {
+          return idx + 1; // end of top-level string
+        }
+        continue;
+      }
+
+      if (inString)
+        continue; // skip structural chars inside strings
+
+      switch (b) {
+        case '{', '[' -> depth++;
+        case '}', ']' -> {
+          if (depth == 0) {
+            return (idx > start) ? idx : -1;
+          }
+          depth--;
+          if (depth == 0)
+            return idx + 1;
+        }
+        case ',' -> {
+          if (depth == 0)
+            return idx;
+        }
+      }
+    }
+
+    return -1; // extends beyond buffer
+  }
+
+  /**
+   * Scalar fallback for findValueEnd when structural index is unavailable.
+   */
+  private int findValueEndScalar(int start) {
     int depth = 0;
     boolean inString = false;
     int i = start;
 
     while (i < limit) {
       byte b = buf[i];
-
       if (inString) {
         if (b == '\\') {
-          i += 2; // skip escape + next char
+          i += 2;
           continue;
         }
         if (b == '"') {
           inString = false;
-          if (depth == 0) {
-            return i + 1; // end of top-level string value
-          }
+          if (depth == 0)
+            return i + 1;
         }
         i++;
         continue;
       }
-
       switch (b) {
-        case '"':
+        case '"' -> {
           inString = true;
           i++;
-          break;
-        case '{':
-        case '[':
+        }
+        case '{', '[' -> {
           depth++;
           i++;
-          break;
-        case '}':
-        case ']':
-          if (depth == 0) {
-            return (i > start) ? i : -1; // end of scalar before structural char
-          }
+        }
+        case '}', ']' -> {
+          if (depth == 0)
+            return (i > start) ? i : -1;
           depth--;
           i++;
-          if (depth == 0) {
-            return i; // end of object/array
-          }
-          break;
-        case ',':
-          if (depth == 0) {
-            return i; // end of scalar value
-          }
+          if (depth == 0)
+            return i;
+        }
+        case ',' -> {
+          if (depth == 0)
+            return i;
           i++;
-          break;
-        case ' ':
-        case '\t':
-        case '\n':
-        case '\r':
-          if (depth == 0 && i > start) {
-            return i; // whitespace after scalar
-          }
+        }
+        case ' ', '\t', '\n', '\r' -> {
+          if (depth == 0 && i > start)
+            return i;
           i++;
-          break;
-        default:
-          i++;
-          break;
+        }
+        default -> i++;
       }
     }
-
-    return -1; // extends beyond buffer
+    return -1;
   }
 
   /**
@@ -437,6 +490,31 @@ public final class StreamingJSONParser {
         limit += n;
       }
     }
+
+    // Rebuild SIMD structural index for the new buffer contents
+    rebuildStructuralIndex();
+  }
+
+  /**
+   * Build a structural index over [0..limit) using SIMD-accelerated scanning.
+   * The index contains positions of { } [ ] , : " characters — the simdjson
+   * approach of pre-scanning structural characters in bulk.
+   */
+  private void rebuildStructuralIndex() {
+    if (limit == 0) {
+      structuralCount = 0;
+      structuralPos = 0;
+      structuralValid = true;
+      return;
+    }
+    // Allocate index array (worst case: every byte is structural)
+    // In practice, ~10-15% of JSON bytes are structural, so limit/4 is generous
+    if (structuralIndices == null || structuralIndices.length < limit / 4) {
+      structuralIndices = new int[Math.max(limit / 4, 1024)];
+    }
+    structuralCount = io.brackit.query.util.simd.VectorOps.findStructuralIndices(buf, 0, limit, structuralIndices);
+    structuralPos = 0;
+    structuralValid = true;
   }
 
   // ==================== Byte-level scanning ====================
@@ -571,11 +649,15 @@ public final class StreamingJSONParser {
         if (pos >= limit)
           return;
       }
-      byte b = buf[pos];
-      if (b != ' ' && b != '\t' && b != '\n' && b != '\r') {
-        return;
+      // SIMD-accelerated whitespace skip within current buffer
+      pos = io.brackit.query.util.simd.VectorOps.skipWhitespace(buf, pos, limit);
+      if (pos < limit) {
+        return; // found non-whitespace
       }
-      pos++;
+      // Entire buffer was whitespace — refill and continue
+      if (eof)
+        return;
+      refill();
     }
   }
 

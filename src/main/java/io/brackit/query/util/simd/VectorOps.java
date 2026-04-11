@@ -986,4 +986,135 @@ public final class VectorOps {
   public static int getDoubleVectorLength() {
     return DOUBLE_SPECIES.length();
   }
+
+  // ==================== JSON Structural Scanning (simdjson-inspired) ====================
+
+  /**
+   * SIMD-accelerated scan for JSON structural characters in a byte buffer.
+   * Finds positions of { } [ ] , : using vectorized comparison — processes
+   * BYTE_SPECIES.length() bytes per cycle (typically 32 or 64 on modern CPUs).
+   * <p>
+   * This is the core simdjson technique: instead of byte-by-byte scanning with
+   * branch-heavy switch statements, compare the entire vector lane against each
+   * structural character and OR the results into a combined mask.
+   * <p>
+   * The output array receives the buffer positions of structural characters.
+   * Returns the number of structural characters found.
+   *
+   * @param buf     input byte buffer
+   * @param offset  start position in buffer
+   * @param length  number of bytes to scan
+   * @param indices output array for structural character positions (must be large enough)
+   * @return number of structural characters found
+   */
+  public static int findStructuralIndices(byte[] buf, int offset, int length, int[] indices) {
+    if (!VECTOR_AVAILABLE) {
+      return findStructuralIndicesScalar(buf, offset, length, indices);
+    }
+
+    int count = 0;
+    int i = 0;
+    int vectorLength = BYTE_SPECIES.length();
+    int limit = length - (length % vectorLength);
+
+    // Broadcast structural characters for comparison
+    ByteVector vLBrace = ByteVector.broadcast(BYTE_SPECIES, (byte) '{');
+    ByteVector vRBrace = ByteVector.broadcast(BYTE_SPECIES, (byte) '}');
+    ByteVector vLBracket = ByteVector.broadcast(BYTE_SPECIES, (byte) '[');
+    ByteVector vRBracket = ByteVector.broadcast(BYTE_SPECIES, (byte) ']');
+    ByteVector vComma = ByteVector.broadcast(BYTE_SPECIES, (byte) ',');
+    ByteVector vColon = ByteVector.broadcast(BYTE_SPECIES, (byte) ':');
+    ByteVector vQuote = ByteVector.broadcast(BYTE_SPECIES, (byte) '"');
+
+    for (; i < limit; i += vectorLength) {
+      ByteVector v = ByteVector.fromArray(BYTE_SPECIES, buf, offset + i);
+
+      // OR all structural character matches into one mask
+      VectorMask<Byte> structural = v.eq(vLBrace)
+                                     .or(v.eq(vRBrace))
+                                     .or(v.eq(vLBracket))
+                                     .or(v.eq(vRBracket))
+                                     .or(v.eq(vComma))
+                                     .or(v.eq(vColon))
+                                     .or(v.eq(vQuote));
+
+      // Extract matching positions
+      if (structural.anyTrue()) {
+        for (int j = 0; j < vectorLength; j++) {
+          if (structural.laneIsSet(j)) {
+            indices[count++] = offset + i + j;
+          }
+        }
+      }
+    }
+
+    // Handle remaining bytes (scalar tail)
+    for (; i < length; i++) {
+      byte b = buf[offset + i];
+      if (b == '{' || b == '}' || b == '[' || b == ']' || b == ',' || b == ':' || b == '"') {
+        indices[count++] = offset + i;
+      }
+    }
+
+    return count;
+  }
+
+  /**
+   * Scalar fallback for structural index scanning.
+   */
+  private static int findStructuralIndicesScalar(byte[] buf, int offset, int length, int[] indices) {
+    int count = 0;
+    for (int i = 0; i < length; i++) {
+      byte b = buf[offset + i];
+      if (b == '{' || b == '}' || b == '[' || b == ']' || b == ',' || b == ':' || b == '"') {
+        indices[count++] = offset + i;
+      }
+    }
+    return count;
+  }
+
+  /**
+   * SIMD-accelerated whitespace skip. Returns the position of the first
+   * non-whitespace byte at or after {@code offset}, or {@code limit} if
+   * the entire range is whitespace.
+   */
+  public static int skipWhitespace(byte[] buf, int offset, int limit) {
+    if (!VECTOR_AVAILABLE) {
+      for (int i = offset; i < limit; i++) {
+        byte b = buf[i];
+        if (b != ' ' && b != '\t' && b != '\n' && b != '\r')
+          return i;
+      }
+      return limit;
+    }
+
+    int i = offset;
+    int vectorLength = BYTE_SPECIES.length();
+    int vectorLimit = offset + ((limit - offset) / vectorLength) * vectorLength;
+
+    ByteVector vSpace = ByteVector.broadcast(BYTE_SPECIES, (byte) ' ');
+    ByteVector vTab = ByteVector.broadcast(BYTE_SPECIES, (byte) '\t');
+    ByteVector vNl = ByteVector.broadcast(BYTE_SPECIES, (byte) '\n');
+    ByteVector vCr = ByteVector.broadcast(BYTE_SPECIES, (byte) '\r');
+
+    for (; i < vectorLimit; i += vectorLength) {
+      ByteVector v = ByteVector.fromArray(BYTE_SPECIES, buf, i);
+      VectorMask<Byte> ws = v.eq(vSpace).or(v.eq(vTab)).or(v.eq(vNl)).or(v.eq(vCr));
+      if (!ws.allTrue()) {
+        // Found non-whitespace in this lane
+        for (int j = 0; j < vectorLength; j++) {
+          if (!ws.laneIsSet(j))
+            return i + j;
+        }
+      }
+    }
+
+    // Scalar tail
+    for (; i < limit; i++) {
+      byte b = buf[i];
+      if (b != ' ' && b != '\t' && b != '\n' && b != '\r')
+        return i;
+    }
+    return limit;
+  }
 }
