@@ -111,8 +111,7 @@ public class TupleSort {
   }
 
   private long getSize(Tuple item) throws QueryException {
-    // TODO
-    return 0;
+    return TupleSerializer.estimateSize(item);
   }
 
   private void writeRun() throws QueryException {
@@ -212,12 +211,11 @@ public class TupleSort {
   }
 
   private Tuple readItem(InputStream in) throws IOException {
-    // TODO
-    return null;
+    return TupleSerializer.read(in);
   }
 
   private void writeItem(OutputStream out, Tuple item) throws IOException {
-    // TODO
+    TupleSerializer.write(out, item);
   }
 
   public Stream<Tuple> stream() {

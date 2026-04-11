@@ -61,7 +61,7 @@ public class Ordering implements Comparator<Tuple> {
   public void add(QueryContext ctx, Tuple t) throws QueryException {
     if (sort == null) {
       offset = t.getSize();
-      sort = new TupleSort(this, 1);
+      sort = new TupleSort(this, Runtime.getRuntime().maxMemory() / 4);
     }
     sort.add(t.concat(sortKeys(ctx, t)));
   }
@@ -69,7 +69,7 @@ public class Ordering implements Comparator<Tuple> {
   public void add(Sequence[] keys, Tuple t) throws QueryException {
     if (sort == null) {
       offset = t.getSize();
-      sort = new TupleSort(this, 1);
+      sort = new TupleSort(this, Runtime.getRuntime().maxMemory() / 4);
     }
     sort.add(t.concat(keys));
   }
