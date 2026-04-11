@@ -27,21 +27,51 @@
  */
 package io.brackit.query.util.simd;
 
+import java.util.Arrays;
+
 import jdk.incubator.vector.*;
 
 /**
  * SIMD-accelerated operations using Java's Vector API.
  * Provides vectorized implementations for common query operations.
+ * Falls back to scalar implementations when Vector API is unavailable
+ * (e.g., in GraalVM native image).
  *
  * @author Brackit Project Team
  */
 public final class VectorOps {
 
-  // Preferred vector species for different element types
-  private static final VectorSpecies<Byte> BYTE_SPECIES = ByteVector.SPECIES_PREFERRED;
-  private static final VectorSpecies<Integer> INT_SPECIES = IntVector.SPECIES_PREFERRED;
-  private static final VectorSpecies<Long> LONG_SPECIES = LongVector.SPECIES_PREFERRED;
-  private static final VectorSpecies<Double> DOUBLE_SPECIES = DoubleVector.SPECIES_PREFERRED;
+  private static final boolean VECTOR_AVAILABLE;
+
+  // Preferred vector species for different element types (may be null in native image)
+  private static final VectorSpecies<Byte> BYTE_SPECIES;
+  private static final VectorSpecies<Integer> INT_SPECIES;
+  private static final VectorSpecies<Long> LONG_SPECIES;
+  private static final VectorSpecies<Double> DOUBLE_SPECIES;
+
+  static {
+    boolean available;
+    VectorSpecies<Byte> byteSpecies = null;
+    VectorSpecies<Integer> intSpecies = null;
+    VectorSpecies<Long> longSpecies = null;
+    VectorSpecies<Double> doubleSpecies = null;
+    try {
+      byteSpecies = ByteVector.SPECIES_PREFERRED;
+      intSpecies = IntVector.SPECIES_PREFERRED;
+      longSpecies = LongVector.SPECIES_PREFERRED;
+      doubleSpecies = DoubleVector.SPECIES_PREFERRED;
+      // Force initialization to detect native-image issues early
+      byteSpecies.length();
+      available = true;
+    } catch (Throwable t) {
+      available = false;
+    }
+    VECTOR_AVAILABLE = available;
+    BYTE_SPECIES = byteSpecies;
+    INT_SPECIES = intSpecies;
+    LONG_SPECIES = longSpecies;
+    DOUBLE_SPECIES = doubleSpecies;
+  }
 
   private VectorOps() {
     // Utility class
@@ -58,6 +88,9 @@ public final class VectorOps {
       return true;
     if (a == null || b == null)
       return false;
+    if (!VECTOR_AVAILABLE) {
+      return Arrays.equals(a, b);
+    }
     if (a.length != b.length)
       return false;
 
@@ -96,6 +129,9 @@ public final class VectorOps {
       return -1;
     if (b == null)
       return 1;
+    if (!VECTOR_AVAILABLE) {
+      return Arrays.compareUnsigned(a, b);
+    }
 
     int minLength = Math.min(a.length, b.length);
     int i = 0;
@@ -139,8 +175,8 @@ public final class VectorOps {
     int i = 0;
     int length = bytes.length;
 
-    // For small arrays, use scalar code
-    if (length < INT_SPECIES.length() * 4) {
+    // For small arrays or when Vector API is unavailable, use scalar code
+    if (!VECTOR_AVAILABLE || length < INT_SPECIES.length() * 4) {
       for (byte b : bytes) {
         hash = 31 * hash + (b & 0xff);
       }
@@ -194,6 +230,12 @@ public final class VectorOps {
     long sum = 0;
     int i = 0;
 
+    if (!VECTOR_AVAILABLE) {
+      for (; i < length; i++)
+        sum += values[offset + i];
+      return sum;
+    }
+
     int vectorLength = LONG_SPECIES.length();
 
     // Unrolled loop with 4 independent accumulators
@@ -238,6 +280,12 @@ public final class VectorOps {
     double sum = 0;
     int i = 0;
 
+    if (!VECTOR_AVAILABLE) {
+      for (; i < length; i++)
+        sum += values[offset + i];
+      return sum;
+    }
+
     int vectorLength = DOUBLE_SPECIES.length();
 
     // Unrolled loop with 4 independent accumulators
@@ -281,6 +329,12 @@ public final class VectorOps {
     long sum = 0;
     int i = 0;
 
+    if (!VECTOR_AVAILABLE) {
+      for (; i < length; i++)
+        sum += values[offset + i];
+      return sum;
+    }
+
     int vectorLength = INT_SPECIES.length();
     int limit = length - (length % vectorLength);
 
@@ -320,6 +374,12 @@ public final class VectorOps {
 
     long min = values[offset];
     int i = 0;
+
+    if (!VECTOR_AVAILABLE) {
+      for (i = 1; i < length; i++)
+        min = Math.min(min, values[offset + i]);
+      return min;
+    }
 
     int vectorLength = LONG_SPECIES.length();
 
@@ -386,6 +446,12 @@ public final class VectorOps {
     long max = values[offset];
     int i = 0;
 
+    if (!VECTOR_AVAILABLE) {
+      for (i = 1; i < length; i++)
+        max = Math.max(max, values[offset + i]);
+      return max;
+    }
+
     int vectorLength = LONG_SPECIES.length();
 
     // Unrolled loop with 4 independent accumulators
@@ -448,6 +514,13 @@ public final class VectorOps {
     int count = 0;
     int i = 0;
 
+    if (!VECTOR_AVAILABLE) {
+      for (; i < length; i++)
+        if (values[offset + i] > threshold)
+          count++;
+      return count;
+    }
+
     int vectorLength = LONG_SPECIES.length();
     int limit = length - (length % vectorLength);
 
@@ -476,6 +549,13 @@ public final class VectorOps {
   public static int filterIndicesGreaterThan(long[] values, int offset, int length, long threshold, int[] indices) {
     int count = 0;
     int i = 0;
+
+    if (!VECTOR_AVAILABLE) {
+      for (; i < length; i++)
+        if (values[offset + i] > threshold)
+          indices[count++] = offset + i;
+      return count;
+    }
 
     int vectorLength = LONG_SPECIES.length();
     int limit = length - (length % vectorLength);
@@ -513,6 +593,13 @@ public final class VectorOps {
     int count = 0;
     int i = 0;
 
+    if (!VECTOR_AVAILABLE) {
+      for (; i < length; i++)
+        if (values[offset + i] == target)
+          count++;
+      return count;
+    }
+
     int vectorLength = LONG_SPECIES.length();
     int limit = length - (length % vectorLength);
 
@@ -542,6 +629,17 @@ public final class VectorOps {
    */
   public static int hashProbe(long[] keys, int tableSize, long searchKey) {
     int hash = Long.hashCode(searchKey) & (tableSize - 1);
+
+    if (!VECTOR_AVAILABLE) {
+      for (int probes = 0; probes < tableSize; probes++) {
+        int idx = (hash + probes) & (tableSize - 1);
+        if (keys[idx] == searchKey)
+          return idx;
+        if (keys[idx] == Long.MIN_VALUE)
+          return -1;
+      }
+      return -1;
+    }
 
     // Linear probing with vectorized comparison
     int vectorLength = LONG_SPECIES.length();
@@ -737,6 +835,13 @@ public final class VectorOps {
       return Double.POSITIVE_INFINITY;
     }
 
+    if (!VECTOR_AVAILABLE) {
+      double min = values[offset];
+      for (int j = 1; j < length; j++)
+        min = Math.min(min, values[offset + j]);
+      return min;
+    }
+
     int i = 0;
     double result;
     int vectorLength = DOUBLE_SPECIES.length();
@@ -794,6 +899,13 @@ public final class VectorOps {
   public static double maxDouble(double[] values, int offset, int length) {
     if (length == 0) {
       return Double.NEGATIVE_INFINITY;
+    }
+
+    if (!VECTOR_AVAILABLE) {
+      double max = values[offset];
+      for (int j = 1; j < length; j++)
+        max = Math.max(max, values[offset + j]);
+      return max;
     }
 
     int i = 0;

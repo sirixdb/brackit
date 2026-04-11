@@ -40,6 +40,7 @@ import io.brackit.query.atomic.Bool;
 import io.brackit.query.atomic.Null;
 import io.brackit.query.atomic.Str;
 import io.brackit.query.compiler.CompileChain;
+import io.brackit.query.function.json.FastJSONParser;
 import io.brackit.query.function.json.JSONParser;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
@@ -244,7 +245,7 @@ public class BrackitJq {
       return null;
     }
     try {
-      return new JSONParser(json).parse();
+      return new FastJSONParser(json).parse();
     } catch (QueryException e) {
       throw new JsonParseException(e.getMessage(), e);
     }

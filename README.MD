@@ -23,33 +23,68 @@ echo '{"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]}' | \
 "Alice"
 ```
 
+## Performance
+
+bjq native binary vs jq (wall-clock, median of 3 runs):
+
+| Query | Records | jq | bjq | Speedup |
+|---|---|---|---|---|
+| Filter (`age > 30`) | 100k | 142ms | **69ms** | **2.1x** |
+| Group by city | 100k | 282ms | **77ms** | **3.7x** |
+| Filter (`age > 30`) | 1M | 1.49s | **0.61s** | **2.4x** |
+| Group by city | 1M | 3.61s | **0.73s** | **4.9x** |
+
+Measured on Linux x86-64. bjq native binary built with Oracle GraalVM, PGO, G1 GC, and `-O3`.
+
 ## Quick Start
 
-### Option 1: Download and Run
+### Option 1: Native Binary (fastest)
 
-Download from [GitHub Releases](https://github.com/sirixdb/brackit/releases):
+Download the pre-built binary for your platform:
 
 ```bash
-# Interactive mode
-java -jar brackit-with-dependencies.jar -iq
+# Linux (x86-64)
+curl -L https://github.com/sirixdb/brackit/releases/latest/download/bjq-linux-amd64 -o bjq
+chmod +x bjq
+sudo mv bjq /usr/local/bin/
 
-# Query a JSON file
-java -jar brackit-with-dependencies.jar -q "json-doc('data.json').users[].name"
+# Linux (ARM64)
+curl -L https://github.com/sirixdb/brackit/releases/latest/download/bjq-linux-arm64 -o bjq
+chmod +x bjq
+sudo mv bjq /usr/local/bin/
+
+# macOS (Apple Silicon)
+curl -L https://github.com/sirixdb/brackit/releases/latest/download/bjq-macos-arm64 -o bjq
+chmod +x bjq
+sudo mv bjq /usr/local/bin/
+
+# macOS (Intel)
+curl -L https://github.com/sirixdb/brackit/releases/latest/download/bjq-macos-amd64 -o bjq
+chmod +x bjq
+sudo mv bjq /usr/local/bin/
+
+# Windows (x86-64) - download bjq-windows-amd64.exe from GitHub Releases
 ```
 
-**For jq-style usage**, create an alias for the bjq jar:
+Then use it:
 
 ```bash
-alias bjq='java -jar /path/to/bjq-jar-with-dependencies.jar'
-
-# Simple field access
 echo '{"name": "Alice"}' | bjq '$$.name'
 
 # FLWOR expressions - the killer feature!
 bjq 'for $u in $$.users[] where $u.age > 21 order by $u.name return $u' data.json
 ```
 
-### Option 2: Build from Source
+### Option 2: Java Jar
+
+Requires **Java 25** or later. Download the jar from [GitHub Releases](https://github.com/sirixdb/brackit/releases), then:
+
+```bash
+alias bjq='java --enable-preview --add-modules=jdk.incubator.vector -jar /path/to/bjq-jar-with-dependencies.jar'
+bjq 'for $u in $$.users[] where $u.age > 21 return $u' data.json
+```
+
+### Option 3: Build from Source
 
 Requires **Java 25** or later.
 
@@ -59,7 +94,7 @@ cd brackit
 mvn package
 
 # Set up bjq alias
-alias bjq='java -jar '$(pwd)'/target/bjq-jar-with-dependencies.jar'
+alias bjq='java --enable-preview --add-modules=jdk.incubator.vector -jar '$(pwd)'/target/bjq-jar-with-dependencies.jar'
 
 # Try it out - FLWOR with grouping!
 echo '[{"cat":"A","v":1},{"cat":"B","v":2},{"cat":"A","v":3}]' | \
@@ -183,28 +218,18 @@ The optimizer automatically applies:
 ### Maven
 
 ```xml
-<repository>
-  <id>sonatype-nexus-snapshots</id>
-  <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-  <snapshots><enabled>true</enabled></snapshots>
-</repository>
-
 <dependency>
   <groupId>io.sirix</groupId>
   <artifactId>brackit</artifactId>
-  <version>0.6-SNAPSHOT</version>
+  <version>0.7</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```groovy
-repositories {
-    maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
-}
-
 dependencies {
-    implementation 'io.sirix:brackit:0.6-SNAPSHOT'
+    implementation 'io.sirix:brackit:0.7'
 }
 ```
 

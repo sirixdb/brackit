@@ -40,11 +40,49 @@ jobs:
         uses: graalvm/setup-graalvm@v1
         with:
           java-version: '25'
-          distribution: 'graalvm'
+          distribution: 'oracle'
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build native image
-        run: mvn -Pnative package -DskipTests
+      - name: Generate test data for PGO
+        shell: bash
+        run: |
+          python3 -c "
+          import json, random
+          random.seed(42)
+          users = [{'name': f'user_{i}', 'age': random.randint(18,65), 'city': random.choice(['NYC','LA','Chicago','Houston','Phoenix'])} for i in range(50000)]
+          orders = [{'id': i, 'user_id': random.randint(0,9999), 'amount': round(random.uniform(10,500),2)} for i in range(50000)]
+          json.dump({'users': users, 'orders': orders}, open('pgo-data.json','w'))
+          "
+
+      - name: Build instrumented binary
+        run: mvn -Pnative-pgo-instrument package -DskipTests
+
+      - name: Collect PGO profiles
+        shell: bash
+        run: |
+          INSTRUMENTED=target/bjq-instrument
+          if [ -f "${INSTRUMENTED}.exe" ]; then INSTRUMENTED="${INSTRUMENTED}.exe"; fi
+
+          # Run representative workloads
+          $INSTRUMENTED 'count(for $u in $$.users[] where $u.age > 30 return $u.name)' pgo-data.json > /dev/null 2>&1 || true
+          $INSTRUMENTED 'for $u in $$.users[] let $c := $u.city group by $c return {"city": $c, "count": count($u)}' pgo-data.json > /dev/null 2>&1 || true
+          $INSTRUMENTED 'for $u in $$.users[], $o in $$.orders[] where $o.user_id eq $u.age return {"name": $u.name, "amount": $o.amount}' pgo-data.json > /dev/null 2>&1 || true
+
+          # Move profile to expected location
+          if [ -f default.iprof ]; then
+            echo "PGO profile collected successfully"
+          else
+            echo "Warning: PGO profile not found, building without PGO"
+          fi
+
+      - name: Build optimized binary with PGO
+        run: |
+          if [ -f default.iprof ]; then
+            mvn -Pnative-pgo package -DskipTests
+          else
+            mvn -Pnative package -DskipTests
+          fi
+        shell: bash
 
       - name: Rename binary (Unix)
         if: runner.os != 'Windows'

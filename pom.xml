@@ -287,6 +287,76 @@
                                 <buildArg>--no-fallback</buildArg>
                                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
                                 <buildArg>--enable-preview</buildArg>
+                                <buildArg>--add-modules=jdk.incubator.vector</buildArg>
+                                <buildArg>-O3</buildArg>
+                                <buildArg>--gc=G1</buildArg>
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>native-pgo-instrument</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <version>0.10.4</version>
+                        <extensions>true</extensions>
+                        <executions>
+                            <execution>
+                                <id>build-native-instrument</id>
+                                <goals>
+                                    <goal>compile-no-fork</goal>
+                                </goals>
+                                <phase>package</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <imageName>bjq-instrument</imageName>
+                            <mainClass>io.brackit.query.BrackitJq</mainClass>
+                            <buildArgs>
+                                <buildArg>--no-fallback</buildArg>
+                                <buildArg>--enable-preview</buildArg>
+                                <buildArg>--add-modules=jdk.incubator.vector</buildArg>
+                                <buildArg>--pgo-instrument</buildArg>
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>native-pgo</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <version>0.10.4</version>
+                        <extensions>true</extensions>
+                        <executions>
+                            <execution>
+                                <id>build-native-pgo</id>
+                                <goals>
+                                    <goal>compile-no-fork</goal>
+                                </goals>
+                                <phase>package</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <imageName>bjq</imageName>
+                            <mainClass>io.brackit.query.BrackitJq</mainClass>
+                            <buildArgs>
+                                <buildArg>--no-fallback</buildArg>
+                                <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                                <buildArg>--enable-preview</buildArg>
+                                <buildArg>--add-modules=jdk.incubator.vector</buildArg>
+                                <buildArg>-O3</buildArg>
+                                <buildArg>--gc=G1</buildArg>
+                                <buildArg>--pgo=${project.basedir}/default.iprof</buildArg>
                             </buildArgs>
                         </configuration>
                     </plugin>

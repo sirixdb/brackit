@@ -36,6 +36,8 @@ import io.brackit.query.jdm.Type;
  */
 public class Null extends AbstractAtomic {
 
+  public static final Null INSTANCE = new Null();
+
   private final class DNull extends Null {
     public DNull(Type type) {
       this.type = type;

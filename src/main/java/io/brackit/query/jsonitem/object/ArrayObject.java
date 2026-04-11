@@ -67,6 +67,16 @@ public final class ArrayObject extends AbstractObject {
     }
   }
 
+  /**
+   * Efficient constructor that takes pre-built lists directly, avoiding array-to-list copies.
+   * The caller transfers ownership — the lists must not be modified after this call.
+   */
+  public ArrayObject(List<QNm> fields, List<Sequence> vals, Map<QNm, Sequence> fieldsToVals) {
+    this.fields = fields;
+    this.vals = vals;
+    this.fieldsToVals = fieldsToVals;
+  }
+
   @Override
   public Object replace(QNm field, Sequence value) {
     requireNonNull(field);
