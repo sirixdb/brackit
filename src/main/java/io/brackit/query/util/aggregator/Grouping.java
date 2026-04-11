@@ -52,6 +52,7 @@ public class Grouping {
   Aggregator[] aggs;
   boolean[] onlyFirst;
   int size;
+  private boolean threadSafe = true;
 
   public Grouping(int[] groupSpecs, int[] addAggsSpecs, Aggregate defaultAgg, Aggregate[] additionalAggs) {
     this.groupSpecs = groupSpecs;
@@ -67,6 +68,14 @@ public class Grouping {
     this.defaultAgg = defaultAgg;
     this.additionalAggs = additionalAggs;
     init(tupleSize);
+  }
+
+  /**
+   * Set thread safety mode. When disabled, avoids synchronized blocks
+   * on the hot path for single-threaded query execution.
+   */
+  public void setThreadSafe(boolean threadSafe) {
+    this.threadSafe = threadSafe;
   }
 
   private synchronized void init(int tupleSize) {
@@ -180,9 +189,7 @@ public class Grouping {
       if (s == null) {
         continue;
       }
-      synchronized (aggs[i]) {
-        aggs[i].add(s);
-      }
+      addToAggregator(aggs[i], s);
     }
     for (int i = 0; i < addAggsSpecs.length; i++) {
       if ((size > 0) && (onlyFirst[tupleSize + i])) {
@@ -192,11 +199,19 @@ public class Grouping {
       if (s == null) {
         continue;
       }
-      synchronized (aggs[tupleSize + i]) {
-        aggs[tupleSize + i].add(s);
-      }
+      addToAggregator(aggs[tupleSize + i], s);
     }
     size++;
+  }
+
+  private void addToAggregator(Aggregator agg, Sequence s) throws QueryException {
+    if (threadSafe) {
+      synchronized (agg) {
+        agg.add(s);
+      }
+    } else {
+      agg.add(s);
+    }
   }
 
   public Tuple emit() throws QueryException {
