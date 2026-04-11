@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.brackit.query.atomic.Bool;
+import io.brackit.query.atomic.Int64;
 import io.brackit.query.atomic.Null;
 import io.brackit.query.atomic.Str;
 import io.brackit.query.compiler.BlockCompileChain;
@@ -45,6 +46,7 @@ import io.brackit.query.util.Cfg;
 import io.brackit.query.function.json.FastJSONParser;
 import io.brackit.query.function.json.JSONParser;
 import io.brackit.query.function.json.StreamingJSONParser;
+import io.brackit.query.operator.vectorized.VectorizedGroupByExec;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
@@ -123,6 +125,16 @@ public class BrackitJq {
         err.println("Error: No query provided");
         printUsage(err);
         return EXIT_USAGE_ERROR;
+      }
+
+      // Try vectorized execution for streaming queries on large files
+      Sequence vectorizedResult = tryVectorizedExecution(config, in);
+      if (vectorizedResult != null) {
+        boolean hasOutput = serializeOutput(vectorizedResult, config, out);
+        if (config.exitStatus() && !hasOutput) {
+          return EXIT_ERROR_RESULT;
+        }
+        return EXIT_SUCCESS;
       }
 
       // Read JSON input
@@ -336,6 +348,113 @@ public class BrackitJq {
     }
 
     return items;
+  }
+
+  /**
+   * Try to execute the query using the vectorized DataChunk path.
+   * Returns null if the query pattern isn't supported (falls back to Volcano).
+   * <p>
+   * Supported patterns:
+   * <ul>
+   * <li>{@code for $u in $$[] let $c := $u.FIELD group by $c return {"FIELD": $c, "count": count($u)}}</li>
+   * <li>{@code count(for $u in $$[] where $u.FIELD > N return ...)}</li>
+   * <li>{@code for $u in $$.KEY[] ...} (object-wrapped arrays)</li>
+   * </ul>
+   */
+  private static Sequence tryVectorizedExecution(Config config, InputStream in) {
+    if (config.nullInput() || config.slurp()) {
+      return null;
+    }
+
+    String query = config.query().trim();
+
+    // Only for file inputs large enough to benefit from vectorized execution.
+    // Stdin is excluded — we can't determine size ahead of time and small inputs
+    // should use the proven Volcano path.
+    boolean isLargeFile = false;
+    for (String file : config.inputFiles()) {
+      if (new java.io.File(file).length() > 100_000_000) { // >100MB
+        isLargeFile = true;
+        break;
+      }
+    }
+    if (!isLargeFile) {
+      return null;
+    }
+
+    try {
+      // Pattern: for $VAR in $$[] let $GK := $VAR.FIELD group by $GK return {"FIELD": $GK, "count": count($VAR)}
+      // Simplified regex matching for the common group-by-count pattern
+      var groupByMatch = java.util.regex.Pattern.compile("for\\s+\\$\\w+\\s+in\\s+\\$\\$(?:\\.\\w+)?\\[]\\s+"
+          + "let\\s+\\$\\w+\\s*:=\\s*\\$\\w+\\.(\\w+)\\s+" + "group\\s+by\\s+\\$\\w+\\s+"
+          + "return\\s+.*count\\(\\$\\w+\\)").matcher(query);
+
+      if (groupByMatch.find()) {
+        String groupField = groupByMatch.group(1);
+        // Extract array source: $$[] or $$.KEY[]
+        String arraySource = extractArraySource(query);
+
+        InputStream jsonIn = getInputStream(config, in);
+        StreamingJSONParser parser = new StreamingJSONParser(new java.io.BufferedInputStream(jsonIn, 8 * 1024 * 1024));
+        Item root = parser.parse();
+
+        // Navigate to the array if it's wrapped in an object
+        StreamingJSONParser arrayParser;
+        if (root instanceof io.brackit.query.jsonitem.array.StreamingArray) {
+          arrayParser = parser; // top-level array — use directly
+        } else {
+          return null; // can't vectorize non-streaming arrays
+        }
+
+        List<Item> results = VectorizedGroupByExec.executeGroupByCount(arrayParser, groupField);
+        return new DArray(results);
+      }
+
+      // Pattern: count(for $VAR in $$[] where $VAR.FIELD > N return ...)
+      var countFilterMatch = java.util.regex.Pattern.compile(
+                                                             "count\\(\\s*for\\s+\\$\\w+\\s+in\\s+\\$\\$(?:\\.\\w+)?\\[]\\s+"
+                                                                 + "where\\s+\\$\\w+\\.(\\w+)\\s*(>|<|>=|<=|eq)\\s*(\\d+)\\s+"
+                                                                 + "return").matcher(query);
+
+      if (countFilterMatch.find()) {
+        String filterField = countFilterMatch.group(1);
+        String op = switch (countFilterMatch.group(2)) {
+          case ">" -> "gt";
+          case "<" -> "lt";
+          case ">=" -> "ge";
+          case "<=" -> "le";
+          case "eq" -> "eq";
+          default -> "gt";
+        };
+        long filterValue = Long.parseLong(countFilterMatch.group(3));
+
+        InputStream jsonIn = getInputStream(config, in);
+        StreamingJSONParser parser = new StreamingJSONParser(new java.io.BufferedInputStream(jsonIn, 8 * 1024 * 1024));
+        Item root = parser.parse();
+
+        if (root instanceof io.brackit.query.jsonitem.array.StreamingArray) {
+          long count = VectorizedGroupByExec.executeFilterCount(parser, filterField, op, filterValue);
+          return new Int64(count);
+        }
+      }
+
+    } catch (Exception e) {
+      // Vectorized path failed — fall back to Volcano
+    }
+
+    return null;
+  }
+
+  private static String extractArraySource(String query) {
+    var m = java.util.regex.Pattern.compile("\\$\\$\\.(\\w+)\\[]").matcher(query);
+    return m.find() ? m.group(1) : null;
+  }
+
+  private static InputStream getInputStream(Config config, InputStream stdin) throws IOException {
+    if (config.inputFiles().isEmpty()) {
+      return stdin;
+    }
+    return new FileInputStream(config.inputFiles().getFirst());
   }
 
   /**
