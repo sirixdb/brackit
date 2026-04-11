@@ -212,11 +212,20 @@ public final class FastJSONParser {
 
   // ==================== String parsing ====================
 
+  private static final int STRING_CACHE_MAX = 1024;
+
   private Str parseString() throws QueryException {
     String raw = parseRawString();
-    // Intern short strings (city names, status values, etc.) — O(1) for repeated values
-    if (raw.length() <= 32) {
+    // Intern short strings that likely repeat (city names, status values, etc.)
+    // Stop interning when cache is full to avoid unbounded growth from unique values
+    if (raw.length() <= 16 && stringValueCache.size() < STRING_CACHE_MAX) {
       return stringValueCache.computeIfAbsent(raw, Str::new);
+    }
+    // Check existing cache entries even when full (for repeated values)
+    if (raw.length() <= 16) {
+      Str cached = stringValueCache.get(raw);
+      if (cached != null)
+        return cached;
     }
     return new Str(raw);
   }

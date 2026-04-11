@@ -127,6 +127,10 @@ public class SpillableGroupBy extends Check implements Operator {
     final Map<GroupKey, Grouping> map = new LinkedHashMap<>();
     long currentSize;
 
+    // Raw tuple buffer — kept alongside in-memory aggregation so we can
+    // write them to partition files if spill is needed
+    final List<Tuple> rawTupleBuffer = new ArrayList<>();
+
     // Spill state
     boolean spilled;
     File[] partitionFiles;
@@ -195,28 +199,19 @@ public class SpillableGroupBy extends Check implements Operator {
             }
           }
 
-          addToMap(t);
-          currentSize += TupleSerializer.estimateSize(t);
+          addOrSpill(t);
 
           // Read remaining tuples for this group segment
           while ((next = c.next(ctx)) != null) {
             if (check && separate(t, next)) {
               break;
             }
-            addToMap(next);
-            currentSize += TupleSerializer.estimateSize(next);
-
-            if (currentSize > memoryBudget) {
-              spillAllPartitions();
-            }
+            addOrSpill(next);
           }
 
-          // If we spilled, process partitions
+          // If we spilled, flush remaining in-memory groups as raw tuples, then process
           if (spilled && partitionFiles != null) {
-            // Flush remaining in-memory groups to partitions too
-            if (!map.isEmpty()) {
-              spillAllPartitions();
-            }
+            flushMapToPartitions();
             return processNextPartition();
           }
 
@@ -228,7 +223,19 @@ public class SpillableGroupBy extends Check implements Operator {
       }
     }
 
-    private void addToMap(Tuple t) throws QueryException {
+    /**
+     * Add a tuple: aggregate in memory and buffer the raw tuple.
+     * If memory budget is exceeded, flush all buffered raw tuples to partition
+     * files and switch to direct-to-partition mode.
+     */
+    private void addOrSpill(Tuple t) throws QueryException {
+      if (spilled) {
+        // Already in spill mode: write raw tuple directly to partition
+        writeToPartition(t);
+        return;
+      }
+
+      // In-memory aggregation + raw tuple buffer
       Atomic[] gks = Grouping.groupingKeys(groupSpecs, t);
       GroupKey key = new GroupKey(gks);
       Grouping grp = map.get(key);
@@ -238,43 +245,66 @@ public class SpillableGroupBy extends Check implements Operator {
         map.put(key, grp);
       }
       grp.add(gks, t);
+      rawTupleBuffer.add(t);
+      currentSize += TupleSerializer.estimateSize(t);
+
+      if (currentSize > memoryBudget) {
+        switchToSpillMode();
+      }
     }
 
     /**
-     * Spill all current in-memory tuples to partition files based on hash prefix.
-     * Each partition gets tuples with a specific hash range.
+     * Transition from in-memory to partitioned spill mode.
+     * Writes ALL buffered raw tuples to partition files (including the initial
+     * in-memory batch), then clears the in-memory state.
      */
-    private void spillAllPartitions() throws QueryException {
+    private void switchToSpillMode() throws QueryException {
       try {
-        if (partitionFiles == null) {
-          partitionFiles = new File[NUM_PARTITIONS];
-          partitionStreams = new OutputStream[NUM_PARTITIONS];
-          for (int i = 0; i < NUM_PARTITIONS; i++) {
-            partitionFiles[i] = File.createTempFile("grp-part-" + i + "-", ".spill");
-            partitionFiles[i].deleteOnExit();
-            partitionStreams[i] = new BufferedOutputStream(new FileOutputStream(partitionFiles[i], true));
-          }
+        initPartitionFiles();
+        // Write all buffered raw tuples to partitions
+        for (Tuple t : rawTupleBuffer) {
+          writeToPartition(t);
         }
-
-        // Re-scan the map and write each group's accumulated tuples to the appropriate partition.
-        // Since Grouping holds aggregated state (not raw tuples), we emit each group's partial
-        // result and write it as a tuple to the partition file for re-aggregation later.
-        for (var entry : map.entrySet()) {
-          GroupKey key = entry.getKey();
-          Grouping grp = entry.getValue();
-          Tuple emitted = grp.emit();
-          grp.clear();
-
-          int partition = (key.hash & 0x7FFFFFFF) % NUM_PARTITIONS;
-          TupleSerializer.write(partitionStreams[partition], emitted);
-        }
-
+        rawTupleBuffer.clear();
         map.clear();
         currentSize = 0;
         spilled = true;
       } catch (IOException e) {
         cleanupPartitions();
         throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR);
+      }
+    }
+
+    /**
+     * Flush remaining in-memory state before processing spilled partitions.
+     */
+    private void flushMapToPartitions() throws QueryException {
+      map.clear();
+      rawTupleBuffer.clear();
+      currentSize = 0;
+    }
+
+    private void writeToPartition(Tuple t) throws QueryException {
+      try {
+        Atomic[] gks = Grouping.groupingKeys(groupSpecs, t);
+        int hash = new GroupKey(gks).hash;
+        int partition = (hash & 0x7FFFFFFF) % NUM_PARTITIONS;
+        TupleSerializer.write(partitionStreams[partition], t);
+      } catch (IOException e) {
+        cleanupPartitions();
+        throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR);
+      }
+    }
+
+    private void initPartitionFiles() throws IOException {
+      if (partitionFiles == null) {
+        partitionFiles = new File[NUM_PARTITIONS];
+        partitionStreams = new OutputStream[NUM_PARTITIONS];
+        for (int i = 0; i < NUM_PARTITIONS; i++) {
+          partitionFiles[i] = File.createTempFile("grp-part-" + i + "-", ".spill");
+          partitionFiles[i].deleteOnExit();
+          partitionStreams[i] = new BufferedOutputStream(new FileOutputStream(partitionFiles[i], true));
+        }
       }
     }
 
@@ -300,7 +330,16 @@ public class SpillableGroupBy extends Check implements Operator {
           try (var in = new BufferedInputStream(new FileInputStream(partFile))) {
             Tuple t;
             while ((t = TupleSerializer.read(in)) != null) {
-              addToMap(t);
+              // Re-aggregate raw tuples from partition file
+              Atomic[] gks = Grouping.groupingKeys(groupSpecs, t);
+              GroupKey key = new GroupKey(gks);
+              Grouping grp = map.get(key);
+              if (grp == null) {
+                grp = new Grouping(groupSpecs, addAggSpecs, defaultAgg, addAggs, tupleSize);
+                grp.setThreadSafe(false);
+                map.put(key, grp);
+              }
+              grp.add(gks, t);
             }
           }
           partFile.delete();

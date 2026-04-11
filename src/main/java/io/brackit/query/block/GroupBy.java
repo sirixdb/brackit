@@ -245,6 +245,10 @@ public class GroupBy implements Block {
     File[] partitionFiles;
     OutputStream[] partitionStreams;
 
+    // Raw tuple buffer for spill correctness
+    final java.util.concurrent.ConcurrentLinkedQueue<Tuple> rawTupleBuffer =
+        new java.util.concurrent.ConcurrentLinkedQueue<>();
+
     HashGroupBy(Sink sink) {
       this.sink = sink;
       this.map = new ConcurrentHashMap<>();
@@ -256,6 +260,11 @@ public class GroupBy implements Block {
 
     @Override
     public void output(Tuple[] buf, int len) throws QueryException {
+      if (spilled) {
+        writeRawToPartitions(buf, len);
+        return;
+      }
+
       for (int i = 0; i < len; i++) {
         Atomic[] gks = Grouping.groupingKeys(groupSpecs, buf[i]);
         Key key = new Key(gks);
@@ -268,36 +277,28 @@ public class GroupBy implements Block {
           }
         }
         grp.add(key.val, buf[i]);
+        rawTupleBuffer.add(buf[i]);
         currentSize.addAndGet(TupleSerializer.estimateSize(buf[i]));
       }
 
       if (currentSize.get() > memoryBudget) {
-        spillPartitions();
+        switchToSpillMode();
       }
     }
 
-    private synchronized void spillPartitions() throws QueryException {
-      if (currentSize.get() <= memoryBudget) {
-        return; // another thread already spilled
+    private synchronized void switchToSpillMode() throws QueryException {
+      if (spilled) {
+        return;
       }
       try {
-        if (partitionFiles == null) {
-          partitionFiles = new File[NUM_PARTITIONS];
-          partitionStreams = new OutputStream[NUM_PARTITIONS];
-          for (int i = 0; i < NUM_PARTITIONS; i++) {
-            partitionFiles[i] = File.createTempFile("blk-grp-" + i + "-", ".spill");
-            partitionFiles[i].deleteOnExit();
-            partitionStreams[i] = new BufferedOutputStream(new FileOutputStream(partitionFiles[i], true));
-          }
-        }
-        // Emit partial aggregates and write to partition files
-        for (var entry : map.entrySet()) {
-          Key key = entry.getKey();
-          Grouping grp = entry.getValue();
-          Tuple emitted = grp.emit();
-          grp.clear();
-          int partition = (key.hash & 0x7FFFFFFF) % NUM_PARTITIONS;
-          TupleSerializer.write(partitionStreams[partition], emitted);
+        initPartitionFiles();
+        // Write ALL buffered raw tuples to partition files (includes initial batch)
+        Tuple t;
+        while ((t = rawTupleBuffer.poll()) != null) {
+          Atomic[] gks = Grouping.groupingKeys(groupSpecs, t);
+          int hash = new Key(gks).hash;
+          int partition = (hash & 0x7FFFFFFF) % NUM_PARTITIONS;
+          TupleSerializer.write(partitionStreams[partition], t);
         }
         map.clear();
         currentSize.set(0);
@@ -307,16 +308,39 @@ public class GroupBy implements Block {
       }
     }
 
+    private void writeRawToPartitions(Tuple[] buf, int len) throws QueryException {
+      try {
+        for (int i = 0; i < len; i++) {
+          Atomic[] gks = Grouping.groupingKeys(groupSpecs, buf[i]);
+          int hash = new Key(gks).hash;
+          int partition = (hash & 0x7FFFFFFF) % NUM_PARTITIONS;
+          TupleSerializer.write(partitionStreams[partition], buf[i]);
+        }
+      } catch (IOException e) {
+        throw new QueryException(e, io.brackit.query.ErrorCode.BIT_DYN_INT_ERROR);
+      }
+    }
+
+    private void initPartitionFiles() throws IOException {
+      if (partitionFiles == null) {
+        partitionFiles = new File[NUM_PARTITIONS];
+        partitionStreams = new OutputStream[NUM_PARTITIONS];
+        for (int i = 0; i < NUM_PARTITIONS; i++) {
+          partitionFiles[i] = File.createTempFile("blk-grp-" + i + "-", ".spill");
+          partitionFiles[i].deleteOnExit();
+          partitionStreams[i] = new BufferedOutputStream(new FileOutputStream(partitionFiles[i], true));
+        }
+      }
+    }
+
     @Override
     protected void doEnd() throws QueryException {
       try {
         sink.begin();
 
         if (spilled) {
-          // Flush remaining in-memory groups to partitions
-          if (!map.isEmpty()) {
-            spillPartitions();
-          }
+          // In spill mode, map is empty (all tuples went directly to partitions)
+          map.clear();
           // Close partition streams
           for (int i = 0; i < NUM_PARTITIONS; i++) {
             if (partitionStreams[i] != null) {
