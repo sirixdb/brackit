@@ -36,25 +36,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up GraalVM
+      - name: Set up Oracle GraalVM
         uses: graalvm/setup-graalvm@v1
         with:
           java-version: '25'
           distribution: 'oracle'
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate test data for PGO
+      - name: Generate PGO training data
         shell: bash
         run: |
           python3 -c "
           import json, random
           random.seed(42)
-          users = [{'name': f'user_{i}', 'age': random.randint(18,65), 'city': random.choice(['NYC','LA','Chicago','Houston','Phoenix'])} for i in range(50000)]
+          cities = ['NYC','LA','Chicago','Houston','Phoenix','Dallas','Seattle','Denver','Boston','Miami']
+
+          # Object-wrapped array (common bjq input pattern)
+          users = [{'name': f'user_{i}', 'age': random.randint(18,65), 'city': random.choice(cities)} for i in range(100000)]
           orders = [{'id': i, 'user_id': random.randint(0,9999), 'amount': round(random.uniform(10,500),2)} for i in range(50000)]
-          json.dump({'users': users, 'orders': orders}, open('pgo-data.json','w'))
+          json.dump({'users': users, 'orders': orders}, open('pgo-obj.json','w'))
+
+          # Top-level array (streaming/vectorized path)
+          json.dump(users, open('pgo-arr.json','w'))
           "
 
-      - name: Build instrumented binary
+      - name: Build PGO-instrumented binary
         run: mvn -Pnative-pgo-instrument package -DskipTests
 
       - name: Collect PGO profiles
@@ -63,26 +69,47 @@ jobs:
           INSTRUMENTED=target/bjq-instrument
           if [ -f "${INSTRUMENTED}.exe" ]; then INSTRUMENTED="${INSTRUMENTED}.exe"; fi
 
-          # Run representative workloads
-          $INSTRUMENTED 'count(for $u in $$.users[] where $u.age > 30 return $u.name)' pgo-data.json > /dev/null 2>&1 || true
-          $INSTRUMENTED 'for $u in $$.users[] let $c := $u.city group by $c return {"city": $c, "count": count($u)}' pgo-data.json > /dev/null 2>&1 || true
-          $INSTRUMENTED 'for $u in $$.users[], $o in $$.orders[] where $o.user_id eq $u.age return {"name": $u.name, "amount": $o.amount}' pgo-data.json > /dev/null 2>&1 || true
+          # Exercise all major code paths for thorough PGO coverage:
 
-          # Move profile to expected location
+          # 1. Filter queries (ForBind + Select hot path)
+          $INSTRUMENTED 'count(for $u in $$.users[] where $u.age > 30 return $u.name)' pgo-obj.json > /dev/null 2>&1 || true
+
+          # 2. Group-by queries (GroupBy + Grouping hot path)
+          $INSTRUMENTED 'for $u in $$.users[] let $c := $u.city group by $c return {"city": $c, "count": count($u)}' pgo-obj.json > /dev/null 2>&1 || true
+
+          # 3. Join queries (TableJoin + hash join hot path)
+          $INSTRUMENTED 'for $u in $$.users[], $o in $$.orders[] where $o.user_id eq $u.age return {"name": $u.name, "amount": $o.amount}' pgo-obj.json > /dev/null 2>&1 || true
+
+          # 4. Order-by queries (TupleSort hot path)
+          $INSTRUMENTED 'for $u in $$.users[] order by $u.age descending return $u.name' pgo-obj.json > /dev/null 2>&1 || true
+
+          # 5. Aggregation functions
+          $INSTRUMENTED 'sum(for $u in $$.users[] return $u.age)' pgo-obj.json > /dev/null 2>&1 || true
+
+          # 6. Streaming path (top-level array)
+          $INSTRUMENTED 'count(for $u in $$[] where $u.age > 30 return $u.name)' pgo-arr.json > /dev/null 2>&1 || true
+          $INSTRUMENTED 'for $u in $$[] let $c := $u.city group by $c return {"city": $c, "count": count($u)}' pgo-arr.json > /dev/null 2>&1 || true
+
+          # 7. Run twice for JIT-like profile depth
+          $INSTRUMENTED 'count(for $u in $$.users[] where $u.age > 30 return $u.name)' pgo-obj.json > /dev/null 2>&1 || true
+          $INSTRUMENTED 'for $u in $$.users[] let $c := $u.city group by $c return {"city": $c, "count": count($u)}' pgo-obj.json > /dev/null 2>&1 || true
+
           if [ -f default.iprof ]; then
-            echo "PGO profile collected successfully"
+            echo "PGO profile collected ($(wc -c < default.iprof) bytes)"
           else
             echo "Warning: PGO profile not found, building without PGO"
           fi
 
       - name: Build optimized binary with PGO
+        shell: bash
         run: |
           if [ -f default.iprof ]; then
+            echo "Building with PGO + G1 GC + O3"
             mvn -Pnative-pgo package -DskipTests
           else
+            echo "Building without PGO (fallback)"
             mvn -Pnative package -DskipTests
           fi
-        shell: bash
 
       - name: Rename binary (Unix)
         if: runner.os != 'Windows'

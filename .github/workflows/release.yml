@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g., 0.6)'
+        description: 'Release version (e.g., 0.8)'
         required: true
       next-version:
-        description: 'Next development version (e.g., 0.7-SNAPSHOT)'
+        description: 'Next development version (e.g., 0.9-SNAPSHOT)'
         required: true
 
 jobs:
@@ -58,3 +58,46 @@ jobs:
         run: |
           git push origin HEAD
           git push origin "v${{ inputs.version }}"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ inputs.version }}" \
+            --title "Brackit ${{ inputs.version }}" \
+            --generate-release-notes \
+            --notes "$(cat <<'NOTES'
+          ## Highlights
+
+          ### Performance: 1 Billion JSON Records in 16 seconds
+          - **Parallel group-by**: 1B records at 3.0 GB/s (97% of disk I/O speed)
+          - **bjq native** 2-5x faster than jq on all scales
+          - 100M+ records with only 4GB heap (jq OOMs at 100M)
+
+          ### New Architecture
+          - **FastJSONParser**: byte-level parser with field interning, CompactObject, Int32 cache
+          - **StreamingJSONParser**: SIMD structural index, zero-copy slices for >2GB files
+          - **MappedJsonScanner**: Foreign Memory API mmap for multi-GB files
+          - **ParallelGroupByExec**: 1BRC-inspired parallel chunk processing with open-addressing byte-key hash map
+          - **SpillableGroupBy**: disk-spill for large aggregations
+          - **MorselPipeline**: DuckDB-inspired morsel-driven parallelism
+          - **TupleSerializer**: binary serialization for external merge sort
+
+          ### Native Binaries
+          All binaries built with Oracle GraalVM, PGO (Profile-Guided Optimization), G1 GC, and -O3:
+          - `bjq-linux-amd64`
+          - `bjq-linux-arm64`
+          - `bjq-macos-amd64`
+          - `bjq-macos-arm64`
+          - `bjq-windows-amd64.exe`
+
+          ### Install
+          ```bash
+          curl -L https://github.com/sirixdb/brackit/releases/latest/download/bjq-linux-amd64 -o bjq
+          chmod +x bjq
+          sudo mv bjq /usr/local/bin/
+          ```
+
+          **Full Changelog**: https://github.com/sirixdb/brackit/compare/v0.7...v${{ inputs.version }}
+          NOTES
+          )"
