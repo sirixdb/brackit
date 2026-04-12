@@ -444,8 +444,8 @@ public class BrackitJq {
         }
       }
 
-    } catch (Exception e) {
-      // Vectorized path failed — fall back to Volcano
+    } catch (Throwable e) {
+      // Vectorized path failed (e.g., UnsupportedFeatureError in native-image) — fall back to Volcano
     }
 
     return null;

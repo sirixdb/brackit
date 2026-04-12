@@ -28,9 +28,11 @@
 package io.brackit.query.operator.vectorized;
 
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -78,25 +80,17 @@ public final class ParallelGroupByExec {
       long fileSize = channel.size();
       MemorySegment segment = channel.map(FileChannel.MapMode.READ_ONLY, 0, fileSize, arena);
 
-      // Find the start of the array content
       long arrayStart = findArrayStart(segment, fileSize);
-
-      // Split into chunks at record boundaries
       long[] chunkStarts = new long[nThreads + 1];
       chunkStarts[0] = arrayStart;
       chunkStarts[nThreads] = fileSize;
-
       long chunkSize = (fileSize - arrayStart) / nThreads;
       for (int i = 1; i < nThreads; i++) {
-        long approx = arrayStart + i * chunkSize;
-        // Align to next record boundary (find next '{' after a ',')
-        chunkStarts[i] = alignToRecordBoundary(segment, approx, fileSize);
+        chunkStarts[i] = alignToRecordBoundary(segment, arrayStart + i * chunkSize, fileSize);
       }
 
-      // Process chunks in parallel
       ExecutorService executor = Executors.newFixedThreadPool(nThreads);
       List<Future<HashMap<String, long[]>>> futures = new ArrayList<>(nThreads);
-
       for (int i = 0; i < nThreads; i++) {
         long start = chunkStarts[i];
         long end = chunkStarts[i + 1];
@@ -394,20 +388,27 @@ public final class ParallelGroupByExec {
   // ==================== File navigation ====================
 
   private static long findArrayStart(MemorySegment segment, long fileSize) {
-    for (long i = 0; i < Math.min(fileSize, 4096); i++) {
-      if (segment.get(ValueLayout.JAVA_BYTE, i) == '[') {
+    // Bulk copy to avoid per-byte MemorySegment.get() (required for native-image)
+    int len = (int) Math.min(fileSize, 4096);
+    byte[] buf = new byte[len];
+    MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, 0, buf, 0, len);
+    for (int i = 0; i < len; i++) {
+      if (buf[i] == '[')
         return i + 1;
-      }
     }
     return 0;
   }
 
   private static long alignToRecordBoundary(MemorySegment segment, long approx, long fileSize) {
-    // Search forward for the start of a JSON object
-    for (long i = approx; i < fileSize; i++) {
-      byte b = segment.get(ValueLayout.JAVA_BYTE, i);
-      if (b == '{')
-        return i;
+    // Bulk copy to find the next record boundary
+    int len = (int) Math.min(8192, fileSize - approx);
+    if (len <= 0)
+      return fileSize;
+    byte[] buf = new byte[len];
+    MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, approx, buf, 0, len);
+    for (int i = 0; i < len; i++) {
+      if (buf[i] == '{')
+        return approx + i;
     }
     return fileSize;
   }
