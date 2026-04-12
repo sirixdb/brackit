@@ -103,8 +103,15 @@ jobs:
       - name: Build optimized binary with PGO
         shell: bash
         run: |
+          # G1 GC only supported on Linux; macOS/Windows use serial GC
+          if [[ "${{ matrix.os-name }}" != "linux" ]]; then
+            echo "Non-Linux: patching pom.xml to use serial GC"
+            sed -i.bak 's/--gc=G1/--gc=serial/g' pom.xml || \
+            sed -i '' 's/--gc=G1/--gc=serial/g' pom.xml
+          fi
+
           if [ -f default.iprof ]; then
-            echo "Building with PGO + G1 GC + O3"
+            echo "Building with PGO + O3"
             mvn -Pnative-pgo package -DskipTests
           else
             echo "Building without PGO (fallback)"
