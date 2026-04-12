@@ -37,6 +37,10 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+
+import jdk.incubator.vector.ByteVector;
+import jdk.incubator.vector.VectorMask;
+import jdk.incubator.vector.VectorSpecies;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,6 +71,17 @@ import io.brackit.query.jsonitem.object.CompactObject;
 public final class ParallelGroupByExec {
 
   private static final int WINDOW_SIZE = 8 * 1024 * 1024;
+  private static final VectorSpecies<Byte> BYTE_SPECIES;
+  static {
+    VectorSpecies<Byte> species;
+    try {
+      species = ByteVector.SPECIES_PREFERRED;
+      species.length(); // force init
+    } catch (Throwable t) {
+      species = null;
+    }
+    BYTE_SPECIES = species;
+  }
 
   /**
    * Execute a parallel group-by-count on a memory-mapped JSON file.
@@ -191,7 +206,7 @@ public final class ParallelGroupByExec {
       boolean rewound = false;
 
       while (localPos < winLen) {
-        // Find '{' — start of object
+        // Find '{' — scalar scan (records are ~50 bytes apart, SIMD overhead not worth it)
         while (localPos < winLen && window[localPos] != '{')
           localPos++;
         if (localPos >= winLen)
@@ -199,7 +214,9 @@ public final class ParallelGroupByExec {
 
         int objStart = localPos;
 
-        // Find matching '}' with depth tracking
+        // Find matching '}' — for flat JSON objects (depth 1), we can skip
+        // to the next '}' that's not inside a string. This is the common case
+        // for our data: {"name":"...","age":N,"city":"..."}
         int depth = 0;
         boolean inStr = false;
         while (localPos < winLen) {
@@ -235,45 +252,46 @@ public final class ParallelGroupByExec {
 
         int objEnd = localPos;
 
-        // Find field value — inline indexOf + value extraction (no method call overhead)
-        int fp = objStart;
+        // SIMD-accelerated field search — find first byte of pattern, then verify rest
+        int fp = simdFind(window, objStart, objEnd, pattern[0]);
         int valueStart = -1;
         int valueEnd = -1;
 
-        // Scan for pattern within the object bytes
         int stop = objEnd - patLen;
         while (fp <= stop) {
-          if (window[fp] == pattern[0]) {
-            boolean match = true;
-            for (int j = 1; j < patLen; j++) {
-              if (window[fp + j] != pattern[j]) {
-                match = false;
-                break;
-              }
-            }
-            if (match) {
-              int vp = fp + patLen;
-              while (vp < objEnd && window[vp] == ' ')
-                vp++;
-              if (vp < objEnd && window[vp] == '"') {
-                vp++;
-                valueStart = vp;
-                while (vp < objEnd) {
-                  if (window[vp] == '\\') {
-                    vp += 2;
-                    continue;
-                  }
-                  if (window[vp] == '"') {
-                    valueEnd = vp;
-                    break;
-                  }
-                  vp++;
-                }
-              }
+          // Verify full pattern match
+          boolean match = true;
+          for (int j = 1; j < patLen; j++) {
+            if (window[fp + j] != pattern[j]) {
+              match = false;
               break;
             }
           }
-          fp++;
+          if (!match) {
+            fp = simdFind(window, fp + 1, objEnd, pattern[0]);
+            continue;
+          }
+          {
+            int vp = fp + patLen;
+            while (vp < objEnd && window[vp] == ' ')
+              vp++;
+            if (vp < objEnd && window[vp] == '"') {
+              vp++;
+              valueStart = vp;
+              while (vp < objEnd) {
+                if (window[vp] == '\\') {
+                  vp += 2;
+                  continue;
+                }
+                if (window[vp] == '"') {
+                  valueEnd = vp;
+                  break;
+                }
+                vp++;
+              }
+            }
+            break;
+          }
         }
 
         if (valueStart >= 0 && valueEnd > valueStart) {
@@ -541,5 +559,45 @@ public final class ParallelGroupByExec {
       results.add(new CompactObject(fields, values));
     }
     return results;
+  }
+
+  // ==================== SIMD-accelerated byte search ====================
+
+  /**
+   * Find the next occurrence of {@code target} in buf[from..limit) using SIMD.
+   * Processes BYTE_SPECIES.length() bytes per cycle (32 or 64 on modern CPUs).
+   * Falls back to scalar scan when Vector API is unavailable.
+   */
+  private static int simdFind(byte[] buf, int from, int limit, byte target) {
+    if (BYTE_SPECIES == null) {
+      // Scalar fallback
+      for (int i = from; i < limit; i++) {
+        if (buf[i] == target)
+          return i;
+      }
+      return limit;
+    }
+
+    int i = from;
+    int vectorLen = BYTE_SPECIES.length();
+    int vectorLimit = limit - vectorLen;
+    ByteVector targetVec = ByteVector.broadcast(BYTE_SPECIES, target);
+
+    // SIMD scan: compare SPECIES_LENGTH bytes at a time
+    while (i <= vectorLimit) {
+      ByteVector v = ByteVector.fromArray(BYTE_SPECIES, buf, i);
+      VectorMask<Byte> mask = v.eq(targetVec);
+      if (mask.anyTrue()) {
+        return i + mask.firstTrue();
+      }
+      i += vectorLen;
+    }
+
+    // Scalar tail
+    for (; i < limit; i++) {
+      if (buf[i] == target)
+        return i;
+    }
+    return limit;
   }
 }
