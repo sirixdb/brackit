@@ -225,7 +225,7 @@ for N in $SIZES; do
   print_row "$N" "filter (scan + predicate)" "$bjq_t" "$jq_t" "$(compute_ratio "$bjq_t" "$jq_t")"
 
   # --- Query 2: Group by + multiple aggregates ---
-  bjq_t=$(bench "bjq-group-$N" "$BJQ_CMD" "'for \$u in \$\$[] group by \$d := \$u.dept return {\"dept\": \$d, \"count\": count(\$u), \"avg_salary\": avg(\$u.salary), \"avg_score\": avg(\$u.score)}'" "$FLAT")
+  bjq_t=$(bench "bjq-group-$N" "$BJQ_CMD" "'for \$u in \$\$[] let \$d := \$u.dept group by \$d return {\"dept\": \$d, \"count\": count(\$u), \"avg_salary\": avg(\$u.salary), \"avg_score\": avg(\$u.score)}'" "$FLAT")
   if $JQ_AVAILABLE; then
     jq_t=$(bench "jq-group-$N" "jq" "'group_by(.dept) | map({dept: .[0].dept, count: length, avg_salary: (map(.salary) | add / length), avg_score: (map(.score) | add / length)})'" "$FLAT")
   else
@@ -234,7 +234,7 @@ for N in $SIZES; do
   print_row "$N" "group by + 3 aggregates" "$bjq_t" "$jq_t" "$(compute_ratio "$bjq_t" "$jq_t")"
 
   # --- Query 3: Group by two keys ---
-  bjq_t=$(bench "bjq-group2-$N" "$BJQ_CMD" "'for \$u in \$\$[] where \$u.active group by \$d := \$u.dept, \$c := \$u.city let \$total := sum(\$u.salary) order by \$total descending return {\"dept\": \$d, \"city\": \$c, \"headcount\": count(\$u), \"total_salary\": \$total}'" "$FLAT")
+  bjq_t=$(bench "bjq-group2-$N" "$BJQ_CMD" "'for \$u in \$\$[] where \$u.active let \$d := \$u.dept, \$c := \$u.city group by \$d, \$c let \$total := sum(\$u.salary) order by \$total descending return {\"dept\": \$d, \"city\": \$c, \"headcount\": count(\$u), \"total_salary\": \$total}'" "$FLAT")
   if $JQ_AVAILABLE; then
     jq_t=$(bench "jq-group2-$N" "jq" "'[.[] | select(.active)] | group_by(.dept, .city) | map({dept: .[0].dept, city: .[0].city, headcount: length, total_salary: (map(.salary) | add)}) | sort_by(-.total_salary)'" "$FLAT")
   else
@@ -258,7 +258,7 @@ for N in $SIZES; do
   fi
 
   # --- Query 5: Join + group + aggregate + sort (the "report" query) ---
-  bjq_t=$(bench "bjq-report-$N" "$BJQ_CMD" "'for \$o in \$\$.orders[], \$c in \$\$.customers[] where \$o.customer_id eq \$c.id group by \$tier := \$c.tier, \$cat := \$o.category let \$revenue := sum(\$o.amount) let \$qty := sum(\$o.quantity) order by \$revenue descending return {\"tier\": \$tier, \"category\": \$cat, \"revenue\": \$revenue, \"units\": \$qty, \"orders\": count(\$o)}'" "$JOIN")
+  bjq_t=$(bench "bjq-report-$N" "$BJQ_CMD" "'for \$o in \$\$.orders[], \$c in \$\$.customers[] where \$o.customer_id eq \$c.id let \$tier := \$c.tier, \$cat := \$o.category group by \$tier, \$cat let \$revenue := sum(\$o.amount) let \$qty := sum(\$o.quantity) order by \$revenue descending return {\"tier\": \$tier, \"category\": \$cat, \"revenue\": \$revenue, \"units\": \$qty, \"orders\": count(\$o)}'" "$JOIN")
   if $JQ_AVAILABLE && [ "$N" -le "$JQ_JOIN_LIMIT" ]; then
     jq_t=$(bench "jq-report-$N" "jq" "'[.orders[] as \$o | .customers[] | select(.id == \$o.customer_id) | {tier: .tier, category: \$o.category, amount: \$o.amount, quantity: \$o.quantity}] | group_by(.tier, .category) | map({tier: .[0].tier, category: .[0].category, revenue: (map(.amount)|add), units: (map(.quantity)|add), orders: length}) | sort_by(-.revenue)'" "$JOIN")
   elif $JQ_AVAILABLE; then
@@ -280,6 +280,51 @@ for N in $SIZES; do
     jq_t="--"
   fi
   print_row "$N" "5-way aggregation" "$bjq_t" "$jq_t" "$(compute_ratio "$bjq_t" "$jq_t")"
+
+  # --- Query 7: String equality filter ---
+  bjq_t=$(bench "bjq-streq-$N" "$BJQ_CMD" "'for \$u in \$\$[] where \$u.city eq \"Tokyo\" return \$u.name'" "$FLAT")
+  if $JQ_AVAILABLE; then
+    jq_t=$(bench "jq-streq-$N" "jq" "'[.[] | select(.city == \"Tokyo\") | .name]'" "$FLAT")
+  else
+    jq_t="--"
+  fi
+  print_row "$N" "string equality filter" "$bjq_t" "$jq_t" "$(compute_ratio "$bjq_t" "$jq_t")"
+
+  # --- Query 8: Top-N (order + slice) ---
+  bjq_t=$(bench "bjq-topn-$N" "$BJQ_CMD" "'(for \$u in \$\$[] order by \$u.salary descending return {\"name\": \$u.name, \"salary\": \$u.salary})[0:10]'" "$FLAT")
+  if $JQ_AVAILABLE; then
+    jq_t=$(bench "jq-topn-$N" "jq" "'sort_by(-.salary) | .[:10] | map({name, salary})'" "$FLAT")
+  else
+    jq_t="--"
+  fi
+  print_row "$N" "top-N (order + slice)" "$bjq_t" "$jq_t" "$(compute_ratio "$bjq_t" "$jq_t")"
+
+  # --- Query 9: Compound AND predicate ---
+  bjq_t=$(bench "bjq-compound-$N" "$BJQ_CMD" "'for \$u in \$\$[] where \$u.age > 30 and \$u.age < 50 and \$u.active return {\"name\": \$u.name, \"dept\": \$u.dept}'" "$FLAT")
+  if $JQ_AVAILABLE; then
+    jq_t=$(bench "jq-compound-$N" "jq" "'[.[] | select(.age > 30 and .age < 50 and .active) | {name, dept}]'" "$FLAT")
+  else
+    jq_t="--"
+  fi
+  print_row "$N" "compound AND filter" "$bjq_t" "$jq_t" "$(compute_ratio "$bjq_t" "$jq_t")"
+
+  # --- Query 10: Count distinct ---
+  bjq_t=$(bench "bjq-cntdist-$N" "$BJQ_CMD" "'count(for \$u in \$\$[] let \$d := \$u.dept group by \$d return \$d)'" "$FLAT")
+  if $JQ_AVAILABLE; then
+    jq_t=$(bench "jq-cntdist-$N" "jq" "'[.[].dept] | unique | length'" "$FLAT")
+  else
+    jq_t="--"
+  fi
+  print_row "$N" "count distinct" "$bjq_t" "$jq_t" "$(compute_ratio "$bjq_t" "$jq_t")"
+
+  # --- Query 11: Multi-key group + top-N on orders ---
+  bjq_t=$(bench "bjq-grptop-$N" "$BJQ_CMD" "'(for \$o in \$\$.orders[] let \$c := \$o.category, \$r := \$o.region group by \$c, \$r let \$total := sum(\$o.amount) order by \$total descending return {\"category\": \$c, \"region\": \$r, \"total\": \$total})[0:10]'" "$JOIN")
+  if $JQ_AVAILABLE; then
+    jq_t=$(bench "jq-grptop-$N" "jq" "'.orders | group_by(.category, .region) | map({category: .[0].category, region: .[0].region, total: (map(.amount)|add)}) | sort_by(-.total) | .[:10]'" "$JOIN")
+  else
+    jq_t="--"
+  fi
+  print_row "$N" "multi-key group + top-N" "$bjq_t" "$jq_t" "$(compute_ratio "$bjq_t" "$jq_t")"
 
   echo ""
 

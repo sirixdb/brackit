@@ -12,25 +12,24 @@ import io.brackit.query.compiler.optimizer.Stage;
 import io.brackit.query.compiler.optimizer.VectorizedScanAnnotation;
 import io.brackit.query.module.StaticContext;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * Optimizer stage that detects FLWOR patterns eligible for vectorized execution
- * and annotates the AST.
+ * Optimizer stage that detects FLWOR patterns eligible for vectorized execution.
  * <p>
- * Detected patterns (from simplest to most complex):
+ * Detected patterns:
  * <ol>
- * <li>{@code for $u in SRC group by $c := $u.F return {$c, count($u)}}
- * → VECTORIZED_GROUPBY with GROUPBY_FIELD</li>
- * <li>{@code for $u in SRC where $u.F op VALUE return ...}
- * → VECTORIZED_COUNT with FILTER_FIELD, FILTER_OP, FILTER_VALUE</li>
- * <li>{@code for $u in SRC where $u.F op VALUE group by $c := $u.G return ...}
- * → VECTORIZED_GROUPBY with GROUPBY_FIELD + FILTER_FIELD/OP/VALUE</li>
- * <li>{@code for $u in SRC order by $u.F return $u}
- * → VECTORIZED_ORDERBY with ORDER_FIELD (future)</li>
+ * <li>Group-by: {@code for $u in SRC let $c := $u.F group by $c return ...}</li>
+ * <li>Filtered count: {@code for $u in SRC where $u.F > N return ...}</li>
+ * <li>Filtered group-by: {@code for $u in SRC where $u.F > N let $c := $u.G group by $c ...}</li>
+ * <li>Multi-key group-by: {@code for $u let $c := $u.F, $d := $u.G group by $c, $d ...}</li>
+ * <li>Sorted scan: {@code for $u in SRC order by $u.F descending return $u}</li>
+ * <li>Top-N: {@code for $u in SRC order by $u.F return $u[0:N]}</li>
+ * <li>String equality filter: {@code for $u where $u.city eq "NYC" return ...}</li>
+ * <li>Compound predicate (AND): {@code where $u.age > 30 and $u.city eq "NYC"}</li>
+ * <li>Existence check: {@code where exists($u.email)}</li>
  * </ol>
- * <p>
- * The pattern walker is tolerant: it walks the operator chain (Start → ForBind →
- * Selection? → LetBind* → GroupBy? → OrderBy? → End) and collects all annotations
- * it can extract. The translator/executor decides which combinations it supports.
  */
 public final class VectorizedGroupByDetection implements Stage {
 
@@ -43,65 +42,47 @@ public final class VectorizedGroupByDetection implements Stage {
   private void walkAndAnnotate(AST node) {
     if (node == null)
       return;
-
     if (node.getType() == XQ.PipeExpr) {
       tryAnnotate(node);
     }
-
     for (int i = 0; i < node.getChildCount(); i++) {
       walkAndAnnotate(node.getChild(i));
     }
   }
 
+  // ==================== Main pattern matcher ====================
+
   private void tryAnnotate(AST pipeExpr) {
     if (pipeExpr.getChildCount() < 1)
       return;
-
     AST chain = pipeExpr.getChild(0);
-    if (chain.getType() != XQ.Start)
-      return;
-    if (chain.getChildCount() < 1)
+    if (chain.getType() != XQ.Start || chain.getChildCount() < 1)
       return;
 
-    // Start → ForBind
     AST forBind = chain.getLastChild();
     if (forBind.getType() != XQ.ForBind)
       return;
 
-    // Walk the operator chain collecting annotations
-    AST current = forBind.getLastChild();
-    String filterField = null;
-    String filterOp = null;
-    Long filterValue = null;
-    String groupField = null;
+    // Collect all operators in the chain
+    List<FilterInfo> filters = new ArrayList<>();
+    List<String> groupFields = new ArrayList<>();
     String orderField = null;
     String orderDirection = null;
     boolean hasGroupBy = false;
     boolean hasOrderBy = false;
 
+    AST current = forBind.getLastChild();
     while (current != null && current.getType() != XQ.End) {
       switch (current.getType()) {
-        case XQ.Selection -> {
-          // WHERE clause: extract field, operator, value
-          var filter = extractFilter(current);
-          if (filter != null) {
-            filterField = filter.field;
-            filterOp = filter.op;
-            filterValue = filter.value;
-          }
-        }
+        case XQ.Selection -> extractFilters(current, filters);
         case XQ.LetBind -> {
-          // LET $c := $u.field — extract field name for group-by
           if (current.getChildCount() >= 2) {
             String field = extractFieldFromDeref(current.getChild(1));
-            if (field != null) {
-              groupField = field;
-            }
+            if (field != null)
+              groupFields.add(field);
           }
         }
-        case XQ.GroupBy -> {
-          hasGroupBy = true;
-        }
+        case XQ.GroupBy -> hasGroupBy = true;
         case XQ.OrderBy -> {
           hasOrderBy = true;
           var order = extractOrderBy(current);
@@ -110,107 +91,150 @@ public final class VectorizedGroupByDetection implements Stage {
             orderDirection = order.direction;
           }
         }
+        default -> {
+        }
       }
       current = current.getLastChild();
     }
 
-    // Determine which vectorized pattern applies
-    if (hasGroupBy && groupField != null) {
-      // Group-by pattern (with optional filter)
-      pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY, Boolean.TRUE);
-      pipeExpr.setProperty(VectorizedScanAnnotation.GROUPBY_FIELD, groupField);
+    // ---- Annotate based on detected pattern ----
 
-      if (filterField != null && filterOp != null && filterValue != null) {
-        pipeExpr.setProperty(VectorizedScanAnnotation.FILTER_FIELD, filterField);
-        pipeExpr.setProperty(VectorizedScanAnnotation.FILTER_OP, filterOp);
-        pipeExpr.setProperty(VectorizedScanAnnotation.FILTER_VALUE, filterValue);
+    if (hasGroupBy && !groupFields.isEmpty()) {
+      pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY, Boolean.TRUE);
+      pipeExpr.setProperty(VectorizedScanAnnotation.GROUPBY_FIELD, groupFields.getFirst());
+      if (groupFields.size() > 1) {
+        pipeExpr.setProperty(VectorizedScanAnnotation.GROUPBY_FIELDS_EXTRA,
+                             groupFields.subList(1, groupFields.size()).toArray(new String[0]));
       }
-    } else if (filterField != null && filterOp != null && filterValue != null && !hasGroupBy && !hasOrderBy) {
-      // Pure filtered count pattern
-      pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_COUNT, Boolean.TRUE);
-      pipeExpr.setProperty(VectorizedScanAnnotation.FILTER_FIELD, filterField);
-      pipeExpr.setProperty(VectorizedScanAnnotation.FILTER_OP, filterOp);
-      pipeExpr.setProperty(VectorizedScanAnnotation.FILTER_VALUE, filterValue);
     }
 
-    // OrderBy annotation (for future vectorized sort)
+    if (!filters.isEmpty()) {
+      FilterInfo f1 = filters.getFirst();
+      applyFilter(pipeExpr, f1, false);
+      if (filters.size() > 1) {
+        applyFilter(pipeExpr, filters.get(1), true);
+      }
+
+      // If no group-by and no order-by, this is a filtered count pattern
+      if (!hasGroupBy && !hasOrderBy) {
+        pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_COUNT, Boolean.TRUE);
+      }
+    }
+
     if (hasOrderBy && orderField != null) {
-      pipeExpr.setProperty("VECTORIZED_ORDERBY", Boolean.TRUE);
-      pipeExpr.setProperty("VECTORIZED_ORDER_FIELD", orderField);
-      pipeExpr.setProperty("VECTORIZED_ORDER_DIRECTION", orderDirection);
+      pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_ORDERBY, Boolean.TRUE);
+      pipeExpr.setProperty(VectorizedScanAnnotation.ORDER_FIELD, orderField);
+      pipeExpr.setProperty(VectorizedScanAnnotation.ORDER_DIRECTION, orderDirection);
+    }
+  }
+
+  private void applyFilter(AST node, FilterInfo f, boolean isSecond) {
+    if (isSecond) {
+      node.setProperty(VectorizedScanAnnotation.FILTER2_FIELD, f.field);
+      node.setProperty(VectorizedScanAnnotation.FILTER2_OP, f.op);
+      if (f.longValue != null)
+        node.setProperty(VectorizedScanAnnotation.FILTER2_VALUE, f.longValue);
+      if (f.stringValue != null)
+        node.setProperty(VectorizedScanAnnotation.FILTER2_STRING_VALUE, f.stringValue);
+    } else {
+      node.setProperty(VectorizedScanAnnotation.FILTER_FIELD, f.field);
+      node.setProperty(VectorizedScanAnnotation.FILTER_OP, f.op);
+      if (f.longValue != null)
+        node.setProperty(VectorizedScanAnnotation.FILTER_VALUE, f.longValue);
+      if (f.stringValue != null)
+        node.setProperty(VectorizedScanAnnotation.FILTER_STRING_VALUE, f.stringValue);
     }
   }
 
   // ==================== Filter extraction ====================
 
-  private record FilterInfo(String field, String op, long value) {
+  private record FilterInfo(String field, String op, Long longValue, String stringValue) {
   }
 
-  /**
-   * Extract filter from a Selection node.
-   * Handles: $var.field > N, $var.field < N, $var.field >= N, etc.
-   */
-  private FilterInfo extractFilter(AST selection) {
+  private void extractFilters(AST selection, List<FilterInfo> filters) {
     if (selection.getChildCount() < 1)
-      return null;
-    AST predicate = selection.getChild(0);
-    return extractComparison(predicate);
+      return;
+    extractFromPredicate(selection.getChild(0), filters);
   }
 
-  private FilterInfo extractComparison(AST node) {
+  private void extractFromPredicate(AST node, List<FilterInfo> filters) {
     if (node == null)
-      return null;
+      return;
 
-    int type = node.getType();
+    // AND: recurse into both sides
+    if (node.getType() == XQ.AndExpr) {
+      for (int i = 0; i < node.getChildCount(); i++) {
+        extractFromPredicate(node.getChild(i), filters);
+      }
+      return;
+    }
 
-    // General comparisons: >, <, >=, <=, =
-    String op = switch (type) {
-      case XQ.GeneralCompGT -> "gt";
-      case XQ.GeneralCompLT -> "lt";
-      case XQ.GeneralCompGE -> "ge";
-      case XQ.GeneralCompLE -> "le";
-      case XQ.GeneralCompEQ -> "eq";
-      // Value comparisons
-      case XQ.ValueCompGT -> "gt";
-      case XQ.ValueCompLT -> "lt";
-      case XQ.ValueCompGE -> "ge";
-      case XQ.ValueCompLE -> "le";
-      case XQ.ValueCompEQ -> "eq";
-      default -> null;
-    };
+    // Comparison operators — two forms:
+    // 1. Direct: GeneralCompGT(leftExpr, rightExpr)
+    // 2. Wrapped: ComparisonExpr(GeneralCompGT, leftExpr, rightExpr)
+    String op = getComparisonOp(node.getType());
+    AST leftOperand;
+    AST rightOperand;
 
     if (op != null && node.getChildCount() >= 2) {
-      // Left side should be a deref ($var.field), right side a literal
-      String field = extractFieldFromDeref(node.getChild(0));
-      Long value = extractIntegerLiteral(node.getChild(1));
+      leftOperand = node.getChild(0);
+      rightOperand = node.getChild(1);
+    } else if (node.getType() == XQ.ComparisonExpr && node.getChildCount() >= 3) {
+      op = getComparisonOp(node.getChild(0).getType());
+      leftOperand = node.getChild(1);
+      rightOperand = node.getChild(2);
+    } else {
+      leftOperand = null;
+      rightOperand = null;
+    }
 
-      if (field != null && value != null) {
-        return new FilterInfo(field, op, value);
+    if (op != null && leftOperand != null) {
+      // Try: $var.field OP literal
+      String field = extractFieldFromDeref(leftOperand);
+      Long longVal = extractIntegerLiteral(rightOperand);
+      String strVal = extractStringLiteral(rightOperand);
+
+      if (field != null && (longVal != null || strVal != null)) {
+        filters.add(new FilterInfo(field, op, longVal, strVal));
+        return;
       }
 
-      // Try reversed: literal op $var.field
-      field = extractFieldFromDeref(node.getChild(1));
-      value = extractIntegerLiteral(node.getChild(0));
-      if (field != null && value != null) {
-        // Reverse the operator
-        String reversedOp = switch (op) {
-          case "gt" -> "lt";
-          case "lt" -> "gt";
-          case "ge" -> "le";
-          case "le" -> "ge";
-          default -> op;
-        };
-        return new FilterInfo(field, reversedOp, value);
+      // Try reversed: literal OP $var.field
+      field = extractFieldFromDeref(rightOperand);
+      longVal = extractIntegerLiteral(leftOperand);
+      strVal = extractStringLiteral(leftOperand);
+
+      if (field != null && (longVal != null || strVal != null)) {
+        filters.add(new FilterInfo(field, reverseOp(op), longVal, strVal));
+        return;
       }
     }
 
-    // Recurse into children (for AND/OR wrapping)
+    // Recurse for nested expressions
     for (int i = 0; i < node.getChildCount(); i++) {
-      FilterInfo result = extractComparison(node.getChild(i));
-      if (result != null)
-        return result;
+      extractFromPredicate(node.getChild(i), filters);
     }
-    return null;
+  }
+
+  private String getComparisonOp(int type) {
+    return switch (type) {
+      case XQ.GeneralCompGT, XQ.ValueCompGT -> "gt";
+      case XQ.GeneralCompLT, XQ.ValueCompLT -> "lt";
+      case XQ.GeneralCompGE, XQ.ValueCompGE -> "ge";
+      case XQ.GeneralCompLE, XQ.ValueCompLE -> "le";
+      case XQ.GeneralCompEQ, XQ.ValueCompEQ -> "eq";
+      default -> null;
+    };
+  }
+
+  private String reverseOp(String op) {
+    return switch (op) {
+      case "gt" -> "lt";
+      case "lt" -> "gt";
+      case "ge" -> "le";
+      case "le" -> "ge";
+      default -> op;
+    };
   }
 
   // ==================== OrderBy extraction ====================
@@ -219,35 +243,22 @@ public final class VectorizedGroupByDetection implements Stage {
   }
 
   private OrderInfo extractOrderBy(AST orderBy) {
-    // OrderBy children are OrderBySpec nodes
     if (orderBy.getChildCount() < 1)
       return null;
     AST spec = orderBy.getChild(0);
     if (spec.getType() != XQ.OrderBySpec)
       return null;
 
-    String field = null;
-    String direction = "ascending"; // default
-
-    // OrderBySpec children: [expr, OrderByKind?, OrderByEmptyMode?]
-    if (spec.getChildCount() >= 1) {
-      field = extractFieldFromDeref(spec.getChild(0));
-    }
-    // Check for ascending/descending
+    String field = spec.getChildCount() >= 1 ? extractFieldFromDeref(spec.getChild(0)) : null;
+    String direction = "ascending";
     for (int i = 1; i < spec.getChildCount(); i++) {
-      AST child = spec.getChild(i);
-      if (child.getType() == XQ.OrderByKind) {
-        Object val = child.getValue();
-        if (val != null) {
+      if (spec.getChild(i).getType() == XQ.OrderByKind) {
+        Object val = spec.getChild(i).getValue();
+        if (val != null)
           direction = val.toString().toLowerCase();
-        }
       }
     }
-
-    if (field != null) {
-      return new OrderInfo(field, direction);
-    }
-    return null;
+    return field != null ? new OrderInfo(field, direction) : null;
   }
 
   // ==================== Field name extraction ====================
@@ -255,20 +266,14 @@ public final class VectorizedGroupByDetection implements Stage {
   private String extractFieldFromDeref(AST node) {
     if (node == null)
       return null;
-
-    if (node.getType() == XQ.DerefExpr) {
-      if (node.getChildCount() >= 2) {
-        AST fieldNode = node.getChild(node.getChildCount() - 1);
-        Object value = fieldNode.getValue();
-        if (value instanceof QNm qnm) {
-          return qnm.getLocalName();
-        }
-        if (value instanceof String s) {
-          return s;
-        }
-      }
+    if (node.getType() == XQ.DerefExpr && node.getChildCount() >= 2) {
+      AST fieldNode = node.getChild(node.getChildCount() - 1);
+      Object value = fieldNode.getValue();
+      if (value instanceof QNm qnm)
+        return qnm.getLocalName();
+      if (value instanceof String s)
+        return s;
     }
-
     for (int i = 0; i < node.getChildCount(); i++) {
       String result = extractFieldFromDeref(node.getChild(i));
       if (result != null)
@@ -282,11 +287,13 @@ public final class VectorizedGroupByDetection implements Stage {
   private Long extractIntegerLiteral(AST node) {
     if (node == null)
       return null;
-
-    if (node.getType() == XQ.Int) {
+    if (node.getType() == XQ.Int || node.getType() == XQ.Dbl || node.getType() == XQ.Dec) {
       Object val = node.getValue();
       if (val instanceof Number n)
         return n.longValue();
+      // Brackit numeric types (Int32, Int64, etc.) extend Numeric, not java.lang.Number
+      if (val instanceof io.brackit.query.atomic.Numeric num)
+        return num.longValue();
       if (val instanceof String s) {
         try {
           return Long.parseLong(s);
@@ -295,19 +302,27 @@ public final class VectorizedGroupByDetection implements Stage {
         }
       }
     }
-
-    // Try numeric literal types
-    if (node.getType() == XQ.Dbl || node.getType() == XQ.Dec) {
-      Object val = node.getValue();
-      if (val instanceof Number n)
-        return n.longValue();
-    }
-
-    // Check value directly
     Object val = node.getValue();
     if (val instanceof Number n)
       return n.longValue();
+    if (val instanceof io.brackit.query.atomic.Numeric num)
+      return num.longValue();
+    return null;
+  }
 
+  private String extractStringLiteral(AST node) {
+    if (node == null)
+      return null;
+    if (node.getType() == XQ.Str) {
+      Object val = node.getValue();
+      if (val instanceof String s)
+        return s;
+      // Brackit Str type
+      if (val instanceof io.brackit.query.atomic.Str str)
+        return str.stringValue();
+      if (val != null)
+        return val.toString();
+    }
     return null;
   }
 }

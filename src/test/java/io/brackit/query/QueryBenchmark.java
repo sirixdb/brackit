@@ -143,12 +143,12 @@ public class QueryBenchmark {
 
     benchQuery("group by + 3 aggregates",
                flatItem,
-               "for $u in $$[] " + "group by $d := $u.dept " + "return {\"dept\": $d, \"count\": count($u), "
+               "for $u in $$[] " + "let $d := $u.dept group by $d " + "return {\"dept\": $d, \"count\": count($u), "
                    + "\"avg_salary\": avg($u.salary), \"avg_score\": avg($u.score)}");
 
     benchQuery("group by 2 keys + sort",
                flatItem,
-               "for $u in $$[] where $u.active " + "group by $d := $u.dept, $c := $u.city "
+               "for $u in $$[] where $u.active " + "let $d := $u.dept, $c := $u.city group by $d, $c "
                    + "let $total := sum($u.salary) " + "order by $total descending "
                    + "return {\"dept\": $d, \"city\": $c, \"headcount\": count($u), " + "\"total_salary\": $total}");
 
@@ -168,45 +168,82 @@ public class QueryBenchmark {
     benchQuery("join + group + agg + sort",
                joinItem,
                "for $o in $$.orders[], $c in $$.customers[] " + "where $o.customer_id eq $c.id "
-                   + "group by $tier := $c.tier, $cat := $o.category " + "let $revenue := sum($o.amount) "
-                   + "let $qty := sum($o.quantity) " + "order by $revenue descending "
+                   + "let $tier := $c.tier, $cat := $o.category group by $tier, $cat "
+                   + "let $revenue := sum($o.amount) " + "let $qty := sum($o.quantity) "
+                   + "order by $revenue descending "
                    + "return {\"tier\": $tier, \"category\": $cat, \"revenue\": $revenue, "
                    + "\"units\": $qty, \"orders\": count($o)}");
 
     benchQuery("join + filter + top-N",
                joinItem,
-               "(for $o in $$.orders[], $c in $$.customers[] " + "where $o.customer_id eq $c.id "
+               "for $o in $$.orders[], $c in $$.customers[] " + "where $o.customer_id eq $c.id "
                    + "and $c.tier eq \"platinum\" " + "and $o.amount > 500 " + "order by $o.amount descending "
-                   + "return {\"customer\": $c.name, " + "\"amount\": $o.amount, \"category\": $o.category})[0:20]");
+                   + "return {\"customer\": $c.name, " + "\"amount\": $o.amount, \"category\": $o.category}");
+
+    // -- Additional queries --
+
+    benchQuery("string eq filter", flatItem, "for $u in $$[] where $u.city eq \"Tokyo\" return $u.name");
+
+    benchQuery("count distinct (dept)", flatItem, "count(for $u in $$[] let $d := $u.dept group by $d return $d)");
+
+    benchQuery("top-N (order + limit)",
+               flatItem,
+               "for $u at $pos in (for $v in $$[] order by $v.salary descending return $v) "
+                   + "where $pos <= 10 return {\"name\": $u.name, \"salary\": $u.salary}");
+
+    benchQuery("compound AND filter",
+               flatItem,
+               "for $u in $$[] where $u.age > 30 and $u.age < 50 and $u.active "
+                   + "return {\"name\": $u.name, \"dept\": $u.dept}");
+
+    benchQuery("group + having pattern",
+               flatItem,
+               "for $u in $$[] " + "let $d := $u.dept group by $d " + "where count($u) > " + (size / 10)
+                   + " return {\"dept\": $d, \"count\": count($u)}");
+
+    benchQuery("nested deref + sort",
+               joinItem,
+               "for $o in $$.orders[] " + "order by $o.amount descending "
+                   + "return {\"id\": $o.id, \"amount\": $o.amount}");
+
+    benchQuery("multi-key group + top-N",
+               joinItem,
+               "for $row at $pos in (for $o in $$.orders[] " + "let $c := $o.category, $r := $o.region group by $c, $r "
+                   + "let $total := sum($o.amount) order by $total descending "
+                   + "return {\"category\": $c, \"region\": $r, \"total\": $total}) " + "where $pos <= 10 return $row");
 
     System.out.println();
   }
 
-  private static void benchQuery(String label, Item contextItem, String queryString) throws Exception {
-    CompileChain chain = new CompileChain();
-    Query query = new Query(chain, queryString);
+  private static void benchQuery(String label, Item contextItem, String queryString) {
+    try {
+      CompileChain chain = new CompileChain();
+      Query query = new Query(chain, queryString);
 
-    // Warmup
-    for (int i = 0; i < WARMUP; i++) {
-      consumeResult(query, contextItem);
+      // Warmup
+      for (int i = 0; i < WARMUP; i++) {
+        consumeResult(query, contextItem);
+      }
+
+      // Measure
+      long totalNanos = 0;
+      long minNanos = Long.MAX_VALUE;
+      for (int i = 0; i < ITERATIONS; i++) {
+        long start = System.nanoTime();
+        consumeResult(query, contextItem);
+        long elapsed = System.nanoTime() - start;
+        totalNanos += elapsed;
+        minNanos = Math.min(minNanos, elapsed);
+      }
+
+      double avgMs = (totalNanos / (double) ITERATIONS) / 1_000_000.0;
+      double minMs = minNanos / 1_000_000.0;
+      double opsPerSec = ITERATIONS / (totalNanos / 1_000_000_000.0);
+
+      System.out.printf("  %-30s  %10.1f  %10.1f  %10.1f%n", label, avgMs, minMs, opsPerSec);
+    } catch (Exception e) {
+      System.out.printf("  %-30s  %10s  %10s  %10s  [%s]%n", label, "ERROR", "--", "--", e.getMessage());
     }
-
-    // Measure
-    long totalNanos = 0;
-    long minNanos = Long.MAX_VALUE;
-    for (int i = 0; i < ITERATIONS; i++) {
-      long start = System.nanoTime();
-      consumeResult(query, contextItem);
-      long elapsed = System.nanoTime() - start;
-      totalNanos += elapsed;
-      minNanos = Math.min(minNanos, elapsed);
-    }
-
-    double avgMs = (totalNanos / (double) ITERATIONS) / 1_000_000.0;
-    double minMs = minNanos / 1_000_000.0;
-    double opsPerSec = ITERATIONS / (totalNanos / 1_000_000_000.0);
-
-    System.out.printf("  %-30s  %10.1f  %10.1f  %10.1f%n", label, avgMs, minMs, opsPerSec);
   }
 
   private static long consumeResult(Query query, Item contextItem) throws QueryException {

@@ -79,8 +79,17 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
   /**
    * Check AST annotations and create the appropriate VectorizedGroupByExpr.
    * Shared by both Sequential and Block pipeline strategies.
+   * <p>
+   * The {@code countWrapped} flag indicates whether this PipeExpr is the
+   * argument of a {@code count()} function call. Filter-count patterns
+   * are only intercepted when wrapped in {@code count()}, because the
+   * vectorized executor returns a scalar count — not the filtered items.
    */
   static Expr tryVectorizedExpr(AST node) {
+    return tryVectorizedExpr(node, false);
+  }
+
+  static Expr tryVectorizedExpr(AST node, boolean countWrapped) {
     VectorizedExecutor executor = vectorizedExecutor;
     if (executor == null)
       return null;
@@ -101,8 +110,10 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       return new VectorizedGroupByExpr(executor, groupField);
     }
 
-    // Pattern 2: Filtered count (no group-by)
-    if (Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT))) {
+    // Pattern 2: Filtered count — only when wrapped in count() function
+    // The executor returns a scalar Int64(count), which replaces the entire
+    // count(PipeExpr) expression.
+    if (countWrapped && Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT))) {
       String filterField = (String) node.getProperty(VectorizedScanAnnotation.FILTER_FIELD);
       String filterOp = (String) node.getProperty(VectorizedScanAnnotation.FILTER_OP);
       Long filterValue = (Long) node.getProperty(VectorizedScanAnnotation.FILTER_VALUE);
@@ -112,10 +123,10 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       }
     }
 
-    // Pattern 3: Sorted scan (future)
-    if (Boolean.TRUE.equals(node.getProperty("VECTORIZED_ORDERBY"))) {
-      String orderField = (String) node.getProperty("VECTORIZED_ORDER_FIELD");
-      String direction = (String) node.getProperty("VECTORIZED_ORDER_DIRECTION");
+    // Pattern 3: Sorted scan
+    if (Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_ORDERBY))) {
+      String orderField = (String) node.getProperty(VectorizedScanAnnotation.ORDER_FIELD);
+      String direction = (String) node.getProperty(VectorizedScanAnnotation.ORDER_DIRECTION);
       if (orderField != null) {
         return VectorizedGroupByExpr.sorted(executor, orderField, direction);
       }

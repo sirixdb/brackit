@@ -49,15 +49,22 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import io.brackit.query.QueryContext;
+import io.brackit.query.QueryException;
 import io.brackit.query.atomic.Int64;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.atomic.Str;
+import io.brackit.query.compiler.optimizer.VectorizedExecutor;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Sequence;
+import io.brackit.query.jsonitem.array.DArray;
 import io.brackit.query.jsonitem.object.CompactObject;
 
 /**
  * 1BRC-inspired parallel group-by execution.
+ * <p>
+ * Implements {@link VectorizedExecutor} so the normal optimizer/translator
+ * pipeline can delegate to it automatically when it detects eligible patterns.
  * <p>
  * Key techniques from the 1 Billion Row Challenge winners:
  * <ul>
@@ -68,7 +75,54 @@ import io.brackit.query.jsonitem.object.CompactObject;
  * <li>Local byte[] windows for cache-friendly scanning</li>
  * </ul>
  */
-public final class ParallelGroupByExec {
+public final class ParallelGroupByExec implements VectorizedExecutor {
+
+  /** Minimum file size to engage the vectorized path (100 MB). */
+  private static final long MIN_FILE_SIZE = 100_000_000;
+
+  private final Path filePath;
+
+  public ParallelGroupByExec(Path filePath) {
+    this.filePath = filePath;
+  }
+
+  @Override
+  public boolean canExecute(QueryContext ctx) {
+    if (filePath == null)
+      return false;
+    try {
+      return java.nio.file.Files.size(filePath) >= MIN_FILE_SIZE;
+    } catch (IOException e) {
+      return false;
+    }
+  }
+
+  @Override
+  public Sequence executeGroupByCount(QueryContext ctx, String groupField) throws QueryException {
+    try {
+      List<Item> results = executeGroupByCount(filePath, groupField);
+      return new DArray(results);
+    } catch (Exception e) {
+      throw new QueryException(e,
+                               io.brackit.query.ErrorCode.BIT_DYN_INT_ERROR,
+                               "Vectorized group-by failed: %s",
+                               e.getMessage());
+    }
+  }
+
+  @Override
+  public Sequence executeFilterCount(QueryContext ctx, String filterField, String filterOp, long filterValue)
+      throws QueryException {
+    try {
+      long count = executeFilterCount(filePath, filterField, filterOp, filterValue);
+      return new Int64(count);
+    } catch (Exception e) {
+      throw new QueryException(e,
+                               io.brackit.query.ErrorCode.BIT_DYN_INT_ERROR,
+                               "Vectorized filter-count failed: %s",
+                               e.getMessage());
+    }
+  }
 
   private static final int WINDOW_SIZE = 8 * 1024 * 1024;
   private static final VectorSpecies<Byte> BYTE_SPECIES;

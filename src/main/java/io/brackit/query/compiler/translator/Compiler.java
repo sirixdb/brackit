@@ -720,6 +720,16 @@ public class Compiler implements Translator {
       return new Null();
     }
 
+    // Intercept count(PipeExpr) when the PipeExpr has a vectorized filter-count annotation.
+    // The vectorized executor returns the count as a scalar Int64, so we replace the
+    // entire count(PipeExpr) with the vectorized expression directly.
+    if ("count".equals(name.getLocalName()) && childCount == 1 && node.getChild(0).getType() == XQ.PipeExpr) {
+      Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(node.getChild(0), true);
+      if (vectorized != null) {
+        return vectorized;
+      }
+    }
+
     Function function = ctx.getFunctions().resolve(name, childCount);
 
     final var signature = function.getSignature();
