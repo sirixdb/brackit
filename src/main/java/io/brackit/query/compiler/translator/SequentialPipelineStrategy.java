@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.brackit.query.atomic.QNm;
+import io.brackit.query.compiler.optimizer.VectorizedExecutor;
+import io.brackit.query.compiler.optimizer.VectorizedScanAnnotation;
 import io.brackit.query.expr.PipeExpr;
 import io.brackit.query.expr.VectorizedGroupByExpr;
 import io.brackit.query.operator.Count;
@@ -62,21 +64,24 @@ import io.brackit.query.jdm.type.SequenceType;
 public class SequentialPipelineStrategy implements PipelineStrategy {
 
   /** Pluggable vectorized executor — set by bjq or SirixDB at startup. */
-  private static volatile io.brackit.query.compiler.optimizer.VectorizedExecutor vectorizedExecutor;
+  private static volatile VectorizedExecutor vectorizedExecutor;
 
   /** Register a vectorized executor for automatic optimization. */
-  public static void setVectorizedExecutor(io.brackit.query.compiler.optimizer.VectorizedExecutor executor) {
+  public static void setVectorizedExecutor(VectorizedExecutor executor) {
     vectorizedExecutor = executor;
+  }
+
+  /** Get the registered vectorized executor (used by BlockPipelineStrategy too). */
+  public static VectorizedExecutor getVectorizedExecutor() {
+    return vectorizedExecutor;
   }
 
   @Override
   public Expr compilePipeExpr(AST node, Compiler compiler) throws QueryException {
     // Check for vectorized scan annotation from the optimizer
-    var executor = vectorizedExecutor;
-    if (executor != null && Boolean.TRUE.equals(node.getProperty(
-                                                                 io.brackit.query.compiler.optimizer.VectorizedScanAnnotation.VECTORIZED_GROUPBY))) {
-      String groupField = (String) node.getProperty(
-                                                    io.brackit.query.compiler.optimizer.VectorizedScanAnnotation.GROUPBY_FIELD);
+    VectorizedExecutor executor = vectorizedExecutor;
+    if (executor != null && Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY))) {
+      String groupField = (String) node.getProperty(VectorizedScanAnnotation.GROUPBY_FIELD);
       if (groupField != null) {
         return new VectorizedGroupByExpr(executor, groupField);
       }

@@ -38,6 +38,7 @@ import io.brackit.query.compiler.AST;
 import io.brackit.query.compiler.optimizer.walker.topdown.GroupByAggregates;
 import io.brackit.query.compiler.optimizer.walker.topdown.JoinGroupDemarcation;
 import io.brackit.query.compiler.optimizer.walker.topdown.JoinRewriter;
+import io.brackit.query.compiler.optimizer.walker.topdown.VectorizedGroupByDetection;
 import io.brackit.query.compiler.optimizer.walker.topdown.JoinToSelectConversion;
 import io.brackit.query.compiler.optimizer.walker.topdown.LeftJoinLifting;
 import io.brackit.query.compiler.optimizer.walker.topdown.LeftJoinRemoval;
@@ -67,6 +68,8 @@ public class TopDownOptimizer extends DefaultOptimizer {
       stages.add(new Unnest());
     }
     stages.add(new FinalizePipeline());
+    // Detect group-by patterns eligible for vectorized execution
+    stages.add(new VectorizedGroupByDetection());
     stages.add(new Finalize());
   }
 
