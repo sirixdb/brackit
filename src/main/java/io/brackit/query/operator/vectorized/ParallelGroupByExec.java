@@ -166,23 +166,32 @@ public final class ParallelGroupByExec {
 
   // ==================== Chunk processing ====================
 
+  /**
+   * Open-addressing byte-key hash map — avoids String allocation entirely.
+   * 1BRC technique: hash and compare on raw bytes. Only create String for output.
+   */
+  private static final int INTERN_CAPACITY = 1024;
+  private static final int INTERN_MASK = INTERN_CAPACITY - 1;
+
   private static HashMap<String, long[]> processChunk(MemorySegment segment, long start, long end, byte[] pattern,
       byte[] patternSpaced) {
-    HashMap<String, long[]> groups = new HashMap<>();
+    // Per-thread intern table: raw byte keys → count
+    byte[][] internKeys = new byte[INTERN_CAPACITY][];
+    long[] internCounts = new long[INTERN_CAPACITY];
+
     byte[] window = new byte[WINDOW_SIZE];
     long pos = start;
+    int patLen = pattern.length;
 
     while (pos < end) {
-      // Load window
       int winLen = (int) Math.min(WINDOW_SIZE, end - pos);
       MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, pos, window, 0, winLen);
 
       int localPos = 0;
       boolean rewound = false;
 
-      // Process records within the window
       while (localPos < winLen) {
-        // Find start of object '{'
+        // Find '{' — start of object
         while (localPos < winLen && window[localPos] != '{')
           localPos++;
         if (localPos >= winLen)
@@ -190,7 +199,7 @@ public final class ParallelGroupByExec {
 
         int objStart = localPos;
 
-        // Find end of object '}' (depth tracking)
+        // Find matching '}' with depth tracking
         int depth = 0;
         boolean inStr = false;
         while (localPos < winLen) {
@@ -219,7 +228,6 @@ public final class ParallelGroupByExec {
         }
 
         if (depth != 0) {
-          // Object spans window boundary — rewind to object start and reload
           pos += objStart;
           rewound = true;
           break;
@@ -227,20 +235,127 @@ public final class ParallelGroupByExec {
 
         int objEnd = localPos;
 
-        // Extract group key from the object bytes
-        String key = extractString(window, objStart, objEnd, pattern, patternSpaced);
-        if (key != null) {
-          groups.computeIfAbsent(key, k -> new long[1])[0]++;
+        // Find field value — inline indexOf + value extraction (no method call overhead)
+        int fp = objStart;
+        int valueStart = -1;
+        int valueEnd = -1;
+
+        // Scan for pattern within the object bytes
+        int stop = objEnd - patLen;
+        while (fp <= stop) {
+          if (window[fp] == pattern[0]) {
+            boolean match = true;
+            for (int j = 1; j < patLen; j++) {
+              if (window[fp + j] != pattern[j]) {
+                match = false;
+                break;
+              }
+            }
+            if (match) {
+              int vp = fp + patLen;
+              while (vp < objEnd && window[vp] == ' ')
+                vp++;
+              if (vp < objEnd && window[vp] == '"') {
+                vp++;
+                valueStart = vp;
+                while (vp < objEnd) {
+                  if (window[vp] == '\\') {
+                    vp += 2;
+                    continue;
+                  }
+                  if (window[vp] == '"') {
+                    valueEnd = vp;
+                    break;
+                  }
+                  vp++;
+                }
+              }
+              break;
+            }
+          }
+          fp++;
+        }
+
+        if (valueStart >= 0 && valueEnd > valueStart) {
+          // Aggregate using byte-key intern table — no String allocation
+          int keyLen = valueEnd - valueStart;
+          int hash = longHash(window, valueStart, keyLen);
+          int idx = hash & INTERN_MASK;
+
+          while (true) {
+            byte[] existing = internKeys[idx];
+            if (existing == null) {
+              byte[] keyCopy = new byte[keyLen];
+              System.arraycopy(window, valueStart, keyCopy, 0, keyLen);
+              internKeys[idx] = keyCopy;
+              internCounts[idx] = 1;
+              break;
+            }
+            if (existing.length == keyLen && bytesEqual(existing, 0, window, valueStart, keyLen)) {
+              internCounts[idx]++;
+              break;
+            }
+            idx = (idx + 31) & INTERN_MASK; // stride-31 probing (1BRC technique)
+          }
         }
       }
 
-      // Only advance past window if we processed it completely (no boundary rewind)
       if (!rewound) {
         pos += winLen;
       }
     }
 
-    return groups;
+    // Convert byte-key intern table to HashMap<String> for merging
+    HashMap<String, long[]> result = new HashMap<>();
+    for (int i = 0; i < INTERN_CAPACITY; i++) {
+      if (internKeys[i] != null) {
+        result.put(new String(internKeys[i], StandardCharsets.UTF_8), new long[] { internCounts[i] });
+      }
+    }
+    return result;
+  }
+
+  /**
+   * 1BRC-style hash: XOR 8-byte longs from the key bytes.
+   * Much faster than per-byte FNV for short keys (city names are 2-9 bytes).
+   */
+  private static int longHash(byte[] buf, int off, int len) {
+    long h;
+    if (len >= 8) {
+      h = readLong(buf, off);
+      if (len >= 16) {
+        h ^= readLong(buf, off + 8);
+      }
+    } else {
+      h = 0;
+      for (int i = 0; i < len; i++) {
+        h = (h << 8) | (buf[off + i] & 0xFF);
+      }
+    }
+    h ^= (h >>> 33) ^ (h >>> 15);
+    return (int) h;
+  }
+
+  private static long readLong(byte[] buf, int off) {
+    return ((long) buf[off] << 56) | ((long) (buf[off + 1] & 0xFF) << 48) | ((long) (buf[off + 2] & 0xFF) << 40)
+        | ((long) (buf[off + 3] & 0xFF) << 32) | ((long) (buf[off + 4] & 0xFF) << 24) | ((long) (buf[off + 5] & 0xFF)
+            << 16) | ((long) (buf[off + 6] & 0xFF) << 8) | (buf[off + 7] & 0xFF);
+  }
+
+  /**
+   * 1BRC-style key comparison: 8 bytes at a time via long reads.
+   */
+  private static boolean bytesEqual(byte[] a, int aOff, byte[] b, int bOff, int len) {
+    int i = 0;
+    for (; i + 8 <= len; i += 8) {
+      if (readLong(a, aOff + i) != readLong(b, bOff + i))
+        return false;
+    }
+    for (; i < len; i++) {
+      if (a[aOff + i] != b[bOff + i])
+        return false;
+    }
+    return true;
   }
 
   private static long processChunkFilter(MemorySegment segment, long start, long end, byte[] pattern,
