@@ -391,23 +391,22 @@ public class BrackitJq {
 
       if (groupByMatch.find()) {
         String groupField = groupByMatch.group(1);
-        // Extract array source: $$[] or $$.KEY[]
-        String arraySource = extractArraySource(query);
 
-        InputStream jsonIn = getInputStream(config, in);
-        StreamingJSONParser parser = new StreamingJSONParser(new java.io.BufferedInputStream(jsonIn, 8 * 1024 * 1024));
-        Item root = parser.parse();
-
-        // Navigate to the array if it's wrapped in an object
-        StreamingJSONParser arrayParser;
-        if (root instanceof io.brackit.query.jsonitem.array.StreamingArray) {
-          arrayParser = parser; // top-level array — use directly
-        } else {
-          return null; // can't vectorize non-streaming arrays
+        // Use memory-mapped I/O for file inputs (Foreign Memory API)
+        if (!config.inputFiles().isEmpty()) {
+          java.nio.file.Path path = java.nio.file.Path.of(config.inputFiles().getFirst());
+          List<Item> results = VectorizedGroupByExec.executeMmapGroupByCount(path, groupField);
+          return new DArray(results);
         }
 
-        List<Item> results = VectorizedGroupByExec.executeGroupByCount(arrayParser, groupField);
-        return new DArray(results);
+        // Stdin fallback: streaming parser
+        StreamingJSONParser parser = new StreamingJSONParser(new java.io.BufferedInputStream(in, 8 * 1024 * 1024));
+        Item root = parser.parse();
+        if (root instanceof io.brackit.query.jsonitem.array.StreamingArray) {
+          List<Item> results = VectorizedGroupByExec.executeGroupByCount(parser, groupField);
+          return new DArray(results);
+        }
+        return null;
       }
 
       // Pattern: count(for $VAR in $$[] where $VAR.FIELD > N return ...)
@@ -428,10 +427,16 @@ public class BrackitJq {
         };
         long filterValue = Long.parseLong(countFilterMatch.group(3));
 
-        InputStream jsonIn = getInputStream(config, in);
-        StreamingJSONParser parser = new StreamingJSONParser(new java.io.BufferedInputStream(jsonIn, 8 * 1024 * 1024));
-        Item root = parser.parse();
+        // Memory-mapped I/O for file inputs
+        if (!config.inputFiles().isEmpty()) {
+          java.nio.file.Path path = java.nio.file.Path.of(config.inputFiles().getFirst());
+          long count = VectorizedGroupByExec.executeMmapFilterCount(path, filterField, op, filterValue);
+          return new Int64(count);
+        }
 
+        // Stdin fallback
+        StreamingJSONParser parser = new StreamingJSONParser(new java.io.BufferedInputStream(in, 8 * 1024 * 1024));
+        Item root = parser.parse();
         if (root instanceof io.brackit.query.jsonitem.array.StreamingArray) {
           long count = VectorizedGroupByExec.executeFilterCount(parser, filterField, op, filterValue);
           return new Int64(count);

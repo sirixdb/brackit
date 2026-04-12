@@ -38,6 +38,7 @@ import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.Int64;
 import io.brackit.query.atomic.Str;
 import io.brackit.query.function.json.FastJSONParser;
+import io.brackit.query.function.json.MappedJsonScanner;
 import io.brackit.query.function.json.StreamingJSONParser;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Sequence;
@@ -62,6 +63,68 @@ import io.brackit.query.jsonitem.object.CompactObject;
 public final class VectorizedGroupByExec {
 
   private static final int BATCH_SIZE = 2048;
+
+  // ==================== Memory-mapped execution (Foreign Memory API) ====================
+
+  /**
+   * Execute group-by-count using memory-mapped file I/O.
+   * No buffer management, no read() syscalls, no refills.
+   * The OS handles paging the 48GB file transparently.
+   */
+  public static List<Item> executeMmapGroupByCount(java.nio.file.Path path, String groupField) throws Exception {
+    HashMap<String, long[]> groups = new HashMap<>();
+    String[] batchKeys = new String[BATCH_SIZE];
+    int batchSize = 0;
+
+    try (MappedJsonScanner scanner = new MappedJsonScanner(path)) {
+      scanner.skipToArrayStart();
+
+      while (scanner.nextElement()) {
+        String key = scanner.extractStringField(groupField);
+        if (key != null) {
+          batchKeys[batchSize++] = key;
+        }
+        if (batchSize == BATCH_SIZE) {
+          aggregateBatch(groups, batchKeys, batchSize);
+          batchSize = 0;
+        }
+      }
+    }
+
+    if (batchSize > 0) {
+      aggregateBatch(groups, batchKeys, batchSize);
+    }
+
+    return buildResult(groups, groupField);
+  }
+
+  /**
+   * Execute filtered count using memory-mapped file I/O.
+   */
+  public static long executeMmapFilterCount(java.nio.file.Path path, String filterField, String filterOp,
+      long filterValue) throws Exception {
+    long count = 0;
+    long[] batchValues = new long[BATCH_SIZE];
+    int batchSize = 0;
+
+    try (MappedJsonScanner scanner = new MappedJsonScanner(path)) {
+      scanner.skipToArrayStart();
+
+      while (scanner.nextElement()) {
+        batchValues[batchSize++] = scanner.extractLongField(filterField);
+        if (batchSize == BATCH_SIZE) {
+          count += countFiltered(batchValues, batchSize, filterOp, filterValue);
+          batchSize = 0;
+        }
+      }
+    }
+
+    if (batchSize > 0) {
+      count += countFiltered(batchValues, batchSize, filterOp, filterValue);
+    }
+
+    return count;
+  }
 
   /**
    * Execute a group-by-count query on streaming JSON input.
