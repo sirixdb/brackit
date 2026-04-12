@@ -32,6 +32,7 @@ import java.util.List;
 
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.expr.PipeExpr;
+import io.brackit.query.expr.VectorizedGroupByExpr;
 import io.brackit.query.operator.Count;
 import io.brackit.query.operator.ForBind;
 import io.brackit.query.operator.GroupBy;
@@ -60,8 +61,27 @@ import io.brackit.query.jdm.type.SequenceType;
  */
 public class SequentialPipelineStrategy implements PipelineStrategy {
 
+  /** Pluggable vectorized executor — set by bjq or SirixDB at startup. */
+  private static volatile io.brackit.query.compiler.optimizer.VectorizedExecutor vectorizedExecutor;
+
+  /** Register a vectorized executor for automatic optimization. */
+  public static void setVectorizedExecutor(io.brackit.query.compiler.optimizer.VectorizedExecutor executor) {
+    vectorizedExecutor = executor;
+  }
+
   @Override
   public Expr compilePipeExpr(AST node, Compiler compiler) throws QueryException {
+    // Check for vectorized scan annotation from the optimizer
+    var executor = vectorizedExecutor;
+    if (executor != null && Boolean.TRUE.equals(node.getProperty(
+                                                                 io.brackit.query.compiler.optimizer.VectorizedScanAnnotation.VECTORIZED_GROUPBY))) {
+      String groupField = (String) node.getProperty(
+                                                    io.brackit.query.compiler.optimizer.VectorizedScanAnnotation.GROUPBY_FIELD);
+      if (groupField != null) {
+        return new VectorizedGroupByExpr(executor, groupField);
+      }
+    }
+
     int initialBindSize = compiler.table.bound().length;
     Operator root = anyOp(null, node.getChild(0), compiler);
 
