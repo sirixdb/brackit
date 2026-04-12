@@ -46,6 +46,7 @@ import io.brackit.query.util.Cfg;
 import io.brackit.query.function.json.FastJSONParser;
 import io.brackit.query.function.json.JSONParser;
 import io.brackit.query.function.json.StreamingJSONParser;
+import io.brackit.query.operator.vectorized.ParallelGroupByExec;
 import io.brackit.query.operator.vectorized.VectorizedGroupByExec;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
@@ -392,10 +393,10 @@ public class BrackitJq {
       if (groupByMatch.find()) {
         String groupField = groupByMatch.group(1);
 
-        // Use memory-mapped I/O for file inputs (Foreign Memory API)
+        // Use parallel memory-mapped I/O (1BRC-inspired, N cores)
         if (!config.inputFiles().isEmpty()) {
           java.nio.file.Path path = java.nio.file.Path.of(config.inputFiles().getFirst());
-          List<Item> results = VectorizedGroupByExec.executeMmapGroupByCount(path, groupField);
+          List<Item> results = ParallelGroupByExec.executeGroupByCount(path, groupField);
           return new DArray(results);
         }
 
@@ -427,10 +428,10 @@ public class BrackitJq {
         };
         long filterValue = Long.parseLong(countFilterMatch.group(3));
 
-        // Memory-mapped I/O for file inputs
+        // Parallel memory-mapped I/O for file inputs
         if (!config.inputFiles().isEmpty()) {
           java.nio.file.Path path = java.nio.file.Path.of(config.inputFiles().getFirst());
-          long count = VectorizedGroupByExec.executeMmapFilterCount(path, filterField, op, filterValue);
+          long count = ParallelGroupByExec.executeFilterCount(path, filterField, op, filterValue);
           return new Int64(count);
         }
 
