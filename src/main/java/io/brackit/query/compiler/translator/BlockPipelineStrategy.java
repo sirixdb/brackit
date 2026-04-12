@@ -33,9 +33,7 @@ import java.util.List;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.block.Block;
 import io.brackit.query.block.BlockChain;
-import io.brackit.query.compiler.optimizer.VectorizedExecutor;
-import io.brackit.query.compiler.optimizer.VectorizedScanAnnotation;
-import io.brackit.query.expr.VectorizedGroupByExpr;
+// Vectorized execution delegated to SequentialPipelineStrategy.tryVectorizedExpr()
 import io.brackit.query.block.MorselBlock;
 import io.brackit.query.block.Count;
 import io.brackit.query.block.ForBind;
@@ -83,15 +81,10 @@ public class BlockPipelineStrategy implements PipelineStrategy {
 
   @Override
   public Expr compilePipeExpr(AST node, Compiler compiler) throws QueryException {
-    // Check for vectorized scan annotation — same check as SequentialPipelineStrategy.
-    // Vectorized execution bypasses both Volcano and Block pipelines entirely.
-    VectorizedExecutor executor = SequentialPipelineStrategy.getVectorizedExecutor();
-    if (executor != null && Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY))) {
-      String groupField = (String) node.getProperty(VectorizedScanAnnotation.GROUPBY_FIELD);
-      if (groupField != null) {
-        return new VectorizedGroupByExpr(executor, groupField);
-      }
-    }
+    // Check for vectorized scan annotations — delegates to shared logic
+    Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(node);
+    if (vectorized != null)
+      return vectorized;
 
     int initialBindSize = compiler.table.bound().length;
 

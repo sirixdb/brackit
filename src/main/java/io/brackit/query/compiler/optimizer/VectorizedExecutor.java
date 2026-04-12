@@ -12,10 +12,6 @@ import io.brackit.query.jdm.Sequence;
 /**
  * Pluggable interface for vectorized execution of annotated queries.
  * <p>
- * When the optimizer annotates a PipeExpr with {@link VectorizedScanAnnotation},
- * the translator delegates execution to this interface instead of building
- * a Volcano operator tree.
- * <p>
  * Implementations:
  * <ul>
  * <li>bjq: {@code ParallelGroupByExec} — mmap + parallel chunk scan on JSON files</li>
@@ -24,34 +20,30 @@ import io.brackit.query.jdm.Sequence;
  */
 public interface VectorizedExecutor {
 
-  /**
-   * Execute a vectorized group-by-count query.
-   *
-   * @param ctx        the query context (provides the context item / collection)
-   * @param groupField the field name to group by
-   * @return the result as a Sequence (typically a DArray of CompactObjects)
-   */
+  /** Execute a vectorized group-by-count query. */
   Sequence executeGroupByCount(QueryContext ctx, String groupField) throws QueryException;
 
-  /**
-   * Execute a vectorized filtered count query.
-   *
-   * @param ctx         the query context
-   * @param filterField the field name to filter on
-   * @param filterOp    comparison operator ("gt", "lt", "ge", "le", "eq")
-   * @param filterValue the threshold value
-   * @return the count as an Int64
-   */
+  /** Execute a vectorized filtered count query. */
   Sequence executeFilterCount(QueryContext ctx, String filterField, String filterOp, long filterValue)
       throws QueryException;
 
   /**
-   * Check if this executor can handle the current query context.
-   * For bjq: checks if the context item is a StreamingArray from a large file.
-   * For SirixDB: checks if the context item is a JsonDBCollection.
-   *
-   * @param ctx the query context
-   * @return true if vectorized execution is applicable
+   * Execute a vectorized filtered group-by query.
+   * Default: falls back to non-filtered group-by (ignores filter).
    */
+  default Sequence executeFilteredGroupByCount(QueryContext ctx, String groupField, String filterField, String filterOp,
+      long filterValue) throws QueryException {
+    return executeGroupByCount(ctx, groupField);
+  }
+
+  /**
+   * Execute a vectorized sorted scan.
+   * Default: not supported (returns null → falls back to Volcano).
+   */
+  default Sequence executeSortedScan(QueryContext ctx, String orderField, String direction) throws QueryException {
+    return null;
+  }
+
+  /** Check if this executor can handle the current query context. */
   boolean canExecute(QueryContext ctx);
 }

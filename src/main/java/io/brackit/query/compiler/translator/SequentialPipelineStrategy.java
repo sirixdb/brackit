@@ -76,16 +76,60 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
     return vectorizedExecutor;
   }
 
-  @Override
-  public Expr compilePipeExpr(AST node, Compiler compiler) throws QueryException {
-    // Check for vectorized scan annotation from the optimizer
+  /**
+   * Check AST annotations and create the appropriate VectorizedGroupByExpr.
+   * Shared by both Sequential and Block pipeline strategies.
+   */
+  static Expr tryVectorizedExpr(AST node) {
     VectorizedExecutor executor = vectorizedExecutor;
-    if (executor != null && Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY))) {
+    if (executor == null)
+      return null;
+
+    // Pattern 1: Group-by (with optional filter)
+    if (Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY))) {
       String groupField = (String) node.getProperty(VectorizedScanAnnotation.GROUPBY_FIELD);
-      if (groupField != null) {
-        return new VectorizedGroupByExpr(executor, groupField);
+      if (groupField == null)
+        return null;
+
+      String filterField = (String) node.getProperty(VectorizedScanAnnotation.FILTER_FIELD);
+      String filterOp = (String) node.getProperty(VectorizedScanAnnotation.FILTER_OP);
+      Long filterValue = (Long) node.getProperty(VectorizedScanAnnotation.FILTER_VALUE);
+
+      if (filterField != null && filterOp != null && filterValue != null) {
+        return new VectorizedGroupByExpr(executor, groupField, filterField, filterOp, filterValue);
+      }
+      return new VectorizedGroupByExpr(executor, groupField);
+    }
+
+    // Pattern 2: Filtered count (no group-by)
+    if (Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT))) {
+      String filterField = (String) node.getProperty(VectorizedScanAnnotation.FILTER_FIELD);
+      String filterOp = (String) node.getProperty(VectorizedScanAnnotation.FILTER_OP);
+      Long filterValue = (Long) node.getProperty(VectorizedScanAnnotation.FILTER_VALUE);
+
+      if (filterField != null && filterOp != null && filterValue != null) {
+        return new VectorizedGroupByExpr(executor, filterField, filterOp, filterValue);
       }
     }
+
+    // Pattern 3: Sorted scan (future)
+    if (Boolean.TRUE.equals(node.getProperty("VECTORIZED_ORDERBY"))) {
+      String orderField = (String) node.getProperty("VECTORIZED_ORDER_FIELD");
+      String direction = (String) node.getProperty("VECTORIZED_ORDER_DIRECTION");
+      if (orderField != null) {
+        return VectorizedGroupByExpr.sorted(executor, orderField, direction);
+      }
+    }
+
+    return null;
+  }
+
+  @Override
+  public Expr compilePipeExpr(AST node, Compiler compiler) throws QueryException {
+    // Check for vectorized scan annotations from the optimizer
+    Expr vectorized = tryVectorizedExpr(node);
+    if (vectorized != null)
+      return vectorized;
 
     int initialBindSize = compiler.table.bound().length;
     Operator root = anyOp(null, node.getChild(0), compiler);
