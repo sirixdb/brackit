@@ -32,26 +32,43 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
 /**
  * Memory-mapped JSON scanner using the Foreign Memory API.
- * Maps the entire file into virtual address space — no buffer management,
- * no refills, no read() syscalls. The OS handles paging transparently.
+ * Maps the entire file, then processes it through a local byte[] window
+ * for cache-friendly, JIT-optimizable scanning.
  * <p>
- * Supports files of any size (no 2GB Java array limit) by operating
- * directly on {@link MemorySegment} offsets.
- * <p>
- * This scanner provides element-by-element access to a top-level JSON array,
- * returning byte offsets for zero-copy field extraction.
+ * The key optimization: instead of per-byte {@code MemorySegment.get()} calls
+ * (which have bounds-check overhead), bulk-copy 8MB chunks into a local
+ * {@code byte[]} and scan with direct array access. The JIT can vectorize
+ * tight loops on {@code byte[]}, but not on MemorySegment random access.
  */
 public final class MappedJsonScanner implements AutoCloseable {
+
+  private static final int WINDOW_SIZE = 8 * 1024 * 1024; // 8 MB
 
   private final Arena arena;
   private final MemorySegment segment;
   private final long fileSize;
-  private long pos;
+
+  // Local window for fast scanning
+  private final byte[] window;
+  private long windowStart; // file offset where current window begins
+  private int windowLen;    // valid bytes in window
+
+  private long pos; // global file position
+
+  // Element boundaries
+  private long elemStart;
+  private long elemEnd;
+
+  // Pre-allocated for field extraction
+  private int localStart; // element start within current window
+  private int localEnd;   // element end within current window
+  private boolean elementInWindow; // true if entire element fits in current window
 
   public MappedJsonScanner(Path path) throws IOException {
     this.arena = Arena.ofShared();
@@ -59,38 +76,34 @@ public final class MappedJsonScanner implements AutoCloseable {
       this.fileSize = channel.size();
       this.segment = channel.map(FileChannel.MapMode.READ_ONLY, 0, fileSize, arena);
     }
+    this.window = new byte[WINDOW_SIZE];
     this.pos = 0;
+    this.windowStart = 0;
+    this.windowLen = 0;
+    refillWindow(0);
   }
 
-  /**
-   * Skip to the start of the array content (past the opening '[').
-   */
   public void skipToArrayStart() {
     skipWhitespace();
-    if (pos < fileSize && getByte(pos) == '[') {
+    if (pos < fileSize && windowByte() == '[') {
       pos++;
     }
   }
-
-  /**
-   * Advance to the next array element. Returns true if found.
-   * Call {@link #getElementStart()} and {@link #getElementEnd()} for boundaries.
-   */
-  private long elemStart;
-  private long elemEnd;
 
   public boolean nextElement() {
     skipWhitespace();
     if (pos >= fileSize)
       return false;
 
-    byte b = getByte(pos);
+    byte b = windowByte();
     if (b == ']')
       return false;
     if (b == ',') {
       pos++;
       skipWhitespace();
-      if (pos >= fileSize || getByte(pos) == ']')
+      if (pos >= fileSize)
+        return false;
+      if (windowByte() == ']')
         return false;
     }
 
@@ -99,168 +112,228 @@ public final class MappedJsonScanner implements AutoCloseable {
     if (elemEnd <= elemStart)
       return false;
     pos = elemEnd;
+
+    // Check if element fits entirely within the current window
+    if (elemStart >= windowStart && elemEnd <= windowStart + windowLen) {
+      localStart = (int) (elemStart - windowStart);
+      localEnd = (int) (elemEnd - windowStart);
+      elementInWindow = true;
+    } else {
+      elementInWindow = false;
+    }
+
     return true;
   }
 
-  public long getElementStart() {
-    return elemStart;
-  }
-
-  public long getElementEnd() {
-    return elemEnd;
+  /**
+   * Extract a string field from the current element using fast local array scanning.
+   */
+  public String extractStringField(byte[] pattern, byte[] patternSpaced) {
+    if (elementInWindow) {
+      return extractStringFromArray(window, localStart, localEnd, pattern, patternSpaced);
+    }
+    // Element spans windows — load into temp buffer
+    int len = (int) (elemEnd - elemStart);
+    byte[] tmp = new byte[len];
+    MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, elemStart, tmp, 0, len);
+    return extractStringFromArray(tmp, 0, len, pattern, patternSpaced);
   }
 
   /**
-   * Extract a string field value from the element at [elemStart, elemEnd).
-   * Scans for the field pattern directly in mapped memory.
+   * Extract a long field from the current element using fast local array scanning.
    */
-  public String extractStringField(String fieldName) {
-    byte[] pattern = ("\"" + fieldName + "\":").getBytes();
-    byte[] patternSpaced = ("\"" + fieldName + "\" :").getBytes();
+  public long extractLongField(byte[] pattern, byte[] patternSpaced) {
+    if (elementInWindow) {
+      return extractLongFromArray(window, localStart, localEnd, pattern, patternSpaced);
+    }
+    int len = (int) (elemEnd - elemStart);
+    byte[] tmp = new byte[len];
+    MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, elemStart, tmp, 0, len);
+    return extractLongFromArray(tmp, 0, len, pattern, patternSpaced);
+  }
 
-    long fpos = indexOf(pattern, elemStart, elemEnd);
-    if (fpos < 0)
-      fpos = indexOf(patternSpaced, elemStart, elemEnd);
-    if (fpos < 0)
+  // ==================== Fast array-based extraction ====================
+
+  private static String extractStringFromArray(byte[] buf, int start, int end, byte[] pattern, byte[] patternSpaced) {
+    int pos = indexOf(buf, pattern, start, end);
+    if (pos < 0)
+      pos = indexOf(buf, patternSpaced, start, end);
+    if (pos < 0)
       return null;
 
-    fpos += pattern.length;
-    while (fpos < elemEnd && getByte(fpos) == ' ')
-      fpos++;
-    if (fpos >= elemEnd || getByte(fpos) != '"')
+    pos += pattern.length;
+    if (pos < end && buf[pos] == ' ')
+      pos++;
+    if (pos >= end || buf[pos] != '"')
       return null;
-    fpos++;
+    pos++;
 
-    long valStart = fpos;
-    while (fpos < elemEnd) {
-      byte c = getByte(fpos);
-      if (c == '\\') {
-        fpos += 2;
+    int valStart = pos;
+    while (pos < end) {
+      if (buf[pos] == '\\') {
+        pos += 2;
         continue;
       }
-      if (c == '"') {
-        int len = (int) (fpos - valStart);
-        byte[] bytes = new byte[len];
-        MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, valStart, bytes, 0, len);
-        return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+      if (buf[pos] == '"') {
+        return new String(buf, valStart, pos - valStart, StandardCharsets.UTF_8);
       }
-      fpos++;
+      pos++;
     }
     return null;
   }
 
-  /**
-   * Extract a long field value from the element at [elemStart, elemEnd).
-   */
-  public long extractLongField(String fieldName) {
-    byte[] pattern = ("\"" + fieldName + "\":").getBytes();
-    byte[] patternSpaced = ("\"" + fieldName + "\" :").getBytes();
-
-    long fpos = indexOf(pattern, elemStart, elemEnd);
-    if (fpos < 0)
-      fpos = indexOf(patternSpaced, elemStart, elemEnd);
-    if (fpos < 0)
+  private static long extractLongFromArray(byte[] buf, int start, int end, byte[] pattern, byte[] patternSpaced) {
+    int pos = indexOf(buf, pattern, start, end);
+    if (pos < 0)
+      pos = indexOf(buf, patternSpaced, start, end);
+    if (pos < 0)
       return 0;
 
-    fpos += pattern.length;
-    while (fpos < elemEnd && (getByte(fpos) == ' ' || getByte(fpos) == '\t'))
-      fpos++;
+    pos += pattern.length;
+    while (pos < end && (buf[pos] == ' ' || buf[pos] == '\t'))
+      pos++;
 
-    boolean negative = false;
-    if (fpos < elemEnd && getByte(fpos) == '-') {
-      negative = true;
-      fpos++;
+    boolean neg = false;
+    if (pos < end && buf[pos] == '-') {
+      neg = true;
+      pos++;
     }
-    long value = 0;
-    while (fpos < elemEnd) {
-      byte c = getByte(fpos);
-      if (c < '0' || c > '9')
-        break;
-      value = value * 10 + (c - '0');
-      fpos++;
+    long v = 0;
+    while (pos < end && buf[pos] >= '0' && buf[pos] <= '9') {
+      v = v * 10 + (buf[pos] - '0');
+      pos++;
     }
-    return negative ? -value : value;
+    return neg ? -v : v;
   }
 
-  // ==================== Internal ====================
+  private static int indexOf(byte[] buf, byte[] needle, int from, int limit) {
+    int plen = needle.length;
+    outer:
+    for (int i = from; i <= limit - plen; i++) {
+      for (int j = 0; j < plen; j++) {
+        if (buf[i + j] != needle[j])
+          continue outer;
+      }
+      return i;
+    }
+    return -1;
+  }
 
-  private byte getByte(long offset) {
-    return segment.get(ValueLayout.JAVA_BYTE, offset);
+  // ==================== Window management ====================
+
+  private void refillWindow(long fileOffset) {
+    windowStart = fileOffset;
+    int toRead = (int) Math.min(WINDOW_SIZE, fileSize - fileOffset);
+    if (toRead > 0) {
+      MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, fileOffset, window, 0, toRead);
+    }
+    windowLen = toRead;
+  }
+
+  /**
+   * Ensure pos is within the current window. If not, refill.
+   */
+  private void ensureInWindow() {
+    if (pos < windowStart || pos >= windowStart + windowLen) {
+      refillWindow(pos);
+    }
+  }
+
+  /**
+   * Get byte at current pos using the local window (fast path) or segment (fallback).
+   */
+  private byte windowByte() {
+    ensureInWindow();
+    return window[(int) (pos - windowStart)];
   }
 
   private void skipWhitespace() {
     while (pos < fileSize) {
-      byte b = getByte(pos);
-      if (b != ' ' && b != '\t' && b != '\n' && b != '\r')
-        return;
-      pos++;
+      ensureInWindow();
+      int localPos = (int) (pos - windowStart);
+      while (localPos < windowLen) {
+        byte b = window[localPos];
+        if (b != ' ' && b != '\t' && b != '\n' && b != '\r') {
+          pos = windowStart + localPos;
+          return;
+        }
+        localPos++;
+      }
+      pos = windowStart + localPos; // advance past window
     }
   }
 
   private long findValueEnd() {
     int depth = 0;
     boolean inString = false;
-    long i = pos;
+    long startPos = pos;
 
-    while (i < fileSize) {
-      byte b = getByte(i);
-      if (inString) {
-        if (b == '\\') {
-          i += 2;
+    while (pos < fileSize) {
+      ensureInWindow();
+      int localPos = (int) (pos - windowStart);
+      int localLimit = windowLen;
+
+      // Scan within the current window — pure array access, JIT-optimizable
+      while (localPos < localLimit) {
+        byte b = window[localPos];
+
+        if (inString) {
+          if (b == '\\') {
+            localPos += 2;
+            continue;
+          }
+          if (b == '"') {
+            inString = false;
+            if (depth == 0) {
+              pos = windowStart + localPos + 1;
+              return pos;
+            }
+          }
+          localPos++;
           continue;
         }
-        if (b == '"') {
-          inString = false;
-          if (depth == 0)
-            return i + 1;
+
+        switch (b) {
+          case '"' -> {
+            inString = true;
+            localPos++;
+          }
+          case '{', '[' -> {
+            depth++;
+            localPos++;
+          }
+          case '}', ']' -> {
+            if (depth == 0) {
+              pos = windowStart + localPos;
+              return pos;
+            }
+            depth--;
+            localPos++;
+            if (depth == 0) {
+              pos = windowStart + localPos;
+              return pos;
+            }
+          }
+          case ',' -> {
+            if (depth == 0) {
+              pos = windowStart + localPos;
+              return pos;
+            }
+            localPos++;
+          }
+          case ' ', '\t', '\n', '\r' -> {
+            if (depth == 0 && (windowStart + localPos) > startPos) {
+              pos = windowStart + localPos;
+              return pos;
+            }
+            localPos++;
+          }
+          default -> localPos++;
         }
-        i++;
-        continue;
       }
-      switch (b) {
-        case '"' -> {
-          inString = true;
-          i++;
-        }
-        case '{', '[' -> {
-          depth++;
-          i++;
-        }
-        case '}', ']' -> {
-          if (depth == 0)
-            return i;
-          depth--;
-          i++;
-          if (depth == 0)
-            return i;
-        }
-        case ',' -> {
-          if (depth == 0)
-            return i;
-          i++;
-        }
-        case ' ', '\t', '\n', '\r' -> {
-          if (depth == 0 && i > pos)
-            return i;
-          i++;
-        }
-        default -> i++;
-      }
+      pos = windowStart + localPos; // end of window — continue with next
     }
     return fileSize;
-  }
-
-  private long indexOf(byte[] pattern, long from, long limit) {
-    int plen = pattern.length;
-    outer:
-    for (long i = from; i <= limit - plen; i++) {
-      for (int j = 0; j < plen; j++) {
-        if (getByte(i + j) != pattern[j])
-          continue outer;
-      }
-      return i;
-    }
-    return -1;
   }
 
   @Override

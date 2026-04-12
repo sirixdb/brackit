@@ -76,11 +76,14 @@ public final class VectorizedGroupByExec {
     String[] batchKeys = new String[BATCH_SIZE];
     int batchSize = 0;
 
+    byte[] pattern = ("\"" + groupField + "\":").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    byte[] patternSpaced = ("\"" + groupField + "\" :").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
     try (MappedJsonScanner scanner = new MappedJsonScanner(path)) {
       scanner.skipToArrayStart();
 
       while (scanner.nextElement()) {
-        String key = scanner.extractStringField(groupField);
+        String key = scanner.extractStringField(pattern, patternSpaced);
         if (key != null) {
           batchKeys[batchSize++] = key;
         }
@@ -107,11 +110,14 @@ public final class VectorizedGroupByExec {
     long[] batchValues = new long[BATCH_SIZE];
     int batchSize = 0;
 
+    byte[] pattern = ("\"" + filterField + "\":").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    byte[] patternSpaced = ("\"" + filterField + "\" :").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
     try (MappedJsonScanner scanner = new MappedJsonScanner(path)) {
       scanner.skipToArrayStart();
 
       while (scanner.nextElement()) {
-        batchValues[batchSize++] = scanner.extractLongField(filterField);
+        batchValues[batchSize++] = scanner.extractLongField(pattern, patternSpaced);
         if (batchSize == BATCH_SIZE) {
           count += countFiltered(batchValues, batchSize, filterOp, filterValue);
           batchSize = 0;
