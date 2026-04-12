@@ -289,7 +289,7 @@
                                 <buildArg>--enable-preview</buildArg>
                                 <buildArg>--add-modules=jdk.incubator.vector</buildArg>
                                 <buildArg>-O3</buildArg>
-                                <buildArg>--gc=G1</buildArg>
+                                <buildArg>--gc=serial</buildArg>
                             </buildArgs>
                         </configuration>
                     </plugin>
@@ -355,7 +355,7 @@
                                 <buildArg>--enable-preview</buildArg>
                                 <buildArg>--add-modules=jdk.incubator.vector</buildArg>
                                 <buildArg>-O3</buildArg>
-                                <buildArg>--gc=G1</buildArg>
+                                <buildArg>--gc=serial</buildArg>
                                 <buildArg>--pgo=${project.basedir}/default.iprof</buildArg>
                             </buildArgs>
                         </configuration>
