@@ -345,11 +345,18 @@ public class BrackitJq {
     return items;
   }
 
+  private static final long VECTORIZED_MIN_FILE_SIZE = 100_000_000L;
+
   /**
    * Register a {@link ParallelGroupByExec} as the vectorized executor when
    * the input is a large file. The optimizer detects eligible patterns
    * (group-by, filter-count, etc.) via AST annotations, and the translator
    * delegates to this executor automatically — no regex matching needed.
+   * <p>
+   * Small files skip registration: the overhead of the parallel mmap scanner
+   * is not worth it below ~100MB, and the executor would reject the query at
+   * evaluate time, which would raise a hard error because no Volcano fallback
+   * is built once the AST is rewritten.
    */
   private static void registerVectorizedExecutor(Config config) {
     if (config.nullInput() || config.inputFiles().isEmpty()) {
@@ -357,6 +364,9 @@ public class BrackitJq {
     }
     try {
       java.nio.file.Path path = java.nio.file.Path.of(config.inputFiles().getFirst());
+      if (java.nio.file.Files.size(path) < VECTORIZED_MIN_FILE_SIZE) {
+        return;
+      }
       SequentialPipelineStrategy.setVectorizedExecutor(new ParallelGroupByExec(path));
     } catch (Throwable e) {
       // If registration fails (e.g., native-image limitation), the normal Volcano path is used
