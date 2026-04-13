@@ -59,16 +59,14 @@ bjq native binary (Oracle GraalVM, PGO, G1 GC, `-O3`) vs jq 1.7 — wall-clock, 
 
 ### Billion-record scan
 
-On a 49GB 1B-record JSON array (Linux, 20 cores, NVMe SSD) — **JVM mode**, parallel memory-mapped scan via `Arena.ofConfined` per worker:
+On a 49GB 1B-record JSON array (Linux, 20 cores, NVMe SSD), parallel memory-mapped scan via `Arena.ofConfined` per worker, 8-way group-by:
 
-| Query | Time | Throughput |
-|---|---|---|
-| Group-by dept (8 buckets) | **13.1s** | 3.7 GB/s, 76M records/s |
-| Filter-count (`age > 40 and active`) | **13.2s** | 3.7 GB/s, 76M records/s |
+| Query | Native (PGO + VectorAPI) | JAR (JVM) | Throughput |
+|---|---|---|---|
+| Group-by dept | **16.0s** | 13.1s | ~3 GB/s, 60M records/s |
+| Filter-count (`age > 40 and active`) | **15.3s** | 13.2s | ~3 GB/s, 65M records/s |
 
-`jq` OOMs at 100M records on the same hardware, so the 1B test is bjq-only.
-
-The native binary uses the same parallel scan but is currently ~4× slower on 1B group-by because the GraalVM native-image Substrate VM has limited intrinsics for the incubator Vector API (SIMD pattern search falls back to scalar loops). For billion-record workloads, **use the JAR**; for small-to-medium workloads and CLI use the native binary is the right choice (lower startup, no JVM required).
+`jq` OOMs at 100M records on the same hardware; the 1B test is bjq-only. The native binary is within ~20% of the JVM on this workload (remaining delta is typical Substrate VM vs HotSpot overhead, not Vector API — see `-H:+VectorAPISupport` in `pom.xml`). Both paths use the same parallel mmap pipeline; pick native for CLI/startup latency, JVM when you embed Brackit as a library.
 
 ## Quick Start
 
