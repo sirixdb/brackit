@@ -59,20 +59,32 @@ bjq native binary (Oracle GraalVM, PGO, G1 GC, `-O3`) vs jq 1.7 — wall-clock, 
 
 ### Scaling: 1M → 100M → 1B records
 
-Compact 48-byte schema (`{"age":N,"dept":"X","city":"X","active":T}`), Linux, 20 cores, NVMe SSD, parallel memory-mapped scan via `Arena.ofConfined` per worker.
+Compact 48-byte schema (`{"age":N,"dept":"X","city":"X","active":T}`), Linux, 20 cores, NVMe SSD, parallel memory-mapped scan via `Arena.ofConfined` per worker. All five vectorized query shapes scale linearly.
 
-| Query | 1M (50MB) | 100M (4.9GB) | 1B (49GB) |
+**Group-by dept:**
+
+| Engine | 1M (50MB) | 100M (4.9GB) | 1B (49GB) |
 |---|---|---|---|
-| **Group-by dept** | | | |
 | native + PGO | **532ms** | **1.1s** | **14.8s** |
 | JAR (JVM) | 644ms | 2.7s | 16.4s |
 | jq | 3.5s | **OOM** | **OOM** |
-| **Filter-count (`age > 40 and active`)** | | | |
+
+**Filter-count (`age > 40 and active`):**
+
+| Engine | 1M | 100M | 1B |
+|---|---|---|---|
 | native + PGO | **474ms** | **1.0s** | 15.2s |
 | JAR (JVM) | 571ms | 1.3s | **14.4s** |
 | jq | 1.4s | **OOM** | **OOM** |
 
-`jq` OOMs at 100M records on this hardware (exit 137, OOM-killed). Both Brackit paths scale linearly and hit ~3 GB/s (≈65-76M records/s) at 1B — approximately raw NVMe read speed. Pick native for CLI/startup latency, JVM when embedding Brackit as a library.
+**Pure aggregates (sum/avg/min/max over age) — single parallel scan:**
+
+| Engine | 100M sum | 100M avg | 100M min | 100M max | 1B sum |
+|---|---|---|---|---|---|
+| native + PGO | **1.4s** | **1.1s** | **1.1s** | **1.1s** | **14.8s** |
+| JAR (JVM) | 4.9s | 2.1s | 2.0s | 1.6s | 13.8s |
+
+`jq` OOMs at 100M records (exit 137, OOM-killed). Both Brackit paths scale linearly and hit ~3 GB/s (≈65–76M records/s) at 1B — approximately raw NVMe read speed. Pick native for CLI/startup latency, JVM when embedding Brackit as a library.
 
 ## Quick Start
 
