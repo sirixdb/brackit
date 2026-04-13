@@ -44,6 +44,17 @@ public interface VectorizedExecutor {
     return null;
   }
 
+  /**
+   * Execute a vectorized pure aggregate (no group-by): sum, avg, min, max, count.
+   * Default: not supported (returns null → falls back to Volcano).
+   *
+   * @param func  one of {@code "sum"}, {@code "avg"}, {@code "min"}, {@code "max"}, {@code "count"}
+   * @param field the numeric field to aggregate (ignored for {@code "count"})
+   */
+  default Sequence executeAggregate(QueryContext ctx, String func, String field) throws QueryException {
+    return null;
+  }
+
   /** Check if this executor can handle the current query context. */
   boolean canExecute(QueryContext ctx);
 }

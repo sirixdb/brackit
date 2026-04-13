@@ -24,7 +24,7 @@ import io.brackit.query.jdm.Sequence;
 public final class VectorizedGroupByExpr implements Expr {
 
   public enum Mode {
-    GROUP_BY, FILTER_COUNT, FILTERED_GROUP_BY, SORTED_SCAN
+    GROUP_BY, FILTER_COUNT, FILTERED_GROUP_BY, SORTED_SCAN, AGGREGATE
   }
 
   private final VectorizedExecutor executor;
@@ -35,30 +35,47 @@ public final class VectorizedGroupByExpr implements Expr {
   private final long filterValue;
   private final String orderField;
   private final String orderDirection;
+  private final String aggregateFunc;
+  private final String aggregateField;
 
   /** Group-by only. */
   public VectorizedGroupByExpr(VectorizedExecutor executor, String groupField) {
-    this(executor, Mode.GROUP_BY, groupField, null, null, 0, null, null);
+    this(executor, Mode.GROUP_BY, groupField, null, null, 0, null, null, null, null);
   }
 
   /** Filtered count. */
   public VectorizedGroupByExpr(VectorizedExecutor executor, String filterField, String filterOp, long filterValue) {
-    this(executor, Mode.FILTER_COUNT, null, filterField, filterOp, filterValue, null, null);
+    this(executor, Mode.FILTER_COUNT, null, filterField, filterOp, filterValue, null, null, null, null);
   }
 
   /** Filtered group-by. */
   public VectorizedGroupByExpr(VectorizedExecutor executor, String groupField, String filterField, String filterOp,
       long filterValue) {
-    this(executor, Mode.FILTERED_GROUP_BY, groupField, filterField, filterOp, filterValue, null, null);
+    this(executor, Mode.FILTERED_GROUP_BY, groupField, filterField, filterOp, filterValue, null, null, null, null);
   }
 
   /** Sorted scan. */
   public static VectorizedGroupByExpr sorted(VectorizedExecutor executor, String orderField, String direction) {
-    return new VectorizedGroupByExpr(executor, Mode.SORTED_SCAN, null, null, null, 0, orderField, direction);
+    return new VectorizedGroupByExpr(executor,
+                                     Mode.SORTED_SCAN,
+                                     null,
+                                     null,
+                                     null,
+                                     0,
+                                     orderField,
+                                     direction,
+                                     null,
+                                     null);
+  }
+
+  /** Pure aggregate (no group-by): sum/avg/min/max/count. */
+  public static VectorizedGroupByExpr aggregate(VectorizedExecutor executor, String func, String field) {
+    return new VectorizedGroupByExpr(executor, Mode.AGGREGATE, null, null, null, 0, null, null, func, field);
   }
 
   private VectorizedGroupByExpr(VectorizedExecutor executor, Mode mode, String groupField, String filterField,
-      String filterOp, long filterValue, String orderField, String orderDirection) {
+      String filterOp, long filterValue, String orderField, String orderDirection, String aggregateFunc,
+      String aggregateField) {
     this.executor = executor;
     this.mode = mode;
     this.groupField = groupField;
@@ -67,6 +84,8 @@ public final class VectorizedGroupByExpr implements Expr {
     this.filterValue = filterValue;
     this.orderField = orderField;
     this.orderDirection = orderDirection;
+    this.aggregateFunc = aggregateFunc;
+    this.aggregateField = aggregateField;
   }
 
   @Override
@@ -88,6 +107,13 @@ public final class VectorizedGroupByExpr implements Expr {
         if (result == null) {
           throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
                                    "Vectorized sorted scan not supported by this executor");
+        }
+        yield result;
+      }
+      case AGGREGATE -> {
+        Sequence result = executor.executeAggregate(ctx, aggregateFunc, aggregateField);
+        if (result == null) {
+          throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR, "Vectorized aggregate not supported by this executor");
         }
         yield result;
       }

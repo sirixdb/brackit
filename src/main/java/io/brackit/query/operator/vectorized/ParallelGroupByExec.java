@@ -124,6 +124,30 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
     }
   }
 
+  @Override
+  public Sequence executeAggregate(QueryContext ctx, String func, String field) throws QueryException {
+    try {
+      // Single parallel pass computes count, sum, min, max; pick the requested metric.
+      long[] stats = executeAggregate(filePath, field);
+      long count = stats[0], sum = stats[1], min = stats[2], max = stats[3];
+      return switch (func) {
+        case "count" -> new Int64(count);
+        case "sum" -> new Int64(sum);
+        case "avg" -> count == 0 ? new Int64(0) : new io.brackit.query.atomic.Dbl((double) sum / (double) count);
+        case "min" -> count == 0 ? new Int64(0) : new Int64(min);
+        case "max" -> count == 0 ? new Int64(0) : new Int64(max);
+        default -> throw new QueryException(io.brackit.query.ErrorCode.BIT_DYN_INT_ERROR,
+                                            "Unsupported vectorized aggregate: %s",
+                                            func);
+      };
+    } catch (Exception e) {
+      throw new QueryException(e,
+                               io.brackit.query.ErrorCode.BIT_DYN_INT_ERROR,
+                               "Vectorized aggregate failed: %s",
+                               e.getMessage());
+    }
+  }
+
   private static final int WINDOW_SIZE = 8 * 1024 * 1024;
   private static final VectorSpecies<Byte> BYTE_SPECIES;
   static {
@@ -230,6 +254,43 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
 
     executor.shutdown();
     return total;
+  }
+
+  /**
+   * Execute a parallel aggregate scan (count, sum, min, max in one pass).
+   * Returns {@code long[4]}: {@code [count, sum, min, max]}. Caller picks
+   * the requested metric (avg = sum / count).
+   */
+  public static long[] executeAggregate(Path path, String field) throws Exception {
+    int nThreads = Runtime.getRuntime().availableProcessors();
+    byte[] pattern = ("\"" + field + "\":").getBytes(StandardCharsets.UTF_8);
+    byte[] patternSpaced = ("\"" + field + "\" :").getBytes(StandardCharsets.UTF_8);
+
+    long[] chunkStarts = computeChunkStarts(path, nThreads);
+
+    ExecutorService executor = Executors.newFixedThreadPool(nThreads);
+    List<Future<long[]>> futures = new ArrayList<>(nThreads);
+    for (int i = 0; i < nThreads; i++) {
+      long start = chunkStarts[i];
+      long end = chunkStarts[i + 1];
+      futures.add(executor.submit(() -> processChunkAggregate(path, start, end, pattern, patternSpaced)));
+    }
+
+    long count = 0, sum = 0, min = Long.MAX_VALUE, max = Long.MIN_VALUE;
+    for (Future<long[]> future : futures) {
+      long[] partial = future.get();
+      count += partial[0];
+      sum += partial[1];
+      if (partial[0] > 0) {
+        if (partial[2] < min)
+          min = partial[2];
+        if (partial[3] > max)
+          max = partial[3];
+      }
+    }
+
+    executor.shutdown();
+    return new long[] { count, sum, min, max };
   }
 
   // ==================== Chunk processing ====================
@@ -512,6 +573,87 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
     } // close try-with-resources
 
     return count;
+  }
+
+  /**
+   * Process a chunk for pure aggregation — extracts the numeric field value
+   * from every record and accumulates count/sum/min/max. Same scan structure
+   * as {@link #processChunkFilter}; only the per-record work differs.
+   */
+  private static long[] processChunkAggregate(Path path, long start, long end, byte[] pattern, byte[] patternSpaced)
+      throws IOException {
+    long count = 0, sum = 0, min = Long.MAX_VALUE, max = Long.MIN_VALUE;
+    byte[] window = new byte[WINDOW_SIZE];
+    long pos = 0;
+    long len = end - start;
+
+    try (Arena arena = Arena.ofConfined(); FileChannel channel = FileChannel.open(path, StandardOpenOption.READ)) {
+      MemorySegment segment = channel.map(FileChannel.MapMode.READ_ONLY, start, len, arena);
+
+      while (pos < len) {
+        int winLen = (int) Math.min(WINDOW_SIZE, len - pos);
+        MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, pos, window, 0, winLen);
+
+        int localPos = 0;
+        boolean rewound = false;
+
+        while (localPos < winLen) {
+          while (localPos < winLen && window[localPos] != '{')
+            localPos++;
+          if (localPos >= winLen)
+            break;
+
+          int objStart = localPos;
+          int depth = 0;
+          boolean inStr = false;
+          while (localPos < winLen) {
+            byte b = window[localPos];
+            if (inStr) {
+              if (b == '\\') {
+                localPos += 2;
+                continue;
+              }
+              if (b == '"')
+                inStr = false;
+            } else {
+              if (b == '"')
+                inStr = true;
+              else if (b == '{')
+                depth++;
+              else if (b == '}') {
+                depth--;
+                if (depth == 0) {
+                  localPos++;
+                  break;
+                }
+              }
+            }
+            localPos++;
+          }
+
+          if (depth != 0) {
+            pos += objStart;
+            rewound = true;
+            break;
+          }
+
+          int objEnd = localPos;
+          long value = extractLong(window, objStart, objEnd, pattern, patternSpaced);
+          count++;
+          sum += value;
+          if (value < min)
+            min = value;
+          if (value > max)
+            max = value;
+        }
+
+        if (!rewound) {
+          pos += winLen;
+        }
+      }
+    }
+
+    return new long[] { count, sum, min, max };
   }
 
   // ==================== Field extraction ====================

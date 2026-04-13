@@ -132,6 +132,15 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       }
     }
 
+    // Pattern 4: Pure aggregate (sum/avg/min/max/count over flat scan, no group-by)
+    if (Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_AGGREGATE))) {
+      String func = (String) node.getProperty(VectorizedScanAnnotation.AGGREGATE_FUNC);
+      String field = (String) node.getProperty(VectorizedScanAnnotation.AGGREGATE_FIELD);
+      if (func != null) {
+        return VectorizedGroupByExpr.aggregate(executor, func, field);
+      }
+    }
+
     return null;
   }
 

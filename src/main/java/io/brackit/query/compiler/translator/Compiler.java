@@ -730,6 +730,22 @@ public class Compiler implements Translator {
       }
     }
 
+    // Intercept sum/avg/min/max(PipeExpr) when the PipeExpr is a pure flat scan
+    // returning a single field (VECTORIZED_AGGREGATE annotation).
+    if (childCount == 1 && node.getChild(0).getType() == XQ.PipeExpr) {
+      String fn = name.getLocalName();
+      if ("sum".equals(fn) || "avg".equals(fn) || "min".equals(fn) || "max".equals(fn)) {
+        AST pipe = node.getChild(0);
+        if (Boolean.TRUE.equals(pipe.getProperty(io.brackit.query.compiler.optimizer.VectorizedScanAnnotation.VECTORIZED_AGGREGATE))) {
+          pipe.setProperty(io.brackit.query.compiler.optimizer.VectorizedScanAnnotation.AGGREGATE_FUNC, fn);
+          Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(pipe);
+          if (vectorized != null) {
+            return vectorized;
+          }
+        }
+      }
+    }
+
     Function function = ctx.getFunctions().resolve(name, childCount);
 
     final var signature = function.getSignature();

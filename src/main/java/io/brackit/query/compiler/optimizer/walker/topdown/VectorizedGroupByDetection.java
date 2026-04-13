@@ -97,6 +97,11 @@ public final class VectorizedGroupByDetection implements Stage {
       current = current.getLastChild();
     }
 
+    // If the return expression is a single DerefExpr `$u.field`, capture the field.
+    // An enclosing sum()/avg()/min()/max() call can use this to vectorize
+    // (see Compiler.functionCall interception).
+    String returnField = current != null ? extractFieldFromDeref(current) : null;
+
     // ---- Annotate based on detected pattern ----
 
     if (hasGroupBy && !groupFields.isEmpty()) {
@@ -125,6 +130,14 @@ public final class VectorizedGroupByDetection implements Stage {
       pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_ORDERBY, Boolean.TRUE);
       pipeExpr.setProperty(VectorizedScanAnnotation.ORDER_FIELD, orderField);
       pipeExpr.setProperty(VectorizedScanAnnotation.ORDER_DIRECTION, orderDirection);
+    }
+
+    // Pure aggregate candidate: ForBind -> Return($u.field), no group-by, no order-by,
+    // no filters. The enclosing FunctionCall (sum/avg/min/max/count) fills in AGGREGATE_FUNC
+    // at compile time; the field is known now.
+    if (!hasGroupBy && !hasOrderBy && filters.isEmpty() && returnField != null) {
+      pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_AGGREGATE, Boolean.TRUE);
+      pipeExpr.setProperty(VectorizedScanAnnotation.AGGREGATE_FIELD, returnField);
     }
   }
 
