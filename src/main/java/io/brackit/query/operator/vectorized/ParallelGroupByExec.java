@@ -163,11 +163,9 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
 
   /**
    * Compute chunk boundaries by reading a small region of the file with a
-   * confined arena. Kept separate from the worker tasks so that no shared
-   * MemorySegment crosses thread boundaries — required to compile under
-   * GraalVM native-image without {@code -H:+SharedArenaSupport}, which has
-   * a known compiler bug when combined with the Vector API
-   * (oracle/graal#13321).
+   * confined arena. Kept separate from the worker tasks so that each worker
+   * can own its own confined arena and FileChannel — no cross-thread
+   * MemorySegment sharing, no session synchronization on the hot path.
    */
   private static long[] computeChunkStarts(Path path, int nThreads) throws IOException {
     try (Arena arena = Arena.ofConfined(); FileChannel channel = FileChannel.open(path, StandardOpenOption.READ)) {
