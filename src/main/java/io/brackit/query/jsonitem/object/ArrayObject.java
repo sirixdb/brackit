@@ -47,34 +47,45 @@ import static java.util.Objects.*;
  * @author Johannes Lichtenberger
  */
 public final class ArrayObject extends AbstractObject {
-  // two arrays for key/value mapping
-  // if lookup costs dominate because the compiler cannot
-  // exploit positional access as alternative, we should
-  // switch to a more efficient (hash) map.
+  // Two parallel arrays for ordered key/value access. The HashMap is built
+  // lazily on first by-name lookup — for output-only usage (return clause
+  // serializing through positional iteration), the map is never built,
+  // saving a HashMap + N puts per object. Critical for high-fan-out joins
+  // that materialize millions of result records.
   private final List<QNm> fields;
   private final List<Sequence> vals;
-  private final Map<QNm, Sequence> fieldsToVals;
+  private Map<QNm, Sequence> fieldsToVals;  // lazy
 
   public ArrayObject(QNm[] fields, Sequence[] values) {
     this.fields = new GapList<>(Arrays.asList(fields));
     this.vals = new GapList<>(Arrays.asList(values));
-    this.fieldsToVals = new HashMap<>();
-
-    for (int i = 0; i < fields.length; i++) {
-      final QNm field = fields[i];
-      final Sequence value = values[i];
-      fieldsToVals.put(field, value);
-    }
+    this.fieldsToVals = null;  // lazy
   }
 
   /**
    * Efficient constructor that takes pre-built lists directly, avoiding array-to-list copies.
    * The caller transfers ownership — the lists must not be modified after this call.
+   *
+   * <p>{@code fieldsToVals} may be {@code null}; in that case it will be built lazily on
+   * the first by-name lookup.
    */
   public ArrayObject(List<QNm> fields, List<Sequence> vals, Map<QNm, Sequence> fieldsToVals) {
     this.fields = fields;
     this.vals = vals;
     this.fieldsToVals = fieldsToVals;
+  }
+
+  /** Build the field → value lookup map on demand. Idempotent (caller should null-check first). */
+  private Map<QNm, Sequence> ensureMap() {
+    Map<QNm, Sequence> m = fieldsToVals;
+    if (m == null) {
+      m = new HashMap<>(fields.size() * 2);
+      for (int i = 0, n = fields.size(); i < n; i++) {
+        m.put(fields.get(i), vals.get(i));
+      }
+      fieldsToVals = m;
+    }
+    return m;
   }
 
   @Override
@@ -84,7 +95,7 @@ public final class ArrayObject extends AbstractObject {
       final QNm currentField = fields.get(i);
       if (currentField.equals(field)) {
         vals.set(i, value);
-        fieldsToVals.put(field, value);
+        ensureMap().put(field, value);
         break;
       }
     }
@@ -100,8 +111,9 @@ public final class ArrayObject extends AbstractObject {
       if (currentField.equals(field)) {
         fields.set(i, newFieldName);
 
-        final Sequence value = fieldsToVals.remove(field);
-        fieldsToVals.put(newFieldName, value);
+        Map<QNm, Sequence> m = ensureMap();
+        final Sequence value = m.remove(field);
+        m.put(newFieldName, value);
         break;
       }
     }
@@ -111,12 +123,13 @@ public final class ArrayObject extends AbstractObject {
 
   @Override
   public Object insert(QNm field, Sequence value) {
-    if (fieldsToVals.containsKey(field)) {
+    Map<QNm, Sequence> m = ensureMap();
+    if (m.containsKey(field)) {
       throw new QueryException(new QNm("Field already defined."));
     }
     fields.add(field);
     vals.add(value);
-    fieldsToVals.put(field, value);
+    m.put(field, value);
     return this;
   }
 
@@ -132,7 +145,8 @@ public final class ArrayObject extends AbstractObject {
     }
     fields.remove(index);
     vals.remove(index);
-    fieldsToVals.remove(field);
+    if (fieldsToVals != null)
+      fieldsToVals.remove(field);
     return this;
   }
 
@@ -148,13 +162,14 @@ public final class ArrayObject extends AbstractObject {
     }
     final QNm field = fields.remove(index);
     vals.remove(index);
-    fieldsToVals.remove(field);
+    if (fieldsToVals != null)
+      fieldsToVals.remove(field);
     return this;
   }
 
   @Override
   public Sequence get(QNm field) {
-    return fieldsToVals.get(field);
+    return ensureMap().get(field);
   }
 
   @Override
