@@ -56,11 +56,16 @@ public final class VectorizedGroupByDetection implements Stage {
     if (pipeExpr.getChildCount() < 1)
       return;
     AST chain = pipeExpr.getChild(0);
-    if (chain.getType() != XQ.Start || chain.getChildCount() < 1)
+    if (chain.getType() != XQ.Start || chain.getChildCount() < 1) {
       return;
-
+    }
+    // The chain may have outer LetBinds (e.g. `let $doc := jn:doc(...) for $u in $doc[] ...`)
+    // that wrap the actual ForBind. Walk down through LetBinds to find the ForBind.
     AST forBind = chain.getLastChild();
-    if (forBind.getType() != XQ.ForBind)
+    while (forBind != null && forBind.getType() == XQ.LetBind) {
+      forBind = forBind.getLastChild();
+    }
+    if (forBind == null || forBind.getType() != XQ.ForBind)
       return;
 
     // Collect all operators in the chain
