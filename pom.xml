@@ -321,6 +321,7 @@
                                 <buildArg>--no-fallback</buildArg>
                                 <buildArg>--enable-preview</buildArg>
                                 <buildArg>--add-modules=jdk.incubator.vector</buildArg>
+                                <buildArg>--enable-native-access=ALL-UNNAMED</buildArg>
                                 <buildArg>--pgo-instrument</buildArg>
                             </buildArgs>
                         </configuration>

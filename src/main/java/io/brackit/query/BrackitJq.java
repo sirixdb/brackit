@@ -33,6 +33,8 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -363,8 +365,8 @@ public class BrackitJq {
       return;
     }
     try {
-      java.nio.file.Path path = java.nio.file.Path.of(config.inputFiles().getFirst());
-      if (java.nio.file.Files.size(path) < VECTORIZED_MIN_FILE_SIZE) {
+      Path path = Path.of(config.inputFiles().getFirst());
+      if (Files.size(path) < VECTORIZED_MIN_FILE_SIZE) {
         return;
       }
       SequentialPipelineStrategy.setVectorizedExecutor(new ParallelGroupByExec(path));

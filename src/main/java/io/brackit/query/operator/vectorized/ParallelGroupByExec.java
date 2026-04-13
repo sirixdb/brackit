@@ -138,17 +138,17 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
   }
 
   /**
-   * Execute a parallel group-by-count on a memory-mapped JSON file.
+   * Compute chunk boundaries by reading a small region of the file with a
+   * confined arena. Kept separate from the worker tasks so that no shared
+   * MemorySegment crosses thread boundaries — required to compile under
+   * GraalVM native-image without {@code -H:+SharedArenaSupport}, which has
+   * a known compiler bug when combined with the Vector API
+   * (oracle/graal#13321).
    */
-  public static List<Item> executeGroupByCount(Path path, String groupField) throws Exception {
-    int nThreads = Runtime.getRuntime().availableProcessors();
-    byte[] pattern = ("\"" + groupField + "\":").getBytes(StandardCharsets.UTF_8);
-    byte[] patternSpaced = ("\"" + groupField + "\" :").getBytes(StandardCharsets.UTF_8);
-
-    try (Arena arena = Arena.ofShared(); FileChannel channel = FileChannel.open(path, StandardOpenOption.READ)) {
+  private static long[] computeChunkStarts(Path path, int nThreads) throws IOException {
+    try (Arena arena = Arena.ofConfined(); FileChannel channel = FileChannel.open(path, StandardOpenOption.READ)) {
       long fileSize = channel.size();
       MemorySegment segment = channel.map(FileChannel.MapMode.READ_ONLY, 0, fileSize, arena);
-
       long arrayStart = findArrayStart(segment, fileSize);
       long[] chunkStarts = new long[nThreads + 1];
       chunkStarts[0] = arrayStart;
@@ -157,30 +157,45 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
       for (int i = 1; i < nThreads; i++) {
         chunkStarts[i] = alignToRecordBoundary(segment, arrayStart + i * chunkSize, fileSize);
       }
-
-      ExecutorService executor = Executors.newFixedThreadPool(nThreads);
-      List<Future<HashMap<String, long[]>>> futures = new ArrayList<>(nThreads);
-      for (int i = 0; i < nThreads; i++) {
-        long start = chunkStarts[i];
-        long end = chunkStarts[i + 1];
-        futures.add(executor.submit(() -> processChunk(segment, start, end, pattern, patternSpaced)));
-      }
-
-      // Merge results
-      HashMap<String, long[]> merged = new HashMap<>();
-      for (Future<HashMap<String, long[]>> future : futures) {
-        HashMap<String, long[]> partial = future.get();
-        for (Map.Entry<String, long[]> entry : partial.entrySet()) {
-          merged.merge(entry.getKey(), entry.getValue(), (a, b) -> {
-            a[0] += b[0];
-            return a;
-          });
-        }
-      }
-
-      executor.shutdown();
-      return buildResult(merged, groupField);
+      return chunkStarts;
     }
+  }
+
+  /**
+   * Execute a parallel group-by-count on a memory-mapped JSON file.
+   * <p>
+   * Each worker thread opens its own FileChannel and creates a confined
+   * {@link Arena} for its slice — see {@link #computeChunkStarts} for why
+   * we don't use a shared arena.
+   */
+  public static List<Item> executeGroupByCount(Path path, String groupField) throws Exception {
+    int nThreads = Runtime.getRuntime().availableProcessors();
+    byte[] pattern = ("\"" + groupField + "\":").getBytes(StandardCharsets.UTF_8);
+    byte[] patternSpaced = ("\"" + groupField + "\" :").getBytes(StandardCharsets.UTF_8);
+
+    long[] chunkStarts = computeChunkStarts(path, nThreads);
+
+    ExecutorService executor = Executors.newFixedThreadPool(nThreads);
+    List<Future<HashMap<String, long[]>>> futures = new ArrayList<>(nThreads);
+    for (int i = 0; i < nThreads; i++) {
+      long start = chunkStarts[i];
+      long end = chunkStarts[i + 1];
+      futures.add(executor.submit(() -> processChunk(path, start, end, pattern, patternSpaced)));
+    }
+
+    HashMap<String, long[]> merged = new HashMap<>();
+    for (Future<HashMap<String, long[]>> future : futures) {
+      HashMap<String, long[]> partial = future.get();
+      for (Map.Entry<String, long[]> entry : partial.entrySet()) {
+        merged.merge(entry.getKey(), entry.getValue(), (a, b) -> {
+          a[0] += b[0];
+          return a;
+        });
+      }
+    }
+
+    executor.shutdown();
+    return buildResult(merged, groupField);
   }
 
   /**
@@ -192,45 +207,29 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
     byte[] pattern = ("\"" + filterField + "\":").getBytes(StandardCharsets.UTF_8);
     byte[] patternSpaced = ("\"" + filterField + "\" :").getBytes(StandardCharsets.UTF_8);
 
-    try (Arena arena = Arena.ofShared(); FileChannel channel = FileChannel.open(path, StandardOpenOption.READ)) {
-      long fileSize = channel.size();
-      MemorySegment segment = channel.map(FileChannel.MapMode.READ_ONLY, 0, fileSize, arena);
+    long[] chunkStarts = computeChunkStarts(path, nThreads);
 
-      long arrayStart = findArrayStart(segment, fileSize);
-
-      long[] chunkStarts = new long[nThreads + 1];
-      chunkStarts[0] = arrayStart;
-      chunkStarts[nThreads] = fileSize;
-
-      long chunkSize = (fileSize - arrayStart) / nThreads;
-      for (int i = 1; i < nThreads; i++) {
-        long approx = arrayStart + i * chunkSize;
-        chunkStarts[i] = alignToRecordBoundary(segment, approx, fileSize);
-      }
-
-      ExecutorService executor = Executors.newFixedThreadPool(nThreads);
-      List<Future<Long>> futures = new ArrayList<>(nThreads);
-
-      for (int i = 0; i < nThreads; i++) {
-        long start = chunkStarts[i];
-        long end = chunkStarts[i + 1];
-        futures.add(executor.submit(() -> processChunkFilter(segment,
-                                                             start,
-                                                             end,
-                                                             pattern,
-                                                             patternSpaced,
-                                                             filterOp,
-                                                             filterValue)));
-      }
-
-      long total = 0;
-      for (Future<Long> future : futures) {
-        total += future.get();
-      }
-
-      executor.shutdown();
-      return total;
+    ExecutorService executor = Executors.newFixedThreadPool(nThreads);
+    List<Future<Long>> futures = new ArrayList<>(nThreads);
+    for (int i = 0; i < nThreads; i++) {
+      long start = chunkStarts[i];
+      long end = chunkStarts[i + 1];
+      futures.add(executor.submit(() -> processChunkFilter(path,
+                                                           start,
+                                                           end,
+                                                           pattern,
+                                                           patternSpaced,
+                                                           filterOp,
+                                                           filterValue)));
     }
+
+    long total = 0;
+    for (Future<Long> future : futures) {
+      total += future.get();
+    }
+
+    executor.shutdown();
+    return total;
   }
 
   // ==================== Chunk processing ====================
@@ -242,140 +241,145 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
   private static final int INTERN_CAPACITY = 1024;
   private static final int INTERN_MASK = INTERN_CAPACITY - 1;
 
-  private static HashMap<String, long[]> processChunk(MemorySegment segment, long start, long end, byte[] pattern,
-      byte[] patternSpaced) {
+  private static HashMap<String, long[]> processChunk(Path path, long start, long end, byte[] pattern,
+      byte[] patternSpaced) throws IOException {
     // Per-thread intern table: raw byte keys → count
     byte[][] internKeys = new byte[INTERN_CAPACITY][];
     long[] internCounts = new long[INTERN_CAPACITY];
 
     byte[] window = new byte[WINDOW_SIZE];
-    long pos = start;
+    long pos = 0;
+    long len = end - start;
     int patLen = pattern.length;
 
-    while (pos < end) {
-      int winLen = (int) Math.min(WINDOW_SIZE, end - pos);
-      MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, pos, window, 0, winLen);
+    try (Arena arena = Arena.ofConfined(); FileChannel channel = FileChannel.open(path, StandardOpenOption.READ)) {
+      MemorySegment segment = channel.map(FileChannel.MapMode.READ_ONLY, start, len, arena);
 
-      int localPos = 0;
-      boolean rewound = false;
+      while (pos < len) {
+        int winLen = (int) Math.min(WINDOW_SIZE, len - pos);
+        MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, pos, window, 0, winLen);
 
-      while (localPos < winLen) {
-        // Find '{' — scalar scan (records are ~50 bytes apart, SIMD overhead not worth it)
-        while (localPos < winLen && window[localPos] != '{')
-          localPos++;
-        if (localPos >= winLen)
-          break;
+        int localPos = 0;
+        boolean rewound = false;
 
-        int objStart = localPos;
-
-        // Find matching '}' — for flat JSON objects (depth 1), we can skip
-        // to the next '}' that's not inside a string. This is the common case
-        // for our data: {"name":"...","age":N,"city":"..."}
-        int depth = 0;
-        boolean inStr = false;
         while (localPos < winLen) {
-          byte b = window[localPos];
-          if (inStr) {
-            if (b == '\\') {
-              localPos += 2;
-              continue;
+          // Find '{' — scalar scan (records are ~50 bytes apart, SIMD overhead not worth it)
+          while (localPos < winLen && window[localPos] != '{')
+            localPos++;
+          if (localPos >= winLen)
+            break;
+
+          int objStart = localPos;
+
+          // Find matching '}' — for flat JSON objects (depth 1), we can skip
+          // to the next '}' that's not inside a string. This is the common case
+          // for our data: {"name":"...","age":N,"city":"..."}
+          int depth = 0;
+          boolean inStr = false;
+          while (localPos < winLen) {
+            byte b = window[localPos];
+            if (inStr) {
+              if (b == '\\') {
+                localPos += 2;
+                continue;
+              }
+              if (b == '"')
+                inStr = false;
+            } else {
+              if (b == '"')
+                inStr = true;
+              else if (b == '{')
+                depth++;
+              else if (b == '}') {
+                depth--;
+                if (depth == 0) {
+                  localPos++;
+                  break;
+                }
+              }
             }
-            if (b == '"')
-              inStr = false;
-          } else {
-            if (b == '"')
-              inStr = true;
-            else if (b == '{')
-              depth++;
-            else if (b == '}') {
-              depth--;
-              if (depth == 0) {
-                localPos++;
+            localPos++;
+          }
+
+          if (depth != 0) {
+            pos += objStart;
+            rewound = true;
+            break;
+          }
+
+          int objEnd = localPos;
+
+          // SIMD-accelerated field search — find first byte of pattern, then verify rest
+          int fp = simdFind(window, objStart, objEnd, pattern[0]);
+          int valueStart = -1;
+          int valueEnd = -1;
+
+          int stop = objEnd - patLen;
+          while (fp <= stop) {
+            // Verify full pattern match
+            boolean match = true;
+            for (int j = 1; j < patLen; j++) {
+              if (window[fp + j] != pattern[j]) {
+                match = false;
                 break;
               }
             }
-          }
-          localPos++;
-        }
-
-        if (depth != 0) {
-          pos += objStart;
-          rewound = true;
-          break;
-        }
-
-        int objEnd = localPos;
-
-        // SIMD-accelerated field search — find first byte of pattern, then verify rest
-        int fp = simdFind(window, objStart, objEnd, pattern[0]);
-        int valueStart = -1;
-        int valueEnd = -1;
-
-        int stop = objEnd - patLen;
-        while (fp <= stop) {
-          // Verify full pattern match
-          boolean match = true;
-          for (int j = 1; j < patLen; j++) {
-            if (window[fp + j] != pattern[j]) {
-              match = false;
-              break;
+            if (!match) {
+              fp = simdFind(window, fp + 1, objEnd, pattern[0]);
+              continue;
             }
-          }
-          if (!match) {
-            fp = simdFind(window, fp + 1, objEnd, pattern[0]);
-            continue;
-          }
-          {
-            int vp = fp + patLen;
-            while (vp < objEnd && window[vp] == ' ')
-              vp++;
-            if (vp < objEnd && window[vp] == '"') {
-              vp++;
-              valueStart = vp;
-              while (vp < objEnd) {
-                if (window[vp] == '\\') {
-                  vp += 2;
-                  continue;
-                }
-                if (window[vp] == '"') {
-                  valueEnd = vp;
-                  break;
-                }
+            {
+              int vp = fp + patLen;
+              while (vp < objEnd && window[vp] == ' ')
                 vp++;
+              if (vp < objEnd && window[vp] == '"') {
+                vp++;
+                valueStart = vp;
+                while (vp < objEnd) {
+                  if (window[vp] == '\\') {
+                    vp += 2;
+                    continue;
+                  }
+                  if (window[vp] == '"') {
+                    valueEnd = vp;
+                    break;
+                  }
+                  vp++;
+                }
               }
+              break;
             }
-            break;
+          }
+
+          if (valueStart >= 0 && valueEnd > valueStart) {
+            // Aggregate using byte-key intern table — no String allocation
+            int keyLen = valueEnd - valueStart;
+            int hash = longHash(window, valueStart, keyLen);
+            int idx = hash & INTERN_MASK;
+
+            while (true) {
+              byte[] existing = internKeys[idx];
+              if (existing == null) {
+                byte[] keyCopy = new byte[keyLen];
+                System.arraycopy(window, valueStart, keyCopy, 0, keyLen);
+                internKeys[idx] = keyCopy;
+                internCounts[idx] = 1;
+                break;
+              }
+              if (existing.length == keyLen && bytesEqual(existing, 0, window, valueStart, keyLen)) {
+                internCounts[idx]++;
+                break;
+              }
+              idx = (idx + 31) & INTERN_MASK; // stride-31 probing (1BRC technique)
+            }
           }
         }
 
-        if (valueStart >= 0 && valueEnd > valueStart) {
-          // Aggregate using byte-key intern table — no String allocation
-          int keyLen = valueEnd - valueStart;
-          int hash = longHash(window, valueStart, keyLen);
-          int idx = hash & INTERN_MASK;
-
-          while (true) {
-            byte[] existing = internKeys[idx];
-            if (existing == null) {
-              byte[] keyCopy = new byte[keyLen];
-              System.arraycopy(window, valueStart, keyCopy, 0, keyLen);
-              internKeys[idx] = keyCopy;
-              internCounts[idx] = 1;
-              break;
-            }
-            if (existing.length == keyLen && bytesEqual(existing, 0, window, valueStart, keyLen)) {
-              internCounts[idx]++;
-              break;
-            }
-            idx = (idx + 31) & INTERN_MASK; // stride-31 probing (1BRC technique)
-          }
+        if (!rewound) {
+          pos += winLen;
         }
       }
-
-      if (!rewound) {
-        pos += winLen;
-      }
-    }
+    } // close try-with-resources
 
     // Convert byte-key intern table to HashMap<String> for merging
     HashMap<String, long[]> result = new HashMap<>();
@@ -430,77 +434,82 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
     return true;
   }
 
-  private static long processChunkFilter(MemorySegment segment, long start, long end, byte[] pattern,
-      byte[] patternSpaced, String op, long threshold) {
+  private static long processChunkFilter(Path path, long start, long end, byte[] pattern, byte[] patternSpaced,
+      String op, long threshold) throws IOException {
     long count = 0;
     byte[] window = new byte[WINDOW_SIZE];
-    long pos = start;
+    long pos = 0;
+    long len = end - start;
 
-    while (pos < end) {
-      int winLen = (int) Math.min(WINDOW_SIZE, end - pos);
-      MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, pos, window, 0, winLen);
+    try (Arena arena = Arena.ofConfined(); FileChannel channel = FileChannel.open(path, StandardOpenOption.READ)) {
+      MemorySegment segment = channel.map(FileChannel.MapMode.READ_ONLY, start, len, arena);
 
-      int localPos = 0;
-      boolean rewound = false;
+      while (pos < len) {
+        int winLen = (int) Math.min(WINDOW_SIZE, len - pos);
+        MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, pos, window, 0, winLen);
 
-      while (localPos < winLen) {
-        while (localPos < winLen && window[localPos] != '{')
-          localPos++;
-        if (localPos >= winLen)
-          break;
+        int localPos = 0;
+        boolean rewound = false;
 
-        int objStart = localPos;
-        int depth = 0;
-        boolean inStr = false;
         while (localPos < winLen) {
-          byte b = window[localPos];
-          if (inStr) {
-            if (b == '\\') {
-              localPos += 2;
-              continue;
-            }
-            if (b == '"')
-              inStr = false;
-          } else {
-            if (b == '"')
-              inStr = true;
-            else if (b == '{')
-              depth++;
-            else if (b == '}') {
-              depth--;
-              if (depth == 0) {
-                localPos++;
-                break;
+          while (localPos < winLen && window[localPos] != '{')
+            localPos++;
+          if (localPos >= winLen)
+            break;
+
+          int objStart = localPos;
+          int depth = 0;
+          boolean inStr = false;
+          while (localPos < winLen) {
+            byte b = window[localPos];
+            if (inStr) {
+              if (b == '\\') {
+                localPos += 2;
+                continue;
+              }
+              if (b == '"')
+                inStr = false;
+            } else {
+              if (b == '"')
+                inStr = true;
+              else if (b == '{')
+                depth++;
+              else if (b == '}') {
+                depth--;
+                if (depth == 0) {
+                  localPos++;
+                  break;
+                }
               }
             }
+            localPos++;
           }
-          localPos++;
+
+          if (depth != 0) {
+            pos += objStart;
+            rewound = true;
+            break;
+          }
+
+          int objEnd = localPos;
+          long value = extractLong(window, objStart, objEnd, pattern, patternSpaced);
+          boolean pass = switch (op) {
+            case "gt" -> value > threshold;
+            case "lt" -> value < threshold;
+            case "ge" -> value >= threshold;
+            case "le" -> value <= threshold;
+            case "eq" -> value == threshold;
+            default -> true;
+          };
+          if (pass)
+            count++;
         }
 
-        if (depth != 0) {
-          pos += objStart;
-          rewound = true;
-          break;
+        if (!rewound) {
+          pos += winLen;
         }
-
-        int objEnd = localPos;
-        long value = extractLong(window, objStart, objEnd, pattern, patternSpaced);
-        boolean pass = switch (op) {
-          case "gt" -> value > threshold;
-          case "lt" -> value < threshold;
-          case "ge" -> value >= threshold;
-          case "le" -> value <= threshold;
-          case "eq" -> value == threshold;
-          default -> true;
-        };
-        if (pass)
-          count++;
       }
-
-      if (!rewound) {
-        pos += winLen;
-      }
-    }
+    } // close try-with-resources
 
     return count;
   }
