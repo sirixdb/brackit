@@ -57,16 +57,22 @@ bjq native binary (Oracle GraalVM, PGO, G1 GC, `-O3`) vs jq 1.7 — wall-clock, 
 
 **Reproducible**: `./examples/benchmark.sh --sizes "10000 100000 1000000"` (or `benchmark-3way.sh` for native vs JAR vs jq).
 
-### Billion-record scan
+### Scaling: 1M → 100M → 1B records
 
-On a 49GB 1B-record JSON array (Linux, 20 cores, NVMe SSD), parallel memory-mapped scan via `Arena.ofConfined` per worker, 8-way group-by:
+Compact 48-byte schema (`{"age":N,"dept":"X","city":"X","active":T}`), Linux, 20 cores, NVMe SSD, parallel memory-mapped scan via `Arena.ofConfined` per worker.
 
-| Query | Native (PGO + VectorAPI) | JAR (JVM) | Throughput |
+| Query | 1M (50MB) | 100M (4.9GB) | 1B (49GB) |
 |---|---|---|---|
-| Group-by dept | **16.0s** | 13.1s | ~3 GB/s, 60M records/s |
-| Filter-count (`age > 40 and active`) | **15.3s** | 13.2s | ~3 GB/s, 65M records/s |
+| **Group-by dept** | | | |
+| native + PGO | **532ms** | **1.1s** | **14.8s** |
+| JAR (JVM) | 644ms | 2.7s | 16.4s |
+| jq | 3.5s | **OOM** | **OOM** |
+| **Filter-count (`age > 40 and active`)** | | | |
+| native + PGO | **474ms** | **1.0s** | 15.2s |
+| JAR (JVM) | 571ms | 1.3s | **14.4s** |
+| jq | 1.4s | **OOM** | **OOM** |
 
-`jq` OOMs at 100M records on the same hardware; the 1B test is bjq-only. The native binary is within ~20% of the JVM on this workload (remaining delta is typical Substrate VM vs HotSpot overhead, not Vector API — see `-H:+VectorAPISupport` in `pom.xml`). Both paths use the same parallel mmap pipeline; pick native for CLI/startup latency, JVM when you embed Brackit as a library.
+`jq` OOMs at 100M records on this hardware (exit 137, OOM-killed). Both Brackit paths scale linearly and hit ~3 GB/s (≈65-76M records/s) at 1B — approximately raw NVMe read speed. Pick native for CLI/startup latency, JVM when embedding Brackit as a library.
 
 ## Quick Start
 
