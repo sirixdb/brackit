@@ -57,34 +57,55 @@ bjq native binary (Oracle GraalVM, PGO, G1 GC, `-O3`) vs jq 1.7 — wall-clock, 
 
 **Reproducible**: `./examples/benchmark.sh --sizes "10000 100000 1000000"` (or `benchmark-3way.sh` for native vs JAR vs jq).
 
-### Scaling: 1M → 100M → 1B records
+### Scaling: 1M → 100M → 1B records — 9 query shapes × 3 engines
 
-Compact 48-byte schema (`{"age":N,"dept":"X","city":"X","active":T}`), Linux, 20 cores, NVMe SSD, parallel memory-mapped scan via `Arena.ofConfined` per worker. All five vectorized query shapes scale linearly.
+Compact 48-byte schema (`{"age":N,"dept":"X","city":"X","active":T}`), Linux, 20 cores, NVMe SSD. Native binary built with PGO trained on all 9 query shapes, `-H:+VectorAPISupport`, G1 GC, `-O3`. JAR run with HotSpot JIT.
 
-**Group-by dept:**
+**1M records (50 MB):**
 
-| Engine | 1M (50MB) | 100M (4.9GB) | 1B (49GB) |
+| Query | native + PGO | JAR (JVM) | jq |
 |---|---|---|---|
-| native + PGO | **532ms** | **1.1s** | **14.8s** |
-| JAR (JVM) | 644ms | 2.7s | 16.4s |
-| jq | 3.5s | **OOM** | **OOM** |
+| filter-count | **503ms** | 603ms | 1.5s |
+| group-by dept | 718ms | **657ms** | 3.8s |
+| group-by 2 keys | 828ms | **711ms** | 5.4s |
+| filter + group-by | 727ms | **649ms** | 2.7s |
+| count distinct | 638ms | **584ms** | 3.6s |
+| sum(age) | **475ms** | 561ms | 1.3s |
+| avg(age) | **473ms** | 577ms | 1.3s |
+| min(age) | **469ms** | 550ms | 1.2s |
+| max(age) | **467ms** | 563ms | 1.2s |
 
-**Filter-count (`age > 40 and active`):**
+**100M records (4.9 GB):**
 
-| Engine | 1M | 100M | 1B |
+| Query | native + PGO | JAR (JVM) | jq |
 |---|---|---|---|
-| native + PGO | **474ms** | **1.0s** | 15.2s |
-| JAR (JVM) | 571ms | 1.3s | **14.4s** |
-| jq | 1.4s | **OOM** | **OOM** |
+| filter-count | **1.5s** | 1.5s | **OOM** |
+| group-by dept | **1.7s** | 2.9s | **OOM** |
+| group-by 2 keys | **1.6s** | 2.6s | **OOM** |
+| filter + group-by | **1.6s** | 2.7s | **OOM** |
+| count distinct | **1.6s** | 2.8s | **OOM** |
+| sum(age) | **1.5s** | 1.7s | **OOM** |
+| avg(age) | **1.4s** | 1.7s | **OOM** |
+| min(age) | **1.5s** | 1.6s | **OOM** |
+| max(age) | **1.5s** | 1.6s | **OOM** |
 
-**Pure aggregates (sum/avg/min/max over age) — single parallel scan:**
+**1B records (49 GB):**
 
-| Engine | 100M sum | 100M avg | 100M min | 100M max | 1B sum |
-|---|---|---|---|---|---|
-| native + PGO | **1.4s** | **1.1s** | **1.1s** | **1.1s** | **14.8s** |
-| JAR (JVM) | 4.9s | 2.1s | 2.0s | 1.6s | 13.8s |
+| Query | native + PGO | JAR (JVM) | jq |
+|---|---|---|---|
+| filter-count | 13.6s | **13.4s** | **OOM** |
+| group-by dept | **14.7s** | 14.8s | **OOM** |
+| group-by 2 keys | **14.5s** | 14.7s | **OOM** |
+| filter + group-by | **15.1s** | 15.2s | **OOM** |
+| count distinct | **14.5s** | 15.3s | **OOM** |
+| sum(age) | **13.1s** | 13.4s | **OOM** |
+| avg(age) | **13.0s** | 13.5s | **OOM** |
+| min(age) | **13.4s** | 13.7s | **OOM** |
+| max(age) | **13.4s** | 13.4s | **OOM** |
 
-`jq` OOMs at 100M records (exit 137, OOM-killed). Both Brackit paths scale linearly and hit ~3 GB/s (≈65–76M records/s) at 1B — approximately raw NVMe read speed. Pick native for CLI/startup latency, JVM when embedding Brackit as a library.
+`jq` OOMs at 100M records (exit 137, OOM-killed by the kernel). Both Brackit paths scale linearly: 1M to 100M is ~3x time for 100x data (cache warm-up + per-thread mmap), 100M to 1B is ~9x time for 10x data — at 1B we're at **~3.4 GB/s**, approximately raw NVMe sequential read speed. Pick native for CLI/startup latency, JVM when embedding Brackit as a library.
+
+Reproducible: `examples/Gen1B.java` (compact 48-byte generator, ~250 MB/s) + `examples/benchmark-1b.sh`.
 
 ## Quick Start
 
