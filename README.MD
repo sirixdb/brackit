@@ -25,16 +25,50 @@ echo '{"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]}' | \
 
 ## Performance
 
-bjq native binary vs jq (wall-clock, median of 3 runs):
+bjq native binary (Oracle GraalVM, PGO, G1 GC, `-O3`) vs jq 1.7 — wall-clock, median of 3 runs:
 
-| Query | Records | jq | bjq | Speedup |
-|---|---|---|---|---|
-| Filter (`age > 30`) | 100k | 142ms | **69ms** | **2.1x** |
-| Group by city | 100k | 282ms | **77ms** | **3.7x** |
-| Filter (`age > 30`) | 1M | 1.49s | **0.61s** | **2.4x** |
-| Group by city | 1M | 3.61s | **0.73s** | **4.9x** |
+**1M records (173 MB flat array):**
 
-Measured on Linux x86-64. bjq native binary built with Oracle GraalVM, PGO, G1 GC, and `-O3`.
+| Query | bjq | jq | Speedup |
+|---|---|---|---|
+| Filter (`age > 40 and active`) | **2.4s** | 3.7s | 1.6x |
+| Group by dept + 3 aggregates | **1.4s** | 7.0s | **4.9x** |
+| Group by 2 keys + sort | **1.5s** | 6.0s | **3.9x** |
+| Hash-join (1M customers × 5M orders) | **44.4s** | — (O(n·m), skipped) | — |
+| Join + group + aggregate + sort | **14.7s** | — (skipped) | — |
+| 5-way aggregation | **1.7s** | 4.9s | **2.9x** |
+| String equality filter | **2.0s** | 3.6s | 1.8x |
+| Top-N (order + slice) | **1.2s** | 5.8s | **4.8x** |
+| Compound AND filter | **2.8s** | 4.0s | 1.4x |
+| Count distinct | **1.5s** | 5.9s | **3.9x** |
+| Multi-key group + top-N | **5.8s** | 39.6s | **6.8x** |
+
+**100k records (18 MB):**
+
+| Query | bjq | jq | Speedup |
+|---|---|---|---|
+| Filter | **314ms** | 376ms | 1.2x |
+| Group by dept + 3 aggregates | **249ms** | 634ms | **2.5x** |
+| Group by 2 keys + sort | **249ms** | 543ms | **2.2x** |
+| 5-way aggregation | **205ms** | 466ms | **2.3x** |
+| Top-N | **240ms** | 517ms | **2.2x** |
+| Count distinct | **184ms** | 496ms | **2.7x** |
+| Multi-key group + top-N | **968ms** | 3.2s | **3.3x** |
+
+**Reproducible**: `./examples/benchmark.sh --sizes "10000 100000 1000000"` (or `benchmark-3way.sh` for native vs JAR vs jq).
+
+### Billion-record scan
+
+On a 49GB 1B-record JSON array (Linux, 20 cores, NVMe SSD) — **JVM mode**, parallel memory-mapped scan via `Arena.ofConfined` per worker:
+
+| Query | Time | Throughput |
+|---|---|---|
+| Group-by dept (8 buckets) | **13.1s** | 3.7 GB/s, 76M records/s |
+| Filter-count (`age > 40 and active`) | **13.2s** | 3.7 GB/s, 76M records/s |
+
+`jq` OOMs at 100M records on the same hardware, so the 1B test is bjq-only.
+
+The native binary uses the same parallel scan but is currently ~4× slower on 1B group-by because the GraalVM native-image Substrate VM has limited intrinsics for the incubator Vector API (SIMD pattern search falls back to scalar loops). For billion-record workloads, **use the JAR**; for small-to-medium workloads and CLI use the native binary is the right choice (lower startup, no JVM required).
 
 ## Quick Start
 
