@@ -288,6 +288,8 @@
                                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
                                 <buildArg>--enable-preview</buildArg>
                                 <buildArg>--add-modules=jdk.incubator.vector</buildArg>
+                                <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
+                                <buildArg>-H:+VectorAPISupport</buildArg>
                                 <buildArg>-O3</buildArg>
                                 <buildArg>--gc=G1</buildArg>
                             </buildArgs>
@@ -321,6 +323,8 @@
                                 <buildArg>--no-fallback</buildArg>
                                 <buildArg>--enable-preview</buildArg>
                                 <buildArg>--add-modules=jdk.incubator.vector</buildArg>
+                                <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
+                                <buildArg>-H:+VectorAPISupport</buildArg>
                                 <buildArg>--enable-native-access=ALL-UNNAMED</buildArg>
                                 <buildArg>--pgo-instrument</buildArg>
                             </buildArgs>
@@ -355,6 +359,8 @@
                                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
                                 <buildArg>--enable-preview</buildArg>
                                 <buildArg>--add-modules=jdk.incubator.vector</buildArg>
+                                <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
+                                <buildArg>-H:+VectorAPISupport</buildArg>
                                 <buildArg>-O3</buildArg>
                                 <buildArg>--gc=G1</buildArg>
                                 <buildArg>--pgo=${project.basedir}/default.iprof</buildArg>
