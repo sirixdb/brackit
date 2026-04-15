@@ -123,6 +123,17 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       }
     }
 
+    // Pattern 2b: count-distinct — count(for ... group by $d return $d) answered
+    // from an HLL cardinality sketch by the executor. Only valid when wrapped in
+    // count() because the executor returns a scalar Int64(estimate), not the
+    // sequence of distinct groups.
+    if (countWrapped && Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT_DISTINCT))) {
+      String field = (String) node.getProperty(VectorizedScanAnnotation.COUNT_DISTINCT_FIELD);
+      if (field != null) {
+        return VectorizedGroupByExpr.countDistinct(executor, field);
+      }
+    }
+
     // Pattern 3: Sorted scan
     if (Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_ORDERBY))) {
       String orderField = (String) node.getProperty(VectorizedScanAnnotation.ORDER_FIELD);

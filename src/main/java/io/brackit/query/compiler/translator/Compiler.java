@@ -54,6 +54,7 @@ import io.brackit.query.QueryException;
 import io.brackit.query.compiler.AST;
 import io.brackit.query.compiler.Bits;
 import io.brackit.query.compiler.XQ;
+import io.brackit.query.compiler.optimizer.VectorizedScanAnnotation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -730,14 +731,37 @@ public class Compiler implements Translator {
       }
     }
 
+    // Intercept count(distinct-values(PipeExpr)) — equivalent in meaning to the
+    // count(for ... group by $d return $d) pattern (both yield the cardinality of a
+    // single field's values). The inner PipeExpr already carries VECTORIZED_AGGREGATE
+    // with AGGREGATE_FIELD set (walker does this for any ForBind → return $u.field).
+    // We translate it into a count-distinct expression via the same executor hook as
+    // the group-by variant.
+    if ("count".equals(name.getLocalName()) && childCount == 1 && node.getChild(0).getType() == XQ.FunctionCall) {
+      final AST innerCall = node.getChild(0);
+      final Object innerName = innerCall.getValue();
+      if (innerName instanceof QNm innerQnm && "distinct-values".equals(innerQnm.getLocalName()) && innerCall
+                                                                                                             .getChildCount()
+          == 1 && innerCall.getChild(0).getType() == XQ.PipeExpr) {
+        final AST pipe = innerCall.getChild(0);
+        if (Boolean.TRUE.equals(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_AGGREGATE))) {
+          final String field = (String) pipe.getProperty(VectorizedScanAnnotation.AGGREGATE_FIELD);
+          final var executor = SequentialPipelineStrategy.getVectorizedExecutor();
+          if (field != null && executor != null) {
+            return VectorizedGroupByExpr.countDistinct(executor, field);
+          }
+        }
+      }
+    }
+
     // Intercept sum/avg/min/max(PipeExpr) when the PipeExpr is a pure flat scan
     // returning a single field (VECTORIZED_AGGREGATE annotation).
     if (childCount == 1 && node.getChild(0).getType() == XQ.PipeExpr) {
       String fn = name.getLocalName();
       if ("sum".equals(fn) || "avg".equals(fn) || "min".equals(fn) || "max".equals(fn)) {
         AST pipe = node.getChild(0);
-        if (Boolean.TRUE.equals(pipe.getProperty(io.brackit.query.compiler.optimizer.VectorizedScanAnnotation.VECTORIZED_AGGREGATE))) {
-          pipe.setProperty(io.brackit.query.compiler.optimizer.VectorizedScanAnnotation.AGGREGATE_FUNC, fn);
+        if (Boolean.TRUE.equals(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_AGGREGATE))) {
+          pipe.setProperty(VectorizedScanAnnotation.AGGREGATE_FUNC, fn);
           Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(pipe);
           if (vectorized != null) {
             return vectorized;

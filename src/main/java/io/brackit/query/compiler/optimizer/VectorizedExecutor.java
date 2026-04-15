@@ -55,6 +55,22 @@ public interface VectorizedExecutor {
     return null;
   }
 
+  /**
+   * Execute a vectorized count-distinct over a single field, i.e. the query shape
+   * {@code count(for $u in SRC let $d := $u.F group by $d return $d)}.
+   * Implementations that maintain cardinality sketches (HLL, etc.) can answer this
+   * in microseconds without a full scan.
+   *
+   * <p>Default: not supported (returns {@code null} → walker/compiler falls back to
+   * the regular group-by-count expression, whose {@link Sequence} length gives the
+   * correct answer).
+   *
+   * @param field the field's local name to count distinct values of
+   */
+  default Sequence executeCountDistinct(QueryContext ctx, String field) throws QueryException {
+    return null;
+  }
+
   /** Check if this executor can handle the current query context. */
   boolean canExecute(QueryContext ctx);
 }

@@ -20,6 +20,8 @@ public final class VectorizedScanAnnotation {
   public static final String VECTORIZED_ORDERBY = "VECTORIZED_ORDERBY";
   /** Pure aggregation (sum/avg/min/max) without group-by. */
   public static final String VECTORIZED_AGGREGATE = "VECTORIZED_AGGREGATE";
+  /** Count-distinct over a single field (count(for ... group by $d return $d)). */
+  public static final String VECTORIZED_COUNT_DISTINCT = "VECTORIZED_COUNT_DISTINCT";
   /** Top-N pattern (order-by + slice). */
   public static final String VECTORIZED_TOPN = "VECTORIZED_TOPN";
 
@@ -55,6 +57,9 @@ public final class VectorizedScanAnnotation {
   public static final String AGGREGATE_FUNC = "VECTORIZED_AGGREGATE_FUNC";
   /** Aggregate field name (String). */
   public static final String AGGREGATE_FIELD = "VECTORIZED_AGGREGATE_FIELD";
+
+  /** Count-distinct target field (local-name String). */
+  public static final String COUNT_DISTINCT_FIELD = "VECTORIZED_COUNT_DISTINCT_FIELD";
 
   // ---- Top-N ----
   /** Number of results to return (Long). */

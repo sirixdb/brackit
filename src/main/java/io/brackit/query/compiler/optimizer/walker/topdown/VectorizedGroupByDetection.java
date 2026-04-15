@@ -71,6 +71,9 @@ public final class VectorizedGroupByDetection implements Stage {
     // Collect all operators in the chain
     List<FilterInfo> filters = new ArrayList<>();
     List<String> groupFields = new ArrayList<>();
+    // Declared variable names for LetBinds that feed group-by — used to verify
+    // count-distinct patterns (return expr must be a VarRef matching one of these).
+    List<QNm> letBindVars = new ArrayList<>();
     String orderField = null;
     String orderDirection = null;
     boolean hasGroupBy = false;
@@ -83,8 +86,10 @@ public final class VectorizedGroupByDetection implements Stage {
         case XQ.LetBind -> {
           if (current.getChildCount() >= 2) {
             String field = extractFieldFromDeref(current.getChild(1));
-            if (field != null)
+            if (field != null) {
               groupFields.add(field);
+              letBindVars.add(extractLetBindVarName(current));
+            }
           }
         }
         case XQ.GroupBy -> hasGroupBy = true;
@@ -143,6 +148,80 @@ public final class VectorizedGroupByDetection implements Stage {
     if (!hasGroupBy && !hasOrderBy && filters.isEmpty() && returnField != null) {
       pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_AGGREGATE, Boolean.TRUE);
       pipeExpr.setProperty(VectorizedScanAnnotation.AGGREGATE_FIELD, returnField);
+    }
+
+    // Count-distinct candidate: a single-key group-by whose return expression is
+    // exactly the group key variable, e.g.:
+    //   count(for $u in SRC let $d := $u.F group by $d return $d)
+    // When wrapped in count(), the tuple count equals the number of distinct $d
+    // values → answerable directly from a cardinality sketch (HLL) at query time.
+    // Correctness guard: the return must be a VarRef whose QNm matches the first
+    // group-by let-bind's declared variable; otherwise count(...) could return
+    // a multiple of the distinct-count (e.g., return ($d, $d)).
+    if (hasGroupBy && !hasOrderBy && filters.isEmpty() && groupFields.size() == 1 && !letBindVars.isEmpty()
+        && letBindVars.getFirst() != null) {
+      final QNm returnVar = current != null ? extractSoleVariableRef(current) : null;
+      if (returnVar != null && returnVar.equals(letBindVars.getFirst())) {
+        pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_COUNT_DISTINCT, Boolean.TRUE);
+        pipeExpr.setProperty(VectorizedScanAnnotation.COUNT_DISTINCT_FIELD, groupFields.getFirst());
+      }
+    }
+  }
+
+  /** Get the declared QNm of a LetBind's variable binding — {@code null} if absent. */
+  private QNm extractLetBindVarName(final AST letBind) {
+    if (letBind.getChildCount() < 1)
+      return null;
+    final AST varBinding = letBind.getChild(0);
+    if (varBinding.getChildCount() < 1)
+      return null;
+    final Object val = varBinding.getChild(0).getValue();
+    return val instanceof QNm qnm ? qnm : null;
+  }
+
+  /**
+   * Return the QNm of a {@link XQ#VariableRef} that is the sole non-structural node
+   * in the return subtree. Returns {@code null} if there are zero or multiple VarRefs,
+   * or if any non-VarRef expression node (e.g. FunctionCall, ArithmeticOp) is present
+   * — preventing mis-detection of {@code return ($d, $d)} or {@code return f($d)}.
+   */
+  private QNm extractSoleVariableRef(final AST node) {
+    final QNm[] found = { null };
+    final boolean[] tooComplex = { false };
+    scanForSoleVarRef(node, found, tooComplex);
+    return tooComplex[0] ? null : found[0];
+  }
+
+  private void scanForSoleVarRef(final AST node, final QNm[] found, final boolean[] tooComplex) {
+    if (node == null || tooComplex[0])
+      return;
+    final int type = node.getType();
+    if (type == XQ.VariableRef) {
+      final Object val = node.getValue();
+      if (val instanceof QNm qnm) {
+        if (found[0] != null && !found[0].equals(qnm)) {
+          tooComplex[0] = true;
+        } else {
+          found[0] = qnm;
+        }
+      }
+      return;
+    }
+    // Expression-bearing node types disqualify the pattern — `return $d + 1`,
+    // `return concat($d, "x")`, `return ($d, $d)` etc.
+    switch (type) {
+      case XQ.FunctionCall, XQ.ArithmeticExpr, XQ.DerefExpr, XQ.PathExpr, XQ.SequenceExpr, XQ.RangeExpr, XQ.IfExpr,
+          XQ.LetBind, XQ.ComparisonExpr -> {
+        tooComplex[0] = true;
+        return;
+      }
+      default -> {
+        /* structural / pass-through — recurse into children */ }
+    }
+    for (int i = 0; i < node.getChildCount(); i++) {
+      scanForSoleVarRef(node.getChild(i), found, tooComplex);
+      if (tooComplex[0])
+        return;
     }
   }
 

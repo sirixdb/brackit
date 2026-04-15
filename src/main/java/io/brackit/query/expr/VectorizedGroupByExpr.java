@@ -24,7 +24,7 @@ import io.brackit.query.jdm.Sequence;
 public final class VectorizedGroupByExpr implements Expr {
 
   public enum Mode {
-    GROUP_BY, FILTER_COUNT, FILTERED_GROUP_BY, SORTED_SCAN, AGGREGATE
+    GROUP_BY, FILTER_COUNT, FILTERED_GROUP_BY, SORTED_SCAN, AGGREGATE, COUNT_DISTINCT
   }
 
   private final VectorizedExecutor executor;
@@ -73,6 +73,14 @@ public final class VectorizedGroupByExpr implements Expr {
     return new VectorizedGroupByExpr(executor, Mode.AGGREGATE, null, null, null, 0, null, null, func, field);
   }
 
+  /**
+   * Count distinct values of a single field — matches {@code count(for ... group by
+   * $d return $d)}. The {@code field} is the group key's source field name.
+   */
+  public static VectorizedGroupByExpr countDistinct(VectorizedExecutor executor, String field) {
+    return new VectorizedGroupByExpr(executor, Mode.COUNT_DISTINCT, field, null, null, 0, null, null, null, null);
+  }
+
   private VectorizedGroupByExpr(VectorizedExecutor executor, Mode mode, String groupField, String filterField,
       String filterOp, long filterValue, String orderField, String orderDirection, String aggregateFunc,
       String aggregateField) {
@@ -114,6 +122,14 @@ public final class VectorizedGroupByExpr implements Expr {
         Sequence result = executor.executeAggregate(ctx, aggregateFunc, aggregateField);
         if (result == null) {
           throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR, "Vectorized aggregate not supported by this executor");
+        }
+        yield result;
+      }
+      case COUNT_DISTINCT -> {
+        Sequence result = executor.executeCountDistinct(ctx, groupField);
+        if (result == null) {
+          throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
+                                   "Vectorized count-distinct not supported by this executor");
         }
         yield result;
       }
