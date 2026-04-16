@@ -538,4 +538,37 @@ public class VectorizedGroupByDetectionTest {
     assertEquals("gt", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP));
     assertEquals(30L, pipe.getProperty(VectorizedScanAnnotation.FILTER_VALUE));
   }
+
+  /** End node whose return expression is a VariableRef to the given name. */
+  private AST endReturningVar(String varName) {
+    AST end = new AST(XQ.End);
+    end.addChild(new AST(XQ.VariableRef, new QNm(varName)));
+    return end;
+  }
+
+  @Test
+  void countDistinctGroupByLetReturnsKey() {
+    // for $u let $d := $u.dept group by $d return $d  — the exact bench shape
+    AST pipe = pipeExpr(forBind("u", letBind("d", deref("u", "dept"), groupBy(endReturningVar("d")))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertEquals(Boolean.TRUE,
+                 pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT_DISTINCT),
+                 "count-distinct annotation must be set for `return $d` where $d is the group key");
+    assertEquals("dept", pipe.getProperty(VectorizedScanAnnotation.COUNT_DISTINCT_FIELD));
+  }
+
+  @Test
+  void countDistinctReturnMismatchNotAnnotated() {
+    // for $u let $d := $u.dept group by $d return "x"  — return is not the group key
+    AST end = new AST(XQ.End);
+    end.addChild(strLit("x"));
+    AST pipe = pipeExpr(forBind("u", letBind("d", deref("u", "dept"), groupBy(end))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT_DISTINCT),
+               "count-distinct must not fire when return is not the group-key VarRef");
+  }
 }

@@ -85,14 +85,29 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
    * are only intercepted when wrapped in {@code count()}, because the
    * vectorized executor returns a scalar count — not the filtered items.
    */
-  static Expr tryVectorizedExpr(AST node) {
+  public static Expr tryVectorizedExpr(AST node) {
     return tryVectorizedExpr(node, false);
   }
 
-  static Expr tryVectorizedExpr(AST node, boolean countWrapped) {
+  public static Expr tryVectorizedExpr(AST node, boolean countWrapped) {
     VectorizedExecutor executor = vectorizedExecutor;
     if (executor == null)
       return null;
+
+    // Pattern 0 (highest priority when count-wrapped): count-distinct answered
+    // from an HLL cardinality sketch. The walker sets VECTORIZED_COUNT_DISTINCT
+    // in addition to VECTORIZED_GROUPBY on the same PipeExpr because the shape
+    // `for $u let $d := $u.F group by $d return $d` is *structurally* a
+    // group-by; the count-distinct specialization only applies when the outer
+    // expression is count(...). Checking this before the group-by branch lets
+    // the HLL path win when count-wrapped; uncount-wrapped calls fall through
+    // to the materializing group-by below.
+    if (countWrapped && Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT_DISTINCT))) {
+      String field = (String) node.getProperty(VectorizedScanAnnotation.COUNT_DISTINCT_FIELD);
+      if (field != null) {
+        return VectorizedGroupByExpr.countDistinct(executor, field);
+      }
+    }
 
     // Pattern 1: Group-by (with optional filter)
     if (Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY))) {
@@ -120,17 +135,6 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
 
       if (filterField != null && filterOp != null && filterValue != null) {
         return new VectorizedGroupByExpr(executor, filterField, filterOp, filterValue);
-      }
-    }
-
-    // Pattern 2b: count-distinct — count(for ... group by $d return $d) answered
-    // from an HLL cardinality sketch by the executor. Only valid when wrapped in
-    // count() because the executor returns a scalar Int64(estimate), not the
-    // sequence of distinct groups.
-    if (countWrapped && Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT_DISTINCT))) {
-      String field = (String) node.getProperty(VectorizedScanAnnotation.COUNT_DISTINCT_FIELD);
-      if (field != null) {
-        return VectorizedGroupByExpr.countDistinct(executor, field);
       }
     }
 

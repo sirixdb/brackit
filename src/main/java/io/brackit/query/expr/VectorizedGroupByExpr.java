@@ -96,6 +96,11 @@ public final class VectorizedGroupByExpr implements Expr {
     this.aggregateField = aggregateField;
   }
 
+  /** Which vectorized path this expression dispatches to — exposed for dispatch-correctness tests. */
+  public Mode getMode() {
+    return mode;
+  }
+
   @Override
   public Sequence evaluate(QueryContext ctx, Tuple tuple) throws QueryException {
     if (!executor.canExecute(ctx)) {
