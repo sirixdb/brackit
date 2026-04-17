@@ -768,6 +768,20 @@ public class Compiler implements Translator {
           }
         }
       }
+
+      // count(PipeExpr) — when the walker has annotated the PipeExpr as a
+      // count-distinct candidate (shape: for $u let $d := $u.F group by $d
+      // return $d), dispatch to the vectorized HLL-backed count-distinct
+      // expression. Previously this only fired for count(distinct-values(...))
+      // syntax; the group-by-return-key shape never reached that check and
+      // fell through to the materializing group-by pipeline.
+      if ("count".equals(fn)) {
+        AST pipe = node.getChild(0);
+        Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(pipe, /*countWrapped=*/true);
+        if (vectorized != null) {
+          return vectorized;
+        }
+      }
     }
 
     Function function = ctx.getFunctions().resolve(name, childCount);
