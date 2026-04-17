@@ -769,17 +769,18 @@ public class Compiler implements Translator {
         }
       }
 
-      // count(PipeExpr) — when the walker has annotated the PipeExpr as a
-      // count-distinct candidate (shape: for $u let $d := $u.F group by $d
-      // return $d), dispatch to the vectorized HLL-backed count-distinct
-      // expression. Previously this only fired for count(distinct-values(...))
-      // syntax; the group-by-return-key shape never reached that check and
-      // fell through to the materializing group-by pipeline.
+      // count(PipeExpr) over a count-distinct candidate — dispatch to HLL-backed
+      // countDistinct. Narrowly gated on VECTORIZED_COUNT_DISTINCT so we only
+      // intercept the `for $u let $d := $u.F group by $d return $d` shape and
+      // DON'T disturb the existing count(filter-count) routing, which reaches
+      // executeFilterCount through Brackit's generic count(Sequence) pathway.
       if ("count".equals(fn)) {
         AST pipe = node.getChild(0);
-        Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(pipe, /*countWrapped=*/true);
-        if (vectorized != null) {
-          return vectorized;
+        if (Boolean.TRUE.equals(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT_DISTINCT))) {
+          Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(pipe, /*countWrapped=*/true);
+          if (vectorized != null) {
+            return vectorized;
+          }
         }
       }
     }

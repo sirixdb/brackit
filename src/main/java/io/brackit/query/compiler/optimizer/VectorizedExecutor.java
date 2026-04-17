@@ -28,6 +28,21 @@ public interface VectorizedExecutor {
       throws QueryException;
 
   /**
+   * Execute a vectorized filtered count with two AND-conjoined numeric predicates.
+   * Default: runs the first filter via {@link #executeFilterCount} and ignores the
+   * second (caller's responsibility to fall back to generic evaluation). Implementations
+   * should fuse both predicates into a single scan when possible — for a same-field
+   * range ({@code age > 30 AND age < 50}) a single SIMD pass with a range mask
+   * eliminates the Brackit post-filter over the first predicate's match set.
+   *
+   * @return {@code null} to signal the caller should use the generic pipeline
+   */
+  default Sequence executeFilterCount2(QueryContext ctx, String field1, String op1, long value1, String field2,
+      String op2, long value2) throws QueryException {
+    return null;
+  }
+
+  /**
    * Execute a vectorized filtered group-by query.
    * Default: falls back to non-filtered group-by (ignores filter).
    */

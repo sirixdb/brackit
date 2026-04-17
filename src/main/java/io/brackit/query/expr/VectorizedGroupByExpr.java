@@ -24,7 +24,7 @@ import io.brackit.query.jdm.Sequence;
 public final class VectorizedGroupByExpr implements Expr {
 
   public enum Mode {
-    GROUP_BY, FILTER_COUNT, FILTERED_GROUP_BY, SORTED_SCAN, AGGREGATE, COUNT_DISTINCT
+    GROUP_BY, FILTER_COUNT, FILTER_COUNT2, FILTERED_GROUP_BY, SORTED_SCAN, AGGREGATE, COUNT_DISTINCT
   }
 
   private final VectorizedExecutor executor;
@@ -33,6 +33,9 @@ public final class VectorizedGroupByExpr implements Expr {
   private final String filterField;
   private final String filterOp;
   private final long filterValue;
+  private String filter2Field;
+  private String filter2Op;
+  private long filter2Value;
   private final String orderField;
   private final String orderDirection;
   private final String aggregateFunc;
@@ -81,6 +84,29 @@ public final class VectorizedGroupByExpr implements Expr {
     return new VectorizedGroupByExpr(executor, Mode.COUNT_DISTINCT, field, null, null, 0, null, null, null, null);
   }
 
+  /**
+   * Filter-count with two AND-conjoined numeric predicates. Matches
+   * {@code count(for $u in SRC where $u.F1 OP1 V1 and $u.F2 OP2 V2 return $u)}
+   * and delegates to {@link VectorizedExecutor#executeFilterCount2}.
+   */
+  public static VectorizedGroupByExpr filterCount2(VectorizedExecutor executor, String field1, String op1, long value1,
+      String field2, String op2, long value2) {
+    VectorizedGroupByExpr e = new VectorizedGroupByExpr(executor,
+                                                        Mode.FILTER_COUNT2,
+                                                        null,
+                                                        field1,
+                                                        op1,
+                                                        value1,
+                                                        null,
+                                                        null,
+                                                        null,
+                                                        null);
+    e.filter2Field = field2;
+    e.filter2Op = op2;
+    e.filter2Value = value2;
+    return e;
+  }
+
   private VectorizedGroupByExpr(VectorizedExecutor executor, Mode mode, String groupField, String filterField,
       String filterOp, long filterValue, String orderField, String orderDirection, String aggregateFunc,
       String aggregateField) {
@@ -94,6 +120,9 @@ public final class VectorizedGroupByExpr implements Expr {
     this.orderDirection = orderDirection;
     this.aggregateFunc = aggregateFunc;
     this.aggregateField = aggregateField;
+    this.filter2Field = null;
+    this.filter2Op = null;
+    this.filter2Value = 0;
   }
 
   /** Which vectorized path this expression dispatches to — exposed for dispatch-correctness tests. */
@@ -110,6 +139,22 @@ public final class VectorizedGroupByExpr implements Expr {
     return switch (mode) {
       case GROUP_BY -> executor.executeGroupByCount(ctx, groupField);
       case FILTER_COUNT -> executor.executeFilterCount(ctx, filterField, filterOp, filterValue);
+      case FILTER_COUNT2 -> {
+        Sequence result = executor.executeFilterCount2(ctx,
+                                                       filterField,
+                                                       filterOp,
+                                                       filterValue,
+                                                       filter2Field,
+                                                       filter2Op,
+                                                       filter2Value);
+        if (result == null) {
+          // Executor doesn't support fused 2-predicate count — fall back to single-pred
+          // (caller must apply the 2nd predicate through the generic pipeline).
+          throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
+                                   "Vectorized 2-predicate filter count not supported by this executor");
+        }
+        yield result;
+      }
       case FILTERED_GROUP_BY -> executor.executeFilteredGroupByCount(ctx,
                                                                      groupField,
                                                                      filterField,

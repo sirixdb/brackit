@@ -134,6 +134,27 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       Long filterValue = (Long) node.getProperty(VectorizedScanAnnotation.FILTER_VALUE);
 
       if (filterField != null && filterOp != null && filterValue != null) {
+        // Two-predicate count: when the walker extracted FILTER2 alongside FILTER, and
+        // both carry numeric (long) values, dispatch to the fused
+        // executeFilterCount2 method so the executor can run one SIMD pass with a
+        // range mask instead of Brackit post-filtering the first predicate's match set.
+        String filter2Field = (String) node.getProperty(VectorizedScanAnnotation.FILTER2_FIELD);
+        String filter2Op = (String) node.getProperty(VectorizedScanAnnotation.FILTER2_OP);
+        Long filter2Value = (Long) node.getProperty(VectorizedScanAnnotation.FILTER2_VALUE);
+        // Only dispatch fused 2-predicate when both filters target the SAME field
+        // (i.e. a range predicate like age > 30 AND age < 50). Cross-field ANDs
+        // (e.g. age > 40 AND active) aren't fuseable by executeFilterCount2
+        // today — those fall through to single-pred and let the generic
+        // pipeline handle the second clause.
+        if (filter2Field != null && filter2Field.equals(filterField) && filter2Op != null && filter2Value != null) {
+          return VectorizedGroupByExpr.filterCount2(executor,
+                                                    filterField,
+                                                    filterOp,
+                                                    filterValue,
+                                                    filter2Field,
+                                                    filter2Op,
+                                                    filter2Value);
+        }
         return new VectorizedGroupByExpr(executor, filterField, filterOp, filterValue);
       }
     }
