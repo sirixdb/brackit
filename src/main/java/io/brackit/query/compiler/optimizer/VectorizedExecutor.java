@@ -44,11 +44,17 @@ public interface VectorizedExecutor {
 
   /**
    * Execute a vectorized filtered group-by query.
-   * Default: falls back to non-filtered group-by (ignores filter).
+   *
+   * <p>Returns {@code null} to signal unsupported — the caller raises a
+   * "not supported by this executor" {@link QueryException}, matching the
+   * contract of the other optional methods here. The prior default silently
+   * dropped the filter and delegated to {@link #executeGroupByCount}, which
+   * produced <i>incorrect results</i> (unfiltered counts) rather than a
+   * failure — a correctness bug for any executor relying on the default.
    */
   default Sequence executeFilteredGroupByCount(QueryContext ctx, String groupField, String filterField, String filterOp,
       long filterValue) throws QueryException {
-    return executeGroupByCount(ctx, groupField);
+    return null;
   }
 
   /**

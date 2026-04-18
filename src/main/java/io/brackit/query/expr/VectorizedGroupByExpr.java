@@ -155,11 +155,17 @@ public final class VectorizedGroupByExpr implements Expr {
         }
         yield result;
       }
-      case FILTERED_GROUP_BY -> executor.executeFilteredGroupByCount(ctx,
-                                                                     groupField,
-                                                                     filterField,
-                                                                     filterOp,
-                                                                     filterValue);
+      case FILTERED_GROUP_BY -> {
+        Sequence result = executor.executeFilteredGroupByCount(ctx, groupField, filterField, filterOp, filterValue);
+        if (result == null) {
+          // Matches the contract of FILTER_COUNT2 / SORTED_SCAN / AGGREGATE /
+          // COUNT_DISTINCT: null signals "not supported" and fails loud
+          // rather than silently returning a wrong (unfiltered) result.
+          throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
+                                   "Vectorized filtered group-by-count not supported by this executor");
+        }
+        yield result;
+      }
       case SORTED_SCAN -> {
         Sequence result = executor.executeSortedScan(ctx, orderField, orderDirection);
         if (result == null) {
