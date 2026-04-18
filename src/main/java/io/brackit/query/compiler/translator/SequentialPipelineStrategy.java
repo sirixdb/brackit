@@ -155,6 +155,14 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
                                                     filter2Op,
                                                     filter2Value);
         }
+        // Numeric predicate + boolean-field conjunct (e.g. age > 40 AND active).
+        // Without this routing the boolean is silently dropped and the scalar
+        // count is wrong. FILTER_COUNT_AND_BOOL forwards both predicates to
+        // the executor; if the executor returns null the caller raises.
+        String boolField = (String) node.getProperty(VectorizedScanAnnotation.FILTER_BOOL_FIELD);
+        if (boolField != null) {
+          return VectorizedGroupByExpr.filterCountAndBool(executor, filterField, filterOp, filterValue, boolField);
+        }
         return new VectorizedGroupByExpr(executor, filterField, filterOp, filterValue);
       }
     }

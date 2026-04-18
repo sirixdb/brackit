@@ -43,6 +43,20 @@ public interface VectorizedExecutor {
   }
 
   /**
+   * Numeric-predicate filter AND boolean-field "is true" conjunct, e.g.
+   * {@code count(for $u in SRC where $u.F OP V and $u.B return $u)}. The walker
+   * surfaces the boolean branch via
+   * {@link VectorizedScanAnnotation#FILTER_BOOL_FIELD}; without this entry
+   * point the boolean conjunct is silently dropped (pre-existing correctness
+   * bug for every executor using the old defaults). Return {@code null} to
+   * signal unsupported.
+   */
+  default Sequence executeFilterCountAndBool(QueryContext ctx, String filterField, String filterOp, long filterValue,
+      String boolField) throws QueryException {
+    return null;
+  }
+
+  /**
    * Execute a vectorized filtered group-by query.
    *
    * <p>Returns {@code null} to signal unsupported — the caller raises a

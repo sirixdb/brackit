@@ -70,6 +70,11 @@ public final class VectorizedGroupByDetection implements Stage {
 
     // Collect all operators in the chain
     List<FilterInfo> filters = new ArrayList<>();
+    // Boolean-field conjuncts from AND-branches, e.g. `$u.active`. XQuery
+    // effective-boolean-value converts a JSON-boolean deref to "is true".
+    // Tracked separately from FilterInfo so the vectorized dispatcher can
+    // fuse them via executeFilterCountAndBool rather than silently drop.
+    List<String> boolFilterFields = new ArrayList<>();
     List<String> groupFields = new ArrayList<>();
     // Declared variable names for LetBinds that feed group-by — used to verify
     // count-distinct patterns (return expr must be a VarRef matching one of these).
@@ -82,7 +87,7 @@ public final class VectorizedGroupByDetection implements Stage {
     AST current = forBind.getLastChild();
     while (current != null && current.getType() != XQ.End) {
       switch (current.getType()) {
-        case XQ.Selection -> extractFilters(current, filters);
+        case XQ.Selection -> extractFilters(current, filters, boolFilterFields);
         case XQ.LetBind -> {
           if (current.getChildCount() >= 2) {
             String field = extractFieldFromDeref(current.getChild(1));
@@ -128,6 +133,11 @@ public final class VectorizedGroupByDetection implements Stage {
       applyFilter(pipeExpr, f1, false);
       if (filters.size() > 1) {
         applyFilter(pipeExpr, filters.get(1), true);
+      }
+      // Boolean-field conjunct carried alongside a numeric predicate — one
+      // slot for now; multi-boolean could go through a list annotation later.
+      if (!boolFilterFields.isEmpty()) {
+        pipeExpr.setProperty(VectorizedScanAnnotation.FILTER_BOOL_FIELD, boolFilterFields.getFirst());
       }
 
       // If no group-by and no order-by, this is a filtered count pattern
@@ -248,22 +258,36 @@ public final class VectorizedGroupByDetection implements Stage {
   private record FilterInfo(String field, String op, Long longValue, String stringValue) {
   }
 
-  private void extractFilters(AST selection, List<FilterInfo> filters) {
+  private void extractFilters(AST selection, List<FilterInfo> filters, List<String> boolFilterFields) {
     if (selection.getChildCount() < 1)
       return;
-    extractFromPredicate(selection.getChild(0), filters);
+    extractFromPredicate(selection.getChild(0), filters, boolFilterFields);
   }
 
-  private void extractFromPredicate(AST node, List<FilterInfo> filters) {
+  private void extractFromPredicate(AST node, List<FilterInfo> filters, List<String> boolFilterFields) {
     if (node == null)
       return;
 
     // AND: recurse into both sides
     if (node.getType() == XQ.AndExpr) {
       for (int i = 0; i < node.getChildCount(); i++) {
-        extractFromPredicate(node.getChild(i), filters);
+        extractFromPredicate(node.getChild(i), filters, boolFilterFields);
       }
       return;
+    }
+
+    // Bare $var.field at the top of a Selection's (AND-branch of a) predicate —
+    // XQuery effective-boolean-value semantics turn a JSON-boolean deref into a
+    // "is true" conjunct. Extract the field name ONLY when this node is
+    // directly a DerefExpr — not a wider recursive search, since a
+    // ComparisonExpr like `age > 40` also contains a DerefExpr child for the
+    // left operand and we must not classify that as a boolean conjunct.
+    if (node.getType() == XQ.DerefExpr) {
+      final String bf = directDerefFieldName(node);
+      if (bf != null) {
+        boolFilterFields.add(bf);
+        return;
+      }
     }
 
     // Comparison operators — two forms:
@@ -309,7 +333,7 @@ public final class VectorizedGroupByDetection implements Stage {
 
     // Recurse for nested expressions
     for (int i = 0; i < node.getChildCount(); i++) {
-      extractFromPredicate(node.getChild(i), filters);
+      extractFromPredicate(node.getChild(i), filters, boolFilterFields);
     }
   }
 
@@ -359,6 +383,19 @@ public final class VectorizedGroupByDetection implements Stage {
   }
 
   // ==================== Field name extraction ====================
+
+  /** Field name for a node that is DIRECTLY a DerefExpr — no descent into children. */
+  private String directDerefFieldName(AST node) {
+    if (node == null || node.getType() != XQ.DerefExpr || node.getChildCount() < 2)
+      return null;
+    final AST fieldNode = node.getChild(node.getChildCount() - 1);
+    final Object value = fieldNode.getValue();
+    if (value instanceof QNm qnm)
+      return qnm.getLocalName();
+    if (value instanceof String s)
+      return s;
+    return null;
+  }
 
   private String extractFieldFromDeref(AST node) {
     if (node == null)

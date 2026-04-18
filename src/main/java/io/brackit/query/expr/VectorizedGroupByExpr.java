@@ -24,7 +24,9 @@ import io.brackit.query.jdm.Sequence;
 public final class VectorizedGroupByExpr implements Expr {
 
   public enum Mode {
-    GROUP_BY, FILTER_COUNT, FILTER_COUNT2, FILTERED_GROUP_BY, SORTED_SCAN, AGGREGATE, COUNT_DISTINCT
+    GROUP_BY, FILTER_COUNT, FILTER_COUNT2, FILTERED_GROUP_BY, SORTED_SCAN, AGGREGATE, COUNT_DISTINCT,
+    /** Numeric filter AND boolean-field "is true" conjunct. */
+    FILTER_COUNT_AND_BOOL
   }
 
   private final VectorizedExecutor executor;
@@ -36,6 +38,7 @@ public final class VectorizedGroupByExpr implements Expr {
   private String filter2Field;
   private String filter2Op;
   private long filter2Value;
+  private String boolFilterField;
   private final String orderField;
   private final String orderDirection;
   private final String aggregateFunc;
@@ -107,6 +110,23 @@ public final class VectorizedGroupByExpr implements Expr {
     return e;
   }
 
+  /** Numeric filter AND boolean-field "is true" conjunct. */
+  public static VectorizedGroupByExpr filterCountAndBool(VectorizedExecutor executor, String filterField,
+      String filterOp, long filterValue, String boolField) {
+    VectorizedGroupByExpr e = new VectorizedGroupByExpr(executor,
+                                                        Mode.FILTER_COUNT_AND_BOOL,
+                                                        null,
+                                                        filterField,
+                                                        filterOp,
+                                                        filterValue,
+                                                        null,
+                                                        null,
+                                                        null,
+                                                        null);
+    e.boolFilterField = boolField;
+    return e;
+  }
+
   private VectorizedGroupByExpr(VectorizedExecutor executor, Mode mode, String groupField, String filterField,
       String filterOp, long filterValue, String orderField, String orderDirection, String aggregateFunc,
       String aggregateField) {
@@ -163,6 +183,14 @@ public final class VectorizedGroupByExpr implements Expr {
           // rather than silently returning a wrong (unfiltered) result.
           throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
                                    "Vectorized filtered group-by-count not supported by this executor");
+        }
+        yield result;
+      }
+      case FILTER_COUNT_AND_BOOL -> {
+        Sequence result = executor.executeFilterCountAndBool(ctx, filterField, filterOp, filterValue, boolFilterField);
+        if (result == null) {
+          throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
+                                   "Vectorized filter-count with boolean conjunct not supported by this executor");
         }
         yield result;
       }

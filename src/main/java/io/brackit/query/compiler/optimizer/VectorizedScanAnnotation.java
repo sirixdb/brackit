@@ -46,6 +46,15 @@ public final class VectorizedScanAnnotation {
   public static final String FILTER2_VALUE = "VECTORIZED_FILTER2_VALUE";
   public static final String FILTER2_STRING_VALUE = "VECTORIZED_FILTER2_STRING_VALUE";
 
+  /**
+   * Extra boolean-field conjunct from an AND predicate (e.g. {@code $u.active} in
+   * {@code where $u.age > 40 and $u.active}). String — the field name, with
+   * "is true" semantics. Routes to
+   * {@link io.brackit.query.compiler.optimizer.VectorizedExecutor#executeFilterCountAndBool}
+   * when set alongside {@link #FILTER_FIELD}.
+   */
+  public static final String FILTER_BOOL_FIELD = "VECTORIZED_FILTER_BOOL_FIELD";
+
   // ---- Order-by ----
   /** Order field name (String). */
   public static final String ORDER_FIELD = "VECTORIZED_ORDER_FIELD";
