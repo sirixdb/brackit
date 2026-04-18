@@ -26,7 +26,9 @@ public final class VectorizedGroupByExpr implements Expr {
   public enum Mode {
     GROUP_BY, FILTER_COUNT, FILTER_COUNT2, FILTERED_GROUP_BY, SORTED_SCAN, AGGREGATE, COUNT_DISTINCT,
     /** Numeric filter AND boolean-field "is true" conjunct. */
-    FILTER_COUNT_AND_BOOL
+    FILTER_COUNT_AND_BOOL,
+    /** Same-field range (filter + filter2) AND boolean-field "is true" conjunct. */
+    FILTER_COUNT2_AND_BOOL
   }
 
   private final VectorizedExecutor executor;
@@ -127,6 +129,26 @@ public final class VectorizedGroupByExpr implements Expr {
     return e;
   }
 
+  /** Same-field range AND boolean-field "is true" conjunct. */
+  public static VectorizedGroupByExpr filterCount2AndBool(VectorizedExecutor executor, String field, String op1,
+      long value1, String op2, long value2, String boolField) {
+    VectorizedGroupByExpr e = new VectorizedGroupByExpr(executor,
+                                                        Mode.FILTER_COUNT2_AND_BOOL,
+                                                        null,
+                                                        field,
+                                                        op1,
+                                                        value1,
+                                                        null,
+                                                        null,
+                                                        null,
+                                                        null);
+    e.filter2Field = field;
+    e.filter2Op = op2;
+    e.filter2Value = value2;
+    e.boolFilterField = boolField;
+    return e;
+  }
+
   private VectorizedGroupByExpr(VectorizedExecutor executor, Mode mode, String groupField, String filterField,
       String filterOp, long filterValue, String orderField, String orderDirection, String aggregateFunc,
       String aggregateField) {
@@ -191,6 +213,20 @@ public final class VectorizedGroupByExpr implements Expr {
         if (result == null) {
           throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
                                    "Vectorized filter-count with boolean conjunct not supported by this executor");
+        }
+        yield result;
+      }
+      case FILTER_COUNT2_AND_BOOL -> {
+        Sequence result = executor.executeFilterCount2AndBool(ctx,
+                                                              filterField,
+                                                              filterOp,
+                                                              filterValue,
+                                                              filter2Op,
+                                                              filter2Value,
+                                                              boolFilterField);
+        if (result == null) {
+          throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
+                                   "Vectorized 2-predicate filter-count with boolean conjunct not supported by this executor");
         }
         yield result;
       }

@@ -146,7 +146,19 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
         // (e.g. age > 40 AND active) aren't fuseable by executeFilterCount2
         // today — those fall through to single-pred and let the generic
         // pipeline handle the second clause.
+        String boolField = (String) node.getProperty(VectorizedScanAnnotation.FILTER_BOOL_FIELD);
         if (filter2Field != null && filter2Field.equals(filterField) && filter2Op != null && filter2Value != null) {
+          // Same-field numeric range. If a boolean conjunct was also extracted,
+          // route to the 3-way fused method; otherwise the existing filterCount2.
+          if (boolField != null) {
+            return VectorizedGroupByExpr.filterCount2AndBool(executor,
+                                                             filterField,
+                                                             filterOp,
+                                                             filterValue,
+                                                             filter2Op,
+                                                             filter2Value,
+                                                             boolField);
+          }
           return VectorizedGroupByExpr.filterCount2(executor,
                                                     filterField,
                                                     filterOp,
@@ -155,11 +167,7 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
                                                     filter2Op,
                                                     filter2Value);
         }
-        // Numeric predicate + boolean-field conjunct (e.g. age > 40 AND active).
-        // Without this routing the boolean is silently dropped and the scalar
-        // count is wrong. FILTER_COUNT_AND_BOOL forwards both predicates to
-        // the executor; if the executor returns null the caller raises.
-        String boolField = (String) node.getProperty(VectorizedScanAnnotation.FILTER_BOOL_FIELD);
+        // Single-numeric + boolean-field conjunct (e.g. age > 40 AND active).
         if (boolField != null) {
           return VectorizedGroupByExpr.filterCountAndBool(executor, filterField, filterOp, filterValue, boolField);
         }

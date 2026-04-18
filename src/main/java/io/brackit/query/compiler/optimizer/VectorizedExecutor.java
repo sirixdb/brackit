@@ -57,6 +57,18 @@ public interface VectorizedExecutor {
   }
 
   /**
+   * Same-field two-predicate numeric range AND a boolean-field conjunct, e.g.
+   * {@code count(where $u.age > 30 and $u.age < 50 and $u.active)}. Routed to
+   * by the walker/dispatcher only when FILTER + FILTER2 (same field) + FILTER_BOOL_FIELD
+   * are all present. Returns {@code null} to signal unsupported — fails loud
+   * instead of silently returning a wrong (bool-dropped) count.
+   */
+  default Sequence executeFilterCount2AndBool(QueryContext ctx, String field, String op1, long value1, String op2,
+      long value2, String boolField) throws QueryException {
+    return null;
+  }
+
+  /**
    * Execute a vectorized filtered group-by query.
    *
    * <p>Returns {@code null} to signal unsupported — the caller raises a
