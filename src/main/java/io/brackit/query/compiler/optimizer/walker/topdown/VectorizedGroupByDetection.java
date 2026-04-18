@@ -8,6 +8,7 @@ package io.brackit.query.compiler.optimizer.walker.topdown;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.compiler.AST;
 import io.brackit.query.compiler.XQ;
+import io.brackit.query.compiler.optimizer.PredicateNode;
 import io.brackit.query.compiler.optimizer.Stage;
 import io.brackit.query.compiler.optimizer.VectorizedScanAnnotation;
 import io.brackit.query.module.StaticContext;
@@ -84,10 +85,28 @@ public final class VectorizedGroupByDetection implements Stage {
     boolean hasGroupBy = false;
     boolean hasOrderBy = false;
 
+    // Generic predicate tree built alongside the shape-specific extraction.
+    // If ALL Selection predicates can be represented, we annotate the PipeExpr
+    // with PREDICATE_TREE; the dispatcher will prefer this over the old FILTER_*
+    // annotations when the executor supports executePredicateCount. Multiple
+    // Selection operators in the chain are AND-conjoined (pipeline semantics).
+    List<PredicateNode> predicateConjuncts = new ArrayList<>();
+    boolean predicateRepresentable = true;
+
     AST current = forBind.getLastChild();
     while (current != null && current.getType() != XQ.End) {
       switch (current.getType()) {
-        case XQ.Selection -> extractFilters(current, filters, boolFilterFields);
+        case XQ.Selection -> {
+          extractFilters(current, filters, boolFilterFields);
+          if (predicateRepresentable && current.getChildCount() >= 1) {
+            PredicateNode pn = extractPredicate(current.getChild(0));
+            if (pn == null) {
+              predicateRepresentable = false;
+            } else {
+              predicateConjuncts.add(pn);
+            }
+          }
+        }
         case XQ.LetBind -> {
           if (current.getChildCount() >= 2) {
             String field = extractFieldFromDeref(current.getChild(1));
@@ -144,6 +163,14 @@ public final class VectorizedGroupByDetection implements Stage {
       if (!hasGroupBy && !hasOrderBy) {
         pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_COUNT, Boolean.TRUE);
       }
+    }
+
+    // Attach the generic predicate tree whenever every Selection in the chain
+    // was representable. This is the Umbra/DuckDB-style annotation: the
+    // dispatcher + executor choose whether to consume it. Empty conjunct list
+    // (no Selection at all) is NOT annotated — that isn't a filter pattern.
+    if (predicateRepresentable && !predicateConjuncts.isEmpty()) {
+      pipeExpr.setProperty(VectorizedScanAnnotation.PREDICATE_TREE, PredicateNode.and(predicateConjuncts));
     }
 
     if (hasOrderBy && orderField != null) {
@@ -253,7 +280,98 @@ public final class VectorizedGroupByDetection implements Stage {
     }
   }
 
-  // ==================== Filter extraction ====================
+  // ==================== Generic predicate-tree extraction ====================
+
+  /**
+   * Recursively build a {@link PredicateNode} from an AST predicate subtree.
+   * Returns {@code null} if any part of the predicate isn't representable —
+   * callers should treat {@code null} as "fall back to generic pipeline"
+   * rather than silently dropping the unrepresentable clause.
+   *
+   * <p>Supported shapes:
+   * <ul>
+   * <li>{@code AndExpr(a, b, ...)} → {@link PredicateNode.And}
+   * <li>{@code OrExpr(a, b, ...)} → {@link PredicateNode.Or}
+   * <li>{@code NotExpr(x)} / {@code fn:not($x)} → {@link PredicateNode.Not}
+   * <li>{@code $u.f OP literal} → {@link PredicateNode.NumCmp} / {@link PredicateNode.StrEq}
+   * <li>{@code $u.f} (bare deref, EBV on JSON boolean) → {@link PredicateNode.BoolRef}
+   * </ul>
+   */
+  private PredicateNode extractPredicate(AST node) {
+    if (node == null)
+      return null;
+
+    final int type = node.getType();
+
+    if (type == XQ.AndExpr) {
+      List<PredicateNode> kids = new ArrayList<>(node.getChildCount());
+      for (int i = 0; i < node.getChildCount(); i++) {
+        PredicateNode c = extractPredicate(node.getChild(i));
+        if (c == null)
+          return null;
+        kids.add(c);
+      }
+      return PredicateNode.and(kids);
+    }
+    if (type == XQ.OrExpr) {
+      List<PredicateNode> kids = new ArrayList<>(node.getChildCount());
+      for (int i = 0; i < node.getChildCount(); i++) {
+        PredicateNode c = extractPredicate(node.getChild(i));
+        if (c == null)
+          return null;
+        kids.add(c);
+      }
+      return PredicateNode.or(kids);
+    }
+
+    // Bare deref: EBV of a JSON boolean field.
+    if (type == XQ.DerefExpr) {
+      String bf = directDerefFieldName(node);
+      return bf != null ? new PredicateNode.BoolRef(bf) : null;
+    }
+
+    // Comparison: either a direct GeneralCompGT(left, right) or
+    // ComparisonExpr(cmpKind, left, right).
+    String op = getComparisonOp(type);
+    AST leftOperand, rightOperand;
+    if (op != null && node.getChildCount() >= 2) {
+      leftOperand = node.getChild(0);
+      rightOperand = node.getChild(1);
+    } else if (type == XQ.ComparisonExpr && node.getChildCount() >= 3) {
+      op = getComparisonOp(node.getChild(0).getType());
+      leftOperand = node.getChild(1);
+      rightOperand = node.getChild(2);
+    } else {
+      return null;
+    }
+    if (op == null || leftOperand == null)
+      return null;
+
+    // $u.F OP literal — field on left.
+    String field = directDerefFieldName(leftOperand);
+    if (field != null) {
+      Long lv = extractIntegerLiteral(rightOperand);
+      if (lv != null)
+        return new PredicateNode.NumCmp(field, op, lv);
+      String sv = extractStringLiteral(rightOperand);
+      if (sv != null && "eq".equals(op))
+        return new PredicateNode.StrEq(field, sv);
+      return null;
+    }
+    // literal OP $u.F — field on right. Reverse the comparison direction.
+    field = directDerefFieldName(rightOperand);
+    if (field != null) {
+      Long lv = extractIntegerLiteral(leftOperand);
+      if (lv != null)
+        return new PredicateNode.NumCmp(field, reverseOp(op), lv);
+      String sv = extractStringLiteral(leftOperand);
+      if (sv != null && "eq".equals(op))
+        return new PredicateNode.StrEq(field, sv);
+    }
+    return null;
+  }
+
+  // ==================== Filter extraction (legacy shape-specific) ====================
 
   private record FilterInfo(String field, String op, Long longValue, String stringValue) {
   }

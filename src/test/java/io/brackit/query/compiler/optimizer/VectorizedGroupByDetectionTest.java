@@ -571,4 +571,93 @@ public class VectorizedGroupByDetectionTest {
     assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT_DISTINCT),
                "count-distinct must not fire when return is not the group-key VarRef");
   }
+
+  // ==================== PREDICATE_TREE annotation tests ====================
+  // These cover the generic Umbra/DuckDB-style predicate-tree output produced
+  // alongside the legacy shape-specific FILTER_* annotations.
+
+  @Test
+  void predicateTreeSingleNumCmp() {
+    AST pipe = pipeExpr(forBind("u", selection(comparison(XQ.GeneralCompGT, deref("u", "age"), intLit(40)), end())));
+    stage.rewrite(null, root(pipe));
+
+    PredicateNode p = (PredicateNode) pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
+    assertNotNull(p);
+    assertTrue(p instanceof PredicateNode.NumCmp);
+    PredicateNode.NumCmp nc = (PredicateNode.NumCmp) p;
+    assertEquals("age", nc.field());
+    assertEquals("gt", nc.op());
+    assertEquals(40L, nc.value());
+  }
+
+  @Test
+  void predicateTreeStringEquality() {
+    AST pipe = pipeExpr(forBind("u", selection(comparison(XQ.ValueCompEQ, deref("u", "city"), strLit("NYC")), end())));
+    stage.rewrite(null, root(pipe));
+
+    PredicateNode p = (PredicateNode) pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
+    assertTrue(p instanceof PredicateNode.StrEq);
+    PredicateNode.StrEq s = (PredicateNode.StrEq) p;
+    assertEquals("city", s.field());
+    assertEquals("NYC", s.value());
+  }
+
+  @Test
+  void predicateTreeAndBoolConjunct() {
+    // where $u.age > 40 and $u.active — NumCmp AND BoolRef
+    AST andExpr = new AST(XQ.AndExpr);
+    andExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "age"), intLit(40)));
+    andExpr.addChild(deref("u", "active"));
+    AST pipe = pipeExpr(forBind("u", selection(andExpr, end())));
+    stage.rewrite(null, root(pipe));
+
+    PredicateNode p = (PredicateNode) pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
+    assertTrue(p instanceof PredicateNode.And);
+    PredicateNode.And a = (PredicateNode.And) p;
+    assertEquals(2, a.children().size());
+    assertTrue(a.children().get(0) instanceof PredicateNode.NumCmp);
+    assertTrue(a.children().get(1) instanceof PredicateNode.BoolRef);
+    assertEquals("active", ((PredicateNode.BoolRef) a.children().get(1)).field());
+  }
+
+  @Test
+  void predicateTreeRangeAndBool() {
+    // where $u.age > 30 and $u.age < 50 and $u.active
+    AST innerAnd = new AST(XQ.AndExpr);
+    innerAnd.addChild(comparison(XQ.GeneralCompGT, deref("u", "age"), intLit(30)));
+    innerAnd.addChild(comparison(XQ.GeneralCompLT, deref("u", "age"), intLit(50)));
+    AST outerAnd = new AST(XQ.AndExpr);
+    outerAnd.addChild(innerAnd);
+    outerAnd.addChild(deref("u", "active"));
+    AST pipe = pipeExpr(forBind("u", selection(outerAnd, end())));
+    stage.rewrite(null, root(pipe));
+
+    PredicateNode p = (PredicateNode) pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
+    assertNotNull(p);
+    java.util.Set<String> fields = new java.util.HashSet<>();
+    p.collectFields(fields);
+    assertEquals(2, fields.size());
+    assertTrue(fields.contains("age"));
+    assertTrue(fields.contains("active"));
+  }
+
+  @Test
+  void predicateTreeNoSelectionNotAnnotated() {
+    // Pure group-by pattern with no WHERE clause → no PREDICATE_TREE.
+    AST pipe = pipeExpr(forBind("u", letBind("c", deref("u", "city"), groupBy(end()))));
+    stage.rewrite(null, root(pipe));
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
+  }
+
+  @Test
+  void predicateTreeUnrepresentableIsNotAnnotated() {
+    // A predicate that the walker can't represent — the annotation must be
+    // absent (the `predicateRepresentable` guard fails-closed).
+    // Shape: where some-function($u.age) — unknown type, not a comparison.
+    AST funcCall = new AST(XQ.FunctionCall, new QNm("some-fn"));
+    funcCall.addChild(deref("u", "age"));
+    AST pipe = pipeExpr(forBind("u", selection(funcCall, end())));
+    stage.rewrite(null, root(pipe));
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
+  }
 }

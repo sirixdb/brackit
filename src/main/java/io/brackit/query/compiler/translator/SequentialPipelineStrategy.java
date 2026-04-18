@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.brackit.query.atomic.QNm;
+import io.brackit.query.compiler.optimizer.PredicateNode;
 import io.brackit.query.compiler.optimizer.VectorizedExecutor;
 import io.brackit.query.compiler.optimizer.VectorizedScanAnnotation;
 import io.brackit.query.expr.PipeExpr;
@@ -109,11 +110,23 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       }
     }
 
-    // Pattern 1: Group-by (with optional filter)
+    // Pattern 1: Group-by (with optional filter).
+    //
+    // Generic predicate-tree group-by takes priority when PREDICATE_TREE is set —
+    // it handles every filter shape (NumCmp, StrEq, BoolRef, arbitrary AND/OR/NOT)
+    // with a single executor entry point. Falls through to the shape-specific
+    // forms if the executor doesn't implement the generic path (returns null
+    // at evaluate, raising — Sirix implements it; legacy executors still
+    // support shape-specific).
     if (Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY))) {
       String groupField = (String) node.getProperty(VectorizedScanAnnotation.GROUPBY_FIELD);
       if (groupField == null)
         return null;
+
+      PredicateNode predicate = (PredicateNode) node.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
+      if (predicate != null) {
+        return VectorizedGroupByExpr.predicateGroupByCount(executor, predicate, groupField);
+      }
 
       String filterField = (String) node.getProperty(VectorizedScanAnnotation.FILTER_FIELD);
       String filterOp = (String) node.getProperty(VectorizedScanAnnotation.FILTER_OP);
@@ -125,10 +138,19 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       return new VectorizedGroupByExpr(executor, groupField);
     }
 
-    // Pattern 2: Filtered count — only when wrapped in count() function
+    // Pattern 2: Filtered count — only when wrapped in count() function.
     // The executor returns a scalar Int64(count), which replaces the entire
     // count(PipeExpr) expression.
+    //
+    // Generic predicate-tree path takes priority: PREDICATE_TREE carries the
+    // full AST, so the executor can evaluate any AND/OR/NOT combination of
+    // NumCmp/StrEq/BoolRef leaves without a shape-specific fusion method.
     if (countWrapped && Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT))) {
+      PredicateNode predicate = (PredicateNode) node.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
+      if (predicate != null) {
+        return VectorizedGroupByExpr.predicateCount(executor, predicate);
+      }
+
       String filterField = (String) node.getProperty(VectorizedScanAnnotation.FILTER_FIELD);
       String filterOp = (String) node.getProperty(VectorizedScanAnnotation.FILTER_OP);
       Long filterValue = (Long) node.getProperty(VectorizedScanAnnotation.FILTER_VALUE);
@@ -184,11 +206,18 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       }
     }
 
-    // Pattern 4: Pure aggregate (sum/avg/min/max/count over flat scan, no group-by)
+    // Pattern 4: Pure aggregate (sum/avg/min/max/count over flat scan, no group-by).
+    // Generic predicate-tree filtered aggregate takes priority when PREDICATE_TREE
+    // is set alongside VECTORIZED_AGGREGATE — avoids a filter-then-aggregate
+    // two-operator pipeline in favor of a single fused scan.
     if (Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_AGGREGATE))) {
       String func = (String) node.getProperty(VectorizedScanAnnotation.AGGREGATE_FUNC);
       String field = (String) node.getProperty(VectorizedScanAnnotation.AGGREGATE_FIELD);
       if (func != null) {
+        PredicateNode predicate = (PredicateNode) node.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
+        if (predicate != null) {
+          return VectorizedGroupByExpr.predicateAggregate(executor, predicate, func, field);
+        }
         return VectorizedGroupByExpr.aggregate(executor, func, field);
       }
     }

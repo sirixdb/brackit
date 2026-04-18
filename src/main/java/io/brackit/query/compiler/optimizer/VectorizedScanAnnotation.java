@@ -55,6 +55,20 @@ public final class VectorizedScanAnnotation {
    */
   public static final String FILTER_BOOL_FIELD = "VECTORIZED_FILTER_BOOL_FIELD";
 
+  /**
+   * Generic predicate-tree representation of the WHERE clause. Value is a
+   * {@link PredicateNode}. When present, takes priority over the shape-specific
+   * FILTER_* / FILTER2_* / FILTER_BOOL_FIELD entries: the dispatcher routes to
+   * {@link VectorizedExecutor#executePredicateCount}, which evaluates the tree
+   * against record batches. The shape-specific keys remain for backward compat
+   * with executors that haven't implemented the generic path yet.
+   *
+   * <p>This mirrors the Umbra / DuckDB / ClickHouse / Velox model: a single
+   * physical Filter operator takes an arbitrary predicate expression rather
+   * than having a combinatorial explosion of filter-shape-specific operators.
+   */
+  public static final String PREDICATE_TREE = "VECTORIZED_PREDICATE_TREE";
+
   // ---- Order-by ----
   /** Order field name (String). */
   public static final String ORDER_FIELD = "VECTORIZED_ORDER_FIELD";

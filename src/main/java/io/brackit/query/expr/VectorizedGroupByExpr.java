@@ -9,6 +9,7 @@ import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryContext;
 import io.brackit.query.QueryException;
 import io.brackit.query.Tuple;
+import io.brackit.query.compiler.optimizer.PredicateNode;
 import io.brackit.query.compiler.optimizer.VectorizedExecutor;
 import io.brackit.query.jdm.Expr;
 import io.brackit.query.jdm.Item;
@@ -28,7 +29,17 @@ public final class VectorizedGroupByExpr implements Expr {
     /** Numeric filter AND boolean-field "is true" conjunct. */
     FILTER_COUNT_AND_BOOL,
     /** Same-field range (filter + filter2) AND boolean-field "is true" conjunct. */
-    FILTER_COUNT2_AND_BOOL
+    FILTER_COUNT2_AND_BOOL,
+    /**
+     * Generic predicate-tree count. Dispatches to
+     * {@link VectorizedExecutor#executePredicateCount}. The executor walks the
+     * arbitrary {@link PredicateNode} tree instead of matching a fixed shape.
+     */
+    GENERIC_PREDICATE_COUNT,
+    /** Generic predicate-tree group-by-count. */
+    GENERIC_PREDICATE_GROUPBY,
+    /** Generic predicate-tree aggregate (sum/avg/min/max/count of field over filtered rows). */
+    GENERIC_PREDICATE_AGGREGATE
   }
 
   private final VectorizedExecutor executor;
@@ -41,6 +52,7 @@ public final class VectorizedGroupByExpr implements Expr {
   private String filter2Op;
   private long filter2Value;
   private String boolFilterField;
+  private PredicateNode predicate;
   private final String orderField;
   private final String orderDirection;
   private final String aggregateFunc;
@@ -126,6 +138,60 @@ public final class VectorizedGroupByExpr implements Expr {
                                                         null,
                                                         null);
     e.boolFilterField = boolField;
+    return e;
+  }
+
+  /**
+   * Generic predicate-tree count. Preferred path — takes an arbitrary
+   * {@link PredicateNode} tree instead of the shape-specific
+   * filter-field/filter-op/filter-value tuple.
+   */
+  public static VectorizedGroupByExpr predicateCount(VectorizedExecutor executor, PredicateNode predicate) {
+    VectorizedGroupByExpr e = new VectorizedGroupByExpr(executor,
+                                                        Mode.GENERIC_PREDICATE_COUNT,
+                                                        null,
+                                                        null,
+                                                        null,
+                                                        0,
+                                                        null,
+                                                        null,
+                                                        null,
+                                                        null);
+    e.predicate = predicate;
+    return e;
+  }
+
+  /** Generic predicate-tree group-by-count. */
+  public static VectorizedGroupByExpr predicateGroupByCount(VectorizedExecutor executor, PredicateNode predicate,
+      String groupField) {
+    VectorizedGroupByExpr e = new VectorizedGroupByExpr(executor,
+                                                        Mode.GENERIC_PREDICATE_GROUPBY,
+                                                        groupField,
+                                                        null,
+                                                        null,
+                                                        0,
+                                                        null,
+                                                        null,
+                                                        null,
+                                                        null);
+    e.predicate = predicate;
+    return e;
+  }
+
+  /** Generic predicate-tree filtered aggregate. */
+  public static VectorizedGroupByExpr predicateAggregate(VectorizedExecutor executor, PredicateNode predicate,
+      String func, String field) {
+    VectorizedGroupByExpr e = new VectorizedGroupByExpr(executor,
+                                                        Mode.GENERIC_PREDICATE_AGGREGATE,
+                                                        null,
+                                                        null,
+                                                        null,
+                                                        0,
+                                                        null,
+                                                        null,
+                                                        func,
+                                                        field);
+    e.predicate = predicate;
     return e;
   }
 
@@ -250,6 +316,30 @@ public final class VectorizedGroupByExpr implements Expr {
         if (result == null) {
           throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
                                    "Vectorized count-distinct not supported by this executor");
+        }
+        yield result;
+      }
+      case GENERIC_PREDICATE_COUNT -> {
+        Sequence result = executor.executePredicateCount(ctx, predicate);
+        if (result == null) {
+          throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
+                                   "Vectorized generic-predicate count not supported by this executor");
+        }
+        yield result;
+      }
+      case GENERIC_PREDICATE_GROUPBY -> {
+        Sequence result = executor.executePredicateGroupByCount(ctx, predicate, groupField);
+        if (result == null) {
+          throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
+                                   "Vectorized generic-predicate group-by-count not supported by this executor");
+        }
+        yield result;
+      }
+      case GENERIC_PREDICATE_AGGREGATE -> {
+        Sequence result = executor.executePredicateAggregate(ctx, predicate, aggregateFunc, aggregateField);
+        if (result == null) {
+          throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR,
+                                   "Vectorized generic-predicate aggregate not supported by this executor");
         }
         yield result;
       }

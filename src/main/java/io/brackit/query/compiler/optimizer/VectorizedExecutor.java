@@ -118,6 +118,51 @@ public interface VectorizedExecutor {
     return null;
   }
 
+  /**
+   * Generic predicate-tree count: evaluate the {@link PredicateNode} against
+   * the document and return the number of tuples where it holds. Replaces the
+   * combinatorial explosion of {@code executeFilterCount*} variants with a
+   * single entry point — the operator walks (or JIT-compiles) the tree.
+   *
+   * <p>This is the Umbra / DuckDB / ClickHouse / Velox model: one physical
+   * Filter operator, arbitrary predicates. Implementations that don't yet
+   * support the generic path should return {@code null}; the Brackit
+   * dispatcher will then fall back to the legacy shape-specific methods
+   * ({@link #executeFilterCount}, {@link #executeFilterCount2}, etc.) so
+   * adoption can be gradual.
+   *
+   * @return scalar {@code Int64(count)} Sequence, or {@code null} if unsupported
+   */
+  default Sequence executePredicateCount(QueryContext ctx, PredicateNode predicate) throws QueryException {
+    return null;
+  }
+
+  /**
+   * Generic predicate-tree group-by-count: evaluate {@code predicate} against
+   * the document and, for each distinct value of {@code groupField} among the
+   * matches, emit the group key + count. Replaces {@link #executeFilteredGroupByCount}
+   * (any predicate shape) and {@link #executeGroupByCount} (the predicate-free
+   * case, via {@link PredicateNode.AlwaysTrue}).
+   *
+   * @return grouped-count Sequence, or {@code null} if unsupported
+   */
+  default Sequence executePredicateGroupByCount(QueryContext ctx, PredicateNode predicate, String groupField)
+      throws QueryException {
+    return null;
+  }
+
+  /**
+   * Generic predicate-tree aggregate: evaluate {@code predicate}, then apply
+   * {@code func} (sum/avg/min/max/count) to {@code field} over matching rows.
+   * Replaces the filter-then-aggregate composition with a single scan.
+   *
+   * @return scalar-aggregate Sequence, or {@code null} if unsupported
+   */
+  default Sequence executePredicateAggregate(QueryContext ctx, PredicateNode predicate, String func, String field)
+      throws QueryException {
+    return null;
+  }
+
   /** Check if this executor can handle the current query context. */
   boolean canExecute(QueryContext ctx);
 }
