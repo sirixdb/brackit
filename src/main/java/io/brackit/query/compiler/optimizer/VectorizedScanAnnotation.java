@@ -32,36 +32,13 @@ public final class VectorizedScanAnnotation {
   public static final String GROUPBY_FIELDS_EXTRA = "VECTORIZED_GROUPBY_FIELDS_EXTRA";
 
   // ---- Filter ----
-  /** Filter field name (String). */
-  public static final String FILTER_FIELD = "VECTORIZED_FILTER_FIELD";
-  /** Filter operator: "gt", "lt", "ge", "le", "eq". */
-  public static final String FILTER_OP = "VECTORIZED_FILTER_OP";
-  /** Filter value for numeric comparisons (Long). */
-  public static final String FILTER_VALUE = "VECTORIZED_FILTER_VALUE";
-  /** Filter value for string equality comparisons (String). */
-  public static final String FILTER_STRING_VALUE = "VECTORIZED_FILTER_STRING_VALUE";
-  /** Second filter (for AND compound predicates). */
-  public static final String FILTER2_FIELD = "VECTORIZED_FILTER2_FIELD";
-  public static final String FILTER2_OP = "VECTORIZED_FILTER2_OP";
-  public static final String FILTER2_VALUE = "VECTORIZED_FILTER2_VALUE";
-  public static final String FILTER2_STRING_VALUE = "VECTORIZED_FILTER2_STRING_VALUE";
-
-  /**
-   * Extra boolean-field conjunct from an AND predicate (e.g. {@code $u.active} in
-   * {@code where $u.age > 40 and $u.active}). String — the field name, with
-   * "is true" semantics. Routes to
-   * {@link io.brackit.query.compiler.optimizer.VectorizedExecutor#executeFilterCountAndBool}
-   * when set alongside {@link #FILTER_FIELD}.
-   */
-  public static final String FILTER_BOOL_FIELD = "VECTORIZED_FILTER_BOOL_FIELD";
-
   /**
    * Generic predicate-tree representation of the WHERE clause. Value is a
-   * {@link PredicateNode}. When present, takes priority over the shape-specific
-   * FILTER_* / FILTER2_* / FILTER_BOOL_FIELD entries: the dispatcher routes to
-   * {@link VectorizedExecutor#executePredicateCount}, which evaluates the tree
-   * against record batches. The shape-specific keys remain for backward compat
-   * with executors that haven't implemented the generic path yet.
+   * {@link PredicateNode}. The dispatcher routes to
+   * {@link VectorizedExecutor#executePredicateCount} /
+   * {@link VectorizedExecutor#executePredicateGroupByCount} /
+   * {@link VectorizedExecutor#executePredicateAggregate}, which evaluates the
+   * arbitrary tree against record batches.
    *
    * <p>This mirrors the Umbra / DuckDB / ClickHouse / Velox model: a single
    * physical Filter operator takes an arbitrary predicate expression rather

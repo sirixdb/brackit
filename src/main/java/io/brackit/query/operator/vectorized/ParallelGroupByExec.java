@@ -111,17 +111,22 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
   }
 
   @Override
-  public Sequence executeFilterCount(QueryContext ctx, String filterField, String filterOp, long filterValue)
+  public Sequence executePredicateCount(QueryContext ctx, io.brackit.query.compiler.optimizer.PredicateNode predicate)
       throws QueryException {
-    try {
-      long count = executeFilterCount(filePath, filterField, filterOp, filterValue);
-      return new Int64(count);
-    } catch (Exception e) {
-      throw new QueryException(e,
-                               io.brackit.query.ErrorCode.BIT_DYN_INT_ERROR,
-                               "Vectorized filter-count failed: %s",
-                               e.getMessage());
+    // Fast shape: single NumCmp → file-backed SIMD filter-count kernel.
+    if (predicate instanceof io.brackit.query.compiler.optimizer.PredicateNode.NumCmp nc) {
+      try {
+        return new Int64(executeFilterCount(filePath, nc.field(), nc.op(), nc.value()));
+      } catch (Exception e) {
+        throw new QueryException(e,
+                                 io.brackit.query.ErrorCode.BIT_DYN_INT_ERROR,
+                                 "Vectorized filter-count failed: %s",
+                                 e.getMessage());
+      }
     }
+    // Bjq doesn't yet have a generic evaluator — signal unsupported, caller
+    // falls back to the generic Volcano pipeline.
+    return null;
   }
 
   @Override

@@ -12,7 +12,14 @@ import io.brackit.query.compiler.optimizer.walker.topdown.VectorizedGroupByDetec
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests that {@link VectorizedGroupByDetection} correctly annotates pipeline
@@ -20,6 +27,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>
  * Each test builds a manual pipeline AST (PipeExpr → Start → ForBind → ... → End)
  * and verifies the annotation keys set on the PipeExpr node.
+ * <p>
+ * Filter predicates are verified via the generic {@link PredicateNode} tree
+ * stored under {@link VectorizedScanAnnotation#PREDICATE_TREE}; the legacy
+ * shape-specific {@code FILTER_*} / {@code FILTER2_*} / {@code FILTER_BOOL_FIELD}
+ * annotation constants were removed as part of the move to a single Umbra-style
+ * generic predicate-tree SPI.
  */
 public class VectorizedGroupByDetectionTest {
 
@@ -149,6 +162,30 @@ public class VectorizedGroupByDetectionTest {
     return root;
   }
 
+  /** Fetch and assert the pipe carries a PREDICATE_TREE. */
+  private PredicateNode predicateTree(AST pipe) {
+    PredicateNode p = (PredicateNode) pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
+    assertNotNull(p, "expected PREDICATE_TREE annotation on pipe");
+    return p;
+  }
+
+  /** Assert the predicate is a NumCmp with the given field/op/value. */
+  private void assertNumCmp(PredicateNode p, String field, String op, long value) {
+    assertInstanceOf(PredicateNode.NumCmp.class, p, "expected NumCmp predicate");
+    PredicateNode.NumCmp nc = (PredicateNode.NumCmp) p;
+    assertEquals(field, nc.field());
+    assertEquals(op, nc.op());
+    assertEquals(value, nc.value());
+  }
+
+  /** Assert the predicate is a StrEq with the given field/value. */
+  private void assertStrEq(PredicateNode p, String field, String value) {
+    assertInstanceOf(PredicateNode.StrEq.class, p, "expected StrEq predicate");
+    PredicateNode.StrEq s = (PredicateNode.StrEq) p;
+    assertEquals(field, s.field());
+    assertEquals(value, s.value());
+  }
+
   // ==================== Tests ====================
 
   @Test
@@ -172,9 +209,7 @@ public class VectorizedGroupByDetectionTest {
     stage.rewrite(null, root(pipe));
 
     assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
-    assertEquals("age", pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
-    assertEquals("gt", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP));
-    assertEquals(30L, pipe.getProperty(VectorizedScanAnnotation.FILTER_VALUE));
+    assertNumCmp(predicateTree(pipe), "age", "gt", 30L);
     assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY));
   }
 
@@ -189,9 +224,7 @@ public class VectorizedGroupByDetectionTest {
 
     assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY));
     assertEquals("city", pipe.getProperty(VectorizedScanAnnotation.GROUPBY_FIELD));
-    assertEquals("age", pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
-    assertEquals("gt", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP));
-    assertEquals(30L, pipe.getProperty(VectorizedScanAnnotation.FILTER_VALUE));
+    assertNumCmp(predicateTree(pipe), "age", "gt", 30L);
     // Should NOT be flagged as count since group-by is present
     assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
   }
@@ -244,10 +277,7 @@ public class VectorizedGroupByDetectionTest {
     stage.rewrite(null, root(pipe));
 
     assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
-    assertEquals("city", pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
-    assertEquals("eq", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP));
-    assertEquals("NYC", pipe.getProperty(VectorizedScanAnnotation.FILTER_STRING_VALUE));
-    assertNull(pipe.getProperty(VectorizedScanAnnotation.FILTER_VALUE));
+    assertStrEq(predicateTree(pipe), "city", "NYC");
   }
 
   @Test
@@ -261,15 +291,13 @@ public class VectorizedGroupByDetectionTest {
 
     stage.rewrite(null, root(pipe));
 
-    // First filter: age > 30
-    assertEquals("age", pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
-    assertEquals("gt", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP));
-    assertEquals(30L, pipe.getProperty(VectorizedScanAnnotation.FILTER_VALUE));
-
-    // Second filter: city eq "NYC"
-    assertEquals("city", pipe.getProperty(VectorizedScanAnnotation.FILTER2_FIELD));
-    assertEquals("eq", pipe.getProperty(VectorizedScanAnnotation.FILTER2_OP));
-    assertEquals("NYC", pipe.getProperty(VectorizedScanAnnotation.FILTER2_STRING_VALUE));
+    // PREDICATE_TREE is an And(NumCmp age gt 30, StrEq city "NYC")
+    PredicateNode p = predicateTree(pipe);
+    assertInstanceOf(PredicateNode.And.class, p);
+    PredicateNode.And a = (PredicateNode.And) p;
+    assertEquals(2, a.children().size());
+    assertNumCmp(a.children().get(0), "age", "gt", 30L);
+    assertStrEq(a.children().get(1), "city", "NYC");
   }
 
   @Test
@@ -279,9 +307,8 @@ public class VectorizedGroupByDetectionTest {
 
     stage.rewrite(null, root(pipe));
 
-    assertEquals("age", pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
-    assertEquals("gt", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP)); // reversed from lt
-    assertEquals(30L, pipe.getProperty(VectorizedScanAnnotation.FILTER_VALUE));
+    // The walker normalizes: 30 < $u.age → $u.age gt 30
+    assertNumCmp(predicateTree(pipe), "age", "gt", 30L);
   }
 
   @Test
@@ -291,9 +318,7 @@ public class VectorizedGroupByDetectionTest {
 
     stage.rewrite(null, root(pipe));
 
-    assertEquals("score", pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
-    assertEquals("ge", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP));
-    assertEquals(100L, pipe.getProperty(VectorizedScanAnnotation.FILTER_VALUE));
+    assertNumCmp(predicateTree(pipe), "score", "ge", 100L);
   }
 
   @Test
@@ -303,9 +328,7 @@ public class VectorizedGroupByDetectionTest {
 
     stage.rewrite(null, root(pipe));
 
-    assertEquals("age", pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
-    assertEquals("lt", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP));
-    assertEquals(18L, pipe.getProperty(VectorizedScanAnnotation.FILTER_VALUE));
+    assertNumCmp(predicateTree(pipe), "age", "lt", 18L);
   }
 
   @Test
@@ -315,9 +338,7 @@ public class VectorizedGroupByDetectionTest {
 
     stage.rewrite(null, root(pipe));
 
-    assertEquals("age", pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
-    assertEquals("le", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP));
-    assertEquals(65L, pipe.getProperty(VectorizedScanAnnotation.FILTER_VALUE));
+    assertNumCmp(predicateTree(pipe), "age", "le", 65L);
   }
 
   @Test
@@ -330,7 +351,7 @@ public class VectorizedGroupByDetectionTest {
     assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY));
     assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
     assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_ORDERBY));
-    assertNull(pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
   }
 
   @Test
@@ -352,9 +373,7 @@ public class VectorizedGroupByDetectionTest {
     stage.rewrite(null, root(pipe));
 
     // Filter detected
-    assertEquals("age", pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
-    assertEquals("gt", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP));
-    assertEquals(21L, pipe.getProperty(VectorizedScanAnnotation.FILTER_VALUE));
+    assertNumCmp(predicateTree(pipe), "age", "gt", 21L);
 
     // Order-by detected
     assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_ORDERBY));
@@ -374,9 +393,7 @@ public class VectorizedGroupByDetectionTest {
 
     stage.rewrite(null, root(pipe));
 
-    assertEquals("status", pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
-    assertEquals("eq", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP));
-    assertEquals("active", pipe.getProperty(VectorizedScanAnnotation.FILTER_STRING_VALUE));
+    assertStrEq(predicateTree(pipe), "status", "active");
   }
 
   @Test
@@ -406,7 +423,7 @@ public class VectorizedGroupByDetectionTest {
 
     // Outer: filtered count
     assertEquals(Boolean.TRUE, outerPipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
-    assertEquals("age", outerPipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
+    assertNumCmp(predicateTree(outerPipe), "age", "gt", 25L);
 
     // Inner: group-by
     assertEquals(Boolean.TRUE, innerPipe.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY));
@@ -420,9 +437,7 @@ public class VectorizedGroupByDetectionTest {
 
     stage.rewrite(null, root(pipe));
 
-    assertEquals("score", pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
-    assertEquals("le", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP)); // ge reversed to le
-    assertEquals(100L, pipe.getProperty(VectorizedScanAnnotation.FILTER_VALUE));
+    assertNumCmp(predicateTree(pipe), "score", "le", 100L);
   }
 
   @Test
@@ -472,8 +487,7 @@ public class VectorizedGroupByDetectionTest {
     // All three patterns detected
     assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY));
     assertEquals("city", pipe.getProperty(VectorizedScanAnnotation.GROUPBY_FIELD));
-    assertEquals("age", pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
-    assertEquals("gt", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP));
+    assertNumCmp(predicateTree(pipe), "age", "gt", 18L);
     assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_ORDERBY));
     assertEquals("name", pipe.getProperty(VectorizedScanAnnotation.ORDER_FIELD));
     // Not a count pattern (group-by is present)
@@ -491,9 +505,7 @@ public class VectorizedGroupByDetectionTest {
     stage.rewrite(null, root(pipe));
 
     assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
-    assertEquals("age", pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
-    assertEquals("gt", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP));
-    assertEquals(30L, pipe.getProperty(VectorizedScanAnnotation.FILTER_VALUE));
+    assertNumCmp(predicateTree(pipe), "age", "gt", 30L);
   }
 
   @Test
@@ -504,9 +516,7 @@ public class VectorizedGroupByDetectionTest {
 
     stage.rewrite(null, root(pipe));
 
-    assertEquals("city", pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
-    assertEquals("eq", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP));
-    assertEquals("NYC", pipe.getProperty(VectorizedScanAnnotation.FILTER_STRING_VALUE));
+    assertStrEq(predicateTree(pipe), "city", "NYC");
   }
 
   @Test
@@ -518,9 +528,7 @@ public class VectorizedGroupByDetectionTest {
 
     stage.rewrite(null, root(pipe));
 
-    assertEquals("age", pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
-    assertEquals("gt", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP));
-    assertEquals(40L, pipe.getProperty(VectorizedScanAnnotation.FILTER_VALUE));
+    assertNumCmp(predicateTree(pipe), "age", "gt", 40L);
   }
 
   @Test
@@ -534,9 +542,7 @@ public class VectorizedGroupByDetectionTest {
 
     assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY));
     assertEquals("city", pipe.getProperty(VectorizedScanAnnotation.GROUPBY_FIELD));
-    assertEquals("age", pipe.getProperty(VectorizedScanAnnotation.FILTER_FIELD));
-    assertEquals("gt", pipe.getProperty(VectorizedScanAnnotation.FILTER_OP));
-    assertEquals(30L, pipe.getProperty(VectorizedScanAnnotation.FILTER_VALUE));
+    assertNumCmp(predicateTree(pipe), "age", "gt", 30L);
   }
 
   /** End node whose return expression is a VariableRef to the given name. */
@@ -573,8 +579,9 @@ public class VectorizedGroupByDetectionTest {
   }
 
   // ==================== PREDICATE_TREE annotation tests ====================
-  // These cover the generic Umbra/DuckDB-style predicate-tree output produced
-  // alongside the legacy shape-specific FILTER_* annotations.
+  // These cover the generic Umbra/DuckDB-style predicate-tree output — the
+  // sole filter representation after removal of the legacy shape-specific
+  // FILTER_* annotations.
 
   @Test
   void predicateTreeSingleNumCmp() {
@@ -634,7 +641,7 @@ public class VectorizedGroupByDetectionTest {
 
     PredicateNode p = (PredicateNode) pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
     assertNotNull(p);
-    java.util.Set<String> fields = new java.util.HashSet<>();
+    Set<String> fields = new HashSet<>();
     p.collectFields(fields);
     assertEquals(2, fields.size());
     assertTrue(fields.contains("age"));

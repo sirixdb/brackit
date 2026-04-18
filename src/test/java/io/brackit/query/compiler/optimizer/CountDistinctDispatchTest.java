@@ -136,16 +136,6 @@ class CountDistinctDispatchTest {
     }
 
     @Override
-    public Sequence executeFilterCount(QueryContext ctx, String field, String op, long value) {
-      return null;
-    }
-
-    @Override
-    public Sequence executeFilteredGroupByCount(QueryContext ctx, String g, String ff, String fo, long fv) {
-      return null;
-    }
-
-    @Override
     public Sequence executeSortedScan(QueryContext ctx, String field, String direction) {
       return null;
     }

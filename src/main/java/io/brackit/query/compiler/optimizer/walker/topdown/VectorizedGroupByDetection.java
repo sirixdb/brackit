@@ -69,13 +69,6 @@ public final class VectorizedGroupByDetection implements Stage {
     if (forBind == null || forBind.getType() != XQ.ForBind)
       return;
 
-    // Collect all operators in the chain
-    List<FilterInfo> filters = new ArrayList<>();
-    // Boolean-field conjuncts from AND-branches, e.g. `$u.active`. XQuery
-    // effective-boolean-value converts a JSON-boolean deref to "is true".
-    // Tracked separately from FilterInfo so the vectorized dispatcher can
-    // fuse them via executeFilterCountAndBool rather than silently drop.
-    List<String> boolFilterFields = new ArrayList<>();
     List<String> groupFields = new ArrayList<>();
     // Declared variable names for LetBinds that feed group-by — used to verify
     // count-distinct patterns (return expr must be a VarRef matching one of these).
@@ -85,11 +78,10 @@ public final class VectorizedGroupByDetection implements Stage {
     boolean hasGroupBy = false;
     boolean hasOrderBy = false;
 
-    // Generic predicate tree built alongside the shape-specific extraction.
-    // If ALL Selection predicates can be represented, we annotate the PipeExpr
-    // with PREDICATE_TREE; the dispatcher will prefer this over the old FILTER_*
-    // annotations when the executor supports executePredicateCount. Multiple
-    // Selection operators in the chain are AND-conjoined (pipeline semantics).
+    // Selection predicates accumulated across the chain. Multiple Selection
+    // operators AND-conjoin by pipeline semantics. If ANY selection is not
+    // representable as a PredicateNode we drop the annotation entirely, forcing
+    // the generic Volcano pipeline — fail closed.
     List<PredicateNode> predicateConjuncts = new ArrayList<>();
     boolean predicateRepresentable = true;
 
@@ -97,7 +89,6 @@ public final class VectorizedGroupByDetection implements Stage {
     while (current != null && current.getType() != XQ.End) {
       switch (current.getType()) {
         case XQ.Selection -> {
-          extractFilters(current, filters, boolFilterFields);
           if (predicateRepresentable && current.getChildCount() >= 1) {
             PredicateNode pn = extractPredicate(current.getChild(0));
             if (pn == null) {
@@ -147,30 +138,13 @@ public final class VectorizedGroupByDetection implements Stage {
       }
     }
 
-    if (!filters.isEmpty()) {
-      FilterInfo f1 = filters.getFirst();
-      applyFilter(pipeExpr, f1, false);
-      if (filters.size() > 1) {
-        applyFilter(pipeExpr, filters.get(1), true);
-      }
-      // Boolean-field conjunct carried alongside a numeric predicate — one
-      // slot for now; multi-boolean could go through a list annotation later.
-      if (!boolFilterFields.isEmpty()) {
-        pipeExpr.setProperty(VectorizedScanAnnotation.FILTER_BOOL_FIELD, boolFilterFields.getFirst());
-      }
-
-      // If no group-by and no order-by, this is a filtered count pattern
+    final boolean hasPredicate = predicateRepresentable && !predicateConjuncts.isEmpty();
+    if (hasPredicate) {
+      pipeExpr.setProperty(VectorizedScanAnnotation.PREDICATE_TREE, PredicateNode.and(predicateConjuncts));
+      // No group-by and no order-by → filtered count shape.
       if (!hasGroupBy && !hasOrderBy) {
         pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_COUNT, Boolean.TRUE);
       }
-    }
-
-    // Attach the generic predicate tree whenever every Selection in the chain
-    // was representable. This is the Umbra/DuckDB-style annotation: the
-    // dispatcher + executor choose whether to consume it. Empty conjunct list
-    // (no Selection at all) is NOT annotated — that isn't a filter pattern.
-    if (predicateRepresentable && !predicateConjuncts.isEmpty()) {
-      pipeExpr.setProperty(VectorizedScanAnnotation.PREDICATE_TREE, PredicateNode.and(predicateConjuncts));
     }
 
     if (hasOrderBy && orderField != null) {
@@ -179,10 +153,11 @@ public final class VectorizedGroupByDetection implements Stage {
       pipeExpr.setProperty(VectorizedScanAnnotation.ORDER_DIRECTION, orderDirection);
     }
 
-    // Pure aggregate candidate: ForBind -> Return($u.field), no group-by, no order-by,
-    // no filters. The enclosing FunctionCall (sum/avg/min/max/count) fills in AGGREGATE_FUNC
-    // at compile time; the field is known now.
-    if (!hasGroupBy && !hasOrderBy && filters.isEmpty() && returnField != null) {
+    // Pure aggregate candidate: ForBind -> Return($u.field), no group-by, no order-by.
+    // A predicate, if present, is carried via PREDICATE_TREE — the enclosing
+    // sum/avg/min/max/count() call fills AGGREGATE_FUNC at compile time and the
+    // dispatcher routes to executePredicateAggregate.
+    if (!hasGroupBy && !hasOrderBy && returnField != null) {
       pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_AGGREGATE, Boolean.TRUE);
       pipeExpr.setProperty(VectorizedScanAnnotation.AGGREGATE_FIELD, returnField);
     }
@@ -194,9 +169,11 @@ public final class VectorizedGroupByDetection implements Stage {
     // values → answerable directly from a cardinality sketch (HLL) at query time.
     // Correctness guard: the return must be a VarRef whose QNm matches the first
     // group-by let-bind's declared variable; otherwise count(...) could return
-    // a multiple of the distinct-count (e.g., return ($d, $d)).
-    if (hasGroupBy && !hasOrderBy && filters.isEmpty() && groupFields.size() == 1 && !letBindVars.isEmpty()
-        && letBindVars.getFirst() != null) {
+    // a multiple of the distinct-count (e.g., return ($d, $d)). Also disallow
+    // predicates — an HLL is unfiltered.
+    if (hasGroupBy && !hasOrderBy && !hasPredicate && groupFields.size() == 1 && !letBindVars.isEmpty() && letBindVars
+                                                                                                                      .getFirst()
+        != null) {
       final QNm returnVar = current != null ? extractSoleVariableRef(current) : null;
       if (returnVar != null && returnVar.equals(letBindVars.getFirst())) {
         pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_COUNT_DISTINCT, Boolean.TRUE);
@@ -259,24 +236,6 @@ public final class VectorizedGroupByDetection implements Stage {
       scanForSoleVarRef(node.getChild(i), found, tooComplex);
       if (tooComplex[0])
         return;
-    }
-  }
-
-  private void applyFilter(AST node, FilterInfo f, boolean isSecond) {
-    if (isSecond) {
-      node.setProperty(VectorizedScanAnnotation.FILTER2_FIELD, f.field);
-      node.setProperty(VectorizedScanAnnotation.FILTER2_OP, f.op);
-      if (f.longValue != null)
-        node.setProperty(VectorizedScanAnnotation.FILTER2_VALUE, f.longValue);
-      if (f.stringValue != null)
-        node.setProperty(VectorizedScanAnnotation.FILTER2_STRING_VALUE, f.stringValue);
-    } else {
-      node.setProperty(VectorizedScanAnnotation.FILTER_FIELD, f.field);
-      node.setProperty(VectorizedScanAnnotation.FILTER_OP, f.op);
-      if (f.longValue != null)
-        node.setProperty(VectorizedScanAnnotation.FILTER_VALUE, f.longValue);
-      if (f.stringValue != null)
-        node.setProperty(VectorizedScanAnnotation.FILTER_STRING_VALUE, f.stringValue);
     }
   }
 
@@ -369,90 +328,6 @@ public final class VectorizedGroupByDetection implements Stage {
         return new PredicateNode.StrEq(field, sv);
     }
     return null;
-  }
-
-  // ==================== Filter extraction (legacy shape-specific) ====================
-
-  private record FilterInfo(String field, String op, Long longValue, String stringValue) {
-  }
-
-  private void extractFilters(AST selection, List<FilterInfo> filters, List<String> boolFilterFields) {
-    if (selection.getChildCount() < 1)
-      return;
-    extractFromPredicate(selection.getChild(0), filters, boolFilterFields);
-  }
-
-  private void extractFromPredicate(AST node, List<FilterInfo> filters, List<String> boolFilterFields) {
-    if (node == null)
-      return;
-
-    // AND: recurse into both sides
-    if (node.getType() == XQ.AndExpr) {
-      for (int i = 0; i < node.getChildCount(); i++) {
-        extractFromPredicate(node.getChild(i), filters, boolFilterFields);
-      }
-      return;
-    }
-
-    // Bare $var.field at the top of a Selection's (AND-branch of a) predicate —
-    // XQuery effective-boolean-value semantics turn a JSON-boolean deref into a
-    // "is true" conjunct. Extract the field name ONLY when this node is
-    // directly a DerefExpr — not a wider recursive search, since a
-    // ComparisonExpr like `age > 40` also contains a DerefExpr child for the
-    // left operand and we must not classify that as a boolean conjunct.
-    if (node.getType() == XQ.DerefExpr) {
-      final String bf = directDerefFieldName(node);
-      if (bf != null) {
-        boolFilterFields.add(bf);
-        return;
-      }
-    }
-
-    // Comparison operators — two forms:
-    // 1. Direct: GeneralCompGT(leftExpr, rightExpr)
-    // 2. Wrapped: ComparisonExpr(GeneralCompGT, leftExpr, rightExpr)
-    String op = getComparisonOp(node.getType());
-    AST leftOperand;
-    AST rightOperand;
-
-    if (op != null && node.getChildCount() >= 2) {
-      leftOperand = node.getChild(0);
-      rightOperand = node.getChild(1);
-    } else if (node.getType() == XQ.ComparisonExpr && node.getChildCount() >= 3) {
-      op = getComparisonOp(node.getChild(0).getType());
-      leftOperand = node.getChild(1);
-      rightOperand = node.getChild(2);
-    } else {
-      leftOperand = null;
-      rightOperand = null;
-    }
-
-    if (op != null && leftOperand != null) {
-      // Try: $var.field OP literal
-      String field = extractFieldFromDeref(leftOperand);
-      Long longVal = extractIntegerLiteral(rightOperand);
-      String strVal = extractStringLiteral(rightOperand);
-
-      if (field != null && (longVal != null || strVal != null)) {
-        filters.add(new FilterInfo(field, op, longVal, strVal));
-        return;
-      }
-
-      // Try reversed: literal OP $var.field
-      field = extractFieldFromDeref(rightOperand);
-      longVal = extractIntegerLiteral(leftOperand);
-      strVal = extractStringLiteral(leftOperand);
-
-      if (field != null && (longVal != null || strVal != null)) {
-        filters.add(new FilterInfo(field, reverseOp(op), longVal, strVal));
-        return;
-      }
-    }
-
-    // Recurse for nested expressions
-    for (int i = 0; i < node.getChildCount(); i++) {
-      extractFromPredicate(node.getChild(i), filters, boolFilterFields);
-    }
   }
 
   private String getComparisonOp(int type) {

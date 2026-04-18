@@ -110,90 +110,29 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       }
     }
 
-    // Pattern 1: Group-by (with optional filter).
-    //
-    // Generic predicate-tree group-by takes priority when PREDICATE_TREE is set —
-    // it handles every filter shape (NumCmp, StrEq, BoolRef, arbitrary AND/OR/NOT)
-    // with a single executor entry point. Falls through to the shape-specific
-    // forms if the executor doesn't implement the generic path (returns null
-    // at evaluate, raising — Sirix implements it; legacy executors still
-    // support shape-specific).
+    // Pattern 1: Group-by (with optional filter). The PREDICATE_TREE annotation,
+    // if present, carries the full WHERE clause; the executor receives it and
+    // evaluates any AND/OR/NOT combination of NumCmp/StrEq/BoolRef leaves in
+    // one scan — no shape-specific fusion method needed.
     if (Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY))) {
       String groupField = (String) node.getProperty(VectorizedScanAnnotation.GROUPBY_FIELD);
       if (groupField == null)
         return null;
-
       PredicateNode predicate = (PredicateNode) node.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
       if (predicate != null) {
         return VectorizedGroupByExpr.predicateGroupByCount(executor, predicate, groupField);
       }
-
-      String filterField = (String) node.getProperty(VectorizedScanAnnotation.FILTER_FIELD);
-      String filterOp = (String) node.getProperty(VectorizedScanAnnotation.FILTER_OP);
-      Long filterValue = (Long) node.getProperty(VectorizedScanAnnotation.FILTER_VALUE);
-
-      if (filterField != null && filterOp != null && filterValue != null) {
-        return new VectorizedGroupByExpr(executor, groupField, filterField, filterOp, filterValue);
-      }
-      return new VectorizedGroupByExpr(executor, groupField);
+      return VectorizedGroupByExpr.groupBy(executor, groupField);
     }
 
-    // Pattern 2: Filtered count — only when wrapped in count() function.
-    // The executor returns a scalar Int64(count), which replaces the entire
-    // count(PipeExpr) expression.
-    //
-    // Generic predicate-tree path takes priority: PREDICATE_TREE carries the
-    // full AST, so the executor can evaluate any AND/OR/NOT combination of
-    // NumCmp/StrEq/BoolRef leaves without a shape-specific fusion method.
+    // Pattern 2: Filtered count — only when wrapped in count(). The executor
+    // returns a scalar Int64 that replaces the entire count(PipeExpr).
+    // Requires the PREDICATE_TREE annotation; without it the query wasn't
+    // representable by the walker and we fall back to the generic pipeline.
     if (countWrapped && Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT))) {
       PredicateNode predicate = (PredicateNode) node.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
       if (predicate != null) {
         return VectorizedGroupByExpr.predicateCount(executor, predicate);
-      }
-
-      String filterField = (String) node.getProperty(VectorizedScanAnnotation.FILTER_FIELD);
-      String filterOp = (String) node.getProperty(VectorizedScanAnnotation.FILTER_OP);
-      Long filterValue = (Long) node.getProperty(VectorizedScanAnnotation.FILTER_VALUE);
-
-      if (filterField != null && filterOp != null && filterValue != null) {
-        // Two-predicate count: when the walker extracted FILTER2 alongside FILTER, and
-        // both carry numeric (long) values, dispatch to the fused
-        // executeFilterCount2 method so the executor can run one SIMD pass with a
-        // range mask instead of Brackit post-filtering the first predicate's match set.
-        String filter2Field = (String) node.getProperty(VectorizedScanAnnotation.FILTER2_FIELD);
-        String filter2Op = (String) node.getProperty(VectorizedScanAnnotation.FILTER2_OP);
-        Long filter2Value = (Long) node.getProperty(VectorizedScanAnnotation.FILTER2_VALUE);
-        // Only dispatch fused 2-predicate when both filters target the SAME field
-        // (i.e. a range predicate like age > 30 AND age < 50). Cross-field ANDs
-        // (e.g. age > 40 AND active) aren't fuseable by executeFilterCount2
-        // today — those fall through to single-pred and let the generic
-        // pipeline handle the second clause.
-        String boolField = (String) node.getProperty(VectorizedScanAnnotation.FILTER_BOOL_FIELD);
-        if (filter2Field != null && filter2Field.equals(filterField) && filter2Op != null && filter2Value != null) {
-          // Same-field numeric range. If a boolean conjunct was also extracted,
-          // route to the 3-way fused method; otherwise the existing filterCount2.
-          if (boolField != null) {
-            return VectorizedGroupByExpr.filterCount2AndBool(executor,
-                                                             filterField,
-                                                             filterOp,
-                                                             filterValue,
-                                                             filter2Op,
-                                                             filter2Value,
-                                                             boolField);
-          }
-          return VectorizedGroupByExpr.filterCount2(executor,
-                                                    filterField,
-                                                    filterOp,
-                                                    filterValue,
-                                                    filter2Field,
-                                                    filter2Op,
-                                                    filter2Value);
-        }
-        // Single-numeric + boolean-field conjunct (e.g. age > 40 AND active).
-        if (boolField != null) {
-          return VectorizedGroupByExpr.filterCountAndBool(executor, filterField, filterOp, filterValue, boolField);
-        }
-        return new VectorizedGroupByExpr(executor, filterField, filterOp, filterValue);
       }
     }
 
