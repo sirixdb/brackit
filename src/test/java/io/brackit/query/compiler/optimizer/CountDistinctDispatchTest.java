@@ -131,22 +131,22 @@ class CountDistinctDispatchTest {
     }
 
     @Override
-    public Sequence executeGroupByCount(QueryContext ctx, String groupField) {
+    public Sequence executeGroupByCount(QueryContext ctx, String[] sourcePath, String groupField) {
       return null;
     }
 
     @Override
-    public Sequence executeSortedScan(QueryContext ctx, String field, String direction) {
+    public Sequence executeSortedScan(QueryContext ctx, String[] sourcePath, String field, String direction) {
       return null;
     }
 
     @Override
-    public Sequence executeAggregate(QueryContext ctx, String func, String field) {
+    public Sequence executeAggregate(QueryContext ctx, String[] sourcePath, String func, String field) {
       return null;
     }
 
     @Override
-    public Sequence executeCountDistinct(QueryContext ctx, String field) {
+    public Sequence executeCountDistinct(QueryContext ctx, String[] sourcePath, String field) {
       return null;
     }
   }

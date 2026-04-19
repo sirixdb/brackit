@@ -46,6 +46,28 @@ public final class VectorizedScanAnnotation {
    */
   public static final String PREDICATE_TREE = "VECTORIZED_PREDICATE_TREE";
 
+  /**
+   * Path prefix for the loop variable's source expression. Value is a
+   * {@code String[]} whose elements are step names, with {@code "[]"} marking
+   * array descent. Examples:
+   * <ul>
+   * <li>{@code for $u in $doc[] where ...} → {@code ["[]"]}
+   * <li>{@code for $u in $doc.items[] where ...} → {@code ["items", "[]"]}
+   * <li>{@code for $u in $doc[].items[] where ...} → {@code ["[]", "items", "[]"]}
+   * <li>{@code for $u in $doc.items where ...} → {@code ["items"]}
+   * </ul>
+   *
+   * <p>Executors combine this prefix with a per-predicate field name to obtain
+   * the full query path, which they then resolve against the document's path
+   * summary to a concrete path identifier (e.g. Sirix's pathNodeKey). That
+   * enables path-scoped aggregate / group-by / filter correctness without
+   * double-counting fields that share a local name at different tree depths.
+   *
+   * <p>Absent (property unset) for un-representable source expressions — the
+   * executor falls back to a tree-walk that doesn't require the prefix.
+   */
+  public static final String SOURCE_PATH_PREFIX = "VECTORIZED_SOURCE_PATH_PREFIX";
+
   // ---- Order-by ----
   /** Order field name (String). */
   public static final String ORDER_FIELD = "VECTORIZED_ORDER_FIELD";

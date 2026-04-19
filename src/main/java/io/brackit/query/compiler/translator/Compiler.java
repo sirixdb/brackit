@@ -746,9 +746,10 @@ public class Compiler implements Translator {
         final AST pipe = innerCall.getChild(0);
         if (Boolean.TRUE.equals(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_AGGREGATE))) {
           final String field = (String) pipe.getProperty(VectorizedScanAnnotation.AGGREGATE_FIELD);
+          final String[] sourcePath = (String[]) pipe.getProperty(VectorizedScanAnnotation.SOURCE_PATH_PREFIX);
           final var executor = SequentialPipelineStrategy.getVectorizedExecutor();
           if (field != null && executor != null) {
-            return VectorizedGroupByExpr.countDistinct(executor, field);
+            return VectorizedGroupByExpr.countDistinct(executor, sourcePath, field);
           }
         }
       }

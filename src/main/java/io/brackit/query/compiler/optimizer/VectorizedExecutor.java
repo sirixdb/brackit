@@ -11,23 +11,36 @@ import io.brackit.query.jdm.Sequence;
 
 /**
  * Pluggable interface for vectorized execution of annotated queries.
- * <p>
- * Implementations:
+ *
+ * <p>Every entry point that touches record fields takes a
+ * {@code sourcePath} prefix that the optimizer extracted from the loop
+ * variable's source expression (see {@link VectorizedScanAnnotation#SOURCE_PATH_PREFIX}).
+ * Executors combine the prefix with per-predicate / per-aggregate field
+ * names to obtain a fully-qualified query path and — when the target
+ * document carries a path summary — resolve that to a concrete
+ * implementation-specific path identifier (e.g. Sirix's {@code pathNodeKey}).
+ * The prefix is {@code null} when the source expression is not a simple
+ * path; implementations must then either fall back to a path-agnostic
+ * tree-walk or return {@code null} to signal the caller should use the
+ * generic pipeline.
+ *
+ * <p>Implementations:
  * <ul>
  * <li>bjq: {@code ParallelGroupByExec} — mmap + parallel chunk scan on JSON files</li>
- * <li>SirixDB: {@code DirectPageScanner} — parallel page scan with bitmap-filtered moveTo</li>
+ * <li>SirixDB: {@code SirixVectorizedExecutor} — parallel page scan with path-scoped evaluation</li>
  * </ul>
  */
 public interface VectorizedExecutor {
 
   /** Execute a vectorized group-by-count query. */
-  Sequence executeGroupByCount(QueryContext ctx, String groupField) throws QueryException;
+  Sequence executeGroupByCount(QueryContext ctx, String[] sourcePath, String groupField) throws QueryException;
 
   /**
    * Execute a vectorized sorted scan.
    * Default: not supported (returns null → falls back to Volcano).
    */
-  default Sequence executeSortedScan(QueryContext ctx, String orderField, String direction) throws QueryException {
+  default Sequence executeSortedScan(QueryContext ctx, String[] sourcePath, String orderField, String direction)
+      throws QueryException {
     return null;
   }
 
@@ -38,7 +51,8 @@ public interface VectorizedExecutor {
    * @param func  one of {@code "sum"}, {@code "avg"}, {@code "min"}, {@code "max"}, {@code "count"}
    * @param field the numeric field to aggregate (ignored for {@code "count"})
    */
-  default Sequence executeAggregate(QueryContext ctx, String func, String field) throws QueryException {
+  default Sequence executeAggregate(QueryContext ctx, String[] sourcePath, String func, String field)
+      throws QueryException {
     return null;
   }
 
@@ -54,52 +68,49 @@ public interface VectorizedExecutor {
    *
    * @param field the field's local name to count distinct values of
    */
-  default Sequence executeCountDistinct(QueryContext ctx, String field) throws QueryException {
+  default Sequence executeCountDistinct(QueryContext ctx, String[] sourcePath, String field) throws QueryException {
     return null;
   }
 
   /**
-   * Generic predicate-tree count: evaluate the {@link PredicateNode} against
-   * the document and return the number of tuples where it holds. Replaces the
-   * combinatorial explosion of {@code executeFilterCount*} variants with a
-   * single entry point — the operator walks (or JIT-compiles) the tree.
+   * Generic predicate-tree count. Evaluates the {@link PredicateNode} tree
+   * against every record reached by {@code sourcePath} and returns the number
+   * of tuples where it holds.
    *
-   * <p>This is the Umbra / DuckDB / ClickHouse / Velox model: one physical
-   * Filter operator, arbitrary predicates. Implementations that don't yet
-   * support the generic path should return {@code null}; the Brackit
-   * dispatcher will then fall back to the legacy shape-specific methods
-   * ({@link #executeFilterCount}, {@link #executeFilterCount2}, etc.) so
-   * adoption can be gradual.
+   * <p>Umbra / DuckDB / ClickHouse / Velox model: one physical Filter
+   * operator, arbitrary predicates. Implementations that don't yet support
+   * the generic path should return {@code null} so the caller falls back to
+   * the generic Volcano pipeline.
    *
    * @return scalar {@code Int64(count)} Sequence, or {@code null} if unsupported
    */
-  default Sequence executePredicateCount(QueryContext ctx, PredicateNode predicate) throws QueryException {
+  default Sequence executePredicateCount(QueryContext ctx, String[] sourcePath, PredicateNode predicate)
+      throws QueryException {
     return null;
   }
 
   /**
    * Generic predicate-tree group-by-count: evaluate {@code predicate} against
-   * the document and, for each distinct value of {@code groupField} among the
-   * matches, emit the group key + count. Replaces {@link #executeFilteredGroupByCount}
-   * (any predicate shape) and {@link #executeGroupByCount} (the predicate-free
-   * case, via {@link PredicateNode.AlwaysTrue}).
+   * records reached via {@code sourcePath}; for each distinct value of
+   * {@code groupField} among the matches, emit the group key + count.
    *
    * @return grouped-count Sequence, or {@code null} if unsupported
    */
-  default Sequence executePredicateGroupByCount(QueryContext ctx, PredicateNode predicate, String groupField)
-      throws QueryException {
+  default Sequence executePredicateGroupByCount(QueryContext ctx, String[] sourcePath, PredicateNode predicate,
+      String groupField) throws QueryException {
     return null;
   }
 
   /**
-   * Generic predicate-tree aggregate: evaluate {@code predicate}, then apply
-   * {@code func} (sum/avg/min/max/count) to {@code field} over matching rows.
-   * Replaces the filter-then-aggregate composition with a single scan.
+   * Generic predicate-tree aggregate: evaluate {@code predicate} over records
+   * reached via {@code sourcePath}, then apply {@code func} (sum/avg/min/max/count)
+   * to {@code field} over matching rows. Replaces the filter-then-aggregate
+   * composition with a single scan.
    *
    * @return scalar-aggregate Sequence, or {@code null} if unsupported
    */
-  default Sequence executePredicateAggregate(QueryContext ctx, PredicateNode predicate, String func, String field)
-      throws QueryException {
+  default Sequence executePredicateAggregate(QueryContext ctx, String[] sourcePath, PredicateNode predicate,
+      String func, String field) throws QueryException {
     return null;
   }
 

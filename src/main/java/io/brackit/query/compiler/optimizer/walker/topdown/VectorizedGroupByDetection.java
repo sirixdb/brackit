@@ -147,6 +147,18 @@ public final class VectorizedGroupByDetection implements Stage {
       }
     }
 
+    // Extract the loop variable's source path prefix (the expression supplying
+    // $u). Executors combine it with per-predicate field names to scope queries
+    // to a specific tree path — eliminates false matches against same-name
+    // fields nested at other depths. Absent if the source isn't a simple path
+    // expression; executors then fall back to a path-agnostic tree-walk.
+    if (forBind.getChildCount() >= 2) {
+      final String[] sourcePath = extractPathPrefix(forBind.getChild(1));
+      if (sourcePath != null) {
+        pipeExpr.setProperty(VectorizedScanAnnotation.SOURCE_PATH_PREFIX, sourcePath);
+      }
+    }
+
     if (hasOrderBy && orderField != null) {
       pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_ORDERBY, Boolean.TRUE);
       pipeExpr.setProperty(VectorizedScanAnnotation.ORDER_FIELD, orderField);
@@ -237,6 +249,86 @@ public final class VectorizedGroupByDetection implements Stage {
       if (tooComplex[0])
         return;
     }
+  }
+
+  // ==================== Source path-prefix extraction ====================
+
+  /**
+   * Extract the loop variable's source path as a list of step names. Each
+   * array-descent ({@code [...][]}) is emitted as {@code "[]"}; each field
+   * dereference emits the field's local name. The bottom of the traversal
+   * must be a {@link XQ#VariableRef} or a {@link XQ#FunctionCall} whose result
+   * is implicitly the document root (e.g. {@code jn:doc(...)}); both terminate
+   * the prefix, meaning the path starts at whatever $doc root the query binds.
+   *
+   * <p>Returns {@code null} for any unrepresentable shape (arithmetic,
+   * sequence constructor, if/then/else, etc.). Callers use absence of the
+   * {@link VectorizedScanAnnotation#SOURCE_PATH_PREFIX} annotation as a
+   * signal to use a path-agnostic fallback.
+   *
+   * <p>Production queries typically parse to one of:
+   * <pre>
+   * for $u in $doc[] → ArrayAccess(VariableRef, -1) ⇒ ["[]"]
+   * for $u in $doc.items[] → ArrayAccess(DerefExpr, -1) ⇒ ["items", "[]"]
+   * for $u in $doc[].items[] → ArrayAccess(DerefExpr(ArrayAccess(...), items), -1)
+   * ⇒ ["[]", "items", "[]"]
+   * for $u in $doc.items → DerefExpr(VariableRef, items) ⇒ ["items"]
+   * for $u in jn:doc('db','r')[] → ArrayAccess(FunctionCall, -1) ⇒ ["[]"]
+   * </pre>
+   */
+  private String[] extractPathPrefix(final AST sourceExpr) {
+    if (sourceExpr == null) {
+      return null;
+    }
+    final List<String> reversed = new ArrayList<>(4);
+    AST current = sourceExpr;
+    while (current != null) {
+      final int type = current.getType();
+      if (type == XQ.ArrayAccess) {
+        // ArrayAccess(subject, index). Treat any index as a full-descent marker:
+        // path-prefix scoping doesn't distinguish element positions, only depth.
+        reversed.add("[]");
+        current = current.getChildCount() > 0 ? current.getChild(0) : null;
+        continue;
+      }
+      if (type == XQ.DerefExpr && current.getChildCount() >= 2) {
+        final AST fieldNode = current.getChild(current.getChildCount() - 1);
+        final String name = qnmLocalName(fieldNode.getValue());
+        if (name == null) {
+          return null;
+        }
+        reversed.add(name);
+        current = current.getChild(0);
+        continue;
+      }
+      if (type == XQ.VariableRef || type == XQ.FunctionCall) {
+        // Terminal — the path starts from this root. The variable / function
+        // identity itself is not part of the path scoping, since Sirix's
+        // pathNodeKey paths are rooted at the document.
+        break;
+      }
+      // Any other AST shape (arithmetic, comparison, sequence constructor,
+      // if-expr, etc.) is not representable as a simple path prefix.
+      return null;
+    }
+    // Reverse: traversal built the list innermost-first (closest to leaf),
+    // callers want outermost-first (from document root toward the field).
+    final String[] prefix = new String[reversed.size()];
+    for (int i = 0; i < reversed.size(); i++) {
+      prefix[i] = reversed.get(reversed.size() - 1 - i);
+    }
+    return prefix;
+  }
+
+  /** Extract the local name from a QNm or String value on an AST node; null otherwise. */
+  private static String qnmLocalName(final Object value) {
+    if (value instanceof QNm qnm) {
+      return qnm.getLocalName();
+    }
+    if (value instanceof String s) {
+      return s;
+    }
+    return null;
   }
 
   // ==================== Generic predicate-tree extraction ====================
