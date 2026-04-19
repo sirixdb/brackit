@@ -55,6 +55,7 @@ import io.brackit.query.operator.OrderBy;
 import io.brackit.query.operator.Select;
 import io.brackit.query.operator.Start;
 import io.brackit.query.operator.TableJoin;
+import io.brackit.query.operator.morsel.MorselPipeline;
 import io.brackit.query.jdm.Expr;
 import io.brackit.query.jdm.type.SequenceType;
 
@@ -67,9 +68,27 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
   /** Pluggable vectorized executor — set by bjq or SirixDB at startup. */
   private static volatile VectorizedExecutor vectorizedExecutor;
 
+  /**
+   * When {@code true}, PipeExprs that fall out of the vectorized fast path and
+   * do not contain pipeline breakers (GroupBy, OrderBy, Join) are wrapped in a
+   * {@link MorselPipeline} for DuckDB-style morsel-driven parallel fan-out.
+   * Off by default — callers opt in via {@link #setMorselEnabled(boolean)}.
+   */
+  private static volatile boolean morselEnabled;
+
   /** Register a vectorized executor for automatic optimization. */
   public static void setVectorizedExecutor(VectorizedExecutor executor) {
     vectorizedExecutor = executor;
+  }
+
+  /** Enable or disable morsel-driven parallel fan-out for the sequential fallback path. */
+  public static void setMorselEnabled(boolean enabled) {
+    morselEnabled = enabled;
+  }
+
+  /** Whether morsel-driven parallel fan-out is enabled. */
+  public static boolean isMorselEnabled() {
+    return morselEnabled;
   }
 
   /** Get the registered vectorized executor (used by BlockPipelineStrategy too). */
@@ -174,7 +193,11 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
     if (vectorized != null)
       return vectorized;
 
-    int initialBindSize = compiler.table.bound().length;
+    final int initialBindSize = compiler.table.bound().length;
+    // AST-level pre-scan: decide whether morsel wrapping is safe BEFORE compilation
+    // (avoids traversing a not-yet-built Operator graph whose upstream API varies).
+    final boolean morselSafe = morselEnabled && isMorselParallelizable(node);
+
     Operator root = anyOp(null, node.getChild(0), compiler);
 
     // for simpler scoping, the return expression is
@@ -186,12 +209,53 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
     Expr expr = compiler.anyExpr(returnExpr.getChild(0));
 
     // clear operator bindings
-    int unbind = compiler.table.bound().length - initialBindSize;
+    final int unbind = compiler.table.bound().length - initialBindSize;
     for (int i = 0; i < unbind; i++) {
       compiler.table.unbind();
     }
 
+    if (morselSafe) {
+      root = new MorselPipeline(root);
+    }
+
     return new PipeExpr(root, expr);
+  }
+
+  /**
+   * AST-level safety check for morsel wrapping. Returns true when the pipeline
+   * starts with a data-driven scan (ForBind) and contains no pipeline breakers
+   * (GroupBy, OrderBy, Join) — those require global state and must not cross
+   * morsel boundaries.
+   *
+   * @param pipeExpr the PipeExpr AST node
+   * @return {@code true} iff the pipeline is safe to wrap in a {@link MorselPipeline}
+   */
+  private static boolean isMorselParallelizable(AST pipeExpr) {
+    if (pipeExpr == null || pipeExpr.getChildCount() == 0) {
+      return false;
+    }
+    final AST start = pipeExpr.getChild(0);
+    // Walk the pipeline chain: Start -> (ForBind|LetBind|Selection|Count)* -> End
+    // Require the first operator under Start to be a ForBind (data-driven scan).
+    AST cursor = start;
+    boolean seenForBind = false;
+    while (cursor != null) {
+      final int t = cursor.getType();
+      if (t == XQ.End) {
+        break;
+      }
+      if (t == XQ.GroupBy || t == XQ.OrderBy || t == XQ.Join) {
+        return false;
+      }
+      if (t == XQ.ForBind) {
+        seenForBind = true;
+      }
+      if (cursor.getChildCount() == 0) {
+        break;
+      }
+      cursor = cursor.getLastChild();
+    }
+    return seenForBind;
   }
 
   protected Operator anyOp(Operator in, AST node, Compiler compiler) throws QueryException {
