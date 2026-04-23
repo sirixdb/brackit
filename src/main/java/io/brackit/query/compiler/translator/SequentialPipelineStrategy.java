@@ -65,8 +65,33 @@ import io.brackit.query.jdm.type.SequenceType;
  */
 public class SequentialPipelineStrategy implements PipelineStrategy {
 
-  /** Pluggable vectorized executor — set by bjq or SirixDB at startup. */
+  /**
+   * Process-wide vectorized executor — set by bjq or SirixDB at startup.
+   * Retained for backwards compatibility with bench harnesses; the
+   * preferred entry point for per-compile scopes is
+   * {@link #setThreadVectorizedExecutor(VectorizedExecutor)}, which
+   * sets a thread-local fallback that takes precedence over this static
+   * field when present.
+   */
   private static volatile VectorizedExecutor vectorizedExecutor;
+
+  /**
+   * Per-thread executor override. Preferred over the static field for
+   * client-driven compilation (e.g. SirixDB's {@code SirixCompileChain})
+   * because:
+   * <ul>
+   * <li>no global "last writer wins" race when multiple threads compile
+   * queries against different resources in parallel;</li>
+   * <li>the executor reference is captured in the compiled
+   * {@link VectorizedGroupByExpr} at compile time, so the
+   * thread-local only needs to be live during compile — after that,
+   * the {@code Expr} is self-sufficient and can run on any thread.</li>
+   * </ul>
+   *
+   * <p>Read order in {@link #tryVectorizedExpr(AST, boolean)}: thread-local
+   * → static. A caller that has set neither gets no fast path.
+   */
+  private static final ThreadLocal<VectorizedExecutor> threadLocalExecutor = new ThreadLocal<>();
 
   /**
    * When {@code true}, PipeExprs that fall out of the vectorized fast path and
@@ -81,6 +106,25 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
     vectorizedExecutor = executor;
   }
 
+  /**
+   * Set a thread-local vectorized executor override. Takes precedence over
+   * the process-wide static. Callers must clear via
+   * {@link #clearThreadVectorizedExecutor()} in a {@code finally} to avoid
+   * leaking the executor reference across thread-pool worker reuse.
+   */
+  public static void setThreadVectorizedExecutor(VectorizedExecutor executor) {
+    if (executor == null) {
+      threadLocalExecutor.remove();
+    } else {
+      threadLocalExecutor.set(executor);
+    }
+  }
+
+  /** Clear any thread-local executor set via {@link #setThreadVectorizedExecutor}. */
+  public static void clearThreadVectorizedExecutor() {
+    threadLocalExecutor.remove();
+  }
+
   /** Enable or disable morsel-driven parallel fan-out for the sequential fallback path. */
   public static void setMorselEnabled(boolean enabled) {
     morselEnabled = enabled;
@@ -91,9 +135,13 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
     return morselEnabled;
   }
 
-  /** Get the registered vectorized executor (used by BlockPipelineStrategy too). */
+  /**
+   * Get the effective vectorized executor (thread-local override if set,
+   * else the process-wide static). Used by BlockPipelineStrategy too.
+   */
   public static VectorizedExecutor getVectorizedExecutor() {
-    return vectorizedExecutor;
+    final VectorizedExecutor local = threadLocalExecutor.get();
+    return local != null ? local : vectorizedExecutor;
   }
 
   /**
@@ -110,7 +158,12 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
   }
 
   public static Expr tryVectorizedExpr(AST node, boolean countWrapped) {
-    VectorizedExecutor executor = vectorizedExecutor;
+    // Thread-local override takes precedence — the SirixCompileChain
+    // installs a per-compile executor here without touching the static.
+    VectorizedExecutor executor = threadLocalExecutor.get();
+    if (executor == null) {
+      executor = vectorizedExecutor;
+    }
     if (executor == null)
       return null;
 
