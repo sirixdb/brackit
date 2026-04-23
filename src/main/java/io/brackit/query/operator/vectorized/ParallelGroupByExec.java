@@ -98,7 +98,7 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
   }
 
   @Override
-  public Sequence executeGroupByCount(QueryContext ctx, String groupField) throws QueryException {
+  public Sequence executeGroupByCount(QueryContext ctx, String[] sourcePath, String groupField) throws QueryException {
     try {
       List<Item> results = executeGroupByCount(filePath, groupField);
       return new DArray(results);
@@ -111,21 +111,27 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
   }
 
   @Override
-  public Sequence executeFilterCount(QueryContext ctx, String filterField, String filterOp, long filterValue)
-      throws QueryException {
-    try {
-      long count = executeFilterCount(filePath, filterField, filterOp, filterValue);
-      return new Int64(count);
-    } catch (Exception e) {
-      throw new QueryException(e,
-                               io.brackit.query.ErrorCode.BIT_DYN_INT_ERROR,
-                               "Vectorized filter-count failed: %s",
-                               e.getMessage());
+  public Sequence executePredicateCount(QueryContext ctx, String[] sourcePath,
+      io.brackit.query.compiler.optimizer.PredicateNode predicate) throws QueryException {
+    // Fast shape: single NumCmp → file-backed SIMD filter-count kernel.
+    if (predicate instanceof io.brackit.query.compiler.optimizer.PredicateNode.NumCmp nc) {
+      try {
+        return new Int64(executeFilterCount(filePath, nc.field(), nc.op(), nc.value()));
+      } catch (Exception e) {
+        throw new QueryException(e,
+                                 io.brackit.query.ErrorCode.BIT_DYN_INT_ERROR,
+                                 "Vectorized filter-count failed: %s",
+                                 e.getMessage());
+      }
     }
+    // Bjq doesn't yet have a generic evaluator — signal unsupported, caller
+    // falls back to the generic Volcano pipeline.
+    return null;
   }
 
   @Override
-  public Sequence executeAggregate(QueryContext ctx, String func, String field) throws QueryException {
+  public Sequence executeAggregate(QueryContext ctx, String[] sourcePath, String func, String field)
+      throws QueryException {
     try {
       // Single parallel pass computes count, sum, min, max; pick the requested metric.
       long[] stats = executeAggregate(filePath, field);

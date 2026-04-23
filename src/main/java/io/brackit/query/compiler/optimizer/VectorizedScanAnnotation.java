@@ -20,6 +20,8 @@ public final class VectorizedScanAnnotation {
   public static final String VECTORIZED_ORDERBY = "VECTORIZED_ORDERBY";
   /** Pure aggregation (sum/avg/min/max) without group-by. */
   public static final String VECTORIZED_AGGREGATE = "VECTORIZED_AGGREGATE";
+  /** Count-distinct over a single field (count(for ... group by $d return $d)). */
+  public static final String VECTORIZED_COUNT_DISTINCT = "VECTORIZED_COUNT_DISTINCT";
   /** Top-N pattern (order-by + slice). */
   public static final String VECTORIZED_TOPN = "VECTORIZED_TOPN";
 
@@ -30,19 +32,41 @@ public final class VectorizedScanAnnotation {
   public static final String GROUPBY_FIELDS_EXTRA = "VECTORIZED_GROUPBY_FIELDS_EXTRA";
 
   // ---- Filter ----
-  /** Filter field name (String). */
-  public static final String FILTER_FIELD = "VECTORIZED_FILTER_FIELD";
-  /** Filter operator: "gt", "lt", "ge", "le", "eq". */
-  public static final String FILTER_OP = "VECTORIZED_FILTER_OP";
-  /** Filter value for numeric comparisons (Long). */
-  public static final String FILTER_VALUE = "VECTORIZED_FILTER_VALUE";
-  /** Filter value for string equality comparisons (String). */
-  public static final String FILTER_STRING_VALUE = "VECTORIZED_FILTER_STRING_VALUE";
-  /** Second filter (for AND compound predicates). */
-  public static final String FILTER2_FIELD = "VECTORIZED_FILTER2_FIELD";
-  public static final String FILTER2_OP = "VECTORIZED_FILTER2_OP";
-  public static final String FILTER2_VALUE = "VECTORIZED_FILTER2_VALUE";
-  public static final String FILTER2_STRING_VALUE = "VECTORIZED_FILTER2_STRING_VALUE";
+  /**
+   * Generic predicate-tree representation of the WHERE clause. Value is a
+   * {@link PredicateNode}. The dispatcher routes to
+   * {@link VectorizedExecutor#executePredicateCount} /
+   * {@link VectorizedExecutor#executePredicateGroupByCount} /
+   * {@link VectorizedExecutor#executePredicateAggregate}, which evaluates the
+   * arbitrary tree against record batches.
+   *
+   * <p>This mirrors the Umbra / DuckDB / ClickHouse / Velox model: a single
+   * physical Filter operator takes an arbitrary predicate expression rather
+   * than having a combinatorial explosion of filter-shape-specific operators.
+   */
+  public static final String PREDICATE_TREE = "VECTORIZED_PREDICATE_TREE";
+
+  /**
+   * Path prefix for the loop variable's source expression. Value is a
+   * {@code String[]} whose elements are step names, with {@code "[]"} marking
+   * array descent. Examples:
+   * <ul>
+   * <li>{@code for $u in $doc[] where ...} → {@code ["[]"]}
+   * <li>{@code for $u in $doc.items[] where ...} → {@code ["items", "[]"]}
+   * <li>{@code for $u in $doc[].items[] where ...} → {@code ["[]", "items", "[]"]}
+   * <li>{@code for $u in $doc.items where ...} → {@code ["items"]}
+   * </ul>
+   *
+   * <p>Executors combine this prefix with a per-predicate field name to obtain
+   * the full query path, which they then resolve against the document's path
+   * summary to a concrete path identifier (e.g. Sirix's pathNodeKey). That
+   * enables path-scoped aggregate / group-by / filter correctness without
+   * double-counting fields that share a local name at different tree depths.
+   *
+   * <p>Absent (property unset) for un-representable source expressions — the
+   * executor falls back to a tree-walk that doesn't require the prefix.
+   */
+  public static final String SOURCE_PATH_PREFIX = "VECTORIZED_SOURCE_PATH_PREFIX";
 
   // ---- Order-by ----
   /** Order field name (String). */
@@ -55,6 +79,9 @@ public final class VectorizedScanAnnotation {
   public static final String AGGREGATE_FUNC = "VECTORIZED_AGGREGATE_FUNC";
   /** Aggregate field name (String). */
   public static final String AGGREGATE_FIELD = "VECTORIZED_AGGREGATE_FIELD";
+
+  /** Count-distinct target field (local-name String). */
+  public static final String COUNT_DISTINCT_FIELD = "VECTORIZED_COUNT_DISTINCT_FIELD";
 
   // ---- Top-N ----
   /** Number of results to return (Long). */

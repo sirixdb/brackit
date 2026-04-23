@@ -28,9 +28,12 @@
 package io.brackit.query.compiler;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -349,26 +352,24 @@ public class AST {
       }
     }
 
-    // Properties
+    // Properties — serialized deterministically so two compilations of the
+    // same query produce byte-identical output:
+    //   * keys sorted alphabetically (independent of HashMap bucket order),
+    //   * arrays and Collections unwrapped to JSON arrays (fallback is
+    //     Object.toString(), which emits identity hashes like
+    //     [Ljava.lang.String;@45f421c for array-typed values).
     if (properties != null && !properties.isEmpty()) {
       sb.append(",\"properties\":{");
+      final List<String> keys = new ArrayList<>(properties.keySet());
+      Collections.sort(keys);
       boolean first = true;
-      for (Entry<String, Object> entry : properties.entrySet()) {
+      for (String key : keys) {
         if (!first) {
           sb.append(",");
         }
         first = false;
-        sb.append("\"").append(escapeJson(entry.getKey())).append("\":");
-        Object propValue = entry.getValue();
-        if (propValue == null) {
-          sb.append("null");
-        } else if (propValue instanceof Boolean) {
-          sb.append(propValue);
-        } else if (propValue instanceof Number) {
-          sb.append(propValue);
-        } else {
-          sb.append("\"").append(escapeJson(propValue.toString())).append("\"");
-        }
+        sb.append("\"").append(escapeJson(key)).append("\":");
+        appendJsonValue(sb, properties.get(key));
       }
       sb.append("}");
     }
@@ -386,6 +387,81 @@ public class AST {
     }
 
     sb.append("}");
+  }
+
+  /**
+   * Deterministic JSON serialization of a property value. Handles
+   * primitives, strings, arrays (any component type) and collections;
+   * anything else falls back to the element's {@code toString()} rendered
+   * as a JSON string.
+   */
+  private static void appendJsonValue(StringBuilder sb, Object value) {
+    if (value == null) {
+      sb.append("null");
+      return;
+    }
+    if (value instanceof Boolean || value instanceof Number) {
+      sb.append(value);
+      return;
+    }
+    if (value instanceof String s) {
+      sb.append("\"").append(escapeJson(s)).append("\"");
+      return;
+    }
+    // Arrays: component-type-specific iteration, no identity hash.
+    if (value instanceof Object[] a) {
+      sb.append("[");
+      for (int i = 0; i < a.length; i++) {
+        if (i > 0)
+          sb.append(",");
+        appendJsonValue(sb, a[i]);
+      }
+      sb.append("]");
+      return;
+    }
+    if (value instanceof int[] a) {
+      sb.append("[");
+      for (int i = 0; i < a.length; i++) {
+        if (i > 0)
+          sb.append(",");
+        sb.append(a[i]);
+      }
+      sb.append("]");
+      return;
+    }
+    if (value instanceof long[] a) {
+      sb.append("[");
+      for (int i = 0; i < a.length; i++) {
+        if (i > 0)
+          sb.append(",");
+        sb.append(a[i]);
+      }
+      sb.append("]");
+      return;
+    }
+    if (value instanceof double[] a) {
+      sb.append("[");
+      for (int i = 0; i < a.length; i++) {
+        if (i > 0)
+          sb.append(",");
+        sb.append(a[i]);
+      }
+      sb.append("]");
+      return;
+    }
+    if (value instanceof Collection<?> c) {
+      sb.append("[");
+      boolean first = true;
+      for (Object el : c) {
+        if (!first)
+          sb.append(",");
+        first = false;
+        appendJsonValue(sb, el);
+      }
+      sb.append("]");
+      return;
+    }
+    sb.append("\"").append(escapeJson(value.toString())).append("\"");
   }
 
   private static String escapeJson(String str) {

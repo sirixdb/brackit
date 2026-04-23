@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.brackit.query.atomic.QNm;
+import io.brackit.query.compiler.optimizer.PredicateNode;
 import io.brackit.query.compiler.optimizer.VectorizedExecutor;
 import io.brackit.query.compiler.optimizer.VectorizedScanAnnotation;
 import io.brackit.query.expr.PipeExpr;
@@ -54,6 +55,7 @@ import io.brackit.query.operator.OrderBy;
 import io.brackit.query.operator.Select;
 import io.brackit.query.operator.Start;
 import io.brackit.query.operator.TableJoin;
+import io.brackit.query.operator.morsel.MorselPipeline;
 import io.brackit.query.jdm.Expr;
 import io.brackit.query.jdm.type.SequenceType;
 
@@ -63,17 +65,83 @@ import io.brackit.query.jdm.type.SequenceType;
  */
 public class SequentialPipelineStrategy implements PipelineStrategy {
 
-  /** Pluggable vectorized executor — set by bjq or SirixDB at startup. */
+  /**
+   * Process-wide vectorized executor — set by bjq or SirixDB at startup.
+   * Retained for backwards compatibility with bench harnesses; the
+   * preferred entry point for per-compile scopes is
+   * {@link #setThreadVectorizedExecutor(VectorizedExecutor)}, which
+   * sets a thread-local fallback that takes precedence over this static
+   * field when present.
+   */
   private static volatile VectorizedExecutor vectorizedExecutor;
+
+  /**
+   * Per-thread executor override. Preferred over the static field for
+   * client-driven compilation (e.g. SirixDB's {@code SirixCompileChain})
+   * because:
+   * <ul>
+   * <li>no global "last writer wins" race when multiple threads compile
+   * queries against different resources in parallel;</li>
+   * <li>the executor reference is captured in the compiled
+   * {@link VectorizedGroupByExpr} at compile time, so the
+   * thread-local only needs to be live during compile — after that,
+   * the {@code Expr} is self-sufficient and can run on any thread.</li>
+   * </ul>
+   *
+   * <p>Read order in {@link #tryVectorizedExpr(AST, boolean)}: thread-local
+   * → static. A caller that has set neither gets no fast path.
+   */
+  private static final ThreadLocal<VectorizedExecutor> threadLocalExecutor = new ThreadLocal<>();
+
+  /**
+   * When {@code true}, PipeExprs that fall out of the vectorized fast path and
+   * do not contain pipeline breakers (GroupBy, OrderBy, Join) are wrapped in a
+   * {@link MorselPipeline} for DuckDB-style morsel-driven parallel fan-out.
+   * Off by default — callers opt in via {@link #setMorselEnabled(boolean)}.
+   */
+  private static volatile boolean morselEnabled;
 
   /** Register a vectorized executor for automatic optimization. */
   public static void setVectorizedExecutor(VectorizedExecutor executor) {
     vectorizedExecutor = executor;
   }
 
-  /** Get the registered vectorized executor (used by BlockPipelineStrategy too). */
+  /**
+   * Set a thread-local vectorized executor override. Takes precedence over
+   * the process-wide static. Callers must clear via
+   * {@link #clearThreadVectorizedExecutor()} in a {@code finally} to avoid
+   * leaking the executor reference across thread-pool worker reuse.
+   */
+  public static void setThreadVectorizedExecutor(VectorizedExecutor executor) {
+    if (executor == null) {
+      threadLocalExecutor.remove();
+    } else {
+      threadLocalExecutor.set(executor);
+    }
+  }
+
+  /** Clear any thread-local executor set via {@link #setThreadVectorizedExecutor}. */
+  public static void clearThreadVectorizedExecutor() {
+    threadLocalExecutor.remove();
+  }
+
+  /** Enable or disable morsel-driven parallel fan-out for the sequential fallback path. */
+  public static void setMorselEnabled(boolean enabled) {
+    morselEnabled = enabled;
+  }
+
+  /** Whether morsel-driven parallel fan-out is enabled. */
+  public static boolean isMorselEnabled() {
+    return morselEnabled;
+  }
+
+  /**
+   * Get the effective vectorized executor (thread-local override if set,
+   * else the process-wide static). Used by BlockPipelineStrategy too.
+   */
   public static VectorizedExecutor getVectorizedExecutor() {
-    return vectorizedExecutor;
+    final VectorizedExecutor local = threadLocalExecutor.get();
+    return local != null ? local : vectorizedExecutor;
   }
 
   /**
@@ -85,59 +153,86 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
    * are only intercepted when wrapped in {@code count()}, because the
    * vectorized executor returns a scalar count — not the filtered items.
    */
-  static Expr tryVectorizedExpr(AST node) {
+  public static Expr tryVectorizedExpr(AST node) {
     return tryVectorizedExpr(node, false);
   }
 
-  static Expr tryVectorizedExpr(AST node, boolean countWrapped) {
-    VectorizedExecutor executor = vectorizedExecutor;
+  public static Expr tryVectorizedExpr(AST node, boolean countWrapped) {
+    // Thread-local override takes precedence — the SirixCompileChain
+    // installs a per-compile executor here without touching the static.
+    VectorizedExecutor executor = threadLocalExecutor.get();
+    if (executor == null) {
+      executor = vectorizedExecutor;
+    }
     if (executor == null)
       return null;
 
-    // Pattern 1: Group-by (with optional filter)
+    // Source-path prefix (from the loop variable's IN clause). Threaded through
+    // every vectorized Expr so the executor can combine it with per-predicate
+    // field names to fully-qualify query paths and filter matches to the
+    // correct tree depth.
+    final String[] sourcePath = (String[]) node.getProperty(VectorizedScanAnnotation.SOURCE_PATH_PREFIX);
+
+    // Pattern 0 (highest priority when count-wrapped): count-distinct answered
+    // from an HLL cardinality sketch. The walker sets VECTORIZED_COUNT_DISTINCT
+    // in addition to VECTORIZED_GROUPBY on the same PipeExpr because the shape
+    // `for $u let $d := $u.F group by $d return $d` is *structurally* a
+    // group-by; the count-distinct specialization only applies when the outer
+    // expression is count(...). Checking this before the group-by branch lets
+    // the HLL path win when count-wrapped; uncount-wrapped calls fall through
+    // to the materializing group-by below.
+    if (countWrapped && Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT_DISTINCT))) {
+      String field = (String) node.getProperty(VectorizedScanAnnotation.COUNT_DISTINCT_FIELD);
+      if (field != null) {
+        return VectorizedGroupByExpr.countDistinct(executor, sourcePath, field);
+      }
+    }
+
+    // Pattern 1: Group-by (with optional filter). PREDICATE_TREE carries the
+    // full WHERE clause; the executor receives it and evaluates any
+    // AND/OR/NOT combination of NumCmp/StrEq/BoolRef leaves in one scan.
     if (Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY))) {
       String groupField = (String) node.getProperty(VectorizedScanAnnotation.GROUPBY_FIELD);
       if (groupField == null)
         return null;
-
-      String filterField = (String) node.getProperty(VectorizedScanAnnotation.FILTER_FIELD);
-      String filterOp = (String) node.getProperty(VectorizedScanAnnotation.FILTER_OP);
-      Long filterValue = (Long) node.getProperty(VectorizedScanAnnotation.FILTER_VALUE);
-
-      if (filterField != null && filterOp != null && filterValue != null) {
-        return new VectorizedGroupByExpr(executor, groupField, filterField, filterOp, filterValue);
+      PredicateNode predicate = (PredicateNode) node.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
+      if (predicate != null) {
+        return VectorizedGroupByExpr.predicateGroupByCount(executor, sourcePath, predicate, groupField);
       }
-      return new VectorizedGroupByExpr(executor, groupField);
+      return VectorizedGroupByExpr.groupBy(executor, sourcePath, groupField);
     }
 
-    // Pattern 2: Filtered count — only when wrapped in count() function
-    // The executor returns a scalar Int64(count), which replaces the entire
-    // count(PipeExpr) expression.
+    // Pattern 2: Filtered count — only when wrapped in count(). Requires
+    // PREDICATE_TREE; without it the query wasn't representable by the walker
+    // and we fall back to the generic pipeline.
     if (countWrapped && Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT))) {
-      String filterField = (String) node.getProperty(VectorizedScanAnnotation.FILTER_FIELD);
-      String filterOp = (String) node.getProperty(VectorizedScanAnnotation.FILTER_OP);
-      Long filterValue = (Long) node.getProperty(VectorizedScanAnnotation.FILTER_VALUE);
-
-      if (filterField != null && filterOp != null && filterValue != null) {
-        return new VectorizedGroupByExpr(executor, filterField, filterOp, filterValue);
+      PredicateNode predicate = (PredicateNode) node.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
+      if (predicate != null) {
+        return VectorizedGroupByExpr.predicateCount(executor, sourcePath, predicate);
       }
     }
 
-    // Pattern 3: Sorted scan
+    // Pattern 3: Sorted scan.
     if (Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_ORDERBY))) {
       String orderField = (String) node.getProperty(VectorizedScanAnnotation.ORDER_FIELD);
       String direction = (String) node.getProperty(VectorizedScanAnnotation.ORDER_DIRECTION);
       if (orderField != null) {
-        return VectorizedGroupByExpr.sorted(executor, orderField, direction);
+        return VectorizedGroupByExpr.sorted(executor, sourcePath, orderField, direction);
       }
     }
 
-    // Pattern 4: Pure aggregate (sum/avg/min/max/count over flat scan, no group-by)
+    // Pattern 4: Pure aggregate (sum/avg/min/max/count over flat scan).
+    // Generic predicate-tree filtered aggregate takes priority when
+    // PREDICATE_TREE is set — fuses filter + aggregate in one scan.
     if (Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_AGGREGATE))) {
       String func = (String) node.getProperty(VectorizedScanAnnotation.AGGREGATE_FUNC);
       String field = (String) node.getProperty(VectorizedScanAnnotation.AGGREGATE_FIELD);
       if (func != null) {
-        return VectorizedGroupByExpr.aggregate(executor, func, field);
+        PredicateNode predicate = (PredicateNode) node.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
+        if (predicate != null) {
+          return VectorizedGroupByExpr.predicateAggregate(executor, sourcePath, predicate, func, field);
+        }
+        return VectorizedGroupByExpr.aggregate(executor, sourcePath, func, field);
       }
     }
 
@@ -151,7 +246,11 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
     if (vectorized != null)
       return vectorized;
 
-    int initialBindSize = compiler.table.bound().length;
+    final int initialBindSize = compiler.table.bound().length;
+    // AST-level pre-scan: decide whether morsel wrapping is safe BEFORE compilation
+    // (avoids traversing a not-yet-built Operator graph whose upstream API varies).
+    final boolean morselSafe = morselEnabled && isMorselParallelizable(node);
+
     Operator root = anyOp(null, node.getChild(0), compiler);
 
     // for simpler scoping, the return expression is
@@ -163,12 +262,53 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
     Expr expr = compiler.anyExpr(returnExpr.getChild(0));
 
     // clear operator bindings
-    int unbind = compiler.table.bound().length - initialBindSize;
+    final int unbind = compiler.table.bound().length - initialBindSize;
     for (int i = 0; i < unbind; i++) {
       compiler.table.unbind();
     }
 
+    if (morselSafe) {
+      root = new MorselPipeline(root);
+    }
+
     return new PipeExpr(root, expr);
+  }
+
+  /**
+   * AST-level safety check for morsel wrapping. Returns true when the pipeline
+   * starts with a data-driven scan (ForBind) and contains no pipeline breakers
+   * (GroupBy, OrderBy, Join) — those require global state and must not cross
+   * morsel boundaries.
+   *
+   * @param pipeExpr the PipeExpr AST node
+   * @return {@code true} iff the pipeline is safe to wrap in a {@link MorselPipeline}
+   */
+  private static boolean isMorselParallelizable(AST pipeExpr) {
+    if (pipeExpr == null || pipeExpr.getChildCount() == 0) {
+      return false;
+    }
+    final AST start = pipeExpr.getChild(0);
+    // Walk the pipeline chain: Start -> (ForBind|LetBind|Selection|Count)* -> End
+    // Require the first operator under Start to be a ForBind (data-driven scan).
+    AST cursor = start;
+    boolean seenForBind = false;
+    while (cursor != null) {
+      final int t = cursor.getType();
+      if (t == XQ.End) {
+        break;
+      }
+      if (t == XQ.GroupBy || t == XQ.OrderBy || t == XQ.Join) {
+        return false;
+      }
+      if (t == XQ.ForBind) {
+        seenForBind = true;
+      }
+      if (cursor.getChildCount() == 0) {
+        break;
+      }
+      cursor = cursor.getLastChild();
+    }
+    return seenForBind;
   }
 
   protected Operator anyOp(Operator in, AST node, Compiler compiler) throws QueryException {
