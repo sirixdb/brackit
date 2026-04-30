@@ -257,7 +257,6 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
   }
 
   protected DTD subtract(AbstractTimeInstant b) {
-    boolean negative = false;
     AbstractTimeInstant a = this;
 
     if (a.getTimezone() != null) {
@@ -267,89 +266,52 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
       b = b.canonicalize();
     }
 
-    if (a.cmp(b) <= 0) {
+    // Ensure a >= b so the rest of the routine computes |a - b|; remember the sign.
+    boolean negative = false;
+    if (a.cmp(b) < 0) {
+      AbstractTimeInstant tmp = a;
       a = b;
-      b = this;
+      b = tmp;
       negative = true;
     }
 
-    int carry = 0;
+    // Date subtraction via Julian Day Numbers — eliminates the field-by-field borrow logic
+    // (and its bugs) for the y/m/d component. Time-of-day is handled with a simple borrow.
+    long dayDiff = julianDayNumber(a.getYear(), a.getMonth(), a.getDay()) - julianDayNumber(b.getYear(),
+                                                                                            b.getMonth(),
+                                                                                            b.getDay());
+
     int micros = a.getMicros() - b.getMicros();
+    int minutes = a.getMinutes() - b.getMinutes();
+    int hours = a.getHours() - b.getHours();
+
     if (micros < 0) {
-      micros *= -1;
-      carry = 1;
+      micros += 60_000_000;
+      minutes -= 1;
     }
-    int minutes = a.getMinutes() - b.getMinutes() + carry;
     if (minutes < 0) {
-      minutes *= -1;
-      carry = 1;
-    } else {
-      carry = 0;
+      minutes += 60;
+      hours -= 1;
     }
-
-    short days = 0;
-    int hours;
-    int ehour = b.getHours() + carry;
-    int eyear = b.getYear();
-    int emonth = b.getMonth();
-    int eday = b.getDay();
-
-    if (ehour < a.getHours()) {
-      hours = a.getHours() - ehour;
-    } else {
-      hours = 24 - ehour + a.getHours();
-      if (eday == maxDayInMonth(eyear, emonth)) {
-        if (emonth == 12) {
-          eyear++;
-          emonth = 1;
-        } else {
-          emonth++;
-        }
-        eday = 1;
-      } else {
-        eday++;
-      }
+    if (hours < 0) {
+      hours += 24;
+      dayDiff -= 1;
     }
+    // dayDiff cannot go negative here because a >= b after the swap.
 
-    if (eyear < a.getYear()) {
-      // advance days to 1st. of next month
-      byte maxDayInMonth = maxDayInMonth(eyear, emonth);
-      days += maxDayInMonth - eday + 1;
-      eday = 1;
+    return new DTD(negative, (short) dayDiff, (byte) hours, (byte) minutes, micros);
+  }
 
-      // advance months to next year
-      while (++emonth <= 12) {
-        byte maxDayInMonth2 = maxDayInMonth(eyear, emonth);
-        days += maxDayInMonth2;
-      }
-      emonth = 1;
-
-      // advance years
-      while (++eyear < a.getYear()) {
-        boolean isLeap = eyear % 400 == 0 || eyear % 100 != 0 && eyear % 4 == 0;
-        days += isLeap ? 366 : 365;
-      }
-    }
-
-    if (emonth < a.getMonth()) {
-      // advance days to 1st. of next month
-      byte maxDayInMonth = maxDayInMonth(eyear, emonth);
-      days += maxDayInMonth - eday + 1;
-      eday = 1;
-
-      // advance months
-      while (++emonth < a.getMonth()) {
-        byte maxDayInMonth2 = maxDayInMonth(eyear, emonth);
-        days += maxDayInMonth2;
-      }
-    }
-
-    if (eday < a.getDay()) {
-      // advance days
-      days += a.getDay() - eday;
-    }
-
-    return new DTD(negative, days, (byte) hours, (byte) minutes, micros);
+  /**
+   * Convert a proleptic Gregorian (year, month, day) to a Julian Day Number.
+   * Uses the Fliegel–Van Flandern algorithm. Valid for any date in the proleptic
+   * Gregorian calendar.
+   */
+  private static long julianDayNumber(int year, int month, int day) {
+    int a = (14 - month) / 12;
+    long y = (long) year + 4800L - a;
+    int m = month + 12 * a - 3;
+    return day + (153L * m + 2) / 5 + 365L * y + y / 4 - y / 100 + y / 400 - 32045L;
   }
 
   private static int fQuotient(int a, int low, int high) {
