@@ -38,7 +38,8 @@ import io.brackit.query.jdm.Type;
  * @author Sebastian Baechle
  */
 public class DTD extends AbstractDuration {
-  private final short days; // no wrap to month on overflow
+  private final int days; // no wrap to month on overflow; widened from short so dateTime
+                         // subtractions across long timespans don't wrap silently.
 
   private final byte hours; // 0..23 -> day wrap on overflow
 
@@ -49,7 +50,7 @@ public class DTD extends AbstractDuration {
   private class DTDDur extends DTD {
     private final Type type;
 
-    public DTDDur(boolean negative, short days, byte hours, byte minutes, int micros, Type type) {
+    public DTDDur(boolean negative, int days, byte hours, byte minutes, int micros, Type type) {
       super(negative, days, hours, minutes, micros);
       this.type = type;
     }
@@ -60,7 +61,7 @@ public class DTD extends AbstractDuration {
     }
   }
 
-  public DTD(boolean negative, short days, byte hours, byte minutes, int micros) {
+  public DTD(boolean negative, int days, byte hours, byte minutes, int micros) {
     this.days = days;
     this.hours = !negative ? hours : (byte) (hours | 0x80);
     this.minutes = minutes;
@@ -69,7 +70,7 @@ public class DTD extends AbstractDuration {
 
   public DTD(String str) throws QueryException {
     boolean negative = false;
-    short days = 0; // no wrap to month on overflow
+    int days = 0; // no wrap to month on overflow
     byte hours = 0; // 0..23 -> day wrap on overflow
     byte minutes = 0; // 0..59 -> hour wrap on overflow
     int micros = 0; // 0..59,999,999 -> minute wrap on overflow
@@ -96,13 +97,7 @@ public class DTD extends AbstractDuration {
     int v = start != end ? Integer.parseInt(str.substring(start, end)) : -1; // parse leading value
 
     if (sectionTerminator == 'D' && v > -1) {
-      if (v > Short.MAX_VALUE) {
-        throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-                                 "Cannot cast '%s' to xs:dayTimeDuration: component too large",
-                                 str);
-      }
-
-      days = (short) v;
+      days = v;
 
       start = pos;
       while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
@@ -128,13 +123,7 @@ public class DTD extends AbstractDuration {
         int newDays = days + v / 24;
         v = v % 24;
 
-        if (newDays > Short.MAX_VALUE) {
-          throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-                                   "Cannot cast '%s' to xs:dayTimeDuration: component too large",
-                                   str);
-        }
-
-        days = (short) newDays;
+        days = newDays;
         hours = (byte) v;
 
         start = pos;
@@ -154,13 +143,7 @@ public class DTD extends AbstractDuration {
         newDays += newHours / 24;
         newHours %= 24;
 
-        if (newDays > Short.MAX_VALUE) {
-          throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-                                   "Cannot cast '%s' to xs:dayTimeDuration: component too large",
-                                   str);
-        }
-
-        days = (short) newDays;
+        days = newDays;
         hours = (byte) newHours;
         minutes = (byte) v;
 
@@ -185,13 +168,7 @@ public class DTD extends AbstractDuration {
         newDays += newHours / 24;
         newHours %= 24;
 
-        if (newDays > Short.MAX_VALUE) {
-          throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-                                   "Cannot cast '%s' to xs:dayTimeDuration: component too large",
-                                   str);
-        }
-
-        days = (short) newDays;
+        days = newDays;
         hours = (byte) newHours;
         minutes = (byte) newMinutes;
         micros = v * 1000000;
@@ -335,11 +312,11 @@ public class DTD extends AbstractDuration {
     newDays += newHours / 24;
     newHours %= 24;
 
-    if (newDays > Short.MAX_VALUE) {
+    if (newDays > Integer.MAX_VALUE) {
       throw new QueryException(ErrorCode.ERR_OVERFLOW_UNDERFLOW_IN_DURATION);
     }
 
-    return new DTD(newNegative, (short) newDays, (byte) newHours, (byte) newMinutes, (int) newMicros);
+    return new DTD(newNegative, (int) newDays, (byte) newHours, (byte) newMinutes, (int) newMicros);
   }
 
   public DTD divide(Dbl dbl) throws QueryException {
@@ -349,7 +326,7 @@ public class DTD extends AbstractDuration {
       throw new QueryException(ErrorCode.ERR_PARAMETER_NAN);
     }
     if (Double.isInfinite(v)) {
-      return new DTD(false, (short) 0, (byte) 0, (byte) 0, 0);
+      return new DTD(false, 0, (byte) 0, (byte) 0, 0);
     }
 
     long newDays = Math.round(getDays() / v);
@@ -372,11 +349,11 @@ public class DTD extends AbstractDuration {
     newDays += newHours / 24;
     newHours %= 24;
 
-    if (newDays > Short.MAX_VALUE) {
+    if (newDays > Integer.MAX_VALUE) {
       throw new QueryException(ErrorCode.ERR_OVERFLOW_UNDERFLOW_IN_DURATION);
     }
 
-    return new DTD(newNegative, (short) newDays, (byte) newHours, (byte) newMinutes, (int) newMicros);
+    return new DTD(newNegative, (int) newDays, (byte) newHours, (byte) newMinutes, (int) newMicros);
   }
 
   public Numeric divide(DTD dur) throws QueryException {
@@ -390,7 +367,7 @@ public class DTD extends AbstractDuration {
     return new Dec(new BigDecimal(a)).div(new Dec(new BigDecimal(b)));
   }
 
-  private DTD addInternal(boolean n2, short d2, byte h2, byte m2, int mic2) throws QueryException {
+  private DTD addInternal(boolean n2, int d2, byte h2, byte m2, int mic2) throws QueryException {
     // Convert each operand to a signed total-micros count, add, then renormalize. The
     // previous field-by-field implementation determined the result's sign from the
     // sign of newDays alone — incorrectly when the days components cancelled but the
@@ -412,15 +389,15 @@ public class DTD extends AbstractDuration {
     final long newHours = (sum / MICROS_PER_HOUR) % 24L;
     final long newDays = sum / MICROS_PER_DAY;
 
-    if (newDays > Short.MAX_VALUE) {
+    if (newDays > Integer.MAX_VALUE) {
       throw new QueryException(ErrorCode.ERR_OVERFLOW_UNDERFLOW_IN_DURATION);
     }
 
-    return new DTD(newNegative, (short) newDays, (byte) newHours, (byte) newMinutes, (int) newMicros);
+    return new DTD(newNegative, (int) newDays, (byte) newHours, (byte) newMinutes, (int) newMicros);
   }
 
   /** Convert a (negative, days, hours, minutes, micros) tuple into total signed micros. */
-  private static long totalMicros(final boolean negative, final short days, final byte hours, final byte minutes,
+  private static long totalMicros(final boolean negative, final int days, final byte hours, final byte minutes,
       final int micros) {
     final long total = (long) days * MICROS_PER_DAY + (long) hours * MICROS_PER_HOUR + (long) minutes
         * MICROS_PER_MINUTE + micros;
@@ -447,7 +424,7 @@ public class DTD extends AbstractDuration {
   }
 
   @Override
-  public short getDays() {
+  public int getDays() {
     return days;
   }
 

@@ -70,7 +70,7 @@ public abstract class AbstractDuration extends AbstractAtomic implements Duratio
     StringBuilder out = !isNegative() ? new StringBuilder("P") : new StringBuilder("-P");
     short years = getYears();
     byte months = getMonths();
-    short days = getDays();
+    int days = getDays();
     byte hours = getHours();
     byte minutes = getMinutes();
     int micros = getMicros();

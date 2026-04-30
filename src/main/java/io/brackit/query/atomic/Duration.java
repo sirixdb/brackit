@@ -35,7 +35,7 @@ public interface Duration {
 
   byte getMonths();
 
-  short getDays();
+  int getDays();
 
   byte getHours();
 

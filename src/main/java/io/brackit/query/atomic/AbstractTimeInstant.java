@@ -52,7 +52,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
     int minutes = fQuotient(remainder, 60000);
     remainder = modulo(remainder, 60000);
     int micros = remainder * 1000;
-    LOCAL_TIMEZONE = new DTD(offset < 0, (short) 0, (byte) hours, (byte) minutes, micros);
+    LOCAL_TIMEZONE = new DTD(offset < 0, 0, (byte) hours, (byte) minutes, micros);
   }
 
   @Override
@@ -111,7 +111,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
       return UTC_TIMEZONE;
     }
 
-    return new DTD(negative, (short) 0, hour, minute, 0);
+    return new DTD(negative, 0, hour, minute, 0);
   }
 
   protected int cmp(AbstractTimeInstant other) {
@@ -198,7 +198,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
   protected AbstractTimeInstant add(boolean negate, Duration duration, DTD newTimezone) {
     short durationYears = duration.getYears();
     byte durationMonths = duration.getMonths();
-    short durationDays = duration.getDays();
+    int durationDays = duration.getDays();
     byte durationHours = duration.getHours();
     byte durationMinutes = duration.getMinutes();
     int durationMicros = duration.getMicros();
@@ -320,7 +320,16 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
     }
     // dayDiff cannot go negative here because a >= b after the swap.
 
-    return new DTD(negative, (short) dayDiff, (byte) hours, (byte) minutes, micros);
+    // DTD's days field is now int (widened from short); Integer.MAX_VALUE days is
+    // ~5.8 million years, more than enough for any realistic dateTime subtraction. We
+    // still defend against overflow on the long → int narrowing.
+    if (dayDiff > Integer.MAX_VALUE) {
+      throw new QueryException(ErrorCode.ERR_OVERFLOW_UNDERFLOW_IN_DURATION,
+                               "xs:dateTime subtraction yields a duration of %d days, exceeding Integer.MAX_VALUE",
+                               dayDiff);
+    }
+
+    return new DTD(negative, (int) dayDiff, (byte) hours, (byte) minutes, micros);
   }
 
   /**

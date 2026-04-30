@@ -119,7 +119,7 @@ public class AdjustToTimezone extends AbstractFunction {
             return dt;
           }
 
-          dtNew = dt.add(new DTD(diff < 0, (short) 0, (byte) Math.abs(diff), (byte) 0, 0));
+          dtNew = dt.add(new DTD(diff < 0, 0, (byte) Math.abs(diff), (byte) 0, 0));
           dtNew = new DateTime(dtNew.getYear(),
                                dtNew.getMonth(),
                                dtNew.getDay(),
@@ -157,7 +157,7 @@ public class AdjustToTimezone extends AbstractFunction {
             return date;
           }
 
-          dateNew = date.add(new DTD(diff < 0, (short) 0, (byte) Math.abs(diff), (byte) 0, 0));
+          dateNew = date.add(new DTD(diff < 0, 0, (byte) Math.abs(diff), (byte) 0, 0));
           dateNew = new Date(dateNew.getYear(), dateNew.getMonth(), dateNew.getDay(), timezone);
         }
 
@@ -189,7 +189,7 @@ public class AdjustToTimezone extends AbstractFunction {
             return time;
           }
 
-          timeNew = time.add(new DTD(diff < 0, (short) 0, (byte) Math.abs(diff), (byte) 0, 0));
+          timeNew = time.add(new DTD(diff < 0, 0, (byte) Math.abs(diff), (byte) 0, 0));
           timeNew = new Time(timeNew.getHours(), timeNew.getMinutes(), timeNew.getMicros(), timezone);
         }
 

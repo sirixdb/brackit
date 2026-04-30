@@ -430,7 +430,7 @@ public class Cast implements Expr {
       return new Dur(atomic.stringValue());
     } else if (source == Type.YMD) {
       YMD ymd = (YMD) atomic;
-      return new Dur(ymd.isNegative(), ymd.getYears(), ymd.getMonths(), (short) 0, (byte) 0, (byte) 0, 0);
+      return new Dur(ymd.isNegative(), ymd.getYears(), ymd.getMonths(), 0, (byte) 0, (byte) 0, 0);
     } else if (source == Type.DTD) {
       DTD dtd = (DTD) atomic;
       return new Dur(dtd.isNegative(),
@@ -472,7 +472,7 @@ public class Cast implements Expr {
       return new DTD(dur.isNegative(), dur.getDays(), dur.getHours(), dur.getMinutes(), dur.getMicros());
     } else if (source == Type.YMD) {
       YMD ymd = (YMD) atomic;
-      return new DTD(ymd.isNegative(), (short) 0, (byte) 0, (byte) 0, 0);
+      return new DTD(ymd.isNegative(), 0, (byte) 0, (byte) 0, 0);
     } else if (source == target) {
       return atomic;
     }
