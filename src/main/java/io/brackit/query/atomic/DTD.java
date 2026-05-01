@@ -69,11 +69,11 @@ public class DTD extends AbstractDuration {
   }
 
   public DTD(String str) throws QueryException {
+    // Field semantics: days has no wrap-on-overflow (just an int counter); hours wrap to
+    // days at 24, minutes to hours at 60, micros to minutes at 60·10⁶.
     boolean negative = false;
-    int days = 0; // no wrap to month on overflow
-    byte hours = 0; // 0..23 -> day wrap on overflow
-    byte minutes = 0; // 0..59 -> hour wrap on overflow
-    int micros = 0; // 0..59,999,999 -> minute wrap on overflow
+    int days = 0, micros = 0;
+    byte hours = 0, minutes = 0;
 
     str = Whitespace.collapseTrimOnly(str);
     char[] charArray = str.toCharArray();

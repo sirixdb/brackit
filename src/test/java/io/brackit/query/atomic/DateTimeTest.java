@@ -196,6 +196,7 @@ public final class DateTimeTest {
   private static final long MICROS_PER_MIN = 60_000_000L;
   private static final long MICROS_PER_HOUR = MICROS_PER_MIN * 60L;
   private static final long MICROS_PER_DAY = MICROS_PER_HOUR * 24L;
+  private static final LongBinaryOperator SUB = (x, y) -> x - y;
 
   /**
    * Random DTD covering full positive and negative dynamic range. Bounded so the
@@ -252,12 +253,7 @@ public final class DateTimeTest {
 
   @Test
   public void property_dtdSubtract_preservesTotalMicros() throws Exception {
-    runRoundTripProperty(0xD7D5BB1AC7L,
-                         DateTimeTest::randomDtd,
-                         DateTimeTest::totalMicros,
-                         DTD::subtract,
-                         (x, y) -> x - y,
-                         "-");
+    runRoundTripProperty(0xD7D5BB1AC7L, DateTimeTest::randomDtd, DateTimeTest::totalMicros, DTD::subtract, SUB, "-");
   }
 
   @Test
@@ -292,25 +288,14 @@ public final class DateTimeTest {
 
   @Test
   public void property_ymdSubtract_preservesTotalMonths() throws Exception {
-    runRoundTripProperty(0x47D5BB1AC7L,
-                         DateTimeTest::randomYmd,
-                         DateTimeTest::totalMonths,
-                         YMD::subtract,
-                         (x, y) -> x - y,
-                         "-");
+    runRoundTripProperty(0x47D5BB1AC7L, DateTimeTest::randomYmd, DateTimeTest::totalMonths, YMD::subtract, SUB, "-");
   }
 
   /**
    * Property: subtracting two dateTimes a, b returns a duration whose total micros
-   * equals (a - b). Uses the proleptic Gregorian calendar via {@link LocalDate} to
-   * compute the expected day diff, then composes with the time-of-day to get the
-   * full expected instant difference.
-   */
-  /**
-   * Property: subtracting two dateTimes a, b returns a duration whose total micros
-   * equals (a - b). After widening DTD.days from short to int (Inv 1.4 in
+   * equals (a - b). After widening DTD.days from short to int (Inv 1.5 in
    * docs/formal-verification.md), any realistic dateTime span fits in DTD without
-   * overflow — Integer.MAX_VALUE days is ~5.8 million years.
+   * overflow — Integer.MAX_VALUE days is ~5.88 million years.
    */
   @Test
   public void property_dateTimeSubtract_preservesSignedInstantDifference() throws Exception {
