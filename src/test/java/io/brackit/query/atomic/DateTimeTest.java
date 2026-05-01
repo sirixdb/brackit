@@ -1,12 +1,16 @@
 package io.brackit.query.atomic;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.time.LocalDate;
 import java.util.SplittableRandom;
 import java.util.function.Function;
 import java.util.function.LongBinaryOperator;
 import java.util.function.ToLongFunction;
+import java.util.stream.Stream;
 
 import io.brackit.query.QueryException;
 
@@ -246,28 +250,6 @@ public final class DateTimeTest {
     }
   }
 
-  @Test
-  public void property_dtdAdd_preservesTotalMicros() throws Exception {
-    runRoundTripProperty(0xD7DADD0L, DateTimeTest::randomDtd, DateTimeTest::totalMicros, DTD::add, Long::sum, "+");
-  }
-
-  @Test
-  public void property_dtdSubtract_preservesTotalMicros() throws Exception {
-    runRoundTripProperty(0xD7D5BB1AC7L, DateTimeTest::randomDtd, DateTimeTest::totalMicros, DTD::subtract, SUB, "-");
-  }
-
-  @Test
-  public void property_dtdAdd_resultIsCanonical() throws Exception {
-    // Inv 1.1b: hours <24, minutes <60, micros <60M.
-    final SplittableRandom rng = new SplittableRandom(0xCAFE0001CL);
-    for (int i = 0; i < 10_000; i++) {
-      final DTD r = randomDtd(rng).add(randomDtd(rng));
-      assertTrue(r.getHours() >= 0 && r.getHours() < 24, "non-canonical hours: " + r);
-      assertTrue(r.getMinutes() >= 0 && r.getMinutes() < 60, "non-canonical minutes: " + r);
-      assertTrue(r.getMicros() >= 0 && r.getMicros() < MICROS_PER_MIN, "non-canonical micros: " + r);
-    }
-  }
-
   /** Random YMD over a representative range. */
   private static YMD randomYmd(final SplittableRandom rng) {
     final boolean negative = rng.nextBoolean();
@@ -281,14 +263,38 @@ public final class DateTimeTest {
     return y.isNegative() ? -magnitude : magnitude;
   }
 
-  @Test
-  public void property_ymdAdd_preservesTotalMonths() throws Exception {
-    runRoundTripProperty(0x47DADD7L, DateTimeTest::randomYmd, DateTimeTest::totalMonths, YMD::add, Long::sum, "+");
+  /** Drives the four arithmetic round-trip properties through a single body. */
+  static Stream<Arguments> arithmeticProperties() {
+    final DurationOp<DTD> dtdAdd = DTD::add, dtdSub = DTD::subtract;
+    final DurationOp<YMD> ymdAdd = YMD::add, ymdSub = YMD::subtract;
+    final Function<SplittableRandom, DTD> randDtd = DateTimeTest::randomDtd;
+    final Function<SplittableRandom, YMD> randYmd = DateTimeTest::randomYmd;
+    final ToLongFunction<DTD> toMicros = DateTimeTest::totalMicros;
+    final ToLongFunction<YMD> toMonths = DateTimeTest::totalMonths;
+    return Stream.of(Arguments.of("dtdAdd", 0xD7DADD0L, randDtd, toMicros, dtdAdd, (LongBinaryOperator) Long::sum, "+"),
+                     Arguments.of("dtdSub", 0xD7D5BB1AC7L, randDtd, toMicros, dtdSub, SUB, "-"),
+                     Arguments.of("ymdAdd", 0x47DADD7L, randYmd, toMonths, ymdAdd, (LongBinaryOperator) Long::sum, "+"),
+                     Arguments.of("ymdSub", 0x47D5BB1AC7L, randYmd, toMonths, ymdSub, SUB, "-"));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("arithmeticProperties")
+  <X> void property_arithmeticPreservesReifiedValue(final String name, final long seed,
+      final Function<SplittableRandom, X> rand, final ToLongFunction<X> reify, final DurationOp<X> op,
+      final LongBinaryOperator expectedOp, final String opSym) throws Exception {
+    runRoundTripProperty(seed, rand, reify, op, expectedOp, opSym);
   }
 
   @Test
-  public void property_ymdSubtract_preservesTotalMonths() throws Exception {
-    runRoundTripProperty(0x47D5BB1AC7L, DateTimeTest::randomYmd, DateTimeTest::totalMonths, YMD::subtract, SUB, "-");
+  public void property_dtdAdd_resultIsCanonical() throws Exception {
+    // Inv 1.1b: hours <24, minutes <60, micros <60M.
+    final SplittableRandom rng = new SplittableRandom(0xCAFE0001CL);
+    for (int i = 0; i < 10_000; i++) {
+      final DTD r = randomDtd(rng).add(randomDtd(rng));
+      assertTrue(r.getHours() >= 0 && r.getHours() < 24, "non-canonical hours: " + r);
+      assertTrue(r.getMinutes() >= 0 && r.getMinutes() < 60, "non-canonical minutes: " + r);
+      assertTrue(r.getMicros() >= 0 && r.getMicros() < MICROS_PER_MIN, "non-canonical micros: " + r);
+    }
   }
 
   /**

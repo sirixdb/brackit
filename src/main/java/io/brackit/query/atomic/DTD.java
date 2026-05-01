@@ -31,7 +31,6 @@ import java.math.BigDecimal;
 
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryException;
-import io.brackit.query.util.Whitespace;
 import io.brackit.query.jdm.Type;
 
 /**
@@ -69,144 +68,19 @@ public class DTD extends AbstractDuration {
   }
 
   public DTD(String str) throws QueryException {
-    // Field semantics: days has no wrap-on-overflow (just an int counter); hours wrap to
-    // days at 24, minutes to hours at 60, micros to minutes at 60·10⁶.
-    boolean negative = false;
-    int days = 0, micros = 0;
-    byte hours = 0, minutes = 0;
-
-    str = Whitespace.collapseTrimOnly(str);
-    char[] charArray = str.toCharArray();
-    int pos = 0;
-    int length = charArray.length;
-
-    if (pos == length || charArray[pos] == '-') {
-      negative = true;
-      pos++;
-    }
-
-    if (length - pos < 3 || charArray[pos++] != 'P') {
+    // xs:dayTimeDuration is xs:duration restricted to {D, H, M, S} components.
+    // Delegate the lexical parse to Dur and reject any year/month part — this
+    // collapses two structurally identical parsers into one and prevents the
+    // pair from drifting independently.
+    final Dur dur = new Dur(str);
+    if (dur.getYears() != 0 || dur.getMonths() != 0) {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:dayTimeDuration", str);
     }
-
-    int start = pos;
-    while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
-      pos++;
-    int end = pos;
-    int sectionTerminator = pos < length ? charArray[pos++] : -1;
-    int v = start != end ? Integer.parseInt(str.substring(start, end)) : -1; // parse leading value
-
-    if (sectionTerminator == 'D' && v > -1) {
-      days = v;
-
-      start = pos;
-      while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
-        pos++;
-      end = pos;
-      sectionTerminator = pos < length ? charArray[pos++] : -1;
-      v = start != end ? Integer.parseInt(str.substring(start, end)) : -1;
-    }
-
-    if (sectionTerminator == 'T') {
-      start = pos;
-      while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
-        pos++;
-      end = pos;
-      sectionTerminator = pos < length ? charArray[pos++] : -1;
-      v = start != end ? Integer.parseInt(str.substring(start, end)) : -1;
-
-      if (sectionTerminator == -1) {
-        throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:dayTimeDuration", str);
-      }
-
-      if (sectionTerminator == 'H' && v > -1) {
-        int newDays = days + v / 24;
-        v = v % 24;
-
-        days = newDays;
-        hours = (byte) v;
-
-        start = pos;
-        while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
-          pos++;
-        end = pos;
-        sectionTerminator = pos < length ? charArray[pos++] : -1;
-        v = start != end ? Integer.parseInt(str.substring(start, end)) : -1;
-      }
-
-      if (sectionTerminator == 'M' && v > -1) {
-        int newDays = days + v / 1440;
-        v = v % 1440;
-        int newHours = hours + v / 60;
-        v = v % 60;
-
-        newDays += newHours / 24;
-        newHours %= 24;
-
-        days = newDays;
-        hours = (byte) newHours;
-        minutes = (byte) v;
-
-        start = pos;
-        while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
-          pos++;
-        end = pos;
-        sectionTerminator = pos < length ? charArray[pos++] : -1;
-        v = start != end ? Integer.parseInt(str.substring(start, end)) : -1;
-      }
-
-      if ((sectionTerminator == '.' || sectionTerminator == 'S') && v > -1) {
-        int newDays = days + v / 86400;
-        v = v % 86400;
-        int newHours = hours + v / 3600;
-        v = v % 3600;
-        int newMinutes = minutes + v / 60;
-        v = v % 60;
-
-        newHours += newMinutes / 60;
-        newMinutes %= 60;
-        newDays += newHours / 24;
-        newHours %= 24;
-
-        days = newDays;
-        hours = (byte) newHours;
-        minutes = (byte) newMinutes;
-        micros = v * 1000000;
-
-        if (sectionTerminator == '.') {
-          start = pos;
-          while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
-            pos++;
-          end = pos;
-          sectionTerminator = pos < length ? charArray[pos++] : -1;
-          int l = end - start;
-          v = start != end ? Integer.parseInt(str.substring(start, start + Math.min(l, 6))) : -1; // drop nano seconds
-
-          if (sectionTerminator == 'S' && v > -1) {
-            if (v > 0) {
-              for (int i = 0; i < 6 - l; i++) {
-                v *= 10;
-              }
-              micros += v;
-            }
-            sectionTerminator = pos < length ? charArray[pos++] : -1;
-          } else {
-            sectionTerminator = 'X';
-          }
-        } else {
-          sectionTerminator = -1;
-        }
-      }
-    }
-
-    if (sectionTerminator != -1) {
-      throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:dayTimeDuration", str);
-    }
-
-    this.days = days;
-    this.hours = !negative ? hours : (byte) (hours | 0x80);
-    this.minutes = minutes;
-    this.micros = micros;
+    final byte magnitudeHours = dur.getHours();
+    this.days = dur.getDays();
+    this.hours = dur.isNegative() ? (byte) (magnitudeHours | 0x80) : magnitudeHours;
+    this.minutes = dur.getMinutes();
+    this.micros = dur.getMicros();
   }
 
   @Override
