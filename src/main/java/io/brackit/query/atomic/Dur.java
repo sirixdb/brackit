@@ -41,7 +41,9 @@ public class Dur extends AbstractDuration {
   private final byte months; // 0..11 -> year wrap on overflow, highest bit
   // used to indicate negative duration
 
-  private final short days; // no wrap to month on overflow
+  private final int days; // no wrap to month on overflow; widened from short for parity
+                         // with DTD.days so dateTime subtraction across long timespans
+                         // doesn't silently wrap.
 
   private final byte hours; // 0..23 -> day wrap on overflow
 
@@ -52,8 +54,7 @@ public class Dur extends AbstractDuration {
   private class DDur extends Dur {
     private final Type type;
 
-    public DDur(boolean negative, short years, byte months, short days, byte hours, byte minutes, int micros,
-        Type type) {
+    public DDur(boolean negative, short years, byte months, int days, byte hours, byte minutes, int micros, Type type) {
       super(negative, years, months, days, hours, minutes, micros);
       this.type = type;
     }
@@ -64,7 +65,7 @@ public class Dur extends AbstractDuration {
     }
   }
 
-  public Dur(boolean negative, short years, byte months, short days, byte hours, byte minutes, int micros) {
+  public Dur(boolean negative, short years, byte months, int days, byte hours, byte minutes, int micros) {
     this.years = years;
     this.months = !negative ? months : (byte) (months | 0x80);
     this.days = days;
@@ -78,7 +79,7 @@ public class Dur extends AbstractDuration {
     short years = 0;
     byte months = 0; // 0..11 -> year wrap on overflow, highest bit used to
     // indicate negative duration
-    short days = 0; // no wrap to month on overflow
+    int days = 0; // no wrap to month on overflow
     byte hours = 0; // 0..23 -> day wrap on overflow
     byte minutes = 0; // 0..59 -> hour wrap on overflow
     int micros = 0; // 0..59,999,999 -> minute wrap on overflow
@@ -143,13 +144,7 @@ public class Dur extends AbstractDuration {
     }
 
     if (sectionTerminator == 'D' && v > -1) {
-      if (v > Short.MAX_VALUE) {
-        throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-                                 "Cannot cast '%s' to xs:duration: component too large",
-                                 str);
-      }
-
-      days = (short) v;
+      days = v;
 
       start = pos;
       while (pos < length && '0' <= charArray[pos] && charArray[pos] <= '9')
@@ -175,13 +170,7 @@ public class Dur extends AbstractDuration {
         int newDays = days + v / 24;
         v = v % 24;
 
-        if (newDays > Short.MAX_VALUE) {
-          throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-                                   "Cannot cast '%s' to xs:duration: component too large",
-                                   str);
-        }
-
-        days = (short) newDays;
+        days = newDays;
         hours = (byte) v;
 
         start = pos;
@@ -201,13 +190,7 @@ public class Dur extends AbstractDuration {
         newDays += newHours / 24;
         newHours %= 24;
 
-        if (newDays > Short.MAX_VALUE) {
-          throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-                                   "Cannot cast '%s' to xs:duration: component too large",
-                                   str);
-        }
-
-        days = (short) newDays;
+        days = newDays;
         hours = (byte) newHours;
         minutes = (byte) v;
 
@@ -232,13 +215,7 @@ public class Dur extends AbstractDuration {
         newDays += newHours / 24;
         newHours %= 24;
 
-        if (newDays > Short.MAX_VALUE) {
-          throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
-                                   "Cannot cast '%s' to xs:duration: component too large",
-                                   str);
-        }
-
-        days = (short) newDays;
+        days = newDays;
         hours = (byte) newHours;
         minutes = (byte) newMinutes;
         micros = v * 1000000;
@@ -349,7 +326,7 @@ public class Dur extends AbstractDuration {
   }
 
   @Override
-  public short getDays() {
+  public int getDays() {
     return days;
   }
 

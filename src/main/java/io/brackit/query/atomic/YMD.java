@@ -313,7 +313,7 @@ public class YMD extends AbstractDuration {
   }
 
   @Override
-  public short getDays() {
+  public int getDays() {
     return 0;
   }
 
