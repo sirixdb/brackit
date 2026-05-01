@@ -4,6 +4,11 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.util.SplittableRandom;
+import java.util.function.Function;
+import java.util.function.LongBinaryOperator;
+import java.util.function.ToLongFunction;
+
+import io.brackit.query.QueryException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -213,28 +218,46 @@ public final class DateTimeTest {
     return d.isNegative() ? -magnitude : magnitude;
   }
 
-  @Test
-  public void property_dtdAdd_preservesTotalMicros() throws Exception {
-    final SplittableRandom rng = new SplittableRandom(0xD7DADD0L);
+  /**
+   * Drive an op over {@code N} random pairs and assert that {@code reify(a OP b)} equals
+   * {@code reify(a) OP reify(b)}. {@code reify} is the homomorphism into a single signed
+   * long counter (total micros for DTD, total months for YMD). Used by the four simple
+   * arithmetic property tests; the dateTimeSubtract test below has a different shape.
+   */
+  @FunctionalInterface
+  private interface DurationOp<X> {
+    X apply(X a, X b) throws QueryException;
+  }
+
+  private static <X> void runRoundTripProperty(final long seed, final Function<SplittableRandom, X> rand,
+      final ToLongFunction<X> reify, final DurationOp<X> op, final LongBinaryOperator expectedOp, final String opSym)
+      throws Exception {
+    final SplittableRandom rng = new SplittableRandom(seed);
     for (int i = 0; i < 10_000; i++) {
-      final DTD a = randomDtd(rng);
-      final DTD b = randomDtd(rng);
-      final long expected = totalMicros(a) + totalMicros(b);
-      final DTD actual = a.add(b);
-      assertEquals(expected, totalMicros(actual), "iteration " + i + ": " + a + " + " + b + " = " + actual);
+      final X a = rand.apply(rng);
+      final X b = rand.apply(rng);
+      final long expected = expectedOp.applyAsLong(reify.applyAsLong(a), reify.applyAsLong(b));
+      final X actual = op.apply(a, b);
+      final int iter = i;
+      assertEquals(expected,
+                   reify.applyAsLong(actual),
+                   () -> "iteration " + iter + ": " + a + " " + opSym + " " + b + " = " + actual);
     }
   }
 
   @Test
+  public void property_dtdAdd_preservesTotalMicros() throws Exception {
+    runRoundTripProperty(0xD7DADD0L, DateTimeTest::randomDtd, DateTimeTest::totalMicros, DTD::add, Long::sum, "+");
+  }
+
+  @Test
   public void property_dtdSubtract_preservesTotalMicros() throws Exception {
-    final SplittableRandom rng = new SplittableRandom(0xD7D5BB1AC7L);
-    for (int i = 0; i < 10_000; i++) {
-      final DTD a = randomDtd(rng);
-      final DTD b = randomDtd(rng);
-      final long expected = totalMicros(a) - totalMicros(b);
-      final DTD actual = a.subtract(b);
-      assertEquals(expected, totalMicros(actual), "iteration " + i + ": " + a + " - " + b + " = " + actual);
-    }
+    runRoundTripProperty(0xD7D5BB1AC7L,
+                         DateTimeTest::randomDtd,
+                         DateTimeTest::totalMicros,
+                         DTD::subtract,
+                         (x, y) -> x - y,
+                         "-");
   }
 
   @Test
@@ -264,26 +287,17 @@ public final class DateTimeTest {
 
   @Test
   public void property_ymdAdd_preservesTotalMonths() throws Exception {
-    final SplittableRandom rng = new SplittableRandom(0x47DADD7L);
-    for (int i = 0; i < 10_000; i++) {
-      final YMD a = randomYmd(rng);
-      final YMD b = randomYmd(rng);
-      final long expected = totalMonths(a) + totalMonths(b);
-      final YMD actual = a.add(b);
-      assertEquals(expected, totalMonths(actual), "iteration " + i + ": " + a + " + " + b + " = " + actual);
-    }
+    runRoundTripProperty(0x47DADD7L, DateTimeTest::randomYmd, DateTimeTest::totalMonths, YMD::add, Long::sum, "+");
   }
 
   @Test
   public void property_ymdSubtract_preservesTotalMonths() throws Exception {
-    final SplittableRandom rng = new SplittableRandom(0x47D5BB1AC7L);
-    for (int i = 0; i < 10_000; i++) {
-      final YMD a = randomYmd(rng);
-      final YMD b = randomYmd(rng);
-      final long expected = totalMonths(a) - totalMonths(b);
-      final YMD actual = a.subtract(b);
-      assertEquals(expected, totalMonths(actual), "iteration " + i + ": " + a + " - " + b + " = " + actual);
-    }
+    runRoundTripProperty(0x47D5BB1AC7L,
+                         DateTimeTest::randomYmd,
+                         DateTimeTest::totalMonths,
+                         YMD::subtract,
+                         (x, y) -> x - y,
+                         "-");
   }
 
   /**
