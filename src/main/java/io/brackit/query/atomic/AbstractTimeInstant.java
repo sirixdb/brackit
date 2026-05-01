@@ -232,19 +232,40 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
     byte maxDayInMonth = maxDayInMonth(newYear, newMonth);
     int newDays = (getDay() > maxDayInMonth ? maxDayInMonth : getDay() < 1 ? 1 : getDay()) + durationDays + carry;
 
+    // Day-of-month is 1..maxDayInMonth (NOT 0..maxDayInMonth-1). Two pre-fix bugs:
+    //
+    //  * `newDays < 0` let newDays == 0 escape the loop, producing invalid 0th-of-month
+    //    dates (e.g. `2026-05-01 - PT2H` came out as `2026-05-00T23:00:00`).
+    //  * `maxDayInMonth(newYear, newMonth - 1)` computed the previous month's day count
+    //    before adjusting for January, where newMonth-1 == 0 — undefined month index.
+    //    The newYear/newMonth update happened AFTER the lookup, so a borrow at January
+    //    of any year sampled month 0 of the same year.
+    //
+    // Compute the previous/next (year, month) FIRST, then look up its day count.
     while (true) {
-      if (newDays < 0) {
-        newDays += maxDayInMonth(newYear, newMonth - 1);
-        carry = -1;
+      if (newDays < 1) {
+        int prevMonth = newMonth - 1;
+        int prevYear = newYear;
+        if (prevMonth < 1) {
+          prevMonth = 12;
+          prevYear -= 1;
+        }
+        newDays += maxDayInMonth(prevYear, prevMonth);
+        newMonth = prevMonth;
+        newYear = prevYear;
       } else if (newDays > maxDayInMonth(newYear, newMonth)) {
         newDays -= maxDayInMonth(newYear, newMonth);
-        carry = 1;
+        int nextMonth = newMonth + 1;
+        int nextYear = newYear;
+        if (nextMonth > 12) {
+          nextMonth = 1;
+          nextYear += 1;
+        }
+        newMonth = nextMonth;
+        newYear = nextYear;
       } else {
         break;
       }
-      temp = newMonth + carry;
-      newMonth = modulo(temp, 1, 13);
-      newYear += fQuotient(temp, 1, 13);
     }
 
     return create((short) newYear,

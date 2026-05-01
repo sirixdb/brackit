@@ -101,4 +101,79 @@ public final class DateTimeTest {
     DTD sevenDays = new DTD(false, (short) 7, (byte) 0, (byte) 0, 0);
     assertTrue(diff.cmp(sevenDays) < 0, "sub-second diff should be less than P7D, got " + diff);
   }
+
+  // =========================================================================
+  // DTD subtract regressions (addInternal sign-bit corruption + wrong newNegative)
+  // =========================================================================
+
+  /**
+   * Pre-fix this returned {@code -PT127H} because {@code newNegative} was decided only
+   * by the sign of {@code newDays}. When the days components cancelled, the routine
+   * stored the negative {@code newHours} byte directly in the DTD's high-bit-encoded
+   * sign field, producing {@code 0xFF & 0x7F == 127}.
+   */
+  @Test
+  public void dtdSubtract_smallerMinusLarger_yieldsCorrectNegativeMagnitude() throws Exception {
+    assertEquals("-PT1H", new DTD("PT1H").subtract(new DTD("PT2H")).toString());
+    assertEquals("-PT30M", new DTD("PT30M").subtract(new DTD("PT1H")).toString());
+    assertEquals("-PT1S", new DTD("PT0S").subtract(new DTD("PT1S")).toString());
+  }
+
+  @Test
+  public void dtdAdd_negativeOperand_renormalizesProperly() throws Exception {
+    assertEquals("PT1H", new DTD("-PT1H").add(new DTD("PT2H")).toString());
+    assertEquals("-PT1H", new DTD("PT1H").add(new DTD("-PT2H")).toString());
+    assertEquals("PT15M", new DTD("-PT30M").add(new DTD("PT45M")).toString());
+  }
+
+  // =========================================================================
+  // YMD subtract regressions (analogous addInternal bug)
+  // =========================================================================
+
+  /**
+   * Pre-fix this returned {@code -P1Y122M} because {@code newNegative} looked only at
+   * {@code newYears}, and the negate of months by {@code *= -1} on a {@code byte}
+   * collided with YMD's high-bit-encoded sign field.
+   */
+  @Test
+  public void ymdSubtract_smallerMinusLarger_yieldsCorrectNegativeMagnitude() throws Exception {
+    assertEquals("-P6M", new YMD("P6M").subtract(new YMD("P1Y")).toString());
+    assertEquals("-P1Y", new YMD("P1Y").subtract(new YMD("P2Y")).toString());
+  }
+
+  // =========================================================================
+  // DateTime + duration boundary cases (off-by-one borrow on January and day=0)
+  // =========================================================================
+
+  /**
+   * Pre-fix {@code 2026-05-01T01:00:00Z - PT2H} returned {@code 2026-05-00T23:00:00Z}
+   * (invalid 0th-of-May) because the day-borrow loop checked {@code newDays < 0}
+   * instead of {@code newDays < 1}.
+   */
+  @Test
+  public void dateTimeSubtract_dayTimeDuration_acrossMonthBoundary() throws Exception {
+    DateTime a = new DateTime("2026-05-01T01:00:00Z");
+    DTD twoHours = new DTD("PT2H");
+    assertEquals("2026-04-30T23:00:00Z", a.subtract(twoHours).toString());
+  }
+
+  /**
+   * Pre-fix subtracting from January would call {@code maxDayInMonth(year, 0)} (the
+   * lookup happened before the year/month wrap), producing wrong day counts for
+   * year-boundary borrows. Correct: roll to December of the previous year.
+   */
+  @Test
+  public void dateTimeSubtract_dayTimeDuration_acrossYearBoundary() throws Exception {
+    DateTime a = new DateTime("2025-01-01T01:00:00Z");
+    DTD twoHours = new DTD("PT2H");
+    assertEquals("2024-12-31T23:00:00Z", a.subtract(twoHours).toString());
+  }
+
+  /** Symmetric case: forward roll across year boundary (December into January). */
+  @Test
+  public void dateTimeAdd_dayTimeDuration_acrossYearBoundary() throws Exception {
+    DateTime a = new DateTime("2024-12-31T23:00:00Z");
+    DTD twoHours = new DTD("PT2H");
+    assertEquals("2025-01-01T01:00:00Z", a.add(twoHours).toString());
+  }
 }

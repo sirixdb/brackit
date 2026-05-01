@@ -261,36 +261,35 @@ public class YMD extends AbstractDuration {
   }
 
   private YMD addInternal(boolean n2, short y2, byte m2) throws QueryException {
-    boolean n1 = isNegative();
-    byte m1 = getMonths();
-    short y1 = getYears();
+    // Convert each operand to a signed total-months count, add, then renormalize. The
+    // previous field-by-field implementation chose the result's sign by looking only at
+    // newYears — incorrect when the years components cancelled but the months didn't
+    // (e.g. P6M - P1Y) — and `*= -1` on a `byte` truncated the negated months into the
+    // YMD's high-bit-encoded sign field, producing nonsense like `-P1Y122M`. Total-
+    // months arithmetic sidesteps both pitfalls.
+    final long total1 = totalMonths(isNegative(), getYears(), getMonths());
+    final long total2 = totalMonths(n2, y2, m2);
+    long sum = total1 + total2;
 
-    if (n1) {
-      m1 *= -1;
-      y1 *= -1;
-    }
-    if (n2) {
-      m2 *= -1;
-      y2 *= -1;
-    }
-
-    int newMonths = m1 + m2;
-    int newYears = y1 + y2;
-    boolean newNegative = newYears < 0;
-
+    final boolean newNegative = sum < 0;
     if (newNegative) {
-      newYears *= -1;
-      newMonths *= -1;
+      sum = -sum;
     }
 
-    newYears += (newMonths / 12);
-    newMonths %= 12;
+    final long newYears = sum / 12L;
+    final long newMonths = sum % 12L;
 
     if (newYears > Short.MAX_VALUE) {
       throw new QueryException(ErrorCode.ERR_OVERFLOW_UNDERFLOW_IN_DURATION);
     }
 
     return new YMD(newNegative, (short) newYears, (byte) newMonths);
+  }
+
+  /** Convert a (negative, years, months) tuple into total signed months. */
+  private static long totalMonths(final boolean negative, final short years, final byte months) {
+    final long total = (long) years * 12L + months;
+    return negative ? -total : total;
   }
 
   @Override

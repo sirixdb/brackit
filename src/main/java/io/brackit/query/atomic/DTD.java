@@ -391,51 +391,45 @@ public class DTD extends AbstractDuration {
   }
 
   private DTD addInternal(boolean n2, short d2, byte h2, byte m2, int mic2) throws QueryException {
-    boolean n1 = isNegative();
-    int mic1 = getMicros();
-    byte m1 = getMinutes();
-    byte h1 = getHours();
-    short d1 = getDays();
+    // Convert each operand to a signed total-micros count, add, then renormalize. The
+    // previous field-by-field implementation determined the result's sign from the
+    // sign of newDays alone — incorrectly when the days components cancelled but the
+    // sub-day components didn't (e.g. PT1H - PT2H = -PT1H), and it relied on `*= -1`
+    // on a `byte` which truncated negative-hour values into the DTD's high-bit-encoded
+    // sign field, producing `-PT127H`. This rewrite avoids both pitfalls — total-micros
+    // arithmetic is unconditionally correct for any input within long range.
+    final long total1 = totalMicros(isNegative(), getDays(), getHours(), getMinutes(), getMicros());
+    final long total2 = totalMicros(n2, d2, h2, m2, mic2);
+    long sum = total1 + total2;
 
-    if (n1) {
-      d1 *= -1;
-      h1 *= -1;
-      m1 *= -1;
-      mic1 *= -1;
-    }
-    if (n2) {
-      d2 *= -1;
-      h2 *= -1;
-      m2 *= -1;
-      mic2 *= -1;
-    }
-
-    int newDays = d1 + d2;
-    int newHours = h1 + h2;
-    int newMinutes = m1 + m2;
-    int newMicros = mic1 + mic2;
-    boolean newNegative = newDays < 0;
-
+    final boolean newNegative = sum < 0;
     if (newNegative) {
-      newDays *= -1;
-      newHours *= -1;
-      newMinutes *= -1;
-      newMicros *= -1;
+      sum = -sum;
     }
 
-    newMinutes += newMicros / 60000000;
-    newMicros %= 60000000;
-    newHours += newMinutes / 60;
-    newMinutes %= 60;
-    newDays += newHours / 24;
-    newHours %= 24;
+    final long newMicros = sum % MICROS_PER_MINUTE;
+    final long newMinutes = (sum / MICROS_PER_MINUTE) % 60L;
+    final long newHours = (sum / MICROS_PER_HOUR) % 24L;
+    final long newDays = sum / MICROS_PER_DAY;
 
     if (newDays > Short.MAX_VALUE) {
       throw new QueryException(ErrorCode.ERR_OVERFLOW_UNDERFLOW_IN_DURATION);
     }
 
-    return new DTD(newNegative, (short) newDays, (byte) newHours, (byte) newMinutes, newMicros);
+    return new DTD(newNegative, (short) newDays, (byte) newHours, (byte) newMinutes, (int) newMicros);
   }
+
+  /** Convert a (negative, days, hours, minutes, micros) tuple into total signed micros. */
+  private static long totalMicros(final boolean negative, final short days, final byte hours, final byte minutes,
+      final int micros) {
+    final long total = (long) days * MICROS_PER_DAY + (long) hours * MICROS_PER_HOUR + (long) minutes
+        * MICROS_PER_MINUTE + micros;
+    return negative ? -total : total;
+  }
+
+  private static final long MICROS_PER_MINUTE = 60_000_000L;
+  private static final long MICROS_PER_HOUR = MICROS_PER_MINUTE * 60L;
+  private static final long MICROS_PER_DAY = MICROS_PER_HOUR * 24L;
 
   @Override
   public boolean isNegative() {
