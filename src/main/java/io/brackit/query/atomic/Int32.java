@@ -232,7 +232,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
       return other.add(this);
     } else if (other instanceof DecNumeric) {
       return addBigDecimal(new BigDecimal(v), other.decimalValue(), false);
-    } else if (other instanceof Dbl) {
+    } else if (other instanceof DblNumeric) {
       return addDouble(v, other.doubleValue());
     } else {
       return addFloat(v, other.floatValue());
@@ -251,7 +251,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
       return other.negate().add(this);
     } else if (other instanceof DecNumeric) {
       return subtractBigDecimal(new BigDecimal(v), other.decimalValue(), false);
-    } else if (other instanceof Dbl) {
+    } else if (other instanceof DblNumeric) {
       return subtractDouble(v, other.doubleValue());
     } else {
       return subtractFloat(v, other.floatValue());
@@ -270,7 +270,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
       return other.multiply(this);
     } else if (other instanceof DecNumeric) {
       return multiplyBigDecimal(new BigDecimal(v), other.decimalValue(), true);
-    } else if (other instanceof Dbl) {
+    } else if (other instanceof DblNumeric) {
       return multiplyDouble(v, other.doubleValue());
     } else {
       return multiplyFloat(v, other.floatValue());
@@ -289,7 +289,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
       return other.add(this);
     } else if (other instanceof DecNumeric) {
       return divideBigDecimal(new BigDecimal(v), other.decimalValue(), false);
-    } else if (other instanceof Dbl) {
+    } else if (other instanceof DblNumeric) {
       return divideDouble(v, other.doubleValue());
     } else {
       return divideFloat(v, other.floatValue());
@@ -308,7 +308,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
       return other.add(this);
     } else if (other instanceof DecNumeric) {
       return idivideBigDecimal(new BigDecimal(v), other.decimalValue());
-    } else if (other instanceof Dbl) {
+    } else if (other instanceof DblNumeric) {
       return idivideDouble(v, other.doubleValue());
     } else {
       return idivideFloat(v, other.floatValue());
@@ -327,7 +327,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
       return other.add(this);
     } else if (other instanceof DecNumeric) {
       return modBigDecimal(new BigDecimal(v), other.decimalValue());
-    } else if (other instanceof Dbl) {
+    } else if (other instanceof DblNumeric) {
       return modDouble(v, other.doubleValue());
     } else {
       return divideFloat(v, other.floatValue());
