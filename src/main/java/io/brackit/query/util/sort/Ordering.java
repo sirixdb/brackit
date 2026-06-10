@@ -29,6 +29,7 @@ package io.brackit.query.util.sort;
 
 import java.util.Comparator;
 
+import io.brackit.query.atomic.AbstractNumeric;
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryContext;
@@ -141,8 +142,8 @@ public class Ordering implements Comparator<Tuple> {
         // () < NaN < values, 'empty greatest' orders values < NaN < (). Java's total order
         // (NaN greater than everything) silently produced the wrong order under 'empty least'
         // (the compiler default).
-        final boolean lNaN = isNaN(lAtomic);
-        final boolean rNaN = isNaN(rAtomic);
+        final boolean lNaN = AbstractNumeric.isNaN(lAtomic);
+        final boolean rNaN = AbstractNumeric.isNaN(rAtomic);
         if (lNaN || rNaN) {
           if (lNaN && rNaN) {
             continue; // NaN equals NaN for ordering purposes — next orderspec
@@ -163,13 +164,6 @@ public class Ordering implements Comparator<Tuple> {
         throw new RuntimeException(e);
       }
     }
-  }
-
-  private static boolean isNaN(Atomic a) {
-    // Only doubles/floats can be NaN — dispatch on those interfaces first so the hot
-    // comparator path never pays Int/Dec doubleValue() conversions.
-    return (a instanceof io.brackit.query.atomic.DblNumeric || a instanceof io.brackit.query.atomic.FltNumeric)
-        && Double.isNaN(((io.brackit.query.atomic.Numeric) a).doubleValue());
   }
 
   public void clear() {

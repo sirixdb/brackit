@@ -120,6 +120,16 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
     AbstractTimeInstant a = this;
     AbstractTimeInstant b = other;
 
+    // EQUAL offsets (overwhelmingly: both UTC) need no normalization — subtracting the same
+    // duration from both sides cannot change their order, and the mixed-normalization hazard
+    // canonicalize() guards against requires DIFFERING offsets. Skips two DateTime+add
+    // allocations per comparison on the sort/comparator hot path.
+    final DTD thisTz = a.getTimezone();
+    final DTD otherTz = b.getTimezone();
+    if (thisTz != null && otherTz != null && sameOffset(thisTz, otherTz)) {
+      return compareFields(a, b);
+    }
+
     // A value with ANY timezone — including UTC (Z / +00:00) — IS timezoned. The old guard treated
     // a 00:00 offset as "no timezone", so a UTC value compared against a non-UTC value wrongly took
     // the implicit-timezone ±14h undecidable path (e.g. "…01:00Z" eq "…03:00+02:00" -> false).
@@ -409,6 +419,40 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
     } else {
       return 31;
     }
+  }
+
+  /**
+   * Lexical year with xs:date/xs:dateTime zero padding to four digits; a negative (BCE) year
+   * keeps its magnitude: "-0001", not just "-".
+   */
+  static String yearString(final int year) {
+    final int absYear = Math.abs(year);
+    return (year < 0 ? "-" : "") + (absYear < 10 ? "000" : absYear < 100 ? "00" : absYear < 1000 ? "0" : "") + absYear;
+  }
+
+  /**
+   * Lexical fractional seconds for a micros remainder in (0, 1_000_000): six digits zero-padded
+   * with trailing zeros stripped — e.g. 250000 -> "25", 123 -> "000123". No Formatter and no
+   * regex; this sits on every sub-second temporal/duration stringValue().
+   */
+  static String fractionalSecondsString(int micros) {
+    int width = 6;
+    while (micros % 10 == 0) {
+      micros /= 10;
+      width--;
+    }
+    final char[] out = new char[width];
+    for (int i = width - 1; i >= 0; i--) {
+      out[i] = (char) ('0' + micros % 10);
+      micros /= 10;
+    }
+    return new String(out);
+  }
+
+  private static boolean sameOffset(final DTD a, final DTD b) {
+    return a.isNegative() == b.isNegative() && a.getDays() == b.getDays() && a.getHours() == b.getHours() && a
+                                                                                                              .getMinutes()
+        == b.getMinutes() && a.getMicros() == b.getMicros();
   }
 
   protected String timezoneString() {

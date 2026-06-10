@@ -117,11 +117,10 @@ public abstract class AbstractDuration extends AbstractAtomic implements Duratio
       out.append(seconds);
       int remainder = micros - seconds * 1000000;
       if (remainder != 0) {
-        // Fractional seconds = the micros remainder zero-padded to 6 digits with trailing zeros
-        // stripped. Appending the bare int dropped the leading zeros (50000 micros = 0.05s rendered
-        // as ".50000") and kept trailing zeros (".500000").
+        // Fractional seconds: see AbstractTimeInstant.fractionalSecondsString (bare-int append
+        // dropped leading zeros and kept trailing ones).
         out.append('.');
-        out.append(String.format("%06d", remainder).replaceAll("0+$", ""));
+        out.append(AbstractTimeInstant.fractionalSecondsString(remainder));
       }
       out.append('S');
       fieldSet = true;

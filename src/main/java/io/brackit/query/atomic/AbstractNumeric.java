@@ -42,6 +42,16 @@ import io.brackit.query.jdm.Type;
  * @author Sebastian Baechle
  */
 public abstract class AbstractNumeric extends AbstractAtomic implements Numeric {
+
+  /**
+   * Only doubles/floats can be NaN — dispatch on the DblNumeric/FltNumeric INTERFACES first
+   * (document-sourced wrapper atomics are not the concrete Dbl/Flt classes) so hot
+   * comparator/aggregation paths never pay an Int/Dec doubleValue() conversion.
+   */
+  public static boolean isNaN(final Atomic a) {
+    return (a instanceof DblNumeric || a instanceof FltNumeric) && Double.isNaN(((Numeric) a).doubleValue());
+  }
+
   /**
    *
    */

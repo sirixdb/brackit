@@ -188,6 +188,19 @@ public class Regex {
     int groupDepth = 0;
 
     for (char c : regex.toCharArray()) {
+      // Single carry-over chokepoint for whitespace-removal (x-flag) mode: every character except
+      // to-be-stripped whitespace (outside character classes) is appended exactly once here. The
+      // structural branches below previously each re-appended their character — a branch that
+      // forgot silently corrupted the rebuilt pattern.
+      if (removeWhitespace) {
+        if (charClassDepth == 0 && WHITESPACE.contains(c)) {
+          // Strip — and don't touch the boolean flags (an escape stays pending across stripped
+          // whitespace, matching the spec's remove-before-parse semantics).
+          continue;
+        }
+        sb.append(c);
+      }
+
       if (escaped) {
         if (backRef == 0 && c == '0') {
           throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, "Reference to group 0 not allowed");
@@ -195,9 +208,6 @@ public class Regex {
           if (charClassDepth > 0) {
             throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
                                      "Back references in character class expressions" + " are disallowed.");
-          }
-          if (removeWhitespace) {
-            sb.append(c);
           }
           backRef = backRef * 10 + Integer.parseInt(Character.toString(c));
           continue;
@@ -216,21 +226,12 @@ public class Regex {
       }
 
       if (c == '\\' && !escaped) {
-        // Not preceded by backslash. In whitespace-removal (x-flag) mode the rebuilt pattern is
-        // assembled char-by-char, so structural characters (\ ( ) [ ] and back-reference digits)
-        // must be re-appended here — dropping them silently changed the regex semantics.
-        if (removeWhitespace) {
-          sb.append(c);
-        }
         escaped = true;
         groupStart = false;
         continue;
       }
 
       if (c == '(' && !escaped) {
-        if (removeWhitespace) {
-          sb.append(c);
-        }
         groupStart = true;
         groupDepth++;
         escaped = false;
@@ -245,29 +246,12 @@ public class Regex {
           throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, "Invalid sequence of brackets.");
         }
         completeGroups++;
-        if (removeWhitespace) {
-          sb.append(c);
-        }
       } else if (c == '[' && !escaped) {
         charClassDepth++;
-        if (removeWhitespace) {
-          sb.append(c);
-        }
       } else if (c == ']' && !escaped) {
         if (--charClassDepth < 0) {
           throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, "Invalid sequence of brackets.");
         }
-        if (removeWhitespace) {
-          sb.append(c);
-        }
-      } else if (removeWhitespace) {
-        // Remove whitespace outside of character classes
-        if (charClassDepth == 0 && WHITESPACE.contains(c)) {
-          // Don't touch boolean flags
-          continue;
-        }
-
-        sb.append(c);
       }
 
       groupStart = false;

@@ -32,6 +32,7 @@ import io.brackit.query.QueryException;
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.atomic.Dbl;
 import io.brackit.query.atomic.Int64;
+import io.brackit.query.atomic.AbstractNumeric;
 import io.brackit.query.atomic.Numeric;
 import io.brackit.query.expr.Cast;
 import io.brackit.query.jdm.Item;
@@ -378,10 +379,10 @@ public class MinMaxAggregator implements Aggregator {
     // F&O §14.4: if the converted sequence contains NaN, fn:min/fn:max return NaN. The cmp-based
     // update below uses the total order (NaN above everything), which never SELECTS NaN — so
     // min((1, NaN)) silently returned 1. NaN is sticky once seen.
-    if (isNaN(s)) {
+    if (AbstractNumeric.isNaN(s)) {
       return s;
     }
-    if (isNaN(minmax)) {
+    if (AbstractNumeric.isNaN(minmax)) {
       return minmax;
     }
 
@@ -391,12 +392,5 @@ public class MinMaxAggregator implements Aggregator {
       minmax = s;
     }
     return minmax;
-  }
-
-  private static boolean isNaN(Atomic a) {
-    // Only doubles/floats can be NaN — interface-first dispatch keeps Int/Dec off the
-    // doubleValue() conversion in the per-item aggregation loop.
-    return (a instanceof io.brackit.query.atomic.DblNumeric || a instanceof io.brackit.query.atomic.FltNumeric)
-        && Double.isNaN(((Numeric) a).doubleValue());
   }
 }
