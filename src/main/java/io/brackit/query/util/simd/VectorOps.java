@@ -860,15 +860,18 @@ public final class VectorOps {
         DoubleVector v2 = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i + vectorLength * 2);
         DoubleVector v3 = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i + vectorLength * 3);
 
-        acc0 = acc0.blend(v0, v0.lt(acc0));
-        acc1 = acc1.blend(v1, v1.lt(acc1));
-        acc2 = acc2.blend(v2, v2.lt(acc2));
-        acc3 = acc3.blend(v3, v3.lt(acc3));
+        // lanewise(MIN) has Math.min semantics (NaN-propagating) — the previous compare+blend
+        // dropped NaN in every lane (NaN compares false), so min((..., NaN)) lost the NaN that
+        // F&O requires fn:min to return; results also differed between SIMD and scalar builds.
+        acc0 = acc0.lanewise(VectorOperators.MIN, v0);
+        acc1 = acc1.lanewise(VectorOperators.MIN, v1);
+        acc2 = acc2.lanewise(VectorOperators.MIN, v2);
+        acc3 = acc3.lanewise(VectorOperators.MIN, v3);
       }
 
-      DoubleVector combined = acc0.blend(acc1, acc1.lt(acc0));
-      combined = combined.blend(acc2, acc2.lt(combined));
-      combined = combined.blend(acc3, acc3.lt(combined));
+      DoubleVector combined = acc0.lanewise(VectorOperators.MIN, acc1);
+      combined = combined.lanewise(VectorOperators.MIN, acc2);
+      combined = combined.lanewise(VectorOperators.MIN, acc3);
       result = combined.reduceLanes(VectorOperators.MIN);
     } else {
       result = values[offset];
@@ -878,14 +881,12 @@ public final class VectorOps {
     for (; i < limit; i += vectorLength) {
       DoubleVector v = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i);
       DoubleVector accVec = DoubleVector.broadcast(DOUBLE_SPECIES, result);
-      accVec = accVec.blend(v, v.lt(accVec));
+      accVec = accVec.lanewise(VectorOperators.MIN, v);
       result = accVec.reduceLanes(VectorOperators.MIN);
     }
 
     for (; i < length; i++) {
-      if (values[offset + i] < result) {
-        result = values[offset + i];
-      }
+      result = Math.min(result, values[offset + i]); // NaN-propagating, unlike '<'
     }
 
     return result;
@@ -926,15 +927,16 @@ public final class VectorOps {
         DoubleVector v2 = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i + vectorLength * 2);
         DoubleVector v3 = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i + vectorLength * 3);
 
-        acc0 = acc0.blend(v0, v0.compare(VectorOperators.GT, acc0));
-        acc1 = acc1.blend(v1, v1.compare(VectorOperators.GT, acc1));
-        acc2 = acc2.blend(v2, v2.compare(VectorOperators.GT, acc2));
-        acc3 = acc3.blend(v3, v3.compare(VectorOperators.GT, acc3));
+        // lanewise(MAX) has Math.max semantics (NaN-propagating) — see minDouble.
+        acc0 = acc0.lanewise(VectorOperators.MAX, v0);
+        acc1 = acc1.lanewise(VectorOperators.MAX, v1);
+        acc2 = acc2.lanewise(VectorOperators.MAX, v2);
+        acc3 = acc3.lanewise(VectorOperators.MAX, v3);
       }
 
-      DoubleVector combined = acc0.blend(acc1, acc1.compare(VectorOperators.GT, acc0));
-      combined = combined.blend(acc2, acc2.compare(VectorOperators.GT, combined));
-      combined = combined.blend(acc3, acc3.compare(VectorOperators.GT, combined));
+      DoubleVector combined = acc0.lanewise(VectorOperators.MAX, acc1);
+      combined = combined.lanewise(VectorOperators.MAX, acc2);
+      combined = combined.lanewise(VectorOperators.MAX, acc3);
       result = combined.reduceLanes(VectorOperators.MAX);
     } else {
       result = values[offset];
@@ -944,14 +946,12 @@ public final class VectorOps {
     for (; i < limit; i += vectorLength) {
       DoubleVector v = DoubleVector.fromArray(DOUBLE_SPECIES, values, offset + i);
       DoubleVector accVec = DoubleVector.broadcast(DOUBLE_SPECIES, result);
-      accVec = accVec.blend(v, v.compare(VectorOperators.GT, accVec));
+      accVec = accVec.lanewise(VectorOperators.MAX, v);
       result = accVec.reduceLanes(VectorOperators.MAX);
     }
 
     for (; i < length; i++) {
-      if (values[offset + i] > result) {
-        result = values[offset + i];
-      }
+      result = Math.max(result, values[offset + i]); // NaN-propagating, unlike '>'
     }
 
     return result;

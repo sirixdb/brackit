@@ -118,7 +118,6 @@ public class TupleSort {
     sortBuffer();
 
     if ((lastInRun != null) && (comparator.compare(lastInRun, buffer[0]) <= 0)) {
-      System.out.println("append to run");
       appendToRun();
       return;
     }

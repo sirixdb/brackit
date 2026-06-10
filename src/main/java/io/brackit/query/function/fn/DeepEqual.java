@@ -178,32 +178,28 @@ public class DeepEqual extends AbstractFunction {
   }
 
   private static boolean childrenDeepEqual(Node<?> a, Node<?> b) {
-    Node<?> aChild = a.getFirstChild();
-    Node<?> bChild = b.getFirstChild();
+    // Comments/PIs are ignored by fn:deep-equal. Skip them on EACH side independently —
+    // the old loops only ran while BOTH cursors were non-null, so deep-equal(<x/>,
+    // <x><!--c--></x>) saw the un-skipped trailing comment and returned false.
+    Node<?> aChild = skipIgnorableSiblings(a.getFirstChild());
+    Node<?> bChild = skipIgnorableSiblings(b.getFirstChild());
 
     while (aChild != null && bChild != null) {
-      while (aChild.getKind() != Kind.ELEMENT && aChild.getKind() != Kind.TEXT) {
-        aChild = aChild.getNextSibling();
-        if (aChild == null) {
-          break;
-        }
+      if (!nodeDeepEquals(aChild, bChild)) {
+        return false;
       }
-      while (bChild.getKind() != Kind.ELEMENT && bChild.getKind() != Kind.TEXT) {
-        bChild = bChild.getNextSibling();
-        if (bChild == null) {
-          break;
-        }
-      }
-      if (aChild != null && bChild != null) {
-        if (!nodeDeepEquals(aChild, bChild)) {
-          return false;
-        }
-        aChild = aChild.getNextSibling();
-        bChild = bChild.getNextSibling();
-      }
+      aChild = skipIgnorableSiblings(aChild.getNextSibling());
+      bChild = skipIgnorableSiblings(bChild.getNextSibling());
     }
 
     return aChild == null && bChild == null;
+  }
+
+  private static Node<?> skipIgnorableSiblings(Node<?> n) {
+    while (n != null && n.getKind() != Kind.ELEMENT && n.getKind() != Kind.TEXT) {
+      n = n.getNextSibling();
+    }
+    return n;
   }
 
   private static Bool attributesDeepEqual(Node<?> a, Node<?> b) throws DocumentException {

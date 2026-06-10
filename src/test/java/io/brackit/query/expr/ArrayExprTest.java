@@ -29,10 +29,16 @@ package io.brackit.query.expr;
 
 import io.brackit.query.XQueryBaseTest;
 import io.brackit.query.atomic.Dec;
+import io.brackit.query.atomic.Int32;
 import io.brackit.query.jdm.Sequence;
+import io.brackit.query.QueryException;
 import io.brackit.query.ResultChecker;
 import io.brackit.query.Query;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author Johannes Lichtenberger
@@ -42,5 +48,34 @@ public class ArrayExprTest extends XQueryBaseTest {
   public void complexArray() {
     Sequence result = new Query("[ 1, '2', 3, (1 > 0) cast as xs:boolean, 1.2343 + 5, =(1,2,3)  ][4]").execute(ctx);
     ResultChecker.dCheck(new Dec("6.2343"), result);
+  }
+
+  @Test
+  public void inBoundsIndex() {
+    ResultChecker.dCheck(new Int32(30), new Query("[10,20,30,40,50][2]").execute(ctx));
+  }
+
+  @Test
+  public void negativeIndexCountsFromEnd() {
+    ResultChecker.dCheck(new Int32(50), new Query("[10,20,30,40,50][-1]").execute(ctx));
+  }
+
+  @Test
+  public void positiveOutOfBoundsIsEmpty() {
+    // Was: raw IndexOutOfBoundsException leaking as an HTTP 500.
+    assertNull(new Query("[10,20,30,40,50][100]").execute(ctx));
+  }
+
+  @Test
+  public void largePositiveIndexIsEmptyNotNegative() {
+    // Was: 3000000000 truncated by intValue() to a negative int -> bogus "Illegal negative index".
+    assertNull(new Query("[10,20,30,40,50][3000000000]").execute(ctx));
+  }
+
+  @Test
+  public void negativeOvershootStillThrows() {
+    // A negative index past the start is a genuine error and must report a clean FORG0006.
+    final var e = assertThrows(QueryException.class, () -> new Query("[10,20,30,40,50][-100]").execute(ctx));
+    assertEquals("FORG0006", e.getCode().getLocalName());
   }
 }

@@ -28,6 +28,7 @@
 package io.brackit.query.atomic;
 
 import java.util.Arrays;
+import java.util.Base64;
 
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryException;
@@ -59,114 +60,15 @@ public class B64 extends AbstractAtomic {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast %s to xs:base64Binary", str);
     }
 
-    int size = 0;
-    int length = str.length();
-    byte[] bytes = new byte[noOfOctets(str)];
-
-    for (int charPos = 0; charPos < length;) {
-      char c1 = str.charAt(charPos++);
-      char c2 = str.charAt(charPos++);
-      char c3 = str.charAt(charPos++);
-      char c4 = str.charAt(charPos++);
-
-      bytes[size++] = (byte) b64(str, c1);
-      bytes[size++] = (byte) (c3 != '=' ? b64(str, c2) : b04(str, c2));
-
-      if (c4 != '=') {
-        bytes[size++] = (byte) b64(str, c3);
-        bytes[size++] = (byte) b64(str, c4);
-      } else {
-        if (c3 != '=') {
-          bytes[size] = (byte) b16(str, c3);
-        }
-
-        if (charPos != length) {
-          throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast %s to xs:base64Binary", str);
-        }
-        break;
-      }
+    // Store the DECODED OCTETS (consistent with the byte[] constructor and with getBytes() being
+    // read as octets by hexBinary/string conversions). The previous hand-rolled decoder stored the
+    // raw 6-bit alphabet indices instead, corrupting the value on every round-trip and cross-type
+    // conversion.
+    try {
+      this.bytes = Base64.getDecoder().decode(str);
+    } catch (final IllegalArgumentException e) {
+      throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast %s to xs:base64Binary", str);
     }
-    this.bytes = bytes;
-  }
-
-  private int b04(String str, char c) throws QueryException {
-    int v;
-    if (c == 'A')
-      v = 0;
-    else if (c == 'Q')
-      v = 16;
-    else if (c == 'g')
-      v = 32;
-    else if (c == 'w')
-      v = 48;
-    else
-      throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast %s to xs:base64Binary", str);
-    return v;
-  }
-
-  private int b16(String str, char c) throws QueryException {
-    int v;
-    if (c == 'A')
-      v = 0;
-    else if (c == 'E')
-      v = 4;
-    else if (c == 'I')
-      v = 8;
-    else if (c == 'M')
-      v = 12;
-    else if (c == 'Q')
-      v = 16;
-    else if (c == 'U')
-      v = 20;
-    else if (c == 'Y')
-      v = 24;
-    else if (c == 'c')
-      v = 28;
-    else if (c == 'g')
-      v = 32;
-    else if (c == 'k')
-      v = 36;
-    else if (c == 'o')
-      v = 40;
-    else if (c == 's')
-      v = 44;
-    else if (c == 'w')
-      v = 48;
-    else if (c == '0')
-      v = 52;
-    else if (c == '4')
-      v = 56;
-    else if (c == '8')
-      v = 60;
-    else
-      throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast %s to xs:base64Binary", str);
-    return v;
-  }
-
-  private int noOfOctets(String str) {
-    int dataLength = str.length();
-    if (dataLength > 0 && str.charAt(dataLength - 1) == '=')
-      dataLength--;
-    if (dataLength > 0 && str.charAt(dataLength - 1) == '=')
-      dataLength--;
-    return dataLength;
-  }
-
-  private int b64(String str, char c) throws QueryException {
-    int v;
-    if (c >= '0' && c <= '9')
-      v = 52 + c - 48;
-    else if (c >= 'A' && c <= 'Z')
-      v = c - 65;
-    else if (c >= 'a' && c <= 'z')
-      v = 26 + c - 87;
-    else if (c == '+')
-      v = 62;
-    else if (c == '/')
-      v = 63;
-    else
-      throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast %s to xs:base64Binary", str);
-    return v;
   }
 
   @Override
@@ -220,13 +122,8 @@ public class B64 extends AbstractAtomic {
 
   @Override
   public String stringValue() {
-    StringBuilder out = new StringBuilder();
-    for (byte aByte : bytes) {
-      int v = aByte & 255;
-      char c = (char) (v < 26 ? v + 65 : v < 52 ? v - 26 + 87 : v < 62 ? v - 52 + 48 : v == 62 ? '+' : '/');
-      out.append(c);
-    }
-    return out.toString();
+    // Re-encode the decoded octets to canonical base64 (with '=' padding).
+    return Base64.getEncoder().encodeToString(bytes);
   }
 
   @Override

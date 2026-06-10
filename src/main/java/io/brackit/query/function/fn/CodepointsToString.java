@@ -77,7 +77,9 @@ public class CodepointsToString extends AbstractFunction {
                                  codePoint);
       }
 
-      sb.append(Character.toChars(codePoint)[0]);
+      // appendCodePoint emits BOTH UTF-16 units of a non-BMP character; toChars(cp)[0] dropped the
+      // low surrogate, corrupting any codepoint above U+FFFF.
+      sb.appendCodePoint(codePoint);
       item = it.next();
     }
 

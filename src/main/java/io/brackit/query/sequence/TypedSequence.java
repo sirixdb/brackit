@@ -167,6 +167,16 @@ public class TypedSequence extends LazySequence {
       // short-circuit wrapping of single item parameter
       ItemType itemType = sType.getItemType();
 
+      // A single item can NEVER satisfy the Zero cardinality (empty-sequence()) — the old fast
+      // path checked only itemType.matches, so `1 instance of empty-sequence()` was true.
+      // (Use == Zero, NOT !moreThanZero(): moreThanZero() means "at least one REQUIRED", so it
+      // is false for the ? and * cardinalities, which a single item DOES satisfy.)
+      if (sType.getCardinality() == io.brackit.query.jdm.type.Cardinality.Zero) {
+        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                                 "Single item where empty sequence expected: %s",
+                                 s);
+      }
+
       if (!itemType.matches((Item) s)) {
         throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                  "Item of invalid type %s in typed sequence (expected %s): %s",
@@ -190,6 +200,13 @@ public class TypedSequence extends LazySequence {
     } else {
       // short-circuit wrapping of single item parameter
       ItemType itemType = sType.getItemType();
+
+      // A single item can NEVER satisfy the Zero cardinality — see toTypedSequence.
+      if (sType.getCardinality() == io.brackit.query.jdm.type.Cardinality.Zero) {
+        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                                 "Single item where empty sequence expected: %s",
+                                 item);
+      }
 
       if (!itemType.matches(item)) {
         throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,

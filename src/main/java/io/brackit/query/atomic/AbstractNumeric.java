@@ -146,7 +146,7 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
     long r = a + b;
     if (b >= 0 ? r < a : r > a) {
       // overflow escalate to BigDecimal
-      new Int(new BigDecimal(a).add(new BigDecimal(b)));
+      return new Int(new BigDecimal(a).add(new BigDecimal(b)));
     }
     return new Int64(r);
   }
@@ -176,7 +176,7 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
     long r = a - b;
     if (b >= 0 ? r >= a : r <= a) {
       // overflow escalate to BigDecimal
-      new Int(new BigDecimal(a).subtract(new BigDecimal(b)));
+      return new Int(new BigDecimal(a).subtract(new BigDecimal(b)));
     }
     return new Int64(r);
   }
@@ -206,7 +206,7 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
     long r = a * b;
     if (b != 0 && r / b != a) {
       // overflow escalate to BigDecimal
-      new Int(new BigDecimal(a).multiply(new BigDecimal(b)));
+      return new Int(new BigDecimal(a).multiply(new BigDecimal(b)));
     }
     return new Int64(r);
   }
@@ -338,12 +338,13 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
     return new Int64(a % b);
   }
 
-  protected final Numeric modBigDecimal(BigDecimal a, BigDecimal b) throws QueryException {
+  protected final Numeric modBigDecimal(BigDecimal a, BigDecimal b, boolean isDecimal) throws QueryException {
     if (b.compareTo(BigDecimal.ZERO) == 0) {
       throw new QueryException(ErrorCode.ERR_DIVISION_BY_ZERO);
     }
 
-    return new Int(a.remainder(b));
+    // mod yields xs:decimal when either operand is a decimal, xs:integer when both are integers.
+    return isDecimal ? new Dec(a.remainder(b)) : new Int(a.remainder(b));
   }
 
   protected final String killTrailingZeros(String s) {

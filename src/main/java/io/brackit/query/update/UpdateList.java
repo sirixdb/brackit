@@ -76,7 +76,11 @@ public final class UpdateList {
     // application which is determined by their type.
     // The resulting list is then checked if some ops
     // are performed twice or more on the same target node
-    final var orderByTypeCmp = Comparator.comparing(UpdateOp::getType);
+    // Sort by the XQUF phase PRIORITY, not enum declaration order (OpType declares
+    // REPLACE_NODE first, so Comparator.comparing(getType) applied replaceNode before
+    // the inserts the spec runs first). List.sort is stable: source order survives
+    // within a phase.
+    final var orderByTypeCmp = Comparator.comparingInt((UpdateOp op) -> op.getType().getPriority());
     ops.sort(orderByTypeCmp);
 
     for (int i = 0, size = ops.size(); i < size; i++) {

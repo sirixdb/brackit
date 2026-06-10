@@ -47,6 +47,12 @@ public class StringLength extends AbstractFunction {
 
   @Override
   public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
-    return (args[0] != null) ? new Int32(((Item) args[0]).atomize().stringValue().length()) : Int32.ZERO;
+    if (args[0] == null) {
+      return Int32.ZERO;
+    }
+    // fn:string-length counts CHARACTERS (codepoints), not UTF-16 units — a non-BMP character
+    // counts as one, not two.
+    final String s = ((Item) args[0]).atomize().stringValue();
+    return new Int32(s.codePointCount(0, s.length()));
   }
 }

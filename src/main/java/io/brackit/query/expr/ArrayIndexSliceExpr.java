@@ -168,12 +168,11 @@ public final class ArrayIndexSliceExpr implements Expr {
 
     Item item;
     final var buffer = new GapList<Item>(array.len());
-    boolean first = true;
     while ((item = it.next()) != null && i < upperBoundIndex) {
-      if (first) {
-        first = false;
-        buffer.add(item);
-      } else if (i % step == 0) {
+      // Step counts from the LOWER BOUND, not absolute index 0: with lower=1, step=2 over
+      // [1,2,3,4,5] the old `i % step == 0` kept indices {1(first),2,4} → [2,3,5]; the correct
+      // kept set is {1,3} → [2,4].
+      if ((i - lowerBoundIndex) % step == 0) {
         buffer.add(item);
       }
       i++;

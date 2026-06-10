@@ -375,11 +375,28 @@ public class MinMaxAggregator implements Aggregator {
                                type);
     }
 
+    // F&O §14.4: if the converted sequence contains NaN, fn:min/fn:max return NaN. The cmp-based
+    // update below uses the total order (NaN above everything), which never SELECTS NaN — so
+    // min((1, NaN)) silently returned 1. NaN is sticky once seen.
+    if (isNaN(s)) {
+      return s;
+    }
+    if (isNaN(minmax)) {
+      return minmax;
+    }
+
     int res = minmax.cmp(s);
 
     if ((min) ? (res > 0) : (res < 0)) {
       minmax = s;
     }
     return minmax;
+  }
+
+  private static boolean isNaN(Atomic a) {
+    // Only doubles/floats can be NaN — interface-first dispatch keeps Int/Dec off the
+    // doubleValue() conversion in the per-item aggregation loop.
+    return (a instanceof io.brackit.query.atomic.DblNumeric || a instanceof io.brackit.query.atomic.FltNumeric)
+        && Double.isNaN(((Numeric) a).doubleValue());
   }
 }

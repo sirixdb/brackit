@@ -80,20 +80,23 @@ public abstract class ConstructedNodeBuilder {
   protected void buildContentSequence(QueryContext ctx, ContentSink sink, Sequence source) {
     if (source != null) {
       if (source instanceof Item) {
-        addContent(ctx, sink, (Item) source, null);
+        addContent(ctx, sink, (Item) source, null, false);
       } else {
         Node<?> prevSibling = null;
+        boolean prevAtomic = false;
         Item next;
         try (Iter s = source.iterate()) {
           while ((next = s.next()) != null) {
-            prevSibling = addContent(ctx, sink, next, prevSibling);
+            prevSibling = addContent(ctx, sink, next, prevSibling, prevAtomic);
+            prevAtomic = !(next instanceof Node<?>);
           }
         }
       }
     }
   }
 
-  private Node<?> addContent(QueryContext ctx, ContentSink sink, Item item, Node<?> prevSibling) {
+  private Node<?> addContent(QueryContext ctx, ContentSink sink, Item item, Node<?> prevSibling,
+      boolean prevWasAtomic) {
     if (item instanceof Node<?>) {
       Node<?> contentNode = (Node<?>) item;
 
@@ -107,16 +110,23 @@ public abstract class ConstructedNodeBuilder {
         try (Stream<? extends Node<?>> children = contentNode.getChildren()) {
           Node<?> child;
           while ((child = children.next()) != null) {
-            sink.addNode(ctx, prevSibling = child);
+            prevSibling = sink.addNode(ctx, child);
           }
         }
         return prevSibling;
       } else {
-        sink.addNode(ctx, contentNode);
-        return contentNode;
+        // Thread the SINK's node (the appended copy), not the source node: a later
+        // atomic-merge against prevSibling must mutate the CONSTRUCTED tree. Returning the
+        // source meant 'element e { $textNode, "b" }' silently rewrote the SOURCE document
+        // (or threw on a read-only store) while the constructed element never got "b".
+        return sink.addNode(ctx, contentNode);
       }
     } else {
-      if (prevSibling != null && prevSibling.getKind() == Kind.TEXT) {
+      // XQ 3.1 §3.9.1.3: ADJACENT ATOMICS are joined into one text node with a single space.
+      // An atomic following a text NODE item gets its OWN text node — adjacent text nodes are
+      // then merged by the sink's insert logic with plain concatenation (no space). The old
+      // code space-merged after ANY text node, inserting a separator the spec doesn't allow.
+      if (prevWasAtomic && prevSibling != null && prevSibling.getKind() == Kind.TEXT) {
         prevSibling.setValue(new Str(prevSibling.getValue().stringValue() + " " + ((Atomic) item).stringValue()));
         return prevSibling;
       } else {

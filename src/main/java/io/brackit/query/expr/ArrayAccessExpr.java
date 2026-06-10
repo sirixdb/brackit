@@ -90,17 +90,28 @@ public final class ArrayAccessExpr implements Expr {
                                Type.INR);
     }
 
-    if (numericIndex.intValue() < 0) {
-      final int index = array.len() + numericIndex.intValue();
+    // Use the full long value: a positive index beyond int range (e.g. 3000000000) must NOT be
+    // truncated to a negative int (which previously produced a bogus "Illegal negative index").
+    final long idx = numericIndex.longValue();
 
-      if (index < 0) {
-        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Illegal negative index: " + index);
+    if (idx < 0) {
+      // Negative indices count from the end (-1 == last). Overshooting the start is an error.
+      final long fromEnd = array.len() + idx;
+
+      if (fromEnd < 0) {
+        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Illegal negative index: " + fromEnd);
       }
 
-      return array.at(array.len() + numericIndex.intValue());
+      return array.at((int) fromEnd);
     }
 
-    return array.at(numericIndex);
+    // A positive index at or beyond the array length is out of bounds -> empty sequence (path-style,
+    // matching the slice operator), rather than truncating or leaking a raw IndexOutOfBoundsException.
+    if (idx >= array.len()) {
+      return null;
+    }
+
+    return array.at((int) idx);
   }
 
   private LazySequence getLazySequence(final QueryContext ctx, final Tuple tuple, final Sequence sequence) {

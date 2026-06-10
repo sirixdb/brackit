@@ -160,7 +160,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
 
   @Override
   public boolean booleanValue() throws QueryException {
-    return ((v != 0) && (v != Integer.MAX_VALUE) && (v != Integer.MIN_VALUE));
+    return v != 0;
   }
 
   @Override
@@ -231,7 +231,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
       }
       return other.add(this);
     } else if (other instanceof DecNumeric) {
-      return addBigDecimal(new BigDecimal(v), other.decimalValue(), false);
+      return addBigDecimal(new BigDecimal(v), other.decimalValue(), true);
     } else if (other instanceof DblNumeric) {
       return addDouble(v, other.doubleValue());
     } else {
@@ -250,7 +250,7 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
       }
       return other.negate().add(this);
     } else if (other instanceof DecNumeric) {
-      return subtractBigDecimal(new BigDecimal(v), other.decimalValue(), false);
+      return subtractBigDecimal(new BigDecimal(v), other.decimalValue(), true);
     } else if (other instanceof DblNumeric) {
       return subtractDouble(v, other.doubleValue());
     } else {
@@ -286,7 +286,8 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
         }
         return divideLong(v, other.longValue());
       }
-      return other.add(this);
+      // bare Int (IntNumeric but not LonNumeric): integer-valued, route through the decimal path
+      return divideBigDecimal(new BigDecimal(v), other.decimalValue(), false);
     } else if (other instanceof DecNumeric) {
       return divideBigDecimal(new BigDecimal(v), other.decimalValue(), false);
     } else if (other instanceof DblNumeric) {
@@ -305,7 +306,8 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
         }
         return idivideLong(v, other.longValue());
       }
-      return other.add(this);
+      // bare Int (IntNumeric but not LonNumeric): integer-valued, route through the decimal path
+      return idivideBigDecimal(new BigDecimal(v), other.decimalValue());
     } else if (other instanceof DecNumeric) {
       return idivideBigDecimal(new BigDecimal(v), other.decimalValue());
     } else if (other instanceof DblNumeric) {
@@ -324,13 +326,14 @@ public class Int32 extends AbstractNumeric implements LonNumeric {
         }
         return modLong(v, other.longValue());
       }
-      return other.add(this);
+      // bare Int (IntNumeric but not LonNumeric): integer-valued, integer remainder
+      return modBigDecimal(new BigDecimal(v), other.decimalValue(), false);
     } else if (other instanceof DecNumeric) {
-      return modBigDecimal(new BigDecimal(v), other.decimalValue());
+      return modBigDecimal(new BigDecimal(v), other.decimalValue(), true);
     } else if (other instanceof DblNumeric) {
       return modDouble(v, other.doubleValue());
     } else {
-      return divideFloat(v, other.floatValue());
+      return modFloat(v, other.floatValue());
     }
   }
 

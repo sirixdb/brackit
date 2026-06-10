@@ -57,7 +57,13 @@ public class Dec extends AbstractNumeric implements DecNumeric {
 
   public Dec(String str) throws QueryException {
     try {
-      this.v = new BigDecimal(Whitespace.collapseTrimOnly(str));
+      final String s = Whitespace.collapseTrimOnly(str);
+      // xs:decimal's lexical space has NO exponent (that belongs to xs:double / xs:float), but
+      // BigDecimal accepts "1.0E2" -> 100. Reject exponent notation so the cast fails per spec.
+      if (s.indexOf('e') >= 0 || s.indexOf('E') >= 0) {
+        throw new NumberFormatException("exponent not allowed in the lexical space of xs:decimal");
+      }
+      this.v = new BigDecimal(s);
     } catch (Exception e) {
       throw new QueryException(e, ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast %s to xs:decimal", str);
     }
@@ -224,7 +230,8 @@ public class Dec extends AbstractNumeric implements DecNumeric {
   @Override
   public Numeric mod(Numeric other) throws QueryException {
     if (other instanceof DecNumeric) {
-      return modBigDecimal(v, other.decimalValue());
+      // this is xs:decimal -> the result is decimal regardless of the other operand's kind.
+      return modBigDecimal(v, other.decimalValue(), true);
     } else if (other instanceof DblNumeric) {
       return modDouble(v.doubleValue(), other.doubleValue());
     } else {
@@ -244,7 +251,7 @@ public class Dec extends AbstractNumeric implements DecNumeric {
 
   @Override
   public Numeric abs() throws QueryException {
-    return v.signum() >= 0 ? this : new Int(v.negate());
+    return v.signum() >= 0 ? this : new Dec(v.negate());
   }
 
   @Override

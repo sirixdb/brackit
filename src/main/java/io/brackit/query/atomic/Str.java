@@ -176,8 +176,16 @@ public class Str extends AbstractAtomic {
   public boolean eq(Atomic other) throws QueryException {
     if (this == other)
       return true;
-    if (!(other instanceof Str s))
+    if (!(other instanceof Str s)) {
+      // Untyped atomics and xs:anyURI compare as strings, mirroring cmp(): general comparisons
+      // deliberately skip the Una->Str cast upstream as an optimization, and xs:anyURI promotes
+      // to xs:string. Returning false here made '"literal" = $untypedNode' ALWAYS false (while
+      // the reverse direction worked via Una's cmp fallback) and broke anyURI '=' equality.
+      if (other instanceof Una || other instanceof AnyURI) {
+        return str.equals(other.stringValue());
+      }
       return false;
+    }
 
     // Quick length check on underlying strings
     if (str.length() != s.str.length())

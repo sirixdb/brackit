@@ -123,13 +123,31 @@ public class Ordering implements Comparator<Tuple> {
         Atomic lAtomic = (Atomic) o1.get(pos);
         Atomic rAtomic = (Atomic) o2.get(pos);
 
+        if (lAtomic == null && rAtomic == null) {
+          // Both keys empty: equal on this orderspec — consult the next one. Falling through
+          // (the old behavior) returned ±1 for BOTH compare(a,b) and compare(b,a): secondary
+          // keys were never consulted and TimSort could throw "Comparison method violates
+          // its general contract!".
+          continue;
+        }
         if (lAtomic == null) {
-          if (rAtomic != null) {
-            return (modifier[i].EMPTY_LEAST) ? -1 : 1;
-          }
+          return (modifier[i].EMPTY_LEAST) ? -1 : 1;
         }
         if (rAtomic == null) {
           return (modifier[i].EMPTY_LEAST) ? 1 : -1;
+        }
+
+        // XQ 3.1 §3.13.4: NaN sits NEXT TO the empty sequence — 'empty least' orders
+        // () < NaN < values, 'empty greatest' orders values < NaN < (). Java's total order
+        // (NaN greater than everything) silently produced the wrong order under 'empty least'
+        // (the compiler default).
+        final boolean lNaN = isNaN(lAtomic);
+        final boolean rNaN = isNaN(rAtomic);
+        if (lNaN || rNaN) {
+          if (lNaN && rNaN) {
+            continue; // NaN equals NaN for ordering purposes — next orderspec
+          }
+          return (modifier[i].EMPTY_LEAST) ? (lNaN ? -1 : 1) : (lNaN ? 1 : -1);
         }
 
         int res = lAtomic.cmp(rAtomic);
@@ -145,6 +163,13 @@ public class Ordering implements Comparator<Tuple> {
         throw new RuntimeException(e);
       }
     }
+  }
+
+  private static boolean isNaN(Atomic a) {
+    // Only doubles/floats can be NaN — dispatch on those interfaces first so the hot
+    // comparator path never pays Int/Dec doubleValue() conversions.
+    return (a instanceof io.brackit.query.atomic.DblNumeric || a instanceof io.brackit.query.atomic.FltNumeric)
+        && Double.isNaN(((io.brackit.query.atomic.Numeric) a).doubleValue());
   }
 
   public void clear() {

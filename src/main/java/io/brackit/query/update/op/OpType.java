@@ -31,7 +31,14 @@ package io.brackit.query.update.op;
  * @author Sebastian Baechle
  */
 public enum OpType {
-  REPLACE_NODE(-1),
+  // Priorities encode the XQUF 1.0 §3.2.2 apply order:
+  // phase 1: insertInto/insertAttributes/replaceValue/rename (0-3)
+  // phase 2: insertBefore/insertAfter/insertIntoAsFirst/insertIntoAsLast (4-7)
+  // phase 3: replaceNode (8)  — was -1, which (combined with sorting by enum order) applied
+  //          replaceNode FIRST: a sibling insert relative to a node that a replace detached
+  //          then targeted a detached node (lost content).
+  // phase 4: replaceElementContent (9), phase 5: delete (10)
+  REPLACE_NODE(8),
 
   INSERT_INTO(0),
 

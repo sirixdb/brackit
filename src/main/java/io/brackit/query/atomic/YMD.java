@@ -201,23 +201,11 @@ public class YMD extends AbstractDuration {
       throw new QueryException(ErrorCode.ERR_OVERFLOW_UNDERFLOW_IN_DURATION);
     }
 
-    long newYears = Math.round(getYears() * v);
-    long newMonths = Math.round(getMonths() * v);
-    boolean newNegative = (isNegative() ^ (v < 0));
-
-    if (isNegative() ^ newNegative) {
-      newYears *= -1;
-      newMonths *= -1;
-    }
-
-    newYears += (newMonths / 12);
-    newMonths %= 12;
-
-    if (newYears > Short.MAX_VALUE) {
-      throw new QueryException(ErrorCode.ERR_OVERFLOW_UNDERFLOW_IN_DURATION);
-    }
-
-    return new YMD(newNegative, (short) newYears, (byte) newMonths);
+    // Scale the TOTAL month count, not years and months independently — e.g. P1Y * 1.5 is P1Y6M,
+    // not P2Y (round(1*1.5) years + round(0*1.5) months).
+    final long signedMonths = (isNegative() ? -1L : 1L) * (((long) getYears()) * 12 + getMonths());
+    final long resultMonths = Math.round(signedMonths * v);
+    return ymdFromSignedMonths(resultMonths);
   }
 
   public YMD divide(Dbl dbl) throws QueryException {
@@ -230,23 +218,23 @@ public class YMD extends AbstractDuration {
       return new YMD(false, (short) 0, (byte) 0);
     }
 
-    long newYears = Math.round(getYears() / v);
-    long newMonths = Math.round(getMonths() / v);
-    boolean newNegative = (isNegative() ^ (v < 0));
+    final long signedMonths = (isNegative() ? -1L : 1L) * (((long) getYears()) * 12 + getMonths());
+    final long resultMonths = Math.round(signedMonths / v);
+    return ymdFromSignedMonths(resultMonths);
+  }
 
-    if (isNegative() ^ newNegative) {
-      newYears *= -1;
-      newMonths *= -1;
-    }
+  /** Build a normalized {@link YMD} from a signed total-month count. */
+  private static YMD ymdFromSignedMonths(final long signedMonths) throws QueryException {
+    final boolean negative = signedMonths < 0;
+    final long magnitude = Math.abs(signedMonths);
+    final long years = magnitude / 12;
+    final long months = magnitude % 12;
 
-    newYears += (newMonths / 12);
-    newMonths %= 12;
-
-    if (newYears > Short.MAX_VALUE) {
+    if (years > Short.MAX_VALUE) {
       throw new QueryException(ErrorCode.ERR_OVERFLOW_UNDERFLOW_IN_DURATION);
     }
 
-    return new YMD(newNegative, (short) newYears, (byte) newMonths);
+    return new YMD(negative, (short) years, (byte) months);
   }
 
   public Numeric divide(YMD dur) throws QueryException {

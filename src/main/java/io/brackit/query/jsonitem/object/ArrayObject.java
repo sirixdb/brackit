@@ -135,13 +135,18 @@ public final class ArrayObject extends AbstractObject {
 
   @Override
   public Object remove(QNm field) {
-    int index = 0;
+    int index = -1;
     for (int i = 0, size = fields.size(); i < size; i++) {
       final QNm currentField = fields.get(i);
       if (field.equals(currentField)) {
         index = i;
         break;
       }
+    }
+    // No-op when the field is absent — index was initialized to 0, so a missing field deleted
+    // the FIRST entry (and threw IndexOutOfBounds on an empty object).
+    if (index < 0) {
+      return this;
     }
     fields.remove(index);
     vals.remove(index);

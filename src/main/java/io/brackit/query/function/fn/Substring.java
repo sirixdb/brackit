@@ -52,8 +52,11 @@ public class Substring extends AbstractFunction {
     }
 
     String string = ((Str) args[0]).stringValue();
+    // XPath substring positions count CHARACTERS (codepoints), not UTF-16 units — measure and index
+    // by codepoint so non-BMP characters (surrogate pairs) are not split or mis-positioned.
+    final int cpLen = string.codePointCount(0, string.length());
     double start = ((Numeric) args[1]).round().doubleValue();
-    double end = (args.length == 3) ? ((Numeric) args[2]).round().doubleValue() : string.length();
+    double end = (args.length == 3) ? ((Numeric) args[2]).round().doubleValue() : cpLen;
 
     if ((Double.isNaN(start)) || (Double.isNaN(end)) || ((start == Double.NEGATIVE_INFINITY) && (end
         == Double.POSITIVE_INFINITY))) {
@@ -61,12 +64,15 @@ public class Substring extends AbstractFunction {
     }
 
     int startPos = (int) Math.max(start, 1) - 1;
-    int endPos = (int) Math.min(start + end - 1, string.length());
+    int endPos = (int) Math.min(start + end - 1, cpLen);
 
     if ((endPos <= startPos) || (endPos - startPos <= 0)) {
       return Str.EMPTY;
     }
 
-    return new Str(string.substring(startPos, endPos));
+    // Map codepoint indices to UTF-16 offsets for the actual slice.
+    final int startOffset = string.offsetByCodePoints(0, startPos);
+    final int endOffset = string.offsetByCodePoints(0, endPos);
+    return new Str(string.substring(startOffset, endOffset));
   }
 }

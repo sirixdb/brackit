@@ -63,7 +63,13 @@ public class Subsequence extends AbstractFunction {
       return null;
     }
 
-    IntNumeric tmp = Cast.asInteger(((Dbl) args[1]).round().doubleValue());
+    // Per spec the result is the items whose position p satisfies
+    //   round($start) <= p < round($start) + round($length).
+    // The end of the window uses the ORIGINAL (possibly <= 0) start, while iteration is clamped to
+    // start at position 1. Using the clamped start for the end over-included items for start <= 0
+    // (e.g. subsequence((1..8), -2, 5) wrongly returned 1..5 instead of 1 2).
+    final IntNumeric originalStart = Cast.asInteger(((Dbl) args[1]).round().doubleValue());
+    IntNumeric tmp = originalStart;
     if (tmp.cmp(Int32.ZERO) <= 0) {
       tmp = Int32.ONE;
     }
@@ -72,7 +78,7 @@ public class Subsequence extends AbstractFunction {
     tmp = null;
     if (args.length == 3) {
       IntNumeric length = Cast.asInteger(((Dbl) args[2]).round().doubleValue());
-      tmp = (IntNumeric) st.add(length);
+      tmp = (IntNumeric) originalStart.add(length);
     }
     final IntNumeric e = tmp;
 

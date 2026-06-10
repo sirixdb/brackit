@@ -488,6 +488,12 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       runVarType = compiler.sequenceType(runVarDecl.getChild(1));
     }
     AST posBindingOrSourceExpr = node.getChild(pos++);
+    // 'allowing empty' marker child (see Compiler#forClause) or the lifted property form.
+    boolean allowingEmpty = node.checkProperty("allowingEmpty");
+    if (posBindingOrSourceExpr.getType() == XQ.AllowingEmpty) {
+      allowingEmpty = true;
+      posBindingOrSourceExpr = node.getChild(pos++);
+    }
     QNm posVarName = null;
     if (posBindingOrSourceExpr.getType() == XQ.TypedVariableBinding) {
       posVarName = (QNm) posBindingOrSourceExpr.getChild(0).getValue();
@@ -507,7 +513,7 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       compiler.table.resolve(posVarName);
       // TODO Optimize and do not bind variable if not necessary
     }
-    ForBind forBind = new ForBind(in, sourceExpr, false);
+    ForBind forBind = new ForBind(in, sourceExpr, allowingEmpty);
     if (posBinding != null) {
       forBind.bindPosition(posBinding.isReferenced());
     }

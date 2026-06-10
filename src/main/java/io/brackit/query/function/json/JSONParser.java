@@ -28,6 +28,7 @@
 package io.brackit.query.function.json;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import io.brackit.query.atomic.*;
@@ -128,20 +129,32 @@ public final class JSONParser extends Tokenizer {
     if (attemptSkipS("}")) {
       return new ArrayObject(new QNm[0], new Item[0]);
     }
-    int len = 0;
     final var fields = new ArrayList<QNm>();
     final var values = new ArrayList<Item>();
+    final var seen = new HashSet<String>();
     do {
       final Str name = string();
       consumeSkipS(":");
       Item value = value(true);
-      fields.add(new QNm(null, null, name.stringValue()));
-      values.add(value);
-      len++;
+      final String keyName = name.stringValue();
+      if (seen.add(keyName)) {
+        fields.add(new QNm(null, null, keyName));
+        values.add(value);
+      } else {
+        // Duplicate object key: last value wins (the common path stays O(1) via the HashSet; the
+        // list scan runs only on the rare collision). Keeping both produced invalid JSON and an
+        // object whose serialization disagreed with `.key` lookup.
+        for (int i = 0; i < fields.size(); i++) {
+          if (fields.get(i).stringValue().equals(keyName)) {
+            values.set(i, value);
+            break;
+          }
+        }
+      }
     } while (attemptSkipS(","));
     consumeSkipS("}");
 
-    return new ArrayObject(fields.toArray(new QNm[len]), values.toArray(new Item[len]));
+    return new ArrayObject(fields.toArray(new QNm[0]), values.toArray(new Item[0]));
   }
 
   private Numeric number() throws QueryException, TokenizerException {
