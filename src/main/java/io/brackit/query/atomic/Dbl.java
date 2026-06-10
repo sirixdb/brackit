@@ -169,11 +169,15 @@ public class Dbl extends AbstractNumeric implements DblNumeric {
     return killTrailingZeros(v > 0 && v >= 1e-6 && v < 1e6 || -v >= 1e-6 && -v < 1e6 ? DD.format(v) : SD.format(v));
   }
 
+  // new BigDecimal(double) is INTENTIONAL: the cast keeps the double's exact binary value (BigDecimal.valueOf would substitute the shortest decimal approximation).
+  @SuppressWarnings("java:S2111")
   @Override
   public BigDecimal decimalValue() {
     return new BigDecimal(v);
   }
 
+  // Exact-expansion BigDecimal(double) intentional here as well — see decimalValue().
+  @SuppressWarnings("java:S2111")
   @Override
   public BigDecimal integerValue() {
     return BigDecimal.valueOf(Math.floor(v));

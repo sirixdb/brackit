@@ -282,7 +282,7 @@ public class Regex {
       // Adapt for XQuery substring matching by extending pattern. An EMPTY pattern is legal (it
       // matches every string) — guard the charAt() calls so it does not throw
       // StringIndexOutOfBoundsException.
-      if (sb.length() == 0 || sb.charAt(0) != '^' || ((flagMask & Pattern.MULTILINE) == Pattern.MULTILINE)) {
+      if (sb.isEmpty() || sb.charAt(0) != '^' || ((flagMask & Pattern.MULTILINE) == Pattern.MULTILINE)) {
         if ((flagMask & Pattern.DOTALL) == Pattern.DOTALL) {
           sb.insert(0, ".*");
         } else {
@@ -290,8 +290,7 @@ public class Regex {
         }
       }
 
-      if (sb.length() == 0 || sb.charAt(sb.length() - 1) != '$' || ((flagMask & Pattern.MULTILINE)
-          == Pattern.MULTILINE)) {
+      if (sb.isEmpty() || sb.charAt(sb.length() - 1) != '$' || ((flagMask & Pattern.MULTILINE) == Pattern.MULTILINE)) {
         if ((flagMask & Pattern.DOTALL) == Pattern.DOTALL) {
           sb.append(".*");
         } else {

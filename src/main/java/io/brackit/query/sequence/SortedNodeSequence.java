@@ -72,16 +72,18 @@ public class SortedNodeSequence extends LazySequence {
           n = (Node<?>) sorted.next();
         }
 
-        while (n != null) {
-          if ((dedup) && (p != null) && (p.cmp(n) == 0)) {
-            n = (Node<?>) sorted.next();
-          }
-          Node<?> deliver = n;
-          p = n;
+        // Skip the WHOLE run of duplicates (the old single `if` only skipped one, so a run of
+        // three or more equal nodes leaked duplicates), then deliver.
+        while (dedup && p != null && n != null && p.cmp(n) == 0) {
           n = (Node<?>) sorted.next();
-          return deliver;
         }
-        return null;
+        if (n == null) {
+          return null;
+        }
+        Node<?> deliver = n;
+        p = n;
+        n = (Node<?>) sorted.next();
+        return deliver;
       }
 
       @Override

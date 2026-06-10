@@ -153,21 +153,13 @@ public class IOUtils {
    * Return the string content of a file.
    */
   public static String getStringFromFile(File pFile) throws QueryException {
-    byte[] buffer = new byte[(int) pFile.length()];
-    BufferedInputStream in = null;
+    // A single InputStream.read(buffer) may return fewer bytes than the file length, silently
+    // truncating the tail to NUL bytes — read everything.
     try {
-      in = new BufferedInputStream(new FileInputStream(pFile));
-      in.read(buffer);
+      return new String(java.nio.file.Files.readAllBytes(pFile.toPath()));
     } catch (IOException e) {
       throw new QueryException(e, ErrorCode.ERR_PARSING_ERROR, e.getMessage());
-    } finally {
-      if (in != null)
-        try {
-          in.close();
-        } catch (IOException ignored) {
-        }
     }
-    return new String(buffer);
   }
 
   /**

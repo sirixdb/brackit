@@ -66,6 +66,8 @@ import java.util.Map;
  */
 public class Compiler implements Translator {
 
+  private static final String COUNT_FN = "count";
+
   protected static class ClauseBinding {
     final ClauseBinding in;
     final Operator operator;
@@ -724,7 +726,7 @@ public class Compiler implements Translator {
     // Intercept count(PipeExpr) when the PipeExpr has a vectorized filter-count annotation.
     // The vectorized executor returns the count as a scalar Int64, so we replace the
     // entire count(PipeExpr) with the vectorized expression directly.
-    if ("count".equals(name.getLocalName()) && childCount == 1 && node.getChild(0).getType() == XQ.PipeExpr) {
+    if (COUNT_FN.equals(name.getLocalName()) && childCount == 1 && node.getChild(0).getType() == XQ.PipeExpr) {
       Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(node.getChild(0), true);
       if (vectorized != null) {
         return vectorized;
@@ -737,7 +739,7 @@ public class Compiler implements Translator {
     // with AGGREGATE_FIELD set (walker does this for any ForBind → return $u.field).
     // We translate it into a count-distinct expression via the same executor hook as
     // the group-by variant.
-    if ("count".equals(name.getLocalName()) && childCount == 1 && node.getChild(0).getType() == XQ.FunctionCall) {
+    if (COUNT_FN.equals(name.getLocalName()) && childCount == 1 && node.getChild(0).getType() == XQ.FunctionCall) {
       final AST innerCall = node.getChild(0);
       final Object innerName = innerCall.getValue();
       if (innerName instanceof QNm innerQnm && "distinct-values".equals(innerQnm.getLocalName()) && innerCall
@@ -775,7 +777,7 @@ public class Compiler implements Translator {
       // intercept the `for $u let $d := $u.F group by $d return $d` shape and
       // DON'T disturb the existing count(filter-count) routing, which reaches
       // executeFilterCount through Brackit's generic count(Sequence) pathway.
-      if ("count".equals(fn)) {
+      if (COUNT_FN.equals(fn)) {
         AST pipe = node.getChild(0);
         if (Boolean.TRUE.equals(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT_DISTINCT))) {
           Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(pipe, /*countWrapped=*/true);

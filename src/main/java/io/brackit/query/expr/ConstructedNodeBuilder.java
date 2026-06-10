@@ -97,30 +97,8 @@ public abstract class ConstructedNodeBuilder {
 
   private Node<?> addContent(QueryContext ctx, ContentSink sink, Item item, Node<?> prevSibling,
       boolean prevWasAtomic) {
-    if (item instanceof Node<?>) {
-      Node<?> contentNode = (Node<?>) item;
-
-      if (contentNode.getKind() == Kind.ATTRIBUTE) {
-        if (prevSibling != null) {
-          throw new QueryException(ErrorCode.ERR_TYPE_CONTENT_SEQUENCE_ATTRIBUTE_FOLLOWING_NON_ATTRIBUTE);
-        }
-        sink.addAttribute(ctx, contentNode);
-        return null;
-      } else if (contentNode.getKind() == Kind.DOCUMENT) {
-        try (Stream<? extends Node<?>> children = contentNode.getChildren()) {
-          Node<?> child;
-          while ((child = children.next()) != null) {
-            prevSibling = sink.addNode(ctx, child);
-          }
-        }
-        return prevSibling;
-      } else {
-        // Thread the SINK's node (the appended copy), not the source node: a later
-        // atomic-merge against prevSibling must mutate the CONSTRUCTED tree. Returning the
-        // source meant 'element e { $textNode, "b" }' silently rewrote the SOURCE document
-        // (or threw on a read-only store) while the constructed element never got "b".
-        return sink.addNode(ctx, contentNode);
-      }
+    if (item instanceof Node<?> contentNode) {
+      return addNodeContent(ctx, sink, contentNode, prevSibling);
     } else {
       // XQ 3.1 §3.9.1.3: ADJACENT ATOMICS are joined into one text node with a single space.
       // An atomic following a text NODE item gets its OWN text node — adjacent text nodes are
@@ -134,6 +112,31 @@ public abstract class ConstructedNodeBuilder {
         return sink.addNode(ctx, node);
       }
     }
+  }
+
+  private Node<?> addNodeContent(QueryContext ctx, ContentSink sink, Node<?> contentNode, Node<?> prevSibling) {
+    if (contentNode.getKind() == Kind.ATTRIBUTE) {
+      if (prevSibling != null) {
+        throw new QueryException(ErrorCode.ERR_TYPE_CONTENT_SEQUENCE_ATTRIBUTE_FOLLOWING_NON_ATTRIBUTE);
+      }
+      sink.addAttribute(ctx, contentNode);
+      return null;
+    }
+    if (contentNode.getKind() == Kind.DOCUMENT) {
+      Node<?> last = prevSibling;
+      try (Stream<? extends Node<?>> children = contentNode.getChildren()) {
+        Node<?> child;
+        while ((child = children.next()) != null) {
+          last = sink.addNode(ctx, child);
+        }
+      }
+      return last;
+    }
+    // Thread the SINK's node (the appended copy), not the source node: a later
+    // atomic-merge against prevSibling must mutate the CONSTRUCTED tree. Returning the
+    // source meant 'element e { $textNode, "b" }' silently rewrote the SOURCE document
+    // (or threw on a read-only store) while the constructed element never got "b".
+    return sink.addNode(ctx, contentNode);
   }
 
   protected String buildTextContent(Sequence source) {

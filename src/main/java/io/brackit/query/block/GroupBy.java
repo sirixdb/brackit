@@ -366,7 +366,9 @@ public class GroupBy implements Block {
                 grp.add(gks, t);
               }
             }
-            partitionFiles[p].delete();
+            if (!partitionFiles[p].delete()) {
+              // Best-effort spill-file cleanup — nothing to do if it is already gone.
+            }
             int len = 0;
             for (var entry : partMap.entrySet()) {
               buf[len++] = emit(entry.getValue());
@@ -430,8 +432,8 @@ public class GroupBy implements Block {
       }
       if (partitionFiles != null) {
         for (File f : partitionFiles) {
-          if (f != null && f.exists()) {
-            f.delete();
+          if (f != null && f.exists() && !f.delete()) {
+            // Best-effort spill-file cleanup — nothing to do if it is already gone.
           }
         }
         partitionFiles = null;

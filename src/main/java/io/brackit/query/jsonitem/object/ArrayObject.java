@@ -79,7 +79,7 @@ public final class ArrayObject extends AbstractObject {
   private Map<QNm, Sequence> ensureMap() {
     Map<QNm, Sequence> m = fieldsToVals;
     if (m == null) {
-      m = new HashMap<>(fields.size() * 2);
+      m = HashMap.newHashMap(fields.size());
       for (int i = 0, n = fields.size(); i < n; i++) {
         m.put(fields.get(i), vals.get(i));
       }

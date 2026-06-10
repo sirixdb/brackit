@@ -204,7 +204,9 @@ public class TupleSort {
 
     for (File run : runs) {
       if ((run != null) && (run.exists())) {
-        run.delete();
+        if (!run.delete()) {
+          // Best-effort sort-run cleanup — nothing to do if it is already gone.
+        }
       }
     }
   }
@@ -232,7 +234,9 @@ public class TupleSort {
 
   public void clear() {
     if (runCount > 0) {
-      runs[0].delete();
+      if (!runs[0].delete()) {
+        // Best-effort sort-run cleanup — nothing to do if it is already gone.
+      }
     }
   }
 
@@ -377,7 +381,9 @@ public class TupleSort {
       } catch (QueryException e) {
         for (File newRun : newRuns) {
           if ((newRun != null) && (newRun.exists())) {
-            newRun.delete();
+            if (!newRun.delete()) {
+              // Best-effort sort-run cleanup — nothing to do if it is already gone.
+            }
           }
         }
         throw e;
@@ -460,8 +466,9 @@ public class TupleSort {
         directMergeSize += read;
       }
 
-      run1.delete();
-      run2.delete();
+      if (!run1.delete() || !run2.delete()) {
+        // Best-effort sort-run cleanup — nothing to do if a run is already gone.
+      }
 
       if (log.isDebugEnabled()) {
         log.debug(String.format("Wrote run '%s'", run));

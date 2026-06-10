@@ -301,7 +301,9 @@ public class SpillableGroupBy extends Check implements Operator {
               grp.add(gks, t);
             }
           }
-          partFile.delete();
+          if (!partFile.delete()) {
+            // Best-effort spill-file cleanup — nothing to do if it is already gone.
+          }
 
           if (!map.isEmpty()) {
             outputIt = map.keySet().iterator();
@@ -341,8 +343,8 @@ public class SpillableGroupBy extends Check implements Operator {
       closePartitionStreams();
       if (partitionFiles != null) {
         for (File f : partitionFiles) {
-          if (f != null && f.exists()) {
-            f.delete();
+          if (f != null && f.exists() && !f.delete()) {
+            // Best-effort spill-file cleanup — nothing to do if it is already gone.
           }
         }
         partitionFiles = null;

@@ -128,6 +128,7 @@ public class BlockingParallelizer implements Operator {
         try {
           wait();
         } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
         }
         long end = System.currentTimeMillis();
         producerBlock += end - start;
@@ -157,6 +158,7 @@ public class BlockingParallelizer implements Operator {
         try {
           wait();
         } catch (InterruptedException ignored) {
+          Thread.currentThread().interrupt();
         }
         long end = System.currentTimeMillis();
 

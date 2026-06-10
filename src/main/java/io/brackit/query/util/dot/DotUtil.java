@@ -58,7 +58,12 @@ public class DotUtil {
       }
       Process proc = Runtime.getRuntime().exec("dot -T" + PLOT_TYPE + " -o" + svgFile + " " + f);
       proc.waitFor();
-      f.delete();
+      if (!f.delete()) {
+        // Best-effort temp-file cleanup.
+      }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      log.error(String.format("Creating dot plan '%s' was interrupted.", svgFile), e);
     } catch (Exception e) {
       log.error(String.format("Creating dot plan '%s' failed.", svgFile), e);
     }

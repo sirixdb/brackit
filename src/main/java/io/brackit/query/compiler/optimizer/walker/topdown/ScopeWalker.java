@@ -485,7 +485,11 @@ public abstract class ScopeWalker extends Walker {
         file.deleteOnExit();
         dot(file);
         Runtime.getRuntime().exec(new String[] { "/usr/bin/dotty", file.getAbsolutePath() }).waitFor();
-        file.delete();
+        if (!file.delete()) {
+          // Best-effort temp-file cleanup (deleteOnExit above is the fallback).
+        }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
       } catch (Exception e) {
         e.printStackTrace();
       }

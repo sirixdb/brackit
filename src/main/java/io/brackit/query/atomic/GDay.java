@@ -55,9 +55,10 @@ public class GDay extends AbstractTimeInstant {
     int length = charArray.length;
 
     // consume '---'
-    if ((pos + 2 >= length) || (charArray[pos++] != '-') || (charArray[pos++] != '-') || (charArray[pos++] != '-')) {
+    if (pos + 2 >= length || charArray[pos] != '-' || charArray[pos + 1] != '-' || charArray[pos + 2] != '-') {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:gDay", str);
     }
+    pos += 3;
 
     // parse day
     int start = pos;

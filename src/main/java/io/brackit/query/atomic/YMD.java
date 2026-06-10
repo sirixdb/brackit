@@ -276,7 +276,7 @@ public class YMD extends AbstractDuration {
 
   /** Convert a (negative, years, months) tuple into total signed months. */
   private static long totalMonths(final boolean negative, final short years, final byte months) {
-    final long total = (long) years * 12L + months;
+    final long total = years * 12L + months;
     return negative ? -total : total;
   }
 

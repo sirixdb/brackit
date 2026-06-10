@@ -66,7 +66,7 @@ public class B64 extends AbstractAtomic {
     // conversion.
     try {
       this.bytes = Base64.getDecoder().decode(str);
-    } catch (final IllegalArgumentException e) {
+    } catch (final IllegalArgumentException _) {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast %s to xs:base64Binary", str);
     }
   }

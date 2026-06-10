@@ -71,9 +71,10 @@ public final class URIHandler {
         throw new IOException(String.format("Location is not a file: %s", uri));
       }
       if (overwrite) {
-        if (f.exists())
-          f.delete();
-        f.createNewFile();
+        // Best-effort normalization — the FileOutputStream below creates/truncates regardless.
+        if ((f.exists() && !f.delete()) || !f.createNewFile()) {
+          // Nothing to do: the stream constructor below surfaces any real failure.
+        }
       }
       return new FileOutputStream(f);
     } else if (scheme.equals("http") || scheme.equals("https") || scheme.equals("ftp") || scheme.equals("jar")) {
