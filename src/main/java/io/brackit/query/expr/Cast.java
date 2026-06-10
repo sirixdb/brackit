@@ -286,16 +286,27 @@ public class Cast implements Expr {
       } else if (source.instanceOf(Type.NOT)) {
         return new QNm(atomic.stringValue());
       } else {
-        QNm qnm = new QNm(atomic.stringValue());
-        if (qnm.getPrefix() != null) {
+        // The 2-arg constructor SPLITS "prefix:local" (the 1-arg one stores the whole string as
+        // the local name and normalizes the prefix to "", so EVERY string cast — prefixed or not —
+        // previously fell into prefix resolution with '' and died with XQDY0074).
+        QNm qnm;
+        try {
+          qnm = new QNm(null, Whitespace.collapseTrimOnly(atomic.stringValue()));
+        } catch (IllegalStateException e) {
+          // Malformed lexical QName (":foo", "a:b:c", ...) -> proper cast error, not a raw RTE.
+          throw new QueryException(e, ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:QName", atomic);
+        }
+        if (!qnm.getPrefix().isEmpty()) {
           String uri = sctx.getNamespaces().resolve(qnm.getPrefix());
           if (uri == null) {
             throw new QueryException(ErrorCode.ERR_UNKNOWN_NS_PREFIX_IN_COMP_CONSTR,
                                      "Statically unkown namespace prefix: '%s'",
                                      qnm.getPrefix());
           }
-          return new QNm(uri, null, qnm.getLocalName());
+          // Keep the lexical prefix — it is part of the xs:QName value (used on re-serialization).
+          return new QNm(uri, qnm.getPrefix(), qnm.getLocalName());
         } else {
+          // No prefix: the QName is in the default element namespace (or none).
           String uri = sctx.getNamespaces().getDefaultElementNamespace();
           if (uri == null || uri.isEmpty()) {
             return qnm;
@@ -578,7 +589,9 @@ public class Cast implements Expr {
     }
     if (source.isNumeric()) {
       double d = ((Numeric) atomic).doubleValue();
-      return new Bool(d == Double.NaN || d == 0 ? false : true);
+      // NaN and 0 (and -0) are false; `d == Double.NaN` is ALWAYS false, so NaN used to cast to
+      // true (F&O: xs:boolean(NaN) is false).
+      return (Double.isNaN(d) || d == 0) ? Bool.FALSE : Bool.TRUE;
     }
     if (source == target) {
       return atomic;
@@ -639,16 +652,19 @@ public class Cast implements Expr {
   }
 
   public static IntNumeric asInteger(double d) {
-    if (d == Double.NaN || d == Double.POSITIVE_INFINITY || d == Double.NEGATIVE_INFINITY) {
+    if (Double.isNaN(d) || Double.isInfinite(d)) { // `d == Double.NaN` is ALWAYS false
       throw new QueryException(ErrorCode.ERR_INVALID_LEXICAL_VALUE);
     }
     if (d <= Integer.MAX_VALUE && d >= Integer.MIN_VALUE) {
       return new Int32((int) d);
     }
-    if (d <= Long.MAX_VALUE || d >= Long.MIN_VALUE) {
+    // && (not ||): a double outside long range must fall through to the arbitrary-precision
+    // BigInteger path. With ||, the condition was always true and xs:integer(1e30) silently
+    // SATURATED at Long.MAX_VALUE.
+    if (d <= Long.MAX_VALUE && d >= Long.MIN_VALUE) {
       return new Int64((long) d);
     }
-    return new Int(d);
+    return new Int(new java.math.BigDecimal(d)); // arbitrary precision; Int(BigDecimal) floors
   }
 
   @Override

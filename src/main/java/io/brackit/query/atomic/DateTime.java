@@ -310,7 +310,10 @@ public class DateTime extends AbstractTimeInstant {
 
   @Override
   public String stringValue() {
-    String yTmp = year < 0 ? "-" : "" + (year < 10 ? "000" : year < 100 ? "00" : year < 1000 ? "0" : "") + year;
+    // A negative (BCE) year must keep its magnitude: "-0001", not just "-".
+    final int absYear = Math.abs(year);
+    String yTmp = (year < 0 ? "-" : "") + (absYear < 10 ? "000" : absYear < 100 ? "00" : absYear < 1000 ? "0" : "")
+        + absYear;
     String mTmp = (month < 10 ? "0" : "") + month;
     String dTmp = (day < 10 ? "0" : "") + day;
     String hTmp = (hour < 10 ? "0" : "") + hour;
@@ -321,9 +324,11 @@ public class DateTime extends AbstractTimeInstant {
     int remainder = micros - seconds * 1000000;
     String sTmp = (seconds < 10 ? "0" : "") + String.valueOf(seconds);
     if (remainder != 0) {
-      while (remainder / 10 == 0)
-        remainder /= 10; // cut trailing zeros
-      sTmp += ":" + remainder;
+      // Fractional seconds: the micros remainder zero-padded to 6 digits with trailing zeros
+      // stripped, after a '.' separator — e.g. 250000 -> ".25", 123 -> ".000123". (The old loop
+      // used ':' and mangled the magnitude / could spin on single-digit remainders.)
+      final String frac = String.format("%06d", remainder).replaceAll("0+$", "");
+      sTmp += "." + frac;
     }
     return String.format("%s-%s-%sT%s:%s:%s%s", yTmp, mTmp, dTmp, hTmp, minTmp, sTmp, tzTmp);
   }

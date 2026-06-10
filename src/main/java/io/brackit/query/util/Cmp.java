@@ -152,7 +152,10 @@ public enum Cmp {
 
   public Bool gCmpAsBool(QueryContext ctx, Sequence left, Sequence right) throws QueryException {
     if (left == null || right == null) {
-      return null;
+      // XQ 3.1 §3.7.2: a general comparison is the EXISTENTIAL quantification over the two
+      // sequences — with an empty operand no pair exists, so the result is false() (an
+      // xs:boolean), not the empty sequence. Returning null made count(() = 1) yield 0.
+      return Bool.FALSE;
     }
     boolean res = gCmp(ctx, left, right);
     return res ? Bool.TRUE : Bool.FALSE;

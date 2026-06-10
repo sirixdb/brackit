@@ -167,10 +167,11 @@ public class TryCatchExpr implements Expr {
       info[pos++] = e.getCode();
     }
     if (bindDesc) {
-      info[pos++] = new Str(e.getMessage());
+      info[pos++] = new Str(e.getDescription());
     }
     if (bindValue) {
-      info[pos++] = null;
+      final Object value = e.getErrorValue();
+      info[pos++] = (value instanceof Sequence) ? (Sequence) value : null;
     }
     if (bindModule) {
       info[pos++] = null;

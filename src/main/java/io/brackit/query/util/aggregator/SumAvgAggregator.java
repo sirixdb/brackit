@@ -234,12 +234,9 @@ public class SumAvgAggregator implements Aggregator {
 
       // Check if we're still getting Int64 values
       if (!(a instanceof Int64 i64)) {
-        // Type changed - flush buffer and fall back to object path
-        if (bufferLen > 0) {
-          currentSum += VectorOps.sumLong(longBuffer, 0, bufferLen);
-        }
+        // Type changed - flush buffer (exactly) and fall back to object path
+        Numeric sum = addRangeExactOrEscalate(longBuffer, bufferLen, currentSum);
         // Continue with mixed-type processing
-        Numeric sum = new Int64(currentSum);
         sum = numericSum(sum, item);
         count++;
         while ((item = in.next()) != null) {
@@ -253,17 +250,56 @@ public class SumAvgAggregator implements Aggregator {
       count++;
 
       if (bufferLen == BATCH_SIZE) {
-        currentSum += VectorOps.sumLong(longBuffer, 0, bufferLen);
+        try {
+          currentSum = sumRangeExact(longBuffer, bufferLen, currentSum);
+        } catch (ArithmeticException overflow) {
+          // xs:integer is arbitrary precision (F&O): the previous raw-long accumulation
+          // silently WRAPPED here and returned a negative/garbage sum. Escalate to the
+          // generic Numeric path (BigDecimal-backed) for the rest of the sequence.
+          Numeric sum = addRangeViaNumeric(longBuffer, bufferLen, currentSum);
+          while ((item = in.next()) != null) {
+            sum = numericSum(sum, item);
+            count++;
+          }
+          return sum;
+        }
         bufferLen = 0;
       }
     }
 
-    // Flush remaining
+    // Flush remaining (exactly — escalating to arbitrary precision on overflow)
     if (bufferLen > 0) {
-      currentSum += VectorOps.sumLong(longBuffer, 0, bufferLen);
+      return addRangeExactOrEscalate(longBuffer, bufferLen, currentSum);
     }
 
     return new Int64(currentSum);
+  }
+
+  /** Exact long-range sum; throws {@link ArithmeticException} on overflow. */
+  private static long sumRangeExact(long[] buf, int len, long acc) {
+    long s = acc;
+    for (int i = 0; i < len; i++) {
+      s = Math.addExact(s, buf[i]);
+    }
+    return s;
+  }
+
+  /** Arbitrary-precision fallback — xs:integer sums must not wrap. */
+  private static Numeric addRangeViaNumeric(long[] buf, int len, long acc) throws QueryException {
+    Numeric sum = new Int64(acc);
+    for (int i = 0; i < len; i++) {
+      sum = (Numeric) sum.add(new Int64(buf[i]));
+    }
+    return sum;
+  }
+
+  /** Sum the buffered range exactly, escalating past long range when needed. */
+  private static Numeric addRangeExactOrEscalate(long[] buf, int len, long acc) throws QueryException {
+    try {
+      return new Int64(sumRangeExact(buf, len, acc));
+    } catch (ArithmeticException overflow) {
+      return addRangeViaNumeric(buf, len, acc);
+    }
   }
 
   /**

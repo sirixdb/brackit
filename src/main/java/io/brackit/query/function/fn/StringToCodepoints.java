@@ -78,7 +78,11 @@ public class StringToCodepoints extends AbstractFunction {
               return null;
             }
 
-            return new Int32(s.codePointAt(index++));
+            // Advance by the full codepoint width (2 UTF-16 units for a non-BMP character),
+            // otherwise the low surrogate is re-read as a bogus second codepoint.
+            final int codePoint = s.codePointAt(index);
+            index += Character.charCount(codePoint);
+            return new Int32(codePoint);
           }
 
           @Override

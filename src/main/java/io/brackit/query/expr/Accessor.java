@@ -211,25 +211,24 @@ public abstract class Accessor {
     @Override
     public Stream<? extends Node<?>> performStep(Node<?> node) {
       final Node<?> n = node;
-      Node<?> p = node.getParent();
 
-      if (p == null || p.isDocumentRoot()) {
-        return new EmptyStream<>();
+      // Climb to the TOPMOST non-document ancestor: the root element of the tree containing
+      // the context node, whose subtree (in document order, minus ancestors) is scanned. The
+      // old climb keyed on isDocumentRoot() — which is simply parent==null and therefore TRUE
+      // for the parentless root ELEMENT of every constructed fragment — so it stopped one
+      // level short: preceding nodes outside the context's immediate parent subtree were
+      // invisible, and nodes directly under a constructed root got an empty axis.
+      Node<?> top = node;
+      Node<?> par = top.getParent();
+      while (par != null && par.getKind() != Kind.DOCUMENT) {
+        top = par;
+        par = par.getParent();
+      }
+      if (top == node) {
+        return new EmptyStream<>(); // the context node is the tree root: nothing precedes it
       }
 
-      if (!p.isDocumentRoot()) {
-        while (true) {
-          Node<?> a = p.getParent();
-          if (a == null || a.isDocumentRoot()) {
-            break;
-          }
-          p = a;
-        }
-      }
-
-      final Stream<? extends Node<?>> fragment = p.getDescendantOrSelf();
-      fragment.next();
-      fragment.next();
+      final Stream<? extends Node<?>> fragment = top.getDescendantOrSelf();
 
       return new Stream<>() {
         final Node<?> stopAt = n;
@@ -252,9 +251,14 @@ public abstract class Accessor {
               s = null;
               return null;
             }
-            // if (n.isAncestorOf(stopAt)) {
-            // continue;
-            // }
+            // XPath: the preceding axis excludes ANCESTORS of the context node. This filter
+            // also covers the fragment root itself, replacing the old unconditional
+            // "fragment.next(); fragment.next();" double-skip that discarded one LEGITIMATE
+            // preceding node (whichever node happened to be second in document order) while
+            // letting ancestors through (the exclusion below was commented out).
+            if (n.isAncestorOf(stopAt)) {
+              continue;
+            }
             return n;
           }
           return null;

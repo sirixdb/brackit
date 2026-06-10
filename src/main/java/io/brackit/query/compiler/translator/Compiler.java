@@ -1392,6 +1392,14 @@ public class Compiler implements Translator {
         emptyLeast = empty.getType() == XQ.LEAST;
       } else if (modifier.getType() == XQ.Collation) {
         collation = modifier.getChild(0).getStringValue();
+        // Only the codepoint collation is implemented. Silently accepting any URI and then
+        // sorting by codepoints anyway returned wrong orderings without a hint — reject at
+        // compile time instead (XQST0076), like fn:deep-equal already does at runtime.
+        if (!"http://www.w3.org/2005/xpath-functions/collation/codepoint".equals(collation)) {
+          throw new QueryException(ErrorCode.ERR_UNKNOWN_COLLATION_IN_FLWOR_CLAUSE,
+                                   "Unsupported collation in order by clause: %s",
+                                   collation);
+        }
       }
     }
     return new Ordering.OrderModifier(asc, emptyLeast, collation);
@@ -1505,6 +1513,15 @@ public class Compiler implements Translator {
 
     AST posBindingOrSourceExpr = forClause.getChild(forClausePos++);
 
+    // 'for $x allowing empty ...' (XQuery 3.0 outer-for): the parser emits an AllowingEmpty
+    // child here; previously no compile path consumed it, so the marker fell through to
+    // expr(...) and crashed with an internal "Unexpected AST expr node" error.
+    boolean allowingEmpty = false;
+    if (posBindingOrSourceExpr.getType() == XQ.AllowingEmpty) {
+      allowingEmpty = true;
+      posBindingOrSourceExpr = forClause.getChild(forClausePos++);
+    }
+
     if (posBindingOrSourceExpr.getType() == XQ.TypedVariableBinding) {
       posVarName = (QNm) posBindingOrSourceExpr.getChild(0).getValue();
       posBindingOrSourceExpr = forClause.getChild(forClausePos);
@@ -1513,7 +1530,7 @@ public class Compiler implements Translator {
 
     final Binding runVarBinding = table.bind(runVarName, runVarType);
     final Binding posBinding = posVarName != null ? table.bind(posVarName, SequenceType.INTEGER) : null;
-    final ForBind forBind = new ForBind(in.operator, sourceExpr, false);
+    final ForBind forBind = new ForBind(in.operator, sourceExpr, allowingEmpty);
 
     return new ClauseBinding(in, forBind, runVarBinding, posBinding) {
       @Override

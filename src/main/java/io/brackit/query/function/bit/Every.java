@@ -67,7 +67,9 @@ public class Every extends AbstractFunction {
   public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
     Sequence sequence = args[0];
     if (sequence == null) {
-      return Bool.FALSE;
+      // XQuery §3.13: `every $x in () satisfies …` is vacuously TRUE (universal quantification
+      // over the empty sequence). Only `some` over () is false.
+      return Bool.TRUE;
     } else if (sequence instanceof Item) {
       return sequence.booleanValue() ? Bool.TRUE : Bool.FALSE;
     } else {

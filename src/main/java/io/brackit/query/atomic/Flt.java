@@ -125,7 +125,7 @@ public class Flt extends AbstractNumeric implements FltNumeric {
 
   @Override
   public boolean booleanValue() throws QueryException {
-    return v != 0 && !Float.isNaN(v) && Float.isInfinite(v);
+    return v != 0 && !Float.isNaN(v) && !Float.isInfinite(v);
   }
 
   @Override

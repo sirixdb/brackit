@@ -41,6 +41,10 @@ import io.brackit.query.jdm.Type;
  * @author Sebastian Baechle
  */
 public class Grouping {
+
+  /** Canonical +0.0 instances for grouping-key normalization (-0.0 groups with +0.0). */
+  private static final io.brackit.query.atomic.Dbl DBL_POSITIVE_ZERO = new io.brackit.query.atomic.Dbl(0.0d);
+  private static final io.brackit.query.atomic.Flt FLT_POSITIVE_ZERO = new io.brackit.query.atomic.Flt(0.0f);
   final int[] groupSpecs;
   final int[] addAggsSpecs;
   final Aggregate defaultAgg;
@@ -123,6 +127,16 @@ public class Grouping {
           gk[i] = item.atomize();
           if (gk[i].type().instanceOf(Type.UNA)) {
             gk[i] = Cast.cast(null, gk[i], Type.STR);
+          }
+          // Grouping equality treats -0.0 and +0.0 as ONE key (fn:deep-equal semantics), but
+          // both atomicCmp (Double.compare) and the key hash (doubleToLongBits) distinguish
+          // them — canonicalize so the pair lands in a single group. Dispatch on the
+          // DblNumeric/FltNumeric INTERFACES: document-sourced doubles are wrapper atomics,
+          // not the concrete Dbl/Flt classes.
+          if (gk[i] instanceof io.brackit.query.atomic.DblNumeric n && n.doubleValue() == 0.0d) {
+            gk[i] = DBL_POSITIVE_ZERO; // canonical instance — no per-key allocation
+          } else if (gk[i] instanceof io.brackit.query.atomic.FltNumeric n && n.doubleValue() == 0.0d) {
+            gk[i] = FLT_POSITIVE_ZERO;
           }
         }
       }

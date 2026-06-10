@@ -59,26 +59,19 @@ public class StringTranslate extends AbstractFunction {
     String trans = ((Str) args[2]).stringValue();
     StringBuilder sb = new StringBuilder(str.length());
 
-    if (map.isEmpty()) {
-      return Str.EMPTY;
-    }
-
-    int copy = 0;
-
     for (int i = 0; i < str.length(); i++) {
       char c = str.charAt(i);
       int index = map.indexOf(c);
-      if (index != -1 && index < trans.length()) {
-        if (copy < i) {
-          sb.append(str.substring(copy, i));
-        }
+      if (index == -1) {
+        // Not in the map: keep unchanged. (An empty map leaves the whole string unchanged — the
+        // old code wrongly returned the empty string.)
+        sb.append(c);
+      } else if (index < trans.length()) {
+        // Corresponding replacement character.
         sb.append(trans.charAt(index));
-        copy = i + 1;
       }
-    }
-
-    if (copy < str.length()) {
-      sb.append(str.substring(copy));
+      // else: present in the map but with no counterpart in trans -> DELETE (append nothing). The
+      // old code passed such characters through unchanged.
     }
 
     return new Str(sb.toString());

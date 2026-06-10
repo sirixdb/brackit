@@ -120,7 +120,10 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
     AbstractTimeInstant a = this;
     AbstractTimeInstant b = other;
 
-    if (a.getTimezone() != null && (a.getTimezone().getHours() != 0 || a.getTimezone().getMinutes() != 0)) {
+    // A value with ANY timezone — including UTC (Z / +00:00) — IS timezoned. The old guard treated
+    // a 00:00 offset as "no timezone", so a UTC value compared against a non-UTC value wrongly took
+    // the implicit-timezone ±14h undecidable path (e.g. "…01:00Z" eq "…03:00+02:00" -> false).
+    if (a.getTimezone() != null) {
       a = new DateTime(a.getYear(),
                        a.getMonth(),
                        a.getDay(),
@@ -130,7 +133,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
                        a.getTimezone()).canonicalize();
       aHasTZ = true;
     }
-    if (b.getTimezone() != null && (b.getTimezone().getHours() != 0 || b.getTimezone().getMinutes() != 0)) {
+    if (b.getTimezone() != null) {
       b = new DateTime(b.getYear(),
                        b.getMonth(),
                        b.getDay(),
@@ -424,9 +427,14 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
   @Override
   public AbstractTimeInstant canonicalize() {
     DTD timezone = getTimezone();
-    if (timezone == null || timezone.getDays() == 0 && timezone.getHours() == 0) {
+    if (timezone == null) {
       return this;
     }
+    // Normalize to UTC through add for ANY offset — including UTC (0:00) and sub-hour offsets like
+    // +00:30. The old shortcut returned `this` whenever the offset hours were 0, which (a) left
+    // +00:30 unnormalized and (b) made a UTC value carry a differently-normalized synthetic date
+    // than a non-UTC value for xs:time/xs:date comparisons, breaking eq/lt/gt. For an already-UTC
+    // value this subtracts a zero offset (time unchanged) and just yields consistent fields.
     return add(!timezone.isNegative(), timezone, UTC_TIMEZONE);
   }
 

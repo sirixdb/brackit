@@ -67,7 +67,9 @@ public class Int extends AbstractNumeric implements IntNumeric {
   }
 
   public Int(double v) {
-    this.v = new BigDecimal((int) v);
+    // Floor to an integer without the lossy/overflowing (int) cast (used for idiv escalation of
+    // values beyond Long range).
+    this.v = BigDecimal.valueOf(v).setScale(0, RoundingMode.FLOOR);
   }
 
   @Override
@@ -158,8 +160,10 @@ public class Int extends AbstractNumeric implements IntNumeric {
 
   @Override
   public Numeric add(Numeric other) throws QueryException {
-    if (other instanceof DecNumeric) {
+    if (other instanceof IntNumeric) {
       return addBigDecimal(v, other.decimalValue(), false);
+    } else if (other instanceof DecNumeric) {
+      return addBigDecimal(v, other.decimalValue(), true);
     } else if (other instanceof DblNumeric) {
       return addDouble(v.doubleValue(), other.doubleValue());
     } else {
@@ -169,8 +173,10 @@ public class Int extends AbstractNumeric implements IntNumeric {
 
   @Override
   public Numeric subtract(Numeric other) throws QueryException {
-    if (other instanceof DecNumeric) {
+    if (other instanceof IntNumeric) {
       return subtractBigDecimal(v, other.decimalValue(), false);
+    } else if (other instanceof DecNumeric) {
+      return subtractBigDecimal(v, other.decimalValue(), true);
     } else if (other instanceof DblNumeric) {
       return subtractDouble(v.doubleValue(), other.doubleValue());
     } else {
@@ -215,8 +221,10 @@ public class Int extends AbstractNumeric implements IntNumeric {
 
   @Override
   public Numeric mod(Numeric other) throws QueryException {
-    if (other instanceof DecNumeric) {
-      return modBigDecimal(v, other.decimalValue());
+    if (other instanceof IntNumeric) {
+      return modBigDecimal(v, other.decimalValue(), false);
+    } else if (other instanceof DecNumeric) {
+      return modBigDecimal(v, other.decimalValue(), true);
     } else if (other instanceof DblNumeric) {
       return modDouble(v.doubleValue(), other.doubleValue());
     } else {

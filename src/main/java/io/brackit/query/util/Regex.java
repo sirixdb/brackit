@@ -97,8 +97,16 @@ public class Regex {
       }
     }
 
-    if (mode != Mode.MATCH && Pattern.matches(pattern, "")) {
-      throw (new QueryException(ErrorCode.ERR_REGULAR_EXPRESSION_EMPTY_STRING, "Pattern matches empty string."));
+    if (mode != Mode.MATCH) {
+      // Pattern.matches runs on the RAW pattern OUTSIDE the compile try/catch below — an invalid
+      // pattern (e.g. fn:tokenize('a','[')) threw a raw PatternSyntaxException instead of FORX0002.
+      try {
+        if (Pattern.matches(pattern, "")) {
+          throw (new QueryException(ErrorCode.ERR_REGULAR_EXPRESSION_EMPTY_STRING, "Pattern matches empty string."));
+        }
+      } catch (PatternSyntaxException e) {
+        throw new QueryException(e, ErrorCode.ERR_INVALID_REGULAR_EXPRESSION);
+      }
     }
 
     if (mode == Mode.TOKENIZE && input.isEmpty()) {
@@ -129,8 +137,17 @@ public class Regex {
         }
 
         StringBuffer sb = new StringBuffer();
-        while (matcher.find()) {
-          matcher.appendReplacement(sb, replace);
+        try {
+          while (matcher.find()) {
+            matcher.appendReplacement(sb, replace);
+          }
+        } catch (IndexOutOfBoundsException | IllegalArgumentException e) {
+          // A trailing lone '$' or '\' slips past the validation regex above (its alternatives
+          // require a following char); appendReplacement then throws a raw Java exception — map
+          // it to FORX0004 instead.
+          throw new QueryException(e,
+                                   ErrorCode.ERR_INVALID_REPLACEMENT_STRING,
+                                   "Invalid replacement string: " + replace);
         }
         matcher.appendTail(sb);
 
@@ -179,6 +196,9 @@ public class Regex {
             throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION,
                                      "Back references in character class expressions" + " are disallowed.");
           }
+          if (removeWhitespace) {
+            sb.append(c);
+          }
           backRef = backRef * 10 + Integer.parseInt(Character.toString(c));
           continue;
         }
@@ -196,13 +216,21 @@ public class Regex {
       }
 
       if (c == '\\' && !escaped) {
-        // Not preceded by backslash
+        // Not preceded by backslash. In whitespace-removal (x-flag) mode the rebuilt pattern is
+        // assembled char-by-char, so structural characters (\ ( ) [ ] and back-reference digits)
+        // must be re-appended here — dropping them silently changed the regex semantics.
+        if (removeWhitespace) {
+          sb.append(c);
+        }
         escaped = true;
         groupStart = false;
         continue;
       }
 
       if (c == '(' && !escaped) {
+        if (removeWhitespace) {
+          sb.append(c);
+        }
         groupStart = true;
         groupDepth++;
         escaped = false;
@@ -217,11 +245,20 @@ public class Regex {
           throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, "Invalid sequence of brackets.");
         }
         completeGroups++;
+        if (removeWhitespace) {
+          sb.append(c);
+        }
       } else if (c == '[' && !escaped) {
         charClassDepth++;
+        if (removeWhitespace) {
+          sb.append(c);
+        }
       } else if (c == ']' && !escaped) {
         if (--charClassDepth < 0) {
           throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION, "Invalid sequence of brackets.");
+        }
+        if (removeWhitespace) {
+          sb.append(c);
         }
       } else if (removeWhitespace) {
         // Remove whitespace outside of character classes
@@ -258,8 +295,10 @@ public class Regex {
     }
 
     if (mode == Mode.MATCH) {
-      // Adapt for XQuery substring matching by extending pattern
-      if (sb.charAt(0) != '^' || ((flagMask & Pattern.MULTILINE) == Pattern.MULTILINE)) {
+      // Adapt for XQuery substring matching by extending pattern. An EMPTY pattern is legal (it
+      // matches every string) — guard the charAt() calls so it does not throw
+      // StringIndexOutOfBoundsException.
+      if (sb.length() == 0 || sb.charAt(0) != '^' || ((flagMask & Pattern.MULTILINE) == Pattern.MULTILINE)) {
         if ((flagMask & Pattern.DOTALL) == Pattern.DOTALL) {
           sb.insert(0, ".*");
         } else {
@@ -267,7 +306,8 @@ public class Regex {
         }
       }
 
-      if (sb.charAt(sb.length() - 1) != '$' || ((flagMask & Pattern.MULTILINE) == Pattern.MULTILINE)) {
+      if (sb.length() == 0 || sb.charAt(sb.length() - 1) != '$' || ((flagMask & Pattern.MULTILINE)
+          == Pattern.MULTILINE)) {
         if ((flagMask & Pattern.DOTALL) == Pattern.DOTALL) {
           sb.append(".*");
         } else {

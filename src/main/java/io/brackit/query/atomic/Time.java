@@ -197,9 +197,9 @@ public class Time extends AbstractTimeInstant {
     int remainder = (micros - (seconds * 1000000));
     String sTmp = ((seconds < 10) ? "0" : "") + seconds;
     if (remainder != 0) {
-      while ((remainder / 10) == 0)
-        remainder /= 10; // cut trailing zeros
-      sTmp += ":" + remainder;
+      // Fractional seconds: micros padded to 6 digits, trailing zeros stripped, '.' separator.
+      final String frac = String.format("%06d", remainder).replaceAll("0+$", "");
+      sTmp += "." + frac;
     }
     return String.format("%s:%s:%s%s", hTmp, minTmp, sTmp, tzTmp);
   }

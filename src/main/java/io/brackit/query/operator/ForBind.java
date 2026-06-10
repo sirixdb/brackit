@@ -104,7 +104,10 @@ public class ForBind extends Check implements Operator {
           it.close();
           it = null;
           if (allowingEmpty) {
-            Tuple tmp = emit(i, null);
+            // emit the INPUT tuple with an empty binding — 'i' is provably null here (the
+            // i != null branch returned above), so emit(i, null) NPE'd on every lazy-empty
+            // bind sequence under 'allowing empty'.
+            Tuple tmp = emit(t, null);
             t = null;
             return tmp;
           } else if (check) {

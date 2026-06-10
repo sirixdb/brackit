@@ -97,12 +97,24 @@ public class StepExpr extends PredicateExpr {
           return null;
         } else if (fs instanceof Numeric) {
           IntNumeric pos = ((Numeric) fs).asIntNumeric();
+          // Positional predicates on reverse axes count in AXIS order (XPath §3.3.3 —
+          // reverse document order), but the accessors deliver document order: without
+          // reversing first, 'ancestor::*[1]' returned the root instead of the parent and
+          // 'preceding-sibling::*[1]' the FIRST sibling instead of the nearest — while the
+          // equivalent '[position()=1]' (the dependent-filter path below) was correct.
+          if (pos != null && backwardAxis && !reversed) {
+            s = reverse(s);
+            reversed = true;
+          }
           s = (pos != null) ? s.get(pos) : null;
         } else {
           try (Iter it = fs.iterate()) {
             Item first = it.next();
             if ((first != null) && (it.next() == null) && (first instanceof Numeric)) {
               IntNumeric pos = ((Numeric) first).asIntNumeric();
+              if (pos != null && backwardAxis && !reversed) {
+                return reverse(s).get(pos); // singleton result: no re-reversal needed
+              }
               return (pos != null) ? s.get(pos) : null;
             }
           }

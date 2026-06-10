@@ -74,7 +74,11 @@ public final class TopDownPipeline extends Walker {
           return end;
         }
       default:
-        throw new IllegalStateException();
+        // Reached for accepted-but-unimplemented clauses (e.g. tumbling/sliding WINDOW, which
+        // the parser and analyzer pass through but no operator implements). A bare
+        // IllegalStateException gave users no clue what failed.
+        throw new IllegalStateException("FLWOR clause is not supported by this processor (no operator implementation): "
+            + XQ.NAMES[clause.getType()]);
     }
   }
 

@@ -98,7 +98,10 @@ public class Castable implements Expr {
 
       if (code.eq(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) || code.eq(ErrorCode.ERR_UNKNOWN_ATOMIC_SCHEMA_TYPE) || code
                                                                                                                      .eq(ErrorCode.ERR_INVALID_LEXICAL_VALUE)
-          || code.eq(ErrorCode.ERR_INVALID_VALUE_FOR_CAST) || code.eq(ErrorCode.ERR_ILLEGAL_CAST_TARGET_TYPE)) {
+          || code.eq(ErrorCode.ERR_INVALID_VALUE_FOR_CAST) || code.eq(ErrorCode.ERR_ILLEGAL_CAST_TARGET_TYPE)
+          // `"x:y" castable as xs:QName` with an unbound prefix must yield false, not raise:
+          // the QName cast reports the bad prefix with this code.
+          || code.eq(ErrorCode.ERR_UNKNOWN_NS_PREFIX_IN_COMP_CONSTR)) {
         return Bool.FALSE;
       }
 

@@ -50,6 +50,9 @@ public class Error extends AbstractFunction {
     QNm qnm = (QNm) (args.length > 0 && args[0] != null ? args[0] : ErrorCode.ERR_UNIDENTIFIED_ERROR);
     Str description = (Str) (args.length > 1 && args[1] != null ? args[1] : Str.EMPTY);
     Sequence seq = args.length > 2 && args[2] != null ? args[2] : null;
-    throw new QueryException(qnm, description.stringValue(), seq);
+    // Verbatim description + retained error value: the old (QNm, String, Object...) overload ran
+    // the user description through String.format with the error value as a format arg — a '%' in
+    // the description threw UnknownFormatConversionException, and the error value was discarded.
+    throw new QueryException(qnm, description.stringValue(), seq, true);
   }
 }

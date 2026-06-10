@@ -176,7 +176,11 @@ public class GYM extends AbstractTimeInstant {
 
   @Override
   public String stringValue() {
-    String yTmp = (year < 0) ? "-" : "" + ((year < 10) ? "000" : (year < 100) ? "00" : (year < 1000) ? "0" : "") + year;
+    // A negative (BCE) year must keep its magnitude: "-0001", not just "-".
+    final int absYear = Math.abs(year);
+    String yTmp = ((year < 0) ? "-" : "") + ((absYear < 10)
+        ? "000"
+        : (absYear < 100) ? "00" : (absYear < 1000) ? "0" : "") + absYear;
     String mTmp = ((month < 10) ? "0" : "") + month;
     String tzTmp = timezoneString();
 

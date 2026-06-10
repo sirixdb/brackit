@@ -250,6 +250,18 @@ public abstract class D2Node extends AbstractNode<D2Node> {
         }
       }
     }
+    if (n.length > p.length) {
+      // p is a strict PREFIX of n (e.g. p=[3], n=[3,3]) — routinely reachable by repeated
+      // insert-before at the same boundary ([3],[5] -> insert [4,3] -> insert [3,3] -> the
+      // third insert lands here; this used to throw). Since a prefix sorts before any of its
+      // extensions (compare() returns length1-length2 on common prefix), a division strictly
+      // between p and n is p extended by a division BEFORE n's remaining tail.
+      int[] tail = Arrays.copyOfRange(n, p.length, n.length);
+      int[] before = siblingBefore(tail);
+      int[] r = Arrays.copyOf(p, p.length + before.length);
+      System.arraycopy(before, 0, r, p.length, before.length);
+      return r;
+    }
     throw new IllegalArgumentException(String.format("Illegal sibling divisions: %s and %s",
                                                      Arrays.toString(p),
                                                      Arrays.toString(n)));

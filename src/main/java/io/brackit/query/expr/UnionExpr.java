@@ -59,11 +59,20 @@ public class UnionExpr implements Expr {
     Sequence sequenceA = firstExpr.evaluate(ctx, tuple);
     Sequence sequenceB = secondExpr.evaluate(ctx, tuple);
 
-    if ((sequenceA == null) || (sequenceB == null)) {
+    final Comparator<Tuple> comparator = (o1, o2) -> ((Node<?>) o1).cmp((Node<?>) o2);
+
+    // An empty (null) operand does NOT empty the union: '() | $nodes' is $nodes in document
+    // order with duplicates removed (XQ 3.1 §3.4.2). The old both-or-nothing shortcut silently
+    // dropped the non-empty side.
+    if (sequenceA == null && sequenceB == null) {
       return null;
     }
-
-    final Comparator<Tuple> comparator = (o1, o2) -> ((Node<?>) o1).cmp((Node<?>) o2);
+    if (sequenceA == null) {
+      return new SortedNodeSequence(comparator, sequenceB, true);
+    }
+    if (sequenceB == null) {
+      return new SortedNodeSequence(comparator, sequenceA, true);
+    }
 
     final Sequence sortedA = new SortedNodeSequence(comparator, sequenceA, true);
     final Sequence sortedB = new SortedNodeSequence(comparator, sequenceB, true);

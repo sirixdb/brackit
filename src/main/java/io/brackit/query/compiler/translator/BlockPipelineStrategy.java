@@ -169,6 +169,12 @@ public class BlockPipelineStrategy implements PipelineStrategy {
       runVarType = compiler.sequenceType(runVarDecl.getChild(1));
     }
     AST posBindingOrSourceExpr = node.getChild(pos++);
+    // 'allowing empty' marker child (see Compiler#forClause) or the lifted property form.
+    boolean allowingEmptyChild = false;
+    if (posBindingOrSourceExpr.getType() == XQ.AllowingEmpty) {
+      allowingEmptyChild = true;
+      posBindingOrSourceExpr = node.getChild(pos++);
+    }
     QNm posVarName = null;
     if (posBindingOrSourceExpr.getType() == XQ.TypedVariableBinding) {
       posVarName = (QNm) posBindingOrSourceExpr.getChild(0).getValue();
@@ -180,7 +186,7 @@ public class BlockPipelineStrategy implements PipelineStrategy {
     compiler.table.resolve(runVarName);
 
     // Check if allowingEmpty is set
-    boolean allowingEmpty = node.checkProperty("allowingEmpty");
+    boolean allowingEmpty = allowingEmptyChild || node.checkProperty("allowingEmpty");
     ForBind forBind = new ForBind(sourceExpr, allowingEmpty);
 
     if (posVarName != null) {

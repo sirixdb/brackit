@@ -45,7 +45,7 @@ import static java.util.Objects.checkFromToIndex;
 public final class DRArray extends AbstractArray {
   private final List<Sequence> vals;
   private final int start;
-  private final int end;
+  private int end; // mutable: insert/append/remove on the slice grow/shrink the view window
 
   public DRArray(List<Sequence> vals, int start, int end) {
     if (start < 0 || start > end || start >= vals.size()) {
@@ -67,7 +67,10 @@ public final class DRArray extends AbstractArray {
 
   @Override
   public Array replaceAt(int index, Sequence value) {
-    if (start + index < 0 || start + index > vals.size()) {
+    // Bounds are the SLICE window [start, end), not the whole backing list: the old
+    // `> vals.size()` (and missing `index < 0`) let replaceAt/insert/remove escape the view
+    // and mutate elements outside the slice.
+    if (index < 0 || start + index >= end) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
     }
 
@@ -78,29 +81,33 @@ public final class DRArray extends AbstractArray {
 
   @Override
   public Array insert(int index, Sequence value) {
-    if (start + index < 0 || start + index > vals.size() - 1) {
+    if (index < 0 || start + index > end) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
     }
 
     vals.add(start + index, value);
+    end++; // the view grew by one
 
     return this;
   }
 
   @Override
   public Array append(Sequence value) {
-    vals.add(value);
+    // Append at the slice END, not the backing-list end (which was invisible to the view).
+    vals.add(end, value);
+    end++;
 
     return this;
   }
 
   @Override
   public Array remove(int index) {
-    if (start + index < 0 || start + index > vals.size() - 1) {
+    if (index < 0 || start + index >= end) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
     }
 
     vals.remove(start + index);
+    end--;
 
     return this;
   }
@@ -129,6 +136,9 @@ public final class DRArray extends AbstractArray {
   @Override
   public Sequence at(IntNumeric index) throws QueryException {
     try {
+      if (index.intValue() < 0) {
+        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
+      }
       int ii = start + index.intValue();
       if (ii >= end) {
         throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
@@ -142,6 +152,9 @@ public final class DRArray extends AbstractArray {
   @Override
   public Sequence at(int index) throws QueryException {
     try {
+      if (index < 0) {
+        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);
+      }
       int ii = start + index;
       if (ii >= end) {
         throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", index);

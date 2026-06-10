@@ -119,7 +119,9 @@ public final class DArray extends AbstractArray {
   public Sequence at(int i) {
     try {
       return vals.get(i);
-    } catch (ArrayIndexOutOfBoundsException e) {
+    } catch (IndexOutOfBoundsException e) {
+      // GapList.get throws the plain IndexOutOfBoundsException superclass, so catching only
+      // ArrayIndexOutOfBoundsException previously let a raw Java exception escape as an HTTP 500.
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
     }
   }

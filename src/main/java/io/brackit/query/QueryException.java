@@ -39,37 +39,76 @@ import io.brackit.query.atomic.QNm;
 public class QueryException extends RuntimeException {
   private final QNm code;
 
+  /** fn:error's user description (raw, NOT run through String.format) — null if not from fn:error. */
+  private final String description;
+
+  /** fn:error's error-object value ($err:value) — null if absent. */
+  private final transient Object errorValue;
+
+  /**
+   * fn:error constructor: keeps the description VERBATIM (no String.format — a '%' in user data
+   * crashed it) and retains the error value for $err:value.
+   */
+  public QueryException(QNm code, String description, Object errorValue, boolean fromError) {
+    super(code.toString() + ": " + description);
+    this.code = code;
+    this.description = description;
+    this.errorValue = errorValue;
+  }
+
   public QueryException(QNm code) {
     super(String.format(code.toString()));
     this.code = code;
+    this.description = null;
+    this.errorValue = null;
   }
 
   public QueryException(QNm code, Object o) {
     super(code.toString() + ": " + o);
     this.code = code;
+    this.description = null;
+    this.errorValue = null;
   }
 
   public QueryException(QNm code, String message, Object... args) {
     super(String.format(code.toString() + ": " + message, args));
     this.code = code;
+    this.description = null;
+    this.errorValue = null;
   }
 
   public QueryException(Throwable cause, QNm code, String message, Object... args) {
     super(String.format(code.toString() + ": " + message, args), cause);
     this.code = code;
+    this.description = null;
+    this.errorValue = null;
   }
 
   public QueryException(Throwable cause, QNm code) {
     super(code.toString(), cause);
     this.code = code;
+    this.description = null;
+    this.errorValue = null;
   }
 
   public QueryException(Throwable cause, QNm code, Object o) {
     super(code.toString() + ": " + o, cause);
     this.code = code;
+    this.description = null;
+    this.errorValue = null;
   }
 
   public QNm getCode() {
     return code;
+  }
+
+  /** The fn:error description ($err:description) — falls back to the full message. */
+  public String getDescription() {
+    return description != null ? description : getMessage();
+  }
+
+  /** The fn:error error-object value ($err:value), or null. */
+  public Object getErrorValue() {
+    return errorValue;
   }
 }
