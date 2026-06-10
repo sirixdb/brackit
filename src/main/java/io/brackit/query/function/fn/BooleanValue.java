@@ -49,24 +49,15 @@ public class BooleanValue extends AbstractFunction {
 
   @Override
   public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
-    if (not) {
-      if (args.length == 0) {
-        if ("true".equals(getName().getLocalName())) {
-          return Bool.FALSE;
-        } else if ("false".equals(getName().getLocalName())) {
-          return Bool.TRUE;
-        }
-      }
-      return args[0] == null ? Bool.TRUE : args[0].booleanValue() ? Bool.FALSE : Bool.TRUE;
-    } else {
-      if (args.length == 0) {
-        if ("false".equals(getName().getLocalName())) {
-          return Bool.FALSE;
-        } else if ("true".equals(getName().getLocalName())) {
-          return Bool.TRUE;
-        }
-      }
-      return args[0] == null ? Bool.FALSE : args[0].booleanValue() ? Bool.TRUE : Bool.FALSE;
+    if (args.length == 0) {
+      // fn:true()/fn:false() — the only zero-argument signatures routed here. The old shape fell
+      // through to an args[0] access (ArrayIndexOutOfBoundsException) for any other name.
+      final boolean isTrue = "true".equals(getName().getLocalName());
+      return isTrue != not ? Bool.TRUE : Bool.FALSE;
     }
+    if (not) {
+      return args[0] == null ? Bool.TRUE : args[0].booleanValue() ? Bool.FALSE : Bool.TRUE;
+    }
+    return args[0] == null ? Bool.FALSE : args[0].booleanValue() ? Bool.TRUE : Bool.FALSE;
   }
 }

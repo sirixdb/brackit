@@ -235,15 +235,10 @@ public class SumAvgAggregator implements Aggregator {
       // Check if we're still getting Int64 values
       if (!(a instanceof Int64 i64)) {
         // Type changed - flush buffer (exactly) and fall back to object path
-        Numeric sum = addRangeExactOrEscalate(longBuffer, bufferLen, currentSum);
-        // Continue with mixed-type processing
-        sum = numericSum(sum, item);
+        Numeric flushed = addRangeExactOrEscalate(longBuffer, bufferLen, currentSum);
+        flushed = numericSum(flushed, item);
         count++;
-        while ((item = in.next()) != null) {
-          sum = numericSum(sum, item);
-          count++;
-        }
-        return sum;
+        return drainViaNumericSum(in, flushed);
       }
 
       longBuffer[bufferLen++] = i64.longValue();
@@ -252,16 +247,11 @@ public class SumAvgAggregator implements Aggregator {
       if (bufferLen == BATCH_SIZE) {
         try {
           currentSum = sumRangeExact(longBuffer, bufferLen, currentSum);
-        } catch (ArithmeticException overflow) {
+        } catch (ArithmeticException _) {
           // xs:integer is arbitrary precision (F&O): the previous raw-long accumulation
           // silently WRAPPED here and returned a negative/garbage sum. Escalate to the
           // generic Numeric path (BigDecimal-backed) for the rest of the sequence.
-          Numeric sum = addRangeViaNumeric(longBuffer, bufferLen, currentSum);
-          while ((item = in.next()) != null) {
-            sum = numericSum(sum, item);
-            count++;
-          }
-          return sum;
+          return drainViaNumericSum(in, addRangeViaNumeric(longBuffer, bufferLen, currentSum));
         }
         bufferLen = 0;
       }
@@ -273,6 +263,16 @@ public class SumAvgAggregator implements Aggregator {
     }
 
     return new Int64(currentSum);
+  }
+
+  /** Consume the rest of the iterator through the generic (arbitrary-precision) sum path. */
+  private Numeric drainViaNumericSum(Iter in, Numeric sum) throws QueryException {
+    Item item;
+    while ((item = in.next()) != null) {
+      sum = numericSum(sum, item);
+      count++;
+    }
+    return sum;
   }
 
   /** Exact long-range sum; throws {@link ArithmeticException} on overflow. */
@@ -288,7 +288,7 @@ public class SumAvgAggregator implements Aggregator {
   private static Numeric addRangeViaNumeric(long[] buf, int len, long acc) throws QueryException {
     Numeric sum = new Int64(acc);
     for (int i = 0; i < len; i++) {
-      sum = (Numeric) sum.add(new Int64(buf[i]));
+      sum = sum.add(new Int64(buf[i]));
     }
     return sum;
   }
@@ -297,7 +297,7 @@ public class SumAvgAggregator implements Aggregator {
   private static Numeric addRangeExactOrEscalate(long[] buf, int len, long acc) throws QueryException {
     try {
       return new Int64(sumRangeExact(buf, len, acc));
-    } catch (ArithmeticException overflow) {
+    } catch (ArithmeticException _) {
       return addRangeViaNumeric(buf, len, acc);
     }
   }

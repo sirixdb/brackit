@@ -205,7 +205,7 @@ public final class OperatorContext {
     this.inputCardinality = leftCard + rightCard;
     // Ensure output cardinality doesn't overflow
     final double product = (double) leftCard * rightCard * this.selectivity;
-    this.outputCardinality = Math.max(1L, (long) Math.min(product, Long.MAX_VALUE - 1));
+    this.outputCardinality = Math.max(1L, (long) Math.min(product, (double) (Long.MAX_VALUE - 1)));
     return this;
   }
 
@@ -280,7 +280,7 @@ public final class OperatorContext {
     } else {
       // Full unboxing multiplies by array size
       final double product = (double) input * avgArraySize;
-      this.outputCardinality = Math.max(1L, (long) Math.min(product, Long.MAX_VALUE - 1));
+      this.outputCardinality = Math.max(1L, (long) Math.min(product, (double) (Long.MAX_VALUE - 1)));
     }
     return this;
   }
@@ -304,7 +304,7 @@ public final class OperatorContext {
     this.isDescendantDeref = false;
     // Output = input * array_size (unboxing)
     final double product = (double) input * avgArraySize;
-    this.outputCardinality = Math.max(1L, (long) Math.min(product, Long.MAX_VALUE - 1));
+    this.outputCardinality = Math.max(1L, (long) Math.min(product, (double) (Long.MAX_VALUE - 1)));
     return this;
   }
 

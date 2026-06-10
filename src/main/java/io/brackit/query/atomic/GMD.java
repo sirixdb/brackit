@@ -59,9 +59,10 @@ public class GMD extends AbstractTimeInstant {
     int length = charArray.length;
 
     // consume '--'
-    if ((pos + 1 >= length) || (charArray[pos++] != '-') || (charArray[pos++] != '-')) {
+    if (pos + 1 >= length || charArray[pos] != '-' || charArray[pos + 1] != '-') {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:gMonthDay", str);
     }
+    pos += 2;
 
     // parse month
     int start = pos;

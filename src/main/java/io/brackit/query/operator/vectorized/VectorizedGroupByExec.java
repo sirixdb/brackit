@@ -37,7 +37,6 @@ import io.brackit.query.QueryException;
 import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.Int64;
 import io.brackit.query.atomic.Str;
-import io.brackit.query.function.json.FastJSONParser;
 import io.brackit.query.function.json.MappedJsonScanner;
 import io.brackit.query.function.json.StreamingJSONParser;
 import io.brackit.query.jdm.Item;

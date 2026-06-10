@@ -47,6 +47,8 @@ import io.brackit.query.function.AbstractFunction;
  */
 public class Delay extends AbstractFunction {
 
+  private static final Random RND = new Random();
+
   public static final QNm DEFAULT_NAME = new QNm(Bits.BIT_NSURI, Bits.BIT_PREFIX, "delay");
 
   public Delay() {
@@ -61,8 +63,7 @@ public class Delay extends AbstractFunction {
   public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
     long delay = ((IntNumeric) args[0]).longValue();
     long start = System.currentTimeMillis();
-    Random rnd = new Random();
-    while (rnd.nextInt(5) != 0 && System.currentTimeMillis() - start < delay)
+    while (RND.nextInt(5) != 0 && System.currentTimeMillis() - start < delay)
       ;
     return null;
   }

@@ -50,7 +50,7 @@ import io.brackit.query.jdm.type.SequenceType;
 public class DefaultCtxItem extends Variable implements Unit {
 
   private Expr expr;
-  private ItemType type = AnyItemType.ANY;
+  private ItemType itemType = AnyItemType.ANY;
   private boolean external = true;
   private Item item;
 
@@ -64,7 +64,7 @@ public class DefaultCtxItem extends Variable implements Unit {
   }
 
   public void setType(ItemType type) {
-    this.type = type;
+    this.itemType = type;
   }
 
   public void setExternal(boolean external) {
@@ -93,7 +93,7 @@ public class DefaultCtxItem extends Variable implements Unit {
                                "Dynamic context variable %s is not assigned a value",
                                name);
     }
-    item = TypedSequence.toTypedItem(new SequenceType(type, Cardinality.One), i);
+    item = TypedSequence.toTypedItem(new SequenceType(itemType, Cardinality.One), i);
     return i;
   }
 }

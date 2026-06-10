@@ -110,7 +110,11 @@ public class ProfilingCompiler extends TopDownTranslator {
       String command = "dot -T" + PLOT_TYPE + " -o" + outfile + " " + f;
       Process proc = Runtime.getRuntime().exec(command);
       proc.waitFor();
-      f.delete();
+      if (!f.delete()) {
+        // Best-effort temp-file cleanup.
+      }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
     } catch (Exception e) {
       e.printStackTrace();
     }

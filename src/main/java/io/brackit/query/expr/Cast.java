@@ -523,6 +523,8 @@ public class Cast implements Expr {
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "Illegal cast from %s to %s", source, target);
   }
 
+  // new BigDecimal(double/float) is INTENTIONAL: xs:decimal gets the EXACT binary value of the source (valueOf would substitute the shortest decimal approximation).
+  @SuppressWarnings("java:S2111")
   private static Atomic primitiveToDec(Atomic atomic, Type source, Type target) {
     if (source == Type.UNA || source == Type.STR) {
       return new Dec(atomic.stringValue());
@@ -651,6 +653,8 @@ public class Cast implements Expr {
     }
   }
 
+  // new BigDecimal(double) is INTENTIONAL: beyond long range the exact binary expansion is the spec-correct integer (valueOf's shortest-representation differs, e.g. for 1e30).
+  @SuppressWarnings("java:S2111")
   public static IntNumeric asInteger(double d) {
     if (Double.isNaN(d) || Double.isInfinite(d)) { // `d == Double.NaN` is ALWAYS false
       throw new QueryException(ErrorCode.ERR_INVALID_LEXICAL_VALUE);
@@ -658,9 +662,9 @@ public class Cast implements Expr {
     if (d <= Integer.MAX_VALUE && d >= Integer.MIN_VALUE) {
       return new Int32((int) d);
     }
-    // && (not ||): a double outside long range must fall through to the arbitrary-precision
-    // BigInteger path. With ||, the condition was always true and xs:integer(1e30) silently
-    // SATURATED at Long.MAX_VALUE.
+    // Conjunction (not disjunction): a double outside long range must fall through to the
+    // arbitrary-precision BigInteger path. With a disjunction the condition was always true and
+    // xs:integer(1e30) silently SATURATED at Long.MAX_VALUE.
     if (d <= Long.MAX_VALUE && d >= Long.MIN_VALUE) {
       return new Int64((long) d);
     }

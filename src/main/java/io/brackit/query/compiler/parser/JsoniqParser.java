@@ -3023,7 +3023,9 @@ public class JsoniqParser extends Tokenizer {
       consume(la2);
       mode = new AST(XQ.ValidateStrict);
       consumeSkipWS("{");
-    } else if ((la2 = laSymSkipWS(la, "strict")) != null) {
+    } else if ((la2 = laSymSkipWS(la, "type")) != null) {
+      // 'validate type EQName { ... }': this branch looked ahead for "strict" again, so it was
+      // unreachable (duplicate of the previous condition) and the type-name form failed to parse.
       consume(la);
       consume(la2);
       mode = eqnameLiteral(false, true);

@@ -148,7 +148,10 @@ public class Ordering implements Comparator<Tuple> {
           if (lNaN && rNaN) {
             continue; // NaN equals NaN for ordering purposes — next orderspec
           }
-          return (modifier[i].EMPTY_LEAST) ? (lNaN ? -1 : 1) : (lNaN ? 1 : -1);
+          if (modifier[i].EMPTY_LEAST) {
+            return lNaN ? -1 : 1;
+          }
+          return lNaN ? 1 : -1;
         }
 
         int res = lAtomic.cmp(rAtomic);

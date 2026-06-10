@@ -736,7 +736,7 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
     MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, 0, buf, 0, len);
     for (int i = 0; i < len; i++) {
       if (buf[i] == '[')
-        return i + 1;
+        return i + 1L;
     }
     return 0;
   }

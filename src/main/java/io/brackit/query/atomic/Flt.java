@@ -161,11 +161,15 @@ public class Flt extends AbstractNumeric implements FltNumeric {
     return killTrailingZeros(v > 0 && v >= 1e-6 && v < 1e6 || -v >= 1e-6 && -v < 1e6 ? DF.format(v) : SF.format(v));
   }
 
+  // new BigDecimal(float) is INTENTIONAL: exact binary value, not the shortest decimal approximation.
+  @SuppressWarnings("java:S2111")
   @Override
   public BigDecimal decimalValue() {
     return new BigDecimal(v);
   }
 
+  // Exact-expansion BigDecimal intentional — see decimalValue().
+  @SuppressWarnings("java:S2111")
   @Override
   public BigDecimal integerValue() {
     return new BigDecimal(Math.floor(v));
@@ -271,6 +275,8 @@ public class Flt extends AbstractNumeric implements FltNumeric {
   }
 
   @Override
+  // Exact-expansion BigDecimal intentional — see decimalValue().
+  @SuppressWarnings("java:S2111")
   public Numeric roundHalfToEven(int precision) throws QueryException {
     if (Float.isInfinite(v) || v == 0 || Float.isNaN(v)) {
       return this;

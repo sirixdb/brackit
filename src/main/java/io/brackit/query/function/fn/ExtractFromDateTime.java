@@ -94,6 +94,8 @@ public class ExtractFromDateTime extends AbstractFunction {
           case TIMEZONE:
             return dt.getTimezone();
         }
+        // No extractable component for this source — falling through would cast to the wrong type.
+        return null;
 
       case DATE:
         Date date = (Date) args[0];
@@ -111,6 +113,8 @@ public class ExtractFromDateTime extends AbstractFunction {
           case TIMEZONE:
             return date.getTimezone();
         }
+        // No extractable component for this source — falling through would cast to the wrong type.
+        return null;
 
       case TIME:
         Time time = (Time) args[0];
@@ -128,6 +132,8 @@ public class ExtractFromDateTime extends AbstractFunction {
           case TIMEZONE:
             return time.getTimezone();
         }
+        // No extractable component for this source — falling through would cast to the wrong type.
+        return null;
 
       default:
         return null;

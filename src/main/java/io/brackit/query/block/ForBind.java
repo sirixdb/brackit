@@ -54,8 +54,8 @@ public class ForBind implements Block {
 
   final Expr expr;
   final boolean allowingEmpty;
-  final int min;
-  final int max;
+  final int splitMin;
+  final int splitMax;
   final int maxQueue;
   final int splitIn;
   boolean bindVar = true;
@@ -68,8 +68,8 @@ public class ForBind implements Block {
   public ForBind(Expr expr, boolean allowingEmpty, int min, int max, int maxQueue, int splitIn) {
     this.expr = expr;
     this.allowingEmpty = allowingEmpty;
-    this.min = min;
-    this.max = max;
+    this.splitMin = min;
+    this.splitMax = max;
     if (maxQueue < 1) {
       throw new IllegalStateException("maxQueue must be >= 1");
     }
@@ -109,7 +109,7 @@ public class ForBind implements Block {
 
     @Override
     protected void doCompute() throws QueryException {
-      Split split = it.split(min, max);
+      Split split = it.split(splitMin, splitMax);
       if (split == null) {
         // Iterator does not support splitting — process sequentially
         process(it);
@@ -139,7 +139,7 @@ public class ForBind implements Block {
             queue.poll().joinSerial();
           }
           Iter tail = split.tail;
-          split = tail.split(min, max);
+          split = tail.split(splitMin, splitMax);
           if (split == null) {
             // Tail does not support splitting — enqueue as final chunk
             split = new Split(tail, null, true);
@@ -156,7 +156,7 @@ public class ForBind implements Block {
       try (it) {
         Item i;
         // Use larger buffer for better throughput (powers of 2 for cache efficiency)
-        int bufSize = Math.max(max, 256);
+        int bufSize = Math.max(splitMax, 256);
         Tuple[] buf = new Tuple[bufSize];
         int len = 0;
         while ((i = it.next()) != null) {

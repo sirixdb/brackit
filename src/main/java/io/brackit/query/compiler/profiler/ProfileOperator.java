@@ -27,8 +27,6 @@
  */
 package io.brackit.query.compiler.profiler;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import io.brackit.query.QueryContext;
 import io.brackit.query.QueryException;
 import io.brackit.query.Tuple;
@@ -40,10 +38,6 @@ import io.brackit.query.util.dot.DotNode;
  * @author Sebastian Baechle
  */
 public class ProfileOperator extends ProfilingNode implements Operator {
-  private static final AtomicInteger idSource = new AtomicInteger(1);
-
-  private final int id = idSource.getAndIncrement();
-
   private Operator op;
 
   private long total;

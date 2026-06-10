@@ -208,14 +208,16 @@ public final class GroupByAggregates extends AggFunChecker {
 
   public static void main(String[] args) throws QueryException {
     DefaultOptimizer.UNNEST = false;
+    final class AggregateWalkOptimizer extends TopDownOptimizer {
+      AggregateWalkOptimizer(Map<QNm, Str> options) {
+        super(options);
+        stages.add(stages.size() - 2, (sctx, ast) -> new GroupByAggregates().walk(ast));
+      }
+    }
     CompileChain cc = new CompileChain() {
       @Override
       protected Optimizer getOptimizer(Map<QNm, Str> options) {
-        return new TopDownOptimizer(options) {
-          {
-            stages.add(stages.size() - 2, (sctx, ast) -> new GroupByAggregates().walk(ast));
-          }
-        };
+        return new AggregateWalkOptimizer(options);
       }
     };
     Query xq = new Query(cc,

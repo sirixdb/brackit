@@ -52,10 +52,12 @@ public class QueryException extends RuntimeException {
    * description, so an overload would be one missed argument away from that hazard.
    */
   public static QueryException fromFnError(QNm code, String description, Object errorValue) {
-    return new QueryException(code, description, errorValue, true);
+    return new QueryException(code, errorValue, description);
   }
 
-  private QueryException(QNm code, String description, Object errorValue, boolean verbatim) {
+  // Parameter order (code, value, description) keeps this private constructor unambiguous with
+  // the public format-interpreting (QNm, String, Object...) constructor.
+  private QueryException(QNm code, Object errorValue, String description) {
     super(code.toString() + ": " + description);
     this.code = code;
     this.description = description;

@@ -352,7 +352,7 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
    */
   private static long julianDayNumber(int year, int month, int day) {
     int a = (14 - month) / 12;
-    long y = (long) year + 4800L - a;
+    long y = year + 4800L - a;
     int m = month + 12 * a - 3;
     return day + (153L * m + 2) / 5 + 365L * y + y / 4 - y / 100 + y / 400 - 32045L;
   }
@@ -427,7 +427,17 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
    */
   static String yearString(final int year) {
     final int absYear = Math.abs(year);
-    return (year < 0 ? "-" : "") + (absYear < 10 ? "000" : absYear < 100 ? "00" : absYear < 1000 ? "0" : "") + absYear;
+    final String pad;
+    if (absYear < 10) {
+      pad = "000";
+    } else if (absYear < 100) {
+      pad = "00";
+    } else if (absYear < 1000) {
+      pad = "0";
+    } else {
+      pad = "";
+    }
+    return (year < 0 ? "-" : "") + pad + absYear;
   }
 
   /**

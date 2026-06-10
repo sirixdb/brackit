@@ -124,24 +124,32 @@ public class Grouping {
       if (seq != null) {
         Item item = ExprUtil.asItem(seq);
         if (item != null) {
-          gk[i] = item.atomize();
-          if (gk[i].type().instanceOf(Type.UNA)) {
-            gk[i] = Cast.cast(null, gk[i], Type.STR);
-          }
-          // Grouping equality treats -0.0 and +0.0 as ONE key (fn:deep-equal semantics), but
-          // both atomicCmp (Double.compare) and the key hash (doubleToLongBits) distinguish
-          // them — canonicalize so the pair lands in a single group. Dispatch on the
-          // DblNumeric/FltNumeric INTERFACES: document-sourced doubles are wrapper atomics,
-          // not the concrete Dbl/Flt classes.
-          if (gk[i] instanceof io.brackit.query.atomic.DblNumeric n && n.doubleValue() == 0.0d) {
-            gk[i] = DBL_POSITIVE_ZERO; // canonical instance — no per-key allocation
-          } else if (gk[i] instanceof io.brackit.query.atomic.FltNumeric n && n.doubleValue() == 0.0d) {
-            gk[i] = FLT_POSITIVE_ZERO;
-          }
+          gk[i] = canonicalGroupingKey(item);
         }
       }
     }
     return gk;
+  }
+
+  /**
+   * Atomize and canonicalize one grouping key. Grouping equality treats -0.0 and +0.0 as ONE key
+   * (fn:deep-equal semantics), but both atomicCmp (Double.compare) and the key hash
+   * (doubleToLongBits) distinguish them — canonicalize so the pair lands in a single group.
+   * Dispatch on the DblNumeric/FltNumeric INTERFACES: document-sourced doubles are wrapper
+   * atomics, not the concrete Dbl/Flt classes.
+   */
+  private static Atomic canonicalGroupingKey(Item item) throws QueryException {
+    Atomic key = item.atomize();
+    if (key.type().instanceOf(Type.UNA)) {
+      key = Cast.cast(null, key, Type.STR);
+    }
+    if (key instanceof io.brackit.query.atomic.DblNumeric n && n.doubleValue() == 0.0d) {
+      return DBL_POSITIVE_ZERO; // canonical instance — no per-key allocation
+    }
+    if (key instanceof io.brackit.query.atomic.FltNumeric n && n.doubleValue() == 0.0d) {
+      return FLT_POSITIVE_ZERO;
+    }
+    return key;
   }
 
   public boolean cmp(Atomic[] gk1, Atomic[] gk2) {
@@ -203,7 +211,7 @@ public class Grouping {
       if (s == null) {
         continue;
       }
-      addToAggregator(aggs[i], s);
+      addToAggregator(i, s);
     }
     for (int i = 0; i < addAggsSpecs.length; i++) {
       if ((size > 0) && (onlyFirst[tupleSize + i])) {
@@ -213,18 +221,20 @@ public class Grouping {
       if (s == null) {
         continue;
       }
-      addToAggregator(aggs[tupleSize + i], s);
+      addToAggregator(tupleSize + i, s);
     }
     size++;
   }
 
-  private void addToAggregator(Aggregator agg, Sequence s) throws QueryException {
+  private void addToAggregator(int aggIdx, Sequence s) throws QueryException {
+    // Lock on the shared per-aggregator instance from the field array (NOT a parameter) — the
+    // fine-grained per-aggregator monitor is the design here.
     if (threadSafe) {
-      synchronized (agg) {
-        agg.add(s);
+      synchronized (aggs[aggIdx]) {
+        aggs[aggIdx].add(s);
       }
     } else {
-      agg.add(s);
+      aggs[aggIdx].add(s);
     }
   }
 

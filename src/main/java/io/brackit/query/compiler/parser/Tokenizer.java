@@ -1376,9 +1376,10 @@ public class Tokenizer {
   protected String scanEscape(int pos, char escapeChar, String escapeString) {
     int s = pos;
     int e = s;
-    if (end - e < 2 || input[e++] != escapeChar || input[e++] != escapeChar) {
+    if (end - e < 2 || input[e] != escapeChar || input[e + 1] != escapeChar) {
       return null;
     }
+    e += 2;
     lastScanEnd = e;
     return escapeString;
   }

@@ -171,7 +171,7 @@ public class TryCatchExpr implements Expr {
     }
     if (bindValue) {
       final Object value = e.getErrorValue();
-      info[pos++] = (value instanceof Sequence) ? (Sequence) value : null;
+      info[pos++] = value instanceof Sequence sequence ? sequence : null;
     }
     if (bindModule) {
       info[pos++] = null;

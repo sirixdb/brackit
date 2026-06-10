@@ -273,8 +273,7 @@ public class DTD extends AbstractDuration {
   /** Convert a (negative, days, hours, minutes, micros) tuple into total signed micros. */
   private static long totalMicros(final boolean negative, final int days, final byte hours, final byte minutes,
       final int micros) {
-    final long total = (long) days * MICROS_PER_DAY + (long) hours * MICROS_PER_HOUR + (long) minutes
-        * MICROS_PER_MINUTE + micros;
+    final long total = days * MICROS_PER_DAY + hours * MICROS_PER_HOUR + minutes * MICROS_PER_MINUTE + micros;
     return negative ? -total : total;
   }
 
