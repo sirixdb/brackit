@@ -53,6 +53,6 @@ public class Error extends AbstractFunction {
     // Verbatim description + retained error value: the old (QNm, String, Object...) overload ran
     // the user description through String.format with the error value as a format arg — a '%' in
     // the description threw UnknownFormatConversionException, and the error value was discarded.
-    throw new QueryException(qnm, description.stringValue(), seq, true);
+    throw QueryException.fromFnError(qnm, description.stringValue(), seq);
   }
 }

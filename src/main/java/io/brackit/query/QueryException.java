@@ -46,10 +46,16 @@ public class QueryException extends RuntimeException {
   private final transient Object errorValue;
 
   /**
-   * fn:error constructor: keeps the description VERBATIM (no String.format — a '%' in user data
-   * crashed it) and retains the error value for $err:value.
+   * fn:error factory: keeps the description VERBATIM (no String.format — a '%' in user data
+   * crashed it) and retains the error value for $err:value. A named factory instead of a
+   * constructor: the varargs (QNm, String, Object...) constructor below format-interprets the
+   * description, so an overload would be one missed argument away from that hazard.
    */
-  public QueryException(QNm code, String description, Object errorValue, boolean fromError) {
+  public static QueryException fromFnError(QNm code, String description, Object errorValue) {
+    return new QueryException(code, description, errorValue, true);
+  }
+
+  private QueryException(QNm code, String description, Object errorValue, boolean verbatim) {
     super(code.toString() + ": " + description);
     this.code = code;
     this.description = description;
