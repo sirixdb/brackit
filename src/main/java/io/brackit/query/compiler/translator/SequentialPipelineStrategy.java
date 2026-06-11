@@ -202,6 +202,22 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       return VectorizedGroupByExpr.groupBy(executor, sourcePath, groupField);
     }
 
+    // Pattern 1b: generalized group-by (multi-key and/or query-renamed output
+    // fields). Capability-gated at translate time, same rationale as the sorted
+    // scan below. The canonical single-key Pattern 1 is checked first so
+    // executors keep their specialized projection fast paths for that shape.
+    if (executor.supportsMultiKeyGroupBy() && Boolean.TRUE.equals(node.getProperty(
+                                                                                   VectorizedScanAnnotation.VECTORIZED_GROUPBY_MULTI))) {
+      String[] groupFields = (String[]) node.getProperty(VectorizedScanAnnotation.GROUPBY_FIELDS);
+      String[] outNames = (String[]) node.getProperty(VectorizedScanAnnotation.GROUPBY_OUT_NAMES);
+      String countName = (String) node.getProperty(VectorizedScanAnnotation.GROUPBY_COUNT_NAME);
+      if (groupFields != null && outNames != null && countName != null && groupFields.length == outNames.length
+          && groupFields.length >= 1) {
+        PredicateNode predicate = (PredicateNode) node.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
+        return VectorizedGroupByExpr.groupByMulti(executor, sourcePath, groupFields, outNames, countName, predicate);
+      }
+    }
+
     // Pattern 2: Filtered count — only when wrapped in count(). Requires
     // PREDICATE_TREE; without it the query wasn't representable by the walker
     // and we fall back to the generic pipeline.
@@ -212,8 +228,12 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       }
     }
 
-    // Pattern 3: Sorted scan.
-    if (Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_ORDERBY))) {
+    // Pattern 3: Sorted scan. Capability-gated at translate time: the substitution
+    // is irreversible (no Volcano pipeline left at evaluate time), so dispatching to
+    // an executor whose executeSortedScan answers null would turn a valid query into
+    // a runtime error instead of a fallback.
+    if (executor.supportsSortedScan() && Boolean.TRUE.equals(node.getProperty(
+                                                                              VectorizedScanAnnotation.VECTORIZED_ORDERBY))) {
       String orderField = (String) node.getProperty(VectorizedScanAnnotation.ORDER_FIELD);
       String direction = (String) node.getProperty(VectorizedScanAnnotation.ORDER_DIRECTION);
       if (orderField != null) {

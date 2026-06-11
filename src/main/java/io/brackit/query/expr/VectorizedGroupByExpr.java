@@ -42,7 +42,7 @@ import io.brackit.query.jdm.Sequence;
 public final class VectorizedGroupByExpr implements Expr {
 
   public enum Mode {
-    GROUP_BY, SORTED_SCAN, AGGREGATE, COUNT_DISTINCT, GENERIC_PREDICATE_COUNT, GENERIC_PREDICATE_GROUPBY, GENERIC_PREDICATE_AGGREGATE
+    GROUP_BY, GROUP_BY_MULTI, SORTED_SCAN, AGGREGATE, COUNT_DISTINCT, GENERIC_PREDICATE_COUNT, GENERIC_PREDICATE_GROUPBY, GENERIC_PREDICATE_AGGREGATE
   }
 
   private final VectorizedExecutor executor;
@@ -54,9 +54,14 @@ public final class VectorizedGroupByExpr implements Expr {
   private final String orderDirection;
   private final String aggregateFunc;
   private final String aggregateField;
+  // GROUP_BY_MULTI only: source fields + output names in return-clause order, count field name.
+  private final String[] groupFields;
+  private final String[] groupOutNames;
+  private final String groupCountName;
 
   private VectorizedGroupByExpr(VectorizedExecutor executor, Mode mode, String[] sourcePath, String groupField,
-      PredicateNode predicate, String orderField, String orderDirection, String aggregateFunc, String aggregateField) {
+      PredicateNode predicate, String orderField, String orderDirection, String aggregateFunc, String aggregateField,
+      String[] groupFields, String[] groupOutNames, String groupCountName) {
     this.executor = executor;
     this.mode = mode;
     this.sourcePath = sourcePath;
@@ -66,11 +71,51 @@ public final class VectorizedGroupByExpr implements Expr {
     this.orderDirection = orderDirection;
     this.aggregateFunc = aggregateFunc;
     this.aggregateField = aggregateField;
+    this.groupFields = groupFields;
+    this.groupOutNames = groupOutNames;
+    this.groupCountName = groupCountName;
+  }
+
+  private VectorizedGroupByExpr(VectorizedExecutor executor, Mode mode, String[] sourcePath, String groupField,
+      PredicateNode predicate, String orderField, String orderDirection, String aggregateFunc, String aggregateField) {
+    this(executor,
+         mode,
+         sourcePath,
+         groupField,
+         predicate,
+         orderField,
+         orderDirection,
+         aggregateFunc,
+         aggregateField,
+         null,
+         null,
+         null);
   }
 
   /** Group-by count (no filter). */
   public static VectorizedGroupByExpr groupBy(VectorizedExecutor executor, String[] sourcePath, String groupField) {
     return new VectorizedGroupByExpr(executor, Mode.GROUP_BY, sourcePath, groupField, null, null, null, null, null);
+  }
+
+  /**
+   * Generalized group-by count: one or more key fields, query-defined output
+   * names, optional predicate. Only dispatched when the executor declares
+   * {@link VectorizedExecutor#supportsMultiKeyGroupBy()}.
+   */
+  public static VectorizedGroupByExpr groupByMulti(VectorizedExecutor executor, String[] sourcePath,
+      String[] groupFields, String[] outNames, String countName, PredicateNode predicate) {
+    return new VectorizedGroupByExpr(executor,
+                                     Mode.GROUP_BY_MULTI,
+                                     sourcePath,
+                                     null,
+                                     predicate,
+                                     null,
+                                     null,
+                                     null,
+                                     null,
+                                     groupFields,
+                                     outNames,
+                                     countName);
   }
 
   /** Sorted scan. */
@@ -164,6 +209,12 @@ public final class VectorizedGroupByExpr implements Expr {
     }
     return switch (mode) {
       case GROUP_BY -> executor.executeGroupByCount(ctx, sourcePath, groupField);
+      case GROUP_BY_MULTI -> requireSupported(executor.executeGroupByCountMulti(ctx,
+                                                                                sourcePath,
+                                                                                groupFields,
+                                                                                groupOutNames,
+                                                                                groupCountName,
+                                                                                predicate), "multi-key group-by-count");
       case SORTED_SCAN -> requireSupported(executor.executeSortedScan(ctx, sourcePath, orderField, orderDirection),
                                            "sorted scan");
       case AGGREGATE -> requireSupported(executor.executeAggregate(ctx, sourcePath, aggregateFunc, aggregateField),

@@ -22,14 +22,25 @@ public final class VectorizedScanAnnotation {
   public static final String VECTORIZED_AGGREGATE = "VECTORIZED_AGGREGATE";
   /** Count-distinct over a single field (count(for ... group by $d return $d)). */
   public static final String VECTORIZED_COUNT_DISTINCT = "VECTORIZED_COUNT_DISTINCT";
-  /** Top-N pattern (order-by + slice). */
-  public static final String VECTORIZED_TOPN = "VECTORIZED_TOPN";
 
   // ---- Group-by ----
-  /** Field name to group by (String). */
+  /** Field name to group by (String) — canonical single-key claim. */
   public static final String GROUPBY_FIELD = "VECTORIZED_GROUPBY_FIELD";
-  /** Additional group-by fields for multi-key grouping (String[]). */
-  public static final String GROUPBY_FIELDS_EXTRA = "VECTORIZED_GROUPBY_FIELDS_EXTRA";
+
+  /**
+   * Generalized (multi-key and/or renamed-output) group-by detected (Boolean).
+   * Set whenever the return clause is the generalized canonical shape
+   * {@code {name1: $k1, ..., nameM: $kM, countName: count($loop)}} for let-bound
+   * direct-deref keys matching the GroupBySpec exactly. Dispatch is gated on
+   * {@link VectorizedExecutor#supportsMultiKeyGroupBy()}.
+   */
+  public static final String VECTORIZED_GROUPBY_MULTI = "VECTORIZED_GROUPBY_MULTI";
+  /** Group-by source field names in RETURN-clause order (String[]). */
+  public static final String GROUPBY_FIELDS = "VECTORIZED_GROUPBY_FIELDS";
+  /** Output object field names for the group keys, aligned with GROUPBY_FIELDS (String[]). */
+  public static final String GROUPBY_OUT_NAMES = "VECTORIZED_GROUPBY_OUT_NAMES";
+  /** Output object field name for the per-group count (String). */
+  public static final String GROUPBY_COUNT_NAME = "VECTORIZED_GROUPBY_COUNT_NAME";
 
   // ---- Filter ----
   /**
@@ -82,10 +93,6 @@ public final class VectorizedScanAnnotation {
 
   /** Count-distinct target field (local-name String). */
   public static final String COUNT_DISTINCT_FIELD = "VECTORIZED_COUNT_DISTINCT_FIELD";
-
-  // ---- Top-N ----
-  /** Number of results to return (Long). */
-  public static final String TOPN_LIMIT = "VECTORIZED_TOPN_LIMIT";
 
   private VectorizedScanAnnotation() {
   }

@@ -32,8 +32,59 @@ import io.brackit.query.jdm.Sequence;
  */
 public interface VectorizedExecutor {
 
-  /** Execute a vectorized group-by-count query. */
+  /**
+   * Execute a vectorized group-by-count query.
+   *
+   * <p>RESULT ENVELOPE CONTRACT: the returned {@link Sequence} must be a flat
+   * sequence of per-group record items — exactly what the replaced FLWOR's
+   * {@code return {"<groupField>": $key, "count": n}} would emit. It must NOT
+   * be a single array item wrapping the records: brackit arrays iterate as
+   * their members, so counts still come out right, but the serialized result
+   * (one {@code [...]} item vs N object items) and positional semantics would
+   * silently differ from the generic pipeline.
+   */
   Sequence executeGroupByCount(QueryContext ctx, String[] sourcePath, String groupField) throws QueryException;
+
+  /**
+   * Whether {@link #executeSortedScan} is actually implemented. The dispatcher
+   * substitutes the sorted-scan expression at TRANSLATE time, after which there
+   * is no generic pipeline to fall back to — an executor that answers
+   * {@code null} at evaluate time turns into a runtime error. Capability is
+   * therefore declared up front; the default matches the default
+   * {@code executeSortedScan} (unsupported).
+   */
+  default boolean supportsSortedScan() {
+    return false;
+  }
+
+  /**
+   * Whether {@link #executeGroupByCountMulti} is actually implemented. Same
+   * translate-time gating rationale as {@link #supportsSortedScan()}.
+   */
+  default boolean supportsMultiKeyGroupBy() {
+    return false;
+  }
+
+  /**
+   * Generalized group-by-count: group the records reached via {@code sourcePath}
+   * by one or more fields and emit ONE record per distinct key combination,
+   * shaped {@code {outNames[0]: key0, ..., outNames[M-1]: keyM-1, countName: n}}.
+   * {@code groupFields} and {@code outNames} are aligned and in RETURN-clause
+   * order; {@code predicate} may be {@code null} (unfiltered) — when non-null it
+   * is evaluated per record before grouping.
+   *
+   * <p>Key values must keep their original JSON types (a numeric field groups
+   * and serializes as numbers, booleans as booleans) — stringifying keys is a
+   * wrong result, not a degradation.
+   *
+   * <p>Same RESULT ENVELOPE CONTRACT as {@link #executeGroupByCount}: a flat
+   * sequence of per-group record items, never a single wrapping array; an empty
+   * grouping is an EMPTY sequence, {@code null} strictly means "unsupported".
+   */
+  default Sequence executeGroupByCountMulti(QueryContext ctx, String[] sourcePath, String[] groupFields,
+      String[] outNames, String countName, PredicateNode predicate) throws QueryException {
+    return null;
+  }
 
   /**
    * Execute a vectorized sorted scan.
@@ -93,6 +144,11 @@ public interface VectorizedExecutor {
    * Generic predicate-tree group-by-count: evaluate {@code predicate} against
    * records reached via {@code sourcePath}; for each distinct value of
    * {@code groupField} among the matches, emit the group key + count.
+   *
+   * <p>Same RESULT ENVELOPE CONTRACT as {@link #executeGroupByCount}: a flat
+   * sequence of per-group record items, never a single wrapping array. A
+   * legitimately empty result (predicate matches nothing) is an EMPTY sequence
+   * — {@code null} strictly means "unsupported, fall back".
    *
    * @return grouped-count Sequence, or {@code null} if unsupported
    */
