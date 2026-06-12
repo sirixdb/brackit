@@ -585,21 +585,29 @@ public class Compiler implements Translator {
     boolean[] bindItem = new boolean[noOfPredicates];
     boolean[] bindPos = new boolean[noOfPredicates];
     boolean[] bindSize = new boolean[noOfPredicates];
+    boolean[] ebvFilter = new boolean[noOfPredicates];
 
     for (int i = 0; i < noOfPredicates; i++) {
+      AST predicate = node.getChild(1 + i);
       Binding itemBinding = table.bind(Bits.FS_DOT, SequenceType.ITEM);
       Binding posBinding = table.bind(Bits.FS_POSITION, SequenceType.INTEGER);
       Binding sizeBinding = table.bind(Bits.FS_LAST, SequenceType.INTEGER);
-      predicates[i] = expr(node.getChild(1 + i).getChild(0), true);
+      predicates[i] = expr(predicate.getChild(0), true);
       table.unbind();
       table.unbind();
       table.unbind();
       bindItem[i] = itemBinding.isReferenced();
       bindPos[i] = posBinding.isReferenced();
       bindSize[i] = sizeBinding.isReferenced();
+      // A JSONiq "[? ... ]" filter that references the context item ($$) is a pure
+      // truthiness filter: the predicate value is reduced to its effective boolean
+      // value and is never compared against the context position. Context-item
+      // independent predicates such as [?1] or [?last()] retain XQuery's positional
+      // semantics.
+      ebvFilter[i] = bindItem[i] && predicate.checkProperty("jsoniqFilter");
     }
 
-    return new FilterExpr(expr, predicates, bindItem, bindPos, bindSize);
+    return new FilterExpr(expr, predicates, bindItem, bindPos, bindSize, ebvFilter);
   }
 
   protected Expr insertExpr(AST node) throws QueryException {

@@ -52,6 +52,12 @@ public class FilterExpr extends PredicateExpr {
     this.expr = expr;
   }
 
+  public FilterExpr(Expr expr, Expr[] filter, boolean[] bindItem, boolean[] bindPos, boolean[] bindSize,
+      boolean[] ebvFilter) {
+    super(filter, bindItem, bindPos, bindSize, ebvFilter);
+    this.expr = expr;
+  }
+
   @Override
   public Sequence evaluate(final QueryContext ctx, final Tuple tuple) {
     Sequence s = expr.evaluate(ctx, tuple);
@@ -121,7 +127,9 @@ public class FilterExpr extends PredicateExpr {
           return null;
         }
 
-        if (fRes instanceof Numeric && ((Numeric) fRes).intValue() != 1) {
+        // JSONiq [? ... ] filters over the context item are pure truthiness checks; only
+        // ordinary XQuery predicates treat a numeric predicate value as a positional test.
+        if (!ebvFilter[i] && fRes instanceof Numeric && ((Numeric) fRes).intValue() != 1) {
           return null;
         }
 

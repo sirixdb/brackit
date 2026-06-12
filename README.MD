@@ -186,6 +186,11 @@ echo '[{"cat":"A","v":1},{"cat":"B","v":2},{"cat":"A","v":3}]' | \
 | **Automatic join optimization** | Hash-joins for FLWOR with multiple `for` clauses |
 | **JSON updates** | `insert`, `delete`, `replace`, `rename` |
 
+A `[? ... ]` predicate that references the current item `$$` is a truthiness filter: it keeps the
+items for which the expression has a true effective boolean value (`null`, `false`, `0`, `""`, and
+a missing member are falsy). Predicates that do not reference `$$` — such as `[?1]` or `[?last()]` —
+select by position, as in XQuery.
+
 ## Mutable JSON with Update Expressions
 
 Brackit supports the full JSONiq Update Facility - modify JSON data with declarative expressions:
