@@ -274,8 +274,19 @@ public abstract class AbstractNumeric extends AbstractAtomic implements Numeric 
       throw new QueryException(ErrorCode.ERR_DIVISION_BY_ZERO);
     }
 
-    int scale = isDecimal ? a.scale() - b.scale() : INTEGER_DIV_SCALE;
-    return new Dec(a.divide(b, scale, RoundingMode.HALF_EVEN));
+    // Exact quotient when the division terminates; otherwise round to the same
+    // 18-digit scale the integer-division path uses. The historical scale rule
+    // `a.scale() - b.scale()` (the MULTIPLICATION scale identity, negated) was
+    // catastrophically wrong for xs:decimal operands: `1.0 div 2.0` evaluated
+    // to scale 0 and HALF_EVEN-rounded 0.5 to **0**; `10.2 div 4` returned 2.6
+    // instead of 2.55. XQuery F&O leaves xs:decimal division precision
+    // implementation-defined, but a terminating quotient must not be rounded
+    // away.
+    try {
+      return new Dec(a.divide(b));
+    } catch (final ArithmeticException nonTerminating) {
+      return new Dec(a.divide(b, INTEGER_DIV_SCALE, RoundingMode.HALF_EVEN));
+    }
   }
 
   protected final Numeric idivideDouble(double a, double b) {

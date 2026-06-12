@@ -164,6 +164,19 @@ public final class VectorizedGroupByDetection implements Stage {
       return;
     }
 
+    // SOUND-ANCHOR GUARD: anchor-based executors iterate records via ONE
+    // field's slots and never visit a record lacking that field. A predicate
+    // that can hold on such a record (e.g. `$u.a > 1 or $u.b > 1` for a record
+    // carrying only `b`, or any shape whose Not/Or combination is satisfiable
+    // with some field absent) would silently lose matches on sparse data. Only
+    // claim predicates for which SOME referenced field provably excludes
+    // records missing it — the executor anchors there. No sound anchor → the
+    // whole selection is unrepresentable → generic (always correct) pipeline.
+    if (predicateRepresentable && !predicateConjuncts.isEmpty() && PredicateNode.and(predicateConjuncts)
+                                                                                .findSoundAnchorField() == null) {
+      predicateRepresentable = false;
+    }
+
     final boolean hasPredicate = predicateRepresentable && !predicateConjuncts.isEmpty();
     if (hasPredicate) {
       pipeExpr.setProperty(VectorizedScanAnnotation.PREDICATE_TREE, PredicateNode.and(predicateConjuncts));
@@ -621,9 +634,9 @@ public final class VectorizedGroupByDetection implements Stage {
     // $u.F OP literal — field on left.
     String field = directDerefFieldName(leftOperand);
     if (field != null) {
-      Long lv = extractIntegerLiteral(rightOperand);
-      if (lv != null)
-        return new PredicateNode.NumCmp(field, op, lv);
+      PredicateNode numCmp = numericComparison(field, op, rightOperand);
+      if (numCmp != null)
+        return numCmp;
       String sv = extractStringLiteral(rightOperand);
       if (sv != null && "eq".equals(op))
         return new PredicateNode.StrEq(field, sv);
@@ -632,9 +645,9 @@ public final class VectorizedGroupByDetection implements Stage {
     // literal OP $u.F — field on right. Reverse the comparison direction.
     field = directDerefFieldName(rightOperand);
     if (field != null) {
-      Long lv = extractIntegerLiteral(leftOperand);
-      if (lv != null)
-        return new PredicateNode.NumCmp(field, reverseOp(op), lv);
+      PredicateNode numCmp = numericComparison(field, reverseOp(op), leftOperand);
+      if (numCmp != null)
+        return numCmp;
       String sv = extractStringLiteral(leftOperand);
       if (sv != null && "eq".equals(op))
         return new PredicateNode.StrEq(field, sv);
@@ -714,29 +727,121 @@ public final class VectorizedGroupByDetection implements Stage {
 
   // ==================== Literal extraction ====================
 
-  private Long extractIntegerLiteral(AST node) {
-    if (node == null)
+  /** {@code Long.MIN_VALUE} / {@code Long.MAX_VALUE} as decimals, for exact-long range checks. */
+  private static final java.math.BigDecimal LONG_MIN = java.math.BigDecimal.valueOf(Long.MIN_VALUE);
+  private static final java.math.BigDecimal LONG_MAX = java.math.BigDecimal.valueOf(Long.MAX_VALUE);
+
+  /**
+   * Build the comparison leaf for {@code field <op> literal} — or {@code null}
+   * (fail closed, generic pipeline) when the literal cannot be represented
+   * EXACTLY in the vectorized predicate encoding.
+   *
+   * <p>Literal handling (the interpreter is the spec):
+   * <ul>
+   * <li>{@code xs:integer} ({@link XQ#Int}): exact {@code long} →
+   * {@link PredicateNode.NumCmp}; out-of-long-range integers fail closed.
+   * The historical code truncated via {@code Number#longValue()} —
+   * silently changing semantics for big literals.</li>
+   * <li>{@code xs:double} ({@link XQ#Dbl}): finite values →
+   * {@link PredicateNode.FpCmp}. The interpreter compares every numeric
+   * document value against an xs:double in double space
+   * ({@code Double.compare(v.doubleValue(), lit)} in
+   * {@code Int64#cmp}/{@code Dbl#cmp}/{@code Dec#cmp}) — exactly the FpCmp
+   * contract, including the interpreter-sanctioned precision loss for
+   * integers above {@code 2^53}. NaN / ±INF literals fail closed.</li>
+   * <li>{@code xs:decimal} ({@link XQ#Dec}): integral decimals that fit in a
+   * long → {@link PredicateNode.NumCmp} (exact, and identical semantics for
+   * every document value type). Anything else →
+   * {@link PredicateNode.DecCmp} carrying the EXACT
+   * {@link java.math.BigDecimal}: the interpreter compares integer and
+   * decimal document values against an xs:decimal exactly in decimal space
+   * ({@code IntNumeric extends DecNumeric}), so any lossy double image
+   * would silently change results. The historical code truncated
+   * {@code 9.99} to {@code 9}.</li>
+   * </ul>
+   */
+  private PredicateNode numericComparison(String field, String op, AST node) {
+    if (node == null || op == null)
       return null;
-    if (node.getType() == XQ.Int || node.getType() == XQ.Dbl || node.getType() == XQ.Dec) {
-      Object val = node.getValue();
-      if (val instanceof Number n)
-        return n.longValue();
-      // Brackit numeric types (Int32, Int64, etc.) extend Numeric, not java.lang.Number
-      if (val instanceof io.brackit.query.atomic.Numeric num)
-        return num.longValue();
-      if (val instanceof String s) {
-        try {
-          return Long.parseLong(s);
-        } catch (NumberFormatException e) {
-          return null;
-        }
+    final int type = node.getType();
+    if (type == XQ.Int) {
+      final Long lv = exactLongOf(node.getValue());
+      return lv != null ? new PredicateNode.NumCmp(field, op, lv) : null;
+    }
+    if (type == XQ.Dbl) {
+      final Double d = doubleOf(node.getValue());
+      if (d == null || !Double.isFinite(d))
+        return null;
+      return new PredicateNode.FpCmp(field, op, d);
+    }
+    if (type == XQ.Dec) {
+      final java.math.BigDecimal c = decimalOf(node.getValue());
+      if (c == null)
+        return null;
+      // Integral and long-representable → exact NumCmp.
+      if (c.stripTrailingZeros().scale() <= 0 && c.compareTo(LONG_MIN) >= 0 && c.compareTo(LONG_MAX) <= 0) {
+        return new PredicateNode.NumCmp(field, op, c.longValueExact());
+      }
+      return new PredicateNode.DecCmp(field, op, c);
+    }
+    // Any other node type is not a plain numeric literal — fail closed. (The
+    // historical catch-all read a Number value off ANY node type and truncated.)
+    return null;
+  }
+
+  /** Exact long of an integer-literal value object; {@code null} when lossy or not numeric. */
+  private static Long exactLongOf(Object val) {
+    if (val instanceof io.brackit.query.atomic.Numeric num) {
+      try {
+        return num.decimalValue().longValueExact();
+      } catch (ArithmeticException e) {
+        return null;
       }
     }
-    Object val = node.getValue();
-    if (val instanceof Number n)
-      return n.longValue();
+    if (val instanceof Long || val instanceof Integer || val instanceof Short || val instanceof Byte) {
+      return ((Number) val).longValue();
+    }
+    if (val instanceof String s) {
+      try {
+        return Long.parseLong(s);
+      } catch (NumberFormatException e) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /** Double of a double-literal value object; {@code null} when not numeric. */
+  private static Double doubleOf(Object val) {
     if (val instanceof io.brackit.query.atomic.Numeric num)
-      return num.longValue();
+      return num.doubleValue();
+    if (val instanceof Number n)
+      return n.doubleValue();
+    if (val instanceof String s) {
+      try {
+        return Double.parseDouble(s);
+      } catch (NumberFormatException e) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /** Exact decimal of a decimal-literal value object; {@code null} when not numeric. */
+  private static java.math.BigDecimal decimalOf(Object val) {
+    if (val instanceof io.brackit.query.atomic.Numeric num)
+      return num.decimalValue();
+    if (val instanceof java.math.BigDecimal bd)
+      return bd;
+    if (val instanceof Number n)
+      return new java.math.BigDecimal(n.toString());
+    if (val instanceof String s) {
+      try {
+        return new java.math.BigDecimal(s);
+      } catch (NumberFormatException e) {
+        return null;
+      }
+    }
     return null;
   }
 
