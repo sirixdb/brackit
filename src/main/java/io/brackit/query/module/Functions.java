@@ -510,6 +510,18 @@ public final class Functions {
                         new Signature(new SequenceType(AtomicType.QNM, Cardinality.One),
                                       new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
                                       new SequenceType(AtomicType.STR, Cardinality.One))));
+    predefine(new QNameComponent(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "local-name-from-QName"),
+                                 QNameComponent.Component.LOCAL_NAME,
+                                 new Signature(new SequenceType(new AtomicType(Type.NCN), Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.QNM, Cardinality.ZeroOrOne))));
+    predefine(new QNameComponent(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "namespace-uri-from-QName"),
+                                 QNameComponent.Component.NAMESPACE_URI,
+                                 new Signature(new SequenceType(AtomicType.AURI, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.QNM, Cardinality.ZeroOrOne))));
+    predefine(new QNameComponent(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "prefix-from-QName"),
+                                 QNameComponent.Component.PREFIX,
+                                 new Signature(new SequenceType(new AtomicType(Type.NCN), Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.QNM, Cardinality.ZeroOrOne))));
 
     // See XQuery Functions and Operators 14 Functions and Operators on
     // Nodes
