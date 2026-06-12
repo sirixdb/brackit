@@ -49,12 +49,24 @@ public abstract class PredicateExpr implements Expr {
   protected final boolean[] bindPos;
   protected final boolean[] bindSize;
   protected final int[] bindCount;
+  /**
+   * Per predicate: {@code true} if the predicate is a JSONiq {@code [? ... ]} filter referencing
+   * the context item ({@code $$}). Such filters apply effective-boolean-value (truthiness)
+   * semantics unconditionally — a numeric predicate value is NOT interpreted as a positional
+   * test against the context position.
+   */
+  protected final boolean[] ebvFilter;
 
   public PredicateExpr(Expr[] filter, boolean[] bindItem, boolean[] bindPos, boolean[] bindSize) {
+    this(filter, bindItem, bindPos, bindSize, new boolean[filter.length]);
+  }
+
+  public PredicateExpr(Expr[] filter, boolean[] bindItem, boolean[] bindPos, boolean[] bindSize, boolean[] ebvFilter) {
     this.filter = filter;
     this.bindItem = bindItem;
     this.bindPos = bindPos;
     this.bindSize = bindSize;
+    this.ebvFilter = ebvFilter;
     this.bindCount = new int[filter.length];
     for (int i = 0; i < filter.length; i++) {
       bindCount[i] = (bindItem[i] ? 1 : 0) + (bindPos[i] ? 1 : 0) + (bindSize[i] ? 1 : 0);
@@ -137,6 +149,11 @@ public abstract class PredicateExpr implements Expr {
 
           if (res == null) {
             return false;
+          }
+
+          if (ebvFilter[i]) {
+            // JSONiq [? ... ] filter over the context item: pure truthiness check.
+            return res.booleanValue();
           }
 
           if (res instanceof Numeric) {

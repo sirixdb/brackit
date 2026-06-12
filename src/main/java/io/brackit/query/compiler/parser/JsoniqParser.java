@@ -3000,6 +3000,12 @@ public class JsoniqParser extends Tokenizer {
       }
     }
     AST pred = new AST(XQ.Predicate);
+    if (isJsoniq) {
+      // Mark predicates stemming from the JSONiq filter syntax "[? ... ]" so that the
+      // compiler can apply filter (truthiness) semantics to context-item-dependent
+      // predicates instead of XQuery's numeric-equals-position rule.
+      pred.setProperty("jsoniqFilter", Boolean.TRUE);
+    }
     pred.addChild(expr());
     consumeSkipWS("]");
     return pred;

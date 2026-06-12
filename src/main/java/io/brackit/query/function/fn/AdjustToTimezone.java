@@ -73,7 +73,10 @@ public class AdjustToTimezone extends AbstractFunction {
     DTD timezone;
     if (args.length > 1) {
       timezone = (DTD) args[1];
-      if (timezone != null && (timezone.getMinutes() != 0 || timezone.getDays() != 0 || timezone.getHours() > 14)) {
+      // A timezone must be a whole number of minutes within -PT14H..PT14H. Sub-hour
+      // offsets such as PT5H30M are valid.
+      if (timezone != null && (timezone.getDays() != 0 || timezone.getMicros() != 0 || timezone.getHours() > 14
+          || (timezone.getHours() == 14 && timezone.getMinutes() != 0))) {
         throw new QueryException(ErrorCode.ERR_INVALID_TIMEZONE, "Invalid value for timezone.");
       }
     } else {
@@ -104,22 +107,12 @@ public class AdjustToTimezone extends AbstractFunction {
                                                        dt.getMicros(),
                                                        null);
         } else {
-          byte old = dt.getTimezone().getHours();
-          if (dt.getTimezone().isNegative()) {
-            old *= -1;
-          }
-
-          byte nw = timezone.getHours();
-          if (timezone.isNegative()) {
-            nw *= -1;
-          }
-
-          int diff = nw - old;
+          int diff = offsetInMinutes(timezone) - offsetInMinutes(dt.getTimezone());
           if (diff == 0) {
             return dt;
           }
 
-          dtNew = dt.add(new DTD(diff < 0, 0, (byte) Math.abs(diff), (byte) 0, 0));
+          dtNew = dt.add(minutesToDTD(diff));
           dtNew = new DateTime(dtNew.getYear(),
                                dtNew.getMonth(),
                                dtNew.getDay(),
@@ -142,22 +135,12 @@ public class AdjustToTimezone extends AbstractFunction {
         } else if (timezone == null) {
           dateNew = new Date(date.getYear(), date.getMonth(), date.getDay(), null);
         } else {
-          byte old = date.getTimezone().getHours();
-          if (date.getTimezone().isNegative()) {
-            old *= -1;
-          }
-
-          byte nw = timezone.getHours();
-          if (timezone.isNegative()) {
-            nw *= -1;
-          }
-
-          int diff = nw - old;
+          int diff = offsetInMinutes(timezone) - offsetInMinutes(date.getTimezone());
           if (diff == 0) {
             return date;
           }
 
-          dateNew = date.add(new DTD(diff < 0, 0, (byte) Math.abs(diff), (byte) 0, 0));
+          dateNew = date.add(minutesToDTD(diff));
           dateNew = new Date(dateNew.getYear(), dateNew.getMonth(), dateNew.getDay(), timezone);
         }
 
@@ -174,22 +157,12 @@ public class AdjustToTimezone extends AbstractFunction {
         } else if (timezone == null) {
           timeNew = new Time(time.getHours(), time.getMinutes(), time.getMicros(), null);
         } else {
-          byte old = time.getTimezone().getHours();
-          if (time.getTimezone().isNegative()) {
-            old *= -1;
-          }
-
-          byte nw = timezone.getHours();
-          if (timezone.isNegative()) {
-            nw *= -1;
-          }
-
-          int diff = nw - old;
+          int diff = offsetInMinutes(timezone) - offsetInMinutes(time.getTimezone());
           if (diff == 0) {
             return time;
           }
 
-          timeNew = time.add(new DTD(diff < 0, 0, (byte) Math.abs(diff), (byte) 0, 0));
+          timeNew = time.add(minutesToDTD(diff));
           timeNew = new Time(timeNew.getHours(), timeNew.getMinutes(), timeNew.getMicros(), timezone);
         }
 
@@ -197,6 +170,21 @@ public class AdjustToTimezone extends AbstractFunction {
     }
 
     return null;
+  }
+
+  /**
+   * The signed total offset of a timezone in minutes. Timezone offsets are not restricted to
+   * whole hours (e.g., +05:30); dropping the minutes component shifts the adjusted value to a
+   * different instant.
+   */
+  private static int offsetInMinutes(DTD timezone) {
+    int minutes = timezone.getHours() * 60 + timezone.getMinutes();
+    return timezone.isNegative() ? -minutes : minutes;
+  }
+
+  private static DTD minutesToDTD(int diffInMinutes) {
+    int abs = Math.abs(diffInMinutes);
+    return new DTD(diffInMinutes < 0, 0, (byte) (abs / 60), (byte) (abs % 60), 0);
   }
 
 }
