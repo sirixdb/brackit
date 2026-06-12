@@ -68,7 +68,9 @@ public class GYE extends AbstractTimeInstant {
 
     if (end - start < 4) {
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:gYear", str);
-    } else if ((end - start > 4) && (negative)) {
+    } else if ((end - start > 4) && (charArray[start] == '0')) {
+      // XSD: leading zeros are prohibited when the year has more than four digits; the sign
+      // does not restrict the number of digits.
       throw new QueryException(ErrorCode.ERR_INVALID_VALUE_FOR_CAST, "Cannot cast '%s' to xs:gYear", str);
     }
     int v = (start != end) ? Integer.parseInt(str.substring(start, end)) : -1; // parse leading value
