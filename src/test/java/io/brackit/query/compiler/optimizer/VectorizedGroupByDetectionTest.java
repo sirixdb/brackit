@@ -1089,4 +1089,250 @@ public class VectorizedGroupByDetectionTest {
     assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_AGGREGATE));
     assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
   }
+
+  // ==================== floating-point literals (FpCmp) ====================
+
+  /** Decimal literal node — matches the parser ({@code new AST(XQ.Dec, new Dec(str))}). */
+  private AST decLit(String value) {
+    return new AST(XQ.Dec, new io.brackit.query.atomic.Dec(new java.math.BigDecimal(value)));
+  }
+
+  /** Double literal node — matches the parser ({@code new AST(XQ.Dbl, new Dbl(str))}). */
+  private AST dblLit(String value) {
+    return new AST(XQ.Dbl, new io.brackit.query.atomic.Dbl(Double.parseDouble(value)));
+  }
+
+  /** Assert the predicate is an FpCmp with the given field/op/value (bit-exact). */
+  private void assertFpCmp(PredicateNode p, String field, String op, double value) {
+    assertInstanceOf(PredicateNode.FpCmp.class, p, "expected FpCmp predicate");
+    PredicateNode.FpCmp fc = (PredicateNode.FpCmp) p;
+    assertEquals(field, fc.field());
+    assertEquals(op, fc.op());
+    assertEquals(Double.doubleToRawLongBits(value),
+                 Double.doubleToRawLongBits(fc.value()),
+                 "FpCmp value must be bit-exact: expected " + value + " got " + fc.value());
+  }
+
+  /** Assert the predicate is a DecCmp with the given field/op/value (exact decimal). */
+  private void assertDecCmp(PredicateNode p, String field, String op, String value) {
+    assertInstanceOf(PredicateNode.DecCmp.class, p, "expected DecCmp predicate");
+    PredicateNode.DecCmp dc = (PredicateNode.DecCmp) p;
+    assertEquals(field, dc.field());
+    assertEquals(op, dc.op());
+    assertEquals(0,
+                 new java.math.BigDecimal(value).compareTo(dc.value()),
+                 "DecCmp value must be exact: expected " + value + " got " + dc.value());
+  }
+
+  @Test
+  void decimalLiteralBecomesExactDecCmp() {
+    // for $u where $u.score gt 9.99 return $u — historically TRUNCATED to `score > 9`
+    // (silently wrong results); now carried as an EXACT DecCmp (the interpreter
+    // compares integer/decimal document values against an xs:decimal exactly).
+    AST pipe = pipeExpr(forBind("u",
+                                selection(comparison(XQ.GeneralCompGT, deref("u", "score"), decLit("9.99")),
+                                          endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
+    assertDecCmp(predicateTree(pipe), "score", "gt", "9.99");
+  }
+
+  @Test
+  void doubleLiteralBecomesFpCmp() {
+    // for $u where $u.score ge 2.5e0 return $u
+    AST pipe = pipeExpr(forBind("u",
+                                selection(comparison(XQ.ValueCompGE, deref("u", "score"), dblLit("2.5e0")),
+                                          endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
+    assertFpCmp(predicateTree(pipe), "score", "ge", 2.5d);
+  }
+
+  @Test
+  void integralDecimalBecomesExactNumCmp() {
+    // for $u where $u.age le 10.0 return $u — 10.0 is an exact long; integer
+    // comparison and the interpreter's decimal comparison agree for every value.
+    AST pipe = pipeExpr(forBind("u",
+                                selection(comparison(XQ.GeneralCompLE, deref("u", "age"), decLit("10.0")),
+                                          endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
+    assertNumCmp(predicateTree(pipe), "age", "le", 10L);
+  }
+
+  @Test
+  void reversedDecimalComparisonNormalizes() {
+    // for $u where 9.99 lt $u.score return $u → score gt 9.99
+    AST pipe = pipeExpr(forBind("u",
+                                selection(comparison(XQ.GeneralCompLT, decLit("9.99"), deref("u", "score")),
+                                          endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertDecCmp(predicateTree(pipe), "score", "gt", "9.99");
+  }
+
+  @Test
+  void fractionalEqualityBecomesDecCmp() {
+    // for $u where $u.score eq 2.5 return $u — eq over a fractional literal is
+    // representable; integral columns simply never match it.
+    AST pipe = pipeExpr(forBind("u",
+                                selection(comparison(XQ.ValueCompEQ, deref("u", "score"), decLit("2.5")),
+                                          endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertDecCmp(predicateTree(pipe), "score", "eq", "2.5");
+  }
+
+  @Test
+  void hugeIntegerLiteralFailsClosed() {
+    // where $u.x gt 18446744073709551616 (= 2^64, not long-representable):
+    // the historical Number#longValue() truncation changed semantics silently.
+    AST huge = new AST(XQ.Int, new io.brackit.query.atomic.Int(new java.math.BigDecimal("18446744073709551616")));
+    AST pipe = pipeExpr(forBind("u",
+                                selection(comparison(XQ.GeneralCompGT, deref("u", "x"), huge), endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
+  }
+
+  @Test
+  void nonFiniteDoubleLiteralFailsClosed() {
+    // where $u.x lt xs:double NaN / INF — NaN comparison semantics (always false,
+    // even for lt+gt combined) are not representable; fail closed.
+    for (double bad : new double[] { Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY }) {
+      AST lit = new AST(XQ.Dbl, new io.brackit.query.atomic.Dbl(bad));
+      AST pipe = pipeExpr(forBind("u",
+                                  selection(comparison(XQ.GeneralCompLT, deref("u", "x"), lit), endReturningVar("u"))));
+
+      stage.rewrite(null, root(pipe));
+
+      assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT), "literal " + bad);
+      assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE), "literal " + bad);
+    }
+  }
+
+  @Test
+  void decimalCrossingIntegerBoundaryUnderDoubleRoundingStaysExact() {
+    // 9.9999999999999999999 rounds to double 10.0 — a double image would flip
+    // `x gt 9.9999999999999999999` for x=10. DecCmp carries the EXACT decimal,
+    // so the claim is safe.
+    AST pipe = pipeExpr(forBind("u",
+                                selection(comparison(XQ.GeneralCompGT,
+                                                     deref("u", "x"),
+                                                     decLit("9.9999999999999999999")), endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertDecCmp(predicateTree(pipe), "x", "gt", "9.9999999999999999999");
+  }
+
+  @Test
+  void fractionalDecimalBeyondTwoPow53StaysExact() {
+    // |c| >= 2^53: longs near c are not double-exact — DecCmp keeps the exact
+    // decimal so the comparison never degrades to a double image.
+    AST pipe = pipeExpr(forBind("u",
+                                selection(comparison(XQ.GeneralCompGT, deref("u", "x"), decLit("9007199254740993.5")),
+                                          endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertDecCmp(predicateTree(pipe), "x", "gt", "9007199254740993.5");
+  }
+
+  @Test
+  void integralDecimalBeyondTwoPow53StaysExactNumCmp() {
+    // 9007199254740993 (2^53 + 1) is integral and long-representable → exact
+    // NumCmp; the long comparison is exact even though the double image isn't.
+    AST pipe = pipeExpr(forBind("u",
+                                selection(comparison(XQ.GeneralCompGT, deref("u", "x"), decLit("9007199254740993")),
+                                          endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNumCmp(predicateTree(pipe), "x", "gt", 9007199254740993L);
+  }
+
+  // ==================== OR / sparse-anchor fail-closed ====================
+
+  @Test
+  void orAcrossDifferentFieldsFailsClosed() {
+    // where $u.a > 1 or $u.b > 1 — a record carrying only `b` satisfies the
+    // disjunction but is invisible to an anchor-based scan on `a` (and vice
+    // versa). No field is a sound anchor → no claim.
+    AST orExpr = new AST(XQ.OrExpr);
+    orExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "a"), intLit(1)));
+    orExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "b"), intLit(1)));
+    AST pipe = pipeExpr(forBind("u", selection(orExpr, endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
+  }
+
+  @Test
+  void orOnSameFieldStillClaimed() {
+    // where $u.a gt 900 or $u.a lt 5 — every disjunct references `a`; a record
+    // missing `a` fails both → `a` is a sound anchor → claimable.
+    AST orExpr = new AST(XQ.OrExpr);
+    orExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "a"), intLit(900)));
+    orExpr.addChild(comparison(XQ.GeneralCompLT, deref("u", "a"), intLit(5)));
+    AST pipe = pipeExpr(forBind("u", selection(orExpr, endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
+    PredicateNode p = predicateTree(pipe);
+    assertInstanceOf(PredicateNode.Or.class, p);
+  }
+
+  @Test
+  void orAcrossFieldsWithSoundConjunctStillClaimed() {
+    // where ($u.a > 1 or $u.b > 1) and $u.c > 0 — `c` is a sound anchor (records
+    // missing `c` fail the conjunction), so the predicate stays representable.
+    AST orExpr = new AST(XQ.OrExpr);
+    orExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "a"), intLit(1)));
+    orExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "b"), intLit(1)));
+    AST andExpr = new AST(XQ.AndExpr);
+    andExpr.addChild(orExpr);
+    andExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "c"), intLit(0)));
+    AST pipe = pipeExpr(forBind("u", selection(andExpr, endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
+    PredicateNode p = predicateTree(pipe);
+    assertInstanceOf(PredicateNode.And.class, p);
+    assertEquals("c", p.findSoundAnchorField());
+  }
+
+  @Test
+  void orAcrossDifferentFieldsBlocksGroupByClaim() {
+    // The unsound predicate must also veto group-by / aggregate claims, not just
+    // the filtered count.
+    AST orExpr = new AST(XQ.OrExpr);
+    orExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "a"), intLit(1)));
+    orExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "b"), intLit(1)));
+    AST pipe = pipeExpr(forBind("u",
+                                selection(orExpr,
+                                          letBind("c",
+                                                  deref("u", "city"),
+                                                  groupBy("c", endReturningGroupCount("city", "c", "u"))))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY));
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY_MULTI));
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
+  }
 }
