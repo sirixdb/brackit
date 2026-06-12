@@ -57,8 +57,8 @@ import io.brackit.query.atomic.Str;
 import io.brackit.query.compiler.optimizer.VectorizedExecutor;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Sequence;
-import io.brackit.query.jsonitem.array.DArray;
 import io.brackit.query.jsonitem.object.CompactObject;
+import io.brackit.query.sequence.ItemSequence;
 
 /**
  * 1BRC-inspired parallel group-by execution.
@@ -101,7 +101,9 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
   public Sequence executeGroupByCount(QueryContext ctx, String[] sourcePath, String groupField) throws QueryException {
     try {
       List<Item> results = executeGroupByCount(filePath, groupField);
-      return new DArray(results);
+      // Flat sequence of per-group records — the FLWOR's envelope, NOT one array item
+      // (RESULT ENVELOPE CONTRACT on VectorizedExecutor#executeGroupByCount).
+      return new ItemSequence(results.toArray(new Item[0]));
     } catch (Exception e) {
       throw new QueryException(e,
                                io.brackit.query.ErrorCode.BIT_DYN_INT_ERROR,
