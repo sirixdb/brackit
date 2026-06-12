@@ -70,8 +70,14 @@ public class Regex {
 
     // parse flags
     boolean removeWhitespace = false;
+    boolean literal = false;
     int flagMask = Pattern.UNIX_LINES;
     if (flags != null) {
+      if (flags.contains("q")) {
+        literal = true;
+        flags = flags.replace("q", "");
+      }
+
       if (flags.contains("x")) {
         removeWhitespace = true;
         flags = flags.replace("x", "");
@@ -95,13 +101,20 @@ public class Regex {
       if (!flags.isEmpty()) {
         throw new QueryException(ErrorCode.ERR_INVALID_REGULAR_EXPRESSION_FLAGS, "Unknown flags specified.");
       }
+
+      if (literal) {
+        // Flag "q": all characters of the pattern represent themselves. It may be combined
+        // with "i"; the "m", "s", and "x" flags have no effect in its presence.
+        flagMask &= ~(Pattern.DOTALL | Pattern.MULTILINE);
+        removeWhitespace = false;
+      }
     }
 
     if (mode != Mode.MATCH) {
       // Pattern.matches runs on the RAW pattern OUTSIDE the compile try/catch below — an invalid
       // pattern (e.g. fn:tokenize('a','[')) threw a raw PatternSyntaxException instead of FORX0002.
       try {
-        if (Pattern.matches(pattern, "")) {
+        if (literal ? pattern.isEmpty() : Pattern.matches(pattern, "")) {
           throw (new QueryException(ErrorCode.ERR_REGULAR_EXPRESSION_EMPTY_STRING, "Pattern matches empty string."));
         }
       } catch (PatternSyntaxException e) {
@@ -115,8 +128,12 @@ public class Regex {
 
     Pattern cpattern;
     try {
-      String regex = adaptRegEx(mode, pattern, flagMask, removeWhitespace);
-      cpattern = Pattern.compile(regex, flagMask);
+      if (literal) {
+        cpattern = Pattern.compile(pattern, flagMask | Pattern.LITERAL);
+      } else {
+        String regex = adaptRegEx(mode, pattern, flagMask, removeWhitespace);
+        cpattern = Pattern.compile(regex, flagMask);
+      }
     } catch (PatternSyntaxException e) {
       throw (new QueryException(e, ErrorCode.ERR_INVALID_REGULAR_EXPRESSION));
     }
@@ -124,8 +141,22 @@ public class Regex {
 
     switch (mode) {
       case MATCH:
-        return new Bool(matcher.matches());
+        // fn:matches has substring semantics. For translated patterns adaptRegEx pads the
+        // pattern with ".*" on both sides; a literal ("q") pattern must not be padded, so
+        // search for it instead.
+        return new Bool(literal ? matcher.find() : matcher.matches());
       case REPLACE:
+        if (literal) {
+          // Flag "q": the characters of the replacement string also represent themselves —
+          // "$" and "\" have no special significance.
+          StringBuffer literalSb = new StringBuffer();
+          while (matcher.find()) {
+            matcher.appendReplacement(literalSb, Matcher.quoteReplacement(replace));
+          }
+          matcher.appendTail(literalSb);
+          return new Str(literalSb.toString());
+        }
+
         // Disallowed in replacement string: backslash or dollar sign as
         // only character in string, or dollar sign not preceded by
         // backslash and not followed by a digit, or backslash not
