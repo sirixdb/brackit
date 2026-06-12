@@ -44,6 +44,39 @@ public class NumericCorrectnessTest extends XQueryBaseTest {
     ResultChecker.dCheck(new Int32(3), new Query("1 + 2").execute(ctx));
   }
 
+  // --- decimal division scale (was `1.0 div 2.0` -> 0, `10.2 div 4` -> 2.6:
+  // the result scale was computed as a.scale() - b.scale(), the negated
+  // MULTIPLICATION identity, and HALF_EVEN rounding destroyed terminating
+  // quotients) ---
+
+  @Test
+  public void decimalDivDecimalTerminating() {
+    ResultChecker.dCheck(dec("0.5"), new Query("1.0 div 2.0").execute(ctx));
+  }
+
+  @Test
+  public void decimalDivIntTerminating() {
+    ResultChecker.dCheck(dec("2.55"), new Query("10.2 div 4").execute(ctx));
+  }
+
+  @Test
+  public void decimalDivIntNonTerminating() {
+    // Non-terminating quotients round to the 18-digit scale the integer
+    // division path uses.
+    ResultChecker.dCheck(dec("0.033333333333333333"), new Query("0.1 div 3").execute(ctx));
+  }
+
+  @Test
+  public void avgDecimalsTerminating() {
+    // avg((10.2, ...)) routes through Dec#div — was rounded to one decimal digit.
+    ResultChecker.dCheck(dec("2.55"), new Query("avg((3, 3.7, 2, 1.5))").execute(ctx));
+  }
+
+  @Test
+  public void integerDivUnchanged() {
+    ResultChecker.dCheck(dec("2.5"), new Query("5 div 2").execute(ctx));
+  }
+
   // --- sum / avg over mixed int+decimal (was sum((1,2.5,3)) -> 6) ---
 
   @Test
