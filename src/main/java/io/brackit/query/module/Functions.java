@@ -39,6 +39,7 @@ import io.brackit.query.function.json.JSONFun;
 import io.brackit.query.function.json.Keys;
 import io.brackit.query.function.json.Size;
 import io.brackit.query.util.Regex;
+import io.brackit.query.util.format.DateTimeFormatter;
 import io.brackit.query.jdm.Function;
 import io.brackit.query.jdm.Signature;
 import io.brackit.query.jdm.Type;
@@ -158,6 +159,17 @@ public final class Functions {
                                 new Signature(new SequenceType(NumericType.INSTANCE, Cardinality.ZeroOrOne),
                                               new SequenceType(NumericType.INSTANCE, Cardinality.ZeroOrOne),
                                               new SequenceType(AtomicType.INR, Cardinality.One))));
+
+    // See XQuery Functions and Operators 4.6.1 fn:format-integer
+    predefine(new FormatInteger(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "format-integer"),
+                                new Signature(new SequenceType(AtomicType.STR, Cardinality.One),
+                                              new SequenceType(AtomicType.INR, Cardinality.ZeroOrOne),
+                                              new SequenceType(AtomicType.STR, Cardinality.One))));
+    predefine(new FormatInteger(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "format-integer"),
+                                new Signature(new SequenceType(AtomicType.STR, Cardinality.One),
+                                              new SequenceType(AtomicType.INR, Cardinality.ZeroOrOne),
+                                              new SequenceType(AtomicType.STR, Cardinality.One),
+                                              new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne))));
 
     // See XQuery Functions and Operators 7.2 Functions to Assemble and
     // Disassemble Strings
@@ -505,11 +517,56 @@ public final class Functions {
                                                  new SequenceType(AtomicType.TIME, Cardinality.ZeroOrOne),
                                                  new SequenceType(AtomicType.DTD, Cardinality.ZeroOrOne))));
 
+    // See XQuery Functions and Operators 9.8 Formatting dates and times
+    predefine(new FormatDateTime(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "format-dateTime"),
+                                 DateTimeFormatter.Source.DATE_TIME,
+                                 new Signature(new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.DATI, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.STR, Cardinality.One))));
+    predefine(new FormatDateTime(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "format-dateTime"),
+                                 DateTimeFormatter.Source.DATE_TIME,
+                                 new Signature(new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.DATI, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.STR, Cardinality.One),
+                                               new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne))));
+    predefine(new FormatDateTime(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "format-date"),
+                                 DateTimeFormatter.Source.DATE,
+                                 new Signature(new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.DATE, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.STR, Cardinality.One))));
+    predefine(new FormatDateTime(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "format-date"),
+                                 DateTimeFormatter.Source.DATE,
+                                 new Signature(new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.DATE, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.STR, Cardinality.One),
+                                               new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne))));
+    predefine(new FormatDateTime(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "format-time"),
+                                 DateTimeFormatter.Source.TIME,
+                                 new Signature(new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.TIME, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.STR, Cardinality.One))));
+    predefine(new FormatDateTime(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "format-time"),
+                                 DateTimeFormatter.Source.TIME,
+                                 new Signature(new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.TIME, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.STR, Cardinality.One),
+                                               new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+                                               new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne))));
+
     // See XQuery Functions and Operators 11 Functions Related to QNames
     predefine(new QName(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "QName"),
                         new Signature(new SequenceType(AtomicType.QNM, Cardinality.One),
                                       new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
                                       new SequenceType(AtomicType.STR, Cardinality.One))));
+    predefine(new ResolveQName(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "resolve-QName"),
+                               new Signature(new SequenceType(AtomicType.QNM, Cardinality.ZeroOrOne),
+                                             new SequenceType(AtomicType.STR, Cardinality.ZeroOrOne),
+                                             new SequenceType(ElementType.ELEMENT, Cardinality.One))));
     predefine(new QNameComponent(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "local-name-from-QName"),
                                  QNameComponent.Component.LOCAL_NAME,
                                  new Signature(new SequenceType(new AtomicType(Type.NCN), Cardinality.ZeroOrOne),

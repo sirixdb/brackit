@@ -435,6 +435,27 @@ public class ErrorCode {
   public static final QNm ERR_INVALID_TIMEZONE = new QNm(Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "FODT0003");
 
   /**
+   * err:FODF1310 - invalid format token / picture string in fn:format-integer (or fn:format-number)
+   */
+  public static final QNm ERR_INVALID_FORMAT_INTEGER_PICTURE = new QNm(Namespaces.ERR_NSURI,
+                                                                       Namespaces.ERR_PREFIX,
+                                                                       "FODF1310");
+
+  /**
+   * err:FOFD1340 - invalid date/time formatting parameters (picture syntax, calendar, language, place)
+   */
+  public static final QNm ERR_INVALID_DATETIME_PICTURE = new QNm(Namespaces.ERR_NSURI,
+                                                                 Namespaces.ERR_PREFIX,
+                                                                 "FOFD1340");
+
+  /**
+   * err:FOFD1350 - component in date/time picture not available in the supplied value type
+   */
+  public static final QNm ERR_DATETIME_COMPONENT_NOT_AVAILABLE = new QNm(Namespaces.ERR_NSURI,
+                                                                         Namespaces.ERR_PREFIX,
+                                                                         "FOFD1350");
+
+  /**
    * err:FODC0005
    */
   public static final QNm ERR_DOCUMENT_NOT_FOUND = new QNm(Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "FODC0005");
