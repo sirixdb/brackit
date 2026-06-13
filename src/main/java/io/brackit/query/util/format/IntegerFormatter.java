@@ -140,7 +140,8 @@ public final class IntegerFormatter {
    * interpreted as a decimal digit pattern.
    */
   public static boolean containsDecimalDigit(String token) {
-    for (int i = 0; i < token.length();) {
+    int i = 0;
+    while (i < token.length()) {
       final int cp = token.codePointAt(i);
       if (Character.getType(cp) == Character.DECIMAL_DIGIT_NUMBER) {
         return true;
@@ -191,7 +192,8 @@ public final class IntegerFormatter {
 
     final int length = token.length();
     int digitSigns = 0;
-    for (int i = 0; i < length;) {
+    int i = 0;
+    while (i < length) {
       final int cp = token.codePointAt(i);
       final int charCount = Character.charCount(cp);
       if (Character.getType(cp) == Character.DECIMAL_DIGIT_NUMBER) {
@@ -235,55 +237,15 @@ public final class IntegerFormatter {
     }
 
     // Convert "digit signs before separator" into "digit signs to the right of the separator".
-    for (int i = 0; i < separatorsLeftToRight.size(); i++) {
-      separatorsLeftToRight.get(i)[0] = digitSigns - digitSignsBeforeSeparator.get(i);
+    for (int s = 0; s < separatorsLeftToRight.size(); s++) {
+      separatorsLeftToRight.get(s)[0] = digitSigns - digitSignsBeforeSeparator.get(s);
     }
 
     // Determine whether the grouping separators are "regular" and can be extrapolated.
-    int groupSize = -1;
-    int groupChar = -1;
-    if (!separatorsLeftToRight.isEmpty()) {
-      boolean regular = true;
-      final int candidateChar = separatorsLeftToRight.get(0)[1];
-      int minPosition = Integer.MAX_VALUE;
-      for (final int[] sep : separatorsLeftToRight) {
-        if (sep[1] != candidateChar) {
-          regular = false;
-          break;
-        }
-        minPosition = Math.min(minPosition, sep[0]);
-      }
-      if (regular) {
-        final int g = minPosition;
-        // every separator position must be a multiple of g
-        for (final int[] sep : separatorsLeftToRight) {
-          if (sep[0] % g != 0) {
-            regular = false;
-            break;
-          }
-        }
-        // every positive multiple of g below the number of digit signs must be a separator position
-        if (regular) {
-          for (int multiple = g; multiple < digitSigns; multiple += g) {
-            boolean found = false;
-            for (final int[] sep : separatorsLeftToRight) {
-              if (sep[0] == multiple) {
-                found = true;
-                break;
-              }
-            }
-            if (!found) {
-              regular = false;
-              break;
-            }
-          }
-        }
-        if (regular) {
-          groupSize = g;
-          groupChar = candidateChar;
-        }
-      }
-    }
+    final int groupSize = separatorsLeftToRight.isEmpty()
+        ? -1
+        : determineRegularGroupSize(separatorsLeftToRight, digitSigns);
+    final int groupChar = groupSize == -1 ? -1 : separatorsLeftToRight.get(0)[1];
 
     return new DecimalPattern(mandatory,
                               optional,
@@ -291,6 +253,42 @@ public final class IntegerFormatter {
                               groupSize,
                               groupChar,
                               groupSize != -1 ? List.of() : separatorsLeftToRight);
+  }
+
+  /**
+   * The extrapolatable group size when the separators are "regular" per the spec: all are the
+   * same character, every position is a multiple of the smallest one, and every multiple of that
+   * size below the number of digit signs is a separator position. Returns -1 when irregular.
+   */
+  private static int determineRegularGroupSize(List<int[]> separators, int digitSigns) {
+    final int candidateChar = separators.get(0)[1];
+    int groupSize = Integer.MAX_VALUE;
+    for (final int[] sep : separators) {
+      if (sep[1] != candidateChar) {
+        return -1;
+      }
+      groupSize = Math.min(groupSize, sep[0]);
+    }
+    for (final int[] sep : separators) {
+      if (sep[0] % groupSize != 0) {
+        return -1;
+      }
+    }
+    for (int multiple = groupSize; multiple < digitSigns; multiple += groupSize) {
+      if (!hasSeparatorAt(separators, multiple)) {
+        return -1;
+      }
+    }
+    return groupSize;
+  }
+
+  private static boolean hasSeparatorAt(List<int[]> separators, int position) {
+    for (final int[] sep : separators) {
+      if (sep[0] == position) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static QueryException invalidPattern(String token, String reason) {
@@ -480,7 +478,7 @@ public final class IntegerFormatter {
         continue;
       }
       final int scale = groupCount - 1 - i;
-      if (sb.length() > 0) {
+      if (!sb.isEmpty()) {
         // "and" joins a final tens-and-units group to the preceding larger parts
         if (scale == 0 && group < 100) {
           sb.append(" and ");

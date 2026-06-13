@@ -57,8 +57,10 @@ import io.brackit.query.util.Whitespace;
  * designators from the spec's list fall back to AD with the spec-mandated
  * <code>[Calendar: AD]</code> output prefix; a calendar QName in a namespace is likewise treated
  * as unsupported (fallback), and any other value is rejected with err:FOFD1340.</li>
- * <li><code>$place</code> is accepted but not used (no geographical/timezone database); the spec
- * permits falling back to the default place for unrecognized values.</li>
+ * <li><code>$place</code> is accepted by the function signatures but not used (no
+ * geographical/timezone database); the spec permits falling back to the default place for
+ * unrecognized values. The argument is therefore consumed in the function wrapper and never
+ * reaches this formatter.</li>
  * <li>Day-of-week and week numbers use the ISO 8601 conventions (Monday=1, first-Thursday rule)
  * for both calendars; weeks-in-month follow the spec's Thursday rule.</li>
  * <li>The year component formats the absolute value of the year (per the spec's component table);
@@ -75,8 +77,11 @@ import io.brackit.query.util.Whitespace;
  */
 public final class DateTimeFormatter {
 
+  /** All component specifiers defined by the spec, in table order. */
+  private static final String ALL_COMPONENTS = "YMDdFWwHhPmsfZzCE";
+
   public enum Source {
-    DATE_TIME("YMDdFWwHhPmsfZzCE", "xs:dateTime"), DATE("YMDdFWwCEZz", "xs:date"), TIME("HhPmsfZzC", "xs:time");
+    DATE_TIME(ALL_COMPONENTS, "xs:dateTime"), DATE("YMDdFWwCEZz", "xs:date"), TIME("HhPmsfZzC", "xs:time");
 
     final String components;
     final String typeName;
@@ -91,7 +96,11 @@ public final class DateTimeFormatter {
     AD, ISO
   }
 
-  private static final String ALL_COMPONENTS = "YMDdFWwHhPmsfZzCE";
+  /** Spec-mandated output prefix when a requested calendar falls back to AD. */
+  private static final String CALENDAR_FALLBACK_PREFIX = "[Calendar: AD]";
+
+  /** Default (and fallback) numeric timezone presentation: signed hours and minutes. */
+  private static final String DEFAULT_TIMEZONE_PRESENTATION = "01:01";
 
   /** Calendar designators enumerated by the spec (all valid; only AD and ISO are supported). */
   private static final Set<String> KNOWN_CALENDARS = Set.of("AD",
@@ -132,79 +141,96 @@ public final class DateTimeFormatter {
   private DateTimeFormatter() {
   }
 
-  public static String format(Source source, TimeInstant value, String picture, String language, String calendar,
-      String place) {
-    final StringBuilder prefix = new StringBuilder();
+  public static String format(Source source, TimeInstant value, String picture, String language, String calendar) {
+    final StringBuilder out = new StringBuilder();
+    appendLanguagePrefix(out, language);
+    final CalendarKind calendarKind = resolveCalendar(out, calendar);
+    appendFormattedPicture(out, source, value, calendarKind, picture);
+    return out.toString();
+  }
 
-    if (language != null) {
-      final String lang = Whitespace.collapseTrimOnly(language);
-      if (!lang.isEmpty() && !"en".equalsIgnoreCase(lang) && !lang.toLowerCase().startsWith("en-")) {
-        // fallback to the supported language, identifying it as the spec requires
-        prefix.append("[Language: en]");
-      }
+  private static void appendLanguagePrefix(StringBuilder out, String language) {
+    if (language == null) {
+      return;
     }
-
-    CalendarKind calendarKind = CalendarKind.AD;
-    if (calendar != null) {
-      final String cal = Whitespace.collapseTrimOnly(calendar);
-      if (!cal.isEmpty()) {
-        if (cal.startsWith("Q{") || cal.indexOf(':') >= 0) {
-          // a calendar identified by a namespaced EQName is implementation-defined territory;
-          // we support none, so use the spec-mandated fallback representation
-          prefix.append("[Calendar: AD]");
-        } else if (!XMLChar.isNCName(cal)) {
-          throw new QueryException(ErrorCode.ERR_INVALID_DATETIME_PICTURE,
-                                   "Invalid calendar value '%s': not a valid EQName",
-                                   cal);
-        } else if ("AD".equals(cal)) {
-          calendarKind = CalendarKind.AD;
-        } else if ("ISO".equals(cal)) {
-          calendarKind = CalendarKind.ISO;
-        } else if (KNOWN_CALENDARS.contains(cal)) {
-          prefix.append("[Calendar: AD]");
-        } else {
-          throw new QueryException(ErrorCode.ERR_INVALID_DATETIME_PICTURE, "Unknown calendar designator '%s'", cal);
-        }
-      }
+    final String lang = Whitespace.collapseTrimOnly(language);
+    if (!lang.isEmpty() && !"en".equalsIgnoreCase(lang) && !lang.toLowerCase().startsWith("en-")) {
+      // fallback to the supported language, identifying it as the spec requires
+      out.append("[Language: en]");
     }
+  }
 
-    // $place is accepted but not used: without a geographical/timezone database the spec
-    // prescribes using the default place for unrecognized values.
+  private static CalendarKind resolveCalendar(StringBuilder out, String calendar) {
+    if (calendar == null) {
+      return CalendarKind.AD;
+    }
+    final String cal = Whitespace.collapseTrimOnly(calendar);
+    if (cal.isEmpty()) {
+      return CalendarKind.AD;
+    }
+    if (cal.startsWith("Q{") || cal.indexOf(':') >= 0) {
+      // namespaced EQName calendars are implementation-defined territory and unsupported here,
+      // so the spec-mandated fallback representation is used
+      out.append(CALENDAR_FALLBACK_PREFIX);
+      return CalendarKind.AD;
+    }
+    if (!XMLChar.isNCName(cal)) {
+      throw new QueryException(ErrorCode.ERR_INVALID_DATETIME_PICTURE,
+                               "Invalid calendar value '%s': not a valid EQName",
+                               cal);
+    }
+    if ("AD".equals(cal)) {
+      return CalendarKind.AD;
+    }
+    if ("ISO".equals(cal)) {
+      return CalendarKind.ISO;
+    }
+    if (KNOWN_CALENDARS.contains(cal)) {
+      out.append(CALENDAR_FALLBACK_PREFIX);
+      return CalendarKind.AD;
+    }
+    throw new QueryException(ErrorCode.ERR_INVALID_DATETIME_PICTURE, "Unknown calendar designator '%s'", cal);
+  }
 
-    final StringBuilder out = new StringBuilder(prefix);
+  private static void appendFormattedPicture(StringBuilder out, Source source, TimeInstant value,
+      CalendarKind calendarKind, String picture) {
     final int length = picture.length();
     int i = 0;
     while (i < length) {
       final char c = picture.charAt(i);
       if (c == '[') {
-        if (i + 1 < length && picture.charAt(i + 1) == '[') {
+        if (isDoubled(picture, i)) {
           out.append('[');
           i += 2;
-          continue;
+        } else {
+          final int close = picture.indexOf(']', i + 1);
+          if (close < 0) {
+            throw new QueryException(ErrorCode.ERR_INVALID_DATETIME_PICTURE,
+                                     "Invalid picture string '%s': unclosed variable marker",
+                                     picture);
+          }
+          out.append(formatMarker(source, value, calendarKind, picture.substring(i + 1, close)));
+          i = close + 1;
         }
-        final int close = picture.indexOf(']', i + 1);
-        if (close < 0) {
-          throw new QueryException(ErrorCode.ERR_INVALID_DATETIME_PICTURE,
-                                   "Invalid picture string '%s': unclosed variable marker",
-                                   picture);
-        }
-        out.append(formatMarker(source, value, calendarKind, picture.substring(i + 1, close)));
-        i = close + 1;
       } else if (c == ']') {
-        if (i + 1 < length && picture.charAt(i + 1) == ']') {
+        if (isDoubled(picture, i)) {
           out.append(']');
           i += 2;
-          continue;
+        } else {
+          throw new QueryException(ErrorCode.ERR_INVALID_DATETIME_PICTURE,
+                                   "Invalid picture string '%s': ']' in literal text must be doubled",
+                                   picture);
         }
-        throw new QueryException(ErrorCode.ERR_INVALID_DATETIME_PICTURE,
-                                 "Invalid picture string '%s': ']' in literal text must be doubled",
-                                 picture);
       } else {
         out.append(c);
         i++;
       }
     }
-    return out.toString();
+  }
+
+  /** True iff the character at {@code i} is immediately repeated (escaped bracket). */
+  private static boolean isDoubled(String picture, int i) {
+    return i + 1 < picture.length() && picture.charAt(i + 1) == picture.charAt(i);
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -267,7 +293,7 @@ public final class DateTimeFormatter {
     }
     marker.first = rest;
 
-    return formatComponent(source, value, calendarKind, marker);
+    return formatComponent(value, calendarKind, marker);
   }
 
   private static void parseWidth(Marker marker, String width) {
@@ -302,65 +328,59 @@ public final class DateTimeFormatter {
   // Component dispatch
   // ---------------------------------------------------------------------------------------------
 
-  private static String formatComponent(Source source, TimeInstant value, CalendarKind calendarKind, Marker marker) {
-    switch (marker.component) {
-      case 'Y':
-        return formatYear(value, marker);
-      case 'M':
-        if (isNameForm(effectiveFirst(marker, "1"))) {
-          return formatName(MONTHS[value.getMonth() - 1], marker, "n");
-        }
-        return formatIntegerComponent(value.getMonth(), marker, "1");
-      case 'D':
-        return formatIntegerComponent(value.getDay(), marker, "1");
-      case 'd':
-        return formatIntegerComponent(dayOfYear(value), marker, "1");
-      case 'F':
-        if (isNameForm(effectiveFirst(marker, "n"))) {
-          return formatName(DAYS[dayOfWeekIndex(value)], marker, "n");
-        }
-        return formatIntegerComponent(dayOfWeekIndex(value) + 1, marker, "n");
-      case 'W':
-        return formatIntegerComponent(weekOfYear(value), marker, "1");
-      case 'w':
-        return formatIntegerComponent(weekOfMonth(value), marker, "1");
-      case 'H':
-        return formatIntegerComponent(value.getHours(), marker, "1");
-      case 'h': {
-        final int hour12 = value.getHours() % 12 == 0 ? 12 : value.getHours() % 12;
-        return formatIntegerComponent(hour12, marker, "1");
-      }
-      case 'P':
-        return formatName(value.getHours() < 12 ? "am" : "pm", marker, "n");
-      case 'm':
-        return formatIntegerComponent(value.getMinutes(), marker, "01");
-      case 's':
-        return formatIntegerComponent(value.getMicros() / 1_000_000, marker, "01");
-      case 'f':
-        return formatFractionalSeconds(value.getMicros() % 1_000_000, marker);
-      case 'Z':
-      case 'z':
-        return formatTimezone(value, marker);
-      case 'C':
-        // the output of the calendar component is implementation-defined: the designator in use
-        return applyWidthToName(calendarKind == CalendarKind.ISO ? "ISO" : "AD", marker);
-      case 'E': {
-        // implementation-defined era names: AD/BC for the AD calendar; the ISO convention is a
-        // minus sign for negative years and a zero-length string otherwise
-        final String era;
-        if (calendarKind == CalendarKind.ISO) {
-          era = value.getYear() < 0 ? "-" : "";
-        } else {
-          era = value.getYear() < 0 ? "BC" : "AD";
-        }
-        return applyWidthToName(era, marker);
-      }
-      default:
-        // unreachable: validated above
-        throw new QueryException(ErrorCode.ERR_INVALID_DATETIME_PICTURE,
-                                 "Invalid component specifier '%s'",
-                                 marker.component);
+  private static String formatComponent(TimeInstant value, CalendarKind calendarKind, Marker marker) {
+    return switch (marker.component) {
+      case 'Y' -> formatYear(value, marker);
+      case 'M' -> formatMonth(value, marker);
+      case 'D' -> formatIntegerComponent(value.getDay(), marker, "1");
+      case 'd' -> formatIntegerComponent(dayOfYear(value), marker, "1");
+      case 'F' -> formatDayOfWeek(value, marker);
+      case 'W' -> formatIntegerComponent(weekOfYear(value), marker, "1");
+      case 'w' -> formatIntegerComponent(weekOfMonth(value), marker, "1");
+      case 'H' -> formatIntegerComponent(value.getHours(), marker, "1");
+      case 'h' -> formatIntegerComponent(value.getHours() % 12 == 0 ? 12 : value.getHours() % 12, marker, "1");
+      case 'P' -> formatName(value.getHours() < 12 ? "am" : "pm", marker, "n");
+      case 'm' -> formatIntegerComponent(value.getMinutes(), marker, "01");
+      case 's' -> formatIntegerComponent(value.getMicros() / 1_000_000, marker, "01");
+      case 'f' -> formatFractionalSeconds(value.getMicros() % 1_000_000, marker);
+      case 'Z', 'z' -> formatTimezone(value, marker);
+      // the output of the calendar component is implementation-defined: the designator in use
+      case 'C' -> applyWidthToName(calendarKind == CalendarKind.ISO ? "ISO" : "AD", marker);
+      case 'E' -> formatEra(value, calendarKind, marker);
+      // unreachable: the component specifier has been validated against ALL_COMPONENTS
+      default -> throw new QueryException(ErrorCode.ERR_INVALID_DATETIME_PICTURE,
+                                          "Invalid component specifier '%s'",
+                                          marker.component);
+    };
+  }
+
+  private static String formatMonth(TimeInstant value, Marker marker) {
+    if (isNameForm(effectiveFirst(marker, "1"))) {
+      return formatName(MONTHS[value.getMonth() - 1], marker, "n");
     }
+    return formatIntegerComponent(value.getMonth(), marker, "1");
+  }
+
+  private static String formatDayOfWeek(TimeInstant value, Marker marker) {
+    if (isNameForm(effectiveFirst(marker, "n"))) {
+      return formatName(DAYS[dayOfWeekIndex(value)], marker, "n");
+    }
+    // the index is 0..6, so the int addition cannot overflow; widen first anyway
+    return formatIntegerComponent(dayOfWeekIndex(value) + 1L, marker, "n");
+  }
+
+  /**
+   * Implementation-defined era names: AD/BC for the AD calendar; the ISO convention is a minus
+   * sign for negative years and a zero-length string otherwise.
+   */
+  private static String formatEra(TimeInstant value, CalendarKind calendarKind, Marker marker) {
+    final String era;
+    if (calendarKind == CalendarKind.ISO) {
+      era = value.getYear() < 0 ? "-" : "";
+    } else {
+      era = value.getYear() < 0 ? "BC" : "AD";
+    }
+    return applyWidthToName(era, marker);
   }
 
   private static String effectiveFirst(Marker marker, String defaultPresentation) {
@@ -393,8 +413,8 @@ public final class DateTimeFormatter {
   }
 
   private static String formatYear(TimeInstant value, Marker marker) {
-    // per the component table the year component formats the absolute value of the year;
-    // the era component carries the BC/AD distinction
+    // the year component formats the absolute value of the year (per the spec's component
+    // table) and the era component carries the BC/AD distinction
     long year = Math.abs((long) value.getYear());
 
     final String first = effectiveFirst(marker, "1");
@@ -419,7 +439,8 @@ public final class DateTimeFormatter {
 
   private static int countDigitSigns(String pattern) {
     int count = 0;
-    for (int i = 0; i < pattern.length();) {
+    int i = 0;
+    while (i < pattern.length()) {
       final int cp = pattern.codePointAt(i);
       if (cp == '#' || Character.getType(cp) == Character.DECIMAL_DIGIT_NUMBER) {
         count++;
@@ -429,19 +450,16 @@ public final class DateTimeFormatter {
     return count;
   }
 
-  /**
-   * Applies a width modifier to a decimal digit pattern: optional digit signs are converted to
-   * mandatory ones starting from the right, then mandatory digit signs are prepended until the
-   * minimum width is reached. The maximum width is ignored for integer-valued components.
-   */
-  private static String adjustPatternToMinWidth(String pattern, Marker marker) {
-    if (!marker.hasWidth || marker.minWidth <= 0) {
-      return pattern;
-    }
+  /** Mandatory digit count, the family's zero digit, and grouping presence of a digit pattern. */
+  private record DigitPatternInfo(int mandatory, int zeroDigit, boolean hasGrouping) {
+  }
+
+  private static DigitPatternInfo scanDigitPattern(String pattern) {
     int mandatory = 0;
     int zeroDigit = '0';
     boolean hasGrouping = false;
-    for (int i = 0; i < pattern.length();) {
+    int i = 0;
+    while (i < pattern.length()) {
       final int cp = pattern.codePointAt(i);
       if (Character.getType(cp) == Character.DECIMAL_DIGIT_NUMBER) {
         if (mandatory == 0) {
@@ -453,20 +471,34 @@ public final class DateTimeFormatter {
       }
       i += Character.charCount(cp);
     }
-    if (hasGrouping || mandatory >= marker.minWidth) {
-      // combining width modifiers with grouping separators is implementation-defined;
-      // we leave the pattern untouched
+    return new DigitPatternInfo(mandatory, zeroDigit, hasGrouping);
+  }
+
+  /**
+   * Applies a width modifier to a decimal digit pattern: optional digit signs are converted to
+   * mandatory ones starting from the right, then mandatory digit signs are prepended until the
+   * minimum width is reached. The maximum width is ignored for integer-valued components.
+   */
+  private static String adjustPatternToMinWidth(String pattern, Marker marker) {
+    if (!marker.hasWidth || marker.minWidth <= 0) {
       return pattern;
     }
+    final DigitPatternInfo info = scanDigitPattern(pattern);
+    if (info.hasGrouping() || info.mandatory() >= marker.minWidth) {
+      // leave the pattern untouched: combining width modifiers with grouping separators is
+      // implementation-defined
+      return pattern;
+    }
+    int mandatory = info.mandatory();
     final StringBuilder sb = new StringBuilder(pattern);
     for (int i = sb.length() - 1; i >= 0 && mandatory < marker.minWidth; i--) {
       if (sb.charAt(i) == '#') {
-        sb.setCharAt(i, (char) zeroDigit);
+        sb.setCharAt(i, (char) info.zeroDigit());
         mandatory++;
       }
     }
     while (mandatory < marker.minWidth) {
-      sb.insert(0, (char) zeroDigit);
+      sb.insert(0, (char) info.zeroDigit());
       mandatory++;
     }
     return sb.toString();
@@ -477,9 +509,10 @@ public final class DateTimeFormatter {
       return IntegerFormatter.format(value, token, ordinal);
     } catch (final QueryException e) {
       if (ErrorCode.ERR_INVALID_FORMAT_INTEGER_PICTURE.equals(e.getCode())) {
-        // a syntactically invalid presentation modifier is a picture syntax error here;
-        // the (QNm, Object) constructor concatenates and never re-format-interprets the message
-        throw new QueryException(e, ErrorCode.ERR_INVALID_DATETIME_PICTURE, (Object) e.getMessage());
+        // a syntactically invalid presentation modifier is a picture syntax error here. The
+        // message is passed to the (Throwable, QNm, Object) constructor, which concatenates and
+        // never re-format-interprets it (the already-formatted message may contain '%').
+        throw new QueryException(e, ErrorCode.ERR_INVALID_DATETIME_PICTURE, e.getMessage());
       }
       throw e;
     }
@@ -524,17 +557,17 @@ public final class DateTimeFormatter {
   // Fractional seconds
   // ---------------------------------------------------------------------------------------------
 
-  private static String formatFractionalSeconds(int micros, Marker marker) {
-    String pattern = effectiveFirst(marker, "1");
-    if (!IntegerFormatter.containsDecimalDigit(pattern)) {
-      // a presentation modifier without digits is implementation-defined: use the default
-      pattern = "1";
-    }
-    // a fractional pattern mirrors a decimal digit pattern: mandatory digits first, then '#'
+  /** Mandatory and optional digit counts plus the digit family of a fractional pattern. */
+  private record FractionalPattern(int mandatory, int optional, int zeroDigit) {
+  }
+
+  /** A fractional pattern mirrors a decimal digit pattern: mandatory digits first, then '#'. */
+  private static FractionalPattern parseFractionalPattern(String pattern) {
     int mandatory = 0;
     int optional = 0;
     int zeroDigit = '0';
-    for (int i = 0; i < pattern.length();) {
+    int i = 0;
+    while (i < pattern.length()) {
       final int cp = pattern.codePointAt(i);
       if (Character.getType(cp) == Character.DECIMAL_DIGIT_NUMBER) {
         if (optional > 0) {
@@ -558,7 +591,19 @@ public final class DateTimeFormatter {
       }
       i += Character.charCount(cp);
     }
-    final boolean singleMandatoryDigit = mandatory == 1 && optional == 0;
+    return new FractionalPattern(mandatory, optional, zeroDigit);
+  }
+
+  private static String formatFractionalSeconds(int micros, Marker marker) {
+    String pattern = effectiveFirst(marker, "1");
+    if (!IntegerFormatter.containsDecimalDigit(pattern)) {
+      // a presentation modifier without digits is implementation-defined: use the default
+      pattern = "1";
+    }
+    final FractionalPattern parsed = parseFractionalPattern(pattern);
+    final boolean singleMandatoryDigit = parsed.mandatory() == 1 && parsed.optional() == 0;
+    int mandatory = parsed.mandatory();
+    int optional = parsed.optional();
     int total = mandatory + optional;
     if (marker.hasWidth) {
       if (marker.minWidth > mandatory) {
@@ -592,9 +637,9 @@ public final class DateTimeFormatter {
     while (out.length() < mandatory) {
       out.append('0');
     }
-    if (zeroDigit != '0') {
+    if (parsed.zeroDigit() != '0') {
       for (int i = 0; i < out.length(); i++) {
-        out.setCharAt(i, (char) (zeroDigit + (out.charAt(i) - '0')));
+        out.setCharAt(i, (char) (parsed.zeroDigit() + (out.charAt(i) - '0')));
       }
     }
     return out.toString();
@@ -606,7 +651,7 @@ public final class DateTimeFormatter {
 
   private static String formatTimezone(TimeInstant value, Marker marker) {
     final DTD timezone = value.getTimezone();
-    String presentation = effectiveFirst(marker, "01:01");
+    String presentation = effectiveFirst(marker, DEFAULT_TIMEZONE_PRESENTATION);
     final String prefix = marker.component == 'z' ? "GMT" : "";
 
     if (timezone == null) {
@@ -623,26 +668,17 @@ public final class DateTimeFormatter {
     final boolean negative = timezone.isNegative() && !zeroOffset;
 
     if ("Z".equals(presentation)) {
-      if (minutes == 0 && hours <= 12) {
-        final char letter;
-        if (zeroOffset) {
-          letter = 'Z';
-        } else if (!negative) {
-          final char candidate = (char) ('A' + hours - 1);
-          // the letter J is reserved for local time and skipped in the military sequence
-          letter = candidate >= 'J' ? (char) (candidate + 1) : candidate;
-        } else {
-          letter = (char) ('N' + hours - 1);
-        }
+      final char letter = militaryTimezoneLetter(hours, minutes, zeroOffset, negative);
+      if (letter != 0) {
         return padRight(prefix + letter, marker.minWidth);
       }
       // offsets without a military letter fall back to the 01:01 presentation
-      presentation = "01:01";
+      presentation = DEFAULT_TIMEZONE_PRESENTATION;
     }
 
     if ("N".equals(presentation)) {
       // timezone names require a timezone database; the spec-mandated fallback is 01:01
-      presentation = "01:01";
+      presentation = DEFAULT_TIMEZONE_PRESENTATION;
     }
 
     final String body;
@@ -654,40 +690,63 @@ public final class DateTimeFormatter {
     return padRight(prefix + body, marker.minWidth);
   }
 
-  private static String formatNumericTimezone(String presentation, boolean negative, int hours, int minutes) {
-    // split the presentation into digit groups around a single separator
+  /**
+   * The military timezone letter (Z = +00:00, A..M = +01:00..+12:00 skipping J, N..Y =
+   * -01:00..-12:00), or 0 when the offset has no letter.
+   */
+  private static char militaryTimezoneLetter(int hours, int minutes, boolean zeroOffset, boolean negative) {
+    if (minutes != 0 || hours > 12) {
+      return 0;
+    }
+    if (zeroOffset) {
+      return 'Z';
+    }
+    if (negative) {
+      return (char) ('N' + hours - 1);
+    }
+    final char candidate = (char) ('A' + hours - 1);
+    // the letter J is reserved for local time and skipped in the military sequence
+    return candidate >= 'J' ? (char) (candidate + 1) : candidate;
+  }
+
+  /** The digit groups of a numeric timezone presentation: hours, optional separator, minutes. */
+  private record TimezoneGroups(String hours, String separator, String minutes) {
+  }
+
+  private static TimezoneGroups splitTimezonePresentation(String presentation) {
     final StringBuilder hourGroup = new StringBuilder();
     final StringBuilder minuteGroup = new StringBuilder();
     String separator = null;
-    for (int i = 0; i < presentation.length();) {
+    int i = 0;
+    while (i < presentation.length()) {
       final int cp = presentation.codePointAt(i);
       if (Character.getType(cp) == Character.DECIMAL_DIGIT_NUMBER) {
         (separator == null ? hourGroup : minuteGroup).appendCodePoint(cp);
-      } else if (separator == null && hourGroup.length() > 0 && IntegerFormatter.isGroupingSeparator(cp)) {
+      } else if (separator == null && !hourGroup.isEmpty() && IntegerFormatter.isGroupingSeparator(cp)) {
         separator = new String(Character.toChars(cp));
       } else {
-        throw new QueryException(ErrorCode.ERR_INVALID_DATETIME_PICTURE,
-                                 "Unsupported timezone presentation modifier '%s'",
-                                 presentation);
+        throw unsupportedTimezonePresentation(presentation);
       }
       i += Character.charCount(cp);
     }
-    if (hourGroup.length() == 0 || (separator != null && minuteGroup.length() == 0)) {
-      throw new QueryException(ErrorCode.ERR_INVALID_DATETIME_PICTURE,
-                               "Unsupported timezone presentation modifier '%s'",
-                               presentation);
+    if (hourGroup.isEmpty() || (separator != null && minuteGroup.isEmpty())) {
+      throw unsupportedTimezonePresentation(presentation);
     }
+    return new TimezoneGroups(hourGroup.toString(), separator, minuteGroup.toString());
+  }
 
+  private static String formatNumericTimezone(String presentation, boolean negative, int hours, int minutes) {
+    final TimezoneGroups groups = splitTimezonePresentation(presentation);
     final String sign = negative ? "-" : "+";
-    if (separator != null) {
+    if (groups.separator() != null) {
       // e.g. 01:01 or 0.00: hours and minutes, always both
-      return sign + IntegerFormatter.format(BigInteger.valueOf(hours), hourGroup.toString(), false) + separator
-          + IntegerFormatter.format(BigInteger.valueOf(minutes), minuteGroup.toString(), false);
+      return sign + IntegerFormatter.format(BigInteger.valueOf(hours), groups.hours(), false) + groups.separator()
+          + IntegerFormatter.format(BigInteger.valueOf(minutes), groups.minutes(), false);
     }
-    final int digitCount = hourGroup.length();
+    final int digitCount = groups.hours().length();
     if (digitCount <= 2) {
       // hours only; minutes are appended (colon-separated) when the offset is not whole hours
-      String result = sign + IntegerFormatter.format(BigInteger.valueOf(hours), hourGroup.toString(), false);
+      String result = sign + IntegerFormatter.format(BigInteger.valueOf(hours), groups.hours(), false);
       if (minutes != 0) {
         result += ":" + IntegerFormatter.format(BigInteger.valueOf(minutes), "01", false);
       }
@@ -695,11 +754,15 @@ public final class DateTimeFormatter {
     }
     if (digitCount <= 4) {
       // combined hours and minutes without separator, e.g. -0500
-      return sign + IntegerFormatter.format(BigInteger.valueOf(hours * 100L + minutes), hourGroup.toString(), false);
+      return sign + IntegerFormatter.format(BigInteger.valueOf(hours * 100L + minutes), groups.hours(), false);
     }
-    throw new QueryException(ErrorCode.ERR_INVALID_DATETIME_PICTURE,
-                             "Unsupported timezone presentation modifier '%s'",
-                             presentation);
+    throw unsupportedTimezonePresentation(presentation);
+  }
+
+  private static QueryException unsupportedTimezonePresentation(String presentation) {
+    return new QueryException(ErrorCode.ERR_INVALID_DATETIME_PICTURE,
+                              "Unsupported timezone presentation modifier '%s'",
+                              presentation);
   }
 
   // ---------------------------------------------------------------------------------------------

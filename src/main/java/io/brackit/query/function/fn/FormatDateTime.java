@@ -66,7 +66,8 @@ public class FormatDateTime extends AbstractFunction {
     final String picture = ((Atomic) args[1]).stringValue();
     final String language = args.length > 2 && args[2] != null ? ((Atomic) args[2]).stringValue() : null;
     final String calendar = args.length > 3 && args[3] != null ? ((Atomic) args[3]).stringValue() : null;
-    final String place = args.length > 4 && args[4] != null ? ((Atomic) args[4]).stringValue() : null;
-    return new Str(DateTimeFormatter.format(source, value, picture, language, calendar, place));
+    // args[4] ($place) is accepted but intentionally unused: without a geographical/timezone
+    // database the spec prescribes falling back to the default place for unrecognized values
+    return new Str(DateTimeFormatter.format(source, value, picture, language, calendar));
   }
 }
