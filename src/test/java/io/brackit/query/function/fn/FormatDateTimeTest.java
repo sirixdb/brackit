@@ -351,6 +351,10 @@ public class FormatDateTimeTest extends XQueryBaseTest {
     // exotic timezone presentation modifiers fail loudly instead of guessing
     checkErr(ErrorCode.ERR_INVALID_DATETIME_PICTURE, fdtTz("+05:30", "[Z00000]"));
     checkErr(ErrorCode.ERR_INVALID_DATETIME_PICTURE, fdtTz("+05:30", "[Z0:0:0]"));
+    // '%' is a legal grouping separator, so it can appear in an invalid pattern's error message;
+    // translating the picture error to FOFD1340 must not re-format-interpret that message (an
+    // accidental String.format pass would die on the lone '%' instead of raising FOFD1340)
+    checkErr(ErrorCode.ERR_INVALID_DATETIME_PICTURE, fd("[Y1%]"));
   }
 
   @Test
