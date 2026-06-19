@@ -67,9 +67,15 @@ public final class ArrayExpr implements Expr {
         continue;
       }
 
-      if (!(res instanceof SequenceExpr.EvalSequence) && !flatten[i] || res instanceof Item) {
+      if (!flatten[i] && res instanceof Item) {
+        // A single item (atomic, object, or nested array) is one member as-is.
         vals.add(res);
       } else {
+        // Any multi-item sequence -- a (a,b,c) constructor, a FLWOR or function-call
+        // result, or an explicitly flattened =(...) field -- expands to one member per
+        // item. Array members are single items by invariant (member access and []
+        // unboxing call evaluateToItem on each), so a sequence is never stored as a
+        // single member; dispatch on cardinality, not on the concrete sequence class.
         try (final Iter it = res.iterate()) {
           Item item;
           while ((item = it.next()) != null) {
