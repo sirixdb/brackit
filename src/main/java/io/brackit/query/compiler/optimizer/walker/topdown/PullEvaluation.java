@@ -87,15 +87,21 @@ public class PullEvaluation extends Walker {
     List<QNm> check2 = appendCheck(check, postJoinVar);
 
     // add check markers to the left input
+    // (per-outer grouping counters must stay free of check markers so that they
+    // keep numbering - and thereby separating - padded tuples of empty iterations)
     AST tmp = left;
     while (tmp.getType() != XQ.End) {
-      tmp.setProperty("check", check2);
+      if (!tmp.checkProperty("groupCount")) {
+        tmp.setProperty("check", check2);
+      }
       tmp = tmp.getLastChild();
     }
 
     tmp = post;
     while (tmp.getType() != XQ.End) {
-      tmp.setProperty("check", check2);
+      if (!tmp.checkProperty("groupCount")) {
+        tmp.setProperty("check", check2);
+      }
       tmp = tmp.getLastChild();
     }
     join.setProperty("check", check2);

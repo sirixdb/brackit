@@ -101,7 +101,11 @@ public final class TrivialLeftJoinRemoval extends Walker {
       if (tmp.getType() == XQ.Join) {
         tmp.setProperty("leftJoin", Boolean.TRUE);
       }
-      tmp.setProperty("check", check);
+      // per-outer grouping counters must stay free of check markers so they
+      // keep numbering (and thereby separating) padded tuples of empty iterations
+      if (!tmp.checkProperty("groupCount")) {
+        tmp.setProperty("check", check);
+      }
       parent.addChild(tmp);
       parent = tmp;
       node = node.getLastChild();

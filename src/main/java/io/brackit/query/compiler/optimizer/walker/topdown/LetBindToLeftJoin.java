@@ -27,6 +27,9 @@
  */
 package io.brackit.query.compiler.optimizer.walker.topdown;
 
+import static io.brackit.query.compiler.XQ.TypedVariableBinding;
+import static io.brackit.query.compiler.XQ.Variable;
+
 import io.brackit.query.atomic.Bool;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.util.Cmp;
@@ -37,6 +40,8 @@ import io.brackit.query.compiler.XQ;
  * @author Sebastian Baechle
  */
 public class LetBindToLeftJoin extends AggFunChecker {
+
+  private int groupVarCnt;
 
   @Override
   protected AST visit(AST node) {
@@ -51,6 +56,10 @@ public class LetBindToLeftJoin extends AggFunChecker {
     }
 
     return convertToLeftJoin(node);
+  }
+
+  private QNm createGroupVarName() {
+    return new QNm("_letgroup;" + (groupVarCnt++));
   }
 
   private AST convertToLeftJoin(AST let) {
@@ -79,18 +88,30 @@ public class LetBindToLeftJoin extends AggFunChecker {
     // boolean value "true" as right join key expression
     righInEnd.replaceChild(0, new AST(XQ.Bool, Bool.TRUE));
 
+    // Establish a per-outer-iteration grouping key for the binding.
+    //
+    // The let-binding may be reached by an arbitrary number of outer tuples
+    // (e.g. an enclosing for-loop). The left join above produces one (matched
+    // or padded) result group per outer tuple, and the post-join group-by has
+    // to fold those back into exactly one binding value per outer tuple. To do
+    // so we number every outer tuple with a Count placed *upstream* of the join
+    // and group the binding by that number. Because the count is an outer column
+    // (it is not the join's "check" marker), it is preserved on the padded tuple
+    // of an outer iteration whose nested pipeline produced nothing, so empty
+    // iterations remain separate groups instead of collapsing into one.
+    QNm groupVar = createGroupVarName();
+
     // the post join pipeline uses a let-binding
     // for the original return expression
-    // and then groups the let-bound return values
+    // and then groups the let-bound return values per outer tuple
     // (only the binding of the final let will be used)
     AST post = new AST(XQ.Start);
     AST letVarBinding = let.getChild(0).copyTree();
-    // TODO fix cardinality of binding if necessary
     AST rlet = new AST(XQ.LetBind);
     rlet.addChild(letVarBinding);
     rlet.addChild(letReturn);
     QNm letVar = (QNm) letVarBinding.getChild(0).getValue();
-    AST groupBy = createGroupBy(letVar, let);
+    AST groupBy = createGroupBy(letVar, groupVar, let);
     rlet.addChild(groupBy);
 
     post.addChild(rlet);
@@ -99,13 +120,27 @@ public class LetBindToLeftJoin extends AggFunChecker {
     AST ljoin = createJoin(leftIn, rightIn, post, let.getLastChild().copyTree());
 
     // we must not sort if result is directly aggregated
-    boolean skipSort = (groupBy.getChild(1).getChild(0).getType() != XQ.SequenceAgg);
+    // (child 0 is the grouping spec, child 1 the let-var aggregate spec)
+    boolean skipSort = (groupBy.getChild(1).getChild(1).getChild(0).getType() != XQ.SequenceAgg);
     if (skipSort) {
       ljoin.setProperty("skipSort", Boolean.TRUE);
     }
 
+    // number the outer tuples just upstream of the join so the grouping key
+    // is available (and survives left-join padding) in the post-join group-by.
+    // The counter is intentionally kept free of iteration "check" markers
+    // (see groupCount property): it must assign a distinct number to *every*
+    // tuple it sees - including the padded tuple of an empty nested iteration -
+    // so that those tuples are never folded together by a downstream group-by.
+    AST count = new AST(XQ.Count);
+    count.setProperty("groupCount", Boolean.TRUE);
+    AST countBinding = new AST(TypedVariableBinding);
+    countBinding.addChild(new AST(Variable, groupVar));
+    count.addChild(countBinding);
+    count.addChild(ljoin);
+
     int replaceAt = insertJoinAfter.getChildCount() - 1;
-    insertJoinAfter.replaceChild(replaceAt, ljoin);
+    insertJoinAfter.replaceChild(replaceAt, count);
     snapshot();
     refreshScopes(insertJoinAfter, true);
     return insertJoinAfter;
@@ -123,7 +158,7 @@ public class LetBindToLeftJoin extends AggFunChecker {
     return ljoin;
   }
 
-  private AST createGroupBy(QNm letVar, AST letBind) {
+  private AST createGroupBy(QNm letVar, QNm groupVar, AST letBind) {
     int aggType = XQ.SequenceAgg;
 
     Var var = findScope(letBind).localBindings().get(0);
@@ -151,6 +186,12 @@ public class LetBindToLeftJoin extends AggFunChecker {
 
     AST groupBy = new AST(XQ.GroupBy);
     groupBy.setProperty("sequential", Boolean.TRUE);
+
+    // group by the per-outer-iteration key so the binding is aggregated
+    // once per outer tuple instead of collapsing all outer tuples into one
+    AST grpSpec = new AST(XQ.GroupBySpec);
+    grpSpec.addChild(new AST(XQ.VariableRef, groupVar));
+    groupBy.addChild(grpSpec);
 
     AST aggSpec = new AST(XQ.AggregateSpec);
     aggSpec.addChild(new AST(XQ.VariableRef, letVar));
