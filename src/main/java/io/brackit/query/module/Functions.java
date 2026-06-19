@@ -646,27 +646,13 @@ public final class Functions {
     predefine(new Distinct(FN_DISTINCT,
                            new Signature(new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
                                          new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany))));
-    predefine(new InsertBefore(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "insert-before"),
-                               new Signature(new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-                                             new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-                                             new SequenceType(AtomicType.INR, Cardinality.One),
-                                             new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany))));
-    predefine(new Remove(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "remove"),
-                         new Signature(new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-                                       new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-                                       new SequenceType(AtomicType.INR, Cardinality.One))));
-    predefine(new Reverse(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "reverse"),
-                          new Signature(new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-                                        new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany))));
-    predefine(new Subsequence(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "subsequence"),
-                              new Signature(new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-                                            new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-                                            new SequenceType(AtomicType.DBL, Cardinality.One))));
-    predefine(new Subsequence(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "subsequence"),
-                              new Signature(new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-                                            new SequenceType(AtomicType.ANA, Cardinality.ZeroOrMany),
-                                            new SequenceType(AtomicType.DBL, Cardinality.One),
-                                            new SequenceType(AtomicType.DBL, Cardinality.One))));
+    // fn:insert-before, fn:remove, fn:reverse and fn:subsequence operate on item()* and must NOT
+    // atomize their input (XPath F&O §14). They were previously also predefined with an
+    // xs:anyAtomicType* ($arg as ANA*) signature that took precedence and made the function
+    // conversion atomize each item — so a sequence of objects/arrays failed with FOTY0012
+    // ("atomized value of record items is undefined"). The item()*-typed registrations below are
+    // the correct ones; the atomizing duplicates are removed. (fn:index-of and fn:distinct-values
+    // keep ANA* deliberately — they compare atomized values by definition.)
     predefine(new Subsequence(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "subsequence"),
                               new Signature(new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany),
                                             new SequenceType(AnyItemType.ANY, Cardinality.ZeroOrMany),
