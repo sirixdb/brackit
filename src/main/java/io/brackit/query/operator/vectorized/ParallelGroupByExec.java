@@ -307,12 +307,26 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
    */
   private static final int INTERN_CAPACITY = 1024;
   private static final int INTERN_MASK = INTERN_CAPACITY - 1;
+  /**
+   * Occupancy cap for the fixed-size open-addressing intern table. Past this many
+   * distinct keys the table stops accepting new entries and the surplus is counted in
+   * an overflow {@link HashMap}. This keeps at least {@code CAPACITY - MAX_FILL} slots
+   * permanently free, so the stride-31 probe is guaranteed to hit a {@code null} slot
+   * and terminate — without the cap, a chunk with more than {@code CAPACITY} distinct
+   * keys fills every slot and the probe loop spins forever.
+   */
+  private static final int INTERN_MAX_FILL = (INTERN_CAPACITY * 3) / 4;
 
   private static HashMap<String, long[]> processChunk(Path path, long start, long end, byte[] pattern,
       byte[] patternSpaced) throws IOException {
     // Per-thread intern table: raw byte keys → count
     byte[][] internKeys = new byte[INTERN_CAPACITY][];
     long[] internCounts = new long[INTERN_CAPACITY];
+    int internSize = 0;
+    // High-cardinality fallback: distinct keys beyond INTERN_MAX_FILL are counted here
+    // so the intern table never fills (keeping the probe bounded). Stays null — and the
+    // hot path untouched — for the common low-cardinality case.
+    HashMap<String, long[]> overflow = null;
 
     byte[] window = new byte[WINDOW_SIZE];
     long pos = 0;
@@ -424,20 +438,38 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
             int hash = longHash(window, valueStart, keyLen);
             int idx = hash & INTERN_MASK;
 
+            boolean counted = false;
             while (true) {
               byte[] existing = internKeys[idx];
               if (existing == null) {
-                byte[] keyCopy = new byte[keyLen];
-                System.arraycopy(window, valueStart, keyCopy, 0, keyLen);
-                internKeys[idx] = keyCopy;
-                internCounts[idx] = 1;
+                // Free slot: intern the key only while under the occupancy cap. Past it
+                // we leave the slot free (so the probe always terminates) and fall through
+                // to the overflow map below.
+                if (internSize < INTERN_MAX_FILL) {
+                  byte[] keyCopy = new byte[keyLen];
+                  System.arraycopy(window, valueStart, keyCopy, 0, keyLen);
+                  internKeys[idx] = keyCopy;
+                  internCounts[idx] = 1;
+                  internSize++;
+                  counted = true;
+                }
                 break;
               }
               if (existing.length == keyLen && bytesEqual(existing, 0, window, valueStart, keyLen)) {
                 internCounts[idx]++;
+                counted = true;
                 break;
               }
               idx = (idx + 31) & INTERN_MASK; // stride-31 probing (1BRC technique)
+            }
+            if (!counted) {
+              // High-cardinality tail: more distinct keys than the table holds. Count the
+              // surplus key in a fallback map so the result stays exact (and bounded).
+              if (overflow == null) {
+                overflow = new HashMap<>();
+              }
+              overflow.computeIfAbsent(new String(window, valueStart, keyLen, StandardCharsets.UTF_8),
+                                       k -> new long[1])[0]++;
             }
           }
         }
@@ -453,6 +485,16 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
     for (int i = 0; i < INTERN_CAPACITY; i++) {
       if (internKeys[i] != null) {
         result.put(new String(internKeys[i], StandardCharsets.UTF_8), new long[] { internCounts[i] });
+      }
+    }
+    // Fold in the high-cardinality overflow (disjoint keys by construction, but merge
+    // defensively in case a key first appeared after the table reached the cap).
+    if (overflow != null) {
+      for (Map.Entry<String, long[]> e : overflow.entrySet()) {
+        result.merge(e.getKey(), e.getValue(), (a, b) -> {
+          a[0] += b[0];
+          return a;
+        });
       }
     }
     return result;
