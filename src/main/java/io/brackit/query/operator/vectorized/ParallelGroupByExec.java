@@ -58,6 +58,7 @@ import io.brackit.query.compiler.optimizer.VectorizedExecutor;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.jsonitem.array.DArray;
+import io.brackit.query.util.Cfg;
 import io.brackit.query.jsonitem.object.CompactObject;
 
 /**
@@ -202,28 +203,80 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
     byte[] patternSpaced = ("\"" + groupField + "\" :").getBytes(StandardCharsets.UTF_8);
 
     long[] chunkStarts = computeChunkStarts(path, nThreads);
+    int spillThreshold = spillThreshold();
 
     ExecutorService executor = Executors.newFixedThreadPool(nThreads);
-    List<Future<HashMap<String, long[]>>> futures = new ArrayList<>(nThreads);
+    List<Future<ChunkResult>> futures = new ArrayList<>(nThreads);
     for (int i = 0; i < nThreads; i++) {
       long start = chunkStarts[i];
       long end = chunkStarts[i + 1];
-      futures.add(executor.submit(() -> processChunk(path, start, end, pattern, patternSpaced)));
+      futures.add(executor.submit(() -> processChunk(path, start, end, pattern, patternSpaced, spillThreshold)));
     }
 
-    HashMap<String, long[]> merged = new HashMap<>();
-    for (Future<HashMap<String, long[]>> future : futures) {
-      HashMap<String, long[]> partial = future.get();
-      for (Map.Entry<String, long[]> entry : partial.entrySet()) {
-        merged.merge(entry.getKey(), entry.getValue(), (a, b) -> {
-          a[0] += b[0];
-          return a;
-        });
+    List<ChunkResult> results = new ArrayList<>(nThreads);
+    boolean anySpilled = false;
+    for (Future<ChunkResult> future : futures) {
+      ChunkResult r = future.get();
+      results.add(r);
+      anySpilled |= r.spilled != null;
+    }
+    executor.shutdown();
+
+    // Fast path: nothing spilled, so every partial fits -- merge them on the heap.
+    if (!anySpilled) {
+      HashMap<String, long[]> merged = new HashMap<>();
+      for (ChunkResult r : results) {
+        for (Map.Entry<String, long[]> entry : r.inMemory.entrySet()) {
+          merged.merge(entry.getKey(), entry.getValue(), (a, b) -> {
+            a[0] += b[0];
+            return a;
+          });
+        }
+      }
+      return buildResult(merged, groupField);
+    }
+
+    // Bounded path: route every worker's data through the per-partition spill files (the
+    // in-memory partials from workers that did not spill are spilled here too), then merge
+    // one partition at a time so the heap holds at most a single partition's distinct keys.
+    List<GroupByCountSpill.Writer> writers = new ArrayList<>(results.size());
+    GroupByCountSpill.Writer inMemorySpill = null;
+    try {
+      for (ChunkResult r : results) {
+        if (r.spilled != null) {
+          writers.add(r.spilled);
+        } else {
+          if (inMemorySpill == null) {
+            inMemorySpill = new GroupByCountSpill.Writer();
+          }
+          for (Map.Entry<String, long[]> entry : r.inMemory.entrySet()) {
+            inMemorySpill.add(entry.getKey(), entry.getValue()[0]);
+          }
+        }
+      }
+      if (inMemorySpill != null) {
+        inMemorySpill.finishWriting();
+        writers.add(inMemorySpill);
+      }
+
+      List<Item> out = new ArrayList<>();
+      QNm fieldQnm = new QNm(groupField);
+      QNm countQnm = new QNm("count");
+      QNm[] fields = { fieldQnm, countQnm };
+      for (int p = 0; p < GroupByCountSpill.NUM_PARTITIONS; p++) {
+        HashMap<String, long[]> partition = new HashMap<>();
+        GroupByCountSpill.mergePartition(writers, p, partition);
+        for (Map.Entry<String, long[]> entry : partition.entrySet()) {
+          Sequence[] values = { new Str(entry.getKey()), new Int64(entry.getValue()[0]) };
+          out.add(new io.brackit.query.jsonitem.object.CompactObject(fields, values));
+        }
+      }
+      return out;
+    } finally {
+      for (GroupByCountSpill.Writer w : writers) {
+        w.close();
       }
     }
-
-    executor.shutdown();
-    return buildResult(merged, groupField);
   }
 
   /**
@@ -305,12 +358,50 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
    */
   private static final int INTERN_CAPACITY = 1024;
   private static final int INTERN_MASK = INTERN_CAPACITY - 1;
+  /** Keep the intern table's load factor &le; 0.75 so probe chains stay short. */
+  private static final int INTERN_LIMIT = (INTERN_CAPACITY * 3) / 4;
+  /** Cap probes per key: the table is fixed-size, so an unbounded probe would spin. */
+  private static final int INTERN_MAX_PROBES = 32;
 
-  private static HashMap<String, long[]> processChunk(Path path, long start, long end, byte[] pattern,
-      byte[] patternSpaced) throws IOException {
-    // Per-thread intern table: raw byte keys → count
+  /**
+   * Per-worker distinct-key budget for the overflow map; once exceeded, the overflow is
+   * spilled to disk so a high-cardinality group-by stays memory-bounded. Default ~2M
+   * distinct keys per worker (well above the low-cardinality workloads this path targets);
+   * read per query so it is settable for tests via
+   * {@code io.brackit.query.groupby.vectorized.spill_threshold}.
+   */
+  private static int spillThreshold() {
+    return (int) Math.max(64, Cfg.asLong("io.brackit.query.groupby.vectorized.spill_threshold", 2_000_000));
+  }
+
+  /** A worker's result: either an in-memory partial map (no spill) or its spill files. */
+  private static final class ChunkResult {
+    final HashMap<String, long[]> inMemory; // non-null iff the worker did not spill
+    final GroupByCountSpill.Writer spilled; // non-null iff the worker spilled
+
+    ChunkResult(HashMap<String, long[]> inMemory) {
+      this.inMemory = inMemory;
+      this.spilled = null;
+    }
+
+    ChunkResult(GroupByCountSpill.Writer spilled) {
+      this.inMemory = null;
+      this.spilled = spilled;
+    }
+  }
+
+  private static ChunkResult processChunk(Path path, long start, long end, byte[] pattern, byte[] patternSpaced,
+      int spillThreshold) throws IOException {
+    // Per-thread intern table: raw byte keys → count, for the hot (low-cardinality) keys.
     byte[][] internKeys = new byte[INTERN_CAPACITY][];
     long[] internCounts = new long[INTERN_CAPACITY];
+    int internSize = 0;
+    // Overflow for keys beyond the intern table's capacity. Lazily created, so a
+    // low-cardinality group-by (the case this path targets) never allocates it.
+    HashMap<String, long[]> overflow = null;
+    // Disk spill for the high-cardinality tail. Lazily created on first spill, so the
+    // common in-memory case never touches the filesystem.
+    GroupByCountSpill.Writer spillWriter = null;
 
     byte[] window = new byte[WINDOW_SIZE];
     long pos = 0;
@@ -417,25 +508,57 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
           }
 
           if (valueStart >= 0 && valueEnd > valueStart) {
-            // Aggregate using byte-key intern table — no String allocation
+            // Aggregate via the byte-key intern table (no String allocation) for the
+            // hot keys; spill the high-cardinality tail to the overflow map. Probing is
+            // bounded so a full fixed-size table can never spin forever, and intern and
+            // overflow are merged at the end, so a key that lands in both (a bounded-probe
+            // miss on an already-interned key) is still counted exactly once.
             int keyLen = valueEnd - valueStart;
             int hash = longHash(window, valueStart, keyLen);
             int idx = hash & INTERN_MASK;
 
-            while (true) {
+            boolean interned = false;
+            for (int probe = 0; probe < INTERN_MAX_PROBES; probe++) {
               byte[] existing = internKeys[idx];
               if (existing == null) {
-                byte[] keyCopy = new byte[keyLen];
-                System.arraycopy(window, valueStart, keyCopy, 0, keyLen);
-                internKeys[idx] = keyCopy;
-                internCounts[idx] = 1;
-                break;
+                if (internSize < INTERN_LIMIT) {
+                  byte[] keyCopy = new byte[keyLen];
+                  System.arraycopy(window, valueStart, keyCopy, 0, keyLen);
+                  internKeys[idx] = keyCopy;
+                  internCounts[idx] = 1;
+                  internSize++;
+                  interned = true;
+                }
+                break; // empty slot: inserted, or the table is at its load limit
               }
               if (existing.length == keyLen && bytesEqual(existing, 0, window, valueStart, keyLen)) {
                 internCounts[idx]++;
+                interned = true;
                 break;
               }
               idx = (idx + 31) & INTERN_MASK; // stride-31 probing (1BRC technique)
+            }
+            if (!interned) {
+              if (overflow == null) {
+                overflow = new HashMap<>();
+              }
+              overflow.merge(new String(window, valueStart, keyLen, StandardCharsets.UTF_8),
+                             new long[] { 1 },
+                             (a, b) -> {
+                               a[0] += b[0];
+                               return a;
+                             });
+              // Once the overflow map outgrows its budget, spill it to disk and start
+              // fresh so the heap footprint stays bounded under high cardinality.
+              if (overflow.size() >= spillThreshold) {
+                if (spillWriter == null) {
+                  spillWriter = new GroupByCountSpill.Writer();
+                }
+                for (Map.Entry<String, long[]> e : overflow.entrySet()) {
+                  spillWriter.add(e.getKey(), e.getValue()[0]);
+                }
+                overflow.clear();
+              }
             }
           }
         }
@@ -446,14 +569,35 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
       }
     } // close try-with-resources
 
-    // Convert byte-key intern table to HashMap<String> for merging
-    HashMap<String, long[]> result = new HashMap<>();
+    if (spillWriter != null) {
+      // This worker spilled: flush the remaining overflow and the intern table to the
+      // spill files, so all of its partial counts live on disk for the partition merge.
+      if (overflow != null) {
+        for (Map.Entry<String, long[]> e : overflow.entrySet()) {
+          spillWriter.add(e.getKey(), e.getValue()[0]);
+        }
+      }
+      for (int i = 0; i < INTERN_CAPACITY; i++) {
+        if (internKeys[i] != null) {
+          spillWriter.add(new String(internKeys[i], StandardCharsets.UTF_8), internCounts[i]);
+        }
+      }
+      spillWriter.finishWriting();
+      return new ChunkResult(spillWriter);
+    }
+
+    // No spill: fold the byte-key intern table into the (possibly populated) overflow map.
+    // Using merge, not put, keeps counts exact when a key appears in both tables.
+    HashMap<String, long[]> result = (overflow != null) ? overflow : new HashMap<>();
     for (int i = 0; i < INTERN_CAPACITY; i++) {
       if (internKeys[i] != null) {
-        result.put(new String(internKeys[i], StandardCharsets.UTF_8), new long[] { internCounts[i] });
+        result.merge(new String(internKeys[i], StandardCharsets.UTF_8), new long[] { internCounts[i] }, (a, b) -> {
+          a[0] += b[0];
+          return a;
+        });
       }
     }
-    return result;
+    return new ChunkResult(result);
   }
 
   /**
