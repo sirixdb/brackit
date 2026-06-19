@@ -67,7 +67,14 @@ public final class ArrayExpr implements Expr {
         continue;
       }
 
-      if (!(res instanceof SequenceExpr.EvalSequence) && !flatten[i] || res instanceof Item) {
+      // A bracket-constructor entry contributes one array member per item of its
+      // sequence value. Only a single Item (incl. a nested array/object, which must
+      // stay intact) is added as-is; every multi-item sequence kind — comma sequence,
+      // FLWOR, function call, … — and every explicitly flattened ('=') entry is
+      // iterated so its items become individual members. Guarding on EvalSequence
+      // alone missed non-comma multi-item sequences (e.g. a FLWOR), which were stored
+      // as a single member and then failed XPTY0004 on access.
+      if (!flatten[i] && res instanceof Item) {
         vals.add(res);
       } else {
         try (final Iter it = res.iterate()) {
