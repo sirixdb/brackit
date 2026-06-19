@@ -34,11 +34,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import io.brackit.query.ErrorCode;
@@ -53,23 +51,37 @@ import io.brackit.query.util.aggregator.Grouping;
 import io.brackit.query.util.sort.TupleSerializer;
 
 /**
- * Hash-based GroupBy operator that spills partitions to disk when the in-memory
- * hash table exceeds a configurable memory budget.
+ * Hash-based GroupBy operator that bounds its memory footprint by spilling raw
+ * tuples to disk when the in-memory hash table exceeds a configurable budget.
  * <p>
- * Strategy (inspired by DuckDB's approach):
+ * Strategy (a radix hash-aggregation spill, in the spirit of DuckDB / PostgreSQL
+ * {@code HashAgg}):
  * <ol>
- * <li>Build hash table in memory, tracking estimated size via {@link TupleSerializer#estimateSize}</li>
- * <li>When budget exceeded, partition tuples by hash prefix into N partition files on disk</li>
- * <li>After input exhausted, process each spilled partition file one at a time:
- * load partition into memory, aggregate, emit results</li>
- * <li>If a single partition still doesn't fit, recursively repartition with different hash bits</li>
+ * <li>Aggregate into an in-memory hash table, tracking its estimated size via
+ * {@link TupleSerializer#estimateSize}.</li>
+ * <li>A tuple whose group is <em>already</em> in the table is always folded in —
+ * that costs no new memory. Once the table reaches the budget, a tuple carrying a
+ * <em>new</em> group is instead appended, raw, to one of {@value #NUM_PARTITIONS}
+ * partition files chosen by a hash of its grouping key. A given group therefore
+ * lives entirely in memory or entirely in a single partition, never split.</li>
+ * <li>After the input is drained, the complete in-memory groups are emitted, then
+ * each non-empty partition is re-aggregated, one at a time, by the same routine.</li>
+ * <li>If a single partition still does not fit, its re-aggregation spills again to
+ * child partitions under a depth-rotated hash, so the bits that select the partition
+ * differ at each level. Recursion is depth-first and is capped at
+ * {@value #MAX_SPILL_DEPTH} levels (a termination guard against pathological
+ * hash-code collisions); beyond the cap a partition is aggregated in memory.</li>
  * </ol>
+ * If nothing ever exceeds the budget, no file is created and the operator behaves
+ * exactly like an in-memory hash group-by.
  */
 public class SpillableGroupBy extends Check implements Operator {
 
-  private static final long DEFAULT_MEMORY_BUDGET = Cfg.asLong("io.brackit.query.groupby.memory_budget",
-                                                               Runtime.getRuntime().maxMemory() / 4);
+  /** System property overriding the per-operator memory budget (bytes). */
+  private static final String MEMORY_BUDGET_CFG = "io.brackit.query.groupby.memory_budget";
   private static final int NUM_PARTITIONS = 64;
+  /** Recursion-depth guard; only reachable under adversarial hash-code collisions. */
+  private static final int MAX_SPILL_DEPTH = 16;
 
   final Operator in;
   final int[] groupSpecs;
@@ -79,7 +91,12 @@ public class SpillableGroupBy extends Check implements Operator {
   final long memoryBudget;
 
   public SpillableGroupBy(Operator in, Aggregate dftAgg, Aggregate[] addAggs, int grpSpecCnt, boolean sequential) {
-    this(in, dftAgg, addAggs, grpSpecCnt, sequential, DEFAULT_MEMORY_BUDGET);
+    this(in,
+         dftAgg,
+         addAggs,
+         grpSpecCnt,
+         sequential,
+         Cfg.asLong(MEMORY_BUDGET_CFG, Runtime.getRuntime().maxMemory() / 4));
   }
 
   public SpillableGroupBy(Operator in, Aggregate dftAgg, Aggregate[] addAggs, int grpSpecCnt, boolean sequential,
@@ -119,26 +136,50 @@ public class SpillableGroupBy extends Check implements Operator {
     return in.tupleWidth(initSize) + addAggs.length;
   }
 
+  /** Select a partition for {@code keyHash}; the bit window varies with {@code depth}. */
+  private static int partitionFor(int keyHash, int depth) {
+    int rotated = Integer.rotateLeft(keyHash, (depth & 31) * 5);
+    return (rotated & 0x7FFFFFFF) % NUM_PARTITIONS;
+  }
+
+  /** A spilled partition file awaiting re-aggregation, tagged with its spill depth. */
+  private record Partition(File file, int depth) {
+  }
+
   private class SpillableHashGroupByCursor implements Cursor {
     final Cursor c;
     final int tupleSize;
 
-    // In-memory hash table
+    /** In-memory hash table for the aggregation pass currently in progress. */
     final Map<GroupKey, Grouping> map = new LinkedHashMap<>();
+    /** Estimated bytes occupied by the distinct groups currently in {@link #map}. */
     long currentSize;
 
-    // Spill state — partition files are opened eagerly and written to in parallel
-    // with in-memory aggregation (dual-write). When memory budget is exceeded,
-    // the in-memory map is cleared; the partition files already have all raw tuples.
-    boolean spilled;
-    boolean partitionsInitialized;
-    File[] partitionFiles;
-    OutputStream[] partitionStreams;
-    int nextPartitionToProcess;
-
-    // Output iteration
-    Iterator<GroupKey> outputIt;
+    /**
+     * Lookahead tuple held across calls. When an iteration-scope boundary
+     * ({@code check && separate}) ends a segment, the tuple that crossed the boundary
+     * is the first tuple of the next segment and is parked here until then.
+     */
     Tuple next;
+
+    /**
+     * Overflow partition files for the pass in progress. A new group that would push
+     * the table past the budget has its raw tuples appended here, keyed by a
+     * depth-rotated hash of its grouping key, and re-aggregated in a later pass.
+     * Created lazily, so a query that never overflows touches the disk not at all.
+     */
+    File[] spillFiles;
+    OutputStream[] spillStreams;
+    int spillChildDepth;
+
+    /** Partition files awaiting a (re-)aggregation pass, processed depth-first. */
+    final ArrayDeque<Partition> pending = new ArrayDeque<>();
+
+    /** Emission iterator over the groups of the pass currently being drained. */
+    Iterator<GroupKey> outputIt;
+
+    /** Reused, single-threaded lookup probe — keeps the per-tuple path allocation-free. */
+    final GroupKey probe = new GroupKey();
 
     SpillableHashGroupByCursor(Cursor c, int tupleSize) {
       this.c = c;
@@ -152,16 +193,14 @@ public class SpillableGroupBy extends Check implements Operator {
 
     @Override
     public void close(QueryContext ctx) {
-      map.clear();
-      currentSize = 0;
-      cleanupPartitions();
+      cleanup();
       c.close(ctx);
     }
 
     @Override
     public Tuple next(QueryContext ctx) throws QueryException {
       while (true) {
-        // Phase 1: Output from in-memory aggregation or current partition
+        // (1) Drain the groups of the pass currently held in memory.
         if (outputIt != null) {
           if (outputIt.hasNext()) {
             GroupKey key = outputIt.next();
@@ -176,194 +215,204 @@ public class SpillableGroupBy extends Check implements Operator {
           currentSize = 0;
         }
 
-        // Phase 2: If we have spilled partitions, process the next one
-        if (spilled && partitionFiles != null) {
-          return processNextPartition();
+        // (2) Re-aggregate the next spilled partition of the current segment (deepest first).
+        Partition p = pending.pollLast();
+        if (p != null) {
+          aggregatePartition(p);
+          finishPass();
+          outputIt = map.keySet().iterator();
+          continue;
         }
 
-        // Phase 3: Read input, respecting check/dead/separate semantics
-        Tuple t;
-        if ((t = next) != null || (t = c.next(ctx)) != null) {
-          // Dead tuple pass-through (matches GroupBy.HashGroupBy behavior)
-          if (check && dead(t)) {
-            if (map.isEmpty()) {
-              next = null;
-              Grouping grp = new Grouping(groupSpecs, addAggSpecs, defaultAgg, addAggs, tupleSize);
-              grp.add(t);
-              return grp.emit();
-            } else {
-              // Output accumulated groups first, keep this tuple for next call
-              outputIt = map.keySet().iterator();
-              continue;
-            }
-          }
-
-          addOrSpill(t);
-
-          // Read remaining tuples for this group segment
-          while ((next = c.next(ctx)) != null) {
-            if (check && separate(t, next)) {
-              break;
-            }
-            addOrSpill(next);
-          }
-
-          if (spilled) {
-            // Spilled during input — re-aggregate from partition files
-            map.clear();
-            currentSize = 0;
-            return processNextPartition();
-          }
-
-          // Everything fit in memory — output directly (skip partition processing)
-          // Clean up partition files (they have duplicate data from dual-write)
-          cleanupPartitions();
-          outputIt = map.keySet().iterator();
-        } else {
+        // (3) The current segment is fully emitted; load the next one. This honours the
+        // iteration-nesting demarcation of the legacy GroupBy (which SpillableGroupBy
+        // replaces): under an enclosing iteration (check), a "dead" left-join-padded tuple
+        // forms its own singleton group, and a segment ends at the first tuple that is
+        // "separate" from the segment's start. The previous segment is fully drained at
+        // this point (table empty, no pending partitions), so a dead tuple emits directly
+        // and a fresh segment starts with clean spill state.
+        Tuple t = next;
+        next = null;
+        if (t == null) {
+          t = c.next(ctx);
+        }
+        if (t == null) {
           return null;
         }
+        if (check && dead(t)) {
+          Grouping grp = new Grouping(groupSpecs, addAggSpecs, defaultAgg, addAggs, tupleSize);
+          grp.add(t);
+          return grp.emit();
+        }
+
+        admitOrSpill(t, 0);
+        while ((next = c.next(ctx)) != null) {
+          if (check && separate(t, next)) {
+            break;
+          }
+          admitOrSpill(next, 0);
+        }
+        finishPass();
+        outputIt = map.keySet().iterator();
       }
     }
 
     /**
-     * Add a tuple to the in-memory aggregation map. No spill — the GroupBy
-     * memory footprint is proportional to the number of distinct groups, not
-     * the total input size. For typical queries (group by city, category, etc.),
-     * the group count is small and fits easily in memory.
+     * Aggregate {@code t} into the in-memory table if its group is already present
+     * or the table is still within budget; otherwise append its raw tuple to the
+     * overflow partition for its key, to be re-aggregated in a later pass.
+     *
+     * @param depth recursion depth of the current pass (0 for the upstream input)
      */
-    private void addOrSpill(Tuple t) throws QueryException {
+    private void admitOrSpill(Tuple t, int depth) throws QueryException {
       Atomic[] gks = Grouping.groupingKeys(groupSpecs, t);
-      GroupKey key = new GroupKey(gks);
-      Grouping grp = map.get(key);
-      if (grp == null) {
+      probe.reset(gks); // computes the key hash once; reused for lookup and partitioning
+      Grouping grp = map.get(probe);
+      if (grp != null) {
+        grp.add(gks, t); // existing group — folds in with no new memory, no allocation
+        return;
+      }
+      // Always admit at least one new group per pass (guarantees forward progress);
+      // admit more while under budget; force in-memory once the rotation is exhausted.
+      long est = TupleSerializer.estimateSize(t);
+      if (map.isEmpty() || currentSize + est <= memoryBudget || depth >= MAX_SPILL_DEPTH) {
         grp = new Grouping(groupSpecs, addAggSpecs, defaultAgg, addAggs, tupleSize);
         grp.setThreadSafe(false);
-        map.put(key, grp);
+        map.put(new GroupKey(gks, probe.hash), grp); // immutable key only on insert
+        grp.add(gks, t);
+        currentSize += est;
+      } else {
+        spill(t, probe.hash, depth + 1);
       }
-      grp.add(gks, t);
     }
 
-    private void writeToPartition(Tuple t) throws QueryException {
+    private void spill(Tuple t, int keyHash, int childDepth) throws QueryException {
       try {
-        Atomic[] gks = Grouping.groupingKeys(groupSpecs, t);
-        int hash = new GroupKey(gks).hash;
-        int partition = (hash & 0x7FFFFFFF) % NUM_PARTITIONS;
-        TupleSerializer.write(partitionStreams[partition], t);
+        if (spillFiles == null) {
+          spillFiles = new File[NUM_PARTITIONS];
+          spillStreams = new OutputStream[NUM_PARTITIONS];
+          spillChildDepth = childDepth;
+        }
+        int part = partitionFor(keyHash, childDepth);
+        if (spillStreams[part] == null) {
+          File f = File.createTempFile("grp-spill-d" + childDepth + "-p" + part + "-", ".tmp");
+          f.deleteOnExit();
+          spillFiles[part] = f;
+          spillStreams[part] = new BufferedOutputStream(new FileOutputStream(f));
+        }
+        TupleSerializer.write(spillStreams[part], t);
       } catch (IOException e) {
-        cleanupPartitions();
+        cleanup();
         throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR);
       }
     }
 
-    private void initPartitionFiles() throws IOException {
-      if (partitionFiles == null) {
-        partitionFiles = new File[NUM_PARTITIONS];
-        partitionStreams = new OutputStream[NUM_PARTITIONS];
-        for (int i = 0; i < NUM_PARTITIONS; i++) {
-          partitionFiles[i] = File.createTempFile("grp-part-" + i + "-", ".spill");
-          partitionFiles[i].deleteOnExit();
-          partitionStreams[i] = new BufferedOutputStream(new FileOutputStream(partitionFiles[i], true));
-        }
-      }
-    }
-
-    /**
-     * Process the next unprocessed spilled partition: read tuples from disk,
-     * re-aggregate in memory, and set up output iterator.
-     */
-    private Tuple processNextPartition() throws QueryException {
-      try {
-        // Close partition streams if still open
-        closePartitionStreams();
-
-        while (nextPartitionToProcess < NUM_PARTITIONS) {
-          File partFile = partitionFiles[nextPartitionToProcess++];
-          if (partFile == null || !partFile.exists() || partFile.length() == 0) {
-            continue;
-          }
-
-          // Read partition and re-aggregate
-          map.clear();
-          currentSize = 0;
-
-          try (var in = new BufferedInputStream(new FileInputStream(partFile))) {
-            Tuple t;
-            while ((t = TupleSerializer.read(in)) != null) {
-              // Re-aggregate raw tuples from partition file
-              Atomic[] gks = Grouping.groupingKeys(groupSpecs, t);
-              GroupKey key = new GroupKey(gks);
-              Grouping grp = map.get(key);
-              if (grp == null) {
-                grp = new Grouping(groupSpecs, addAggSpecs, defaultAgg, addAggs, tupleSize);
-                grp.setThreadSafe(false);
-                map.put(key, grp);
-              }
-              grp.add(gks, t);
-            }
-          }
-          partFile.delete();
-
-          if (!map.isEmpty()) {
-            outputIt = map.keySet().iterator();
-            if (outputIt.hasNext()) {
-              GroupKey key = outputIt.next();
-              Grouping grp = map.get(key);
-              outputIt.remove();
-              Tuple result = grp.emit();
-              grp.clear();
-              return result;
-            }
-          }
+    /** Read a spilled partition back and re-aggregate it into the in-memory table. */
+    private void aggregatePartition(Partition p) throws QueryException {
+      try (var in = new BufferedInputStream(new FileInputStream(p.file()))) {
+        Tuple t;
+        while ((t = TupleSerializer.read(in)) != null) {
+          admitOrSpill(t, p.depth());
         }
       } catch (IOException e) {
-        cleanupPartitions();
+        cleanup();
         throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR);
+      } finally {
+        p.file().delete();
       }
-
-      return null;
     }
 
-    private void closePartitionStreams() {
-      if (partitionStreams != null) {
-        for (int i = 0; i < partitionStreams.length; i++) {
-          if (partitionStreams[i] != null) {
-            try {
-              partitionStreams[i].close();
-            } catch (IOException ignored) {
-            }
-            partitionStreams[i] = null;
+    /** Close the pass's spill streams and queue its non-empty partitions for re-aggregation. */
+    private void finishPass() {
+      if (spillStreams == null) {
+        return;
+      }
+      for (int i = 0; i < NUM_PARTITIONS; i++) {
+        if (spillStreams[i] != null) {
+          try {
+            spillStreams[i].close();
+          } catch (IOException ignored) {
           }
         }
-      }
-    }
-
-    private void cleanupPartitions() {
-      closePartitionStreams();
-      if (partitionFiles != null) {
-        for (File f : partitionFiles) {
-          if (f != null && f.exists()) {
+        File f = spillFiles[i];
+        if (f != null) {
+          if (f.length() > 0) {
+            pending.addLast(new Partition(f, spillChildDepth));
+          } else {
             f.delete();
           }
         }
-        partitionFiles = null;
       }
+      spillFiles = null;
+      spillStreams = null;
+      spillChildDepth = 0;
+    }
+
+    private void cleanup() {
+      map.clear();
+      currentSize = 0;
+      if (spillStreams != null) {
+        for (OutputStream s : spillStreams) {
+          if (s != null) {
+            try {
+              s.close();
+            } catch (IOException ignored) {
+            }
+          }
+        }
+        spillStreams = null;
+      }
+      if (spillFiles != null) {
+        for (File f : spillFiles) {
+          if (f != null) {
+            f.delete();
+          }
+        }
+        spillFiles = null;
+      }
+      for (Partition p : pending) {
+        p.file().delete();
+      }
+      pending.clear();
     }
   }
 
   /**
-   * Grouping key wrapper for hash map lookup.
+   * Grouping-key wrapper for hash-table lookup. Stored keys are immutable; a single
+   * mutable instance per cursor is reused as a lookup probe (via {@link #reset}) so the
+   * per-tuple aggregation path allocates no key for the common existing-group hit.
+   * {@code final} lets the JIT devirtualise {@link #hashCode}/{@link #equals}.
    */
-  private static class GroupKey {
-    final int hash;
-    final Atomic[] val;
+  private static final class GroupKey {
+    int hash;
+    Atomic[] val;
 
+    /** Immutable stored key. */
     GroupKey(Atomic[] val) {
+      this(val, computeHash(val));
+    }
+
+    /** Immutable stored key reusing an already-computed hash (avoids a second pass). */
+    GroupKey(Atomic[] val, int hash) {
       this.val = val;
+      this.hash = hash;
+    }
+
+    /** Reusable lookup probe; call {@link #reset} before each {@code map.get}. */
+    GroupKey() {
+    }
+
+    void reset(Atomic[] val) {
+      this.val = val;
+      this.hash = computeHash(val);
+    }
+
+    private static int computeHash(Atomic[] val) {
       int h = 1;
       for (Atomic a : val) {
         h = 31 * h + (a != null ? a.hashCode() : 0);
       }
-      this.hash = h;
+      return h;
     }
 
     @Override
