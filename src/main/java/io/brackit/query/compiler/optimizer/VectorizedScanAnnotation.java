@@ -79,6 +79,19 @@ public final class VectorizedScanAnnotation {
    */
   public static final String SOURCE_PATH_PREFIX = "VECTORIZED_SOURCE_PATH_PREFIX";
 
+  /**
+   * Identity of the document the scan reads from. Value is a {@link SourceRef}. Where
+   * {@link #SOURCE_PATH_PREFIX} captures <em>which path</em> a scan walks, this captures <em>which
+   * document</em> it dereferences — the concrete {@code jn:doc}/{@code jn:open} resource/revision, the
+   * query's context item, or {@link SourceRef.Kind#UNKNOWN} when identity can't be proven.
+   *
+   * <p>Set on every vectorizable {@code PipeExpr} the walker annotates. The translator hands it to
+   * {@link VectorizedExecutor#acceptsSource(SourceRef)} so a resource-bound executor can decline a scan
+   * over a document it is not bound to — falling back to the generic pipeline rather than answering with
+   * the wrong resource's data. Executors that are not resource-bound (the default) accept every source.
+   */
+  public static final String SOURCE_REF = "VECTORIZED_SOURCE_REF";
+
   // ---- Order-by ----
   /** Order field name (String). */
   public static final String ORDER_FIELD = "VECTORIZED_ORDER_FIELD";

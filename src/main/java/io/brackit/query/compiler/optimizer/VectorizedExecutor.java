@@ -172,4 +172,31 @@ public interface VectorizedExecutor {
 
   /** Check if this executor can handle the current query context. */
   boolean canExecute(QueryContext ctx);
+
+  /**
+   * Whether this executor may serve a scan over the given source document.
+   *
+   * <p>{@code sourcePath} tells an executor which path inside a document a scan walks, but never which
+   * document. An executor bound to a single physical resource/revision (e.g. SirixDB's
+   * {@code SirixVectorizedExecutor}) would otherwise answer a same-shaped query over a <em>different</em>
+   * document from its own columns — wrong results. The optimizer therefore lifts the scan's source
+   * identity into a {@link SourceRef} (see {@link VectorizedScanAnnotation#SOURCE_REF}) and asks here,
+   * at TRANSLATE time, before substituting the vectorized expression.
+   *
+   * <p>Returning {@code false} is not an error: the translator simply builds the generic (always-correct)
+   * pipeline instead, so declining only ever costs the fast path. A resource-bound executor should fail
+   * closed — accept {@link SourceRef.Kind#DOCUMENT} refs that match its binding (and the query's
+   * {@link SourceRef.Kind#CONTEXT_ITEM}, the caller's own transaction), and decline everything else,
+   * including {@link SourceRef.Kind#UNKNOWN}.
+   *
+   * <p>The default accepts every source — correct for executors that are not bound to one resource
+   * (e.g. bjq's file-backed {@code ParallelGroupByExec}), so the added contract is opt-in and does not
+   * change their behaviour.
+   *
+   * @param source the scan's source identity; never {@code null} when the optimizer annotated the scan
+   * @return {@code true} to allow vectorized serving of this source, {@code false} to fall back
+   */
+  default boolean acceptsSource(SourceRef source) {
+    return true;
+  }
 }

@@ -32,6 +32,7 @@ import java.util.List;
 
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.compiler.optimizer.PredicateNode;
+import io.brackit.query.compiler.optimizer.SourceRef;
 import io.brackit.query.compiler.optimizer.VectorizedExecutor;
 import io.brackit.query.compiler.optimizer.VectorizedScanAnnotation;
 import io.brackit.query.expr.PipeExpr;
@@ -166,6 +167,17 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
     }
     if (executor == null)
       return null;
+
+    // Source-document identity (from the loop variable's IN clause). A resource-bound
+    // executor answers a scan from ITS columns, so serving a scan over a document it is
+    // not bound to would return the wrong resource's data. Ask before substituting any
+    // vectorized expression; a decline falls through to the generic (correct) pipeline.
+    // The annotation is present on every walker-annotated scan; when absent (legacy
+    // callers / hand-built ASTs) the executor's default accept-all applies unchanged.
+    final SourceRef sourceRef = (SourceRef) node.getProperty(VectorizedScanAnnotation.SOURCE_REF);
+    if (sourceRef != null && !executor.acceptsSource(sourceRef)) {
+      return null;
+    }
 
     // Source-path prefix (from the loop variable's IN clause). Threaded through
     // every vectorized Expr so the executor can combine it with per-predicate

@@ -9,12 +9,18 @@ import io.brackit.query.atomic.QNm;
 import io.brackit.query.compiler.AST;
 import io.brackit.query.compiler.XQ;
 import io.brackit.query.compiler.optimizer.PredicateNode;
+import io.brackit.query.compiler.optimizer.SourceRef;
 import io.brackit.query.compiler.optimizer.Stage;
 import io.brackit.query.compiler.optimizer.VectorizedScanAnnotation;
+import io.brackit.query.function.json.JSONFun;
 import io.brackit.query.module.StaticContext;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Optimizer stage that detects FLWOR patterns eligible for vectorized execution.
@@ -43,26 +49,34 @@ import java.util.List;
  */
 public final class VectorizedGroupByDetection implements Stage {
 
+  /** Guard against pathological ASTs when resolving a scan source through variable bindings. */
+  private static final int MAX_UNWRAP_STEPS = 64;
+
   @Override
   public AST rewrite(StaticContext sctx, AST ast) {
-    walkAndAnnotate(ast);
+    // Resolve a scan's source document (a `for $u in $doc[]` reaches its `jn:doc(...)` only through the
+    // `let $doc := ...` binding), so collect every visible for/let binding once up front and thread the
+    // map into the per-PipeExpr annotation.
+    final Map<Object, AST> variableBindings = new HashMap<>();
+    collectVariableBindings(ast, variableBindings);
+    walkAndAnnotate(ast, variableBindings);
     return ast;
   }
 
-  private void walkAndAnnotate(AST node) {
+  private void walkAndAnnotate(AST node, Map<Object, AST> variableBindings) {
     if (node == null)
       return;
     if (node.getType() == XQ.PipeExpr) {
-      tryAnnotate(node);
+      tryAnnotate(node, variableBindings);
     }
     for (int i = 0; i < node.getChildCount(); i++) {
-      walkAndAnnotate(node.getChild(i));
+      walkAndAnnotate(node.getChild(i), variableBindings);
     }
   }
 
   // ==================== Main pattern matcher ====================
 
-  private void tryAnnotate(AST pipeExpr) {
+  private void tryAnnotate(AST pipeExpr, Map<Object, AST> variableBindings) {
     if (pipeExpr.getChildCount() < 1)
       return;
     AST chain = pipeExpr.getChild(0);
@@ -237,6 +251,11 @@ public final class VectorizedGroupByDetection implements Stage {
       if (sourcePath != null) {
         pipeExpr.setProperty(VectorizedScanAnnotation.SOURCE_PATH_PREFIX, sourcePath);
       }
+      // Document identity of the scan source. Set unconditionally (the translator only consults it once
+      // a vectorized claim exists) so a resource-bound executor can decline a scan over a document it is
+      // not bound to — see VectorizedExecutor#acceptsSource.
+      pipeExpr.setProperty(VectorizedScanAnnotation.SOURCE_REF,
+                           resolveSourceRef(forBind.getChild(1), variableBindings));
     }
 
     // Sorted scan emits FULL RECORDS sorted by ONE direct `$loopVar.field` key — only
@@ -562,6 +581,124 @@ public final class VectorizedGroupByDetection implements Stage {
       return s;
     }
     return null;
+  }
+
+  // ==================== Source-document identity extraction ====================
+
+  /**
+   * Collect every {@link XQ#ForBind}/{@link XQ#LetBind} binding in the tree into {@code out}, keyed by
+   * the declared variable's QNm. First (outermost) binding wins on shadowing — a heuristic that only
+   * ever costs precision (a misresolved source yields {@link SourceRef#unknown()}, which fails closed).
+   */
+  private static void collectVariableBindings(final AST node, final Map<Object, AST> out) {
+    if ((node.getType() == XQ.ForBind || node.getType() == XQ.LetBind) && node.getChildCount() >= 2) {
+      final Object varKey = bindingVariableKey(node.getChild(0));
+      if (varKey != null) {
+        out.putIfAbsent(varKey, node.getChild(1));
+      }
+    }
+    for (int i = 0, n = node.getChildCount(); i < n; i++) {
+      collectVariableBindings(node.getChild(i), out);
+    }
+  }
+
+  /**
+   * The variable QNm bound by a {@code For}/{@code LetBind}'s first child (a
+   * {@link XQ#TypedVariableBinding} whose own first child, the {@code Variable}, carries the QNm that a
+   * {@link XQ#VariableRef} later resolves against). Falls back to the node's own value defensively.
+   */
+  private static Object bindingVariableKey(final AST typedVariableBinding) {
+    if (typedVariableBinding.getChildCount() > 0) {
+      return typedVariableBinding.getChild(0).getValue();
+    }
+    return typedVariableBinding.getValue();
+  }
+
+  /**
+   * Resolve a loop variable's source expression down to the document it reads from, following
+   * deref/array/filter layers and variable bindings, and classify it as a {@link SourceRef}. Never
+   * {@code null}: an unresolvable, dynamic, cyclic, collection, or non-document source resolves to
+   * {@link SourceRef#unknown()} so a resource-bound executor fails closed.
+   */
+  private SourceRef resolveSourceRef(final AST binding, final Map<Object, AST> variableBindings) {
+    final Set<Object> resolvingVars = new HashSet<>(4);
+    AST current = binding;
+    for (int step = 0; current != null && step < MAX_UNWRAP_STEPS; step++) {
+      switch (current.getType()) {
+        case XQ.DerefExpr, XQ.ArrayAccess, XQ.FilterExpr -> {
+          if (current.getChildCount() < 1) {
+            return SourceRef.unknown();
+          }
+          current = current.getChild(0);
+        }
+        case XQ.VariableRef -> {
+          final Object varKey = current.getValue();
+          if (varKey == null || !resolvingVars.add(varKey)) {
+            return SourceRef.unknown(); // unresolved or cyclic — cannot prove a single document
+          }
+          final AST resolved = variableBindings.get(varKey);
+          if (resolved == null) {
+            return SourceRef.unknown(); // a for-loop / outer variable, not a document binding
+          }
+          current = resolved;
+        }
+        case XQ.ContextItemExpr -> {
+          return SourceRef.contextItem(); // the caller's own bound read transaction
+        }
+        case XQ.FunctionCall -> {
+          return functionCallSourceRef(current);
+        }
+        default -> {
+          return SourceRef.unknown();
+        }
+      }
+    }
+    return SourceRef.unknown();
+  }
+
+  /**
+   * Classify a {@link XQ#FunctionCall} scan source. A {@code jn:doc}/{@code jn:open} with literal
+   * database and resource arguments (and, if present, a literal integer revision) yields a concrete
+   * {@link SourceRef#document}; a dynamic argument, any other {@code jn:} opener (collection /
+   * multi-revision — it spans more than one resource/revision), or a non-JSON function yields
+   * {@link SourceRef#unknown()}.
+   */
+  private SourceRef functionCallSourceRef(final AST call) {
+    if (!(call.getValue() instanceof QNm qnm) || !JSONFun.JSON_NSURI.equals(qnm.getNamespaceURI())) {
+      return SourceRef.unknown();
+    }
+    final String local = qnm.getLocalName();
+    if (!"doc".equals(local) && !"open".equals(local)) {
+      return SourceRef.unknown();
+    }
+    if (call.getChildCount() < 2) {
+      return SourceRef.unknown();
+    }
+    final String databaseName = stringLiteralValue(call.getChild(0));
+    final String resourceName = stringLiteralValue(call.getChild(1));
+    if (databaseName == null || resourceName == null) {
+      return SourceRef.unknown(); // dynamic (non-literal) database/resource — unprovable
+    }
+    if (call.getChildCount() == 2) {
+      return SourceRef.document(databaseName, resourceName, SourceRef.LATEST_REVISION);
+    }
+    final Integer revision = literalRevision(call.getChild(2));
+    if (revision == null) {
+      return SourceRef.unknown(); // dynamic revision — unprovable
+    }
+    return SourceRef.document(databaseName, resourceName, revision);
+  }
+
+  /** The exact int of a literal integer revision argument; {@code null} for anything non-literal/lossy. */
+  private static Integer literalRevision(final AST node) {
+    if (node == null || node.getType() != XQ.Int) {
+      return null;
+    }
+    final Long lv = exactLongOf(node.getValue());
+    if (lv == null || lv < Integer.MIN_VALUE || lv > Integer.MAX_VALUE) {
+      return null;
+    }
+    return lv.intValue();
   }
 
   // ==================== Generic predicate-tree extraction ====================
