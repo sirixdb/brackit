@@ -61,29 +61,46 @@ public class DerefExpr implements Expr {
   public Sequence evaluate(QueryContext ctx, Tuple tuple) {
     Sequence sequence = object.evaluate(ctx, tuple);
 
+    if (sequence == null) {
+      return null;
+    }
+
     if (sequence instanceof ItemSequence itemSequence) {
-      return getLazySequence(ctx, tuple, itemSequence.iterate());
+      return getLazySequence(ctx, tuple, itemSequence);
     }
 
     if (sequence instanceof LazySequence lazySequence) {
-      return getLazySequence(ctx, tuple, lazySequence.iterate());
+      return getLazySequence(ctx, tuple, lazySequence);
     }
 
-    if (!(sequence instanceof Object obj)) {
+    if (sequence instanceof Object obj) {
+      Item itemField = field.evaluateToItem(ctx, tuple);
+      if (itemField == null) {
+        return null;
+      }
+      return getSequenceByRecordField(obj, itemField);
+    }
+
+    if (sequence instanceof Item) {
+      // A single non-record item (atomic, array): deref is the empty sequence.
       return null;
     }
 
-    Item itemField = field.evaluateToItem(ctx, tuple);
-    if (itemField == null) {
-      return null;
-    }
-    return getSequenceByRecordField(obj, itemField);
+    // Any other multi-item sequence implementation — e.g. the FlatteningSequence a
+    // parenthesized expression (SequenceExpr) evaluates to — is mapped per item just like
+    // the ItemSequence/LazySequence cases. Dispatching only on those two concrete classes
+    // made (for $x in ... return {"a": $x}).a evaluate to empty without ever running the
+    // pipeline.
+    return getLazySequence(ctx, tuple, sequence);
   }
 
-  private LazySequence getLazySequence(final QueryContext ctx, final Tuple tuple, final Iter iter) {
+  private LazySequence getLazySequence(final QueryContext ctx, final Tuple tuple, final Sequence base) {
     return new LazySequence() {
       @Override
       public Iter iterate() {
+        // A fresh base iterator per iterate() call: sharing one across calls would resume
+        // an exhausted iterator on the second pass.
+        final Iter iter = base.iterate();
         return new BaseIter() {
           @Override
           public Item next() {
