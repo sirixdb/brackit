@@ -753,6 +753,50 @@ public final class JsonTest extends XQueryBaseTest {
   }
 
   @Test
+  public void derefExprOverParenthesizedFlwor() throws IOException {
+    // Regression: DerefExpr dispatched on the concrete ItemSequence/LazySequence classes
+    // only, so the FlatteningSequence a parenthesized expression evaluates to derefed to
+    // the EMPTY sequence without ever evaluating the pipeline — this used to return 0.
+    final String query = """
+          count((for $i in 1 to 3 return {"a": $i}).a)
+        """;
+    final var result = query(query);
+    assertEquals("3", result);
+  }
+
+  @Test
+  public void derefExprOverParenthesizedFlworSkipsRecordsWithoutField() throws IOException {
+    // Per-item mapping must skip records lacking the field (empty deref), not emit nulls.
+    final String query = """
+          count((for $i in 1 to 3 return if ($i eq 2) then {"b": $i} else {"a": $i}).a)
+        """;
+    final var result = query(query);
+    assertEquals("2", result);
+  }
+
+  @Test
+  public void derefExprOverParenthesizedSequenceOfRecords() throws IOException {
+    // Plain parenthesized record sequence — also a non-ItemSequence base before the fix.
+    final String query = """
+          ({"a": 1}, {"b": 2}, {"a": 3}).a
+        """;
+    final var result = query(query);
+    assertEquals("1 3", result);
+  }
+
+  @Test
+  public void derefExprLazySequenceIteratesFreshlyPerPass() throws IOException {
+    // Each iterate() on the deref result must open a fresh base iterator; a shared one
+    // resumed exhausted on the second pass and returned 3 instead of 6.
+    final String query = """
+          let $s := (for $i in 1 to 3 return {"a": $i}).a
+          return count($s) + count($s)
+        """;
+    final var result = query(query);
+    assertEquals("6", result);
+  }
+
+  @Test
   public void arrayUnboxing2() throws IOException {
     final String query = """
           let $array := [{"foo": 0}, "bar", {"baz": true}]
