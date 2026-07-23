@@ -638,7 +638,12 @@ public final class VectorizedGroupByDetection implements Stage {
           }
           final AST resolved = variableBindings.get(varKey);
           if (resolved == null) {
-            return SourceRef.unknown(); // a for-loop / outer variable, not a document binding
+            // No binding inside the query tree — typically an EXTERNAL variable bound at
+            // execution time (or a for-loop/outer variable). The document identity is not
+            // provable at compile time, but it IS verifiable at runtime by resolving the name
+            // through the QueryContext — so classify as VARIABLE (runtime-checkable), not
+            // UNKNOWN (hopeless). Compile-time gates still fail closed on VARIABLE.
+            return varKey instanceof QNm variableName ? SourceRef.variable(variableName) : SourceRef.unknown();
           }
           current = resolved;
         }

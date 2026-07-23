@@ -13,6 +13,7 @@ import io.brackit.query.compiler.AST;
 import io.brackit.query.compiler.XQ;
 import io.brackit.query.compiler.optimizer.walker.topdown.VectorizedGroupByDetection;
 import io.brackit.query.compiler.translator.SequentialPipelineStrategy;
+import io.brackit.query.expr.RuntimeSourceGatedExpr;
 import io.brackit.query.expr.VectorizedGroupByExpr;
 import io.brackit.query.function.json.JSONFun;
 import io.brackit.query.jdm.Expr;
@@ -264,12 +265,18 @@ public class VectorizedSourceRefTest {
   }
 
   @Test
-  void unresolvedVariableSourceYieldsUnknown() {
-    // for $u in $mystery[] ... — $mystery is bound nowhere the walker can see.
+  void unresolvedVariableSourceYieldsRuntimeCheckableVariableRef() {
+    // for $u in $mystery[] ... — $mystery is bound nowhere the walker can see (typically an
+    // EXTERNAL variable bound at execution time). The identity is unprovable at compile time
+    // but verifiable at runtime by resolving the name through the QueryContext, so the walker
+    // classifies it VARIABLE (carrying the name) rather than the hopeless UNKNOWN. Compile-time
+    // gates still fail closed on VARIABLE; only runtime-capable call sites may serve it.
     AST pipe = groupByPipe("u", "c", "city", arrayAccess(varRef("mystery")), null, null);
     stage.rewrite(null, root(pipe));
 
-    assertEquals(SourceRef.Kind.UNKNOWN, sourceRefOf(pipe).kind());
+    SourceRef ref = sourceRefOf(pipe);
+    assertEquals(SourceRef.Kind.VARIABLE, ref.kind());
+    assertEquals(new QNm("mystery"), ref.variableName());
   }
 
   // ==================== translate-time gate: acceptsSource ====================
@@ -334,6 +341,70 @@ public class VectorizedSourceRefTest {
   // ==================== stubs ====================
 
   /** Executor that records the source it was asked about and answers a fixed accept/decline. */
+  // ==================== gateBySource: the single source-gate authority ====================
+
+  @Test
+  void gateAdmitsWhenNoSourceAnnotationIsPresent() throws QueryException {
+    AST pipe = new AST(XQ.PipeExpr);   // no SOURCE_REF property at all (legacy/hand-built AST)
+    RecordingExecutor executor = new RecordingExecutor(false);
+    Expr vec = dummyExpr();
+    assertEquals(vec, SequentialPipelineStrategy.gateBySource(pipe, executor, () -> vec, null));
+  }
+
+  @Test
+  void gateDeclinesAndReturnsNullWhenExecutorRefuses() throws QueryException {
+    AST pipe = new AST(XQ.PipeExpr);
+    pipe.setProperty(VectorizedScanAnnotation.SOURCE_REF, SourceRef.document("db", "res", -1));
+    RecordingExecutor executor = new RecordingExecutor(false);
+    assertNull(SequentialPipelineStrategy.gateBySource(pipe, executor, this::dummyExpr, null),
+               "a declined source must fall through to the caller's generic compilation");
+    assertTrue(executor.lastSource.isDocument());
+  }
+
+  @Test
+  void gateWrapsVariableSourceWhenGenericIsAvailable() throws QueryException {
+    AST pipe = new AST(XQ.PipeExpr);
+    pipe.setProperty(VectorizedScanAnnotation.SOURCE_REF, SourceRef.variable(new QNm("doc")));
+    RecordingExecutor executor = new RecordingExecutor(false);   // compile-time answer is irrelevant
+    Expr gated = SequentialPipelineStrategy.gateBySource(pipe, executor, this::dummyExpr, this::dummyExpr);
+    assertInstanceOf(RuntimeSourceGatedExpr.class,
+                     gated,
+                     "a VARIABLE source with a generic fallback must decide per evaluation");
+  }
+
+  @Test
+  void gateFailsClosedOnVariableSourceWithoutGenericFallback() throws QueryException {
+    AST pipe = new AST(XQ.PipeExpr);
+    pipe.setProperty(VectorizedScanAnnotation.SOURCE_REF, SourceRef.variable(new QNm("doc")));
+    RecordingExecutor executor = new RecordingExecutor(true);
+    assertNull(SequentialPipelineStrategy.gateBySource(pipe, executor, this::dummyExpr, null),
+               "no generic to fall back to at runtime -> must not substitute the vectorized expr");
+  }
+
+  private Expr dummyExpr() {
+    return new Expr() {
+      @Override
+      public io.brackit.query.jdm.Sequence evaluate(io.brackit.query.QueryContext ctx, io.brackit.query.Tuple tuple) {
+        return null;
+      }
+
+      @Override
+      public io.brackit.query.jdm.Item evaluateToItem(io.brackit.query.QueryContext ctx, io.brackit.query.Tuple tuple) {
+        return null;
+      }
+
+      @Override
+      public boolean isUpdating() {
+        return false;
+      }
+
+      @Override
+      public boolean isVacuous() {
+        return false;
+      }
+    };
+  }
+
   private static final class RecordingExecutor implements VectorizedExecutor {
     private final boolean accept;
     private SourceRef lastSource;

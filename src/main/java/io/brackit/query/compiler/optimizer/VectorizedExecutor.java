@@ -199,4 +199,24 @@ public interface VectorizedExecutor {
   default boolean acceptsSource(SourceRef source) {
     return true;
   }
+
+  /**
+   * Runtime-capable variant of {@link #acceptsSource(SourceRef)} for gates that run at
+   * EVALUATION time, when the {@link QueryContext} — and with it the actual binding of a
+   * {@link SourceRef.Kind#VARIABLE} source (an external variable such as
+   * {@code declare variable $doc external}) — is available. An executor can resolve
+   * {@code source.variableName()} through {@code ctx}, inspect the concrete item actually bound,
+   * and accept iff it denotes the executor's own resource/revision. Compile-time consumers keep
+   * calling the single-argument overload, which must stay fail-closed for VARIABLE refs.
+   *
+   * <p>The default delegates to {@link #acceptsSource(SourceRef)}, so existing executors keep
+   * their exact behaviour unless they opt in.
+   *
+   * @param source the scan's source identity; never {@code null} when the optimizer annotated the scan
+   * @param ctx    the evaluating query context (carries external-variable bindings)
+   * @return {@code true} to allow vectorized serving of this source, {@code false} to fall back
+   */
+  default boolean acceptsSource(SourceRef source, QueryContext ctx) {
+    return acceptsSource(source);
+  }
 }

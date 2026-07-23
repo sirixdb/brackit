@@ -735,7 +735,9 @@ public class Compiler implements Translator {
     // The vectorized executor returns the count as a scalar Int64, so we replace the
     // entire count(PipeExpr) with the vectorized expression directly.
     if (COUNT_FN.equals(name.getLocalName()) && childCount == 1 && node.getChild(0).getType() == XQ.PipeExpr) {
-      Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(node.getChild(0), true);
+      Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(node.getChild(0),
+                                                                     true,
+                                                                     () -> resolveFunctionCall(node, name, childCount));
       if (vectorized != null) {
         return vectorized;
       }
@@ -759,7 +761,21 @@ public class Compiler implements Translator {
           final String[] sourcePath = (String[]) pipe.getProperty(VectorizedScanAnnotation.SOURCE_PATH_PREFIX);
           final var executor = SequentialPipelineStrategy.getVectorizedExecutor();
           if (field != null && executor != null) {
-            return VectorizedGroupByExpr.countDistinct(executor, sourcePath, field);
+            // Routed through the shared source gate (it previously built the expression with NO
+            // acceptsSource check — a resource-bound executor could serve a foreign document's
+            // count-distinct from its own columns). A decline falls through to the generic
+            // function resolution below; a VARIABLE source decides per evaluation.
+            Expr vectorized = SequentialPipelineStrategy.gateBySource(pipe,
+                                                                      executor,
+                                                                      () -> VectorizedGroupByExpr.countDistinct(executor,
+                                                                                                                sourcePath,
+                                                                                                                field),
+                                                                      () -> resolveFunctionCall(node,
+                                                                                                name,
+                                                                                                childCount));
+            if (vectorized != null) {
+              return vectorized;
+            }
           }
         }
       }
@@ -773,7 +789,11 @@ public class Compiler implements Translator {
         AST pipe = node.getChild(0);
         if (Boolean.TRUE.equals(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_AGGREGATE))) {
           pipe.setProperty(VectorizedScanAnnotation.AGGREGATE_FUNC, fn);
-          Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(pipe);
+          Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(pipe,
+                                                                         false,
+                                                                         () -> resolveFunctionCall(node,
+                                                                                                   name,
+                                                                                                   childCount));
           if (vectorized != null) {
             return vectorized;
           }
@@ -788,7 +808,11 @@ public class Compiler implements Translator {
       if (COUNT_FN.equals(fn)) {
         AST pipe = node.getChild(0);
         if (Boolean.TRUE.equals(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT_DISTINCT))) {
-          Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(pipe, /*countWrapped=*/true);
+          Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(pipe,
+                                                                         /*countWrapped=*/true,
+                                                                         () -> resolveFunctionCall(node,
+                                                                                                   name,
+                                                                                                   childCount));
           if (vectorized != null) {
             return vectorized;
           }
@@ -796,6 +820,15 @@ public class Compiler implements Translator {
       }
     }
 
+    return resolveFunctionCall(node, name, childCount);
+  }
+
+  /**
+   * Generic function-call resolution/compilation — the tail of {@link #functionCall(AST)},
+   * extracted so vectorized interceptions over a VARIABLE source can compile it as the
+   * runtime fallback of a {@link io.brackit.query.expr.RuntimeSourceGatedExpr}.
+   */
+  private Expr resolveFunctionCall(AST node, QNm name, int childCount) throws QueryException {
     Function function = ctx.getFunctions().resolve(name, childCount);
 
     final var signature = function.getSignature();
