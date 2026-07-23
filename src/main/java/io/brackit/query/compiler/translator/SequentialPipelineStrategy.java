@@ -36,6 +36,7 @@ import io.brackit.query.compiler.optimizer.SourceRef;
 import io.brackit.query.compiler.optimizer.VectorizedExecutor;
 import io.brackit.query.compiler.optimizer.VectorizedScanAnnotation;
 import io.brackit.query.expr.PipeExpr;
+import io.brackit.query.expr.RuntimeSourceGatedExpr;
 import io.brackit.query.expr.VectorizedGroupByExpr;
 import io.brackit.query.operator.Count;
 import io.brackit.query.operator.ForBind;
@@ -154,11 +155,26 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
    * are only intercepted when wrapped in {@code count()}, because the
    * vectorized executor returns a scalar count — not the filtered items.
    */
-  public static Expr tryVectorizedExpr(AST node) {
+  public static Expr tryVectorizedExpr(AST node) throws QueryException {
     return tryVectorizedExpr(node, false);
   }
 
-  public static Expr tryVectorizedExpr(AST node, boolean countWrapped) {
+  public static Expr tryVectorizedExpr(AST node, boolean countWrapped) throws QueryException {
+    return tryVectorizedExpr(node, countWrapped, null);
+  }
+
+  /**
+   * Supplies the generic (always-correct) compilation of the SAME query fragment, for call sites
+   * able to compile both sides so a {@link SourceRef.Kind#VARIABLE} source can be decided per
+   * evaluation (see {@link RuntimeSourceGatedExpr}). May run the compiler, hence may throw.
+   */
+  @FunctionalInterface
+  public interface GenericExprSupplier {
+    Expr get() throws QueryException;
+  }
+
+  public static Expr tryVectorizedExpr(AST node, boolean countWrapped, GenericExprSupplier generic)
+      throws QueryException {
     // Thread-local override takes precedence — the SirixCompileChain
     // installs a per-compile executor here without touching the static.
     VectorizedExecutor executor = threadLocalExecutor.get();
@@ -174,10 +190,54 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
     // vectorized expression; a decline falls through to the generic (correct) pipeline.
     // The annotation is present on every walker-annotated scan; when absent (legacy
     // callers / hand-built ASTs) the executor's default accept-all applies unchanged.
-    final SourceRef sourceRef = (SourceRef) node.getProperty(VectorizedScanAnnotation.SOURCE_REF);
-    if (sourceRef != null && !executor.acceptsSource(sourceRef)) {
+    final VectorizedExecutor boundExecutor = executor;
+    return gateBySource(node, boundExecutor, () -> buildVectorizedExpr(node, countWrapped, boundExecutor), generic);
+  }
+
+  /** Lazily builds a vectorized expression once the source gate admits it (may yield {@code null}). */
+  @FunctionalInterface
+  public interface VectorizedExprSupplier {
+    Expr get();
+  }
+
+  /**
+   * SINGLE AUTHORITY for the source-identity gate. Every site that substitutes a vectorized
+   * expression for a scan MUST route through here — a site with its own (or no) gate is how a
+   * resource-bound executor ends up serving a scan over a document it is not bound to
+   * (wrong results). Semantics, by the annotated {@link SourceRef}:
+   * <ul>
+   * <li>no annotation — legacy/hand-built ASTs: the executor's default applies, admit;</li>
+   * <li>{@link SourceRef.Kind#VARIABLE} — unverifiable at compile time: when the caller can
+   * supply the generic compilation, substitute a {@link RuntimeSourceGatedExpr} deciding per
+   * evaluation against the actual binding; otherwise fail closed ({@code null});</li>
+   * <li>anything else — ask {@link VectorizedExecutor#acceptsSource(SourceRef)}; a decline
+   * returns {@code null} and the caller falls through to its generic compilation.</li>
+   * </ul>
+   */
+  public static Expr gateBySource(AST pipe, VectorizedExecutor executor, VectorizedExprSupplier vectorized,
+      GenericExprSupplier generic) throws QueryException {
+    final SourceRef sourceRef = (SourceRef) pipe.getProperty(VectorizedScanAnnotation.SOURCE_REF);
+    if (sourceRef == null) {
+      return vectorized.get();
+    }
+    if (sourceRef.kind() == SourceRef.Kind.VARIABLE) {
+      if (generic == null) {
+        return null;
+      }
+      final Expr vec = vectorized.get();
+      if (vec == null) {
+        return null;
+      }
+      return new RuntimeSourceGatedExpr(executor, sourceRef, vec, generic.get());
+    }
+    if (!executor.acceptsSource(sourceRef)) {
       return null;
     }
+    return vectorized.get();
+  }
+
+  /** The pattern matcher proper: builds the vectorized expression for an ACCEPTED source. */
+  private static Expr buildVectorizedExpr(AST node, boolean countWrapped, VectorizedExecutor executor) {
 
     // Source-path prefix (from the loop variable's IN clause). Threaded through
     // every vectorized Expr so the executor can combine it with per-predicate
@@ -273,11 +333,17 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
 
   @Override
   public Expr compilePipeExpr(AST node, Compiler compiler) throws QueryException {
-    // Check for vectorized scan annotations from the optimizer
-    Expr vectorized = tryVectorizedExpr(node);
+    // Vectorized substitution. For a VARIABLE source (an external variable, unverifiable at
+    // compile time) the generic pipeline is compiled as well and the choice is made per
+    // evaluation against the actual binding — see RuntimeSourceGatedExpr.
+    Expr vectorized = tryVectorizedExpr(node, false, () -> compileGenericPipeExpr(node, compiler));
     if (vectorized != null)
       return vectorized;
+    return compileGenericPipeExpr(node, compiler);
+  }
 
+  /** The generic (Volcano) pipeline compilation — the always-correct path/fallback. */
+  protected Expr compileGenericPipeExpr(AST node, Compiler compiler) throws QueryException {
     final int initialBindSize = compiler.table.bound().length;
     // AST-level pre-scan: decide whether morsel wrapping is safe BEFORE compilation
     // (avoids traversing a not-yet-built Operator graph whose upstream API varies).

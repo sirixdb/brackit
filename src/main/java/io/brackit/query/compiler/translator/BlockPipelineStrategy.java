@@ -81,11 +81,18 @@ public class BlockPipelineStrategy implements PipelineStrategy {
 
   @Override
   public Expr compilePipeExpr(AST node, Compiler compiler) throws QueryException {
-    // Check for vectorized scan annotations — delegates to shared logic
-    Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(node);
+    // Vectorized substitution (shared logic); VARIABLE sources decide per evaluation with the
+    // generic block pipeline as the runtime fallback — see RuntimeSourceGatedExpr.
+    Expr vectorized = SequentialPipelineStrategy.tryVectorizedExpr(node,
+                                                                   false,
+                                                                   () -> compileGenericPipeExpr(node, compiler));
     if (vectorized != null)
       return vectorized;
+    return compileGenericPipeExpr(node, compiler);
+  }
 
+  /** The generic block pipeline compilation — the always-correct path/fallback. */
+  protected Expr compileGenericPipeExpr(AST node, Compiler compiler) throws QueryException {
     int initialBindSize = compiler.table.bound().length;
 
     // Collect blocks
