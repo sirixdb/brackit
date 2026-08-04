@@ -191,13 +191,20 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
     // The annotation is present on every walker-annotated scan; when absent (legacy
     // callers / hand-built ASTs) the executor's default accept-all applies unchanged.
     final VectorizedExecutor boundExecutor = executor;
-    return gateBySource(node, boundExecutor, () -> buildVectorizedExpr(node, countWrapped, boundExecutor), generic);
+    return gateBySource(node, boundExecutor, exec -> buildVectorizedExpr(node, countWrapped, exec), generic);
   }
 
   /** Lazily builds a vectorized expression once the source gate admits it (may yield {@code null}). */
   @FunctionalInterface
   public interface VectorizedExprSupplier {
-    Expr get();
+    /**
+     * @param executor the executor bound to the ADMITTED source — see
+     *                 {@link VectorizedExecutor#executorForSource(SourceRef)}. Build against this
+     *                 one, not the executor the gate was called with: for a chain fronting several
+     *                 resources they are different objects, and only this one is bound to the
+     *                 document the scan actually reads.
+     */
+    Expr get(VectorizedExecutor executor);
   }
 
   /**
@@ -218,13 +225,15 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       GenericExprSupplier generic) throws QueryException {
     final SourceRef sourceRef = (SourceRef) pipe.getProperty(VectorizedScanAnnotation.SOURCE_REF);
     if (sourceRef == null) {
-      return vectorized.get();
+      return vectorized.get(executor);
     }
     if (sourceRef.kind() == SourceRef.Kind.VARIABLE) {
       if (generic == null) {
         return null;
       }
-      final Expr vec = vectorized.get();
+      // Unresolvable until evaluation, so the dispatching executor itself is captured and decides
+      // per evaluation against the actual binding.
+      final Expr vec = vectorized.get(executor);
       if (vec == null) {
         return null;
       }
@@ -233,7 +242,10 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
     if (!executor.acceptsSource(sourceRef)) {
       return null;
     }
-    return vectorized.get();
+    // Build against the executor bound to THIS source, which for a single-resource executor is the
+    // same object and for a multi-resource one is the instance that reads the right document.
+    final VectorizedExecutor boundToSource = executor.executorForSource(sourceRef);
+    return vectorized.get(boundToSource == null ? executor : boundToSource);
   }
 
   /** The pattern matcher proper: builds the vectorized expression for an ACCEPTED source. */
@@ -244,6 +256,17 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
     // field names to fully-qualify query paths and filter matches to the
     // correct tree depth.
     final String[] sourcePath = (String[]) node.getProperty(VectorizedScanAnnotation.SOURCE_PATH_PREFIX);
+
+    // SINGLE authority for the predicate gate, for the same reason gateBySource is the single
+    // authority for the source gate: this is the last point at which declining is free. Past it the
+    // substitution is committed and most modes have no generic pipeline left to fall back to, so an
+    // executor that cannot reproduce the predicate's semantics would have to choose between a wrong
+    // answer and a failed query. Every mode below reads PREDICATE_TREE from this same node, so one
+    // check here covers all of them.
+    final PredicateNode annotatedPredicate = (PredicateNode) node.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
+    if (annotatedPredicate != null && !executor.acceptsPredicate(sourcePath, annotatedPredicate)) {
+      return null;
+    }
 
     // Pattern 0 (highest priority when count-wrapped): count-distinct answered
     // from an HLL cardinality sketch. The walker sets VECTORIZED_COUNT_DISTINCT
