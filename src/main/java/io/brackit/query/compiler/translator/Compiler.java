@@ -767,9 +767,9 @@ public class Compiler implements Translator {
             // function resolution below; a VARIABLE source decides per evaluation.
             Expr vectorized = SequentialPipelineStrategy.gateBySource(pipe,
                                                                       executor,
-                                                                      () -> VectorizedGroupByExpr.countDistinct(executor,
-                                                                                                                sourcePath,
-                                                                                                                field),
+                                                                      exec -> VectorizedGroupByExpr.countDistinct(exec,
+                                                                                                                  sourcePath,
+                                                                                                                  field),
                                                                       () -> resolveFunctionCall(node,
                                                                                                 name,
                                                                                                 childCount));

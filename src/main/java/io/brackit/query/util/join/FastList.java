@@ -78,9 +78,25 @@ public class FastList<E> {
     size = size + len;
   }
 
+  /**
+   * Grows the backing array geometrically, matching {@link #add(Object)}'s {@code *3/2+1}.
+   *
+   * <p>Growing to the exact requested capacity makes every bulk append reallocate and copy the
+   * whole array, so appending n elements in batches of b costs O(n²/b) copies rather than O(n).
+   * {@code BlockExpr.Return.doOutput} accumulates a whole result sequence through
+   * {@link #addAllSafe(Object[], int, int)} one batch per pipeline flush, so on a 3.48 M-record
+   * scan this was ~13,600 reallocations totalling ~2.4e10 element copies — the parallel query
+   * pipeline never finished, and profiles showed 40 % of CPU in {@code memset}/{@code Arrays.copyOf}
+   * plus ~20 % in G1. The single-element {@code add} path was already geometric; only the bulk path
+   * was not.
+   *
+   * <p>{@code size} remains the logical length, so over-allocating capacity changes no observable
+   * behaviour.
+   */
   private void capacity(int capacity) {
     if (values.length < capacity) {
-      values = Arrays.copyOf(values, capacity);
+      final int grown = values.length * 3 / 2 + 1;
+      values = Arrays.copyOf(values, Math.max(capacity, grown));
     }
   }
 

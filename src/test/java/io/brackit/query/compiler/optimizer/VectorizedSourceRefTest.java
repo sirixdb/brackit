@@ -348,7 +348,7 @@ public class VectorizedSourceRefTest {
     AST pipe = new AST(XQ.PipeExpr);   // no SOURCE_REF property at all (legacy/hand-built AST)
     RecordingExecutor executor = new RecordingExecutor(false);
     Expr vec = dummyExpr();
-    assertEquals(vec, SequentialPipelineStrategy.gateBySource(pipe, executor, () -> vec, null));
+    assertEquals(vec, SequentialPipelineStrategy.gateBySource(pipe, executor, boundExecutor -> vec, null));
   }
 
   @Test
@@ -356,7 +356,7 @@ public class VectorizedSourceRefTest {
     AST pipe = new AST(XQ.PipeExpr);
     pipe.setProperty(VectorizedScanAnnotation.SOURCE_REF, SourceRef.document("db", "res", -1));
     RecordingExecutor executor = new RecordingExecutor(false);
-    assertNull(SequentialPipelineStrategy.gateBySource(pipe, executor, this::dummyExpr, null),
+    assertNull(SequentialPipelineStrategy.gateBySource(pipe, executor, boundExecutor -> dummyExpr(), null),
                "a declined source must fall through to the caller's generic compilation");
     assertTrue(executor.lastSource.isDocument());
   }
@@ -366,7 +366,7 @@ public class VectorizedSourceRefTest {
     AST pipe = new AST(XQ.PipeExpr);
     pipe.setProperty(VectorizedScanAnnotation.SOURCE_REF, SourceRef.variable(new QNm("doc")));
     RecordingExecutor executor = new RecordingExecutor(false);   // compile-time answer is irrelevant
-    Expr gated = SequentialPipelineStrategy.gateBySource(pipe, executor, this::dummyExpr, this::dummyExpr);
+    Expr gated = SequentialPipelineStrategy.gateBySource(pipe, executor, boundExecutor -> dummyExpr(), this::dummyExpr);
     assertInstanceOf(RuntimeSourceGatedExpr.class,
                      gated,
                      "a VARIABLE source with a generic fallback must decide per evaluation");
@@ -377,7 +377,7 @@ public class VectorizedSourceRefTest {
     AST pipe = new AST(XQ.PipeExpr);
     pipe.setProperty(VectorizedScanAnnotation.SOURCE_REF, SourceRef.variable(new QNm("doc")));
     RecordingExecutor executor = new RecordingExecutor(true);
-    assertNull(SequentialPipelineStrategy.gateBySource(pipe, executor, this::dummyExpr, null),
+    assertNull(SequentialPipelineStrategy.gateBySource(pipe, executor, boundExecutor -> dummyExpr(), null),
                "no generic to fall back to at runtime -> must not substitute the vectorized expr");
   }
 

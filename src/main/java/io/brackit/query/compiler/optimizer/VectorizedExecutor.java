@@ -174,6 +174,51 @@ public interface VectorizedExecutor {
   boolean canExecute(QueryContext ctx);
 
   /**
+   * The executor that should serve THIS source, once {@link #acceptsSource(SourceRef)} has admitted
+   * it. Returning {@code this} — the default — keeps the historical behaviour of one executor per
+   * compile.
+   *
+   * <p>Exists because a query may read more than one document, while the translator captures a
+   * single executor object into each compiled expression. An executor that fronts several resources
+   * can hand back a differently-bound instance per scan here, so a two-document query gets the fast
+   * path on BOTH sides instead of only whichever document happened to be named first.
+   *
+   * <p>Called once per admitted scan, at translate time. Implementations must return an executor
+   * that is genuinely bound to {@code source} — the returned instance answers the scan with no
+   * further identity check, so handing back the wrong one is a wrong result, exactly what
+   * {@link #acceptsSource(SourceRef)} exists to prevent.
+   *
+   * @param source the scan's source identity, already admitted by {@link #acceptsSource(SourceRef)}
+   * @return the executor to build this scan against; never {@code null}
+   */
+  default VectorizedExecutor executorForSource(SourceRef source) {
+    return this;
+  }
+
+  /**
+   * Whether this executor can reproduce {@code predicate}'s semantics faithfully.
+   *
+   * <p>Asked at TRANSLATE time, with the annotated predicate in hand, at the one point where a
+   * decline is still free: the caller simply builds the generic pipeline instead. That matters
+   * because most substituted entry points have NO generic pipeline behind them at evaluation time
+   * — an executor that discovers mid-scan that it cannot answer has only the choice between a wrong
+   * result and a failed query. This is the third option, and the place to take it.
+   *
+   * <p>The intended use is semantic edge cases an executor's kernels do not implement the same way
+   * the interpreter does — comparisons against JSON {@code null}, collations, type promotions.
+   * Declining costs the fast path for that one query shape and nothing else.
+   *
+   * <p>The default accepts everything, so executors that have no such edge cases are unaffected.
+   *
+   * @param sourcePath the scan's source-path prefix (see {@link VectorizedScanAnnotation#SOURCE_PATH_PREFIX})
+   * @param predicate  the annotated predicate tree; never {@code null} when this is consulted
+   * @return {@code true} to allow substitution, {@code false} to fall back to the generic pipeline
+   */
+  default boolean acceptsPredicate(String[] sourcePath, PredicateNode predicate) {
+    return true;
+  }
+
+  /**
    * Whether this executor may serve a scan over the given source document.
    *
    * <p>{@code sourcePath} tells an executor which path inside a document a scan walks, but never which

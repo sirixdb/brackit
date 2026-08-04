@@ -126,7 +126,7 @@ public final class VectorizedGroupByDetection implements Stage {
         case XQ.Selection -> {
           hasSelection = true;
           if (predicateRepresentable && current.getChildCount() >= 1) {
-            PredicateNode pn = extractPredicate(current.getChild(0));
+            PredicateNode pn = extractPredicate(current.getChild(0), loopVar);
             if (pn == null) {
               predicateRepresentable = false;
             } else {
@@ -722,8 +722,18 @@ public final class VectorizedGroupByDetection implements Stage {
    * <li>{@code $u.f OP literal} → {@link PredicateNode.NumCmp} / {@link PredicateNode.StrEq}
    * <li>{@code $u.f} (bare deref, EBV on JSON boolean) → {@link PredicateNode.BoolRef}
    * </ul>
+   *
+   * <p>Field references must be DIRECTLY {@code $loopVar.field}, which is why {@code loopVar} is
+   * threaded down here rather than each operand being read on its own. A nested deref
+   * ({@code $u.inner.age}) or a reference to some other variable in scope
+   * ({@code $other.age}) names a value the executor will not be looking at: it evaluates the
+   * annotation against the loop record's DIRECT children, so {@code $u.inner.age gt 5} would
+   * otherwise compile to the same {@code NumCmp[field=age, op=gt, value=5]} as
+   * {@code $u.age gt 5}, and the executor would compare the outer {@code age} — silently, with
+   * nothing left in the annotation for a consumer to notice. Declining costs the fast path;
+   * guessing costs the answer.
    */
-  private PredicateNode extractPredicate(AST node) {
+  private PredicateNode extractPredicate(AST node, QNm loopVar) {
     if (node == null)
       return null;
 
@@ -732,7 +742,7 @@ public final class VectorizedGroupByDetection implements Stage {
     if (type == XQ.AndExpr) {
       List<PredicateNode> kids = new ArrayList<>(node.getChildCount());
       for (int i = 0; i < node.getChildCount(); i++) {
-        PredicateNode c = extractPredicate(node.getChild(i));
+        PredicateNode c = extractPredicate(node.getChild(i), loopVar);
         if (c == null)
           return null;
         kids.add(c);
@@ -742,7 +752,7 @@ public final class VectorizedGroupByDetection implements Stage {
     if (type == XQ.OrExpr) {
       List<PredicateNode> kids = new ArrayList<>(node.getChildCount());
       for (int i = 0; i < node.getChildCount(); i++) {
-        PredicateNode c = extractPredicate(node.getChild(i));
+        PredicateNode c = extractPredicate(node.getChild(i), loopVar);
         if (c == null)
           return null;
         kids.add(c);
@@ -752,7 +762,7 @@ public final class VectorizedGroupByDetection implements Stage {
 
     // Bare deref: EBV of a JSON boolean field.
     if (type == XQ.DerefExpr) {
-      String bf = directDerefFieldName(node);
+      String bf = directLoopVarDerefField(node, loopVar);
       return bf != null ? new PredicateNode.BoolRef(bf) : null;
     }
 
@@ -774,7 +784,7 @@ public final class VectorizedGroupByDetection implements Stage {
       return null;
 
     // $u.F OP literal — field on left.
-    String field = directDerefFieldName(leftOperand);
+    String field = directLoopVarDerefField(leftOperand, loopVar);
     if (field != null) {
       PredicateNode numCmp = numericComparison(field, op, rightOperand);
       if (numCmp != null)
@@ -785,7 +795,7 @@ public final class VectorizedGroupByDetection implements Stage {
       return null;
     }
     // literal OP $u.F — field on right. Reverse the comparison direction.
-    field = directDerefFieldName(rightOperand);
+    field = directLoopVarDerefField(rightOperand, loopVar);
     if (field != null) {
       PredicateNode numCmp = numericComparison(field, reverseOp(op), leftOperand);
       if (numCmp != null)
@@ -850,21 +860,6 @@ public final class VectorizedGroupByDetection implements Stage {
       }
     }
     return field != null ? new OrderInfo(field, direction) : null;
-  }
-
-  // ==================== Field name extraction ====================
-
-  /** Field name for a node that is DIRECTLY a DerefExpr — no descent into children. */
-  private String directDerefFieldName(AST node) {
-    if (node == null || node.getType() != XQ.DerefExpr || node.getChildCount() < 2)
-      return null;
-    final AST fieldNode = node.getChild(node.getChildCount() - 1);
-    final Object value = fieldNode.getValue();
-    if (value instanceof QNm qnm)
-      return qnm.getLocalName();
-    if (value instanceof String s)
-      return s;
-    return null;
   }
 
   // ==================== Literal extraction ====================

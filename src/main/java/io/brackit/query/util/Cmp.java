@@ -37,6 +37,7 @@ import io.brackit.query.atomic.Una;
 import io.brackit.query.expr.Cast;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
+import io.brackit.query.atomic.Null;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.jdm.Type;
 
@@ -66,6 +67,35 @@ public enum Cmp {
    * xs:untypedAtomic.
    */
   public boolean aCmp(QueryContext ctx, Atomic left, Atomic right) throws QueryException {
+    // JSONiq gives null its own comparison rules, and they are total — never a type error:
+    //
+    //   "null can be compared for equality or inequality to anything - it is only equal to itself
+    //    so that false is returned when comparing it for equality with any non-null atomic."
+    //   "For ordering operators (lt, le, gt, ge), null is considered the smallest possible value
+    //    (like in JavaScript)."
+    //     -- JSONiq specification, Basic Operations; `1 eq null, "foo" ne null, null eq null`
+    //        evaluates to `false true true` and `1 lt null` to `false`.
+    //
+    // Without this, the per-type cmp/eq implementations decide, and every one of them raises
+    // XPTY0004 on a type it does not recognise — so a single null row turned an ordinary filter
+    // over a nullable JSON field into a failed query.
+    final boolean leftIsNull = left instanceof Null;
+    final boolean rightIsNull = right instanceof Null;
+    if (leftIsNull || rightIsNull) {
+      if (this == Cmp.eq) {
+        return leftIsNull && rightIsNull;
+      }
+      if (this == Cmp.ne) {
+        return !(leftIsNull && rightIsNull);
+      }
+      // Ordering: null is the smallest value, so it ties only with itself.
+      final int nullCompare = leftIsNull && rightIsNull ? 0 : leftIsNull ? -1 : 1;
+      if (nullCompare == 0) {
+        return this == Cmp.ge || this == Cmp.le;
+      }
+      return nullCompare < 0 ? this == Cmp.le || this == Cmp.lt : this == Cmp.ge || this == Cmp.gt;
+    }
+
     if (this == Cmp.eq) {
       return left.eq(right);
     } else if (this == Cmp.ne) {
