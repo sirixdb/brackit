@@ -450,6 +450,61 @@ public class VectorizedGroupByDetectionTest {
     assertStrEq(predicateTree(pipe), "city", "NYC");
   }
 
+  /**
+   * A predicate field must be DIRECTLY {@code $loopVar.field}. A nested deref names a value one
+   * level down, but the annotation has no way to say so: dropping the prefix made
+   * {@code $u.inner.age gt 5} compile to the same {@code NumCmp[field=age, op=gt, value=5]} as
+   * {@code $u.age gt 5}, so an executor evaluating the annotation against the loop record's direct
+   * children silently compared the OUTER age — a wrong answer with nothing left for the consumer to
+   * notice. Declining costs the fast path; guessing cost the answer.
+   */
+  @Test
+  void nestedDerefPredicateIsNotAnnotated() {
+    // for $u where $u.inner.age > 5 return $u   —   DerefExpr(DerefExpr($u, inner), age)
+    AST nested = new AST(XQ.DerefExpr);
+    nested.addChild(deref("u", "inner"));
+    nested.addChild(new AST(XQ.DerefExpr, new QNm("age")));
+
+    AST pipe = pipeExpr(forBind("u", selection(comparison(XQ.GeneralCompGT, nested, intLit(5)), endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE),
+               "a nested deref must not be annotated as a flat field");
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT),
+               "with no representable predicate the pipeline must not be claimed at all");
+  }
+
+  /** Same rule for a reference to some OTHER variable in scope: not the loop record's field. */
+  @Test
+  void foreignVariableDerefPredicateIsNotAnnotated() {
+    // for $u where $other.age > 5 return $u
+    AST pipe = pipeExpr(forBind("u",
+                                selection(comparison(XQ.GeneralCompGT, deref("other", "age"), intLit(5)),
+                                          endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE),
+               "a field of a different variable must not be annotated as the loop record's field");
+  }
+
+  /** The bare-deref (EBV) arm takes the same rule. */
+  @Test
+  void nestedBareDerefPredicateIsNotAnnotated() {
+    // for $u where $u.inner.flag return $u
+    AST nested = new AST(XQ.DerefExpr);
+    nested.addChild(deref("u", "inner"));
+    nested.addChild(new AST(XQ.DerefExpr, new QNm("flag")));
+
+    AST pipe = pipeExpr(forBind("u", selection(nested, endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE),
+               "a nested bare deref must not be annotated as a flat boolean field");
+  }
+
   @Test
   void compoundAndPredicate() {
     // for $u where $u.age > 30 and $u.city eq "NYC" return ...
