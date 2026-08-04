@@ -94,18 +94,40 @@ public abstract class SerialSink extends ChainedSink {
     }
   }
 
+  /**
+   * Buffers output produced while this sink does not hold the token.
+   *
+   * <p>Every forked sink but the token holder accumulates here until the token reaches it, so on a
+   * large fan-in this is appended to thousands of times. Two things made that quadratic and unsafe:
+   *
+   * <ul>
+   * <li><b>Exact-size growth.</b> {@code Arrays.copyOfRange(pending, 0, pLen + len)} reallocated
+   * and copied the entire buffer on <i>every</i> append, so accumulating k batches copied
+   * O(k²) tuples. On the 3.48 M-record corpus that is billions of element copies, which is
+   * what pinned the parallel pipeline and thrashed GC. Grown geometrically instead.</li>
+   * <li><b>Aliasing the caller's array.</b> The first append stored {@code buf} itself, but
+   * {@code ForBind.ForBindTask.process} deliberately REUSES its {@code Tuple[]} across
+   * flushes — so the pending data was overwritten in place by the next batch. Copied
+   * defensively instead.</li>
+   * </ul>
+   *
+   * <p>{@code pLen}, not {@code pending.length}, remains the valid extent; {@link #processPending()}
+   * passes both, so the spare capacity is never read.
+   */
   @Override
   protected void setPending(Tuple[] buf, int len) throws QueryException {
     if (pending == null) {
-      pending = buf;
+      pending = Arrays.copyOf(buf, len);
       pLen = len;
-    } else {
-      int newPLen = pLen + len;
-      if (newPLen > pending.length) {
-        pending = Arrays.copyOfRange(pending, 0, newPLen);
-      }
-      System.arraycopy(buf, 0, pending, pLen, len);
-      pLen = newPLen;
+      return;
     }
+    final int newPLen = pLen + len;
+    if (newPLen > pending.length) {
+      // 1.5x growth, floored at what this append needs, so k appends cost O(k) amortized.
+      final int grown = pending.length + (pending.length >> 1);
+      pending = Arrays.copyOf(pending, Math.max(newPLen, grown));
+    }
+    System.arraycopy(buf, 0, pending, pLen, len);
+    pLen = newPLen;
   }
 }

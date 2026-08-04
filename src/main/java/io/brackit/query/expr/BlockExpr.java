@@ -159,7 +159,13 @@ public class BlockExpr implements Expr {
     @Override
     protected void doOutput(Out out) throws QueryException {
       Result res = (Result) out;
-      for (Tuple t : res.buf) {
+      // Only the first res.len entries belong to this batch. ForBind.ForBindTask.process REUSES its
+      // Tuple[] across flushes (it resets len to 0 without clearing) and doPreOutput compacts into
+      // that same array, so slots from res.len to buf.length still hold tuples from an earlier
+      // batch. Iterating the whole array re-emitted them. The sibling sink Return.doOutput already
+      // respects the bound via addAllSafe(res.buf, 0, res.len).
+      for (int idx = 0; idx < res.len; idx++) {
+        final Tuple t = res.buf[idx];
         if (t != null) {
           Sequence s = (Sequence) t;
           if (s instanceof Item) {
