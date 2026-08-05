@@ -9,6 +9,8 @@ import io.brackit.query.atomic.QNm;
 import io.brackit.query.compiler.AST;
 import io.brackit.query.compiler.XQ;
 import io.brackit.query.compiler.optimizer.walker.topdown.VectorizedGroupByDetection;
+import io.brackit.query.function.json.JSONFun;
+import io.brackit.query.module.Namespaces;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -1389,5 +1391,165 @@ public class VectorizedGroupByDetectionTest {
     assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY));
     assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY_MULTI));
     assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
+  }
+
+  // ==================== fn:not ====================
+
+  /**
+   * {@code fn:not} over a representable argument produces a {@link PredicateNode.Not}.
+   *
+   * <p>The class javadoc listed negation among the supported shapes and {@link PredicateNode.Not}
+   * has always existed with every consumer handling it — but no branch in {@code extractPredicate}
+   * ever built one, so any {@code where} touching {@code not(...)} returned null and dropped the
+   * annotation whole. This is the arm that closes that gap.
+   */
+  @Test
+  void negatedBooleanFieldProducesNotNode() {
+    // for $u where not($u.active) and $u.age gt 30 return $u
+    //
+    // Conjoined with a numeric leaf on purpose: a BARE not($u.active) is correctly refused by the
+    // sound-anchor guard (see negatedBooleanFieldAloneIsNotAnchorable), so asserting the Not node
+    // on its own would assert against a tree the walker is right to throw away.
+    final AST andExpr = new AST(XQ.AndExpr);
+    andExpr.addChild(fnNot(Namespaces.FN_NSURI, deref("u", "active")));
+    andExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "age"), intLit(30)));
+
+    final AST pipe = pipeExpr(forBind("u", selection(andExpr, endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    final PredicateNode p = predicateTree(pipe);
+    assertInstanceOf(PredicateNode.And.class, p);
+    final PredicateNode.And a = (PredicateNode.And) p;
+    assertEquals(2, a.children().size());
+    assertInstanceOf(PredicateNode.Not.class, a.children().get(0));
+    final PredicateNode.Not n = (PredicateNode.Not) a.children().get(0);
+    assertInstanceOf(PredicateNode.BoolRef.class, n.child());
+    assertEquals("active", ((PredicateNode.BoolRef) n.child()).field());
+    assertNumCmp(a.children().get(1), "age", "gt", 30L);
+    assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
+  }
+
+  /**
+   * An unprefixed {@code not(...)} must be recognised too — and it is the form that matters.
+   *
+   * <p>{@code ExprAnalyzer#functionCall} expands an unprefixed call to the JSONiq default function
+   * namespace and leaves it there; only an explicitly written {@code fn:not} ever carries
+   * {@code FN_NSURI}. A namespace check written against {@code FN_NSURI} alone compiles, passes the
+   * prefixed test above, and is dead code for every query a user actually writes.
+   */
+  @Test
+  void unprefixedNotIsRecognisedInTheDefaultFunctionNamespace() {
+    final AST andExpr = new AST(XQ.AndExpr);
+    andExpr.addChild(fnNot(Namespaces.DEFAULT_FN_NSURI, deref("u", "active")));
+    andExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "age"), intLit(30)));
+
+    final AST pipe = pipeExpr(forBind("u", selection(andExpr, endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    final PredicateNode.And a = (PredicateNode.And) predicateTree(pipe);
+    assertInstanceOf(PredicateNode.Not.class, a.children().get(0));
+  }
+
+  /**
+   * A bare negated boolean stays unclaimed: it holds for records that lack the field.
+   *
+   * <p>{@code not($u.active)} over a record with no {@code active} is {@code not(())}, whose EBV is
+   * {@code not(false) = true}. An anchor-based scan iterates the {@code active} column's slots and
+   * never visits such a record, so claiming this shape would undercount on sparse data — the exact
+   * De Morgan case {@link PredicateNode#excludesRecordsMissingField} documents. The negation
+   * support makes the walker able to SEE the shape; the guard is what decides it.
+   */
+  @Test
+  void negatedBooleanFieldAloneIsNotAnchorable() {
+    final AST pipe = pipeExpr(forBind("u",
+                                      selection(fnNot(Namespaces.DEFAULT_FN_NSURI, deref("u", "active")),
+                                                endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE),
+               "a bare negation matches records missing the field and has no sound scan anchor");
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT),
+               "with no representable predicate the pipeline must not be claimed at all");
+  }
+
+  /** Same for a negated comparison: {@code not($u.age gt 30)} is true when {@code age} is absent. */
+  @Test
+  void negatedComparisonAloneIsNotAnchorable() {
+    final AST pipe = pipeExpr(forBind("u",
+                                      selection(fnNot(Namespaces.DEFAULT_FN_NSURI,
+                                                      comparison(XQ.GeneralCompGT, deref("u", "age"), intLit(30))),
+                                                endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
+  }
+
+  /**
+   * A {@code not} from some other namespace is a different function and must not become a negation.
+   *
+   * <p>Matching on the local name alone would compile {@code jn:not($u.active)} — or any user
+   * module's {@code not} — into a negation the executor then evaluates as one, inverting an answer
+   * on behalf of a function whose body nobody looked at.
+   */
+  @Test
+  void notFromAnotherNamespaceIsNotANegation() {
+    final AST andExpr = new AST(XQ.AndExpr);
+    andExpr.addChild(fnNot(JSONFun.JSON_NSURI, deref("u", "active")));
+    andExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "age"), intLit(30)));
+
+    final AST pipe = pipeExpr(forBind("u", selection(andExpr, endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE),
+               "only fn:not is a negation; an unknown function makes the whole predicate " + "unrepresentable");
+  }
+
+  /** Arity is part of the match: a two-argument {@code not} is not {@code fn:not}. */
+  @Test
+  void twoArgumentNotIsNotANegation() {
+    final AST call = new AST(XQ.FunctionCall, new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "not"));
+    call.addChild(deref("u", "active"));
+    call.addChild(deref("u", "other"));
+
+    final AST andExpr = new AST(XQ.AndExpr);
+    andExpr.addChild(call);
+    andExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "age"), intLit(30)));
+
+    final AST pipe = pipeExpr(forBind("u", selection(andExpr, endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
+  }
+
+  /** An unrepresentable argument still fails closed, rather than yielding a tree that lies. */
+  @Test
+  void notOverAnUnrepresentableArgumentIsRejected() {
+    final AST nested = new AST(XQ.DerefExpr);
+    nested.addChild(deref("u", "inner"));
+    nested.addChild(new AST(XQ.DerefExpr, new QNm("flag")));
+
+    final AST andExpr = new AST(XQ.AndExpr);
+    andExpr.addChild(fnNot(Namespaces.DEFAULT_FN_NSURI, nested));
+    andExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "age"), intLit(30)));
+
+    final AST pipe = pipeExpr(forBind("u", selection(andExpr, endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE),
+               "a negation over a nested deref must not be claimed as a flat-field negation");
+  }
+
+  /** {@code fn:not(...)} node in the given function namespace. */
+  private AST fnNot(final String nsUri, final AST argument) {
+    final AST call = new AST(XQ.FunctionCall, new QNm(nsUri, Namespaces.FN_PREFIX, "not"));
+    call.addChild(argument);
+    return call;
   }
 }

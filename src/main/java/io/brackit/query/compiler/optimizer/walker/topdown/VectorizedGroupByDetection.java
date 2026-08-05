@@ -13,6 +13,7 @@ import io.brackit.query.compiler.optimizer.SourceRef;
 import io.brackit.query.compiler.optimizer.Stage;
 import io.brackit.query.compiler.optimizer.VectorizedScanAnnotation;
 import io.brackit.query.function.json.JSONFun;
+import io.brackit.query.module.Namespaces;
 import io.brackit.query.module.StaticContext;
 
 import java.util.ArrayList;
@@ -758,6 +759,31 @@ public final class VectorizedGroupByDetection implements Stage {
         kids.add(c);
       }
       return PredicateNode.or(kids);
+    }
+
+    // fn:not(x). PredicateNode.Not has existed since the tree was introduced — every consumer
+    // handles it, and excludesRecordsMissingField documents its De Morgan case — but no branch
+    // here ever produced one, so any `where` touching fn:not returned null and dropped the whole
+    // annotation. That also cost the conjunctions: `$u.age gt 30 and not($u.active)` was
+    // unrepresentable because of the second conjunct alone, even though the first anchors it.
+    //
+    // A bare `not($u.active)` still ends up on the generic pipeline, and must: it holds for a
+    // record with no `active` field at all, which the sound-anchor guard above correctly refuses
+    // to claim for an anchor-based scan. This branch is what lets the guard see the shape and
+    // decide, rather than never being handed one.
+    //
+    // Namespace-checked, single argument only: matching the local name alone would compile some
+    // other module's `not` into a negation the executor then evaluates as one. BOTH namespaces
+    // are accepted because ExprAnalyzer#functionCall expands an unprefixed call to the JSONiq
+    // default function namespace and leaves it there — `not($u.active)` never carries FN_NSURI,
+    // only the explicitly prefixed `fn:not($u.active)` does. Checking FN_NSURI alone would make
+    // this branch dead code for the form people actually write.
+    if (type == XQ.FunctionCall && node.getChildCount() == 1 && node.getValue() instanceof QNm fnName && "not".equals(
+                                                                                                                      fnName.getLocalName())
+        && (Namespaces.FN_NSURI.equals(fnName.getNamespaceURI()) || Namespaces.DEFAULT_FN_NSURI.equals(fnName
+                                                                                                             .getNamespaceURI()))) {
+      final PredicateNode child = extractPredicate(node.getChild(0), loopVar);
+      return child == null ? null : new PredicateNode.Not(child);
     }
 
     // Bare deref: EBV of a JSON boolean field.
