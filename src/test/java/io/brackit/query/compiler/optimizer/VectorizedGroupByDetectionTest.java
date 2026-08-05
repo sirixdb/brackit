@@ -1322,10 +1322,12 @@ public class VectorizedGroupByDetectionTest {
   // ==================== OR / sparse-anchor fail-closed ====================
 
   @Test
-  void orAcrossDifferentFieldsFailsClosed() {
-    // where $u.a > 1 or $u.b > 1 — a record carrying only `b` satisfies the
-    // disjunction but is invisible to an anchor-based scan on `a` (and vice
-    // versa). No field is a sound anchor → no claim.
+  void orAcrossDifferentFieldsIsCountDecomposable() {
+    // where $u.a > 1 or $u.b > 1 — a record carrying only `b` satisfies the disjunction but is
+    // invisible to an anchor-based scan on `a` (and vice versa), so the shape cannot be ITERATED.
+    // Its COUNT is still exact by inclusion-exclusion over anchored branch counts, so the count
+    // claim (and only that claim) is kept; the executor's acceptsPredicate gate decides at
+    // translate time whether it can actually compute the terms.
     AST orExpr = new AST(XQ.OrExpr);
     orExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "a"), intLit(1)));
     orExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "b"), intLit(1)));
@@ -1333,8 +1335,8 @@ public class VectorizedGroupByDetectionTest {
 
     stage.rewrite(null, root(pipe));
 
-    assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
-    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
+    assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
+    assertInstanceOf(PredicateNode.Or.class, pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
   }
 
   @Test
@@ -1453,31 +1455,28 @@ public class VectorizedGroupByDetectionTest {
   }
 
   /**
-   * A bare negated boolean stays unclaimed: it holds for records that lack the field.
-   *
-   * <p>{@code not($u.active)} over a record with no {@code active} is {@code not(())}, whose EBV is
-   * {@code not(false) = true}. An anchor-based scan iterates the {@code active} column's slots and
-   * never visits such a record, so claiming this shape would undercount on sparse data — the exact
-   * De Morgan case {@link PredicateNode#excludesRecordsMissingField} documents. The negation
-   * support makes the walker able to SEE the shape; the guard is what decides it.
+   * A bare negated boolean has no ITERATION anchor — it holds for records that lack the field, the
+   * De Morgan case {@link PredicateNode#excludesRecordsMissingField} documents — but its COUNT is
+   * the complement of an anchored count, so the count claim survives and everything else stays off.
    */
   @Test
-  void negatedBooleanFieldAloneIsNotAnchorable() {
+  void negatedBooleanFieldAloneIsCountDecomposable() {
     final AST pipe = pipeExpr(forBind("u",
                                       selection(fnNot(Namespaces.DEFAULT_FN_NSURI, deref("u", "active")),
                                                 endReturningVar("u"))));
 
     stage.rewrite(null, root(pipe));
 
-    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE),
-               "a bare negation matches records missing the field and has no sound scan anchor");
-    assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT),
-               "with no representable predicate the pipeline must not be claimed at all");
+    assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
+    assertInstanceOf(PredicateNode.Not.class, pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY),
+               "no anchored claim may ride along with a decomposable count");
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_ORDERBY));
   }
 
-  /** Same for a negated comparison: {@code not($u.age gt 30)} is true when {@code age} is absent. */
+  /** Same for a negated comparison: {@code N - count($u.age gt 30)} is exact. */
   @Test
-  void negatedComparisonAloneIsNotAnchorable() {
+  void negatedComparisonAloneIsCountDecomposable() {
     final AST pipe = pipeExpr(forBind("u",
                                       selection(fnNot(Namespaces.DEFAULT_FN_NSURI,
                                                       comparison(XQ.GeneralCompGT, deref("u", "age"), intLit(30))),
@@ -1485,7 +1484,8 @@ public class VectorizedGroupByDetectionTest {
 
     stage.rewrite(null, root(pipe));
 
-    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
+    assertEquals(Boolean.TRUE, pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT));
+    assertInstanceOf(PredicateNode.Not.class, pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
   }
 
   /**

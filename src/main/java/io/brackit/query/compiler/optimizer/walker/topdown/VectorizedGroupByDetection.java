@@ -187,8 +187,19 @@ public final class VectorizedGroupByDetection implements Stage {
     // claim predicates for which SOME referenced field provably excludes
     // records missing it — the executor anchors there. No sound anchor → the
     // whole selection is unrepresentable → generic (always correct) pipeline.
+    // COUNT-DECOMPOSABLE ESCAPE HATCH: some predicates with no sound anchor for ITERATION still
+    // have an exactly computable COUNT from anchored sub-counts. `not(X)` with X anchored is
+    // N_total - count(X); `A or B` with every branch anchored is count(A) + count(B) - count(A and
+    // B). No record with a referenced field missing is ever mis-handled, because it is never
+    // ITERATED — the algebra ranges over totals. Such trees keep the count claim (and only that
+    // claim: every other executor mode iterates records via an anchor and stays fail-closed). The
+    // executor's acceptsPredicate gate still decides at translate time whether it can actually
+    // compute the totals (e.g. whether the record count is provable), so an executor that cannot
+    // falls back to the generic pipeline exactly as before.
+    boolean countDecomposable = false;
     if (predicateRepresentable && !predicateConjuncts.isEmpty() && PredicateNode.and(predicateConjuncts)
                                                                                 .findSoundAnchorField() == null) {
+      countDecomposable = isCountDecomposable(PredicateNode.and(predicateConjuncts));
       predicateRepresentable = false;
     }
 
@@ -238,8 +249,12 @@ public final class VectorizedGroupByDetection implements Stage {
     // must be exactly the loop variable (one item per tuple, never empty):
     // `return ($u, $u)` doubles the count and `return $u.maybeAbsent` yields zero
     // items for records lacking the field — both silently wrong.
-    if (hasPredicate && !hasGroupBy && !hasOrderBy && isSoleLoopVarRef(returnExpr, loopVar)) {
+    if ((hasPredicate || countDecomposable) && !hasGroupBy && !hasOrderBy && isSoleLoopVarRef(returnExpr, loopVar)) {
       pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_COUNT, Boolean.TRUE);
+      if (countDecomposable) {
+        // The tree travels only alongside the count claim: nothing else may anchor-iterate it.
+        pipeExpr.setProperty(VectorizedScanAnnotation.PREDICATE_TREE, PredicateNode.and(predicateConjuncts));
+      }
     }
 
     // Extract the loop variable's source path prefix (the expression supplying
@@ -734,6 +749,30 @@ public final class VectorizedGroupByDetection implements Stage {
    * nothing left in the annotation for a consumer to notice. Declining costs the fast path;
    * guessing costs the answer.
    */
+  /**
+   * Whether a predicate with no sound iteration anchor still has an exactly computable count.
+   *
+   * <p>{@code Not(X)}: the count is {@code N_total - count(X)}, sound whenever X's own count is —
+   * recursively, so {@code not(a or b)} rides the OR rule below. {@code Or(branches)}: by
+   * inclusion-exclusion over anchored branches; every intersection term is a conjunction containing
+   * an anchored branch and is therefore anchored itself. Everything else — in particular an OR with
+   * an unanchored branch — stays undecomposable and falls back.
+   */
+  private static boolean isCountDecomposable(PredicateNode p) {
+    if (p instanceof PredicateNode.Not n) {
+      return n.child().findSoundAnchorField() != null || isCountDecomposable(n.child());
+    }
+    if (p instanceof PredicateNode.Or or) {
+      for (PredicateNode branch : or.children()) {
+        if (branch.findSoundAnchorField() == null) {
+          return false;
+        }
+      }
+      return !or.children().isEmpty();
+    }
+    return false;
+  }
+
   private PredicateNode extractPredicate(AST node, QNm loopVar) {
     if (node == null)
       return null;
