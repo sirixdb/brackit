@@ -1546,6 +1546,52 @@ public class VectorizedGroupByDetectionTest {
                "a negation over a nested deref must not be claimed as a flat-field negation");
   }
 
+  /**
+   * Grouping parens are their content: {@code (a and b) or c} arrives with a ParenthesizedExpr
+   * around the AndExpr, and the walker must see through it. Before this arm existed, adding parens
+   * to an otherwise representable predicate silently dropped the whole annotation.
+   */
+  @Test
+  void parenthesizedBranchIsTransparent() {
+    // where ($u.year ge 1940 and $u.year le 1950) or $u.year gt 2000 — all on ONE field, so the
+    // disjunction is soundly anchored on it.
+    final AST inner = new AST(XQ.AndExpr);
+    inner.addChild(comparison(XQ.GeneralCompGE, deref("u", "year"), intLit(1940)));
+    inner.addChild(comparison(XQ.GeneralCompLE, deref("u", "year"), intLit(1950)));
+    final AST paren = new AST(XQ.ParenthesizedExpr);
+    paren.addChild(inner);
+    final AST orExpr = new AST(XQ.OrExpr);
+    orExpr.addChild(paren);
+    orExpr.addChild(comparison(XQ.GeneralCompGT, deref("u", "year"), intLit(2000)));
+
+    final AST pipe = pipeExpr(forBind("u", selection(orExpr, endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    final PredicateNode p = predicateTree(pipe);
+    assertInstanceOf(PredicateNode.Or.class, p);
+    final PredicateNode.Or or = (PredicateNode.Or) p;
+    assertEquals(2, or.children().size());
+    assertInstanceOf(PredicateNode.And.class,
+                     or.children().get(0),
+                     "the parenthesized conjunction must survive as a conjunction");
+  }
+
+  /** A multi-child paren is a sequence constructor, not a predicate — still unrepresentable. */
+  @Test
+  void multiChildParenIsNotAPredicate() {
+    final AST paren = new AST(XQ.ParenthesizedExpr);
+    paren.addChild(comparison(XQ.GeneralCompGT, deref("u", "year"), intLit(2000)));
+    paren.addChild(comparison(XQ.GeneralCompLT, deref("u", "year"), intLit(1950)));
+
+    final AST pipe = pipeExpr(forBind("u", selection(paren, endReturningVar("u"))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE),
+               "a sequence's EBV is not a predicate's; the annotation must be dropped");
+  }
+
   /** {@code fn:not(...)} node in the given function namespace. */
   private AST fnNot(final String nsUri, final AST argument) {
     final AST call = new AST(XQ.FunctionCall, new QNm(nsUri, Namespaces.FN_PREFIX, "not"));

@@ -740,6 +740,15 @@ public final class VectorizedGroupByDetection implements Stage {
 
     final int type = node.getType();
 
+    // A parenthesized group is its content: `(a and b) or c` parses with a ParenthesizedExpr
+    // around the AndExpr, and without this arm the whole selection was unrepresentable — the
+    // annotation silently vanished the moment a user added grouping parens to a predicate that was
+    // representable without them. Single child only: a multi-child paren is a sequence constructor,
+    // whose EBV rules are not a predicate's.
+    if (type == XQ.ParenthesizedExpr && node.getChildCount() == 1) {
+      return extractPredicate(node.getChild(0), loopVar);
+    }
+
     if (type == XQ.AndExpr) {
       List<PredicateNode> kids = new ArrayList<>(node.getChildCount());
       for (int i = 0; i < node.getChildCount(); i++) {
