@@ -277,6 +277,66 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
     return null;
   }
 
+  /**
+   * Whether a backend that DECOMPOSES this predicate — evaluating each branch over its own anchor
+   * and combining the per-branch results — can serve it soundly, even when
+   * {@link #findSoundAnchorField()} finds no single global anchor.
+   *
+   * <p>The single-anchor rule asks one field to exclude every non-matching record, which is what a
+   * scan driven by one field's slots needs. Inclusion-exclusion asks strictly less:
+   * {@code a > 1 or b > 1} is {@code |A| + |B| - |A and B|}, and each term is counted over ITS OWN
+   * field's slots, so a record carrying only {@code b} is still visited — via {@code b}. Per node:
+   * <ul>
+   * <li>a leaf anchors on its own field;</li>
+   * <li>{@code And} needs only ONE sound anchor, because a record missing that conjunct's field
+   * cannot satisfy the conjunction; failing that, every conjunct must itself be decomposable and
+   * the backend must intersect the per-conjunct results;</li>
+   * <li>{@code Or} needs EVERY branch independently anchorable — the branch is what gets its own
+   * scan;</li>
+   * <li>{@code Not} is servable only as a COMPLEMENT, since a record missing {@code x} satisfies
+   * {@code not(x > 5)}: the backend counts all records minus the child's matches, so the child
+   * must itself be anchorable;</li>
+   * <li>{@code AlwaysTrue} is NOT anchorable — it holds for a record with no fields at all, which
+   * no field's slots enumerate.</li>
+   * </ul>
+   *
+   * <p>This is a CAPABILITY question, not a correctness relaxation. It says the shape admits a
+   * sound decomposition, not that any particular executor implements one — a backend that scans
+   * from a single anchor must keep using {@link #findSoundAnchorField()} alone, and a backend that
+   * claims decomposition it does not implement will silently under-count exactly as before.
+   */
+  default boolean isDecomposablyAnchorable() {
+    return switch (this) {
+      case NumCmp n -> true;
+      case FpCmp f -> true;
+      case DecCmp d -> true;
+      case StrEq s -> true;
+      case BoolRef b -> true;
+      // A conjunction is claimable only on a GLOBAL anchor: one conjunct whose field every
+      // candidate record must carry. Deliberately no recursion into the children — a conjunction
+      // of individually decomposable but unanchored parts, say
+      // {@code (a gt 1 or b gt 1) and not(c)}, would need the INTERSECTION of two separately
+      // decomposed result sets, which is a different capability from combining the branches of one
+      // union and is not what a decomposing backend advertises here. Claiming it merely moves the
+      // refusal from this optimizer to a query-time exception.
+      case And a -> findSoundAnchorField() != null;
+      case Or o -> {
+        // An empty Or is AlwaysFalse by the convention above, but it carries no field to anchor
+        // on and no branch to scan; leave it to the generic pipeline rather than special-casing.
+        if (o.children.isEmpty())
+          yield false;
+        for (PredicateNode c : o.children) {
+          if (!c.isDecomposablyAnchorable())
+            yield false;
+        }
+        yield true;
+      }
+      case Not n -> n.child.isDecomposablyAnchorable();
+      case AlwaysTrue t -> false;
+      case AlwaysFalse f -> true;
+    };
+  }
+
   /** Singleton AlwaysTrue as a {@link List}-friendly constant. */
   List<PredicateNode> EMPTY = Collections.emptyList();
 }

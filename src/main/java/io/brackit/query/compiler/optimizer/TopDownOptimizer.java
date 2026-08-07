@@ -57,6 +57,21 @@ import io.brackit.query.compiler.optimizer.walker.topdown.TrivialLeftJoinRemoval
 public class TopDownOptimizer extends DefaultOptimizer {
 
   public TopDownOptimizer(Map<QNm, Str> options) {
+    this(options, false);
+  }
+
+  /**
+   * @param decomposablePredicatesSupported whether the backend this optimizer plans for can
+   *                                        decompose a predicate — evaluate each branch over its own anchor and combine
+   *                                        the
+   *                                        per-branch results — instead of scanning from one global anchor. Passed to
+   *                                        {@link VectorizedGroupByDetection}, which withholds the wider claim
+   *                                        otherwise. A
+   *                                        constructor parameter rather than an overridable hook: a subclass override
+   *                                        would be
+   *                                        invoked from this constructor, before the subclass's own fields exist.
+   */
+  protected TopDownOptimizer(Map<QNm, Str> options, boolean decomposablePredicatesSupported) {
     super(options, new ArrayList<>());
     stages.add(new Simplification());
     stages.add(new Pipelining());
@@ -69,7 +84,7 @@ public class TopDownOptimizer extends DefaultOptimizer {
     }
     stages.add(new FinalizePipeline());
     // Detect group-by patterns eligible for vectorized execution
-    stages.add(new VectorizedGroupByDetection());
+    stages.add(new VectorizedGroupByDetection(decomposablePredicatesSupported));
     stages.add(new Finalize());
   }
 
