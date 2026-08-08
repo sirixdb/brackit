@@ -13,6 +13,7 @@ import io.brackit.query.compiler.optimizer.SourceRef;
 import io.brackit.query.compiler.optimizer.Stage;
 import io.brackit.query.compiler.optimizer.VectorizedScanAnnotation;
 import io.brackit.query.function.json.JSONFun;
+import io.brackit.query.module.Namespaces;
 import io.brackit.query.module.StaticContext;
 
 import java.util.ArrayList;
@@ -51,6 +52,32 @@ public final class VectorizedGroupByDetection implements Stage {
 
   /** Guard against pathological ASTs when resolving a scan source through variable bindings. */
   private static final int MAX_UNWRAP_STEPS = 64;
+
+  /**
+   * Whether the backend this optimizer plans for can DECOMPOSE a predicate — evaluate each branch
+   * over its own anchor and combine the per-branch results — rather than scanning from one global
+   * anchor. Consumed by the anchor guard in {@code tryAnnotate}.
+   *
+   * <p>Per INSTANCE, supplied by the optimizer that builds this stage, deliberately NOT a static
+   * flag. The capability belongs to the backend being planned for, and one process can host more
+   * than one: a JVM running a decomposing backend alongside a plain {@code CompileChain} must not
+   * have the plain one's queries annotated with claims only the other can serve. A static would
+   * also latch on class initialization — an unrelated field read on the wiring class would enable
+   * it process-wide, with no way back.
+   */
+  private final boolean decomposablePredicatesSupported;
+
+  /** A stage for a backend that scans from a single anchor: the conservative default. */
+  public VectorizedGroupByDetection() {
+    this(false);
+  }
+
+  /**
+   * @param decomposablePredicatesSupported whether the target backend decomposes predicates
+   */
+  public VectorizedGroupByDetection(final boolean decomposablePredicatesSupported) {
+    this.decomposablePredicatesSupported = decomposablePredicatesSupported;
+  }
 
   @Override
   public AST rewrite(StaticContext sctx, AST ast) {
@@ -186,9 +213,32 @@ public final class VectorizedGroupByDetection implements Stage {
     // claim predicates for which SOME referenced field provably excludes
     // records missing it — the executor anchors there. No sound anchor → the
     // whole selection is unrepresentable → generic (always correct) pipeline.
-    if (predicateRepresentable && !predicateConjuncts.isEmpty() && PredicateNode.and(predicateConjuncts)
-                                                                                .findSoundAnchorField() == null) {
-      predicateRepresentable = false;
+    //
+    // A DECOMPOSING backend needs less than that. Inclusion-exclusion counts each Or branch over
+    // its OWN anchor and combines the per-branch results, so `$u.a > 1 or $u.b > 1` still visits a
+    // record carrying only `b` — via `b`. A bare negation is served as the complement of its child
+    // over all records, which likewise never requires the child's field to be present. Shapes that
+    // admit such a decomposition are claimed too; see PredicateNode#isDecomposablyAnchorable, which
+    // is a statement about the SHAPE, not a promise that a given executor implements one. A backend
+    // that claims decomposition it has not implemented will under-count exactly as before.
+    //
+    // TWO levels of anchoring, because a backend that decomposes does not necessarily decompose for
+    // every claim kind. STRICT means one field's slots enumerate every candidate record, which any
+    // anchored scan can serve. DECOMPOSABLE means only that per-branch anchoring would work — true
+    // of a cross-field disjunction — and is claimed for the predicate COUNT alone, whose executor
+    // combines per-branch results. Aggregates, group-bys and sorted scans keep the strict
+    // requirement: each reads a value per surviving record and so needs the anchor the scan is
+    // actually driven by. Claiming more for them does not make them faster; it moves the refusal
+    // from the optimizer to a query-time exception.
+    boolean predicateStrictlyAnchored = predicateRepresentable;
+    if (predicateRepresentable && !predicateConjuncts.isEmpty()) {
+      final PredicateNode tree = PredicateNode.and(predicateConjuncts);
+      if (tree.findSoundAnchorField() == null) {
+        predicateStrictlyAnchored = false;
+        if (!(decomposablePredicatesSupported && tree.isDecomposablyAnchorable())) {
+          predicateRepresentable = false;
+        }
+      }
     }
 
     final boolean hasPredicate = predicateRepresentable && !predicateConjuncts.isEmpty();
@@ -212,7 +262,7 @@ public final class VectorizedGroupByDetection implements Stage {
     // PREDICATE_TREE and applied by the executor. Historical context: the original
     // detection claimed multi-key group-bys while the executor emitted the
     // single-first-key grouping with canonical field names — silently wrong results.
-    if (hasGroupBy && groupSpecsExtractable && predicateRepresentable && !hasOrderBy) {
+    if (hasGroupBy && groupSpecsExtractable && predicateStrictlyAnchored && !hasOrderBy) {
       final GroupReturnShape shape = matchCanonicalGroupReturn(returnExpr,
                                                                letBindVars,
                                                                groupFields,
@@ -262,7 +312,7 @@ public final class VectorizedGroupByDetection implements Stage {
     // claim it for exactly one order-by with exactly one spec, a return expression that
     // is exactly the loop variable, no group-by (the executor would drop the grouping),
     // and a representable (or absent) selection.
-    if (hasOrderBy && orderByCount == 1 && !hasGroupBy && predicateRepresentable && orderField != null
+    if (hasOrderBy && orderByCount == 1 && !hasGroupBy && predicateStrictlyAnchored && orderField != null
         && isSoleLoopVarRef(returnExpr, loopVar)) {
       pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_ORDERBY, Boolean.TRUE);
       pipeExpr.setProperty(VectorizedScanAnnotation.ORDER_FIELD, orderField);
@@ -273,7 +323,7 @@ public final class VectorizedGroupByDetection implements Stage {
     // A predicate, if present, is carried via PREDICATE_TREE — the enclosing
     // sum/avg/min/max/count() call fills AGGREGATE_FUNC at compile time and the
     // dispatcher routes to executePredicateAggregate.
-    if (!hasGroupBy && !hasOrderBy && predicateRepresentable && returnField != null) {
+    if (!hasGroupBy && !hasOrderBy && predicateStrictlyAnchored && returnField != null) {
       pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_AGGREGATE, Boolean.TRUE);
       pipeExpr.setProperty(VectorizedScanAnnotation.AGGREGATE_FIELD, returnField);
     }
@@ -738,6 +788,28 @@ public final class VectorizedGroupByDetection implements Stage {
       return null;
 
     final int type = node.getType();
+
+    // Parentheses are grouping, not semantics: `($u.a ge 1 and $u.a le 2) or $u.a gt 9` arrives
+    // with its left branch wrapped, and dropping the whole predicate over a pair of brackets left
+    // an otherwise representable shape on the generic pipeline. Exactly one child: anything else
+    // inside parentheses is a sequence, not a boolean, and stays unrepresentable.
+    if (type == XQ.ParenthesizedExpr) {
+      return node.getChildCount() == 1 ? extractPredicate(node.getChild(0), loopVar) : null;
+    }
+
+    // fn:not(...) — the only function call claimed here, and only in a function namespace we own,
+    // so a user-defined `not` is never mistaken for it. Note that a negation cannot anchor on its
+    // own child's field: a record MISSING `x` satisfies `not($u.x gt 5)`, since `not(false)` is
+    // true. Representability is therefore NOT decided here — the tree is handed to the anchor
+    // rules in PredicateNode, which either find a sound anchor elsewhere in the surrounding
+    // conjunction or require the backend to serve the negation as a complement.
+    if (type == XQ.FunctionCall && node.getChildCount() == 1 && node.getValue() instanceof QNm fn && "not".equals(fn
+                                                                                                                    .getLocalName())
+        && (Namespaces.FN_NSURI.equals(fn.getNamespaceURI()) || Namespaces.DEFAULT_FN_NSURI.equals(fn
+                                                                                                     .getNamespaceURI()))) {
+      final PredicateNode negated = extractPredicate(node.getChild(0), loopVar);
+      return negated == null ? null : new PredicateNode.Not(negated);
+    }
 
     if (type == XQ.AndExpr) {
       List<PredicateNode> kids = new ArrayList<>(node.getChildCount());
