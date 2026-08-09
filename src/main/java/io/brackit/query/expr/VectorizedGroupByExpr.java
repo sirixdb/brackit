@@ -42,7 +42,7 @@ import io.brackit.query.jdm.Sequence;
 public final class VectorizedGroupByExpr implements Expr {
 
   public enum Mode {
-    GROUP_BY, GROUP_BY_MULTI, SORTED_SCAN, AGGREGATE, COUNT_DISTINCT, GENERIC_PREDICATE_COUNT, GENERIC_PREDICATE_GROUPBY, GENERIC_PREDICATE_AGGREGATE
+    GROUP_BY, GROUP_BY_MULTI, SORTED_SCAN, AGGREGATE, BINARY_AGGREGATE, COUNT_DISTINCT, GENERIC_PREDICATE_COUNT, GENERIC_PREDICATE_GROUPBY, GENERIC_PREDICATE_AGGREGATE
   }
 
   private final VectorizedExecutor executor;
@@ -192,6 +192,31 @@ public final class VectorizedGroupByExpr implements Expr {
                                      field);
   }
 
+  /**
+   * Aggregate over an arithmetic expression of two fields, e.g. {@code sum($m.width * $m.height)}.
+   *
+   * <p>{@code binary} is {@code {left, op, right}}. Held as an array rather than three fields
+   * because every other mode leaves it null, and a constructor that already carries nine arguments
+   * should not grow three more for one of them.
+   */
+  public static VectorizedGroupByExpr binaryAggregate(VectorizedExecutor executor, String[] sourcePath, String func,
+      String[] binary) {
+    final VectorizedGroupByExpr expr = new VectorizedGroupByExpr(executor,
+                                                                 Mode.BINARY_AGGREGATE,
+                                                                 sourcePath,
+                                                                 null,
+                                                                 null,
+                                                                 null,
+                                                                 null,
+                                                                 func,
+                                                                 null);
+    expr.binaryOperands = binary;
+    return expr;
+  }
+
+  /** {@code {left, op, right}} for {@link Mode#BINARY_AGGREGATE}; null for every other mode. */
+  private String[] binaryOperands;
+
   /** Which vectorized path this expression dispatches to. Exposed for dispatch-correctness tests. */
   public Mode getMode() {
     return mode;
@@ -219,6 +244,16 @@ public final class VectorizedGroupByExpr implements Expr {
                                            "sorted scan");
       case AGGREGATE -> requireSupported(executor.executeAggregate(ctx, sourcePath, aggregateFunc, aggregateField),
                                          "aggregate");
+      // Deliberately NOT requireSupported: this is the one mode whose backend may decline per
+      // EVALUATION rather than per compile — whether a columnar store covers both operand columns
+      // is not knowable when the capability is declared. FallbackOnNullExpr keeps the generic
+      // pipeline behind it and uses it when the answer is null.
+      case BINARY_AGGREGATE -> executor.executeBinaryAggregate(ctx,
+                                                               sourcePath,
+                                                               aggregateFunc,
+                                                               binaryOperands[0],
+                                                               binaryOperands[1],
+                                                               binaryOperands[2]);
       case COUNT_DISTINCT -> requireSupported(executor.executeCountDistinct(ctx, sourcePath, groupField),
                                               "count-distinct");
       case GENERIC_PREDICATE_COUNT -> requireSupported(executor.executePredicateCount(ctx, sourcePath, predicate),

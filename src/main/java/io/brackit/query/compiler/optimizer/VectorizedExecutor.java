@@ -119,6 +119,34 @@ public interface VectorizedExecutor {
    *
    * @param field the field's local name to count distinct values of
    */
+  /**
+   * Whether {@link #executeBinaryAggregate} is actually implemented. Declared up front for the same
+   * reason as {@link #supportsSortedScan()}: the dispatcher decides at TRANSLATE time.
+   */
+  default boolean supportsBinaryAggregate() {
+    return false;
+  }
+
+  /**
+   * Aggregate over an ARITHMETIC expression of two fields — {@code sum($m.width * $m.height)} —
+   * rather than over one field's values.
+   *
+   * <p>The single-field {@link #executeAggregate} cannot express it, and a backend that extracted
+   * one operand from the expression would aggregate the wrong values, so the walker refuses to
+   * claim the shape at all unless a backend says it can serve it. Columnar backends can: both
+   * operands are columns, and the product is one fused pass over the two.
+   *
+   * @param func one of {@code sum}, {@code avg}, {@code min}, {@code max}
+   * @param op   {@code "*"}, {@code "+"} or {@code "-"} — the operators for which a
+   *             record-at-a-time evaluation and a column-at-a-time one agree exactly on the
+   *             integers and doubles a JSON document holds
+   * @return the aggregate, or {@code null} for "unsupported" (the caller keeps its generic path)
+   */
+  default Sequence executeBinaryAggregate(QueryContext ctx, String[] sourcePath, String func, String leftField,
+      String op, String rightField) throws QueryException {
+    return null;
+  }
+
   default Sequence executeCountDistinct(QueryContext ctx, String[] sourcePath, String field) throws QueryException {
     return null;
   }

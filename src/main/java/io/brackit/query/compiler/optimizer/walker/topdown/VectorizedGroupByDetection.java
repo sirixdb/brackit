@@ -199,6 +199,11 @@ public final class VectorizedGroupByDetection implements Stage {
     // would turn `return $u.a + $u.b` into an aggregate over field `a` alone.
     final String returnField = directLoopVarDerefField(returnExpr, loopVar);
 
+    // ... or an ARITHMETIC expression over two of the loop variable's fields. Kept strictly apart
+    // from returnField: `return $u.a * $u.b` must never be claimed as an aggregate over `a`, which
+    // is what descending into the subtree for a field name would produce.
+    final String[] returnBinary = binaryLoopVarDeref(returnExpr, loopVar);
+
     // ---- Annotate based on detected pattern ----
 
     if (!chainUnderstood) {
@@ -326,6 +331,12 @@ public final class VectorizedGroupByDetection implements Stage {
     if (!hasGroupBy && !hasOrderBy && predicateStrictlyAnchored && returnField != null) {
       pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_AGGREGATE, Boolean.TRUE);
       pipeExpr.setProperty(VectorizedScanAnnotation.AGGREGATE_FIELD, returnField);
+    } else if (!hasGroupBy && !hasOrderBy && predicateStrictlyAnchored && returnBinary != null) {
+      // Same claim, arithmetic return. AGGREGATE_FIELD stays unset — the two properties are
+      // alternatives and a backend reading the wrong one would aggregate one column where the
+      // query asked for a product.
+      pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_AGGREGATE, Boolean.TRUE);
+      pipeExpr.setProperty(VectorizedScanAnnotation.AGGREGATE_BINARY, returnBinary);
     }
 
     // Count-distinct candidate: a single-key group-by whose return expression is
@@ -359,6 +370,35 @@ public final class VectorizedGroupByDetection implements Stage {
     if (base.getType() != XQ.VariableRef || !loopVar.equals(base.getValue() instanceof QNm qnm ? qnm : null))
       return null;
     return qnmLocalName(expr.getChild(expr.getChildCount() - 1).getValue());
+  }
+
+  /**
+   * {@code {left, op, right}} iff {@code expr} is {@code $loopVar.a OP $loopVar.b} for an operator
+   * whose column-at-a-time evaluation is exactly its record-at-a-time one; {@code null} otherwise.
+   *
+   * <p>Multiplication, addition and subtraction only. Division is excluded deliberately: over the
+   * integers a JSON document holds it is not closed, and {@code sum(a div b)} over a column of
+   * exact decimals is not the sum of the doubles a columnar kernel would produce — a difference the
+   * generic pipeline would not have. Both operands must be DIRECT derefs of the loop variable, for
+   * the reason {@link #directLoopVarDerefField} gives: anything else computes over other values
+   * than the query names.
+   */
+  private String[] binaryLoopVarDeref(final AST expr, final QNm loopVar) {
+    if (expr == null || expr.getType() != XQ.ArithmeticExpr || expr.getChildCount() != 3) {
+      return null;
+    }
+    final String op = switch (expr.getChild(0).getType()) {
+      case XQ.MultiplyOp -> "*";
+      case XQ.AddOp -> "+";
+      case XQ.SubtractOp -> "-";
+      default -> null;
+    };
+    if (op == null) {
+      return null;
+    }
+    final String left = directLoopVarDerefField(expr.getChild(1), loopVar);
+    final String right = directLoopVarDerefField(expr.getChild(2), loopVar);
+    return left == null || right == null ? null : new String[] { left, op, right };
   }
 
   /**
