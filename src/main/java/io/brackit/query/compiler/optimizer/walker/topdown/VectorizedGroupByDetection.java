@@ -851,6 +851,11 @@ public final class VectorizedGroupByDetection implements Stage {
       return negated == null ? null : new PredicateNode.Not(negated);
     }
 
+    // some $g in $u.field[] satisfies $g eq "literal" — membership in an array-valued field.
+    if (type == XQ.QuantifiedExpr) {
+      return arrayContains(node, loopVar);
+    }
+
     if (type == XQ.AndExpr) {
       List<PredicateNode> kids = new ArrayList<>(node.getChildCount());
       for (int i = 0; i < node.getChildCount(); i++) {
@@ -917,6 +922,84 @@ public final class VectorizedGroupByDetection implements Stage {
         return new PredicateNode.StrEq(field, sv);
     }
     return null;
+  }
+
+  /**
+   * {@code some $g in $u.field[] satisfies $g eq "literal"} as a {@link PredicateNode.ArrayContains}.
+   *
+   * <p>EXISTENTIAL only. {@code every $g in ... satisfies ...} is vacuously TRUE on a record whose
+   * array is empty — and on one that has no such field at all — so it cannot anchor on that field,
+   * which is the property every backend here relies on to visit candidate records at all.
+   *
+   * <p>The index must be the EMPTY sequence: {@code $u.f[]} iterates every element, while
+   * {@code $u.f[[1]]} names one, and reading the second as the first would test a different value.
+   */
+  private PredicateNode arrayContains(final AST node, final QNm loopVar) {
+    if (!ARRAY_CONTAINS_CLAIMED) {
+      return null;
+    }
+    if (node.getChildCount() != 3 || node.getChild(0).getType() != XQ.SomeQuantifier) {
+      return null;
+    }
+    final AST binding = node.getChild(1);
+    if (binding.getType() != XQ.QuantifiedBinding || binding.getChildCount() != 2) {
+      return null;
+    }
+    final AST typedBinding = binding.getChild(0);
+    if (typedBinding.getType() != XQ.TypedVariableBinding || typedBinding.getChildCount() < 1) {
+      return null;
+    }
+    final AST variable = typedBinding.getChild(0);
+    if (variable.getType() != XQ.Variable || !(variable.getValue() instanceof QNm boundVar)) {
+      return null;
+    }
+    final AST access = binding.getChild(1);
+    if (access.getType() != XQ.ArrayAccess || access.getChildCount() != 2) {
+      return null;
+    }
+    final AST index = access.getChild(1);
+    if (index.getType() != XQ.SequenceExpr || index.getChildCount() != 0) {
+      return null;
+    }
+    final String field = directLoopVarDerefField(access.getChild(0), loopVar);
+    if (field == null) {
+      return null;
+    }
+    final AST comparison = node.getChild(2);
+    if (comparison.getType() != XQ.ComparisonExpr || comparison.getChildCount() != 3) {
+      return null;
+    }
+    final int cmp = comparison.getChild(0).getType();
+    if (cmp != XQ.ValueCompEQ && cmp != XQ.GeneralCompEQ) {
+      return null;
+    }
+    String value = literalComparedToBoundVar(comparison.getChild(1), comparison.getChild(2), boundVar);
+    if (value == null) {
+      value = literalComparedToBoundVar(comparison.getChild(2), comparison.getChild(1), boundVar);
+    }
+    return value == null ? null : new PredicateNode.ArrayContains(field, value);
+  }
+
+  /**
+   * Whether the array-membership shape is claimed for backends at all.
+   *
+   * <p>On, with a kill switch. The claim was not free to make: an anchored backend reaches
+   * candidate records through the anchor field's slots, and a field whose value is an ARRAY was not
+   * returned by that lookup at all — measured, the scan visited nothing and counted zero where the
+   * interpreter counted 686. That gap is closed on the storage side (the name-key column now uses
+   * the field-name ROLE predicate rather than the primitive-layout one); the switch stays so the
+   * claim can be taken back without a rebuild if a shape turns up that a backend mishandles.
+   */
+  private static final boolean ARRAY_CONTAINS_CLAIMED = !"false".equalsIgnoreCase(System.getProperty(
+                                                                                                     "brackit.predicate.arrayContains",
+                                                                                                     "true"));
+
+  /** The string literal, when {@code varSide} IS the quantifier's bound variable. */
+  private String literalComparedToBoundVar(final AST varSide, final AST literalSide, final QNm boundVar) {
+    if (varSide.getType() != XQ.VariableRef || !boundVar.equals(varSide.getValue())) {
+      return null;
+    }
+    return extractStringLiteral(literalSide);
   }
 
   private String getComparisonOp(int type) {
