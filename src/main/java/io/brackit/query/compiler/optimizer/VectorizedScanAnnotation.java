@@ -104,6 +104,18 @@ public final class VectorizedScanAnnotation {
   /** Aggregate field name (String). */
   public static final String AGGREGATE_FIELD = "VECTORIZED_AGGREGATE_FIELD";
 
+  /**
+   * The two operand fields and the operator of an aggregate over an ARITHMETIC return expression —
+   * {@code sum(for $m in ... return $m.a * $m.b)} — as {@code {left, op, right}}, where {@code op}
+   * is one of {@code "*"}, {@code "+"}, {@code "-"}.
+   *
+   * <p>Set INSTEAD of {@link #AGGREGATE_FIELD}, never beside it: the two say different things about
+   * what the executor must compute, and a backend reading the wrong one aggregates a single column
+   * where the query asked for a product. A backend that does not implement the shape declines via
+   * {@code VectorizedExecutor#supportsBinaryAggregate} and the generic pipeline answers.
+   */
+  public static final String AGGREGATE_BINARY = "VECTORIZED_AGGREGATE_BINARY";
+
   /** Count-distinct target field (local-name String). */
   public static final String COUNT_DISTINCT_FIELD = "VECTORIZED_COUNT_DISTINCT_FIELD";
 

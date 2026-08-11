@@ -30,7 +30,7 @@ import java.util.List;
  * leave the annotation off the AST so the generic Volcano pipeline handles
  * the query.
  */
-public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNode.FpCmp, PredicateNode.DecCmp, PredicateNode.StrEq, PredicateNode.BoolRef, PredicateNode.And, PredicateNode.Or, PredicateNode.Not, PredicateNode.AlwaysTrue, PredicateNode.AlwaysFalse {
+public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNode.FpCmp, PredicateNode.DecCmp, PredicateNode.StrEq, PredicateNode.ArrayContains, PredicateNode.BoolRef, PredicateNode.And, PredicateNode.Or, PredicateNode.Not, PredicateNode.AlwaysTrue, PredicateNode.AlwaysFalse {
 
   /**
    * Numeric comparison {@code $u.field <op> literal}. {@code op} is one of
@@ -87,6 +87,22 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
 
   /** String equality {@code $u.field eq "literal"}. */
   record StrEq(String field, String value) implements PredicateNode {
+  }
+
+  /**
+   * Membership in an array-valued field: {@code some $g in $u.field[] satisfies $g eq "literal"}.
+   *
+   * <p>Distinct from {@link StrEq} because the field holds a SEQUENCE, and a backend answering it
+   * must test every element rather than one value — a difference that decides which column, and
+   * which linkage, it has to read.
+   *
+   * <p>Soundly anchorable on {@code field}, and for the ordinary reason: a record that does not
+   * carry the field carries no element either, so it cannot satisfy the quantifier. An empty array
+   * likewise satisfies nothing, which is what makes the existential the anchorable direction and
+   * a universal ({@code every ... satisfies}) not — that one is TRUE on a record with no array at
+   * all, so it is not expressed here.
+   */
+  record ArrayContains(String field, String value) implements PredicateNode {
   }
 
   /**
@@ -160,6 +176,7 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
       case FpCmp f -> into.add(f.field);
       case DecCmp d -> into.add(d.field);
       case StrEq s -> into.add(s.field);
+      case ArrayContains c -> into.add(c.field);
       case BoolRef b -> into.add(b.field);
       case And a -> {
         for (PredicateNode c : a.children)
@@ -203,6 +220,10 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
       case NumCmp n -> n.field.equals(field);
       case FpCmp f -> f.field.equals(field);
       case DecCmp d -> d.field.equals(field);
+      // A record without the field has no element to satisfy the quantifier — and an EMPTY
+      // array satisfies nothing either, which is what makes the existential form the
+      // anchorable one.
+      case ArrayContains c -> c.field.equals(field);
       case StrEq s -> s.field.equals(field);
       case BoolRef b -> b.field.equals(field);
       case And a -> {
@@ -237,6 +258,7 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
       case NumCmp n -> false;
       case FpCmp f -> false;
       case DecCmp d -> false;
+      case ArrayContains c -> false;
       case StrEq s -> false;
       case BoolRef b -> false;
       case And a -> {
@@ -310,6 +332,7 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
       case NumCmp n -> true;
       case FpCmp f -> true;
       case DecCmp d -> true;
+      case ArrayContains c -> true;
       case StrEq s -> true;
       case BoolRef b -> true;
       // A conjunction is claimable only on a GLOBAL anchor: one conjunct whose field every

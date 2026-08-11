@@ -36,6 +36,7 @@ import io.brackit.query.compiler.optimizer.SourceRef;
 import io.brackit.query.compiler.optimizer.VectorizedExecutor;
 import io.brackit.query.compiler.optimizer.VectorizedScanAnnotation;
 import io.brackit.query.expr.PipeExpr;
+import io.brackit.query.expr.FallbackOnNullExpr;
 import io.brackit.query.expr.RuntimeSourceGatedExpr;
 import io.brackit.query.expr.VectorizedGroupByExpr;
 import io.brackit.query.operator.Count;
@@ -225,7 +226,19 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       GenericExprSupplier generic) throws QueryException {
     final SourceRef sourceRef = (SourceRef) pipe.getProperty(VectorizedScanAnnotation.SOURCE_REF);
     if (sourceRef == null) {
-      return vectorized.get(executor);
+      final Expr unannotated = vectorized.get(executor);
+      if (unannotated == null || pipe.getProperty(VectorizedScanAnnotation.AGGREGATE_BINARY) == null || generic
+          == null) {
+        return unannotated;
+      }
+      return new FallbackOnNullExpr(unannotated, generic.get());
+    }
+    // An aggregate over an arithmetic expression declines per EVALUATION, so it may only be
+    // substituted where a generic compilation is still available to fall back to.
+    final boolean binaryAggregate = pipe.getProperty(VectorizedScanAnnotation.AGGREGATE_BINARY) != null && Boolean.TRUE
+                                                                                                                       .equals(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_AGGREGATE));
+    if (binaryAggregate && generic == null) {
+      return null;
     }
     if (sourceRef.kind() == SourceRef.Kind.VARIABLE) {
       if (generic == null) {
@@ -237,7 +250,11 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       if (vec == null) {
         return null;
       }
-      return new RuntimeSourceGatedExpr(executor, sourceRef, vec, generic.get());
+      final Expr genericExpr = generic.get();
+      return new RuntimeSourceGatedExpr(executor,
+                                        sourceRef,
+                                        binaryAggregate ? new FallbackOnNullExpr(vec, genericExpr) : vec,
+                                        genericExpr);
     }
     if (!executor.acceptsSource(sourceRef)) {
       return null;
@@ -245,7 +262,11 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
     // Build against the executor bound to THIS source, which for a single-resource executor is the
     // same object and for a multi-resource one is the instance that reads the right document.
     final VectorizedExecutor boundToSource = executor.executorForSource(sourceRef);
-    return vectorized.get(boundToSource == null ? executor : boundToSource);
+    final Expr vec = vectorized.get(boundToSource == null ? executor : boundToSource);
+    if (vec == null || !binaryAggregate) {
+      return vec;
+    }
+    return new FallbackOnNullExpr(vec, generic.get());
   }
 
   /** The pattern matcher proper: builds the vectorized expression for an ACCEPTED source. */
@@ -342,6 +363,16 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
     if (Boolean.TRUE.equals(node.getProperty(VectorizedScanAnnotation.VECTORIZED_AGGREGATE))) {
       String func = (String) node.getProperty(VectorizedScanAnnotation.AGGREGATE_FUNC);
       String field = (String) node.getProperty(VectorizedScanAnnotation.AGGREGATE_FIELD);
+      String[] binary = (String[]) node.getProperty(VectorizedScanAnnotation.AGGREGATE_BINARY);
+      if (func != null && binary != null) {
+        // An arithmetic return. No predicate variant: a filtered product has no kernel yet, and
+        // claiming one the backend does not have would substitute an expression that returns null
+        // at evaluate time — past the point where a generic pipeline is still available.
+        if (!executor.supportsBinaryAggregate() || node.getProperty(VectorizedScanAnnotation.PREDICATE_TREE) != null) {
+          return null;
+        }
+        return VectorizedGroupByExpr.binaryAggregate(executor, sourcePath, func, binary);
+      }
       if (func != null) {
         PredicateNode predicate = (PredicateNode) node.getProperty(VectorizedScanAnnotation.PREDICATE_TREE);
         if (predicate != null) {
