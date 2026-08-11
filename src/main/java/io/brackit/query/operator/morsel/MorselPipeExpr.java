@@ -249,7 +249,6 @@ public final class MorselPipeExpr implements Expr {
 
   /** Fans the chain out over the source's splits and drains the results in completion order. */
   private final class ParallelIter extends BaseIter {
-    private final QueryContext ctx;
     private final BlockingQueue<Object> queue;
     private final CountDownLatch finished;
     private final AtomicReference<Throwable> failure = new AtomicReference<>();
@@ -263,7 +262,6 @@ public final class MorselPipeExpr implements Expr {
     private boolean exhausted;
 
     ParallelIter(final QueryContext ctx, final Tuple tuple, final SplittableSequence source, final int splits) {
-      this.ctx = ctx;
       this.workers = splits;
       this.queue = new ArrayBlockingQueue<>(Math.max(2, splits * QUEUE_DEPTH));
       this.finished = new CountDownLatch(splits);
@@ -332,14 +330,30 @@ public final class MorselPipeExpr implements Expr {
         }
         leafBind.bind(previous);
         finished.countDown();
-        // Unblock a consumer that is waiting on an empty queue for this worker's sentinel.
-        queue.offer(DONE);
+        // Unblock a consumer that is waiting on an empty queue for this worker's sentinel. The
+        // latch above is what actually ends the run, so this only has to arrive eventually — but
+        // the queue is BOUNDED, and a plain offer() drops the sentinel whenever it is full, which
+        // is exactly when a worker finishes behind a backlog. The consumer would then fall back on
+        // its poll timeout, paying it once per worker at the end of every fan-out.
+        offerUntilCancelled(DONE);
       }
     }
 
     /** @return {@code false} once the consumer has stopped caring, so the worker can stop early. */
     private boolean publish(final Item[] items, final int len) {
-      final Object payload = len == items.length ? items : trim(items, len);
+      return offerUntilCancelled(len == items.length ? items : trim(items, len));
+    }
+
+    /**
+     * Waits for a slot rather than dropping the payload on a full queue.
+     *
+     * <p>Cannot deadlock: the consumer only stops draining after {@link #close}, which sets
+     * {@code cancelled} and clears the queue.
+     *
+     * @return {@code false} if the payload was never handed over because the consumer stopped
+     *         caring (or this thread was interrupted)
+     */
+    private boolean offerUntilCancelled(final Object payload) {
       while (!cancelled) {
         try {
           if (queue.offer(payload, 50, TimeUnit.MILLISECONDS)) {
