@@ -58,7 +58,8 @@ import io.brackit.query.operator.OrderBy;
 import io.brackit.query.operator.Select;
 import io.brackit.query.operator.Start;
 import io.brackit.query.operator.TableJoin;
-import io.brackit.query.operator.morsel.MorselPipeline;
+import io.brackit.query.operator.morsel.MorselPipeExpr;
+import io.brackit.query.operator.morsel.SplitAwareExpr;
 import io.brackit.query.jdm.Expr;
 import io.brackit.query.jdm.type.SequenceType;
 
@@ -99,10 +100,16 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
   /**
    * When {@code true}, PipeExprs that fall out of the vectorized fast path and
    * do not contain pipeline breakers (GroupBy, OrderBy, Join) are wrapped in a
-   * {@link MorselPipeline} for DuckDB-style morsel-driven parallel fan-out.
+   * {@link io.brackit.query.operator.morsel.MorselPipeExpr} for DuckDB-style morsel-driven fan-out.
    * Off by default — callers opt in via {@link #setMorselEnabled(boolean)}.
    */
   private static volatile boolean morselEnabled;
+
+  /** Set while a morsel-eligible pipeline compiles, telling {@link #forBind} to wrap its leaf. */
+  private static final ThreadLocal<Boolean> WRAP_LEAF = new ThreadLocal<>();
+
+  /** The leaf bind expression {@link #forBind} wrapped for the pipeline currently compiling. */
+  private static final ThreadLocal<SplitAwareExpr> PENDING_LEAF = new ThreadLocal<>();
 
   /** Register a vectorized executor for automatic optimization. */
   public static void setVectorizedExecutor(VectorizedExecutor executor) {
@@ -403,7 +410,30 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
     // (avoids traversing a not-yet-built Operator graph whose upstream API varies).
     final boolean morselSafe = morselEnabled && isMorselParallelizable(node);
 
-    Operator root = anyOp(null, node.getChild(0), compiler);
+    // Ask forBind to wrap the LEAF scan's bind expression, so workers can be handed a split of it
+    // later. Saved and restored rather than merely cleared: a pipeline nested inside this one
+    // compiles while these are set, and must not steal this pipeline's leaf or lose its own.
+    final Boolean outerWrap = WRAP_LEAF.get();
+    final SplitAwareExpr outerLeaf = PENDING_LEAF.get();
+    Operator root;
+    final SplitAwareExpr leafBind;
+    try {
+      WRAP_LEAF.set(morselSafe);
+      PENDING_LEAF.remove();
+      root = anyOp(null, node.getChild(0), compiler);
+      leafBind = morselSafe ? PENDING_LEAF.get() : null;
+    } finally {
+      if (outerWrap == null) {
+        WRAP_LEAF.remove();
+      } else {
+        WRAP_LEAF.set(outerWrap);
+      }
+      if (outerLeaf == null) {
+        PENDING_LEAF.remove();
+      } else {
+        PENDING_LEAF.set(outerLeaf);
+      }
+    }
 
     // for simpler scoping, the return expression is
     // at the right-most leaf
@@ -419,8 +449,10 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       compiler.table.unbind();
     }
 
-    if (morselSafe) {
-      root = new MorselPipeline(root);
+    // A pipeline is only worth fanning out if its leaf could actually be wrapped; if the plan had
+    // no ForBind under a Start there is nothing to split and the serial pipeline is the plan.
+    if (leafBind != null) {
+      return new MorselPipeExpr(root, expr, leafBind);
     }
 
     return new PipeExpr(root, expr);
@@ -433,7 +465,7 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
    * morsel boundaries.
    *
    * @param pipeExpr the PipeExpr AST node
-   * @return {@code true} iff the pipeline is safe to wrap in a {@link MorselPipeline}
+   * @return {@code true} iff the pipeline is safe to run morsel-parallel
    */
   private static boolean isMorselParallelizable(AST pipeExpr) {
     if (pipeExpr == null || pipeExpr.getChildCount() == 0) {
@@ -665,7 +697,16 @@ public class SequentialPipelineStrategy implements PipelineStrategy {
       compiler.table.resolve(posVarName);
       // TODO Optimize and do not bind variable if not necessary
     }
-    ForBind forBind = new ForBind(in, sourceExpr, allowingEmpty);
+    // The bottom-most ForBind — the one reading straight from Start — is the pipeline's scan, and
+    // the only one whose source a morsel run can split. Marked here rather than by walking the
+    // finished operator graph, because `in` is exactly the information that graph does not expose.
+    Expr boundExpr = sourceExpr;
+    if (in instanceof Start && Boolean.TRUE.equals(WRAP_LEAF.get()) && PENDING_LEAF.get() == null) {
+      final SplitAwareExpr splitAware = new SplitAwareExpr(sourceExpr);
+      PENDING_LEAF.set(splitAware);
+      boundExpr = splitAware;
+    }
+    ForBind forBind = new ForBind(in, boundExpr, allowingEmpty);
     if (posBinding != null) {
       forBind.bindPosition(posBinding.isReferenced());
     }

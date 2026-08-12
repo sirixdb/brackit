@@ -29,6 +29,7 @@ package io.brackit.query.expr;
 
 import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.jdm.*;
+import io.brackit.query.jdm.SplittableSequence;
 import io.brackit.query.util.ExprUtil;
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryContext;
@@ -38,6 +39,7 @@ import io.brackit.query.sequence.BaseIter;
 import io.brackit.query.sequence.ItemSequence;
 import io.brackit.query.sequence.LazySequence;
 import io.brackit.query.jdm.json.Array;
+import io.brackit.query.jdm.json.SplittableMembers;
 import io.brackit.query.jdm.type.ArrayType;
 
 /**
@@ -87,7 +89,14 @@ public final class ArrayAccessExpr implements Expr {
     final Item itemIndex = index.evaluateToItem(ctx, tuple);
 
     if (itemIndex == null) {
-      return getLazySequence(ctx, tuple, array);
+      // The unboxed array — `$a[]`. Its items ARE the array's members, so when the backend can hand
+      // those out in disjoint pieces this view is exactly what a morsel run needs to split. Present
+      // it as such; everything else about the iteration is unchanged.
+      final LazySequence unboxed = getLazySequence(ctx, tuple, array);
+      if (array instanceof SplittableMembers splittable) {
+        return new SplittableUnboxedArray(unboxed, splittable);
+      }
+      return unboxed;
     }
 
     if (!(itemIndex instanceof IntNumeric numericIndex)) {
@@ -233,5 +242,36 @@ public final class ArrayAccessExpr implements Expr {
   @Override
   public boolean isVacuous() {
     return false;
+  }
+
+  /**
+   * An unboxed array that advertises its backend's member splitting.
+   *
+   * <p>Iteration is delegated untouched to the ordinary unboxed view, so this changes what a
+   * consumer can <em>ask</em> for and nothing about what it gets.
+   */
+  private static final class SplittableUnboxedArray extends LazySequence implements SplittableSequence {
+    private final LazySequence unboxed;
+    private final SplittableMembers array;
+
+    SplittableUnboxedArray(final LazySequence unboxed, final SplittableMembers array) {
+      this.unboxed = unboxed;
+      this.array = array;
+    }
+
+    @Override
+    public Iter iterate() {
+      return unboxed.iterate();
+    }
+
+    @Override
+    public int splitCount(final int preferred) {
+      return array.memberSplitCount(preferred);
+    }
+
+    @Override
+    public Sequence split(final int index, final int total) {
+      return array.memberSplit(index, total);
+    }
   }
 }
