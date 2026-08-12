@@ -46,7 +46,14 @@ public class OrderForGroupBy extends Walker {
     }
 
     // check if prev sibling is already the needed group by
-    AST prev = node.getParent().getChild(node.getChildIndex() - 1);
+    final AST parent = node.getParent();
+    final int index = node.getChildIndex();
+    if (parent == null || index < 1) {
+      // A group-by clause always follows the clause it groups, so it has a previous sibling. If it
+      // somehow does not, there is nothing to compare against and nothing to reorder.
+      return node;
+    }
+    AST prev = parent.getChild(index - 1);
     if (prev.getType() == XQ.OrderByClause) {
       if (checkOrderBy(node, prev)) {
         return node;

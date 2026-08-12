@@ -53,6 +53,12 @@ public final class GroupByAggregates extends AggFunChecker {
       return node;
     }
 
+    if (node.getChildCount() < 2) {
+      // The grouping spec and the default aggregate are what a GroupBy is made of; without both
+      // there is no default to read and no position to insert an aggregate spec at.
+      return node;
+    }
+
     AST dftAgg = node.getChild(node.getChildCount() - 2);
     AST dftAggType = dftAgg.getChild(0);
     if (dftAggType.getType() == XQ.SequenceAgg) {

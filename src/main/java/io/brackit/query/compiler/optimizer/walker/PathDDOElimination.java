@@ -65,6 +65,12 @@ public class PathDDOElimination extends Walker {
     }
 
     int stepCount = node.getChildCount();
+    if (stepCount < 2) {
+      // The parser hands back the step itself rather than a one-step PathExpr, so this is a node no
+      // grammar production builds. There is no second step to reason about either way: leaving the
+      // node alone forgoes an optimization, which is the safe half of the trade.
+      return node;
+    }
     AST step = node.getChild(1);
 
     // special check for leading E1/E2

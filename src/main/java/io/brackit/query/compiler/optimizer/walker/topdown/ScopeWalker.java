@@ -38,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.brackit.query.ErrorCode;
+import io.brackit.query.QueryException;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.module.StaticContext;
 import io.brackit.query.util.dot.DotContext;
@@ -903,6 +905,10 @@ public abstract class ScopeWalker extends Walker {
   }
 
   private void caseClause(AST clause) {
+    if (clause.getChildCount() < 1) {
+      throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+                               "Malformed case clause: nothing to bind or inspect");
+    }
     table.openScope(clause, false);
     AST varOrType = clause.getChild(0);
     if (varOrType.getType() == XQ.Variable) {
@@ -930,6 +936,11 @@ public abstract class ScopeWalker extends Walker {
   }
 
   private void transformExpr(AST expr) {
+    if (expr.getChildCount() < 2) {
+      throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+                               "Malformed TransformExpr: a modify clause and a return are required, got %s children",
+                               expr.getChildCount());
+    }
     table.openScope(expr, false);
     int pos = 0;
     while (pos < expr.getChildCount() - 2) {
