@@ -157,6 +157,11 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if (expr.getType() != XQ.TransformExpr) {
       return false;
     }
+    if (expr.getChildCount() < 2) {
+      throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+                               "Malformed TransformExpr: a modify clause and a return are required, got %s children",
+                               expr.getChildCount());
+    }
     int scopeCount = scopeCount();
     int pos = 0;
     while (pos < expr.getChildCount() - 2) {
@@ -479,6 +484,10 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     if (expr.getType() != XQ.QuantifiedExpr) {
       return false;
     }
+    if (expr.getChildCount() < 1) {
+      throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+                               "Malformed QuantifiedExpr: no quantifier, binding or predicate to analyze");
+    }
     int scopeCount = scopeCount();
     // child 0 is quantifier type
     for (int i = 1; i < expr.getChildCount() - 1; i++) {
@@ -507,6 +516,10 @@ public class ExprAnalyzer extends AbstractAnalyzer {
   }
 
   protected boolean switchClause(AST clause) throws QueryException {
+    if (clause.getChildCount() < 1) {
+      throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+                               "Malformed switch clause: no case operand or return expression");
+    }
     for (int i = 0; i < clause.getChildCount() - 1; i++) {
       exprSingle(clause.getChild(i));
     }

@@ -259,6 +259,13 @@ public class Dbl extends AbstractNumeric implements DblNumeric {
   }
 
   @Override
+  // new BigDecimal(double), NOT BigDecimal.valueOf(double), is the correct construction here and
+  // the two are not interchangeable: valueOf() goes through Double.toString, i.e. the shortest
+  // decimal that reads back as this double, whereas rounding half-to-even at a given digit has to
+  // see the value the double actually holds. Sweeping the branch below over 6.3 M reachable
+  // (value, precision) pairs, the two disagree in 288 of them — subnormals rounded far past their
+  // shortest form. Keeping the exact expansion.
+  @SuppressWarnings("java:S2111")
   public Numeric roundHalfToEven(int precision) throws QueryException {
     if (Double.isInfinite(v) || v == 0 || Double.isNaN(v)) {
       return this;

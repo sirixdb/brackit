@@ -257,6 +257,11 @@ public class Compiler implements Translator {
   }
 
   protected Expr inlineFuncExpr(AST node) throws QueryException {
+    if (node.getChildCount() < 1) {
+      throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+                               "Malformed InlineFuncItem '%s': no function body to compile",
+                               node);
+    }
     final var udf = (UDF) node.getProperty("udf");
     final var body = node.getChild(node.getChildCount() - 1);
     final var pNames = (QNm[]) node.getProperty("paramNames");
@@ -1360,6 +1365,11 @@ public class Compiler implements Translator {
 
   protected Expr flowrExpr(AST node) throws QueryException {
     final int childCount = node.getChildCount();
+    if (childCount < 1) {
+      throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+                               "Malformed FLWOR '%s': no return clause to compile",
+                               node);
+    }
     final ClauseBinding cb = flowrClause(new ClauseBinding(null, new Start()), node, 0, childCount - 2);
     final Expr returnExpr = expr(node.getChild(childCount - 1).getChild(0), false);
     cb.unbind();

@@ -70,6 +70,13 @@ public final class ArrayAccessExpr implements Expr {
 
     final var currItem = ExprUtil.asItem(sequence);
 
+    if (currItem == null) {
+      // asItem() answers null for a sequence that iterates empty — the same nothing the null check
+      // above already returns for. Falling through would report the type error by asking the absent
+      // item what type it is.
+      return null;
+    }
+
     if (!(currItem instanceof Array array)) {
       throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                "Illegal operand type '%s' where '%s' is expected",
