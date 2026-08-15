@@ -87,7 +87,137 @@ public final class VectorizedGroupByDetection implements Stage {
     final Map<Object, AST> variableBindings = new HashMap<>();
     collectVariableBindings(ast, variableBindings);
     walkAndAnnotate(ast, variableBindings);
+    withdrawRegroupedSources(ast, Set.of(), List.of());
     return ast;
+  }
+
+  /**
+   * Withdraws any claim whose scan source is a variable a {@code group by} has already rebound.
+   *
+   * <p>A {@code group by} rebinds every non-grouping variable of its FLWOR to the sequence of THAT
+   * group's values. {@link #resolveSourceRef} finds the document a scan reads by following the
+   * variable to its binding clause, and that walk cannot see the grouping, so for
+   *
+   * <pre>
+   * for $h in jn:doc('db','res')[]
+   * let $k := $h.region
+   * group by $k
+   * return {"k": $k, "s": sum(for $x in $h return $x.width)}
+   * </pre>
+   *
+   * the inner pipeline's source resolves back through {@code $h} to the whole document. A backend
+   * that accepts that source folds every record for every group and answers each one with the global
+   * sum — silently, and only for the shapes that read a field: {@code count($h)} builds no inner
+   * pipeline and stays correct.
+   *
+   * <p>Running as a second pass keeps the resolution itself untouched: this only has to say that a
+   * source it already produced cannot be proven, which {@link SourceRef#unknown()} states and every
+   * compile-time gate already fails closed on. The claim on the grouping pipeline ITSELF is
+   * unaffected — that one is annotated at the {@code PipeExpr}, above the {@code GroupBy}, where its
+   * own source is still exactly what it says it is.
+   *
+   * @param node          the subtree to walk
+   * @param regroupedVars variables an enclosing {@code group by} has rebound
+   * @param chainVars     variables bound so far by the CURRENT pipeline's clauses
+   */
+  private static void withdrawRegroupedSources(final AST node, final Set<Object> regroupedVars,
+      final List<Object> chainVars) {
+    if (node.getType() == XQ.PipeExpr && !regroupedVars.isEmpty()) {
+      withdrawIfSourceIsRegrouped(node, regroupedVars);
+    }
+    final List<Object> childChainVars = extendChainVars(node, chainVars);
+    final Set<Object> childRegrouped = extendRegroupedVars(node, regroupedVars, chainVars);
+    for (int i = 0, n = node.getChildCount(); i < n; i++) {
+      withdrawRegroupedSources(node.getChild(i), childRegrouped, childChainVars);
+    }
+  }
+
+  /**
+   * The variables bound by the current pipeline's clauses, extended by the one {@code node} binds.
+   * A {@link XQ#Start} resets the list: a nested pipeline opens its own clause scope, and the outer
+   * variables it can still see are already accounted for in {@code regroupedVars}.
+   */
+  private static List<Object> extendChainVars(final AST node, final List<Object> chainVars) {
+    final int type = node.getType();
+    if (type == XQ.Start) {
+      return List.of();
+    }
+    if (type != XQ.ForBind && type != XQ.LetBind || node.getChildCount() < 2) {
+      return chainVars;
+    }
+    final Object varKey = bindingVariableKey(node.getChild(0));
+    if (varKey == null) {
+      return chainVars;
+    }
+    final List<Object> extended = new ArrayList<>(chainVars.size() + 1);
+    extended.addAll(chainVars);
+    extended.add(varKey);
+    return extended;
+  }
+
+  /** A {@code GroupBy} rebinds every variable its pipeline has bound so far. */
+  private static Set<Object> extendRegroupedVars(final AST node, final Set<Object> regroupedVars,
+      final List<Object> chainVars) {
+    if (node.getType() != XQ.GroupBy || chainVars.isEmpty()) {
+      return regroupedVars;
+    }
+    final Set<Object> extended = new HashSet<>(regroupedVars);
+    extended.addAll(chainVars);
+    return extended;
+  }
+
+  /**
+   * Replaces an annotated pipeline's source with {@link SourceRef#unknown()} when it scans a
+   * regrouped variable. Unknown rather than removed: a missing source ref means "unannotated, admit
+   * by executor default", which is the opposite of what this has to say.
+   */
+  private static void withdrawIfSourceIsRegrouped(final AST pipeExpr, final Set<Object> regroupedVars) {
+    if (pipeExpr.getProperty(VectorizedScanAnnotation.SOURCE_REF) == null) {
+      return;
+    }
+    final AST forBind = forBindOf(pipeExpr);
+    if (forBind == null || forBind.getChildCount() < 2) {
+      return;
+    }
+    final Object sourceVar = sourceVariableOrNull(forBind.getChild(1));
+    if (sourceVar != null && regroupedVars.contains(sourceVar)) {
+      pipeExpr.setProperty(VectorizedScanAnnotation.SOURCE_REF, SourceRef.unknown());
+    }
+  }
+
+  /** The {@code ForBind} at the end of a pipeline's clause chain, or {@code null}. */
+  private static AST forBindOf(final AST pipeExpr) {
+    if (pipeExpr.getChildCount() < 1) {
+      return null;
+    }
+    final AST chain = pipeExpr.getChild(0);
+    if (chain.getType() != XQ.Start || chain.getChildCount() < 1) {
+      return null;
+    }
+    AST forBind = chain.getLastChild();
+    while (forBind != null && forBind.getType() == XQ.LetBind) {
+      forBind = forBind.getLastChild();
+    }
+    return forBind != null && forBind.getType() == XQ.ForBind ? forBind : null;
+  }
+
+  /**
+   * The variable a binding expression ultimately reads, looking through the deref / array-access /
+   * filter layers a source path is written with; {@code null} when it is not rooted in a variable.
+   */
+  private static Object sourceVariableOrNull(final AST binding) {
+    AST current = binding;
+    for (int step = 0; current != null && step < MAX_UNWRAP_STEPS; step++) {
+      final int type = current.getType();
+      if (type == XQ.VariableRef) {
+        return current.getValue();
+      }
+      if (type != XQ.DerefExpr && type != XQ.ArrayAccess && type != XQ.FilterExpr) {
+        return null;
+      }
+      current = current.getChildCount() < 1 ? null : current.getChild(0);
+    }
+    return null;
   }
 
   private void walkAndAnnotate(AST node, Map<Object, AST> variableBindings) {
