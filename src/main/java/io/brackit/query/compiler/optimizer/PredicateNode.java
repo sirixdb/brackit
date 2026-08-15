@@ -30,7 +30,7 @@ import java.util.List;
  * leave the annotation off the AST so the generic Volcano pipeline handles
  * the query.
  */
-public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNode.FpCmp, PredicateNode.DecCmp, PredicateNode.StrEq, PredicateNode.ArrayContains, PredicateNode.BoolRef, PredicateNode.And, PredicateNode.Or, PredicateNode.Not, PredicateNode.AlwaysTrue, PredicateNode.AlwaysFalse {
+public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNode.FpCmp, PredicateNode.DecCmp, PredicateNode.StrEq, PredicateNode.StrNe, PredicateNode.ArrayContains, PredicateNode.BoolRef, PredicateNode.And, PredicateNode.Or, PredicateNode.Not, PredicateNode.AlwaysTrue, PredicateNode.AlwaysFalse {
 
   /**
    * Numeric comparison {@code $u.field <op> literal}. {@code op} is one of
@@ -87,6 +87,25 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
 
   /** String equality {@code $u.field eq "literal"}. */
   record StrEq(String field, String value) implements PredicateNode {
+  }
+
+  /**
+   * String inequality {@code $u.field ne "literal"}.
+   *
+   * <p>A variant of its own rather than an operator on {@link StrEq}, and deliberately NOT
+   * expressible as {@code Not(StrEq)}. Over a record MISSING the field the deref is the empty
+   * sequence, a general comparison over it is false, and so this leaf is false — whereas
+   * {@code Not(StrEq)} is true there. The two differ on exactly the records an anchored scan is
+   * allowed to skip, which is why this one is soundly anchorable and a negation is not.
+   *
+   * <p>JSON null is a separate matter, and one a backend must handle rather than assume away: per
+   * the JSONiq specification a null-valued field DOES satisfy this leaf ("True is returned when
+   * comparing it with non-equality with any non-null atomic"; the spec's own example gives
+   * {@code 1 eq null, "foo" ne null, null eq null} =&gt; {@code false true true}). A backend whose
+   * kernels cannot tell a null from a missing field must therefore DECLINE this predicate over a
+   * null-bearing column, not serve it.
+   */
+  record StrNe(String field, String value) implements PredicateNode {
   }
 
   /**
@@ -176,6 +195,7 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
       case FpCmp f -> into.add(f.field);
       case DecCmp d -> into.add(d.field);
       case StrEq s -> into.add(s.field);
+      case StrNe s -> into.add(s.field);
       case ArrayContains c -> into.add(c.field);
       case BoolRef b -> into.add(b.field);
       case And a -> {
@@ -225,6 +245,10 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
       // anchorable one.
       case ArrayContains c -> c.field.equals(field);
       case StrEq s -> s.field.equals(field);
+      // Anchorable for the same reason as StrEq, and the reason a NEGATION would not be: the deref
+      // of a missing field is the empty sequence, and a general comparison over it is false. So a
+      // record lacking the field cannot satisfy `field ne "x"` and an anchored scan may skip it.
+      case StrNe s -> s.field.equals(field);
       case BoolRef b -> b.field.equals(field);
       case And a -> {
         for (PredicateNode c : a.children) {
@@ -260,6 +284,11 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
       case DecCmp d -> false;
       case ArrayContains c -> false;
       case StrEq s -> false;
+      // FALSE, despite reading like "a missing field is surely not equal to x". The comparison is
+      // over the empty sequence, which is false, not true. Answering true here would make
+      // Not(StrNe) report provably-false-on-missing and an anchored scan would skip exactly the
+      // records that satisfy it.
+      case StrNe s -> false;
       case BoolRef b -> false;
       case And a -> {
         for (PredicateNode c : a.children) {
@@ -334,6 +363,7 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
       case DecCmp d -> true;
       case ArrayContains c -> true;
       case StrEq s -> true;
+      case StrNe s -> true;
       case BoolRef b -> true;
       // A conjunction is claimable only on a GLOBAL anchor: one conjunct whose field every
       // candidate record must carry. Deliberately no recursion into the children — a conjunction

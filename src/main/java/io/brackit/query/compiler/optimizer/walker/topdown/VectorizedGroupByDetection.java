@@ -1037,8 +1037,12 @@ public final class VectorizedGroupByDetection implements Stage {
       if (numCmp != null)
         return numCmp;
       String sv = extractStringLiteral(rightOperand);
-      if (sv != null && "eq".equals(op))
-        return new PredicateNode.StrEq(field, sv);
+      if (sv != null) {
+        if ("eq".equals(op))
+          return new PredicateNode.StrEq(field, sv);
+        if ("ne".equals(op))
+          return new PredicateNode.StrNe(field, sv);
+      }
       return null;
     }
     // literal OP $u.F — field on right. Reverse the comparison direction.
@@ -1048,8 +1052,14 @@ public final class VectorizedGroupByDetection implements Stage {
       if (numCmp != null)
         return numCmp;
       String sv = extractStringLiteral(leftOperand);
-      if (sv != null && "eq".equals(op))
-        return new PredicateNode.StrEq(field, sv);
+      if (sv != null) {
+        // Both eq and ne are symmetric, so the reversal reverseOp() applies to the ordering
+        // operators is a no-op here and the literal side does not change the leaf.
+        if ("eq".equals(op))
+          return new PredicateNode.StrEq(field, sv);
+        if ("ne".equals(op))
+          return new PredicateNode.StrNe(field, sv);
+      }
     }
     return null;
   }
