@@ -1139,10 +1139,12 @@ public final class VectorizedGroupByDetection implements Stage {
       case XQ.GeneralCompGE, XQ.ValueCompGE -> "ge";
       case XQ.GeneralCompLE, XQ.ValueCompLE -> "le";
       case XQ.GeneralCompEQ, XQ.ValueCompEQ -> "eq";
+      case XQ.GeneralCompNE, XQ.ValueCompNE -> "ne";
       default -> null;
     };
   }
 
+  /** {@code ne} is symmetric, like {@code eq}, so the default carries it through unchanged. */
   private String reverseOp(String op) {
     return switch (op) {
       case "gt" -> "lt";

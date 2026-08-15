@@ -432,7 +432,11 @@ public final class VectorizedGroupByExec {
         case "ge" -> filterValues[i] >= threshold;
         case "le" -> filterValues[i] <= threshold;
         case "eq" -> filterValues[i] == threshold;
-        default -> true;
+        case "ne" -> filterValues[i] != threshold;
+        // Fail closed. `default -> true` silently PASSED every row for any operator this switch
+        // did not know, so an operator added to the detection walker would not fail here — it
+        // would drop the filter and return a wrong count.
+        default -> throw new IllegalStateException("unsupported filter operator: " + op);
       };
       if (pass) {
         groups.computeIfAbsent(keys[i], k -> new long[1])[0]++;
@@ -449,7 +453,9 @@ public final class VectorizedGroupByExec {
         case "ge" -> values[i] >= threshold ? 1 : 0;
         case "le" -> values[i] <= threshold ? 1 : 0;
         case "eq" -> values[i] == threshold ? 1 : 0;
-        default -> 1;
+        case "ne" -> values[i] != threshold ? 1 : 0;
+        // Fail closed — see aggregateFilteredBatch; `default -> 1` counted every row.
+        default -> throw new IllegalStateException("unsupported filter operator: " + op);
       };
     }
     return count;
