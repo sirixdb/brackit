@@ -112,6 +112,21 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
     }
   }
 
+  /**
+   * Only a single {@code NumCmp} is servable here — see {@link #executePredicateCount}.
+   *
+   * <p>
+   * Without this override the SPI default accepts EVERY predicate, and the decline below then
+   * becomes a thrown error rather than a fallback: {@code VectorizedGroupByExpr} converts a
+   * {@code null} from this mode into a {@code QueryException}. So a shape this executor cannot serve
+   * — a string comparison, a conjunction — failed the query instead of running the generic pipeline.
+   * Declining at the gate is what actually restores the fallback.
+   */
+  @Override
+  public boolean acceptsPredicate(String[] sourcePath, io.brackit.query.compiler.optimizer.PredicateNode predicate) {
+    return predicate instanceof io.brackit.query.compiler.optimizer.PredicateNode.NumCmp;
+  }
+
   @Override
   public Sequence executePredicateCount(QueryContext ctx, String[] sourcePath,
       io.brackit.query.compiler.optimizer.PredicateNode predicate) throws QueryException {
