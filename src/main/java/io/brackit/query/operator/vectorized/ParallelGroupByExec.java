@@ -608,7 +608,10 @@ public final class ParallelGroupByExec implements VectorizedExecutor {
             case "ge" -> value >= threshold;
             case "le" -> value <= threshold;
             case "eq" -> value == threshold;
-            default -> true;
+            case "ne" -> value != threshold;
+            // Fail closed: `default -> true` dropped the filter and over-counted for any operator
+            // this switch did not know about.
+            default -> throw new IllegalStateException("unsupported filter operator: " + op);
           };
           if (pass)
             count++;
