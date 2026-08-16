@@ -30,7 +30,7 @@ import java.util.List;
  * leave the annotation off the AST so the generic Volcano pipeline handles
  * the query.
  */
-public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNode.FpCmp, PredicateNode.DecCmp, PredicateNode.StrEq, PredicateNode.StrNe, PredicateNode.ArrayContains, PredicateNode.BoolRef, PredicateNode.And, PredicateNode.Or, PredicateNode.Not, PredicateNode.AlwaysTrue, PredicateNode.AlwaysFalse {
+public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNode.FpCmp, PredicateNode.DecCmp, PredicateNode.StrEq, PredicateNode.StrNe, PredicateNode.StrCmp, PredicateNode.StrContains, PredicateNode.ArrayContains, PredicateNode.BoolRef, PredicateNode.And, PredicateNode.Or, PredicateNode.Not, PredicateNode.AlwaysTrue, PredicateNode.AlwaysFalse {
 
   /**
    * Numeric comparison {@code $u.field <op> literal}. {@code op} is one of
@@ -106,6 +106,48 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
    * null-bearing column, not serve it.
    */
   record StrNe(String field, String value) implements PredicateNode {
+  }
+
+  /**
+   * String ORDERING comparison {@code $u.field <op> "literal"}; {@code op} is one of {@code "gt"},
+   * {@code "lt"}, {@code "ge"}, {@code "le"} only — equality stays {@link StrEq} and inequality
+   * {@link StrNe}, whose missing-field/null contracts differ from each other and from this leaf.
+   *
+   * <p>COLLATION CONTRACT: the interpreter's general comparison over strings is {@code Str#cmp} =
+   * {@code String.compareTo} = UTF-16 code-unit order. Unsigned UTF-8 byte order (what a
+   * dictionary kernel naturally compares) is CODEPOINT order; the two differ exactly when a
+   * supplementary character (U+10000 and above, a 4-byte UTF-8 sequence) meets a BMP character in
+   * U+E000..U+FFFF. A backend comparing raw UTF-8 must detect that case (any 4-byte lead byte,
+   * {@code (b & 0xFF) >= 0xF0}) and fall back to decoding, or it serves an order the interpreter
+   * disagrees with.
+   *
+   * <p>NULL CONTRACT: JSONiq's total order makes null the SMALLEST value, so e.g.
+   * {@code null le "x"} is TRUE — a kernel that reads null as missing-and-false must DECLINE this
+   * leaf over a null-bearing column rather than serve it. Missing-field semantics are the ordinary
+   * ones: the deref is the empty sequence, the comparison is false, so the leaf soundly anchors on
+   * its field.
+   */
+  record StrCmp(String field, String op, String value) implements PredicateNode {
+  }
+
+  /**
+   * Substring containment {@code fn:contains($u.field, "literal")} — the two-argument builtin
+   * only; the three-argument (collation) form must never be represented here.
+   *
+   * <p>{@code fn:contains((), "x")} treats the empty sequence as {@code ""} and answers FALSE, so
+   * the leaf is false on a record missing the field — which is exactly what makes it soundly
+   * anchorable. {@code fn:not(contains(...))} is deliberately NOT a variant: it is TRUE on a
+   * missing field, so representing it would require opting out of the presence-AND every mask
+   * builder applies, and any site that forgot would under-count silently.
+   *
+   * <p>NULL CONTRACT: the interpreter raises a type error for {@code contains(null, "x")}; a
+   * kernel would answer false. An error is not false — a backend must DECLINE this leaf over a
+   * null-bearing column.
+   *
+   * <p>No collation subtlety, unlike {@link StrCmp}: UTF-8 is self-synchronizing, so a byte-wise
+   * needle match IS a codepoint substring match.
+   */
+  record StrContains(String field, String value) implements PredicateNode {
   }
 
   /**
@@ -196,6 +238,8 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
       case DecCmp d -> into.add(d.field);
       case StrEq s -> into.add(s.field);
       case StrNe s -> into.add(s.field);
+      case StrCmp c -> into.add(c.field);
+      case StrContains c -> into.add(c.field);
       case ArrayContains c -> into.add(c.field);
       case BoolRef b -> into.add(b.field);
       case And a -> {
@@ -249,6 +293,11 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
       // of a missing field is the empty sequence, and a general comparison over it is false. So a
       // record lacking the field cannot satisfy `field ne "x"` and an anchored scan may skip it.
       case StrNe s -> s.field.equals(field);
+      // The empty-sequence comparison is false, exactly as for StrEq/StrNe.
+      case StrCmp c -> c.field.equals(field);
+      // contains((), lit) is contains("", lit) = false — the anchorable direction; the negation
+      // (true on missing) is deliberately unrepresentable.
+      case StrContains c -> c.field.equals(field);
       case BoolRef b -> b.field.equals(field);
       case And a -> {
         for (PredicateNode c : a.children) {
@@ -289,6 +338,9 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
       // Not(StrNe) report provably-false-on-missing and an anchored scan would skip exactly the
       // records that satisfy it.
       case StrNe s -> false;
+      // Same discipline: the empty-sequence comparison/containment is FALSE, never true.
+      case StrCmp c -> false;
+      case StrContains c -> false;
       case BoolRef b -> false;
       case And a -> {
         for (PredicateNode c : a.children) {
@@ -364,6 +416,8 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
       case ArrayContains c -> true;
       case StrEq s -> true;
       case StrNe s -> true;
+      case StrCmp c -> true;
+      case StrContains c -> true;
       case BoolRef b -> true;
       // A conjunction is claimable only on a GLOBAL anchor: one conjunct whose field every
       // candidate record must carry. Deliberately no recursion into the children — a conjunction

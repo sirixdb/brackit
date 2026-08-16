@@ -9,6 +9,7 @@ import io.brackit.query.atomic.QNm;
 import io.brackit.query.compiler.AST;
 import io.brackit.query.compiler.XQ;
 import io.brackit.query.compiler.optimizer.walker.topdown.VectorizedGroupByDetection;
+import io.brackit.query.module.Namespaces;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -1369,6 +1370,100 @@ public class VectorizedGroupByDetectionTest {
     PredicateNode p = predicateTree(pipe);
     assertInstanceOf(PredicateNode.And.class, p);
     assertEquals("c", p.findSoundAnchorField());
+  }
+
+  @Test
+  void stringOrderingComparisonBecomesStrCmp() {
+    // for $u where $u.date ge "2013-07-01" return ...
+    AST pipe = pipeExpr(forBind("u",
+                                selection(comparison(XQ.GeneralCompGE, deref("u", "date"), strLit("2013-07-01")),
+                                          end())));
+
+    stage.rewrite(null, root(pipe));
+
+    PredicateNode p = predicateTree(pipe);
+    assertInstanceOf(PredicateNode.StrCmp.class, p);
+    PredicateNode.StrCmp c = (PredicateNode.StrCmp) p;
+    assertEquals("date", c.field());
+    assertEquals("ge", c.op());
+    assertEquals("2013-07-01", c.value());
+  }
+
+  @Test
+  void reversedStringOrderingComparisonReversesTheOp() {
+    // "2013-07-31" ge $u.date  ≡  $u.date le "2013-07-31" — the ordering ops are NOT
+    // symmetric, unlike eq/ne, so the literal side must flip the operator.
+    AST pipe = pipeExpr(forBind("u",
+                                selection(comparison(XQ.GeneralCompGE, strLit("2013-07-31"), deref("u", "date")),
+                                          end())));
+
+    stage.rewrite(null, root(pipe));
+
+    PredicateNode p = predicateTree(pipe);
+    assertInstanceOf(PredicateNode.StrCmp.class, p);
+    PredicateNode.StrCmp c = (PredicateNode.StrCmp) p;
+    assertEquals("date", c.field());
+    assertEquals("le", c.op());
+    assertEquals("2013-07-31", c.value());
+  }
+
+  @Test
+  void containsBecomesStrContains() {
+    // for $u where fn:contains($u.url, "google") return ...
+    AST call = new AST(XQ.FunctionCall, new QNm(Namespaces.FN_NSURI, null, "contains"));
+    call.addChild(deref("u", "url"));
+    call.addChild(strLit("google"));
+    AST pipe = pipeExpr(forBind("u", selection(call, end())));
+
+    stage.rewrite(null, root(pipe));
+
+    PredicateNode p = predicateTree(pipe);
+    assertInstanceOf(PredicateNode.StrContains.class, p);
+    PredicateNode.StrContains c = (PredicateNode.StrContains) p;
+    assertEquals("url", c.field());
+    assertEquals("google", c.value());
+  }
+
+  @Test
+  void threeArgumentContainsIsNotClaimed() {
+    // fn:contains(x, y, collation) has collation semantics the leaf cannot carry.
+    AST call = new AST(XQ.FunctionCall, new QNm(Namespaces.FN_NSURI, null, "contains"));
+    call.addChild(deref("u", "url"));
+    call.addChild(strLit("google"));
+    call.addChild(strLit("http://collation"));
+    AST pipe = pipeExpr(forBind("u", selection(call, end())));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
+  }
+
+  @Test
+  void foreignNamespaceContainsIsNotClaimed() {
+    // local:contains must never be served with fn:* semantics.
+    AST call = new AST(XQ.FunctionCall, new QNm("http://example.org/local", null, "contains"));
+    call.addChild(deref("u", "url"));
+    call.addChild(strLit("google"));
+    AST pipe = pipeExpr(forBind("u", selection(call, end())));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
+  }
+
+  @Test
+  void strCmpAnchorsOnItsOwnField() {
+    // The leaf must report anchorability exactly like StrEq: false on missing, so its field
+    // is a sound anchor and satisfiedWhenFieldMissing is false.
+    PredicateNode cmp = new PredicateNode.StrCmp("date", "le", "2013-07-31");
+    assertTrue(cmp.excludesRecordsMissingField("date"));
+    assertEquals("date", cmp.findSoundAnchorField());
+    PredicateNode contains = new PredicateNode.StrContains("url", "google");
+    assertTrue(contains.excludesRecordsMissingField("url"));
+    assertEquals("url", contains.findSoundAnchorField());
+    // The Not(contains) landmine: NOT provably-false-on-missing (it is TRUE there).
+    PredicateNode notContains = new PredicateNode.Not(contains);
+    assertNull(notContains.findSoundAnchorField());
   }
 
   @Test
