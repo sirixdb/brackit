@@ -986,6 +986,19 @@ public final class VectorizedGroupByDetection implements Stage {
       return arrayContains(node, loopVar);
     }
 
+    // fn:contains($u.field, "literal") — the TWO-argument builtin only, and only in a function
+    // namespace we own (a user-defined or three-argument/collation `contains` must never be
+    // claimed with fn:* semantics). False on a missing field (contains("", lit)), which is what
+    // makes the leaf anchorable; see the StrContains contract.
+    if (type == XQ.FunctionCall && node.getChildCount() == 2 && node.getValue() instanceof QNm cfn && "contains".equals(
+                                                                                                                        cfn.getLocalName())
+        && (Namespaces.FN_NSURI.equals(cfn.getNamespaceURI()) || Namespaces.DEFAULT_FN_NSURI.equals(cfn
+                                                                                                       .getNamespaceURI()))) {
+      final String cField = directLoopVarDerefField(node.getChild(0), loopVar);
+      final String needle = cField == null ? null : extractStringLiteral(node.getChild(1));
+      return needle == null ? null : new PredicateNode.StrContains(cField, needle);
+    }
+
     if (type == XQ.AndExpr) {
       List<PredicateNode> kids = new ArrayList<>(node.getChildCount());
       for (int i = 0; i < node.getChildCount(); i++) {
@@ -1042,6 +1055,8 @@ public final class VectorizedGroupByDetection implements Stage {
           return new PredicateNode.StrEq(field, sv);
         if ("ne".equals(op))
           return new PredicateNode.StrNe(field, sv);
+        if ("gt".equals(op) || "lt".equals(op) || "ge".equals(op) || "le".equals(op))
+          return new PredicateNode.StrCmp(field, op, sv);
       }
       return null;
     }
@@ -1053,12 +1068,15 @@ public final class VectorizedGroupByDetection implements Stage {
         return numCmp;
       String sv = extractStringLiteral(leftOperand);
       if (sv != null) {
-        // Both eq and ne are symmetric, so the reversal reverseOp() applies to the ordering
-        // operators is a no-op here and the literal side does not change the leaf.
+        // eq and ne are symmetric, so the literal side does not change those leaves. The
+        // ORDERING operators are not: `"lit" lt $u.f` is `$u.f gt "lit"`, so the reversal
+        // reverseOp() applies to the numeric arm applies here too.
         if ("eq".equals(op))
           return new PredicateNode.StrEq(field, sv);
         if ("ne".equals(op))
           return new PredicateNode.StrNe(field, sv);
+        if ("gt".equals(op) || "lt".equals(op) || "ge".equals(op) || "le".equals(op))
+          return new PredicateNode.StrCmp(field, reverseOp(op), sv);
       }
     }
     return null;
