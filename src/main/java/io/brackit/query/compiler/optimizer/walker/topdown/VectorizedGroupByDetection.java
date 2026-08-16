@@ -1054,11 +1054,15 @@ public final class VectorizedGroupByDetection implements Stage {
       // equalities; a missing field is false on every branch and so false on the whole. `eq`
       // ONLY: `f != (a, b)` is true whenever f differs from ANY item — true for every present
       // value once the items differ — so anything else stays with the interpreter.
-      if ("eq".equals(op) && rightOperand.getType() == XQ.SequenceExpr && rightOperand.getChildCount() >= 2) {
-        final List<PredicateNode> branches = new ArrayList<>(rightOperand.getChildCount());
+      AST seqOperand = rightOperand;
+      while (seqOperand.getType() == XQ.ParenthesizedExpr && seqOperand.getChildCount() == 1) {
+        seqOperand = seqOperand.getChild(0); // `(a, b)` arrives paren-wrapped
+      }
+      if ("eq".equals(op) && seqOperand.getType() == XQ.SequenceExpr && seqOperand.getChildCount() >= 2) {
+        final List<PredicateNode> branches = new ArrayList<>(seqOperand.getChildCount());
         boolean allNumeric = true;
-        for (int i = 0; i < rightOperand.getChildCount(); i++) {
-          final PredicateNode item = numericComparison(field, "eq", rightOperand.getChild(i));
+        for (int i = 0; i < seqOperand.getChildCount(); i++) {
+          final PredicateNode item = numericComparison(field, "eq", seqOperand.getChild(i));
           if (item == null) {
             allNumeric = false;
             break;
