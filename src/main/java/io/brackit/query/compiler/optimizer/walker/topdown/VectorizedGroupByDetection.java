@@ -1276,6 +1276,23 @@ public final class VectorizedGroupByDetection implements Stage {
     if (node == null || op == null)
       return null;
     final int type = node.getType();
+    if (type == XQ.ArithmeticExpr && node.getChildCount() == 3 && node.getChild(0).getType() == XQ.MultiplyOp
+        && node.getChild(1).getType() == XQ.Int) {
+      // Unary minus arrives from the parser as `(-1) * literal` — fold it back into the negated
+      // literal, or NO negative literal ever serves. Only the exact parser shape is claimed.
+      final Long minusOne = exactLongOf(node.getChild(1).getValue());
+      if (minusOne == null || minusOne != -1L) {
+        return null;
+      }
+      final PredicateNode inner = numericComparison(field, op, node.getChild(2));
+      return switch (inner) {
+        case PredicateNode.NumCmp nc when nc.value() != Long.MIN_VALUE ->
+          new PredicateNode.NumCmp(field, op, -nc.value());
+        case PredicateNode.FpCmp fc -> new PredicateNode.FpCmp(field, op, -fc.value());
+        case PredicateNode.DecCmp dc -> new PredicateNode.DecCmp(field, op, dc.value().negate());
+        case null, default -> null;
+      };
+    }
     if (type == XQ.Int) {
       final Long lv = exactLongOf(node.getValue());
       return lv != null ? new PredicateNode.NumCmp(field, op, lv) : null;
