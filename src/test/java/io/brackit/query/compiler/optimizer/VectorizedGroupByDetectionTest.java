@@ -1473,7 +1473,9 @@ public class VectorizedGroupByDetectionTest {
     AST seq = new AST(XQ.SequenceExpr);
     seq.addChild(intLit(-1));
     seq.addChild(intLit(6));
-    AST pipe = pipeExpr(forBind("u", selection(comparison(XQ.GeneralCompEQ, deref("u", "src"), seq), end())));
+    AST paren = new AST(XQ.ParenthesizedExpr);
+    paren.addChild(seq); // the parser always paren-wraps a sequence literal
+    AST pipe = pipeExpr(forBind("u", selection(comparison(XQ.GeneralCompEQ, deref("u", "src"), paren), end())));
 
     stage.rewrite(null, root(pipe));
 
