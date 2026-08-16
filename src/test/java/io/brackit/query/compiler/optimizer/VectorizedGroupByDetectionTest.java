@@ -1467,6 +1467,39 @@ public class VectorizedGroupByDetectionTest {
   }
 
   @Test
+  void sequenceEqualityBecomesPerItemDisjunction() {
+    // for $u where $u.src = (-1, 6) return ...  — SQL's IN list: an existential over the
+    // sequence items, exactly Or(eq -1, eq 6). Same-field branches keep the field anchorable.
+    AST seq = new AST(XQ.SequenceExpr);
+    seq.addChild(intLit(-1));
+    seq.addChild(intLit(6));
+    AST pipe = pipeExpr(forBind("u", selection(comparison(XQ.GeneralCompEQ, deref("u", "src"), seq), end())));
+
+    stage.rewrite(null, root(pipe));
+
+    PredicateNode p = predicateTree(pipe);
+    assertInstanceOf(PredicateNode.Or.class, p);
+    PredicateNode.Or or = (PredicateNode.Or) p;
+    assertEquals(2, or.children().size());
+    assertNumCmp(or.children().get(0), "src", "eq", -1L);
+    assertNumCmp(or.children().get(1), "src", "eq", 6L);
+    assertEquals("src", p.findSoundAnchorField());
+  }
+
+  @Test
+  void sequenceInequalityIsNotClaimed() {
+    // `f != (a, b)` is true for every present f once the items differ — must never be served.
+    AST seq = new AST(XQ.SequenceExpr);
+    seq.addChild(intLit(-1));
+    seq.addChild(intLit(6));
+    AST pipe = pipeExpr(forBind("u", selection(comparison(XQ.GeneralCompNE, deref("u", "src"), seq), end())));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.PREDICATE_TREE));
+  }
+
+  @Test
   void orAcrossDifferentFieldsBlocksGroupByClaim() {
     // The unsound predicate must also veto group-by / aggregate claims, not just
     // the filtered count.
