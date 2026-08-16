@@ -1049,6 +1049,26 @@ public final class VectorizedGroupByDetection implements Stage {
       PredicateNode numCmp = numericComparison(field, op, rightOperand);
       if (numCmp != null)
         return numCmp;
+      // $u.F = (a, b, ...) — SQL's IN list. A general comparison against a sequence literal is
+      // an EXISTENTIAL over its items, which for `eq` is exactly the disjunction of the per-item
+      // equalities; a missing field is false on every branch and so false on the whole. `eq`
+      // ONLY: `f != (a, b)` is true whenever f differs from ANY item — true for every present
+      // value once the items differ — so anything else stays with the interpreter.
+      if ("eq".equals(op) && rightOperand.getType() == XQ.SequenceExpr && rightOperand.getChildCount() >= 2) {
+        final List<PredicateNode> branches = new ArrayList<>(rightOperand.getChildCount());
+        boolean allNumeric = true;
+        for (int i = 0; i < rightOperand.getChildCount(); i++) {
+          final PredicateNode item = numericComparison(field, "eq", rightOperand.getChild(i));
+          if (item == null) {
+            allNumeric = false;
+            break;
+          }
+          branches.add(item);
+        }
+        if (allNumeric) {
+          return PredicateNode.or(branches);
+        }
+      }
       String sv = extractStringLiteral(rightOperand);
       if (sv != null) {
         if ("eq".equals(op))
