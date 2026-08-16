@@ -284,6 +284,30 @@ public class VectorizedGroupByDetectionTest {
   }
 
   @Test
+  void postGroupSelectionKeepsRowFilterAndWithholdsGroupClaims() {
+    // for $u where $u.age > 30 let $c := $u.city group by $c where $n > 5 return {...}
+    // The post-group selection is HAVING-shaped: it must NOT poison the pre-group
+    // row-filter claim (the tree stays available to backends that serve HAVING
+    // themselves), and the legacy group-by claim must be WITHHELD — an executor
+    // honoring it would silently drop the post-group filter.
+    AST having = comparison(XQ.GeneralCompGT, new AST(XQ.VariableRef, new QNm("n")), intLit(5));
+    AST pipe = pipeExpr(forBind("u",
+                                selection(comparison(XQ.GeneralCompGT, deref("u", "age"), intLit(30)),
+                                          letBind("c",
+                                                  deref("u", "city"),
+                                                  groupBy("c",
+                                                          selection(having,
+                                                                    endReturningGroupCount("city", "c", "u")))))));
+
+    stage.rewrite(null, root(pipe));
+
+    assertNumCmp(predicateTree(pipe), "age", "gt", 30L);
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY));
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_GROUPBY_MULTI));
+    assertNull(pipe.getProperty(VectorizedScanAnnotation.VECTORIZED_COUNT_DISTINCT));
+  }
+
+  @Test
   void multiKeyGroupByWithSingleKeyReturnFailsClosed() {
     // for $u let $c := $u.city, $s := $u.state group by $c, $s return {"city": $c, "count": count($u)}
     // The return covers only ONE of the two grouping keys — the emitted records could

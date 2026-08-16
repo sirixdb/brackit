@@ -264,6 +264,10 @@ public final class VectorizedGroupByDetection implements Stage {
     boolean hasGroupBy = false;
     boolean hasOrderBy = false;
     boolean hasSelection = false;
+    // A selection AFTER the group-by (SQL HAVING). Never a row filter: folding it into the
+    // predicate tree would either poison the whole claim (the common `$c > N` over an
+    // aggregate let is unrepresentable) or, worse, get served with per-row semantics.
+    boolean hasPostGroupSelection = false;
     int orderByCount = 0;
     // Any claim replaces the WHOLE pipeline, so a chain operator this walker doesn't
     // model (count/window/join clauses, ...) would be silently dropped by the
@@ -281,13 +285,19 @@ public final class VectorizedGroupByDetection implements Stage {
     while (current != null && current.getType() != XQ.End) {
       switch (current.getType()) {
         case XQ.Selection -> {
-          hasSelection = true;
-          if (predicateRepresentable && current.getChildCount() >= 1) {
-            PredicateNode pn = extractPredicate(current.getChild(0), loopVar);
-            if (pn == null) {
-              predicateRepresentable = false;
-            } else {
-              predicateConjuncts.add(pn);
+          if (hasGroupBy) {
+            // HAVING-shaped: excluded from the row-filter tree; the group-by and
+            // count-distinct claims below stay withheld so no backend drops it.
+            hasPostGroupSelection = true;
+          } else {
+            hasSelection = true;
+            if (predicateRepresentable && current.getChildCount() >= 1) {
+              PredicateNode pn = extractPredicate(current.getChild(0), loopVar);
+              if (pn == null) {
+                predicateRepresentable = false;
+              } else {
+                predicateConjuncts.add(pn);
+              }
             }
           }
         }
@@ -397,7 +407,8 @@ public final class VectorizedGroupByDetection implements Stage {
     // PREDICATE_TREE and applied by the executor. Historical context: the original
     // detection claimed multi-key group-bys while the executor emitted the
     // single-first-key grouping with canonical field names — silently wrong results.
-    if (hasGroupBy && groupSpecsExtractable && predicateStrictlyAnchored && !hasOrderBy) {
+    if (hasGroupBy && groupSpecsExtractable && predicateStrictlyAnchored && !hasOrderBy
+        && !hasPostGroupSelection) {
       final GroupReturnShape shape = matchCanonicalGroupReturn(returnExpr,
                                                                letBindVars,
                                                                groupFields,
@@ -478,7 +489,7 @@ public final class VectorizedGroupByDetection implements Stage {
     // group-by let-bind's declared variable; otherwise count(...) could return
     // a multiple of the distinct-count (e.g., return ($d, $d)). Also disallow
     // selections of ANY kind (representable or not) — an HLL is unfiltered.
-    if (singleGroupKey && !hasOrderBy && !hasSelection) {
+    if (singleGroupKey && !hasOrderBy && !hasSelection && !hasPostGroupSelection) {
       final QNm returnVar = current != null ? extractSoleVariableRef(current) : null;
       if (returnVar != null && returnVar.equals(letBindVars.getFirst())) {
         pipeExpr.setProperty(VectorizedScanAnnotation.VECTORIZED_COUNT_DISTINCT, Boolean.TRUE);
