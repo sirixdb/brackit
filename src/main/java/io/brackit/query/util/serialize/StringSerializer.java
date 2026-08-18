@@ -54,6 +54,9 @@ public class StringSerializer implements Serializer {
 
   private static final String EOL = System.lineSeparator();
 
+  /** {@code \\u00xx} forms for the control characters that have no shorter JSON escape. */
+  private static final String[] CONTROL_ESCAPES = controlEscapes();
+
   private final PrintWriter out;
   private boolean format;
   private String indent = "  ";
@@ -201,9 +204,7 @@ public class StringSerializer implements Serializer {
         } else if (((Atomic) sequence).type() == Type.NULL) {
           out.write("null");
         } else {
-          out.write("\"");
-          out.write(sequence.toString());
-          out.write("\"");
+          jsonString(sequence.toString());
         }
       } else if (sequence instanceof Array array) {
         int arrayDepth = depth + 1;
@@ -254,9 +255,8 @@ public class StringSerializer implements Serializer {
             }
           }
 
-          out.write("\"");
-          out.write(object.name(i).stringValue());
-          out.write("\":");
+          jsonString(object.name(i).stringValue());
+          out.write(":");
 
           if (format) {
             out.write(" ");
@@ -318,6 +318,58 @@ public class StringSerializer implements Serializer {
         out.write("]");
       }
     }
+  }
+
+  /**
+   * Writes a JSON string literal with the escapes RFC 8259 requires. Without them a value holding a
+   * quote — a quotation inside a post, a Windows path — renders as JSON that no parser accepts, and
+   * anything that reads the output back (the spill files of the sort and the group-by, above all)
+   * fails or, worse, reads a different value than was written.
+   * <p>
+   * Escape-free stretches are written in one go: almost every string needs no escaping at all, and
+   * that case must not cost a call per character.
+   */
+  private void jsonString(final String value) {
+    out.write('"');
+    final int length = value.length();
+    int plainFrom = 0;
+    for (int i = 0; i < length; i++) {
+      final char c = value.charAt(i);
+      final String escape = escapeOf(c);
+      if (escape != null) {
+        if (i > plainFrom) {
+          out.write(value, plainFrom, i - plainFrom);
+        }
+        out.write(escape);
+        plainFrom = i + 1;
+      }
+    }
+    if (plainFrom < length) {
+      out.write(value, plainFrom, length - plainFrom);
+    }
+    out.write('"');
+  }
+
+  private static String[] controlEscapes() {
+    final String[] escapes = new String[0x20];
+    for (int c = 0; c < escapes.length; c++) {
+      escapes[c] = String.format("\\u%04x", c);
+    }
+    return escapes;
+  }
+
+  /** The JSON escape for a character, or {@code null} if it may be written as it is. */
+  private static String escapeOf(final char c) {
+    return switch (c) {
+      case '"' -> "\\\"";
+      case '\\' -> "\\\\";
+      case '\b' -> "\\b";
+      case '\f' -> "\\f";
+      case '\n' -> "\\n";
+      case '\r' -> "\\r";
+      case '\t' -> "\\t";
+      default -> c < 0x20 ? CONTROL_ESCAPES[c] : null;
+    };
   }
 
   static void serializeNode(Node<?> sequence, SubtreePrinter p, PrintWriter out) {

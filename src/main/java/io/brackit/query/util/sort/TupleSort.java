@@ -62,6 +62,13 @@ public class TupleSort {
 
   private final File sortDir = new File(Cfg.asString("java.io.tmpdir"));
 
+  /**
+   * Keeps the columns that are too large to copy alive for as long as a run may reference them.
+   * A tuple carries every variable in scope, so a run of a query over {@code jn:doc(...)} would
+   * otherwise serialize the whole document once per row.
+   */
+  private final TupleSerializer.SpillContext spillCtx = new TupleSerializer.SpillContext();
+
   private File[] runs;
 
   private Tuple[] buffer;
@@ -212,11 +219,11 @@ public class TupleSort {
   }
 
   private Tuple readItem(InputStream in) throws IOException {
-    return TupleSerializer.read(in);
+    return TupleSerializer.read(in, spillCtx);
   }
 
   private void writeItem(OutputStream out, Tuple item) throws IOException {
-    TupleSerializer.write(out, item);
+    TupleSerializer.write(out, item, spillCtx);
   }
 
   public Stream<Tuple> stream() {
