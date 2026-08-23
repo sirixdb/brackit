@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
@@ -494,7 +495,10 @@ public class SpillableGroupBy extends Check implements Operator {
       final int partition = partitionOf(hash, level);
       DataOutputStream out = streams[partition];
       if (out == null) {
-        final File file = File.createTempFile("grp-part-" + partition + "-", ".spill");
+        // Files.createTempFile, not File.createTempFile: the spill holds real tuple data, and the
+        // java.io variant creates it in the shared temp directory with the process umask (0644 on a
+        // typical POSIX box), readable by every local user. The NIO variant creates it 0600.
+        final File file = Files.createTempFile("grp-part-" + partition + "-", ".spill").toFile();
         file.deleteOnExit();
         files[partition] = file;
         out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file), IO_BUFFER_BYTES));
