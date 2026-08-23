@@ -486,6 +486,7 @@ public class SpillableGroupBy extends Check implements Operator {
     private final int level;
     private final File[] files = new File[NUM_PARTITIONS];
     private final DataOutputStream[] streams = new DataOutputStream[NUM_PARTITIONS];
+    private File spillDir;
 
     PartitionWriter(int level) {
       this.level = level;
@@ -495,16 +496,34 @@ public class SpillableGroupBy extends Check implements Operator {
       final int partition = partitionOf(hash, level);
       DataOutputStream out = streams[partition];
       if (out == null) {
-        // Files.createTempFile, not File.createTempFile: the spill holds real tuple data, and the
-        // java.io variant creates it in the shared temp directory with the process umask (0644 on a
-        // typical POSIX box), readable by every local user. The NIO variant creates it 0600.
-        final File file = Files.createTempFile("grp-part-" + partition + "-", ".spill").toFile();
+        final File file = File.createTempFile("grp-part-" + partition + "-", ".spill", spillDir());
         file.deleteOnExit();
         files[partition] = file;
         out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file), IO_BUFFER_BYTES));
         streams[partition] = out;
       }
       TupleSerializer.write(out, t, ctx);
+    }
+
+    /**
+     * A private directory for this pass's spill files, created on first use.
+     * <p>
+     * The spill holds real tuple data, so it must not sit directly in the shared temp directory
+     * where every local user can read it — {@code File.createTempFile} applies only the process
+     * umask, measured as {@code rw-rw-r--} on a typical POSIX box. {@link Files#createTempDirectory}
+     * creates the directory {@code rwx------}, so the partitions inside are unreachable by other
+     * users whatever mode the files themselves end up with.
+     * <p>
+     * Registered for deletion first, so the JVM's reverse-order exit hooks remove it after the
+     * partition files it contains.
+     */
+    private File spillDir() throws IOException {
+      if (spillDir == null) {
+        final File dir = Files.createTempDirectory("brackit-grp-spill-").toFile();
+        dir.deleteOnExit();
+        spillDir = dir;
+      }
+      return spillDir;
     }
 
     void close() throws IOException {
