@@ -36,6 +36,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
@@ -516,10 +517,15 @@ public class SpillableGroupBy extends Check implements Operator {
      * <p>
      * Registered for deletion first, so the JVM's reverse-order exit hooks remove it after the
      * partition files it contains.
+     * <p>
+     * The base location comes from configuration rather than the JVM default, matching
+     * {@code TupleSort}'s {@code sortDir}: a spill big enough to matter should be placeable on a
+     * disk the operator chooses, not wherever {@code java.io.tmpdir} happens to point.
      */
     private File spillDir() throws IOException {
       if (spillDir == null) {
-        final File dir = Files.createTempDirectory("brackit-grp-spill-").toFile();
+        final Path base = Path.of(Cfg.asString("java.io.tmpdir"));
+        final File dir = Files.createTempDirectory(base, "brackit-grp-spill-").toFile();
         dir.deleteOnExit();
         spillDir = dir;
       }
