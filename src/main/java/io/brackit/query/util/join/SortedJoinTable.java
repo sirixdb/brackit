@@ -58,6 +58,7 @@ public class SortedJoinTable extends AbstractJoinTable {
       entries = Arrays.copyOf(entries, (entries.length * 3) / 2 + 1);
     }
     entries[size++] = new TEntry(new TKey(key), new TValue(bindings, pos));
+    sorted = false;
   }
 
   @Override

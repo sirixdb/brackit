@@ -33,6 +33,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -41,8 +43,28 @@ import io.brackit.query.Query;
 import io.brackit.query.XQueryBaseTest;
 import io.brackit.query.compiler.CompileChain;
 
-/** Regression tests for joins whose inner pipeline adds more columns than the outer pipeline. */
+/** Regression tests for compiled joins: correlated inner pipelines and mixed-type join keys. */
 public class CorrelatedTableJoinTest extends XQueryBaseTest {
+  private boolean joinDetection;
+
+  private boolean unnest;
+
+  @Override
+  @BeforeEach
+  public void setUp() throws Exception {
+    super.setUp();
+    joinDetection = DefaultOptimizer.JOIN_DETECTION;
+    unnest = DefaultOptimizer.UNNEST;
+    DefaultOptimizer.JOIN_DETECTION = true;
+    DefaultOptimizer.UNNEST = true;
+  }
+
+  @AfterEach
+  public void restoreOptimizerFlags() {
+    DefaultOptimizer.JOIN_DETECTION = joinDetection;
+    DefaultOptimizer.UNNEST = unnest;
+  }
+
   private void assertQuery(String expected, String query) {
     var out = new ByteArrayOutputStream();
     new Query(new CompileChain(), query).serialize(ctx, new PrintStream(out));
@@ -95,6 +117,28 @@ public class CorrelatedTableJoinTest extends XQueryBaseTest {
       result += " + $d" + i;
     }
     return bindings + "for $p in [1,2,1][] where $p eq $c and $p gt 0 return " + result;
+  }
+
+  // An uncorrelated join builds its table once, so the probe sees the decimal
+  // keys both before and after integer keys are promoted into them.
+  @Test
+  public void mixedNumericKeysInAscendingComparison() {
+    assertQuery("1 5.5 2.5 5.5", """
+        for $c in [1,2.5][]
+        for $p in [1,5.5][]
+        where $c lt $p
+        return ($c, $p)
+        """);
+  }
+
+  @Test
+  public void mixedNumericKeysInDescendingComparison() {
+    assertQuery("2.5 1", """
+        for $c in [1,2.5][]
+        for $p in [1,5.5][]
+        where $c gt $p
+        return ($c, $p)
+        """);
   }
 
   @ParameterizedTest

@@ -29,6 +29,7 @@ package io.brackit.query.operator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -41,7 +42,9 @@ import io.brackit.query.BrackitQueryContext;
 import io.brackit.query.QueryContext;
 import io.brackit.query.Tuple;
 import io.brackit.query.atomic.Atomic;
+import io.brackit.query.atomic.Dec;
 import io.brackit.query.atomic.Int32;
+import io.brackit.query.atomic.Numeric;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.atomic.Str;
 import io.brackit.query.expr.BoundVariable;
@@ -68,11 +71,15 @@ public class TableJoinTest {
   }
 
   private static Expr values(int... values) {
-    Expr[] exprs = new Expr[values.length];
+    Atomic[] atomics = new Atomic[values.length];
     for (int i = 0; i < values.length; i++) {
-      exprs[i] = new Int32(values[i]);
+      atomics[i] = new Int32(values[i]);
     }
-    return new SequenceExpr(exprs);
+    return atomicValues(atomics);
+  }
+
+  private static Expr atomicValues(Atomic... values) {
+    return new SequenceExpr(values);
   }
 
   private static Expr variable(int pos) {
@@ -120,13 +127,17 @@ public class TableJoinTest {
   }
 
   private static List<String> row(Integer group, int left, Integer right, int leftColumns) {
+    return row(group, Integer.toString(left), right == null ? null : right.toString(), leftColumns);
+  }
+
+  private static List<String> row(Integer group, String left, String right, int leftColumns) {
     var row = new ArrayList<String>();
     row.add(group == null ? null : group.toString());
-    row.add(Integer.toString(left));
+    row.add(left);
     for (int i = 1; i < leftColumns; i++) {
       row.add("L" + i);
     }
-    row.add(right == null ? null : right.toString());
+    row.add(right);
     row.add(right == null ? null : "R");
     return row;
   }
@@ -191,6 +202,37 @@ public class TableJoinTest {
         var join = join(columns, general, false, cmp, values(0, 1, 2, 3, 4), values(rightValues));
         assertEquals(expected, read(join, buffered, 42), cmp.toString());
       }
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("widthsAndInputs")
+  public void promotedNumericKeysStayOrderedForOrderedComparisons(int columns, boolean buffered, boolean general) {
+    // The probe reaches the decimal table as an integer first and as a decimal
+    // second, so that table is searched, then grown by numeric promotion, and
+    // searched again.
+    Atomic[] leftValues = { new Int32(1), new Dec(new BigDecimal("2.5")) };
+    Atomic[] rightValues = { new Int32(1), new Dec(new BigDecimal("5.5")) };
+    for (Cmp cmp : new Cmp[] { Cmp.lt, Cmp.le, Cmp.gt, Cmp.ge }) {
+      var expected = new ArrayList<List<String>>();
+      for (Atomic left : leftValues) {
+        for (Atomic right : rightValues) {
+          double l = ((Numeric) left).doubleValue();
+          double r = ((Numeric) right).doubleValue();
+          boolean match = switch (cmp) {
+            case lt -> l < r;
+            case le -> l <= r;
+            case gt -> l > r;
+            case ge -> l >= r;
+            default -> throw new AssertionError(cmp);
+          };
+          if (match) {
+            expected.add(row(42, left.stringValue(), right.stringValue(), columns));
+          }
+        }
+      }
+      var join = join(columns, general, false, cmp, atomicValues(leftValues), atomicValues(rightValues));
+      assertEquals(expected, read(join, buffered, 42), cmp.toString());
     }
   }
 
