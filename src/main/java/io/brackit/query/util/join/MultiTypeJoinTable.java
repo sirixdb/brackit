@@ -131,19 +131,25 @@ public class MultiTypeJoinTable {
         convertedUntypedAtomicToDbl = true;
       }
 
-      if ((type == Type.DBL) && (!promotedNumericToDbl)) {
-        addToTable(Type.INR, Type.DBL);
-        addToTable(Type.DEC, Type.DBL);
-        addToTable(Type.FLO, Type.DBL);
-        promotedNumericToDbl = true;
-      } else if ((type == Type.FLO) && (!promotedNumericToFlo)) {
-        addToTable(Type.INR, Type.FLO);
-        addToTable(Type.DEC, Type.FLO);
-        promotedNumericToFlo = true;
+      if (type == Type.DBL) {
+        if (!promotedNumericToDbl) {
+          addToTable(Type.INR, Type.DBL);
+          addToTable(Type.DEC, Type.DBL);
+          addToTable(Type.FLO, Type.DBL);
+          promotedNumericToDbl = true;
+        }
+      } else if (type == Type.FLO) {
+        if (!promotedNumericToFlo) {
+          addToTable(Type.INR, Type.FLO);
+          addToTable(Type.DEC, Type.FLO);
+          promotedNumericToFlo = true;
+        }
         probeAtomic(matches, Cast.cast(null, atomic, Type.DBL, false), Type.DBL);
-      } else if ((type == Type.DEC) && (!promotedNumericToDec)) {
-        addToTable(Type.INR, Type.DEC);
-        promotedNumericToDec = true;
+      } else if (type == Type.DEC) {
+        if (!promotedNumericToDec) {
+          addToTable(Type.INR, Type.DEC);
+          promotedNumericToDec = true;
+        }
         probeAtomic(matches, Cast.cast(null, atomic, Type.DBL, false), Type.DBL);
         probeAtomic(matches, Cast.cast(null, atomic, Type.FLO, false), Type.FLO);
       } else if (type == Type.INR) {

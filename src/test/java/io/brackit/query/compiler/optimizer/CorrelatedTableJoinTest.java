@@ -37,6 +37,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import io.brackit.query.Query;
@@ -139,6 +140,21 @@ public class CorrelatedTableJoinTest extends XQueryBaseTest {
         where $c gt $p
         return ($c, $p)
         """);
+  }
+
+  // Every probe row of a narrower numeric type must reach the wider build
+  // tables, not just the first one, in either join orientation.
+  @ParameterizedTest
+  @CsvSource(delimiter = '|', value = { "1.5 2.5 | for $c in (1.5, 2.5) for $p in (3.0e0) where $c lt $p return $c",
+      "1.5 2.5 | for $c in (1.5e0, 2.5e0) for $p in (3.5) where $c lt $p return $c",
+      "1.5 2.5 | for $c in (xs:float(1.5), xs:float(2.5)) for $p in (3.0e0) where $c lt $p return $c",
+      "1.5 2.5 | for $c in (1.5e0, 2.5e0) for $p in (xs:float(3.5)) where $c lt $p return $c",
+      "1.5 2.5 | for $c in (1.5, 2.5) for $p in (xs:float(3.5)) where $c lt $p return $c",
+      "1.5 2.5 | for $c in (xs:float(1.5), xs:float(2.5)) for $p in (3.5) where $c lt $p return $c",
+      "1.5 1.5 | for $c in (1.5, 1.5) for $p in (1.5e0) where $c eq $p return $c",
+      "1.5 1.5 | for $c in (1.5e0, 1.5e0) for $p in (1.5) where $c eq $p return $c" })
+  public void everyProbeReachesWiderNumericBuildTables(String expected, String query) {
+    assertQuery(expected, query);
   }
 
   @ParameterizedTest
