@@ -51,19 +51,16 @@ public class SingleTypeJoinTable {
 
   /**
    * Completes the table: no key can be added afterwards, and probes only read
-   * it. A table that was not sealed is sealed by its first probe.
+   * it. Whoever builds a table that several threads probe calls this before
+   * handing the table to them, in the thread that built it; a table that was
+   * not sealed cannot be probed.
    */
   public final void seal() {
-    if (!sealed) {
-      sealOnce();
+    if (sealed) {
+      return;
     }
-  }
-
-  private synchronized void sealOnce() {
-    if (!sealed) {
-      table.seal();
-      sealed = true;
-    }
+    table.seal();
+    sealed = true;
   }
 
   protected final FastList<Sequence[]> sortAndDeduplicate(FastList<TValue> in) throws QueryException {
@@ -98,11 +95,11 @@ public class SingleTypeJoinTable {
   }
 
   public final FastList<Sequence[]> probe(Sequence keys) throws QueryException {
+    if (!sealed) {
+      throw new IllegalStateException("The join table is not sealed");
+    }
     if (keys == null) {
       return FastList.emptyList();
-    }
-    if (!sealed) {
-      sealOnce();
     }
 
     FastList<TValue> matches = new FastList<TValue>();

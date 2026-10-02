@@ -30,7 +30,7 @@ package io.brackit.query.util.join;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.util.Cmp;
@@ -49,13 +49,25 @@ import io.brackit.query.jdm.Type;
  * The table is filled by {@link #add(Sequence, Sequence[], int)}, which is not
  * thread-safe, and completed by {@link #seal()}. From then on the build keys
  * never change and {@link #probe(Sequence)} may be called by any number of
- * threads at once, as the block pipeline does.
+ * threads at once, as the block pipeline does. A table that was not sealed
+ * cannot be probed.
  * <p>
  * A probe key is compared with a numeric build key of another type in the
  * wider of the two types, and with an untyped build key in its own type
  * (xs:double if it is numeric). Where that takes a copy of the build keys in
- * the other type, the first probe that needs the copy makes it. A copy is made
- * at most once and never changes once another probe can see it.
+ * the other type, the copy is made by the first probe that needs it and not by
+ * {@link #seal()}: a join whose keys are all of one type needs no copy at all,
+ * and making every copy up front would cost that common case a multiple of
+ * its build keys in memory for copies no probe ever reads.
+ * <p>
+ * What the probe path pays for that is one volatile read of the copies made so
+ * far, which hold one entry per type a probe has asked for. A copy is built
+ * before it is handed to that structure, without holding a lock, so a probing
+ * fork-join worker is never blocked behind another one, and it is published
+ * with a compare-and-set. Two probes racing for the same copy may therefore
+ * both build it, and one of the two copies is dropped. That changes no result:
+ * a copy is made of sealed keys, so both of them hold the same keys, and every
+ * probe returns the same rows in the same order whichever one it reads.
  *
  * @author Sebastian Baechle
  */
@@ -90,15 +102,51 @@ public class MultiTypeJoinTable {
 
   private volatile boolean sealed;
 
+  // Copies of the build keys in one other type each, as a probe reads them:
+  // one volatile read of the holding reference takes the whole set, and
+  // looking a type up in it writes nothing.
+  private static final class Copies {
+    static final Copies NONE = new Copies(new Type[0], new AbstractJoinTable[0]);
+
+    // The primitive type constants that "tables" is keyed by, which a probe
+    // key and a build key of the same type share, so they are compared by
+    // identity.
+    private final Type[] types;
+
+    private final AbstractJoinTable[] tables;
+
+    private Copies(Type[] types, AbstractJoinTable[] tables) {
+      this.types = types;
+      this.tables = tables;
+    }
+
+    private AbstractJoinTable get(Type type) {
+      for (int i = 0; i < types.length; i++) {
+        if (types[i] == type) {
+          return tables[i];
+        }
+      }
+      return null;
+    }
+
+    private Copies with(Type type, AbstractJoinTable table) {
+      Type[] grownTypes = Arrays.copyOf(types, types.length + 1);
+      AbstractJoinTable[] grownTables = Arrays.copyOf(tables, tables.length + 1);
+      grownTypes[types.length] = type;
+      grownTables[tables.length] = table;
+      return new Copies(grownTypes, grownTables);
+    }
+  }
+
   // Copies of numeric build keys in a wider numeric type, by that type. These
   // must stay out of "tables": a probe of the narrower type must never see a
   // widened key, only a probe of the wider type may.
-  private final ConcurrentHashMap<Type, AbstractJoinTable> widenedTables = new ConcurrentHashMap<>();
+  private final AtomicReference<Copies> widened = new AtomicReference<>(Copies.NONE);
 
   // Copies of the untyped build keys in the type a probe key compares them in,
   // by that type. These stay out of "tables" too: an untyped probe key is
   // compared with an untyped build key as a string, never in another type.
-  private final ConcurrentHashMap<Type, AbstractJoinTable> convertedTables = new ConcurrentHashMap<>();
+  private final AtomicReference<Copies> converted = new AtomicReference<>(Copies.NONE);
 
   public MultiTypeJoinTable(Cmp cmp, boolean isGCmp, boolean skipSort) {
     this.cmp = cmp;
@@ -189,8 +237,8 @@ public class MultiTypeJoinTable {
     if (!hasKeysNarrowerThan(type)) {
       return null;
     }
-    AbstractJoinTable widened = widenedTables.get(type);
-    return widened != null ? widened : widenedTables.computeIfAbsent(type, this::widen);
+    AbstractJoinTable copy = widened.get().get(type);
+    return copy != null ? copy : publish(widened, type, widen(type));
   }
 
   // xs:integer is narrower than xs:decimal, which is narrower than xs:float,
@@ -206,16 +254,16 @@ public class MultiTypeJoinTable {
   }
 
   private AbstractJoinTable widen(Type type) throws QueryException {
-    AbstractJoinTable widened = createTable();
-    copy(integers, widened, type);
+    AbstractJoinTable widenedKeys = createTable();
+    copy(integers, widenedKeys, type);
     if (type != Type.DEC) {
-      copy(decimals, widened, type);
+      copy(decimals, widenedKeys, type);
     }
     if (type == Type.DBL) {
-      copy(floats, widened, type);
+      copy(floats, widenedKeys, type);
     }
-    widened.seal();
-    return widened;
+    widenedKeys.seal();
+    return widenedKeys;
   }
 
   // The untyped build keys as copies in the given type, or null if there are
@@ -224,15 +272,32 @@ public class MultiTypeJoinTable {
     if (untyped == null) {
       return null;
     }
-    AbstractJoinTable converted = convertedTables.get(type);
-    return converted != null ? converted : convertedTables.computeIfAbsent(type, this::convertUntyped);
+    AbstractJoinTable copy = converted.get().get(type);
+    return copy != null ? copy : publish(converted, type, convertUntyped(type));
   }
 
   private AbstractJoinTable convertUntyped(Type type) throws QueryException {
-    AbstractJoinTable converted = createTable();
-    copy(untyped, converted, type);
-    converted.seal();
-    return converted;
+    AbstractJoinTable convertedKeys = createTable();
+    copy(untyped, convertedKeys, type);
+    convertedKeys.seal();
+    return convertedKeys;
+  }
+
+  // Hands out one copy per type: the one that got there first, which from then
+  // on is the only one a probe can reach. The copy passed in was built outside
+  // of any lock, so a probe making a copy holds up no other probe; at worst two
+  // of them make the same copy and the one that loses the race is dropped here.
+  private static AbstractJoinTable publish(AtomicReference<Copies> copies, Type type, AbstractJoinTable made) {
+    while (true) {
+      Copies current = copies.get();
+      AbstractJoinTable published = current.get(type);
+      if (published != null) {
+        return published;
+      }
+      if (copies.compareAndSet(current, current.with(type, made))) {
+        return made;
+      }
+    }
   }
 
   private static void copy(AbstractJoinTable from, AbstractJoinTable to, Type type) throws QueryException {
@@ -336,16 +401,10 @@ public class MultiTypeJoinTable {
   /**
    * Completes the table: no key can be added afterwards, and probes only read
    * it. Whoever builds a table that several threads probe calls this before
-   * handing the table to them. A table that was not sealed is sealed by its
-   * first probe.
+   * handing the table to them, in the thread that built it; a table that was
+   * not sealed cannot be probed.
    */
   public final void seal() {
-    if (!sealed) {
-      sealOnce();
-    }
-  }
-
-  private synchronized void sealOnce() {
     if (sealed) {
       return;
     }
@@ -371,11 +430,11 @@ public class MultiTypeJoinTable {
   }
 
   public final FastList<Sequence[]> probe(Sequence keys) throws QueryException {
+    if (!sealed) {
+      throw new IllegalStateException("The join table is not sealed");
+    }
     if (keys == null) {
       return FastList.emptyList();
-    }
-    if (!sealed) {
-      sealOnce();
     }
 
     final var matches = new FastList<TValue>();
