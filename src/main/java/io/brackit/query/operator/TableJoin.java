@@ -140,20 +140,13 @@ public final class TableJoin extends Check implements Operator {
         tgk = (Atomic) tuple.get(groupVar);
       }
       int pos = 1;
-      boolean isLeftSizeBiggerOrEqualToRightSize = leftSize >= rightSize;
       Tuple cursorTuple;
 
-      Cursor cursor1 = isLeftSizeBiggerOrEqualToRightSize ? right.create(ctx, tuple) : left.create(ctx, tuple);
+      Cursor cursor1 = right.create(ctx, tuple);
       try {
         cursor1.open(ctx);
         while ((cursorTuple = cursor1.next(ctx)) != null) {
-          Sequence keys;
-
-          if (isLeftSizeBiggerOrEqualToRightSize) {
-            keys = isGCmp ? rightExpr.evaluate(ctx, cursorTuple) : rightExpr.evaluateToItem(ctx, cursorTuple);
-          } else {
-            keys = isGCmp ? leftExpr.evaluate(ctx, cursorTuple) : leftExpr.evaluateToItem(ctx, cursorTuple);
-          }
+          Sequence keys = isGCmp ? rightExpr.evaluate(ctx, cursorTuple) : rightExpr.evaluateToItem(ctx, cursorTuple);
           if (keys != null) {
             Sequence[] tmp = cursorTuple.array();
             Sequence[] bindings = Arrays.copyOfRange(tmp, size, tmp.length);
@@ -168,10 +161,6 @@ public final class TableJoin extends Check implements Operator {
 
   final Operator left;
   final Operator right;
-
-  int leftSize;
-
-  int rightSize;
 
   final Expr rightExpr;
   final Expr leftExpr;
@@ -195,28 +184,22 @@ public final class TableJoin extends Check implements Operator {
 
   @Override
   public Cursor create(QueryContext ctx, Tuple tuple) throws QueryException {
-    leftSize = left.tupleWidth(tuple.getSize());
-    rightSize = right.tupleWidth(tuple.getSize());
-    int lPad = leftSize - tuple.getSize();
-    int rPad = rightSize - tuple.getSize();
-
-    if (leftSize >= rightSize) {
-      return new TableJoinCursor(left.create(ctx, tuple), leftSize, rPad);
-    }
-    return new TableJoinCursor(right.create(ctx, tuple), rightSize, lPad);
+    return createCursor(left.create(ctx, tuple), tuple.getSize());
   }
 
   @Override
   public Cursor create(QueryContext ctx, Tuple[] buf, int len) throws QueryException {
-    leftSize = left.tupleWidth(buf[0].getSize());
-    rightSize = right.tupleWidth(buf[0].getSize());
-    int lPad = leftSize - buf[0].getSize();
-    int rPad = rightSize - buf[0].getSize();
+    return createCursor(left.create(ctx, buf, len), buf[0].getSize());
+  }
 
-    if (leftSize >= rightSize) {
-      return new TableJoinCursor(left.create(ctx, buf, len), leftSize, rPad);
-    }
-    return new TableJoinCursor(right.create(ctx, buf, len), rightSize, lPad);
+  private Cursor createCursor(Cursor cursor, int inputSize) {
+    // The right pipeline is compiled with the left bindings in scope and must
+    // be opened with a left output tuple. Tuple width is not row cardinality:
+    // swapping sides here breaks correlation, binding positions, result order,
+    // comparison direction and left-join iteration checks.
+    int leftSize = left.tupleWidth(inputSize);
+    int rightPad = right.tupleWidth(leftSize) - leftSize;
+    return new TableJoinCursor(cursor, leftSize, rightPad);
   }
 
   @Override

@@ -58,6 +58,7 @@ public class SortedJoinTable extends AbstractJoinTable {
       entries = Arrays.copyOf(entries, (entries.length * 3) / 2 + 1);
     }
     entries[size++] = new TEntry(new TKey(key), new TValue(bindings, pos));
+    sorted = false;
   }
 
   @Override
@@ -81,7 +82,9 @@ public class SortedJoinTable extends AbstractJoinTable {
   private void lessLookup(FastList<TValue> matches, Atomic key) {
     TKey tKey = new TKey(key);
     int lower = 0;
-    int upper = size - 1;
+    int upper = size;
+    // Find the first build key satisfying probe <[=] build. The insertion
+    // point may be size when no build key matches.
     while (lower < upper) {
       int mid = lower + (upper - lower) / 2;
       int p = entries[mid].key.compareTo(tKey);
@@ -101,19 +104,21 @@ public class SortedJoinTable extends AbstractJoinTable {
   private void greaterLookup(FastList<TValue> matches, Atomic key) {
     TKey tKey = new TKey(key);
     int lower = 0;
-    int upper = size - 1;
+    int upper = size;
+    // Find the first build key not satisfying probe >[=] build. The matching
+    // prefix may be empty, including when the table contains only one key.
     while (lower < upper) {
-      int mid = lower + (upper - lower + 1) / 2;
+      int mid = lower + (upper - lower) / 2;
       int p = entries[mid].key.compareTo(tKey);
       if (((cmp == Cmp.gt) && (p >= 0)) || (p > 0)) {
-        upper = mid - 1;
+        upper = mid;
       } else {
-        lower = mid;
+        lower = mid + 1;
       }
     }
 
-    matches.ensureAdditional(lower + 1);
-    for (int i = 0; i < lower + 1; i++) {
+    matches.ensureAdditional(lower);
+    for (int i = 0; i < lower; i++) {
       matches.addUnchecked(entries[i].value);
     }
   }
