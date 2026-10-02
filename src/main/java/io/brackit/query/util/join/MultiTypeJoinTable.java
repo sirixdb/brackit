@@ -56,6 +56,8 @@ public class MultiTypeJoinTable {
 
   private final Map<Type, AbstractJoinTable> tables = new HashMap<>();
 
+  private final Map<Type, AbstractJoinTable> promotedTables = new HashMap<>();
+
   private final Set<Type> convertedUntypedAtomic = new HashSet<>();
 
   private final Set<Type> nonNumericTypes = new HashSet<>();
@@ -113,80 +115,80 @@ public class MultiTypeJoinTable {
 
     if (type == Type.UNA) {
       for (Type nnType : nonNumericTypes) {
-        probeAtomic(matches, Cast.cast(null, atomic, nnType, false), nnType);
+        probeCast(matches, atomic, nnType, false);
       }
       if (numericPresent) {
         if (!promotedNumericToDbl) {
-          addToTable(Type.INR, Type.DBL);
-          addToTable(Type.DEC, Type.DBL);
-          addToTable(Type.FLO, Type.DBL);
+          addToTable(promotedTables, Type.INR, Type.DBL);
+          addToTable(promotedTables, Type.DEC, Type.DBL);
+          addToTable(promotedTables, Type.FLO, Type.DBL);
           promotedNumericToDbl = true;
         }
-        probeAtomic(matches, Cast.cast(null, atomic, Type.DBL, false), Type.DBL);
+        probeCast(matches, atomic, Type.DBL, true);
       }
     } else if (type.isNumeric()) {
       // convert all untyped to dbl and add them
       if (!convertedUntypedAtomicToDbl) {
-        addToTable(Type.UNA, Type.DBL);
+        addToTable(tables, Type.UNA, Type.DBL);
         convertedUntypedAtomicToDbl = true;
       }
 
       if (type == Type.DBL) {
         if (!promotedNumericToDbl) {
-          addToTable(Type.INR, Type.DBL);
-          addToTable(Type.DEC, Type.DBL);
-          addToTable(Type.FLO, Type.DBL);
+          addToTable(promotedTables, Type.INR, Type.DBL);
+          addToTable(promotedTables, Type.DEC, Type.DBL);
+          addToTable(promotedTables, Type.FLO, Type.DBL);
           promotedNumericToDbl = true;
         }
       } else if (type == Type.FLO) {
         if (!promotedNumericToFlo) {
-          addToTable(Type.INR, Type.FLO);
-          addToTable(Type.DEC, Type.FLO);
+          addToTable(promotedTables, Type.INR, Type.FLO);
+          addToTable(promotedTables, Type.DEC, Type.FLO);
           promotedNumericToFlo = true;
         }
-        probeAtomic(matches, Cast.cast(null, atomic, Type.DBL, false), Type.DBL);
+        probeCast(matches, atomic, Type.DBL, false);
       } else if (type == Type.DEC) {
         if (!promotedNumericToDec) {
-          addToTable(Type.INR, Type.DEC);
+          addToTable(promotedTables, Type.INR, Type.DEC);
           promotedNumericToDec = true;
         }
-        probeAtomic(matches, Cast.cast(null, atomic, Type.DBL, false), Type.DBL);
-        probeAtomic(matches, Cast.cast(null, atomic, Type.FLO, false), Type.FLO);
+        probeCast(matches, atomic, Type.DBL, false);
+        probeCast(matches, atomic, Type.FLO, false);
       } else if (type == Type.INR) {
-        probeAtomic(matches, Cast.cast(null, atomic, Type.DBL, false), Type.DBL);
-        probeAtomic(matches, Cast.cast(null, atomic, Type.FLO, false), Type.FLO);
-        probeAtomic(matches, Cast.cast(null, atomic, Type.DEC, false), Type.DEC);
+        probeCast(matches, atomic, Type.DBL, false);
+        probeCast(matches, atomic, Type.FLO, false);
+        probeCast(matches, atomic, Type.DEC, false);
       }
 
       probeAtomic(matches, atomic, type);
     } else {
       // convert all untyped to type and add them
       if (!convertedUntypedAtomic.contains(type)) {
-        addToTable(Type.UNA, type);
+        addToTable(tables, Type.UNA, type);
         convertedUntypedAtomic.add(type);
       }
 
       probeAtomic(matches, atomic, type);
 
       if (type == Type.STR) {
-        probeAtomic(matches, Cast.cast(null, atomic, Type.AURI, false), Type.AURI);
+        probeCast(matches, atomic, Type.AURI, false);
       } else if (type == Type.AURI) {
-        probeAtomic(matches, Cast.cast(null, atomic, Type.STR, false), Type.STR);
+        probeCast(matches, atomic, Type.STR, false);
       }
     }
   }
 
-  private void addToTable(Type from, Type to) throws QueryException {
+  private void addToTable(Map<Type, AbstractJoinTable> target, Type from, Type to) throws QueryException {
     AbstractJoinTable fromTable = tables.get(from);
 
     if (fromTable == null) {
       return;
     }
 
-    AbstractJoinTable table = tables.get(to);
+    AbstractJoinTable table = target.get(to);
     if (table == null) {
       table = createTable();
-      tables.put(to, table);
+      target.put(to, table);
     }
 
     for (TEntry entry : fromTable.entries()) {
@@ -201,18 +203,44 @@ public class MultiTypeJoinTable {
   }
 
   private void probeAtomic(FastList<TValue> matches, Atomic atomic, Type type) throws QueryException {
+    lookupIn(matches, tables.get(type), atomic);
+    lookupIn(matches, promotedTables.get(type), atomic);
+  }
+
+  private void probeCast(FastList<TValue> matches, Atomic atomic, Type type, boolean includePromoted)
+      throws QueryException {
     AbstractJoinTable table = tables.get(type);
+    AbstractJoinTable promoted = includePromoted ? promotedTables.get(type) : null;
+    if (table == null && promoted == null) {
+      return;
+    }
+    Atomic key = Cast.cast(null, atomic, type, false);
+    lookupIn(matches, table, key);
+    lookupIn(matches, promoted, key);
+  }
+
+  private static void lookupIn(FastList<TValue> matches, AbstractJoinTable table, Atomic key) throws QueryException {
     if (table != null) {
-      table.lookup(matches, atomic);
+      table.lookup(matches, key);
     }
   }
 
   protected final FastList<Sequence[]> sortAndDeduplicate(FastList<TValue> in) throws QueryException {
     int inSize = in.getSize();
-    if ((skipSort) || (inSize < 2)) {
+    if (inSize < 2) {
       FastList<Sequence[]> out = new FastList<>(inSize);
       for (int i = 0; i < inSize; i++) {
         out.add(in.get(i).bindings);
+      }
+      return out;
+    } else if (skipSort) {
+      FastList<Sequence[]> out = new FastList<>(inSize);
+      Set<Integer> seen = new HashSet<>();
+      for (int i = 0; i < inSize; i++) {
+        TValue v = in.get(i);
+        if (seen.add(v.pos)) {
+          out.add(v.bindings);
+        }
       }
       return out;
     } else {

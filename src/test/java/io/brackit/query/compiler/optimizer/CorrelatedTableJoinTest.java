@@ -157,6 +157,30 @@ public class CorrelatedTableJoinTest extends XQueryBaseTest {
     assertQuery(expected, query);
   }
 
+  // Promoting a build key into a wider table loses precision, so a probe must
+  // compare against the key's own type rather than the widened copy.
+  @ParameterizedTest
+  @CsvSource(delimiter = '|', value = {
+      "5 1.00000000000000000001 | for $c in (0.5, 5.0e0, 1.0) for $p in (1.00000000000000000001) where $c ge $p return ($c, $p)",
+      "1.00000000000000000001 5 | for $c in (1.00000000000000000001) for $p in (0.5, 5.0e0, 1.0) where $c le $p return ($c, $p)",
+      "5 1.00000000000000000001 | for $c in (5.0e0, 1) for $p in (1.00000000000000000001) where $c ge $p return ($c, $p)",
+      "1.00000000000000000001 5 | for $c in (1.00000000000000000001) for $p in (5.0e0, 1) where $c le $p return ($c, $p)",
+      "5 0.99999999999 | for $c in (5.0e0, xs:float(1.0)) for $p in (0.99999999999) where $c gt $p return ($c, $p)",
+      "0.99999999999 5 | for $c in (0.99999999999) for $p in (5.0e0, xs:float(1.0)) where $c lt $p return ($c, $p)" })
+  public void widenedBuildKeysDoNotMatchOutsideTheirOwnType(String expected, String query) {
+    assertQuery(expected, query);
+  }
+
+  // A build row reached through both its own table and a wider one is still one
+  // row, in unordered mode too, where the position sort is skipped.
+  @ParameterizedTest
+  @CsvSource(delimiter = '|', value = {
+      "1.5 0.5 1.5 0.5 2.5 0.5 | declare ordering unordered; for $c in (1.5, 1.5e0, 2.5) for $p in (0.5) where $c gt $p return ($c, $p)",
+      "0.5 1.5 0.5 1.5 0.5 2.5 | declare ordering unordered; for $c in (0.5) for $p in (1.5, 1.5e0, 2.5) where $c lt $p return ($c, $p)" })
+  public void unorderedModeStillEmitsEachBuildRowOnce(String expected, String query) {
+    assertQuery(expected, query);
+  }
+
   @ParameterizedTest
   @ValueSource(ints = { 0, 1, 2 })
   public void equalityPreservesOrderAndDuplicates(int leftBindings) {
