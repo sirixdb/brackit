@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -177,6 +178,31 @@ public class ParallelTableJoinTest {
     for (int run = 0; run < RUNS; run++) {
       List<String> actual = assertTimeoutPreemptively(Duration.ofSeconds(60), () -> rows(parallel, probe, build));
       assertEquals(expected, actual, "run " + run);
+    }
+  }
+
+  // Without ordered loading, the forks of the right input add their rows to the
+  // table concurrently.
+  @Test
+  public void unorderedLoadingKeepsEveryBuildRow() {
+    String key = "org.brackit.xquery.join.loadordered";
+    String previous = System.getProperty(key);
+    System.setProperty(key, "false");
+    try {
+      Item[] build = items(BUILD_SIZE, i -> new Int32(buildValue(i)));
+      Item[] probe = items(2000, i -> new Int32(i + 1));
+      String query = PROLOG + "for $c in $probe for $p in $build where $c eq $p return $p";
+      Query parallel = new Query(new BlockCompileChain(false), query);
+      for (int run = 0; run < RUNS; run++) {
+        List<String> actual = assertTimeoutPreemptively(Duration.ofSeconds(60), () -> rows(parallel, probe, build));
+        assertEquals(countBuild(b -> buildValue(b) <= 2000), actual.size(), "run " + run);
+      }
+    } finally {
+      if (previous == null) {
+        System.clearProperty(key);
+      } else {
+        System.setProperty(key, previous);
+      }
     }
   }
 
