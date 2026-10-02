@@ -87,6 +87,11 @@ public class TableJoinTest {
   }
 
   private TableJoin join(int leftColumns, boolean general, boolean outer, Cmp cmp, Expr leftValues, Expr rightValues) {
+    return join(leftColumns, general, outer, false, cmp, leftValues, rightValues);
+  }
+
+  private TableJoin join(int leftColumns, boolean general, boolean outer, boolean skipSort, Cmp cmp, Expr leftValues,
+      Expr rightValues) {
     Operator left = new ForBind(new Start(), leftValues, false);
     for (int i = 1; i < leftColumns; i++) {
       left = new LetBind(left, new Str("L" + i));
@@ -99,7 +104,7 @@ public class TableJoinTest {
       leftKey = new SequenceExpr(leftKey, leftKey);
       rightKey = new SequenceExpr(rightKey, rightKey);
     }
-    return new TableJoin(cmp, general, outer, false, left, leftKey, right, rightKey);
+    return new TableJoin(cmp, general, outer, skipSort, left, leftKey, right, rightKey);
   }
 
   private List<List<String>> read(TableJoin join, boolean buffered, int... groups) {
@@ -146,6 +151,17 @@ public class TableJoinTest {
   @MethodSource("widthsAndInputs")
   public void equalityKeepsBindingPositionsOrderAndDuplicates(int columns, boolean buffered, boolean general) {
     var join = join(columns, general, false, Cmp.eq, values(3, 1, 2, 1), values(1, 2, 1));
+    assertEquals(List.of(row(42, 1, 1, columns),
+                         row(42, 1, 1, columns),
+                         row(42, 2, 2, columns),
+                         row(42, 1, 1, columns),
+                         row(42, 1, 1, columns)), read(join, buffered, 42));
+  }
+
+  @ParameterizedTest
+  @MethodSource("widthsAndInputs")
+  public void unorderedModeEmitsEachMatchedRowOnce(int columns, boolean buffered, boolean general) {
+    var join = join(columns, general, false, true, Cmp.eq, values(3, 1, 2, 1), values(1, 2, 1));
     assertEquals(List.of(row(42, 1, 1, columns),
                          row(42, 1, 1, columns),
                          row(42, 2, 2, columns),
@@ -208,9 +224,9 @@ public class TableJoinTest {
   @ParameterizedTest
   @MethodSource("widthsAndInputs")
   public void promotedNumericKeysStayOrderedForOrderedComparisons(int columns, boolean buffered, boolean general) {
-    // The probe reaches the decimal table as an integer first and as a decimal
-    // second, so that table is searched, then grown by numeric promotion, and
-    // searched again.
+    // The probe reaches the decimal build table first by cross-probing it as an
+    // integer and then as a decimal, when the promoted integer copies are read
+    // alongside it.
     Atomic[] leftValues = { new Int32(1), new Dec(new BigDecimal("2.5")) };
     Atomic[] rightValues = { new Int32(1), new Dec(new BigDecimal("5.5")) };
     for (Cmp cmp : new Cmp[] { Cmp.lt, Cmp.le, Cmp.gt, Cmp.ge }) {

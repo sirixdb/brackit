@@ -120,8 +120,8 @@ public class CorrelatedTableJoinTest extends XQueryBaseTest {
     return bindings + "for $p in [1,2,1][] where $p eq $c and $p gt 0 return " + result;
   }
 
-  // An uncorrelated join builds its table once, so the probe sees the decimal
-  // keys both before and after integer keys are promoted into them.
+  // An uncorrelated join builds its table once, so one set of tables serves
+  // probe rows of both numeric types.
   @Test
   public void mixedNumericKeysInAscendingComparison() {
     assertQuery("1 5.5 2.5 5.5", """
@@ -171,14 +171,30 @@ public class CorrelatedTableJoinTest extends XQueryBaseTest {
     assertQuery(expected, query);
   }
 
-  // A build row reached through both its own table and a wider one is still one
-  // row, in unordered mode too, where the position sort is skipped.
+  // A build row matched more than once by a single probe is emitted once, in
+  // unordered mode too, where the position sort is skipped.
   @ParameterizedTest
   @CsvSource(delimiter = '|', value = {
+      "1 1 2 2 | declare ordering unordered; for $c in (1, 2) for $p in (1, 2) where ($c, $c) = ($p, $p) return ($c, $p)",
+      "1 1 2 2 | declare ordering unordered; for $c in (1, 2) for $p in (1, 2) where ($c, $c) = $p return ($c, $p)",
       "1.5 0.5 1.5 0.5 2.5 0.5 | declare ordering unordered; for $c in (1.5, 1.5e0, 2.5) for $p in (0.5) where $c gt $p return ($c, $p)",
       "0.5 1.5 0.5 1.5 0.5 2.5 | declare ordering unordered; for $c in (0.5) for $p in (1.5, 1.5e0, 2.5) where $c lt $p return ($c, $p)" })
   public void unorderedModeStillEmitsEachBuildRowOnce(String expected, String query) {
     assertQuery(expected, query);
+  }
+
+  // Converting untyped build keys to double appends to the double table during
+  // the probe phase, so a table an earlier probe already searched has to be
+  // sorted again before the next lookup.
+  @Test
+  public void untypedConversionReordersAnAlreadySearchedTable() {
+    assertQuery("1.5 1.0", """
+        let $d := <a><b>1.0</b></a>
+        return (for $c in ($d/b/text(), 1.5e0)
+                for $p in (2.0e0, $d/b/text())
+                where $c > $p
+                return ($c, string($p)))
+        """);
   }
 
   @ParameterizedTest
