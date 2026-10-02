@@ -42,9 +42,28 @@ public class SingleTypeJoinTable {
 
   protected final AbstractJoinTable table;
 
+  private volatile boolean sealed;
+
   public SingleTypeJoinTable(QueryContext ctx, AbstractJoinTable table) {
     this.ctx = ctx;
     this.table = table;
+  }
+
+  /**
+   * Completes the table: no key can be added afterwards, and probes only read
+   * it. A table that was not sealed is sealed by its first probe.
+   */
+  public final void seal() {
+    if (!sealed) {
+      sealOnce();
+    }
+  }
+
+  private synchronized void sealOnce() {
+    if (!sealed) {
+      table.seal();
+      sealed = true;
+    }
   }
 
   protected final FastList<Sequence[]> sortAndDeduplicate(FastList<TValue> in) throws QueryException {
@@ -63,6 +82,9 @@ public class SingleTypeJoinTable {
   }
 
   public final void add(Sequence keys, Sequence[] bindings, int pos) throws QueryException {
+    if (sealed) {
+      throw new IllegalStateException("The join table is sealed");
+    }
     if (keys instanceof Item) {
       table.add(((Item) keys).atomize(), pos, bindings);
     } else {
@@ -78,6 +100,9 @@ public class SingleTypeJoinTable {
   public final FastList<Sequence[]> probe(Sequence keys) throws QueryException {
     if (keys == null) {
       return FastList.emptyList();
+    }
+    if (!sealed) {
+      sealOnce();
     }
 
     FastList<TValue> matches = new FastList<TValue>();

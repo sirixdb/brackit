@@ -46,7 +46,9 @@ public class SortedJoinTable extends AbstractJoinTable {
 
   private int size;
 
-  private boolean sorted;
+  // Written by the building thread only. The table reaches other threads after
+  // it is sealed, so they never see it change.
+  private boolean sealed;
 
   public SortedJoinTable(Cmp cmp) {
     this.cmp = cmp;
@@ -54,18 +56,30 @@ public class SortedJoinTable extends AbstractJoinTable {
 
   @Override
   protected void add(Atomic key, int pos, Sequence[] bindings) throws QueryException {
+    if (sealed) {
+      throw new IllegalStateException("The join table is sealed");
+    }
     if (size == entries.length) {
       entries = Arrays.copyOf(entries, (entries.length * 3) / 2 + 1);
     }
     entries[size++] = new TEntry(new TKey(key), new TValue(bindings, pos));
-    sorted = false;
+  }
+
+  // The keys are sorted exactly once, here, and not by the first lookup: that
+  // lookup runs in several threads at once, which would sort one array
+  // concurrently.
+  @Override
+  protected void seal() {
+    if (!sealed) {
+      Arrays.sort(entries, 0, size);
+      sealed = true;
+    }
   }
 
   @Override
   protected void lookup(FastList<TValue> matches, Atomic key) throws QueryException {
-    if (!sorted) {
-      Arrays.sort(entries, 0, size);
-      sorted = true;
+    if (!sealed) {
+      throw new IllegalStateException("The join table is not sealed");
     }
 
     if (cmp == Cmp.eq) {

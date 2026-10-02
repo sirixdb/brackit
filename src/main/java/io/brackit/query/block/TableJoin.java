@@ -194,6 +194,9 @@ public class TableJoin implements Block {
         rightIn.fail();
         throw e;
       }
+      // The table is complete. Seal it here, in the one thread that loaded it,
+      // so that the threads probing it from now on only read it.
+      table.seal();
       join.gk = (groupVar >= 0 && groupVar < t.getSize()) ? (Atomic) t.get(groupVar) : null;
       join.table = table;
     }

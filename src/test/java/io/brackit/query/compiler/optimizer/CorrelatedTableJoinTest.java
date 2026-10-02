@@ -185,9 +185,8 @@ public class CorrelatedTableJoinTest extends XQueryBaseTest {
     assertQuery(expected, query);
   }
 
-  // Converting untyped build keys to double appends to the double table during
-  // the probe phase, so a table an earlier probe already searched has to be
-  // sorted again before the next lookup.
+  // A numeric probe key compares the untyped build keys as doubles, also after
+  // an earlier untyped probe searched the double build keys without them.
   @Test
   public void untypedConversionReordersAnAlreadySearchedTable() {
     assertQuery("1.5 1.0", """
@@ -208,6 +207,17 @@ public class CorrelatedTableJoinTest extends XQueryBaseTest {
       "1 2.5 0.5 | let $d := <a><b>3</b></a> return (for $c in $d/b/text() for $p in (1, 2.5, xs:float(0.5), 9.0e0) where $c > $p return string($p))",
       "2 | let $d := <a><b>2</b></a> return (for $c in $d/b/text() for $p in (1, 2) where $c = $p return string($p))" })
   public void untypedProbeReachesPromotedNumericBuildKeys(String expected, String query) {
+    assertQuery(expected, query);
+  }
+
+  // An untyped probe key compares an untyped build key as a string, also after a
+  // numeric probe key compared that build key as a double: "1.0" does not equal
+  // "1". The rows must not depend on the order of the probe keys.
+  @ParameterizedTest
+  @CsvSource(delimiter = '|', value = {
+      "1 | let $d := <a><b>1</b><c>1.0</c></a> return (for $c in (1, $d/c/text()) for $p in $d/b/text() where $c = $p return string($c))",
+      "1 | let $d := <a><b>1</b><c>1.0</c></a> return (for $c in ($d/c/text(), 1) for $p in $d/b/text() where $c = $p return string($c))" })
+  public void untypedProbeComparesUntypedBuildKeysAsStrings(String expected, String query) {
     assertQuery(expected, query);
   }
 

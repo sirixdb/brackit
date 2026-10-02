@@ -156,6 +156,7 @@ public final class TableJoin extends Check implements Operator {
       } finally {
         cursor1.close(ctx);
       }
+      table.seal();
     }
   }
 

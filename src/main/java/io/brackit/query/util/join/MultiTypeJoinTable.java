@@ -27,10 +27,10 @@
  */
 package io.brackit.query.util.join;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.util.Cmp;
@@ -44,6 +44,19 @@ import io.brackit.query.jdm.Sequence;
 import io.brackit.query.jdm.Type;
 
 /**
+ * A join table for build keys of mixed types.
+ * <p>
+ * The table is filled by {@link #add(Sequence, Sequence[], int)}, which is not
+ * thread-safe, and completed by {@link #seal()}. From then on the build keys
+ * never change and {@link #probe(Sequence)} may be called by any number of
+ * threads at once, as the block pipeline does.
+ * <p>
+ * A probe key is compared with a numeric build key of another type in the
+ * wider of the two types, and with an untyped build key in its own type
+ * (xs:double if it is numeric). Where that takes a copy of the build keys in
+ * the other type, the first probe that needs the copy makes it. A copy is made
+ * at most once and never changes once another probe can see it.
+ *
  * @author Sebastian Baechle
  */
 public class MultiTypeJoinTable {
@@ -54,27 +67,38 @@ public class MultiTypeJoinTable {
 
   private final boolean skipSort;
 
-  private final Map<Type, AbstractJoinTable> tables = new HashMap<>();
+  // The build keys by their primitive type, in the order the types came.
+  private final Map<Type, AbstractJoinTable> tables = new LinkedHashMap<>();
 
-  // Copies of build keys widened to a wider numeric type. These must stay out
-  // of "tables": a probe of the narrower type must never see a widened key,
-  // only a probe of the wider type may, so the two maps are looked up together
-  // for the probed type and never merged.
-  private final Map<Type, AbstractJoinTable> promotedTables = new HashMap<>();
+  // What a probe reads of the build keys. All of it is written once by seal()
+  // before "sealed" is set, and a probe reads "sealed" first.
+  private AbstractJoinTable integers;
 
-  private final Set<Type> convertedUntypedAtomic = new HashSet<>();
+  private AbstractJoinTable decimals;
 
-  private final Set<Type> nonNumericTypes = new HashSet<>();
+  private AbstractJoinTable floats;
 
-  private boolean convertedUntypedAtomicToDbl;
+  private AbstractJoinTable doubles;
 
-  private boolean promotedNumericToDbl;
+  private AbstractJoinTable untyped;
 
-  private boolean promotedNumericToFlo;
+  private Type[] nonNumericTypes;
 
-  private boolean promotedNumericToDec;
+  private AbstractJoinTable[] nonNumericTables;
 
   private boolean numericPresent;
+
+  private volatile boolean sealed;
+
+  // Copies of numeric build keys in a wider numeric type, by that type. These
+  // must stay out of "tables": a probe of the narrower type must never see a
+  // widened key, only a probe of the wider type may.
+  private final ConcurrentHashMap<Type, AbstractJoinTable> widenedTables = new ConcurrentHashMap<>();
+
+  // Copies of the untyped build keys in the type a probe key compares them in,
+  // by that type. These stay out of "tables" too: an untyped probe key is
+  // compared with an untyped build key as a string, never in another type.
+  private final ConcurrentHashMap<Type, AbstractJoinTable> convertedTables = new ConcurrentHashMap<>();
 
   public MultiTypeJoinTable(Cmp cmp, boolean isGCmp, boolean skipSort) {
     this.cmp = cmp;
@@ -101,11 +125,6 @@ public class MultiTypeJoinTable {
       tables.put(type, table);
     }
     table.add(atomic, pos, bindings);
-    if (type.isNumeric()) {
-      numericPresent = true;
-    } else {
-      nonNumericTypes.add(type);
-    }
   }
 
   private void probeItem(FastList<TValue> matches, Item key) throws QueryException {
@@ -118,111 +137,121 @@ public class MultiTypeJoinTable {
     }
 
     if (type == Type.UNA) {
-      for (Type nnType : nonNumericTypes) {
-        probeCast(matches, atomic, nnType, false);
+      for (int i = 0; i < nonNumericTypes.length; i++) {
+        probeCast(matches, atomic, nonNumericTypes[i], nonNumericTables[i], null);
       }
       if (numericPresent) {
-        if (!promotedNumericToDbl) {
-          addToTable(promotedTables, Type.INR, Type.DBL);
-          addToTable(promotedTables, Type.DEC, Type.DBL);
-          addToTable(promotedTables, Type.FLO, Type.DBL);
-          promotedNumericToDbl = true;
-        }
         // An untyped probe reaches every numeric build type through xs:double,
-        // so this is the only lookup that must include the promoted keys.
-        probeCast(matches, atomic, Type.DBL, true);
+        // so this is the only cast lookup that must include the widened keys.
+        probeCast(matches, atomic, Type.DBL, doubles, widenedTo(Type.DBL));
       }
     } else if (type.isNumeric()) {
-      // convert all untyped to dbl and add them
-      if (!convertedUntypedAtomicToDbl) {
-        addToTable(tables, Type.UNA, Type.DBL);
-        convertedUntypedAtomicToDbl = true;
-      }
+      // Untyped build keys are compared with a numeric probe key as xs:double.
+      AbstractJoinTable untypedDoubles = untypedAs(Type.DBL);
 
       if (type == Type.DBL) {
-        if (!promotedNumericToDbl) {
-          addToTable(promotedTables, Type.INR, Type.DBL);
-          addToTable(promotedTables, Type.DEC, Type.DBL);
-          addToTable(promotedTables, Type.FLO, Type.DBL);
-          promotedNumericToDbl = true;
-        }
+        lookupIn(matches, doubles, atomic);
+        lookupIn(matches, untypedDoubles, atomic);
+        lookupIn(matches, widenedTo(Type.DBL), atomic);
       } else if (type == Type.FLO) {
-        if (!promotedNumericToFlo) {
-          addToTable(promotedTables, Type.INR, Type.FLO);
-          addToTable(promotedTables, Type.DEC, Type.FLO);
-          promotedNumericToFlo = true;
-        }
-        probeCast(matches, atomic, Type.DBL, false);
+        probeCast(matches, atomic, Type.DBL, doubles, untypedDoubles);
+        lookupIn(matches, floats, atomic);
+        lookupIn(matches, widenedTo(Type.FLO), atomic);
       } else if (type == Type.DEC) {
-        if (!promotedNumericToDec) {
-          addToTable(promotedTables, Type.INR, Type.DEC);
-          promotedNumericToDec = true;
-        }
-        probeCast(matches, atomic, Type.DBL, false);
-        probeCast(matches, atomic, Type.FLO, false);
+        probeCast(matches, atomic, Type.DBL, doubles, untypedDoubles);
+        probeCast(matches, atomic, Type.FLO, floats, null);
+        lookupIn(matches, decimals, atomic);
+        lookupIn(matches, widenedTo(Type.DEC), atomic);
       } else if (type == Type.INR) {
-        probeCast(matches, atomic, Type.DBL, false);
-        probeCast(matches, atomic, Type.FLO, false);
-        probeCast(matches, atomic, Type.DEC, false);
+        probeCast(matches, atomic, Type.DBL, doubles, untypedDoubles);
+        probeCast(matches, atomic, Type.FLO, floats, null);
+        probeCast(matches, atomic, Type.DEC, decimals, null);
+        lookupIn(matches, integers, atomic);
       }
-
-      probeAtomic(matches, atomic, type);
     } else {
-      // convert all untyped to type and add them
-      if (!convertedUntypedAtomic.contains(type)) {
-        addToTable(tables, Type.UNA, type);
-        convertedUntypedAtomic.add(type);
-      }
+      // Untyped build keys are compared with any other probe key in its type.
+      AbstractJoinTable untypedOfType = untypedAs(type);
 
-      probeAtomic(matches, atomic, type);
+      lookupIn(matches, tables.get(type), atomic);
+      lookupIn(matches, untypedOfType, atomic);
 
       if (type == Type.STR) {
-        probeCast(matches, atomic, Type.AURI, false);
+        probeCast(matches, atomic, Type.AURI, tables.get(Type.AURI), null);
       } else if (type == Type.AURI) {
-        probeCast(matches, atomic, Type.STR, false);
+        probeCast(matches, atomic, Type.STR, tables.get(Type.STR), null);
       }
     }
   }
 
-  private void addToTable(Map<Type, AbstractJoinTable> target, Type from, Type to) throws QueryException {
-    AbstractJoinTable fromTable = tables.get(from);
+  // The numeric build keys narrower than the given type as copies in that
+  // type, or null if there are none.
+  private AbstractJoinTable widenedTo(Type type) throws QueryException {
+    if (!hasKeysNarrowerThan(type)) {
+      return null;
+    }
+    AbstractJoinTable widened = widenedTables.get(type);
+    return widened != null ? widened : widenedTables.computeIfAbsent(type, this::widen);
+  }
 
-    if (fromTable == null) {
+  // xs:integer is narrower than xs:decimal, which is narrower than xs:float,
+  // which is narrower than xs:double.
+  private boolean hasKeysNarrowerThan(Type type) {
+    if (integers != null) {
+      return true;
+    }
+    if (type == Type.DEC) {
+      return false;
+    }
+    return decimals != null || (type == Type.DBL && floats != null);
+  }
+
+  private AbstractJoinTable widen(Type type) throws QueryException {
+    AbstractJoinTable widened = createTable();
+    copy(integers, widened, type);
+    if (type != Type.DEC) {
+      copy(decimals, widened, type);
+    }
+    if (type == Type.DBL) {
+      copy(floats, widened, type);
+    }
+    widened.seal();
+    return widened;
+  }
+
+  // The untyped build keys as copies in the given type, or null if there are
+  // none. A key that cannot be cast fails every probe that asks for the type.
+  private AbstractJoinTable untypedAs(Type type) throws QueryException {
+    if (untyped == null) {
+      return null;
+    }
+    AbstractJoinTable converted = convertedTables.get(type);
+    return converted != null ? converted : convertedTables.computeIfAbsent(type, this::convertUntyped);
+  }
+
+  private AbstractJoinTable convertUntyped(Type type) throws QueryException {
+    AbstractJoinTable converted = createTable();
+    copy(untyped, converted, type);
+    converted.seal();
+    return converted;
+  }
+
+  private static void copy(AbstractJoinTable from, AbstractJoinTable to, Type type) throws QueryException {
+    if (from == null) {
       return;
     }
-
-    AbstractJoinTable table = target.get(to);
-    if (table == null) {
-      table = createTable();
-      target.put(to, table);
-    }
-
-    for (TEntry entry : fromTable.entries()) {
-      table.add(Cast.cast(null, entry.key.atomic, to, false), entry.value.pos, entry.value.bindings);
-    }
-
-    if (to.isNumeric()) {
-      numericPresent = true;
-    } else {
-      nonNumericTypes.add(to);
+    for (TEntry entry : from.entries()) {
+      to.add(Cast.cast(null, entry.key.atomic, type, false), entry.value.pos, entry.value.bindings);
     }
   }
 
-  private void probeAtomic(FastList<TValue> matches, Atomic atomic, Type type) throws QueryException {
-    lookupIn(matches, tables.get(type), atomic);
-    lookupIn(matches, promotedTables.get(type), atomic);
-  }
-
-  private void probeCast(FastList<TValue> matches, Atomic atomic, Type type, boolean includePromoted)
-      throws QueryException {
-    AbstractJoinTable table = tables.get(type);
-    AbstractJoinTable promoted = includePromoted ? promotedTables.get(type) : null;
-    if (table == null && promoted == null) {
+  private static void probeCast(FastList<TValue> matches, Atomic atomic, Type type, AbstractJoinTable table,
+      AbstractJoinTable copies) throws QueryException {
+    if (table == null && copies == null) {
       return;
     }
     Atomic key = Cast.cast(null, atomic, type, false);
     lookupIn(matches, table, key);
-    lookupIn(matches, promoted, key);
+    lookupIn(matches, copies, key);
   }
 
   private static void lookupIn(FastList<TValue> matches, AbstractJoinTable table, Atomic key) throws QueryException {
@@ -289,6 +318,9 @@ public class MultiTypeJoinTable {
     if (keys == null) {
       return;
     }
+    if (sealed) {
+      throw new IllegalStateException("The join table is sealed");
+    }
     if (keys instanceof Item item) {
       addItem(item, bindings, pos);
     } else {
@@ -301,9 +333,49 @@ public class MultiTypeJoinTable {
     }
   }
 
+  /**
+   * Completes the table: no key can be added afterwards, and probes only read
+   * it. Whoever builds a table that several threads probe calls this before
+   * handing the table to them. A table that was not sealed is sealed by its
+   * first probe.
+   */
+  public final void seal() {
+    if (!sealed) {
+      sealOnce();
+    }
+  }
+
+  private synchronized void sealOnce() {
+    if (sealed) {
+      return;
+    }
+    Type[] types = new Type[tables.size()];
+    AbstractJoinTable[] typeTables = new AbstractJoinTable[types.length];
+    int size = 0;
+    for (Map.Entry<Type, AbstractJoinTable> entry : tables.entrySet()) {
+      entry.getValue().seal();
+      if (!entry.getKey().isNumeric()) {
+        types[size] = entry.getKey();
+        typeTables[size++] = entry.getValue();
+      }
+    }
+    nonNumericTypes = Arrays.copyOf(types, size);
+    nonNumericTables = Arrays.copyOf(typeTables, size);
+    integers = tables.get(Type.INR);
+    decimals = tables.get(Type.DEC);
+    floats = tables.get(Type.FLO);
+    doubles = tables.get(Type.DBL);
+    untyped = tables.get(Type.UNA);
+    numericPresent = integers != null || decimals != null || floats != null || doubles != null;
+    sealed = true;
+  }
+
   public final FastList<Sequence[]> probe(Sequence keys) throws QueryException {
     if (keys == null) {
       return FastList.emptyList();
+    }
+    if (!sealed) {
+      sealOnce();
     }
 
     final var matches = new FastList<TValue>();
