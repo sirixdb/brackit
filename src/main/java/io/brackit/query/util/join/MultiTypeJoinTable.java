@@ -27,7 +27,6 @@
  */
 package io.brackit.query.util.join;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -72,10 +71,6 @@ public class MultiTypeJoinTable {
   private boolean promotedNumericToDec;
 
   private boolean numericPresent;
-
-  private int[] seenAtGeneration = new int[0];
-
-  private int probeGeneration;
 
   public MultiTypeJoinTable(Cmp cmp, boolean isGCmp, boolean skipSort) {
     this.cmp = cmp;
@@ -240,10 +235,10 @@ public class MultiTypeJoinTable {
       return out;
     } else if (skipSort) {
       FastList<Sequence[]> out = new FastList<>(inSize);
-      int generation = nextProbeGeneration();
+      int[] seen = new int[Integer.highestOneBit(inSize) << 2];
       for (int i = 0; i < inSize; i++) {
         TValue v = in.get(i);
-        if (firstSightOf(v.pos, generation)) {
+        if (addSeenPos(seen, v.pos)) {
           out.add(v.bindings);
         }
       }
@@ -263,22 +258,17 @@ public class MultiTypeJoinTable {
     }
   }
 
-  private int nextProbeGeneration() {
-    if (probeGeneration == Integer.MAX_VALUE) {
-      Arrays.fill(seenAtGeneration, 0);
-      probeGeneration = 0;
+  private static boolean addSeenPos(int[] seen, int pos) {
+    int mask = seen.length - 1;
+    int hash = pos * 0x9E3779B1;
+    int slot = (hash ^ (hash >>> 16)) & mask;
+    while (seen[slot] != 0) {
+      if (seen[slot] == pos) {
+        return false;
+      }
+      slot = (slot + 1) & mask;
     }
-    return ++probeGeneration;
-  }
-
-  private boolean firstSightOf(int pos, int generation) {
-    if (pos >= seenAtGeneration.length) {
-      seenAtGeneration = Arrays.copyOf(seenAtGeneration, Math.max(pos + 1, seenAtGeneration.length * 2));
-    }
-    if (seenAtGeneration[pos] == generation) {
-      return false;
-    }
-    seenAtGeneration[pos] = generation;
+    seen[slot] = pos;
     return true;
   }
 

@@ -42,6 +42,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import io.brackit.query.Query;
 import io.brackit.query.XQueryBaseTest;
+import io.brackit.query.jdm.Iter;
+import io.brackit.query.compiler.BlockCompileChain;
 import io.brackit.query.compiler.CompileChain;
 
 /** Regression tests for compiled joins: correlated inner pipelines and mixed-type join keys. */
@@ -207,6 +209,26 @@ public class CorrelatedTableJoinTest extends XQueryBaseTest {
       "2 | let $d := <a><b>2</b></a> return (for $c in $d/b/text() for $p in (1, 2) where $c = $p return string($p))" })
   public void untypedProbeReachesPromotedNumericBuildKeys(String expected, String query) {
     assertQuery(expected, query);
+  }
+
+  // The block pipeline probes one shared join table from several threads, so the
+  // unordered de-duplication must not keep state on the table.
+  @Test
+  public void parallelUnorderedJoinKeepsEveryMatch() throws Exception {
+    var query = """
+        declare ordering unordered;
+        for $c in (1 to 100000)
+        for $p in (1 to 10)
+        where $c ge $p
+        return $c
+        """;
+    long rows = 0;
+    try (Iter it = new Query(new BlockCompileChain(false), query).execute(ctx).iterate()) {
+      while (it.next() != null) {
+        rows++;
+      }
+    }
+    assertEquals(45 + 99991L * 10, rows);
   }
 
   @ParameterizedTest
