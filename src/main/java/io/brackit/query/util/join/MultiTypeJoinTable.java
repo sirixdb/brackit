@@ -56,6 +56,10 @@ public class MultiTypeJoinTable {
 
   private final Map<Type, AbstractJoinTable> tables = new HashMap<>();
 
+  // Copies of build keys widened to a wider numeric type. These must stay out
+  // of "tables": a probe of the narrower type must never see a widened key,
+  // only a probe of the wider type may, so the two maps are looked up together
+  // for the probed type and never merged.
   private final Map<Type, AbstractJoinTable> promotedTables = new HashMap<>();
 
   private final Set<Type> convertedUntypedAtomic = new HashSet<>();
@@ -124,6 +128,8 @@ public class MultiTypeJoinTable {
           addToTable(promotedTables, Type.FLO, Type.DBL);
           promotedNumericToDbl = true;
         }
+        // An untyped probe reaches every numeric build type through xs:double,
+        // so this is the only lookup that must include the promoted keys.
         probeCast(matches, atomic, Type.DBL, true);
       }
     } else if (type.isNumeric()) {
@@ -234,6 +240,9 @@ public class MultiTypeJoinTable {
       }
       return out;
     } else if (skipSort) {
+      // Order does not matter here, but a build row must still be emitted at
+      // most once per probe: it is reachable through more than one type table,
+      // and a general comparison probes with every item of the key sequence.
       FastList<Sequence[]> out = new FastList<>(inSize);
       int[] seen = new int[Integer.highestOneBit(inSize) << 2];
       for (int i = 0; i < inSize; i++) {
@@ -258,6 +267,10 @@ public class MultiTypeJoinTable {
     }
   }
 
+  // Open-addressed set of build positions. Positions are assigned from 1 by
+  // the join's table build loop, so 0 marks a free slot, and the table holds
+  // more than twice as many slots as there are matches, so the probe sequence
+  // always hits one.
   private static boolean addSeenPos(int[] seen, int pos) {
     int mask = seen.length - 1;
     int hash = pos * 0x9E3779B1;
