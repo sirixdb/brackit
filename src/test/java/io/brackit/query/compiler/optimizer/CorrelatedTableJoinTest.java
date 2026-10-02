@@ -197,6 +197,18 @@ public class CorrelatedTableJoinTest extends XQueryBaseTest {
         """);
   }
 
+  // An untypedAtomic probe key reaches numeric build keys only as a double, so
+  // it has to see the integer, decimal and float keys promoted into that table.
+  @ParameterizedTest
+  @CsvSource(delimiter = '|', value = {
+      "1 2.5 | let $d := <a><b>3</b></a> return (for $c in $d/b/text() for $p in (1, 2.5) where $c > $p return string($p))",
+      "1.5 | let $d := <a><b>3</b></a> return (for $c in $d/b/text() for $p in (xs:float(1.5), xs:float(9.5)) where $c > $p return string($p))",
+      "1 2.5 0.5 | let $d := <a><b>3</b></a> return (for $c in $d/b/text() for $p in (1, 2.5, xs:float(0.5), 9.0e0) where $c > $p return string($p))",
+      "2 | let $d := <a><b>2</b></a> return (for $c in $d/b/text() for $p in (1, 2) where $c = $p return string($p))" })
+  public void untypedProbeReachesPromotedNumericBuildKeys(String expected, String query) {
+    assertQuery(expected, query);
+  }
+
   @ParameterizedTest
   @ValueSource(ints = { 0, 1, 2 })
   public void equalityPreservesOrderAndDuplicates(int leftBindings) {

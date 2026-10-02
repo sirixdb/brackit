@@ -27,6 +27,7 @@
  */
 package io.brackit.query.util.join;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -71,6 +72,10 @@ public class MultiTypeJoinTable {
   private boolean promotedNumericToDec;
 
   private boolean numericPresent;
+
+  private int[] seenAtGeneration = new int[0];
+
+  private int probeGeneration;
 
   public MultiTypeJoinTable(Cmp cmp, boolean isGCmp, boolean skipSort) {
     this.cmp = cmp;
@@ -235,10 +240,10 @@ public class MultiTypeJoinTable {
       return out;
     } else if (skipSort) {
       FastList<Sequence[]> out = new FastList<>(inSize);
-      Set<Integer> seen = new HashSet<>();
+      int generation = nextProbeGeneration();
       for (int i = 0; i < inSize; i++) {
         TValue v = in.get(i);
-        if (seen.add(v.pos)) {
+        if (firstSightOf(v.pos, generation)) {
           out.add(v.bindings);
         }
       }
@@ -256,6 +261,25 @@ public class MultiTypeJoinTable {
       }
       return out;
     }
+  }
+
+  private int nextProbeGeneration() {
+    if (probeGeneration == Integer.MAX_VALUE) {
+      Arrays.fill(seenAtGeneration, 0);
+      probeGeneration = 0;
+    }
+    return ++probeGeneration;
+  }
+
+  private boolean firstSightOf(int pos, int generation) {
+    if (pos >= seenAtGeneration.length) {
+      seenAtGeneration = Arrays.copyOf(seenAtGeneration, Math.max(pos + 1, seenAtGeneration.length * 2));
+    }
+    if (seenAtGeneration[pos] == generation) {
+      return false;
+    }
+    seenAtGeneration[pos] = generation;
+    return true;
   }
 
   public final void add(Sequence keys, Sequence[] bindings, int pos) throws QueryException {
