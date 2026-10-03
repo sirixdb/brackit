@@ -47,16 +47,23 @@ import io.brackit.query.sequence.BaseIter;
  * <p>
  * This array is read-only — mutation methods throw {@link UnsupportedOperationException}.
  * Operations that require random access ({@link #at(int)}, {@link #values()}, {@link #length()})
- * force materialization up to the requested index or fully. Once iteration consumes an
- * uncached element, subsequent iterators and random access throw a {@link QueryException}
- * because the consumed elements cannot be replayed. Materialize before iterating if
- * multiple reads are required.
+ * force materialization up to the requested index or fully. Once an iterator consumes an
+ * uncached element, only that iterator may continue reading; other iterators, including
+ * ones created earlier, and materialization or random access throw a {@link QueryException}.
+ * Consumed uncached elements cannot be replayed. Fully materialize with {@link #values()}
+ * or {@link #length()} before consuming uncached elements if multiple reads are required;
+ * materializing only a prefix does not make the uncached suffix replayable.
+ * <p>
+ * A parsing failure is terminal: the failing read propagates the original exception,
+ * and every later read throws a {@link QueryException} with that exception as its cause,
+ * including reads through the owning iterator or of cached elements.
  */
 public final class StreamingArray extends AbstractArray {
 
   private final StreamingJSONParser parser;
   private final boolean wrappedInObject;
 
+  // Parser consumption, ownership, cache updates, and failure state use this array's monitor.
   // Cache for materialized elements (for random access)
   private final List<Sequence> materialized = new ArrayList<>();
   private boolean fullyMaterialized;
@@ -250,6 +257,7 @@ public final class StreamingArray extends AbstractArray {
       }
       return item;
     } catch (RuntimeException e) {
+      // The parser may already have advanced; forbid all later reads instead of exposing a suffix.
       parsingFailure = e;
       throw e;
     }

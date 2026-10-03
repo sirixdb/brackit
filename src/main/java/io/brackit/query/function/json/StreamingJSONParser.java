@@ -45,9 +45,9 @@ import io.brackit.query.jsonitem.object.ArrayObject;
 /**
  * Streaming JSON parser that reads from an {@link InputStream} in fixed-size buffer chunks.
  * <p>
- * For top-level arrays (or objects wrapping a single array), returns a {@link StreamingArray}
- * whose elements are parsed on-demand — the file is never fully loaded into memory.
- * For small or non-array inputs, falls back to buffering and using {@link FastJSONParser}.
+ * For top-level arrays, returns a {@link StreamingArray} whose elements are parsed on-demand.
+ * Arrays inside objects are materialized before the object is returned; other non-array
+ * inputs are buffered and parsed with {@link FastJSONParser}.
  * <p>
  * This enables processing of multi-GB JSON files that exceed Java's array size limit.
  */
@@ -87,9 +87,7 @@ public final class StreamingJSONParser {
   // For now, the streaming path with 8MB buffer and zero-copy slices is used.
 
   /**
-   * Parse the top-level JSON value. If it's an array or an object containing a single
-   * array value, returns a {@link StreamingArray} for lazy element-by-element parsing.
-   * Otherwise buffers the entire input and parses with {@link FastJSONParser}.
+   * Parse the top-level JSON value using the strategies described by {@link StreamingJSONParser}.
    */
   public Item parse() throws QueryException {
     try {
@@ -425,9 +423,9 @@ public final class StreamingJSONParser {
   }
 
   /**
-   * Parse a top-level object. Parses field by field; when a field value is an array,
-   * it's represented as a StreamingArray for lazy parsing. This allows queries like
-   * {@code $$.users[]} to stream through a large inner array without materialization.
+   * Parse a top-level object field by field. Array values must be fully parsed or
+   * captured before advancing to the next field so no returned array shares the
+   * object's advancing parser cursor.
    */
   private Item parseObjectOrStream() throws QueryException, IOException {
     // Save position to rewind on parse issues
@@ -477,13 +475,12 @@ public final class StreamingJSONParser {
 
       if (pos < limit && buf[pos] == '[') {
         // Try to find the matching ']' within the current buffer (zero-copy).
-        // If found, capture the byte range and create a deferred-parse array.
         // If the array spans buffer boundaries, fall back to StreamingArray + materialize.
         int arrayStart = pos; // points at '['
         int arrayEnd = findMatchingClose(pos);
 
         if (arrayEnd > 0) {
-          // Array fits in buffer — capture byte range, advance cursor, parse lazily
+          // Retain the array bytes independently of the refillable buffer.
           pos = arrayEnd; // advance past ']'
           byte[] arrayBytes = new byte[arrayEnd - arrayStart];
           System.arraycopy(buf, arrayStart, arrayBytes, 0, arrayEnd - arrayStart);
