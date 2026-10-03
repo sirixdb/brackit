@@ -124,11 +124,13 @@ public class DynamicFunctionExpr implements Expr {
     if (functionItem instanceof Function function) {
       function.getSignature().checkArity(argumentsSize);
       int pos = 0;
-      for (Sequence sequence : tuple.array()) {
-        if (sequence == functionItem) {
-          break;
+      if (!function.isBuiltIn()) {
+        for (Sequence sequence : tuple.array()) {
+          if (sequence == functionItem) {
+            break;
+          }
+          pos++;
         }
-        pos++;
       }
 
       final ItemType dftCtxItemType = function.getSignature().defaultCtxItemType();

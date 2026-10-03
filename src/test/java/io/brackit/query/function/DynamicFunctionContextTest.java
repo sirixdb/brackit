@@ -21,6 +21,38 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DynamicFunctionContextTest extends XQueryBaseTest {
+  @ParameterizedTest
+  @ValueSource(strings = { "true", "false" })
+  void zeroArgumentBuiltinsDoNotReceiveFilterFocus(String name) {
+    ctx.bind(new QNm("f"), new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, name), 0));
+    String declaration = "declare variable $f external; ";
+    boolean keep = name.equals("true");
+    ResultChecker.dCheck(keep ? new ItemSequence(Int32.ZERO, Int32.ONE, new Int32(2)) : null,
+                         new Query(declaration + "(0,1,2)[?$f()]").execute(ctx));
+    ResultChecker.dCheck(keep ? Int32.ZERO : null, new Query(declaration + "0[?$f()]").execute(ctx));
+    ResultChecker.dCheck(new Int32(keep ? 2 : 0),
+                         new Query(declaration + "count(<r><a/><b/><c/></r>/c/preceding-sibling::*[?$f()])").execute(ctx));
+  }
+
+  @Test
+  void zeroArgumentCollectionUsesDefaultCollectionInsidePredicates() {
+    ctx.setDefaultNodeCollection(storeDocument("default", "<default/>"));
+    ctx.bind(new QNm("f"), new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "collection"), 0));
+    String declaration = "declare variable $f external; ";
+    ResultChecker.dCheck(new ItemSequence(new Str("missing"), new Str("other")),
+                         new Query(declaration + "('missing','other')[?exists($f())]").execute(ctx));
+    ResultChecker.dCheck(new Str("missing"), new Query(declaration + "'missing'[?exists($f())]").execute(ctx));
+    ResultChecker.dCheck(new Int32(2),
+                         new Query(declaration + "count(<r><a/><b/><c/></r>/c/preceding-sibling::*[?exists($f())])").execute(ctx));
+  }
+
+  @Test
+  void explicitBuiltinArgumentsRemainSeparateFromFocus() {
+    ctx.bind(new QNm("f"), new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "boolean"), 1));
+    ResultChecker.dCheck(null,
+                         new Query("declare variable $f external; (0,1,2)[?$$ and $f(false())]").execute(ctx));
+  }
+
   private void bindStringLength() {
     ctx.bind(new QNm("f"),
              new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "string-length"), 0));

@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import io.brackit.query.atomic.IntNumeric;
-import io.brackit.query.expr.DefaultCtxItem;
 import io.brackit.query.expr.PredicateExpr;
+import io.brackit.query.expr.Variable;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
@@ -16,7 +16,20 @@ public final class QueryExecution {
   private static final ScopedValue<QueryExecution> CURRENT = ScopedValue.newInstance();
 
   private final QueryContext context;
-  private Map<DefaultCtxItem, Item> contextItems;
+  private Map<Variable, DeclarationValue> declarations;
+
+  private static final class DeclarationValue {
+    private Sequence value;
+    private boolean initialized;
+
+    synchronized Sequence get(Supplier<? extends Sequence> initializer) {
+      if (!initialized) {
+        value = initializer.get();
+        initialized = true;
+      }
+      return value;
+    }
+  }
 
   QueryExecution(QueryContext context) {
     this.context = context;
@@ -33,19 +46,23 @@ public final class QueryExecution {
         : scope == null ? ScopedValue.where(CURRENT, execution) : scope.where(CURRENT, execution);
   }
 
-  public static Item resolveDefaultContextItem(QueryContext context, DefaultCtxItem declaration,
-                                             Supplier<Item> initializer) {
+  public static Sequence resolveDeclaration(QueryContext context, Variable declaration,
+                                            Supplier<? extends Sequence> initializer) {
     QueryExecution execution = current();
     return execution != null && execution.context == context
         ? execution.resolve(declaration, initializer)
         : initializer.get();
   }
 
-  private synchronized Item resolve(DefaultCtxItem declaration, Supplier<Item> initializer) {
-    if (contextItems == null) {
-      contextItems = new IdentityHashMap<>(1);
+  private Sequence resolve(Variable declaration, Supplier<? extends Sequence> initializer) {
+    DeclarationValue value;
+    synchronized (this) {
+      if (declarations == null) {
+        declarations = new IdentityHashMap<>(1);
+      }
+      value = declarations.computeIfAbsent(declaration, ignored -> new DeclarationValue());
     }
-    return contextItems.computeIfAbsent(declaration, ignored -> initializer.get());
+    return value.get(initializer);
   }
 
   public <T> T call(Supplier<T> operation) {

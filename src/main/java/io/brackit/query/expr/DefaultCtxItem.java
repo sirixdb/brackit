@@ -78,7 +78,7 @@ public class DefaultCtxItem extends Variable implements Unit {
 
   @Override
   public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
-    return QueryExecution.resolveDefaultContextItem(ctx, this, () -> initialize(ctx, tuple));
+    return (Item) QueryExecution.resolveDeclaration(ctx, this, () -> initialize(ctx, tuple));
   }
 
   private Item initialize(QueryContext ctx, Tuple tuple) {

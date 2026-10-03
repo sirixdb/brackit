@@ -129,7 +129,7 @@ public class StepExpr extends PredicateExpr {
         }
       } else {
         // the filter predicate is dependent on the context item
-        if (backwardAxis && !reversed) {
+        if (backwardAxis && !reversed && (!ebvFilter[i] || bindPos[i] || bindSize[i])) {
           s = reverse(s);
           reversed = true;
         }
