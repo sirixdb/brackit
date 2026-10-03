@@ -44,8 +44,8 @@ import io.brackit.query.Tuple;
  * </p>
  *
  * <p>
- * For performance reasons sequences may only be iterated and do not allow
- * direct access to specific elements.
+ * Indexed access and size calculation may require iteration; implementations
+ * can provide more efficient access when supported by their backend.
  * </p>
  *
  * <p>
@@ -79,6 +79,13 @@ public interface Sequence extends Tuple, Expr {
    */
   IntNumeric size() throws QueryException;
 
+  /**
+   * Returns the exact cardinality when it is cheaply available without evaluating
+   * or consuming the sequence. Unlike {@link #size()}, this method must not
+   * traverse the value or construct its items to determine the cardinality.
+   *
+   * @return the non-negative cardinality, or {@code null} if it is unknown
+   */
   default IntNumeric knownSize() {
     return null;
   }

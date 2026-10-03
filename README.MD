@@ -300,14 +300,14 @@ and materialization behavior.
 
 For opted-in `item()*` and `item()+` results, return conversion preserves the
 backend's `size()`, indexed access and skip paths for multi-item values. Backends
-can override `Sequence.knownSize()` with an accurate, non-consuming cardinality;
-the default `null` reports that cardinality is unknown. Repeatability alone does
-not promise cheap cardinality. Empty and singleton results become `null` or the
-actual `Item`, matching materialized results. Without known cardinality, the
-return boundary peeks at most two items, closes that reader, and replays the raw
-prefix before opening an independent tail reader. No tail is counted or drained
-at the boundary. Item-type constraints still validate consumed and skipped
-items; singleton/empty return bounds use eager bounded lookahead.
+with cheap cardinality can also override `Sequence.knownSize()`; see its
+[API contract](src/main/java/io/brackit/query/jdm/Sequence.java). Repeatability
+alone does not promise cheap cardinality. Empty and singleton results become
+`null` or the actual `Item`, matching materialized results. Without known
+cardinality, the return boundary peeks at most two items, closes that reader,
+and replays the raw prefix before opening an independent tail reader. No tail is
+counted or drained at the boundary. Item-type constraints still validate consumed
+and skipped items; singleton/empty return bounds use eager bounded lookahead.
 Deferred recursion overflow becomes the existing `BIDY0006` query error, so a
 consuming expression such as `try {count(local:slice())} catch * {...}` can catch it.
 Existing argument and shared-binding policies are unchanged.
