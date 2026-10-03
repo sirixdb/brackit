@@ -121,6 +121,18 @@ public abstract class AbstractJoinTable {
 
   protected abstract void add(Atomic key, int pos, Sequence[] bindings) throws QueryException;
 
+  /**
+   * Ends the build phase. The table is complete once this returns and is only
+   * read from then on, so any number of threads may look keys up in it at the
+   * same time.
+   */
+  protected void seal() {
+  }
+
+  /**
+   * Collects the build rows matching the given key. This must not change the
+   * table: one sealed table is probed by several threads at once.
+   */
   protected abstract void lookup(FastList<TValue> matches, Atomic key) throws QueryException;
 
   protected abstract List<TEntry> entries();

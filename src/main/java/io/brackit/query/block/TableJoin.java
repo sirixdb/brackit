@@ -194,6 +194,9 @@ public class TableJoin implements Block {
         rightIn.fail();
         throw e;
       }
+      // The table is complete. Seal it here, in the one thread that loaded it,
+      // so that the threads probing it from now on only read it.
+      table.seal();
       join.gk = (groupVar >= 0 && groupVar < t.getSize()) ? (Atomic) t.get(groupVar) : null;
       join.table = table;
     }
@@ -354,7 +357,10 @@ public class TableJoin implements Block {
     }
   }
 
-  private final class Load extends ConcurrentSink {
+  // Unless the load is ordered, the forks of the right input deliver their rows
+  // here concurrently. Their keys are evaluated concurrently, but the rows are
+  // added to the table, which is not thread-safe, one batch at a time.
+  private final class Load extends MutexSink {
     final QueryContext ctx;
     final MultiTypeJoinTable table;
     final int offset;
@@ -372,16 +378,37 @@ public class TableJoin implements Block {
     }
 
     @Override
-    public void output(Tuple[] buf, int len) throws QueryException {
+    protected Out doPreOutput(Tuple[] buf, int len) throws QueryException {
+      Rows rows = new Rows(len);
       for (int i = 0; i < len; i++) {
         Tuple t = buf[i];
         Sequence keys = (isGCmp) ? rExpr.evaluate(ctx, t) : rExpr.evaluateToItem(ctx, t);
         if (keys != null) {
           Sequence[] tmp = t.array();
-          Sequence[] bindings = Arrays.copyOfRange(tmp, offset, tmp.length);
-          table.add(keys, bindings, pos++);
+          rows.keys[rows.len] = keys;
+          rows.bindings[rows.len++] = Arrays.copyOfRange(tmp, offset, tmp.length);
         }
       }
+      return rows;
+    }
+
+    @Override
+    protected void doOutput(Out out) throws QueryException {
+      Rows rows = (Rows) out;
+      for (int i = 0; i < rows.len; i++) {
+        table.add(rows.keys[i], rows.bindings[i], pos++);
+      }
+    }
+  }
+
+  private static final class Rows extends MutexSink.Out {
+    final Sequence[] keys;
+    final Sequence[][] bindings;
+    int len;
+
+    Rows(int capacity) {
+      keys = new Sequence[capacity];
+      bindings = new Sequence[capacity][];
     }
   }
 
