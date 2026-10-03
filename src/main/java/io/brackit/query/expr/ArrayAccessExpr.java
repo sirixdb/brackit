@@ -148,19 +148,23 @@ public final class ArrayAccessExpr implements Expr {
             try {
               Item item;
 
-              if (nestedIter != null) {
-                if ((item = nestedIter.next()) != null) {
-                  returned = true;
-                  return item;
+              while (true) {
+                if (nestedIter != null) {
+                  if ((item = nestedIter.next()) != null) {
+                    returned = true;
+                    return item;
+                  }
+                  try {
+                    nestedIter.close();
+                  } finally {
+                    nestedIter = null;
+                  }
                 }
-                try {
-                  nestedIter.close();
-                } finally {
-                  nestedIter = null;
-                }
-              }
 
-              while ((item = iter.next()) != null) {
+                item = iter.next();
+                if (item == null) {
+                  return null;
+                }
                 if (!(item instanceof Array array)) {
                   continue;
                 }
@@ -188,12 +192,12 @@ public final class ArrayAccessExpr implements Expr {
                     continue;
                   }
 
-                  item = array.at((int) index).evaluateToItem(ctx, tuple);
-                  returned = item != null;
-                  return item;
+                  final Sequence selected = array.at((int) index);
+                  if (selected != null) {
+                    nestedIter = selected.iterate();
+                  }
                 }
               }
-              return null;
             } finally {
               if (!returned) {
                 close();

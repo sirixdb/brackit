@@ -102,30 +102,67 @@ public class DerefExpr implements Expr {
         // an exhausted iterator on the second pass.
         final Iter iter = base.iterate();
         return new BaseIter() {
+          Iter nestedIter;
+          boolean closed;
+
           @Override
           public Item next() {
-            Item item;
-            while ((item = iter.next()) != null) {
-              if (!(item instanceof Object obj)) {
-                continue;
-              }
+            if (closed) {
+              return null;
+            }
+            boolean returned = false;
+            try {
+              Item item;
+              while (true) {
+                if (nestedIter != null) {
+                  if ((item = nestedIter.next()) != null) {
+                    returned = true;
+                    return item;
+                  }
+                  try {
+                    nestedIter.close();
+                  } finally {
+                    nestedIter = null;
+                  }
+                }
 
-              Item itemField = field.evaluateToItem(ctx, tuple);
-              if (itemField == null) {
-                continue;
-              }
+                item = iter.next();
+                if (item == null) {
+                  return null;
+                }
+                if (!(item instanceof Object obj)) {
+                  continue;
+                }
 
-              final var sequenceByRecordField = getSequenceByRecordField(obj, itemField);
-              if (sequenceByRecordField != null) {
-                return sequenceByRecordField.evaluateToItem(ctx, tuple);
+                Item itemField = field.evaluateToItem(ctx, tuple);
+                if (itemField == null) {
+                  continue;
+                }
+
+                final var selected = getSequenceByRecordField(obj, itemField);
+                if (selected != null) {
+                  nestedIter = selected.iterate();
+                }
+              }
+            } finally {
+              if (!returned) {
+                close();
               }
             }
-            return null;
           }
 
           @Override
           public void close() {
-            iter.close();
+            if (!closed) {
+              closed = true;
+              try {
+                if (nestedIter != null) {
+                  nestedIter.close();
+                }
+              } finally {
+                iter.close();
+              }
+            }
           }
         };
       }

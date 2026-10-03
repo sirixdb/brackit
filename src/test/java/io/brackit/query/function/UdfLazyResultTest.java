@@ -29,6 +29,8 @@ package io.brackit.query.function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -55,6 +57,7 @@ import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.jdm.Signature;
 import io.brackit.query.jsonitem.array.DArray;
+import io.brackit.query.jsonitem.object.ArrayObject;
 import io.brackit.query.jdm.type.SequenceType;
 import io.brackit.query.jdm.type.AnyItemType;
 import io.brackit.query.jdm.type.AtomicType;
@@ -64,6 +67,7 @@ import io.brackit.query.module.Functions;
 import io.brackit.query.module.StaticContext;
 import io.brackit.query.sequence.AbstractSequence;
 import io.brackit.query.sequence.BaseIter;
+import io.brackit.query.sequence.ItemSequence;
 import io.brackit.query.sequence.LazySequence;
 import io.brackit.query.sequence.TypedSequence;
 import io.brackit.query.util.ExprUtil;
@@ -92,6 +96,7 @@ public class UdfLazyResultTest extends XQueryBaseTest {
     boolean varyingArrayLengths;
     boolean failOnSize = true;
     Item value;
+    Item[] values;
   }
 
   private static final class Keys extends AbstractFunction {
@@ -125,6 +130,9 @@ public class UdfLazyResultTest extends XQueryBaseTest {
           }
           if (probe.value != null) {
             return probe.value;
+          }
+          if (probe.values != null) {
+            return probe.values[position - 1];
           }
           return position == probe.badItem ? new Str("bad") : new Int32(position);
         }
@@ -261,6 +269,43 @@ public class UdfLazyResultTest extends XQueryBaseTest {
   private String calls(String type, String body) {
     return "declare function local:f() as " + type + " {" + body + "}; " + "let $f := function() as " + type + " {"
         + body + "} return ";
+  }
+
+  private record LookupOutcome(List<Integer> values, QNm error) {
+  }
+
+  private LookupOutcome lookupOutcome(String text) {
+    List<Integer> values = new ArrayList<>();
+    try {
+      Sequence result = query(text);
+      if (result != null) {
+        try (Iter it = result.iterate()) {
+          Item item;
+          while ((item = it.next()) != null) {
+            values.add(((IntNumeric) item).intValue());
+          }
+        }
+      }
+      return new LookupOutcome(values, null);
+    } catch (QueryException error) {
+      return new LookupOutcome(values, error.getCode());
+    }
+  }
+
+  private Item lookupContainer(boolean object, Sequence member) {
+    return object
+        ? new ArrayObject(new QNm[] { new QNm("v"), new QNm("empty"), new QNm("tail") },
+                          new Sequence[] { member, null, new Int32(30) })
+        : new DArray(Arrays.asList(member, null, new Int32(30)));
+  }
+
+  private Probe singletonLookupProbe(boolean repeatable, Item value) {
+    resetProbe();
+    Probe probe = PROBE.get();
+    probe.length = 1;
+    probe.repeatable = repeatable;
+    probe.value = value;
+    return probe;
   }
 
   @ParameterizedTest
@@ -767,22 +812,21 @@ public class UdfLazyResultTest extends XQueryBaseTest {
   @ValueSource(strings = { "local:f()", "$f()" })
   public void lazyArrayBoundsPreserveFullWidthAndSingletonBehavior(String call) {
     for (String body : new String[] { "probe:keys()", "local:id(probe:keys())" }) {
-      for (String access : new String[] { "[4294967296]", "[1]", "[0]", "[-1]", "[-4294967296]" }) {
-        resetProbe();
-        PROBE.get().length = 1;
-        PROBE.get().arrays = true;
+      for (String access : new String[] { "[4294967296]", "[1]", "[0]", "[-1]", "[-4294967296]", "[-2]", "[2147483648]",
+          "[-2147483648]", "[9223372036854775807]", "[-9223372036854775808]", "[1.0]", "['bad']", "[true()]",
+          "[()]" }) {
         String text = "declare function local:id($s as item()*) as item()* {($s)}; " + calls("item()*", body) + call
             + access;
-        if (access.equals("[-4294967296]")) {
-          assertEquals(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-                       assertThrows(QueryException.class, () -> ExprUtil.asItem(query(text))).getCode());
-        } else if (access.equals("[0]") || access.equals("[-1]")) {
-          assertEquals(10, ((IntNumeric) ExprUtil.asItem(query(text))).intValue());
-        } else {
-          assertNull(ExprUtil.asItem(query(text)));
-        }
-        assertEquals(1, PROBE.get().opened);
-        assertEquals(1, PROBE.get().closed);
+        Item array = new DArray(List.of(new Int32(10)));
+        Probe baselineProbe = singletonLookupProbe(false, array);
+        LookupOutcome baseline = lookupOutcome(text);
+        assertEquals(1, baselineProbe.opened, text);
+        assertEquals(1, baselineProbe.closed, text);
+        Probe lazyProbe = singletonLookupProbe(true, array);
+        assertEquals(baseline, lookupOutcome(text), text);
+        assertEquals(1, lazyProbe.constructed, text);
+        assertEquals(1, lazyProbe.opened, text);
+        assertEquals(1, lazyProbe.closed, text);
       }
     }
     resetProbe();
@@ -791,6 +835,135 @@ public class UdfLazyResultTest extends XQueryBaseTest {
     assertEquals(0, integer("let $s as item()* := probe:keys() return count($s[4294967296])"));
     assertEquals(1, PROBE.get().opened);
     assertEquals(1, PROBE.get().closed);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void sequenceValuedAndEmptyLookupsMatchMaterializedSingletons(String call) {
+    for (boolean object : new boolean[] { false, true }) {
+      for (Sequence member : new Sequence[] { new ItemSequence(new Int32(10), new Int32(20)), null, new ItemSequence(),
+          new Int32(10) }) {
+        for (String body : new String[] { "probe:keys()", "local:id(probe:keys())" }) {
+          for (String access : object
+              ? new String[] { ".v", ".(0)", ".('v')", ".empty", ".(1)", ".tail", ".missing" }
+              : new String[] { "[0]", "[-3]", "[1]", "[-2]", "[2]", "[-1]", "[3]", "[-4]", "[4294967296]",
+                  "[-4294967296]" }) {
+            String text = "declare function local:id($s as item()*) as item()* {($s)}; " + calls("item()*", body) + call
+                + access;
+            Probe baselineProbe = singletonLookupProbe(false, lookupContainer(object, member));
+            LookupOutcome baseline = lookupOutcome(text);
+            if (access.equals("[0]") || access.equals("[-3]") || access.equals(".v") || access.equals(".(0)") || access
+                                                                                                                       .equals(".('v')")) {
+              List<Integer> expected = member == null || member.size().intValue() == 0
+                  ? List.of()
+                  : member instanceof Item ? List.of(10) : List.of(10, 20);
+              assertEquals(new LookupOutcome(expected, null), baseline, text);
+            }
+            assertEquals(1, baselineProbe.opened, text);
+            assertEquals(1, baselineProbe.closed, text);
+            Probe lazyProbe = singletonLookupProbe(true, lookupContainer(object, member));
+            assertEquals(baseline, lookupOutcome(text), text);
+            assertEquals(1, lazyProbe.constructed, text);
+            assertEquals(1, lazyProbe.opened, text);
+            assertEquals(1, lazyProbe.closed, text);
+          }
+        }
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void emptySelectedSequencesDoNotHideLaterLookupResults(String call) {
+    for (boolean object : new boolean[] { false, true }) {
+      for (String body : new String[] { "probe:keys()", "local:id(probe:keys())" }) {
+        resetProbe();
+        Probe probe = PROBE.get();
+        probe.length = 3;
+        probe.values = new Item[] { lookupContainer(object, null), lookupContainer(object, new ItemSequence()),
+            lookupContainer(object, new ItemSequence(new Int32(10), new Int32(20))) };
+        String text = "declare function local:id($s as item()*) as item()* {($s)}; " + calls("item()*", body) + call
+            + (object ? ".v" : "[0]");
+        assertEquals(new LookupOutcome(List.of(10, 20), null), lookupOutcome(text));
+        assertEquals(3, probe.constructed);
+        assertEquals(1, probe.opened);
+        assertEquals(1, probe.closed);
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void selectedLookupReadersCloseAfterFullEmptyAndPrefixConsumption(String call) {
+    for (boolean object : new boolean[] { false, true }) {
+      for (String body : new String[] { "probe:keys()", "local:id(probe:keys())" }) {
+        for (int length : new int[] { 0, 3, 64 }) {
+          resetProbe();
+          Probe nestedProbe = PROBE.get();
+          nestedProbe.length = length;
+          Sequence member = new UnknownKeys().execute(null, ctx, new Sequence[0]);
+          Probe outerProbe = singletonLookupProbe(true, lookupContainer(object, member));
+          String operand = call + (object ? ".v" : "[-3]");
+          String text = "declare function local:id($s as item()*) as item()* {($s)}; " + calls("item()*", body)
+              + (length == 64 ? "subsequence(" + operand + ",1,1)" : operand);
+          Sequence result = query(text);
+          assertEquals(0, outerProbe.constructed);
+          assertEquals(0, nestedProbe.constructed);
+          int count = 0;
+          try (Iter it = result.iterate()) {
+            Item item;
+            while ((item = it.next()) != null) {
+              assertEquals(++count, ((IntNumeric) item).intValue());
+            }
+          }
+          assertEquals(length == 64 ? 1 : length, count);
+          assertEquals(1, outerProbe.constructed);
+          assertEquals(count, nestedProbe.constructed);
+          assertEquals(1, outerProbe.opened);
+          assertEquals(1, outerProbe.closed);
+          assertEquals(1, nestedProbe.opened);
+          assertEquals(1, nestedProbe.closed);
+        }
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void selectedLookupReadersCloseOnNestedAndOuterFailures(String call) {
+    for (boolean object : new boolean[] { false, true }) {
+      for (boolean nestedFailure : new boolean[] { false, true }) {
+        resetProbe();
+        Probe nestedProbe = PROBE.get();
+        nestedProbe.length = 1;
+        nestedProbe.failAfter = nestedFailure ? 1 : -1;
+        Sequence member = new Keys().execute(null, ctx, new Sequence[0]);
+        Probe outerProbe = singletonLookupProbe(true, lookupContainer(object, member));
+        if (!nestedFailure) {
+          outerProbe.length = 2;
+          outerProbe.failAfter = 1;
+        }
+        Sequence result = query(calls("item()*", "probe:keys()") + call + (object ? ".v" : "[0]"));
+        try (Iter it = result.iterate()) {
+          assertEquals(1, ((IntNumeric) it.next()).intValue());
+          assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, assertThrows(QueryException.class, it::next).getCode());
+          assertEquals(1, outerProbe.opened);
+          assertEquals(1, outerProbe.closed);
+          assertEquals(1, nestedProbe.opened);
+          assertEquals(1, nestedProbe.closed);
+          assertNull(it.next());
+        }
+        assertEquals(1, outerProbe.closed);
+        assertEquals(1, nestedProbe.closed);
+      }
+      Probe probe = singletonLookupProbe(true, lookupContainer(object, new Int32(10)));
+      Sequence result = query(calls("item()*", "probe:keys()") + call + (object ? ".([1])" : "['bad']"));
+      try (Iter it = result.iterate()) {
+        assertThrows(QueryException.class, it::next);
+        assertEquals(1, probe.opened);
+        assertEquals(1, probe.closed);
+      }
+    }
   }
 
   @ParameterizedTest
