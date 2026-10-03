@@ -121,23 +121,14 @@ public final class ArrayAccessExpr implements Expr {
     return new LazySequence() {
       @Override
       public Iter iterate() {
-        return new BaseIter() {
-          final Iter iter = sequence.iterate();
-          Iter nestedIter;
-
+        return new JsonLookupIter(sequence.iterate()) {
           @Override
-          public Item next() {
+          protected Item nextItem() {
             Item item;
-
             while (true) {
-              if (nestedIter != null) {
-                if ((item = nestedIter.next()) != null) {
-                  return item;
-                }
-                nestedIter.close();
-                nestedIter = null;
+              if ((item = nextNested()) != null) {
+                return item;
               }
-
               item = iter.next();
               if (item == null) {
                 return null;
@@ -149,20 +140,15 @@ public final class ArrayAccessExpr implements Expr {
               if (i == null) {
                 nestedIter = getLazySequence(ctx, tuple, array).iterate();
               } else {
-                Sequence value = lookup(array, i);
-                if (value != null && (item = value.evaluateToItem(ctx, tuple)) != null) {
-                  return item;
+                Sequence selected = lookup(array, i);
+                if (selected instanceof Item selectedItem) {
+                  return selectedItem;
+                }
+                if (selected != null) {
+                  nestedIter = selected.iterate();
                 }
               }
             }
-          }
-
-          @Override
-          public void close() {
-            if (nestedIter != null) {
-              nestedIter.close();
-            }
-            iter.close();
           }
         };
       }

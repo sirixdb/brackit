@@ -2547,10 +2547,10 @@ public class JsoniqParser extends Tokenizer {
       axis = new AST(XQ.FUTURE_OR_SELF);
     } else if ((la = laSkipWS("future")) != null) {
       axis = new AST(XQ.FUTURE);
-    } else if ((la = laSkipWS("past")) != null) {
-      axis = new AST(XQ.PAST);
     } else if ((la = laSkipWS("past-or-self")) != null) {
       axis = new AST(XQ.PAST_OR_SELF);
+    } else if ((la = laSkipWS("past")) != null) {
+      axis = new AST(XQ.PAST);
     } else if ((la = laSkipWS("last")) != null) {
       axis = new AST(XQ.LAST);
     } else if ((la = laSkipWS("first")) != null) {

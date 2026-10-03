@@ -36,6 +36,7 @@ import io.brackit.query.jdm.type.ItemType;
 import io.brackit.query.jdm.type.SequenceType;
 import io.brackit.query.module.StaticContext;
 import io.brackit.query.sequence.FunctionConversionSequence;
+import io.brackit.query.sequence.FunctionResultSequence;
 import io.brackit.query.util.ExprUtil;
 import io.brackit.query.QueryException;
 
@@ -105,9 +106,7 @@ public class FunctionExpr implements Expr {
     if (function.isBuiltIn()) {
       return res;
     }
-    res = FunctionConversionSequence.asTypedSequence(function.getSignature().getResultType(), res, builtin);
-
-    return ExprUtil.materialize(res);
+    return FunctionResultSequence.prepare(function, res);
   }
 
   @Override

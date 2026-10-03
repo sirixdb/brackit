@@ -268,6 +268,20 @@ bjq -r '$$.name' data.json
 bjq -c '$$' data.json
 ```
 
+### Streamed array input
+
+Top-level arrays from stdin (without `-s`) or files larger than 1.5 GB use
+single-pass iteration. See the [StreamingArray read contract](src/main/java/io/brackit/query/jsonitem/array/StreamingArray.java)
+for reread, materialization, and parsing-failure restrictions.
+
+For repeated reads from stdin, `-s` buffers all input in memory and wraps the JSON
+values in an outer array. Select the original array with `$$[0]`:
+
+```bash
+echo '[1, 2, 3]' | bjq -s 'let $a := $$[0][] return (count($a), count($a))'
+# Outputs 3 twice
+```
+
 ## Embed in Your Data Store
 
 Brackit is designed as a **retargetable query compiler**. Data stores can plug in their own:
@@ -288,6 +302,29 @@ The optimizer automatically applies:
 - Predicate pushdown
 - Constant folding
 - And more...
+
+### Lazy results through user-defined functions
+
+A backend sequence can opt into lazy UDF returns by overriding
+`Sequence.isRepeatable()` to return `true`. Independent readers must see the
+same immutable items (including node identity and failures), even after a
+reader stops early; concurrent readers must not share a single-use cursor.
+Unmarked sequences and single-use I/O keep the existing eager UDF conversion
+and materialization behavior.
+
+For opted-in `item()*` and `item()+` results, return conversion preserves the
+backend's `size()`, indexed access and skip paths for multi-item values. Backends
+with cheap cardinality can also override `Sequence.knownSize()`; see its
+[API contract](src/main/java/io/brackit/query/jdm/Sequence.java). Repeatability
+alone does not promise cheap cardinality. Empty and singleton results become
+`null` or the actual `Item`, matching materialized results. Without known
+cardinality, the return boundary peeks at most two items, closes that reader,
+and replays the raw prefix before opening an independent tail reader. No tail is
+counted or drained at the boundary. Item-type constraints still validate consumed
+and skipped items; singleton/empty return bounds use eager bounded lookahead.
+Deferred recursion overflow becomes the existing `BIDY0006` query error, so a
+consuming expression such as `try {count(local:slice())} catch * {...}` can catch it.
+Existing argument and shared-binding policies are unchanged.
 
 ## Installation
 

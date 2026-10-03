@@ -69,49 +69,50 @@ public class TypeswitchExpr implements Expr {
     for (int i = 0; i < caseExprs.length; i++) {
       ItemType itemType = caseTypes[i].getItemType();
       Cardinality card = caseTypes[i].getCardinality();
-      Iter it = operand.iterate();
+      try (Iter it = operand.iterate()) {
 
-      // Test first item
-      Item item = it.next();
-      if (item == null) {
-        if (card != Cardinality.One && card != Cardinality.OneOrMany) {
-          if (toItem) {
-            return caseExprs[i].evaluateToItem(ctx, (varRefs[i] ? tuple.concat(operand) : tuple));
+        // Test first item
+        Item item = it.next();
+        if (item == null) {
+          if (card != Cardinality.One && card != Cardinality.OneOrMany) {
+            if (toItem) {
+              return caseExprs[i].evaluateToItem(ctx, (varRefs[i] ? tuple.concat(operand) : tuple));
+            } else {
+              return caseExprs[i].evaluate(ctx, (varRefs[i] ? tuple.concat(operand) : tuple));
+            }
           } else {
-            return caseExprs[i].evaluate(ctx, (varRefs[i] ? tuple.concat(operand) : tuple));
+            continue;
           }
+        } else if (card == Cardinality.Zero || !itemType.matches(item)) {
+          continue;
+        }
+
+        // Test second item
+        item = it.next();
+        if (item != null && (card == Cardinality.One || card == Cardinality.ZeroOrOne || !itemType.matches(item))) {
+          continue;
+        }
+
+        if (item != null && itemType != AnyItemType.ANY) {
+          // Test following items
+          boolean match = true;
+          while ((item = it.next()) != null) {
+            if (!itemType.matches(item)) {
+              match = false;
+              break;
+            }
+          }
+
+          if (!match) {
+            continue;
+          }
+        }
+
+        if (toItem) {
+          return caseExprs[i].evaluateToItem(ctx, (varRefs[i] ? tuple.concat(operand) : tuple));
         } else {
-          continue;
+          return caseExprs[i].evaluate(ctx, (varRefs[i] ? tuple.concat(operand) : tuple));
         }
-      } else if (card == Cardinality.Zero || !itemType.matches(item)) {
-        continue;
-      }
-
-      // Test second item
-      item = it.next();
-      if (item != null && (card == Cardinality.One || card == Cardinality.ZeroOrOne || !itemType.matches(item))) {
-        continue;
-      }
-
-      if (item != null && itemType != AnyItemType.ANY) {
-        // Test following items
-        boolean match = true;
-        while ((item = it.next()) != null) {
-          if (!itemType.matches(item)) {
-            match = false;
-            break;
-          }
-        }
-
-        if (!match) {
-          continue;
-        }
-      }
-
-      if (toItem) {
-        return caseExprs[i].evaluateToItem(ctx, (varRefs[i] ? tuple.concat(operand) : tuple));
-      } else {
-        return caseExprs[i].evaluate(ctx, (varRefs[i] ? tuple.concat(operand) : tuple));
       }
     }
 

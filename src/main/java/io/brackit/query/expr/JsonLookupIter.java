@@ -25,56 +25,67 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package io.brackit.query.sequence;
+package io.brackit.query.expr;
 
-import io.brackit.query.atomic.Counter;
-import io.brackit.query.atomic.Int32;
-import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
+import io.brackit.query.sequence.BaseIter;
 
-/**
- * @author Sebastian Baechle
- */
-public abstract class LazySequence extends AbstractSequence {
-  // use volatile fields because
-  // they are computed on demand
-  private volatile IntNumeric size;
-  private volatile Boolean bool;
+/** Shared reader ownership for lazy array and object lookups. */
+abstract class JsonLookupIter extends BaseIter {
+  protected final Iter iter;
+  protected Iter nestedIter;
+  private boolean closed;
 
-  @Override
-  public boolean booleanValue() {
-    Boolean b = bool; // volatile read
-    return b != null ? b : (bool = super.booleanValue());
+  JsonLookupIter(Iter iter) {
+    this.iter = iter;
   }
 
   @Override
-  public IntNumeric size() {
-    IntNumeric si = size; // volatile read
-    return si != null ? si : (size = super.size());
-  }
-
-  @Override
-  public Item get(IntNumeric pos) {
-    IntNumeric si = size; // volatile read
-    if ((si != null) && (si.cmp(pos) < 0)) {
+  public final Item next() {
+    if (closed) {
       return null;
     }
-    if (Int32.ZERO.cmp(pos) >= 0) {
-      return null;
-    }
-    final Counter count = new Counter();
-    try (Iter it = iterate()) {
-      Item item;
-      while ((item = it.next()) != null) {
-        if (count.inc().cmp(pos) == 0) {
-          return item;
-        }
+    boolean returned = false;
+    try {
+      Item item = nextItem();
+      returned = item != null;
+      return item;
+    } finally {
+      if (!returned) {
+        close();
       }
     }
-    if (si == null) {
-      size = count.asIntNumeric(); // remember size
+  }
+
+  protected abstract Item nextItem();
+
+  protected final Item nextNested() {
+    if (nestedIter == null) {
+      return null;
     }
-    return null;
+    Item item = nestedIter.next();
+    if (item == null) {
+      try {
+        nestedIter.close();
+      } finally {
+        nestedIter = null;
+      }
+    }
+    return item;
+  }
+
+  @Override
+  public final void close() {
+    if (!closed) {
+      closed = true;
+      try {
+        if (nestedIter != null) {
+          nestedIter.close();
+        }
+      } finally {
+        iter.close();
+      }
+    }
   }
 }

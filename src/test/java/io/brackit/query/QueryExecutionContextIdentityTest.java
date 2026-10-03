@@ -3,6 +3,7 @@ package io.brackit.query;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.brackit.query.atomic.Int32;
+import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.atomic.Str;
 import io.brackit.query.block.FJControl;
@@ -116,6 +117,99 @@ class QueryExecutionContextIdentityTest extends XQueryBaseTest {
     }
     query.evaluate(backend);
     assertTrue(calls.get() > 3);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = { false, true })
+  void repeatableUdfResultsRetainNativeCapabilitiesWithinTheirExecution(boolean dynamic) {
+    BackendContext backend = new BackendContext(store);
+    AtomicInteger pulls = new AtomicInteger();
+    AtomicInteger sizes = new AtomicInteger();
+    AtomicInteger gets = new AtomicInteger();
+    AtomicInteger skips = new AtomicInteger();
+    Sequence source = new LazySequence() {
+      @Override
+      public boolean isRepeatable() {
+        assertNotNull(QueryExecution.current());
+        return true;
+      }
+
+      @Override
+      public IntNumeric knownSize() {
+        assertNotNull(QueryExecution.current());
+        return new Int32(3);
+      }
+
+      @Override
+      public IntNumeric size() {
+        assertNotNull(QueryExecution.current());
+        sizes.incrementAndGet();
+        return new Int32(3);
+      }
+
+      @Override
+      public Item get(IntNumeric position) {
+        assertNotNull(QueryExecution.current());
+        gets.incrementAndGet();
+        return position.cmp(Int32.ONE) >= 0 && position.cmp(new Int32(3)) <= 0 ? position : null;
+      }
+
+      @Override
+      public Iter iterate() {
+        assertNotNull(QueryExecution.current());
+        return new BaseIter() {
+          int position;
+
+          @Override
+          public Item next() {
+            assertNotNull(QueryExecution.current());
+            pulls.incrementAndGet();
+            return ++position <= 3 ? new Int32(position) : null;
+          }
+
+          @Override
+          public void skip(IntNumeric count) {
+            assertNotNull(QueryExecution.current());
+            skips.incrementAndGet();
+            position += count.intValue();
+          }
+
+          @Override
+          public void close() {
+            assertNotNull(QueryExecution.current());
+          }
+        };
+      }
+    };
+    Function producer = new AbstractFunction(new QNm("source"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
+      @Override
+      public Sequence execute(StaticContext sctx, QueryContext received, Sequence[] args) {
+        assertSame(backend, received);
+        return source;
+      }
+    };
+    backend.bind(new QNm("source"), producer);
+    String call = dynamic ? "let $f := function() as item()* { local:inner() } return $f()" : "local:inner()";
+    Sequence result = new Query("declare variable $source external; "
+        + "declare function local:inner() as item()* { $source() }; " + call).execute(backend);
+    assertEquals(0, pulls.get());
+    assertTrue(result.isRepeatable());
+    assertEquals(new Int32(3), result.knownSize());
+    assertEquals(new Int32(3), result.size());
+    assertEquals(new Int32(2), result.get(new Int32(2)));
+    assertEquals(1, sizes.get());
+    assertEquals(1, gets.get());
+    assertEquals(0, pulls.get());
+    for (int pass = 0; pass < 2; pass++) {
+      try (Iter iter = result.iterate()) {
+        iter.skip(Int32.ONE);
+        assertEquals(new Int32(2), iter.next());
+        assertEquals(new Int32(3), iter.next());
+        assertNull(iter.next());
+      }
+    }
+    assertEquals(2, skips.get());
+    assertNull(QueryExecution.current());
   }
 
   @Test

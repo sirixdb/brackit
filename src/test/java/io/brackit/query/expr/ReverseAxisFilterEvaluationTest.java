@@ -8,6 +8,14 @@ import io.brackit.query.Query;
 import io.brackit.query.ResultChecker;
 import io.brackit.query.XQueryBaseTest;
 import io.brackit.query.atomic.Bool;
+import io.brackit.query.atomic.Int32;
+import io.brackit.query.function.AbstractFunction;
+import io.brackit.query.QueryContext;
+import io.brackit.query.jdm.Sequence;
+import io.brackit.query.jdm.Signature;
+import io.brackit.query.jdm.type.SequenceType;
+import io.brackit.query.module.StaticContext;
+import io.brackit.query.sequence.ItemSequence;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.atomic.Str;
 import io.brackit.query.compiler.AST;
@@ -142,6 +150,39 @@ class ReverseAxisFilterEvaluationTest extends XQueryBaseTest {
                             new boolean[] { true }, new Object[1]);
     assertTrue(step.evaluate(ctx, TupleImpl.EMPTY_TUPLE).booleanValue());
     assertEquals(1, pulls.get());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "past", "past-or-self" })
+  void temporalPredicatesRankNewestFirstCursorCandidates(String axis) {
+    List<Node<?>> nodes = List.of((Node<?>) new Query("<r4 v='1'/>").execute(ctx),
+                                 (Node<?>) new Query("<r3 v='1'/>").execute(ctx),
+                                 (Node<?>) new Query("<r2 v='1'/>").execute(ctx),
+                                 (Node<?>) new Query("<r1 v='1'/>").execute(ctx));
+    boolean self = axis.equals("past-or-self");
+    List<Node<?>> candidates = self ? nodes : nodes.subList(1, 4);
+    ctx.setContextItem(nodes.getFirst());
+    ctx.bind(new QNm("rank"), new AbstractFunction(new QNm("rank"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
+      @Override
+      public Sequence execute(StaticContext sctx, QueryContext context, Sequence[] args) {
+        return new ItemSequence(new Int32(2));
+      }
+    });
+    List<String> predicates = List.of("[1]", "[2]", "[$rank()]", "[@v + 0]", "[@v + 1]", "[position() le 2]", "[true()]");
+    for (String predicate : predicates) {
+      AtomicInteger pulls = new AtomicInteger();
+      Query query = new Query(observedAxes(pulls, candidates),
+          "xquery version \"3.0\"; declare variable $rank external; " + axis + "::*" + predicate);
+      List<Node<?>> expected = predicate.equals("[true()]") ? candidates
+          : predicate.equals("[position() le 2]") ? candidates.subList(0, 2)
+          : List.of(candidates.get(predicate.equals("[2]") || predicate.equals("[$rank()]") || predicate.equals("[@v + 1]") ? 1 : 0));
+      try (Iter result = query.execute(ctx).iterate()) {
+        for (Node<?> node : expected) {
+          assertSame(node, result.next(), axis + predicate);
+        }
+        assertNull(result.next(), axis + predicate);
+      }
+    }
   }
 
   @ParameterizedTest

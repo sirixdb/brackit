@@ -18,11 +18,7 @@ mvn test -Dtest=ClassName#methodName  # Run single test method
 
 ## Running Brackit
 
-```bash
-java -jar target/brackit-0.6-SNAPSHOT-with-dependencies.jar -q "1+1"     # Direct query
-java -jar target/brackit-0.6-SNAPSHOT-with-dependencies.jar -qf file.xq  # Query from file
-java -jar target/brackit-0.6-SNAPSHOT-with-dependencies.jar -iq          # Interactive mode
-```
+See [Quick Start in README.MD](README.MD#quick-start) for CLI setup and usage.
 
 ## Architecture
 

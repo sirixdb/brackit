@@ -414,6 +414,11 @@ public abstract class Accessor {
     this.axis = axis;
   }
 
+  public boolean requiresPositionReversal() {
+    return axis == Axis.ANCESTOR || axis == Axis.ANCESTOR_OR_SELF
+        || axis == Axis.PRECEDING || axis == Axis.PRECEDING_SIBLING;
+  }
+
   public Axis getAxis() {
     return axis;
   }

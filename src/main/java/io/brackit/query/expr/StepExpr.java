@@ -85,7 +85,7 @@ public class StepExpr extends PredicateExpr {
                                ((Item) node).itemType());
     }
     Sequence s = new AxisStepSequence((Node<?>) node);
-    boolean backwardAxis = !accessor.getAxis().isForward();
+    boolean backwardAxis = accessor.requiresPositionReversal();
     boolean reversed = false;
 
     for (int i = 0; i < filter.length; i++) {

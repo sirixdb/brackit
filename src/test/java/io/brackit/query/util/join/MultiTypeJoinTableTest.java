@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -50,7 +51,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryException;
+import io.brackit.query.atomic.AnyURI;
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.atomic.Dbl;
 import io.brackit.query.atomic.Dec;
@@ -59,6 +62,7 @@ import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.Str;
 import io.brackit.query.atomic.Una;
 import io.brackit.query.jdm.Sequence;
+import io.brackit.query.sequence.ItemSequence;
 import io.brackit.query.util.Cmp;
 
 /** One join table probed by several threads at once, as the block pipeline does. */
@@ -248,6 +252,187 @@ public class MultiTypeJoinTableTest {
       }
     }
     return cases.stream();
+  }
+
+  @ParameterizedTest
+  @MethodSource("comparisons")
+  public void anyURIAndStringKeysCompareAsStrings(Cmp cmp, boolean general) {
+    var uri = new AnyURI("http://x");
+    var string = new Str("http://x");
+    Atomic[] keys = { uri, string, new Str("a b"), new AnyURI("http://z"), uri };
+    var table = new MultiTypeJoinTable(cmp, general, false);
+    for (int i = 0; i < keys.length; i++) {
+      table.add(keys[i], row(i + 1), i + 1);
+    }
+    table.seal();
+
+    for (Atomic probe : new Atomic[] { new Str("a b"), string, uri, new Str("http://z") }) {
+      var expected = new ArrayList<Integer>();
+      for (int i = 0; i < keys.length; i++) {
+        int comparison = probe.stringValue().compareTo(keys[i].stringValue());
+        boolean match = switch (cmp) {
+          case eq -> comparison == 0;
+          case lt -> comparison < 0;
+          case le -> comparison <= 0;
+          case gt -> comparison > 0;
+          case ge -> comparison >= 0;
+          default -> throw new AssertionError(cmp);
+        };
+        if (match) {
+          expected.add(i + 1);
+        }
+      }
+      assertEquals(expected, positions(table.probe(probe)), probe.toString());
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("comparisons")
+  public void anyURIUntypedAndStringKeysPreserveComparisonCoercion(Cmp cmp, boolean general) {
+    Atomic[] keys = { new AnyURI("http://x"), new Str("http://x"), new Una(" http://x "), new Str(" http://x "),
+        new AnyURI("http://z"), new Una(" http://z "), new AnyURI("http://x"), new Una("http://x") };
+    Atomic[] probes = { new Una(" http://x "), new AnyURI("http://x"), new Str("a b"), new Una("http://x"), new Str(
+                                                                                                                    " http://x "),
+        new AnyURI("http://z"), new Una(" http://z ") };
+    for (boolean sequenceKeys : new boolean[] { false, true }) {
+      for (boolean skipSort : new boolean[] { false, true }) {
+        var table = new MultiTypeJoinTable(cmp, general, skipSort);
+        for (int i = 0; i < keys.length; i++) {
+          Sequence key = sequenceKeys ? new ItemSequence(keys[i], keys[i]) : keys[i];
+          table.add(key, new Sequence[] { new Int32(i + 1), keys[i] }, i + 1);
+        }
+        table.seal();
+
+        for (Atomic probe : probes) {
+          var expected = new ArrayList<Integer>();
+          for (int i = 0; i < keys.length; i++) {
+            if (general ? cmp.gCmp(null, probe, keys[i]) : cmp.vCmp(null, probe, keys[i])) {
+              expected.add(i + 1);
+            }
+          }
+          Sequence probeKey = sequenceKeys ? new ItemSequence(probe, probe) : probe;
+          var matches = table.probe(probeKey);
+          var actual = positions(matches);
+          if (skipSort) {
+            actual.sort(null);
+          }
+          assertEquals(expected, actual, probe.toString());
+          for (int i = 0; i < matches.getSize(); i++) {
+            Sequence[] bindings = matches.get(i);
+            int pos = ((Int32) bindings[0]).intValue();
+            assertSame(keys[pos - 1], bindings[1]);
+          }
+        }
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("comparisons")
+  public void unicodeURIKeysUseCodepointOrderInDirectComparisonsAndJoins(Cmp cmp, boolean general) {
+    for (String prefix : new String[] { "", "http://example.org/abcdefghijklmnop/" }) {
+      String low = prefix + "\uFF21";
+      String high = prefix + "\uD83D\uDE00";
+      Atomic[] keys = { new AnyURI(high), new Una(low), new Str(high), new AnyURI(low), new Una(high), new Str(low),
+          new AnyURI(high) };
+      Atomic[] probes = { new Una(high), new AnyURI(high), new Str(high), new Una(low), new AnyURI(low), new Str(low) };
+      var table = new MultiTypeJoinTable(cmp, general, false);
+      for (int i = 0; i < keys.length; i++) {
+        table.add(keys[i], row(i + 1), i + 1);
+      }
+      table.seal();
+
+      for (Atomic probe : probes) {
+        var expected = new ArrayList<Integer>();
+        for (int i = 0; i < keys.length; i++) {
+          int order = Arrays.compare(probe.stringValue().codePoints().toArray(),
+                                     keys[i].stringValue().codePoints().toArray());
+          boolean match = switch (cmp) {
+            case eq -> order == 0;
+            case lt -> order < 0;
+            case le -> order <= 0;
+            case gt -> order > 0;
+            case ge -> order >= 0;
+            default -> throw new AssertionError(cmp);
+          };
+          assertEquals(match, general ? cmp.gCmp(null, probe, keys[i]) : cmp.vCmp(null, probe, keys[i]));
+          if (match) {
+            expected.add(i + 1);
+          }
+        }
+        assertEquals(expected, positions(table.probe(probe)), probe.toString());
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("comparisons")
+  public void loneSurrogateKeysRetainTheirDistinctJoinMatches(Cmp cmp, boolean general) {
+    String prefix = "x".repeat(32);
+    Atomic[] keys = { new Una(prefix + "\uD801"), new Str(prefix + "\uD800"), new Una(prefix + "\uD800"), new Str(prefix
+        + "\uD801"), new Str(prefix + "?") };
+    for (boolean cached : new boolean[] { false, true }) {
+      if (cached) {
+        for (Atomic key : keys) {
+          if (key instanceof Str string) {
+            string.getUtf8Bytes();
+          }
+        }
+      }
+      var table = new MultiTypeJoinTable(cmp, general, false);
+      for (int i = 0; i < keys.length; i++) {
+        table.add(keys[i], row(i + 1), i + 1);
+      }
+      table.seal();
+
+      for (Atomic probe : keys) {
+        var expected = new ArrayList<Integer>();
+        for (int i = 0; i < keys.length; i++) {
+          int order = Arrays.compare(probe.stringValue().codePoints().toArray(),
+                                     keys[i].stringValue().codePoints().toArray());
+          boolean match = switch (cmp) {
+            case eq -> order == 0;
+            case lt -> order < 0;
+            case le -> order <= 0;
+            case gt -> order > 0;
+            case ge -> order >= 0;
+            default -> throw new AssertionError(cmp);
+          };
+          if (match) {
+            expected.add(i + 1);
+          }
+        }
+        assertEquals(expected, positions(table.probe(probe)), probe.type().toString());
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("comparisons")
+  public void invalidUntypedURICastsFailOnlyGeneralComparisons(Cmp cmp, boolean general) {
+    var uri = new AnyURI("http://x");
+    var untyped = new Una("a b");
+    var string = new Str("a b");
+    var uriBuild = new MultiTypeJoinTable(cmp, general, false);
+    uriBuild.add(uri, row(1), 1);
+    uriBuild.seal();
+    var untypedBuild = new MultiTypeJoinTable(cmp, general, false);
+    untypedBuild.add(untyped, row(1), 1);
+    untypedBuild.seal();
+
+    if (general) {
+      for (int i = 0; i < 2; i++) {
+        assertEquals(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
+                     assertThrows(QueryException.class, () -> uriBuild.probe(untyped)).getCode());
+        assertEquals(ErrorCode.ERR_INVALID_VALUE_FOR_CAST,
+                     assertThrows(QueryException.class, () -> untypedBuild.probe(uri)).getCode());
+      }
+    } else {
+      assertEquals(cmp.vCmp(null, untyped, uri) ? List.of(1) : List.of(), positions(uriBuild.probe(untyped)));
+      assertEquals(cmp.vCmp(null, uri, untyped) ? List.of(1) : List.of(), positions(untypedBuild.probe(uri)));
+    }
+    assertEquals(cmp.vCmp(null, string, uri) ? List.of(1) : List.of(), positions(uriBuild.probe(string)));
+    assertEquals(cmp.vCmp(null, string, untyped) ? List.of(1) : List.of(), positions(untypedBuild.probe(string)));
   }
 
   // Build and probe keys of every numeric type and untyped ones, so that the

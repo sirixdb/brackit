@@ -150,6 +150,11 @@ public class TypedSequence extends AbstractSequence {
 
       return s;
     } else {
+      // An unconstrained identity view must not hide an opted-in backend's size
+      // or repeatability when a typed variable is returned through another UDF.
+      if (sType.getItemType().isAnyItem() && sType.getCardinality() == Cardinality.ZeroOrMany && s.isRepeatable()) {
+        return RepeatableSequence.normalize(s);
+      }
       return new TypedSequence(sType, s);
     }
   }

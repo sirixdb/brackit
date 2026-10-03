@@ -79,6 +79,16 @@ public final class QueryExecution {
     }
     return new AbstractSequence() {
       @Override
+      public boolean isRepeatable() {
+        return call(sequence::isRepeatable);
+      }
+
+      @Override
+      public IntNumeric knownSize() {
+        return call(sequence::knownSize);
+      }
+
+      @Override
       public boolean booleanValue() {
         return call(sequence::booleanValue);
       }
