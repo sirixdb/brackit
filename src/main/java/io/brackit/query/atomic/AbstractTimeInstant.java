@@ -47,8 +47,9 @@ public abstract class AbstractTimeInstant extends AbstractAtomic implements Time
 
   static {
     int offset = TimeZone.getDefault().getOffset(System.currentTimeMillis());
-    int hours = fQuotient(offset, 3600000);
-    int remainder = modulo(offset, 3600000);
+    int magnitude = Math.abs(offset);
+    int hours = fQuotient(magnitude, 3600000);
+    int remainder = modulo(magnitude, 3600000);
     int minutes = fQuotient(remainder, 60000);
     remainder = modulo(remainder, 60000);
     int micros = remainder * 1000;
