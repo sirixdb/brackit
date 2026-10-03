@@ -95,4 +95,19 @@ public interface Sequence extends Tuple, Expr {
    * Create a stream to iterate over all items of this sequence.
    */
   Iter iterate();
+
+  /**
+   * Whether independent readers can traverse the same immutable value again,
+   * including after an earlier reader stops or closes. Node identity and failures
+   * must remain stable, and concurrent readers must not compete for a single source.
+   * Reporting this capability must not evaluate or consume the value. This does
+   * not imply that {@link #size()} is cheap.
+   *
+   * <p>Backends may opt in to let user-defined functions return their results lazily.
+   * The conservative default preserves eager UDF result materialization, including
+   * for unknown {@code LazySequence} subclasses and single-use I/O sources.</p>
+   */
+  default boolean isRepeatable() {
+    return false;
+  }
 }
