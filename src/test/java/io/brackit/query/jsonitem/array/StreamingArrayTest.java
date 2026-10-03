@@ -137,8 +137,9 @@ class StreamingArrayTest {
                                                                             StreamingArray::len,
                                                                             array -> array.at(1),
                                                                             array -> array.at(Int32.ONE),
-                                                                            array -> array.range(Int32.ZERO, new Int32(2)))
-                                               .map(read -> Arguments.of(bufferSize, read)));
+                                                                            array -> array.range(Int32.ZERO,
+                                                                                                 new Int32(2)))
+                                              .map(read -> Arguments.of(bufferSize, read)));
   }
 
   private static Stream<Consumer<StreamingArray>> completionReads() {
@@ -330,9 +331,7 @@ class StreamingArrayTest {
         assertEquals(Int32.ONE, first.next());
         assertEquals(Int32.ONE, second.next());
       }
-      var reread = overlapReads(input,
-                                () -> assertEquals(new Int32(cachedPrefix ? 2 : 1), first.next()),
-                                second::next);
+      var reread = overlapReads(input, () -> assertEquals(new Int32(cachedPrefix ? 2 : 1), first.next()), second::next);
       assertRereadFails(reread);
       if (!cachedPrefix) {
         assertEquals(new Int32(2), first.next());
