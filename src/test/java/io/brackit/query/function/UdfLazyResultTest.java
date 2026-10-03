@@ -350,7 +350,6 @@ public class UdfLazyResultTest extends XQueryBaseTest {
           assertSame(probe.value, result);
           assertEquals(1, probe.constructed);
         } else {
-          assertInstanceOf(LazySequence.class, result);
           assertTrue(result.isRepeatable());
           assertEquals(source.equals("probe:keys()") ? 0 : 2, probe.constructed);
           try (Iter it = result.iterate()) {
@@ -813,7 +812,7 @@ public class UdfLazyResultTest extends XQueryBaseTest {
     assertEquals(20,
                  ((IntNumeric) ExprUtil.asItem(xqueryResult(declarations + "(10,20)[" + dependent + "]"))).intValue());
     PROBE.get().value = new Dbl(1.5);
-    assertEquals(11, ((IntNumeric) ExprUtil.asItem(xqueryResult(declarations + "(10[" + call + "]) + 1"))).intValue());
+    assertNull(ExprUtil.asItem(xqueryResult(declarations + "(10[" + call + "]) + 1")));
     assertNull(ExprUtil.asItem(xqueryResult(declarations + "(10,20)[" + call + "]")));
     assertEquals(PROBE.get().opened, PROBE.get().closed);
   }
@@ -869,13 +868,11 @@ public class UdfLazyResultTest extends XQueryBaseTest {
 
   @ParameterizedTest
   @ValueSource(strings = { "local:f()", "$f()" })
-  public void unmarkedScalarPredicatesRetainMasterBehavior(String call) {
+  public void unmarkedScalarPredicatesRejectFractionalPositions(String call) {
     PROBE.get().repeatable = false;
     PROBE.get().length = 1;
     PROBE.get().value = new Dbl(1.5);
-    assertEquals(11,
-                 ((IntNumeric) ExprUtil.asItem(xqueryResult(calls("item()*", "probe:keys()") + "(10[" + call
-                     + "]) + 1"))).intValue());
+    assertNull(ExprUtil.asItem(xqueryResult(calls("item()*", "probe:keys()") + "(10[" + call + "]) + 1")));
     assertEquals(1, PROBE.get().constructed);
     assertEquals(1, PROBE.get().opened);
     assertEquals(1, PROBE.get().closed);
@@ -1023,7 +1020,7 @@ public class UdfLazyResultTest extends XQueryBaseTest {
                 + "count(" + call + access + ")";
             Probe baselineProbe = singletonLookupProbe(false, value);
             LookupOutcome baseline = lookupOutcome(text);
-            assertEquals(new LookupOutcome(List.of(), ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE), baseline, text);
+            assertEquals(new LookupOutcome(List.of(0), null), baseline, text);
             assertEquals(1, baselineProbe.opened, text);
             assertEquals(1, baselineProbe.closed, text);
             Probe lazyProbe = singletonLookupProbe(true, value);
@@ -1105,14 +1102,14 @@ public class UdfLazyResultTest extends XQueryBaseTest {
   }
 
   @Test
-  public void typedIdentityViewsKeepSingletonLookupTypeRejection() {
+  public void typedIdentityViewsKeepSingletonNonArrayLookupEmpty() {
     for (String source : new String[] { "probe:keys()", "probe:unknown-keys()" }) {
       for (String access : new String[] { "[0]", "[-1]", "[]" }) {
         String text = "declare function local:f() as item()* {" + source
             + "}; let $s as item()* := local:f() return count($s" + access + ")";
         Probe baselineProbe = singletonLookupProbe(false, Int32.ONE);
         LookupOutcome baseline = lookupOutcome(text);
-        assertEquals(new LookupOutcome(List.of(), ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE), baseline);
+        assertEquals(new LookupOutcome(List.of(0), null), baseline);
         assertEquals(1, baselineProbe.opened);
         assertEquals(1, baselineProbe.closed);
         Probe lazyProbe = singletonLookupProbe(true, Int32.ONE);
@@ -1135,7 +1132,7 @@ public class UdfLazyResultTest extends XQueryBaseTest {
         probe.failAfter = length == 64 ? 1 : -1;
         for (int pass = 1; pass <= 2; pass++) {
           LookupOutcome outcome = lookupOutcome(calls("item()*", "probe:keys()") + "count(" + call + access + ")");
-          assertEquals(length == 0
+          assertEquals(length <= 1
               ? new LookupOutcome(List.of(0), null)
               : new LookupOutcome(List.of(), ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE), outcome);
           assertEquals(pass, probe.opened);

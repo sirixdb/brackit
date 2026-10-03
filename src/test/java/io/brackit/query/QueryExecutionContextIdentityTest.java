@@ -189,7 +189,7 @@ class QueryExecutionContextIdentityTest extends XQueryBaseTest {
       }
     };
     backend.bind(new QNm("source"), producer);
-    String call = dynamic ? "let $f := function() as item()* { local:inner() } return $f()" : "local:inner()";
+    String call = dynamic ? "(function() as item()* { local:inner() })()" : "local:inner()";
     Sequence result = new Query("declare variable $source external; "
         + "declare function local:inner() as item()* { $source() }; " + call).execute(backend);
     assertEquals(0, pulls.get());
