@@ -60,7 +60,7 @@ public abstract class AbstractAnalyzer {
       return SequenceType.EMPTY_SEQUENCE;
     }
     ItemType itype = itemType(type);
-    Cardinality card = Cardinality.ZeroOrMany;
+    Cardinality card = Cardinality.One;
     if (stype.getChildCount() == 2) {
       card = occurrenceIndicator(stype.getChild(1));
     }

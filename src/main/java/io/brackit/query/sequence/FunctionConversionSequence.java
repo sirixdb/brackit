@@ -270,6 +270,11 @@ public class FunctionConversionSequence extends LazySequence {
       }
       return null;
     } else if (s instanceof Item) {
+      if (sType.getCardinality() == Cardinality.Zero) {
+        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                                 "Single item where empty sequence expected: %s",
+                                 s);
+      }
       // short-circuit wrapping of single item parameter
       ItemType iType = sType.getItemType();
       if (iType instanceof AtomicType) {
@@ -315,7 +320,10 @@ public class FunctionConversionSequence extends LazySequence {
 
       if (sType.getCardinality().atMostOne()) {
         try (Iter it = ts.iterate()) {
-          return it.next();
+          Item item = it.next();
+          // Validate the upper bound even when the caller only consumes the first item.
+          it.next();
+          return item;
         }
       }
 

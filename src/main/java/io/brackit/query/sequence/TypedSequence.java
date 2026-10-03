@@ -29,7 +29,6 @@ package io.brackit.query.sequence;
 
 import io.brackit.query.atomic.Counter;
 import io.brackit.query.atomic.Int32;
-import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
@@ -51,9 +50,13 @@ public class TypedSequence extends LazySequence {
     ItemType iType = type.getItemType();
     Counter pos = new Counter();
     Iter s;
+    boolean finished;
 
     @Override
     public Item next() {
+      if (finished) {
+        return null;
+      }
       if (s == null) {
         s = arg.iterate();
       }
@@ -65,7 +68,7 @@ public class TypedSequence extends LazySequence {
                                    "Invalid empty typed sequence (expected %s)",
                                    card);
         }
-        safe = true; // remember that sequence type is OK
+        finished = true;
         return null;
       }
 
@@ -84,15 +87,16 @@ public class TypedSequence extends LazySequence {
                                  item);
       }
 
-      return item;
-    }
-
-    @Override
-    public void skip(IntNumeric i) {
-      if (s == null) {
-        s = arg.iterate();
+      // A singleton constraint must be checked before a consumer can stop at the first item.
+      if (card.atMostOne()) {
+        if (s.next() != null) {
+          throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                                   "Invalid cardinality of typed sequence (expected %s): >= 2",
+                                   card);
+        }
+        finished = true;
       }
-      s.skip(i);
+      return item;
     }
 
     @Override
@@ -105,8 +109,6 @@ public class TypedSequence extends LazySequence {
 
   final SequenceType type;
   final Sequence arg;
-  // volatile field because safe is evaluated lazy
-  volatile boolean safe;
 
   public TypedSequence(SequenceType type, Sequence arg) {
     this.type = type;
@@ -115,46 +117,7 @@ public class TypedSequence extends LazySequence {
 
   @Override
   public Iter iterate() {
-    if (safe) {
-      return arg.iterate();
-    }
     return new TypedIter();
-  }
-
-  @Override
-  public Item get(IntNumeric pos) {
-    Item item = arg.get(pos);
-    if (safe) { // volatile read
-      return item;
-    }
-    Cardinality card = type.getCardinality();
-    if (item == null) {
-      if (card.moreThanZero()) {
-        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                 "Invalid empty typed sequence (expected %s)",
-                                 card);
-      }
-    } else {
-      if ((pos.cmp(Int32.ONE) > 0) && (card.atMostOne())) {
-        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                 "Invalid cardinality of typed sequence (expected %s): >= %s",
-                                 card,
-                                 pos);
-      }
-      if ((pos.cmp(Int32.ZERO) > 0) && (card == Cardinality.Zero)) {
-        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                 "Invalid cardinality of typed sequence (expected %s): >= %s",
-                                 card,
-                                 pos);
-      }
-      if (!type.getItemType().matches(item)) {
-        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                 "Item of invalid type in typed sequence (expected %s): %s",
-                                 type.getItemType(),
-                                 item);
-      }
-    }
-    return item;
   }
 
   public static Sequence toTypedSequence(SequenceType sType, Sequence s) {
@@ -227,18 +190,7 @@ public class TypedSequence extends LazySequence {
       }
       return null;
     } else if (s instanceof Item item) {
-      // short-circuit wrapping of single item parameter
-      ItemType itemType = sType.getItemType();
-
-      if (!itemType.matches(item)) {
-        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                 "Item of invalid type %s in typed sequence (expected %s): %s",
-                                 item.itemType(),
-                                 itemType,
-                                 item);
-      }
-
-      return item;
+      return toTypedItem(sType, item);
     } else {
       try (Iter it = s.iterate()) {
         Item item = it.next();

@@ -159,8 +159,8 @@ public class DynamicFunctionExpr implements Expr {
               args[pos + i] = FunctionConversionSequence.asTypedSequence(sType, args[i], false);
             }
           } else {
-            args[pos + i] = arguments[i].evaluateToItem(ctx, tuple);
-            args[pos + i] = FunctionConversionSequence.asTypedSequence(sType, args[i], false);
+            args[pos + i] = arguments[i].evaluate(ctx, tuple);
+            args[pos + i] = FunctionConversionSequence.asTypedSequence(sType, args[pos + i], false);
           }
         }
       }

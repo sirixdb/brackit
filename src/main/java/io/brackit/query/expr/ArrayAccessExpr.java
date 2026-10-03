@@ -36,11 +36,9 @@ import io.brackit.query.QueryContext;
 import io.brackit.query.QueryException;
 import io.brackit.query.Tuple;
 import io.brackit.query.sequence.BaseIter;
-import io.brackit.query.sequence.ItemSequence;
 import io.brackit.query.sequence.LazySequence;
 import io.brackit.query.jdm.json.Array;
 import io.brackit.query.jdm.json.SplittableMembers;
-import io.brackit.query.jdm.type.ArrayType;
 
 /**
  * @author Sebastian Baechle
@@ -62,28 +60,15 @@ public final class ArrayAccessExpr implements Expr {
       return null;
     }
 
-    if (sequence instanceof ItemSequence itemSequence) {
-      return getLazySequence(ctx, tuple, itemSequence);
-    }
-
-    if (sequence instanceof LazySequence lazySequence) {
-      return getLazySequence(ctx, tuple, lazySequence);
-    }
-
-    final var currItem = ExprUtil.asItem(sequence);
-
-    if (currItem == null) {
-      // asItem() answers null for a sequence that iterates empty — the same nothing the null check
-      // above already returns for. Falling through would report the type error by asking the absent
-      // item what type it is.
-      return null;
+    if (!(sequence instanceof Item currItem)) {
+      return getLazySequence(ctx, tuple, sequence);
     }
 
     if (!(currItem instanceof Array array)) {
-      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                               "Illegal operand type '%s' where '%s' is expected",
-                               currItem.itemType(),
-                               ArrayType.ARRAY);
+      // JSONiq Extension to XQuery, chapter 5 and sections 5.3/5.4: array lookup and
+      // unboxing skip non-arrays, just as object lookup does in section 5.1.
+      // https://www.jsoniq.org/docs/JSONiqExtensionToXQuery/html/section-json-navigation.html
+      return null;
     }
 
     final Item itemIndex = index.evaluateToItem(ctx, tuple);
