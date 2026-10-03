@@ -134,28 +134,24 @@ public final class ArrayAccessExpr implements Expr {
     return new LazySequence() {
       @Override
       public Iter iterate() {
-        return new BaseIter() {
-          final Iter iter = sequence.iterate();
-          Iter nestedIter;
-
+        return new JsonLookupIter(sequence.iterate()) {
           @Override
-          public Item next() {
+          protected Item nextItem() {
             Item item;
-
-            if (nestedIter != null) {
-              if ((item = nestedIter.next()) != null) {
+            while (true) {
+              if ((item = nextNested()) != null) {
                 return item;
               }
-            }
-
-            while ((item = iter.next()) != null) {
+              item = iter.next();
+              if (item == null) {
+                return null;
+              }
               if (!(item instanceof Array array)) {
                 continue;
               }
               final Item i = index.evaluateToItem(ctx, tuple);
               if (i == null) {
                 nestedIter = getLazySequence(ctx, tuple, array).iterate();
-
                 return nestedIter.next();
               } else {
                 if (!(i instanceof IntNumeric intNumeric)) {
@@ -165,18 +161,24 @@ public final class ArrayAccessExpr implements Expr {
                                            Type.INR);
                 }
 
-                final var index = intNumeric.intValue() >= 0
-                    ? intNumeric.intValue()
-                    : array.len() + intNumeric.intValue();
+                final long idx = intNumeric.longValue();
+                final long index = idx >= 0 ? idx : array.len() + idx;
+                if (index < 0) {
+                  throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Illegal negative index: " + index);
+                }
+                if (index >= array.len()) {
+                  continue;
+                }
 
-                return array.at(index).evaluateToItem(ctx, tuple);
+                final Sequence selected = array.at((int) index);
+                if (selected instanceof Item selectedItem) {
+                  return selectedItem;
+                }
+                if (selected != null) {
+                  nestedIter = selected.iterate();
+                }
               }
             }
-            return null;
-          }
-
-          @Override
-          public void close() {
           }
         };
       }

@@ -54,6 +54,22 @@ public final class SequenceExpr implements Expr {
       this.seqs = new Sequence[expr.length];
     }
 
+    /**
+     * Expose an explicitly repeatable result through a one-expression UDF body.
+     * Called only at the UDF return boundary, where unmarked results are still
+     * materialized. Ordinary iteration keeps its existing evaluation timing.
+     */
+    public Sequence repeatableResult() {
+      if (expr.length != 1) {
+        return this;
+      }
+      Sequence child = sequence(0);
+      if (child instanceof EvalSequence identity) {
+        child = identity.repeatableResult();
+      }
+      return child != null && child.isRepeatable() ? child : this;
+    }
+
     @Override
     protected Sequence sequence(int pos) {
       if (pos >= expr.length) {

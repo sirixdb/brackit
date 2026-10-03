@@ -46,7 +46,7 @@ public abstract class LazySequence extends AbstractSequence {
   private volatile Boolean bool;
 
   @Override
-  public final boolean booleanValue() {
+  public boolean booleanValue() {
     Boolean b = bool; // volatile read
     if (b != null) {
       return b;
@@ -70,7 +70,7 @@ public abstract class LazySequence extends AbstractSequence {
   }
 
   @Override
-  public final IntNumeric size() {
+  public IntNumeric size() {
     IntNumeric si = size; // volatile read
     if (si != null) {
       return si;

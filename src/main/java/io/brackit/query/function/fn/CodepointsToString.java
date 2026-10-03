@@ -57,33 +57,34 @@ public class CodepointsToString extends AbstractFunction {
       return Str.EMPTY;
     }
 
-    Iter it = args[0].iterate();
+    try (Iter it = args[0].iterate()) {
 
-    Item item = it.next();
+      Item item = it.next();
 
-    if (item == null) {
-      return Str.EMPTY;
-    }
-
-    StringBuilder sb = new StringBuilder();
-
-    while (item != null) {
-      int codePoint = ((IntNumeric) item).intValue();
-
-      if ((codePoint < 0x20 || codePoint > 0xD7FF) && codePoint != 0x9 && codePoint != 0xA && codePoint != 0xD
-          && (codePoint < 0xE000 || codePoint > 0xFFFD) && (codePoint < 0x10000 || codePoint > 0x10FFFF)) {
-        throw new QueryException(ErrorCode.ERR_CODE_POINT_NOT_VALID,
-                                 "Codepoint does not represent a legal XML character: %s.",
-                                 codePoint);
+      if (item == null) {
+        return Str.EMPTY;
       }
 
-      // appendCodePoint emits BOTH UTF-16 units of a non-BMP character; toChars(cp)[0] dropped the
-      // low surrogate, corrupting any codepoint above U+FFFF.
-      sb.appendCodePoint(codePoint);
-      item = it.next();
-    }
+      StringBuilder sb = new StringBuilder();
 
-    return new Str(sb.toString());
+      while (item != null) {
+        int codePoint = ((IntNumeric) item).intValue();
+
+        if ((codePoint < 0x20 || codePoint > 0xD7FF) && codePoint != 0x9 && codePoint != 0xA && codePoint != 0xD
+            && (codePoint < 0xE000 || codePoint > 0xFFFD) && (codePoint < 0x10000 || codePoint > 0x10FFFF)) {
+          throw new QueryException(ErrorCode.ERR_CODE_POINT_NOT_VALID,
+                                   "Codepoint does not represent a legal XML character: %s.",
+                                   codePoint);
+        }
+
+        // appendCodePoint emits BOTH UTF-16 units of a non-BMP character; toChars(cp)[0] dropped the
+        // low surrogate, corrupting any codepoint above U+FFFF.
+        sb.appendCodePoint(codePoint);
+        item = it.next();
+      }
+
+      return new Str(sb.toString());
+    }
   }
 
 }

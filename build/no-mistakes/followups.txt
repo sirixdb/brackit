@@ -1,0 +1,26 @@
+Pre-existing master behavior, excluded by the captain's narrow UDF-result scope:
+
+1. AbstractAnalyzer.sequenceType defaults a missing occurrence indicator to
+   ZeroOrMany. A declared result of item() or xs:integer therefore behaves as
+   item()* or xs:integer*, rather than enforcing exactly one. Test explicit
+   Cardinality.One signatures until this language-wide parser bug is addressed.
+
+2. FunctionConversionSequence.asTypedSequence returns the first item for an
+   at-most-one sequence without checking a second item. Non-repeatable UDF
+   results retain that behavior in this PR; opted-in results check both bounds.
+   TypedSequence also has related strict occurrence-checking gaps.
+
+3. StreamingArray can return an empty second uncached traversal, and partial
+   uncached traversal can leave cache/stream positions inconsistent. The wide
+   branch explored guarding and buffering these cases; this PR leaves the
+   master implementation untouched.
+
+4. Several legacy iterator consumers (e.g. Remove and InsertBefore) assume
+   iterator initialization succeeded during cleanup. An exception while opening
+   a source can consequently be replaced by a null dereference. Shared-stream
+   initialization also needs a separate concurrency audit.
+
+5. TryCatchExpr catches errors raised during evaluate(), but errors from an
+   already-returned lazy built-in sequence can escape during later consumption.
+   This PR preserves eager UDF handling for unmarked sources and tests opted-in
+   source failures with consumption inside try (e.g. try {count(local:f())}).

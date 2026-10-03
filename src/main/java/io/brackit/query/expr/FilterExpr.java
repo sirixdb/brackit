@@ -129,7 +129,7 @@ public class FilterExpr extends PredicateExpr {
 
         // JSONiq [? ... ] filters over the context item are pure truthiness checks; only
         // ordinary XQuery predicates treat a numeric predicate value as a positional test.
-        if (!ebvFilter[i] && fRes instanceof Numeric && ((Numeric) fRes).intValue() != 1) {
+        if (!ebvFilter[i] && fRes instanceof Numeric numeric && numeric.intValue() != 1) {
           return null;
         }
 

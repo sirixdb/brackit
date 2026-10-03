@@ -44,8 +44,8 @@ import io.brackit.query.Tuple;
  * </p>
  *
  * <p>
- * For performance reasons sequences may only be iterated and do not allow
- * direct access to specific elements.
+ * Indexed access and size calculation may require iteration; implementations
+ * can provide more efficient access when supported by their backend.
  * </p>
  *
  * <p>
@@ -80,6 +80,17 @@ public interface Sequence extends Tuple, Expr {
   IntNumeric size() throws QueryException;
 
   /**
+   * Returns the exact cardinality when it is cheaply available without evaluating
+   * or consuming the sequence. Unlike {@link #size()}, this method must not
+   * traverse the value or construct its items to determine the cardinality.
+   *
+   * @return the non-negative cardinality, or {@code null} if it is unknown
+   */
+  default IntNumeric knownSize() {
+    return null;
+  }
+
+  /**
    * Returns the item at the given position or <code>null</code> iff
    * <code>pos</code> is out of range.
    *
@@ -95,4 +106,19 @@ public interface Sequence extends Tuple, Expr {
    * Create a stream to iterate over all items of this sequence.
    */
   Iter iterate();
+
+  /**
+   * Whether independent readers can traverse the same immutable value again,
+   * including after an earlier reader stops or closes. Node identity and failures
+   * must remain stable, and concurrent readers must not compete for a single source.
+   * Reporting this capability must not evaluate or consume the value. This does
+   * not imply that {@link #size()} is cheap.
+   *
+   * <p>Backends may opt in to let user-defined functions return their results lazily.
+   * The conservative default preserves eager UDF result materialization, including
+   * for unknown {@code LazySequence} subclasses and single-use I/O sources.</p>
+   */
+  default boolean isRepeatable() {
+    return false;
+  }
 }

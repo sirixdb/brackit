@@ -25,48 +25,67 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package io.brackit.query.function.fn;
+package io.brackit.query.expr;
 
-import io.brackit.query.atomic.QNm;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
-import io.brackit.query.jdm.Sequence;
-import io.brackit.query.jdm.Signature;
-import io.brackit.query.module.StaticContext;
-import io.brackit.query.sequence.ItemSequence;
-import io.brackit.query.QueryContext;
-import io.brackit.query.QueryException;
-import io.brackit.query.function.AbstractFunction;
+import io.brackit.query.sequence.BaseIter;
 
-/**
- * Implementation of predefined function fn:reverse($arg1) as per
- * http://www.w3.org/TR/xpath-functions/#func-reverse
- *
- * @author Max Bechtold
- */
-public class Reverse extends AbstractFunction {
+/** Shared reader ownership for lazy array and object lookups. */
+abstract class JsonLookupIter extends BaseIter {
+  protected final Iter iter;
+  protected Iter nestedIter;
+  private boolean closed;
 
-  public Reverse(QNm name, Signature signature) {
-    super(name, signature, true);
+  JsonLookupIter(Iter iter) {
+    this.iter = iter;
   }
 
   @Override
-  public Sequence execute(StaticContext sctx, QueryContext ctx, Sequence[] args) throws QueryException {
-    Sequence s = args[0];
-    if (s == null) {
+  public final Item next() {
+    if (closed) {
       return null;
     }
-
-    Item[] items = new Item[s.size().intValue()];
-    try (Iter iter = s.iterate()) {
-      Item item;
-      int i = items.length - 1;
-      while ((item = iter.next()) != null) {
-        items[i--] = item;
+    boolean returned = false;
+    try {
+      Item item = nextItem();
+      returned = item != null;
+      return item;
+    } finally {
+      if (!returned) {
+        close();
       }
     }
-
-    return new ItemSequence(items);
   }
 
+  protected abstract Item nextItem();
+
+  protected final Item nextNested() {
+    if (nestedIter == null) {
+      return null;
+    }
+    Item item = nestedIter.next();
+    if (item == null) {
+      try {
+        nestedIter.close();
+      } finally {
+        nestedIter = null;
+      }
+    }
+    return item;
+  }
+
+  @Override
+  public final void close() {
+    if (!closed) {
+      closed = true;
+      try {
+        if (nestedIter != null) {
+          nestedIter.close();
+        }
+      } finally {
+        iter.close();
+      }
+    }
+  }
 }
