@@ -55,7 +55,12 @@ public class StepExpr extends PredicateExpr {
 
   public StepExpr(Accessor accessor, NodeType test, Expr input, Expr[] filter, boolean[] bindItem, boolean[] bindPos,
       boolean[] bindSize) {
-    super(filter, bindItem, bindPos, bindSize);
+    this(accessor, test, input, filter, bindItem, bindPos, bindSize, new boolean[filter.length], new Object[filter.length]);
+  }
+
+  public StepExpr(Accessor accessor, NodeType test, Expr input, Expr[] filter, boolean[] bindItem, boolean[] bindPos,
+      boolean[] bindSize, boolean[] ebvFilter, Object[] potentialFocus) {
+    super(filter, bindItem, bindPos, bindSize, ebvFilter, potentialFocus);
     this.accessor = accessor;
     this.test = test;
     this.input = input;
@@ -124,7 +129,7 @@ public class StepExpr extends PredicateExpr {
         }
       } else {
         // the filter predicate is dependent on the context item
-        if ((backwardAxis) && (!reversed) && (bindPos[i])) {
+        if (backwardAxis && !reversed) {
           s = reverse(s);
           reversed = true;
         }

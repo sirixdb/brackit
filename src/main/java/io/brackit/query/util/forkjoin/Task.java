@@ -39,7 +39,7 @@ import io.brackit.query.QueryExecution;
  */
 public abstract class Task extends RecursiveAction {
 
-  private final QueryExecution execution = QueryExecution.current();
+  private final ScopedValue.Carrier execution = QueryExecution.capture();
 
   private volatile Throwable throwable;
 

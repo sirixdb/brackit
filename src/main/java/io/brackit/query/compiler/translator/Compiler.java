@@ -592,6 +592,7 @@ public class Compiler implements Translator {
     boolean[] bindPos = new boolean[noOfPredicates];
     boolean[] bindSize = new boolean[noOfPredicates];
     boolean[] ebvFilter = new boolean[noOfPredicates];
+    Object[] potentialFocus = new Object[noOfPredicates];
 
     for (int i = 0; i < noOfPredicates; i++) {
       AST predicate = node.getChild(1 + i);
@@ -611,9 +612,10 @@ public class Compiler implements Translator {
       // independent predicates such as [?1] or [?last()] retain XQuery's positional
       // semantics.
       ebvFilter[i] = itemBinding.isContextDependent() && predicate.checkProperty("jsoniqFilter");
+      potentialFocus[i] = predicate.checkProperty("jsoniqFilter") ? itemBinding.potentialContext() : null;
     }
 
-    return new FilterExpr(expr, predicates, bindItem, bindPos, bindSize, ebvFilter);
+    return new FilterExpr(expr, predicates, bindItem, bindPos, bindSize, ebvFilter, potentialFocus);
   }
 
   protected Expr insertExpr(AST node) throws QueryException {
@@ -1142,21 +1144,26 @@ public class Compiler implements Translator {
     boolean[] bindItem = new boolean[noOfPredicates];
     boolean[] bindPos = new boolean[noOfPredicates];
     boolean[] bindSize = new boolean[noOfPredicates];
+    boolean[] ebvFilter = new boolean[noOfPredicates];
+    Object[] potentialFocus = new Object[noOfPredicates];
 
     for (int i = 0; i < noOfPredicates; i++) {
       Binding itemBinding = table.bind(Bits.FS_DOT, SequenceType.ITEM);
       Binding posBinding = table.bind(Bits.FS_POSITION, SequenceType.INTEGER);
       Binding sizeBinding = table.bind(Bits.FS_LAST, SequenceType.INTEGER);
-      filter[i] = expr(node.getChild(2 + i).getChild(0), true);
+      AST predicate = node.getChild(2 + i);
+      filter[i] = expr(predicate.getChild(0), true);
       table.unbind();
       table.unbind();
       table.unbind();
       bindItem[i] = itemBinding.isReferenced();
       bindPos[i] = posBinding.isReferenced();
       bindSize[i] = sizeBinding.isReferenced();
+      ebvFilter[i] = itemBinding.isContextDependent() && predicate.checkProperty("jsoniqFilter");
+      potentialFocus[i] = predicate.checkProperty("jsoniqFilter") ? itemBinding.potentialContext() : null;
     }
 
-    return new StepExpr(axis, test, in, filter, bindItem, bindPos, bindSize);
+    return new StepExpr(axis, test, in, filter, bindItem, bindPos, bindSize, ebvFilter, potentialFocus);
   }
 
   protected Accessor axis(AST node) throws QueryException {

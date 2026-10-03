@@ -4,25 +4,38 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.QNm;
+import io.brackit.query.atomic.Str;
 import io.brackit.query.block.FJControl;
 import io.brackit.query.compiler.Bits;
 import io.brackit.query.expr.DefaultCtxItem;
+import io.brackit.query.expr.BoundVariable;
+import io.brackit.query.expr.FilterExpr;
 import io.brackit.query.function.AbstractFunction;
 import io.brackit.query.function.DynamicFunctionExpr;
 import io.brackit.query.function.FunctionExpr;
 import io.brackit.query.jdm.Function;
+import io.brackit.query.jdm.Expr;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.jdm.Signature;
+import io.brackit.query.jdm.SplittableSequence;
 import io.brackit.query.jdm.node.NodeStore;
 import io.brackit.query.jdm.type.SequenceType;
 import io.brackit.query.module.MainModule;
+import io.brackit.query.module.Functions;
+import io.brackit.query.module.Namespaces;
 import io.brackit.query.module.StaticContext;
 import io.brackit.query.operator.TupleImpl;
+import io.brackit.query.operator.ForBind;
+import io.brackit.query.operator.Start;
+import io.brackit.query.operator.morsel.MorselPipeExpr;
+import io.brackit.query.operator.morsel.SplitAwareExpr;
+import io.brackit.query.sequence.ItemSequence;
 import io.brackit.query.sequence.BaseIter;
 import io.brackit.query.sequence.LazySequence;
 import io.brackit.query.util.forkjoin.Task;
+import io.brackit.query.util.ExprUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -154,5 +167,182 @@ class QueryExecutionContextIdentityTest extends XQueryBaseTest {
       assertSame(firstNode, first.next());
       assertSame(secondNode, second.next());
     }
+  }
+
+  @Test
+  void morselWorkersAndTheirLazyReturnsShareTheExecutionDefault() {
+    BackendContext backend = new BackendContext(store);
+    DefaultCtxItem declaration = (DefaultCtxItem) new Query("declare context item as node() := <n/>; $$")
+        .getModule().getVariables().resolve(Bits.FS_DOT);
+    AtomicInteger workers = new AtomicInteger();
+    class SplitSource extends ItemSequence implements SplittableSequence {
+      SplitSource() {
+        super(Int32.ONE, new Int32(2), new Int32(3), new Int32(4));
+      }
+
+      @Override
+      public int splitCount(int preferred) {
+        return Math.min(2, preferred);
+      }
+
+      @Override
+      public Sequence split(int index, int total) {
+        assertEquals("brackit-morsel", Thread.currentThread().getName());
+        assertNotNull(QueryExecution.current());
+        workers.incrementAndGet();
+        return new ItemSequence(items[index * 2], items[index * 2 + 1]);
+      }
+    }
+    Function source = new AbstractFunction(new QNm("split-source"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
+      @Override
+      public Sequence execute(StaticContext sctx, QueryContext received, Sequence[] args) {
+        assertSame(backend, received);
+        return new SplitSource();
+      }
+    };
+    Function result = new AbstractFunction(new QNm("morsel-default"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
+      @Override
+      public Sequence execute(StaticContext sctx, QueryContext received, Sequence[] args) {
+        assertSame(backend, received);
+        Item first = declaration.evaluateToItem(received, new TupleImpl());
+        return new LazySequence() {
+          @Override
+          public Iter iterate() {
+            return new BaseIter() {
+              private boolean delivered;
+
+              @Override
+              public Item next() {
+                assertSame(first, declaration.evaluateToItem(received, new TupleImpl()));
+                if (delivered) {
+                  return null;
+                }
+                delivered = true;
+                return first;
+              }
+
+              @Override
+              public void close() {
+                assertSame(first, declaration.evaluateToItem(received, new TupleImpl()));
+              }
+            };
+          }
+        };
+      }
+    };
+    SplitAwareExpr leaf = new SplitAwareExpr(new FunctionExpr(null, source));
+    MainModule module = new MainModule();
+    module.setExpr(new MorselPipeExpr(new ForBind(new Start(), leaf, false), new FunctionExpr(null, result), leaf));
+    Query query = new Query(module);
+    try (Iter first = query.execute(backend).iterate(); Iter second = query.execute(backend).iterate()) {
+      Item firstNode = first.next();
+      Item secondNode = second.next();
+      assertNotSame(firstNode, secondNode);
+      for (int row = 1; row < 4; row++) {
+        assertSame(firstNode, first.next());
+        assertSame(secondNode, second.next());
+      }
+      assertNull(first.next());
+      assertNull(second.next());
+    }
+    assertEquals(4, workers.get());
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = { false, true })
+  void workerEvaluatedImplicitContextPredicatesRetainTruthiness(boolean morsel) {
+    Object binding = new Object();
+    BoundVariable focus = new BoundVariable(new QNm("focus"), SequenceType.ITEM, binding);
+    focus.setPos(0);
+    Function stringLength = new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "string-length"), 0);
+    Expr call = new DynamicFunctionExpr(null, stringLength, focus);
+    Expr predicate;
+    if (morsel) {
+      class SplitSource extends ItemSequence implements SplittableSequence {
+        SplitSource() {
+          super(Int32.ONE);
+        }
+
+        @Override
+        public int splitCount(int preferred) {
+          return Math.min(2, preferred);
+        }
+
+        @Override
+        public Sequence split(int index, int total) {
+          return index == 0 ? new ItemSequence(Int32.ONE) : new ItemSequence();
+        }
+      }
+      Function source = new AbstractFunction(new QNm("predicate-source"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
+        @Override
+        public Sequence execute(StaticContext sctx, QueryContext received, Sequence[] args) {
+          return new SplitSource();
+        }
+      };
+      SplitAwareExpr leaf = new SplitAwareExpr(new FunctionExpr(null, source));
+      predicate = new MorselPipeExpr(new ForBind(new Start(), leaf, false), call, leaf);
+    } else {
+      predicate = new Expr() {
+        @Override
+        public Sequence evaluate(QueryContext received, Tuple tuple) {
+          return new LazySequence() {
+            @Override
+            public Iter iterate() {
+              return new BaseIter() {
+                private boolean delivered;
+
+                @Override
+                public Item next() {
+                  if (delivered) {
+                    return null;
+                  }
+                  delivered = true;
+                  Item[] result = new Item[1];
+                  Task task = new Task() {
+                    @Override
+                    protected void doCompute() {
+                      result[0] = call.evaluateToItem(received, tuple);
+                    }
+                  };
+                  FJControl.submit(task).join();
+                  assertNull(task.getError());
+                  return result[0];
+                }
+
+                @Override
+                public void close() {
+                }
+              };
+            }
+          };
+        }
+
+        @Override
+        public Item evaluateToItem(QueryContext received, Tuple tuple) {
+          return ExprUtil.asItem(evaluate(received, tuple));
+        }
+
+        @Override
+        public boolean isUpdating() {
+          return false;
+        }
+
+        @Override
+        public boolean isVacuous() {
+          return false;
+        }
+      };
+    }
+    ItemSequence expected = new ItemSequence(new Str("aa"), new Str("b"), new Str("ccc"));
+    Function input = new AbstractFunction(new QNm("predicate-input"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
+      @Override
+      public Sequence execute(StaticContext sctx, QueryContext received, Sequence[] args) {
+        return expected;
+      }
+    };
+    MainModule module = new MainModule();
+    module.setExpr(new FilterExpr(new FunctionExpr(null, input), new Expr[] { predicate }, new boolean[] { true },
+        new boolean[] { false }, new boolean[] { false }, new boolean[] { false }, new Object[] { binding }));
+    ResultChecker.dCheck(expected, new Query(module).execute(ctx));
   }
 }

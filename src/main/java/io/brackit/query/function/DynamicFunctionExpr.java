@@ -36,7 +36,6 @@ import io.brackit.query.atomic.QNm;
 import io.brackit.query.jdm.*;
 import io.brackit.query.jdm.json.Array;
 import io.brackit.query.jdm.json.Object;
-import io.brackit.query.jdm.node.Node;
 import io.brackit.query.jdm.type.Cardinality;
 import io.brackit.query.jdm.type.ItemType;
 import io.brackit.query.jdm.type.SequenceType;
@@ -179,10 +178,6 @@ public class DynamicFunctionExpr implements Expr {
       res = FunctionConversionSequence.asTypedSequence(function.getSignature().getResultType(), res, false);
 
       return ExprUtil.materialize(res);
-    }
-
-    if (functionItem == null || functionItem instanceof Atomic || functionItem instanceof Node<?>) {
-      return null;
     }
 
     throw new QueryException(new QNm(""));

@@ -96,7 +96,8 @@ public class VariableTable {
 
     for (int i = bLength - 1; i > -1; i--) {
       if (bTable[bTableCounts][i].name.equals(name)) {
-        BoundVariable variable = new BoundVariable(name, bTable[bTableCounts][i].type);
+        Binding binding = bTable[bTableCounts][i];
+        BoundVariable variable = new BoundVariable(name, binding.type, contextDependent ? null : binding.contextKey());
         bTable[bTableCounts][i].connect(variable, contextDependent);
         return variable;
       }

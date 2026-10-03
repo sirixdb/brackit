@@ -6,6 +6,7 @@ import java.util.function.Supplier;
 
 import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.expr.DefaultCtxItem;
+import io.brackit.query.expr.PredicateExpr;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
@@ -23,6 +24,13 @@ public final class QueryExecution {
 
   public static QueryExecution current() {
     return CURRENT.isBound() ? CURRENT.get() : null;
+  }
+
+  public static ScopedValue.Carrier capture() {
+    ScopedValue.Carrier scope = PredicateExpr.captureFocus();
+    QueryExecution execution = current();
+    return execution == null ? scope
+        : scope == null ? ScopedValue.where(CURRENT, execution) : scope.where(CURRENT, execution);
   }
 
   public static Item resolveDefaultContextItem(QueryContext context, DefaultCtxItem declaration,
