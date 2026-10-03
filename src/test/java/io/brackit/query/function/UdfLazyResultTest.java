@@ -221,7 +221,7 @@ public class UdfLazyResultTest extends XQueryBaseTest {
       return new LazySequence() {
         @Override
         public boolean isRepeatable() {
-          return true;
+          return probe.repeatable;
         }
 
         @Override
@@ -236,7 +236,10 @@ public class UdfLazyResultTest extends XQueryBaseTest {
                 return null;
               }
               probe.constructed++;
-              return new Int32(++position);
+              position++;
+              return probe.value != null
+                  ? probe.value
+                  : probe.values != null ? probe.values[position - 1] : new Int32(position);
             }
 
             @Override
@@ -806,6 +809,142 @@ public class UdfLazyResultTest extends XQueryBaseTest {
     assertEquals(64, PROBE.get().constructed);
     assertEquals(1, PROBE.get().opened);
     assertEquals(1, PROBE.get().closed);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void singletonNonArrayLookupsMatchMaterializedResults(String call) {
+    for (String source : new String[] { "probe:keys()", "probe:unknown-keys()" }) {
+      for (String body : new String[] { source, "local:id(" + source + ")" }) {
+        for (String access : new String[] { "[0]", "[-1]", "[]" }) {
+          for (Item value : new Item[] { Int32.ONE, new Str("value"), Bool.TRUE, lookupContainer(true, Int32.ONE), ctx
+                                                                                                                      .getNodeFactory()
+                                                                                                                      .element(new QNm("n")) }) {
+            String text = "declare function local:id($s as item()*) as item()* {($s)}; " + calls("item()*", body)
+                + "count(" + call + access + ")";
+            Probe baselineProbe = singletonLookupProbe(false, value);
+            LookupOutcome baseline = lookupOutcome(text);
+            assertEquals(new LookupOutcome(List.of(), ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE), baseline, text);
+            assertEquals(1, baselineProbe.opened, text);
+            assertEquals(1, baselineProbe.closed, text);
+            Probe lazyProbe = singletonLookupProbe(true, value);
+            assertEquals(baseline, lookupOutcome(text), text);
+            assertEquals(1, lazyProbe.constructed, text);
+            assertEquals(1, lazyProbe.opened, text);
+            assertEquals(1, lazyProbe.closed, text);
+          }
+        }
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void mixedArrayLookupsKeepMultiItemMappingAndPrefixBudgets(String call) {
+    Item array = new DArray(List.of(new Int32(10)));
+    for (String source : new String[] { "probe:keys()", "probe:unknown-keys()" }) {
+      for (String body : new String[] { source, "local:id(" + source + ")" }) {
+        for (String access : new String[] { "[0]", "[-1]", "[]" }) {
+          for (Item[] values : new Item[][] { { array, Int32.ONE, array }, { Int32.ONE, array, array }, { Int32.ONE,
+              Int32.ONE, array }, { Int32.ONE, Int32.ONE } }) {
+            String declarations = "declare function local:id($s as item()*) as item()* {($s)}; " + calls("item()*",
+                                                                                                         body);
+            resetProbe();
+            Probe baselineProbe = PROBE.get();
+            baselineProbe.repeatable = false;
+            baselineProbe.length = values.length;
+            baselineProbe.values = values;
+            LookupOutcome baseline = lookupOutcome(declarations + call + access);
+            int arrayCount = 0;
+            for (Item item : values) {
+              if (item instanceof DArray) {
+                arrayCount++;
+              }
+            }
+            assertEquals(new LookupOutcome(arrayCount == 2
+                ? List.of(10, 10)
+                : arrayCount == 1 ? List.of(10) : List.of(), null), baseline);
+            assertEquals(1, baselineProbe.opened);
+            assertEquals(1, baselineProbe.closed);
+            for (boolean prefix : new boolean[] { false, true }) {
+              resetProbe();
+              Probe lazyProbe = PROBE.get();
+              lazyProbe.length = values.length;
+              lazyProbe.values = values;
+              String operand = call + access;
+              Sequence result = query(declarations + (prefix ? "subsequence(" + operand + ",1,1)" : operand));
+              assertEquals(0, lazyProbe.constructed);
+              List<Integer> actual = new ArrayList<>();
+              try (Iter it = result.iterate()) {
+                Item item;
+                while ((item = it.next()) != null) {
+                  actual.add(((IntNumeric) item).intValue());
+                }
+              }
+              assertEquals(prefix && arrayCount > 0 ? List.of(10) : baseline.values(), actual);
+              int expectedConstructed = values.length;
+              if (prefix && arrayCount > 0) {
+                expectedConstructed = 1;
+                while (!(values[expectedConstructed - 1] instanceof DArray)) {
+                  expectedConstructed++;
+                }
+              }
+              assertEquals(expectedConstructed, lazyProbe.constructed);
+              assertEquals(1, lazyProbe.opened);
+              assertEquals(1, lazyProbe.closed);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  public void typedIdentityViewsKeepSingletonLookupTypeRejection() {
+    for (String source : new String[] { "probe:keys()", "probe:unknown-keys()" }) {
+      for (String access : new String[] { "[0]", "[-1]", "[]" }) {
+        String text = "let $s as item()* := " + source + " return count($s" + access + ")";
+        Probe baselineProbe = singletonLookupProbe(false, Int32.ONE);
+        LookupOutcome baseline = lookupOutcome(text);
+        assertEquals(new LookupOutcome(List.of(), ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE), baseline);
+        assertEquals(1, baselineProbe.opened);
+        assertEquals(1, baselineProbe.closed);
+        Probe lazyProbe = singletonLookupProbe(true, Int32.ONE);
+        assertEquals(baseline, lookupOutcome(text));
+        assertEquals(1, lazyProbe.constructed);
+        assertEquals(1, lazyProbe.opened);
+        assertEquals(1, lazyProbe.closed);
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void singletonLookaheadClosesReadersOnEmptySingletonAndFailure(String call) {
+    for (String access : new String[] { "[0]", "[-1]", "[]" }) {
+      for (int length : new int[] { 0, 1, 64 }) {
+        resetProbe();
+        Probe probe = PROBE.get();
+        probe.length = length;
+        probe.failAfter = length == 64 ? 1 : -1;
+        Sequence result = query(calls("item()*", "probe:keys()") + call + access);
+        for (int pass = 1; pass <= 2; pass++) {
+          try (Iter it = result.iterate()) {
+            if (length == 0) {
+              assertNull(it.next());
+            } else {
+              assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                           assertThrows(QueryException.class, it::next).getCode());
+              assertNull(it.next());
+            }
+            assertEquals(pass, probe.opened);
+            assertEquals(pass, probe.closed);
+          }
+          assertEquals(pass, probe.closed);
+          assertEquals(length == 0 ? 0 : pass, probe.constructed);
+        }
+      }
+    }
   }
 
   @ParameterizedTest
