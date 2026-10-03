@@ -29,8 +29,22 @@ package io.brackit.query.jsonitem.array;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryException;
@@ -39,6 +53,7 @@ import io.brackit.query.function.json.StreamingJSONParser;
 import io.brackit.query.jdm.Iter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -52,8 +67,72 @@ class StreamingArrayTest {
 
   private void assertRereadFails(Runnable read) {
     QueryException error = assertThrows(QueryException.class, read::run);
+    assertRereadError(error);
+  }
+
+  private void assertRereadFails(Future<?> read) {
+    ExecutionException error = assertThrows(ExecutionException.class, () -> read.get(10, TimeUnit.SECONDS));
+    assertRereadError(assertInstanceOf(QueryException.class, error.getCause()));
+  }
+
+  private void assertRereadError(QueryException error) {
     assertEquals(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR, error.getCode());
     assertTrue(error.getMessage().contains("StreamingArray cannot be reread"));
+  }
+
+  private static final class PausingInput extends ByteArrayInputStream {
+    private final AtomicBoolean pauseNextRead = new AtomicBoolean();
+    private final CountDownLatch paused = new CountDownLatch(1);
+    private final CountDownLatch resume = new CountDownLatch(1);
+
+    private PausingInput(String json) {
+      super(json.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
+    public int read(byte[] bytes, int offset, int length) {
+      if (pauseNextRead.compareAndSet(true, false)) {
+        paused.countDown();
+        try {
+          assertTrue(resume.await(10, TimeUnit.SECONDS), "input read was not resumed");
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new AssertionError(e);
+        }
+      }
+      return super.read(bytes, offset, length);
+    }
+  }
+
+  private <T> Future<T> overlapReads(PausingInput input, Runnable firstRead, Callable<T> secondRead) throws Exception {
+    input.pauseNextRead.set(true);
+    try (var executor = Executors.newFixedThreadPool(2)) {
+      var first = executor.submit(firstRead);
+      Future<T> second;
+      try {
+        assertTrue(input.paused.await(10, TimeUnit.SECONDS), "first reader did not reach input");
+        var started = new CountDownLatch(1);
+        second = executor.submit(() -> {
+          started.countDown();
+          return secondRead.call();
+        });
+        assertTrue(started.await(10, TimeUnit.SECONDS), "second reader did not start");
+        assertThrows(TimeoutException.class, () -> second.get(100, TimeUnit.MILLISECONDS));
+      } finally {
+        input.resume.countDown();
+      }
+      first.get(10, TimeUnit.SECONDS);
+      return second;
+    }
+  }
+
+  private static Stream<Consumer<StreamingArray>> materializations() {
+    return Stream.of(array -> assertEquals(List.of(Int32.ONE, new Int32(2), new Int32(3)), array.values()),
+                     array -> assertEquals(new Int32(3), array.length()),
+                     array -> assertEquals(3, array.len()),
+                     array -> assertEquals(Int32.ONE, array.at(0)),
+                     array -> assertEquals(Int32.ONE, array.at(Int32.ZERO)),
+                     array -> assertEquals(Int32.ONE, array.range(Int32.ZERO, Int32.ONE).at(0)));
   }
 
   @Test
@@ -97,6 +176,107 @@ class StreamingArrayTest {
       assertEquals(new Int32(2), first.next());
       assertEquals(new Int32(3), first.next());
       assertNull(first.next());
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = { false, true })
+  void overlappingIteratorsCannotShareParserCursor(boolean cachedPrefix) throws Exception {
+    var input = new PausingInput("[1,2,3]");
+    var array = (StreamingArray) new StreamingJSONParser(input, cachedPrefix ? 3 : 1).parse();
+    if (cachedPrefix) {
+      assertEquals(Int32.ONE, array.at(0));
+    }
+    try (Iter first = array.iterate(); Iter second = array.iterate()) {
+      if (cachedPrefix) {
+        assertEquals(Int32.ONE, first.next());
+        assertEquals(Int32.ONE, second.next());
+      }
+      var reread = overlapReads(input,
+                                () -> assertEquals(new Int32(cachedPrefix ? 2 : 1), first.next()),
+                                second::next);
+      assertRereadFails(reread);
+      if (!cachedPrefix) {
+        assertEquals(new Int32(2), first.next());
+      }
+      assertEquals(new Int32(3), first.next());
+      assertNull(first.next());
+    }
+  }
+
+  @Test
+  void iteratorAdmissionCannotRaceWithStreaming() throws Exception {
+    var input = new PausingInput("[1,2,3]");
+    var array = (StreamingArray) new StreamingJSONParser(input, 1).parse();
+    try (Iter iter = array.iterate()) {
+      var reread = overlapReads(input, () -> assertEquals(Int32.ONE, iter.next()), array::iterate);
+      assertRereadFails(reread);
+      assertEquals(new Int32(2), iter.next());
+      assertEquals(new Int32(3), iter.next());
+      assertNull(iter.next());
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("materializations")
+  void materializationCannotRaceWithStreaming(Consumer<StreamingArray> materialize) throws Exception {
+    var input = new PausingInput("[1,2,3]");
+    var array = (StreamingArray) new StreamingJSONParser(input, 1).parse();
+    try (Iter iter = array.iterate()) {
+      var reread = overlapReads(input, () -> assertEquals(Int32.ONE, iter.next()), () -> {
+        materialize.accept(array);
+        return null;
+      });
+      assertRereadFails(reread);
+      assertEquals(new Int32(2), iter.next());
+      assertEquals(new Int32(3), iter.next());
+      assertNull(iter.next());
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("materializations")
+  void materializationBeforeIterationPublishesAlignedCache(Consumer<StreamingArray> materialize) throws Exception {
+    var input = new PausingInput("[1,2,3]");
+    var array = (StreamingArray) new StreamingJSONParser(input, 1).parse();
+    try (Iter iter = array.iterate()) {
+      var read = overlapReads(input, () -> materialize.accept(array), iter::next);
+      assertEquals(Int32.ONE, read.get(10, TimeUnit.SECONDS));
+      assertEquals(List.of(Int32.ONE, new Int32(2), new Int32(3)), array.values());
+      assertEquals(new Int32(2), iter.next());
+      assertEquals(new Int32(3), iter.next());
+      assertNull(iter.next());
+    }
+    try (Iter replay = array.iterate()) {
+      assertEquals(Int32.ONE, replay.next());
+      assertEquals(new Int32(2), replay.next());
+      assertEquals(new Int32(3), replay.next());
+      assertNull(replay.next());
+    }
+  }
+
+  @Test
+  void overlappingMaterializersPreserveArrayIndices() throws Exception {
+    var input = new PausingInput("[1,2,3]");
+    var array = (StreamingArray) new StreamingJSONParser(input, 1).parse();
+    var read = overlapReads(input, () -> assertEquals(Int32.ONE, array.at(0)), array::values);
+    assertEquals(List.of(Int32.ONE, new Int32(2), new Int32(3)), read.get(10, TimeUnit.SECONDS));
+    assertEquals(Int32.ONE, array.at(0));
+    assertEquals(new Int32(2), array.at(1));
+    assertEquals(new Int32(3), array.at(2));
+  }
+
+  @Test
+  void overlappingEmptyArrayIteratorsRemainReplayable() throws Exception {
+    var input = new PausingInput("[]");
+    var array = (StreamingArray) new StreamingJSONParser(input, 1).parse();
+    try (Iter first = array.iterate(); Iter second = array.iterate()) {
+      var read = overlapReads(input, () -> assertNull(first.next()), second::next);
+      assertNull(read.get(10, TimeUnit.SECONDS));
+    }
+    assertEquals(0, array.len());
+    try (Iter replay = array.iterate()) {
+      assertNull(replay.next());
     }
   }
 

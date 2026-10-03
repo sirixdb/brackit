@@ -72,7 +72,7 @@ public final class StreamingArray extends AbstractArray {
   }
 
   @Override
-  public Iter iterate() {
+  public synchronized Iter iterate() {
     ensureReplayable();
     if (fullyMaterialized) {
       // Already materialized — iterate from cache
@@ -103,40 +103,42 @@ public final class StreamingArray extends AbstractArray {
 
       @Override
       public Item next() {
-        if (done) {
-          return null;
-        }
-
-        // Iterators created before streaming starts must not share the parser cursor.
-        if (!ownsStream) {
-          ensureReplayable();
-        }
-
-        // Replay already-materialized elements (from prior random access)
-        if (index < materialized.size()) {
-          return (Item) materialized.get(index++);
-        }
-
-        // Another operation may have finished materializing since this iterator was created.
-        if (fullyMaterialized) {
-          done = true;
-          return null;
-        }
-
-        // Pull next from parser — do NOT cache (streaming mode)
-        Item item = parser.nextArrayElement();
-        if (item == null) {
-          done = true;
-          fullyMaterialized = !streamed;
-          if (wrappedInObject) {
-            parser.skipTrailingObjectClose();
+        synchronized (StreamingArray.this) {
+          if (done) {
+            return null;
           }
-          return null;
+
+          // Iterators created before streaming starts must not share the parser cursor.
+          if (!ownsStream) {
+            ensureReplayable();
+          }
+
+          // Replay already-materialized elements (from prior random access)
+          if (index < materialized.size()) {
+            return (Item) materialized.get(index++);
+          }
+
+          // Another operation may have finished materializing since this iterator was created.
+          if (fullyMaterialized) {
+            done = true;
+            return null;
+          }
+
+          // Pull next from parser — do NOT cache (streaming mode)
+          Item item = parser.nextArrayElement();
+          if (item == null) {
+            done = true;
+            fullyMaterialized = !streamed;
+            if (wrappedInObject) {
+              parser.skipTrailingObjectClose();
+            }
+            return null;
+          }
+          streamed = true;
+          ownsStream = true;
+          index++;
+          return item;
         }
-        streamed = true;
-        ownsStream = true;
-        index++;
-        return item;
       }
 
       @Override
@@ -146,13 +148,13 @@ public final class StreamingArray extends AbstractArray {
   }
 
   @Override
-  public List<Sequence> values() {
+  public synchronized List<Sequence> values() {
     materializeAll();
     return materialized;
   }
 
   @Override
-  public Sequence at(int i) {
+  public synchronized Sequence at(int i) {
     materializeUpTo(i);
     if (i < 0 || i >= materialized.size()) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
@@ -166,20 +168,20 @@ public final class StreamingArray extends AbstractArray {
   }
 
   @Override
-  public IntNumeric length() {
+  public synchronized IntNumeric length() {
     materializeAll();
     int len = materialized.size();
     return len <= 20 ? Int32.ZERO_TO_TWENTY[len] : new Int32(len);
   }
 
   @Override
-  public int len() {
+  public synchronized int len() {
     materializeAll();
     return materialized.size();
   }
 
   @Override
-  public Array range(IntNumeric from, IntNumeric to) {
+  public synchronized Array range(IntNumeric from, IntNumeric to) {
     materializeUpTo(to.intValue());
     List<Sequence> sub = materialized.subList(from.intValue(), to.intValue());
     return new DArray(sub);
