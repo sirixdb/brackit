@@ -257,7 +257,7 @@ public class DateTime extends AbstractTimeInstant {
   }
 
   public DateTime(DTD timezone) {
-    int utcDiff = timezone.getHours() * 60 + (timezone.isNegative() ? -1 : 1) * timezone.getMinutes();
+    int utcDiff = (timezone.isNegative() ? -1 : 1) * (timezone.getHours() * 60 + timezone.getMinutes());
     Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
     cal.add(Calendar.MINUTE, utcDiff);
     this.year = (short) cal.get(Calendar.YEAR);
