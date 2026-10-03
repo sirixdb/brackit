@@ -77,7 +77,12 @@ abstract class ForwardDeclaration extends ExprAnalyzer {
       return false;
     }
     name = expand(name, DefaultNS.EMPTY);
-    if (!variables.check(name)) {
+    // Only a reference that lexical resolution cannot bind to an in-query
+    // variable refers to a declared (prolog) variable and thus is a dependency.
+    // Note that check() inspects the innermost scope only, so it both misses
+    // references to outer in-query variables and wrongly hides a declared
+    // variable shadowed by a binding that is not in scope yet.
+    if (variables.resolve(name) == null) {
       DeclVariable dependency = (DeclVariable) module.getVariables().resolve(name);
       if (deps == null) {
         deps = new HashSet<>();

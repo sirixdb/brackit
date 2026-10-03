@@ -109,6 +109,20 @@ public class PrologDeclarationTest extends XQueryBaseTest {
   }
 
   @Test
+  public void variableDeclarationWithNestedScopeVariableAccess() {
+    Sequence result = new Query(
+                                "declare variable $x := (for $a in (1,2) return (for $b in (10,20) return $a * $b)); $x").execute(ctx);
+    ResultChecker.dCheck(new ItemSequence(new Int32(10), new Int32(20), new Int32(20), new Int32(40)), result);
+  }
+
+  @Test
+  public void variableDeclarationWithNestedScopeVariableAccessInWhereClause() {
+    Sequence result = new Query("declare variable $src := ({\"id\":1}); " + "declare variable $r := (for $a in (1,2) "
+        + "where empty(for $b in $src where $b.id eq $a return $b.id) return $a); ($r, $r)").execute(ctx);
+    ResultChecker.dCheck(new ItemSequence(new Int32(2), new Int32(2)), result);
+  }
+
+  @Test
   public void declareVariableWithCylicInitializer() throws Exception {
     QueryContext ctx = createContext();
     ctx.setContextItem(new Int(1));
