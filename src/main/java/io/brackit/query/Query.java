@@ -82,7 +82,7 @@ public class Query {
     if (body == null) {
       throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR, "Module does not contain a query body.");
     }
-    Sequence result = body.evaluate(ctx, new TupleImpl());
+    Sequence result = body.evaluate(new ExecutionQueryContext(ctx), new TupleImpl());
 
     if (!lazy || body.isUpdating()) {
       // iterate possibly lazy result sequence to "pull-in" all pending updates

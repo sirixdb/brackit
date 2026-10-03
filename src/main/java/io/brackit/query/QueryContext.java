@@ -1,5 +1,8 @@
 package io.brackit.query;
 
+import java.util.function.Supplier;
+
+import io.brackit.query.expr.DefaultCtxItem;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.jdm.json.JsonCollection;
@@ -42,6 +45,10 @@ public interface QueryContext {
   void setContextItem(Item item);
 
   Item getContextItem();
+
+  default Item resolveDefaultContextItem(DefaultCtxItem declaration, Supplier<Item> initializer) {
+    return initializer.get();
+  }
 
   ItemType getItemType();
 
