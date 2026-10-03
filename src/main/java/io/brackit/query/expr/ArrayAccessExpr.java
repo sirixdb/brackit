@@ -84,6 +84,10 @@ public final class ArrayAccessExpr implements Expr {
       return unboxed;
     }
 
+    return lookup(array, itemIndex);
+  }
+
+  private Sequence lookup(Array array, Item itemIndex) {
     if (!(itemIndex instanceof IntNumeric numericIndex)) {
       throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                "Illegal operand type '%s' where '%s' is expected",
@@ -91,12 +95,9 @@ public final class ArrayAccessExpr implements Expr {
                                Type.INR);
     }
 
-    // Use the full long value: a positive index beyond int range (e.g. 3000000000) must NOT be
-    // truncated to a negative int (which previously produced a bogus "Illegal negative index").
     final long idx = numericIndex.longValue();
 
     if (idx < 0) {
-      // Negative indices count from the end (-1 == last). Overshooting the start is an error.
       final long fromEnd = array.len() + idx;
 
       if (fromEnd < 0) {
@@ -106,8 +107,6 @@ public final class ArrayAccessExpr implements Expr {
       return array.at((int) fromEnd);
     }
 
-    // A positive index at or beyond the array length is out of bounds -> empty sequence (path-style,
-    // matching the slice operator), rather than truncating or leaking a raw IndexOutOfBoundsException.
     if (idx >= array.len()) {
       return null;
     }
@@ -127,41 +126,40 @@ public final class ArrayAccessExpr implements Expr {
           public Item next() {
             Item item;
 
-            if (nestedIter != null) {
-              if ((item = nestedIter.next()) != null) {
-                return item;
+            while (true) {
+              if (nestedIter != null) {
+                if ((item = nestedIter.next()) != null) {
+                  return item;
+                }
+                nestedIter.close();
+                nestedIter = null;
               }
-            }
 
-            while ((item = iter.next()) != null) {
+              item = iter.next();
+              if (item == null) {
+                return null;
+              }
               if (!(item instanceof Array array)) {
                 continue;
               }
               final Item i = index.evaluateToItem(ctx, tuple);
               if (i == null) {
                 nestedIter = getLazySequence(ctx, tuple, array).iterate();
-
-                return nestedIter.next();
               } else {
-                if (!(i instanceof IntNumeric intNumeric)) {
-                  throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                           "Illegal operand type '%s' where '%s' is expected",
-                                           i.itemType(),
-                                           Type.INR);
+                Sequence value = lookup(array, i);
+                if (value != null && (item = value.evaluateToItem(ctx, tuple)) != null) {
+                  return item;
                 }
-
-                final var index = intNumeric.intValue() >= 0
-                    ? intNumeric.intValue()
-                    : array.len() + intNumeric.intValue();
-
-                return array.at(index).evaluateToItem(ctx, tuple);
               }
             }
-            return null;
           }
 
           @Override
           public void close() {
+            if (nestedIter != null) {
+              nestedIter.close();
+            }
+            iter.close();
           }
         };
       }
@@ -200,10 +198,16 @@ public final class ArrayAccessExpr implements Expr {
 
           @Override
           public Item next() {
-            if (i >= array.len()) {
-              return null;
+            while (i < array.len()) {
+              Sequence value = array.at(i++);
+              if (value != null) {
+                Item item = value.evaluateToItem(ctx, tuple);
+                if (item != null) {
+                  return item;
+                }
+              }
             }
-            return array.at(i++).evaluateToItem(ctx, tuple);
+            return null;
           }
 
           @Override

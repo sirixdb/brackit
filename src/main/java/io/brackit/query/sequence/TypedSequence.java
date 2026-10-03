@@ -29,6 +29,7 @@ package io.brackit.query.sequence;
 
 import io.brackit.query.atomic.Counter;
 import io.brackit.query.atomic.Int32;
+import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
@@ -118,6 +119,23 @@ public class TypedSequence extends LazySequence {
   @Override
   public Iter iterate() {
     return new TypedIter();
+  }
+
+  @Override
+  public Item get(IntNumeric pos) {
+    if (Int32.ZERO.cmp(pos) >= 0) {
+      return null;
+    }
+    Counter count = new Counter();
+    try (Iter it = iterate()) {
+      Item item;
+      while ((item = it.next()) != null) {
+        if (count.inc().cmp(pos) == 0) {
+          return item;
+        }
+      }
+    }
+    return null;
   }
 
   public static Sequence toTypedSequence(SequenceType sType, Sequence s) {

@@ -76,7 +76,6 @@ public class FunctionConversionSequence extends LazySequence {
                                    "Invalid empty typed sequence (expected %s)",
                                    card);
         }
-        safe = true; // remember that sequence type is OK
         return null;
       }
 
@@ -94,7 +93,7 @@ public class FunctionConversionSequence extends LazySequence {
 
       if ((type == Type.UNA) && (expected != Type.UNA)) {
         if ((builtin) && (expected.isNumeric())) {
-          atomic = Cast.cast(null, atomic, Type.DBL, false);
+          atomic = Cast.cast(null, atomic, expected, false);
         } else if ((expected.instanceOf(Type.QNM)) || (expected.instanceOf(Type.NOT))) {
           throw new QueryException(ErrorCode.ERR_TYPE_CAST_TO_NAMESPACE_SENSITIVE_TYPE,
                                    "Cannot cast %s to namespace-sensitive type %s",
@@ -117,14 +116,6 @@ public class FunctionConversionSequence extends LazySequence {
       }
 
       return atomic;
-    }
-
-    @Override
-    public void skip(IntNumeric i) {
-      if (s == null) {
-        s = arg.iterate();
-      }
-      s.skip(i);
     }
 
     @Override
@@ -159,7 +150,6 @@ public class FunctionConversionSequence extends LazySequence {
                                    "Invalid empty typed sequence (expected %s)",
                                    card);
         }
-        safe = true; // remember that sequence type is OK
         return null;
       }
 
@@ -182,14 +172,6 @@ public class FunctionConversionSequence extends LazySequence {
     }
 
     @Override
-    public void skip(IntNumeric i) {
-      if (s == null) {
-        s = arg.iterate();
-      }
-      s.skip(i);
-    }
-
-    @Override
     public void close() {
       if (s != null) {
         s.close();
@@ -200,8 +182,6 @@ public class FunctionConversionSequence extends LazySequence {
   final SequenceType type;
   final Sequence arg;
   final boolean builtin;
-  // volatile field because safe is evaluated lazy
-  volatile boolean safe;
 
   public FunctionConversionSequence(SequenceType type, Sequence arg, boolean builtin) {
     this.type = type;
@@ -211,9 +191,6 @@ public class FunctionConversionSequence extends LazySequence {
 
   @Override
   public Iter iterate() {
-    if (safe) {
-      return arg.iterate();
-    }
     Cardinality card = type.getCardinality();
     ItemType iType = type.getItemType();
     if (iType instanceof AtomicType) {
@@ -225,38 +202,19 @@ public class FunctionConversionSequence extends LazySequence {
 
   @Override
   public Item get(IntNumeric pos) {
-    Item item = arg.get(pos);
-    if (safe) { // volatile read
-      return item;
+    if (Int32.ZERO.cmp(pos) >= 0) {
+      return null;
     }
-    Cardinality card = type.getCardinality();
-    if (item == null) {
-      if (card.moreThanZero()) {
-        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                 "Invalid empty typed sequence (expected %s)",
-                                 card);
-      }
-    } else {
-      if ((pos.cmp(Int32.ONE) > 0) && (card.atMostOne())) {
-        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                 "Invalid cardinality of typed sequence (expected %s): >= %s",
-                                 card,
-                                 pos);
-      }
-      if ((pos.cmp(Int32.ZERO) > 0) && (card == Cardinality.Zero)) {
-        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                 "Invalid cardinality of typed sequence (expected %s): >= %s",
-                                 card,
-                                 pos);
-      }
-      if (!type.getItemType().matches(item)) {
-        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                 "Item of invalid type in typed sequence (expected %s): %s",
-                                 type.getItemType(),
-                                 item);
+    Counter count = new Counter();
+    try (Iter it = iterate()) {
+      Item item;
+      while ((item = it.next()) != null) {
+        if (count.inc().cmp(pos) == 0) {
+          return item;
+        }
       }
     }
-    return item;
+    return null;
   }
 
   /**

@@ -35,6 +35,7 @@ import io.brackit.query.jdm.Signature;
 import io.brackit.query.jdm.type.SequenceType;
 import io.brackit.query.module.StaticContext;
 import io.brackit.query.QueryException;
+import io.brackit.query.sequence.FunctionConversionSequence;
 
 /**
  * A function that wraps another function with some arguments pre-bound.
@@ -61,8 +62,18 @@ public class PartiallyAppliedFunction extends AbstractFunction {
           false,
           originalFunction.isUpdating());
     this.originalFunction = originalFunction;
-    this.boundArgs = boundArgs;
+    this.boundArgs = boundArgs.clone();
     this.placeholderPositions = placeholderPositions;
+    SequenceType[] params = originalFunction.getSignature().getParams();
+    arguments: for (int i = 0; i < boundArgs.length; i++) {
+      for (int placeholder : placeholderPositions) {
+        if (i == placeholder) {
+          continue arguments;
+        }
+      }
+      SequenceType type = i < params.length ? params[i] : params[params.length - 1];
+      this.boundArgs[i] = FunctionConversionSequence.asTypedSequence(type, boundArgs[i], originalFunction.isBuiltIn());
+    }
   }
 
   private static QNm createName(Function originalFunction) {
@@ -78,7 +89,7 @@ public class PartiallyAppliedFunction extends AbstractFunction {
     SequenceType[] newParams = new SequenceType[placeholderPositions.length];
     for (int i = 0; i < placeholderPositions.length; i++) {
       int pos = placeholderPositions[i];
-      newParams[i] = pos < origParams.length ? origParams[pos] : SequenceType.ITEM_SEQUENCE;
+      newParams[i] = pos < origParams.length ? origParams[pos] : origParams[origParams.length - 1];
     }
     return new Signature(originalFunction.getSignature().getResultType(), newParams);
   }

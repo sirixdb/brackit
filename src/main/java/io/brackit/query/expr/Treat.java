@@ -133,8 +133,8 @@ public class Treat implements Expr {
   @Override
   public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
     try {
-      Item item = expr.evaluateToItem(ctx, tuple);
-      return TypedSequence.toTypedItem(expected, item);
+      Sequence sequence = expr.evaluate(ctx, tuple);
+      return TypedSequence.toTypedItem(expected, sequence);
     } catch (QueryException e) {
       if (e.getCode() == ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE) {
         throw new QueryException(e, ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE);
