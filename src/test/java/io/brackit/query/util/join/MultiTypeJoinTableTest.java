@@ -367,6 +367,48 @@ public class MultiTypeJoinTableTest {
 
   @ParameterizedTest
   @MethodSource("comparisons")
+  public void loneSurrogateKeysRetainTheirDistinctJoinMatches(Cmp cmp, boolean general) {
+    String prefix = "x".repeat(32);
+    Atomic[] keys = { new Una(prefix + "\uD801"), new Str(prefix + "\uD800"), new Una(prefix + "\uD800"), new Str(prefix
+        + "\uD801"), new Str(prefix + "?") };
+    for (boolean cached : new boolean[] { false, true }) {
+      if (cached) {
+        for (Atomic key : keys) {
+          if (key instanceof Str string) {
+            string.getUtf8Bytes();
+          }
+        }
+      }
+      var table = new MultiTypeJoinTable(cmp, general, false);
+      for (int i = 0; i < keys.length; i++) {
+        table.add(keys[i], row(i + 1), i + 1);
+      }
+      table.seal();
+
+      for (Atomic probe : keys) {
+        var expected = new ArrayList<Integer>();
+        for (int i = 0; i < keys.length; i++) {
+          int order = Arrays.compare(probe.stringValue().codePoints().toArray(),
+                                     keys[i].stringValue().codePoints().toArray());
+          boolean match = switch (cmp) {
+            case eq -> order == 0;
+            case lt -> order < 0;
+            case le -> order <= 0;
+            case gt -> order > 0;
+            case ge -> order >= 0;
+            default -> throw new AssertionError(cmp);
+          };
+          if (match) {
+            expected.add(i + 1);
+          }
+        }
+        assertEquals(expected, positions(table.probe(probe)), probe.type().toString());
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("comparisons")
   public void invalidUntypedURICastsFailOnlyGeneralComparisons(Cmp cmp, boolean general) {
     var uri = new AnyURI("http://x");
     var untyped = new Una("a b");

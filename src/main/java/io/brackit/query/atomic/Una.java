@@ -82,7 +82,7 @@ public class Una extends AbstractAtomic {
   @Override
   public int cmp(Atomic other) throws QueryException {
     if (other instanceof Str || other instanceof Una) {
-      return asStr().cmp(other);
+      return Str.compareCodepoints(str, other.stringValue());
     }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                              "Cannot compare '%s' with '%s'",
@@ -92,7 +92,7 @@ public class Una extends AbstractAtomic {
 
   @Override
   public int atomicCmpInternal(Atomic atomic) {
-    return asStr().atomicCmpInternal(atomic);
+    return Str.compareCodepoints(str, atomic.stringValue());
   }
 
   @Override
