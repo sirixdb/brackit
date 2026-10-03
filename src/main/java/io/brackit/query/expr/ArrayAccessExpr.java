@@ -137,46 +137,82 @@ public final class ArrayAccessExpr implements Expr {
         return new BaseIter() {
           final Iter iter = sequence.iterate();
           Iter nestedIter;
+          boolean closed;
 
           @Override
           public Item next() {
-            Item item;
-
-            if (nestedIter != null) {
-              if ((item = nestedIter.next()) != null) {
-                return item;
-              }
+            if (closed) {
+              return null;
             }
+            boolean returned = false;
+            try {
+              Item item;
 
-            while ((item = iter.next()) != null) {
-              if (!(item instanceof Array array)) {
-                continue;
-              }
-              final Item i = index.evaluateToItem(ctx, tuple);
-              if (i == null) {
-                nestedIter = getLazySequence(ctx, tuple, array).iterate();
-
-                return nestedIter.next();
-              } else {
-                if (!(i instanceof IntNumeric intNumeric)) {
-                  throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                           "Illegal operand type '%s' where '%s' is expected",
-                                           i.itemType(),
-                                           Type.INR);
+              if (nestedIter != null) {
+                if ((item = nestedIter.next()) != null) {
+                  returned = true;
+                  return item;
                 }
+                try {
+                  nestedIter.close();
+                } finally {
+                  nestedIter = null;
+                }
+              }
 
-                final var index = intNumeric.intValue() >= 0
-                    ? intNumeric.intValue()
-                    : array.len() + intNumeric.intValue();
+              while ((item = iter.next()) != null) {
+                if (!(item instanceof Array array)) {
+                  continue;
+                }
+                final Item i = index.evaluateToItem(ctx, tuple);
+                if (i == null) {
+                  nestedIter = getLazySequence(ctx, tuple, array).iterate();
 
-                return array.at(index).evaluateToItem(ctx, tuple);
+                  item = nestedIter.next();
+                  returned = item != null;
+                  return item;
+                } else {
+                  if (!(i instanceof IntNumeric intNumeric)) {
+                    throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                                             "Illegal operand type '%s' where '%s' is expected",
+                                             i.itemType(),
+                                             Type.INR);
+                  }
+
+                  final long idx = intNumeric.longValue();
+                  final long index = idx >= 0 ? idx : array.len() + idx;
+                  if (index < 0) {
+                    throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Illegal negative index: " + index);
+                  }
+                  if (index >= array.len()) {
+                    continue;
+                  }
+
+                  item = array.at((int) index).evaluateToItem(ctx, tuple);
+                  returned = item != null;
+                  return item;
+                }
+              }
+              return null;
+            } finally {
+              if (!returned) {
+                close();
               }
             }
-            return null;
           }
 
           @Override
           public void close() {
+            if (!closed) {
+              closed = true;
+              try {
+                if (nestedIter != null) {
+                  nestedIter.close();
+                }
+              } finally {
+                iter.close();
+              }
+            }
           }
         };
       }

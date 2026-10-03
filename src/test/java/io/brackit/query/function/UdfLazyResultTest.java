@@ -89,6 +89,8 @@ public class UdfLazyResultTest extends XQueryBaseTest {
     boolean overflow;
     boolean nodes;
     boolean arrays;
+    boolean varyingArrayLengths;
+    boolean failOnSize = true;
     Item value;
   }
 
@@ -117,7 +119,9 @@ public class UdfLazyResultTest extends XQueryBaseTest {
           }
           probe.constructed++;
           if (probe.arrays) {
-            return new DArray(List.of(new Int32(position * 10)));
+            return new DArray(probe.varyingArrayLengths && position > 1
+                ? List.of(new Int32(position * 10), new Int32(position * 10 + 1))
+                : List.of(new Int32(position * 10)));
           }
           if (probe.value != null) {
             return probe.value;
@@ -141,7 +145,9 @@ public class UdfLazyResultTest extends XQueryBaseTest {
 
         @Override
         public IntNumeric size() {
-          checkFailure(probe.length);
+          if (probe.failOnSize) {
+            checkFailure(probe.length);
+          }
           return new Int32(probe.length);
         }
 
@@ -753,6 +759,211 @@ public class UdfLazyResultTest extends XQueryBaseTest {
       assertEquals(64, second.get(10, TimeUnit.SECONDS).intValue());
     }
     assertEquals(64, PROBE.get().constructed);
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(1, PROBE.get().closed);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void lazyArrayBoundsPreserveFullWidthAndSingletonBehavior(String call) {
+    for (String body : new String[] { "probe:keys()", "local:id(probe:keys())" }) {
+      for (String access : new String[] { "[4294967296]", "[1]", "[0]", "[-1]", "[-4294967296]" }) {
+        resetProbe();
+        PROBE.get().length = 1;
+        PROBE.get().arrays = true;
+        String text = "declare function local:id($s as item()*) as item()* {($s)}; " + calls("item()*", body) + call
+            + access;
+        if (access.equals("[-4294967296]")) {
+          assertEquals(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                       assertThrows(QueryException.class, () -> ExprUtil.asItem(query(text))).getCode());
+        } else if (access.equals("[0]") || access.equals("[-1]")) {
+          assertEquals(10, ((IntNumeric) ExprUtil.asItem(query(text))).intValue());
+        } else {
+          assertNull(ExprUtil.asItem(query(text)));
+        }
+        assertEquals(1, PROBE.get().opened);
+        assertEquals(1, PROBE.get().closed);
+      }
+    }
+    resetProbe();
+    PROBE.get().length = 1;
+    PROBE.get().arrays = true;
+    assertEquals(0, integer("let $s as item()* := probe:keys() return count($s[4294967296])"));
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(1, PROBE.get().closed);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void outOfRangeArrayMembersDoNotHideLaterMatches(String call) {
+    PROBE.get().length = 2;
+    PROBE.get().arrays = true;
+    PROBE.get().varyingArrayLengths = true;
+    assertEquals(21, integer(calls("item()*", "probe:keys()") + call + "[1]"));
+    assertEquals(2, PROBE.get().constructed);
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(1, PROBE.get().closed);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void arrayConsumersCloseReadersAfterFullAndPrefixConsumption(String call) {
+    for (String access : new String[] { "[0]", "[-1]", "[]" }) {
+      for (boolean prefix : new boolean[] { false, true }) {
+        resetProbe();
+        PROBE.get().arrays = true;
+        PROBE.get().length = 2;
+        PROBE.get().varyingArrayLengths = true;
+        String operand = call + access;
+        String consumer = prefix ? "subsequence(" + operand + ",1,1)" : operand;
+        assertEquals(prefix ? 1 : access.equals("[]") ? 3 : 2,
+                     integer(calls("item()*", "probe:keys()") + "count(" + consumer + ")"));
+        assertEquals(prefix ? 1 : 2, PROBE.get().constructed);
+        assertEquals(1, PROBE.get().opened);
+        assertEquals(1, PROBE.get().closed);
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void arrayConsumersCloseReadersOnIndexAndSourceFailures(String call) {
+    PROBE.get().arrays = true;
+    Sequence result = query(calls("item()*", "probe:keys()") + call + "['bad']");
+    try (Iter it = result.iterate()) {
+      assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, assertThrows(QueryException.class, it::next).getCode());
+      assertEquals(1, PROBE.get().opened);
+      assertEquals(1, PROBE.get().closed);
+    }
+    resetProbe();
+    PROBE.get().arrays = true;
+    PROBE.get().failAfter = 1;
+    result = query(calls("item()*", "probe:keys()") + call + "[]");
+    try (Iter it = result.iterate()) {
+      assertEquals(10, ((IntNumeric) it.next()).intValue());
+      assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, assertThrows(QueryException.class, it::next).getCode());
+      assertEquals(1, PROBE.get().opened);
+      assertEquals(1, PROBE.get().closed);
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void typeswitchClosesReadersOnMatchRejectionAndDefault(String call) {
+    for (String body : new String[] { "typeswitch(" + call + ") case item()* return 42 default return 0", "(typeswitch("
+        + call + ") case item()* return 42 default return 0) + 1", "typeswitch(" + call
+            + ") case xs:string* return 0 case item()* return 42 default return 0", "typeswitch(" + call
+                + ") case xs:integer? return 0 case item()* return 42 default return 0", "typeswitch(" + call
+                    + ") case xs:string* return 0 default return 42", "typeswitch(" + call
+                        + ") case $s as item()* return count($s) default return 0" }) {
+      resetProbe();
+      PROBE.get().length = 3;
+      int expected = body.endsWith("+ 1") ? 43 : body.contains("count($s)") ? 3 : 42;
+      assertEquals(expected, integer(calls("item()*", "probe:keys()") + body));
+      assertTrue(PROBE.get().opened > 0);
+      assertEquals(PROBE.get().opened, PROBE.get().closed);
+    }
+    resetProbe();
+    PROBE.get().length = 3;
+    PROBE.get().badItem = 3;
+    assertEquals(42,
+                 integer(calls("item()*", "probe:keys()") + "typeswitch(" + call
+                     + ") case xs:integer* return 0 default return 42"));
+    assertEquals(3, PROBE.get().constructed);
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(1, PROBE.get().closed);
+    resetProbe();
+    PROBE.get().length = 0;
+    assertEquals(42,
+                 integer(calls("item()*", "probe:keys()") + "typeswitch(" + call
+                     + ") case empty-sequence() return 42 default return 0"));
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(1, PROBE.get().closed);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void typeswitchClosesReadersOnIterationAndCaseBodyFailures(String call) {
+    PROBE.get().failAfter = 1;
+    assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                 assertThrows(QueryException.class,
+                              () -> integer(calls("item()*", "probe:keys()") + "typeswitch(" + call
+                                  + ") case item()* return 42 default return 0")).getCode());
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(1, PROBE.get().closed);
+    resetProbe();
+    assertThrows(QueryException.class,
+                 () -> integer(calls("item()*", "probe:keys()") + "typeswitch(" + call
+                     + ") case item()* return error() default return 0"));
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(1, PROBE.get().closed);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void reverseClosesReadersOnSuccessAndIterationFailure(String call) {
+    PROBE.get().length = 3;
+    Sequence result = query(calls("item()*", "probe:keys()") + "reverse(" + call + ")");
+    try (Iter it = result.iterate()) {
+      for (int expected = 3; expected > 0; expected--) {
+        assertEquals(expected, ((IntNumeric) it.next()).intValue());
+      }
+      assertNull(it.next());
+    }
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(1, PROBE.get().closed);
+    resetProbe();
+    PROBE.get().length = 3;
+    assertEquals(3, integer(calls("item()*", "probe:keys()") + "subsequence(reverse(" + call + "),1,1)"));
+    assertEquals(3, PROBE.get().constructed);
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(1, PROBE.get().closed);
+    resetProbe();
+    PROBE.get().failAfter = 2;
+    PROBE.get().failOnSize = false;
+    assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                 assertThrows(QueryException.class,
+                              () -> ExprUtil.asItem(query(calls("item()*", "probe:keys()") + "reverse(" + call + ")")))
+                                                                                                                       .getCode());
+    assertEquals(2, PROBE.get().constructed);
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(1, PROBE.get().closed);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void codepointConversionClosesReadersOnSuccessEmptyAndFailure(String call) {
+    PROBE.get().length = 3;
+    PROBE.get().value = new Int32(65);
+    assertEquals("AAA",
+                 ExprUtil.asItem(query(calls("item()*", "probe:keys()") + "codepoints-to-string(" + call + ")"))
+                         .atomize()
+                         .stringValue());
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(1, PROBE.get().closed);
+    resetProbe();
+    PROBE.get().length = 0;
+    assertEquals("",
+                 ExprUtil.asItem(query(calls("item()*", "probe:keys()") + "codepoints-to-string(" + call + ")"))
+                         .atomize()
+                         .stringValue());
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(1, PROBE.get().closed);
+    resetProbe();
+    PROBE.get().value = Int32.ZERO;
+    assertEquals(ErrorCode.ERR_CODE_POINT_NOT_VALID,
+                 assertThrows(QueryException.class,
+                              () -> ExprUtil.asItem(query(calls("item()*", "probe:keys()") + "codepoints-to-string("
+                                  + call + ")"))).getCode());
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(1, PROBE.get().closed);
+    resetProbe();
+    PROBE.get().value = new Int32(65);
+    PROBE.get().failAfter = 1;
+    assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                 assertThrows(QueryException.class,
+                              () -> ExprUtil.asItem(query(calls("item()*", "probe:keys()") + "codepoints-to-string("
+                                  + call + ")"))).getCode());
     assertEquals(1, PROBE.get().opened);
     assertEquals(1, PROBE.get().closed);
   }

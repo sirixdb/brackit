@@ -58,12 +58,12 @@ public class Reverse extends AbstractFunction {
     }
 
     Item[] items = new Item[s.size().intValue()];
-    Item item = null;
-    Iter iter = s.iterate();
-
-    int i = items.length - 1;
-    while ((item = iter.next()) != null) {
-      items[i--] = item;
+    try (Iter iter = s.iterate()) {
+      Item item;
+      int i = items.length - 1;
+      while ((item = iter.next()) != null) {
+        items[i--] = item;
+      }
     }
 
     return new ItemSequence(items);
