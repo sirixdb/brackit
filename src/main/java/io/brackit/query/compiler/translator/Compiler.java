@@ -299,7 +299,8 @@ public class Compiler implements Translator {
     }
 
     if (placeholderCount == 0) {
-      return new DynamicFunctionExpr(sctx, functionExpr, argumentsExpr);
+      Expr contextItemExpr = argCount == 0 ? table.resolve(Bits.FS_DOT) : null;
+      return new DynamicFunctionExpr(sctx, functionExpr, contextItemExpr, argumentsExpr);
     } else {
       int[] positions = placeholderCount == argCount
           ? placeholderPositions
