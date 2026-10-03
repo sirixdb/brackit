@@ -30,10 +30,14 @@ package io.brackit.query.util.join;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.util.Cmp;
+import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryException;
 import io.brackit.query.expr.Cast;
 import io.brackit.query.util.join.AbstractJoinTable.TEntry;
@@ -61,13 +65,18 @@ import io.brackit.query.jdm.Type;
  * its build keys in memory for copies no probe ever reads.
  * <p>
  * What the probe path pays for that is one volatile read of the copies made so
- * far, which hold one entry per type a probe has asked for. A copy is built
- * before it is handed to that structure, without holding a lock, so a probing
- * fork-join worker is never blocked behind another one, and it is published
- * with a compare-and-set. Two probes racing for the same copy may therefore
- * both build it, and one of the two copies is dropped. That changes no result:
- * a copy is made of sealed keys, so both of them hold the same keys, and every
- * probe returns the same rows in the same order whichever one it reads.
+ * far, which hold one entry per type a probe has asked for. Each of those
+ * entries is made exactly once, however many threads probe: the first probe
+ * that needs a copy claims the entry with a compare-and-set and makes the copy
+ * without holding a lock, and the probes that need the same copy meanwhile
+ * wait for that one instead of making their own, so the work and the memory
+ * stay those of a single copy no matter how wide the probe side is. They wait
+ * through {@link ForkJoinPool#managedBlock}, not on a monitor, so a pool
+ * probing the table keeps its parallelism while they do (see
+ * {@link io.brackit.query.block.MutexSink} for what a plain monitor costs it
+ * here). A copy that cannot be made - an untyped build key that the probe's
+ * type cannot be cast to - fails the probe making it and every probe waiting
+ * for it with the same error, and is not attempted again.
  *
  * @author Sebastian Baechle
  */
@@ -102,39 +111,97 @@ public class MultiTypeJoinTable {
 
   private volatile boolean sealed;
 
-  // Copies of the build keys in one other type each, as a probe reads them:
-  // one volatile read of the holding reference takes the whole set, and
-  // looking a type up in it writes nothing.
+  // One copy of the build keys in one other type. The probe that puts the
+  // entry in place makes the copy, and the probes that find it in place wait
+  // for whatever it ends up holding: the copy, or the error that making it
+  // raised.
+  private static final class Copy implements ForkJoinPool.ManagedBlocker {
+    private final CountDownLatch made = new CountDownLatch(1);
+
+    private volatile AbstractJoinTable table;
+
+    private volatile RuntimeException failure;
+
+    private AbstractJoinTable make(Type type, Function<Type, AbstractJoinTable> copier) throws QueryException {
+      try {
+        AbstractJoinTable copy = copier.apply(type);
+        table = copy;
+        return copy;
+      } catch (RuntimeException e) {
+        failure = e;
+        throw e;
+      } finally {
+        made.countDown();
+      }
+    }
+
+    private AbstractJoinTable get() throws QueryException {
+      AbstractJoinTable copy = table;
+      if (copy != null) {
+        return copy;
+      }
+      try {
+        ForkJoinPool.managedBlock(this);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR, "Interrupted while waiting for the join build keys");
+      }
+      RuntimeException failed = failure;
+      if (failed != null) {
+        throw failed;
+      }
+      copy = table;
+      if (copy == null) {
+        throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR, "The join build keys could not be copied");
+      }
+      return copy;
+    }
+
+    @Override
+    public boolean block() throws InterruptedException {
+      made.await();
+      return true;
+    }
+
+    @Override
+    public boolean isReleasable() {
+      return made.getCount() == 0;
+    }
+  }
+
+  // The copies of the build keys made so far, as a probe reads them: one
+  // volatile read of the holding reference takes the whole set, and looking a
+  // type up in it writes nothing.
   private static final class Copies {
-    static final Copies NONE = new Copies(new Type[0], new AbstractJoinTable[0]);
+    static final Copies NONE = new Copies(new Type[0], new Copy[0]);
 
     // The primitive type constants that "tables" is keyed by, which a probe
     // key and a build key of the same type share, so they are compared by
     // identity.
     private final Type[] types;
 
-    private final AbstractJoinTable[] tables;
+    private final Copy[] copies;
 
-    private Copies(Type[] types, AbstractJoinTable[] tables) {
+    private Copies(Type[] types, Copy[] copies) {
       this.types = types;
-      this.tables = tables;
+      this.copies = copies;
     }
 
-    private AbstractJoinTable get(Type type) {
+    private Copy get(Type type) {
       for (int i = 0; i < types.length; i++) {
         if (types[i] == type) {
-          return tables[i];
+          return copies[i];
         }
       }
       return null;
     }
 
-    private Copies with(Type type, AbstractJoinTable table) {
+    private Copies with(Type type, Copy copy) {
       Type[] grownTypes = Arrays.copyOf(types, types.length + 1);
-      AbstractJoinTable[] grownTables = Arrays.copyOf(tables, tables.length + 1);
+      Copy[] grownCopies = Arrays.copyOf(copies, copies.length + 1);
       grownTypes[types.length] = type;
-      grownTables[tables.length] = table;
-      return new Copies(grownTypes, grownTables);
+      grownCopies[copies.length] = copy;
+      return new Copies(grownTypes, grownCopies);
     }
   }
 
@@ -237,8 +304,7 @@ public class MultiTypeJoinTable {
     if (!hasKeysNarrowerThan(type)) {
       return null;
     }
-    AbstractJoinTable copy = widened.get().get(type);
-    return copy != null ? copy : publish(widened, type, widen(type));
+    return copyIn(widened, type, this::widen);
   }
 
   // xs:integer is narrower than xs:decimal, which is narrower than xs:float,
@@ -272,8 +338,7 @@ public class MultiTypeJoinTable {
     if (untyped == null) {
       return null;
     }
-    AbstractJoinTable copy = converted.get().get(type);
-    return copy != null ? copy : publish(converted, type, convertUntyped(type));
+    return copyIn(converted, type, this::convertUntyped);
   }
 
   private AbstractJoinTable convertUntyped(Type type) throws QueryException {
@@ -283,21 +348,24 @@ public class MultiTypeJoinTable {
     return convertedKeys;
   }
 
-  // Hands out one copy per type: the one that got there first, which from then
-  // on is the only one a probe can reach. The copy passed in was built outside
-  // of any lock, so a probe making a copy holds up no other probe; at worst two
-  // of them make the same copy and the one that loses the race is dropped here.
-  private static AbstractJoinTable publish(AtomicReference<Copies> copies, Type type, AbstractJoinTable made) {
-    while (true) {
-      Copies current = copies.get();
-      AbstractJoinTable published = current.get(type);
-      if (published != null) {
-        return published;
-      }
-      if (copies.compareAndSet(current, current.with(type, made))) {
-        return made;
+  // The one copy of the build keys in the given type: made here if this probe
+  // is the one that claims it, waited for if another probe claimed it first.
+  private static AbstractJoinTable copyIn(AtomicReference<Copies> copies, Type type,
+      Function<Type, AbstractJoinTable> copier) throws QueryException {
+    Copies current = copies.get();
+    Copy copy = current.get(type);
+    if (copy != null) {
+      return copy.get();
+    }
+    Copy claim = new Copy();
+    while (!copies.compareAndSet(current, current.with(type, claim))) {
+      current = copies.get();
+      copy = current.get(type);
+      if (copy != null) {
+        return copy.get();
       }
     }
+    return claim.make(type, copier);
   }
 
   private static void copy(AbstractJoinTable from, AbstractJoinTable to, Type type) throws QueryException {

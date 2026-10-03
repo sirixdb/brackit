@@ -28,6 +28,8 @@
 package io.brackit.query.util.join;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -93,6 +95,22 @@ public class MultiTypeJoinTableTest {
     }
   }
 
+  /** An untyped build key that holds up the first cast of itself in the gate's thread. */
+  private static final class GatedUntyped extends Una {
+    private final Gate gate;
+
+    GatedUntyped(String v, Gate gate) {
+      super(v);
+      this.gate = gate;
+    }
+
+    @Override
+    public String stringValue() {
+      gate.pass();
+      return super.stringValue();
+    }
+  }
+
   private static final class Gate {
     final CountDownLatch reached = new CountDownLatch(1);
     final CountDownLatch opened = new CountDownLatch(1);
@@ -111,39 +129,48 @@ public class MultiTypeJoinTableTest {
     }
   }
 
-  // A probe that needs a copy of the build keys in another type must make it
-  // without holding up the probes running next to it: the first probe is held
-  // up in the middle of the copy, and the second one, which needs the same
-  // copy, has to run to its end before the first one goes on.
+  // A copy of the build keys is made once, by the probe that needs it first,
+  // and that probe holds up only the probes that need the same copy: the first
+  // probe is held up in the middle of the copy, a second probe of the same type
+  // has to wait for it instead of making its own copy, and a probe that needs
+  // no copy runs to its end meanwhile.
   @Test
   @Timeout(30)
-  public void aProbeCopyingTheBuildKeysDoesNotHoldUpOtherProbes() throws Exception {
+  public void oneProbeMakesACopyAndOnlyTheProbesNeedingItWait() throws Exception {
     var gate = new Gate();
     var table = new MultiTypeJoinTable(Cmp.gt, false, false);
     int[] keys = { 5, 4, 3, 2, 1 };
     for (int i = 0; i < keys.length; i++) {
       table.add(new GatedInteger(keys[i], gate), row(i + 1), i + 1);
     }
+    table.add(new Str("m"), row(keys.length + 1), keys.length + 1);
     table.seal();
 
     var first = new AtomicReference<Object>();
-    var second = new AtomicReference<Object>();
+    var sameType = new AtomicReference<Object>();
+    var otherType = new AtomicReference<Object>();
     Thread a = new Thread(() -> first.set(probeOrFailure(table, new Dbl(3))));
     gate.holdUp = a;
     a.start();
     assertTrue(gate.reached.await(20, TimeUnit.SECONDS), "the first probe did not reach the copy");
-    Thread b = new Thread(() -> second.set(probeOrFailure(table, new Dbl(3))));
-    b.start();
+    Thread waiting = new Thread(() -> sameType.set(probeOrFailure(table, new Dbl(3))));
+    Thread other = new Thread(() -> otherType.set(probeOrFailure(table, new Str("n"))));
+    waiting.start();
+    other.start();
     try {
-      assertTrue(b.join(Duration.ofSeconds(10)), "the second probe waited for the first one to finish the copy");
+      assertTrue(other.join(Duration.ofSeconds(10)), "a probe needing no copy waited for the copy being made");
+      assertFalse(waiting.join(Duration.ofMillis(500)), "a probe made a second copy of the same build keys");
     } finally {
       gate.opened.countDown();
     }
     a.join();
+    waiting.join();
 
     // build keys 2 and 1 are less than 3, at build positions 4 and 5
     assertEquals(List.of(4, 5), first.get());
-    assertEquals(List.of(4, 5), second.get());
+    assertEquals(List.of(4, 5), sameType.get());
+    // build key "m" is less than "n", at build position 6
+    assertEquals(List.of(6), otherType.get());
     for (int probe = 0; probe <= 6; probe++) {
       var expected = new ArrayList<Integer>();
       for (int i = 0; i < keys.length; i++) {
@@ -154,6 +181,38 @@ public class MultiTypeJoinTableTest {
       expected.sort(null);
       assertEquals(expected, positions(table.probe(new Dbl(probe))), "probe " + probe);
     }
+  }
+
+  // A copy that cannot be made fails the probe making it and every probe that
+  // is waiting for it, and none of them makes a second attempt.
+  @Test
+  @Timeout(30)
+  public void aCopyThatCannotBeMadeFailsTheProbesWaitingForIt() throws Exception {
+    var gate = new Gate();
+    var table = new MultiTypeJoinTable(Cmp.eq, true, false);
+    table.add(new GatedUntyped("abc", gate), row(1), 1);
+    table.seal();
+
+    var first = new AtomicReference<Object>();
+    var second = new AtomicReference<Object>();
+    Thread a = new Thread(() -> first.set(probeOrFailure(table, new Dbl(1))));
+    gate.holdUp = a;
+    a.start();
+    assertTrue(gate.reached.await(20, TimeUnit.SECONDS), "the first probe did not reach the copy");
+    Thread b = new Thread(() -> second.set(probeOrFailure(table, new Dbl(1))));
+    b.start();
+    try {
+      assertFalse(b.join(Duration.ofMillis(500)), "a probe made a second copy of the same build keys");
+    } finally {
+      gate.opened.countDown();
+    }
+    a.join();
+    b.join();
+
+    assertInstanceOf(QueryException.class, first.get());
+    assertInstanceOf(QueryException.class, second.get());
+    assertThrows(QueryException.class, () -> table.probe(new Dbl(1)));
+    assertEquals(List.of(1), positions(table.probe(new Una("abc"))));
   }
 
   private static Object probeOrFailure(MultiTypeJoinTable table, Atomic key) {
@@ -265,8 +324,8 @@ public class MultiTypeJoinTableTest {
   }
 
   // Every double probe needs the integer build keys as doubles. Sealing the
-  // table copies none of them, the first double probe copies every one of them,
-  // and every probe after it uses that copy instead of making its own.
+  // table copies none of them, and however many threads probe it at once, the
+  // build keys are copied exactly once for all of them.
   @Test
   @Timeout(60)
   public void buildKeysAreWidenedOnceForAllProbes() throws Exception {
@@ -278,10 +337,6 @@ public class MultiTypeJoinTableTest {
     }
     table.seal();
     assertEquals(0, casts.get(), "sealing the table copies no build key");
-
-    assertEquals(List.of(1), positions(table.probe(new Dbl(0))));
-    assertEquals(size, casts.get(), "the first double probe copies every build key once");
-    casts.set(0);
 
     var start = new CountDownLatch(1);
     var rows = new AtomicInteger();
@@ -305,7 +360,7 @@ public class MultiTypeJoinTableTest {
       worker.join();
     }
     assertEquals(8 * size / 10, rows.get());
-    assertEquals(0, casts.get(), "the probes after the copy reuse it");
+    assertEquals(size, casts.get(), "the build keys were copied more than once for the probes");
   }
 
   // An untyped probe key is compared with an untyped build key as a string. A
