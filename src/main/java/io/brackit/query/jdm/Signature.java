@@ -71,8 +71,7 @@ public class Signature {
   }
 
   public void checkArity(int argumentCount) {
-    if (argumentCount != params.length
-        && (!lastIsVarArg || params.length == 0 || argumentCount < params.length - 1)) {
+    if (argumentCount != params.length && (!lastIsVarArg || params.length == 0 || argumentCount < params.length - 1)) {
       throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                "Invalid function arity %s for signature %s",
                                argumentCount,

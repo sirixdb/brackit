@@ -186,10 +186,12 @@ echo '[{"cat":"A","v":1},{"cat":"B","v":2},{"cat":"A","v":3}]' | \
 | **Automatic join optimization** | Hash-joins for FLWOR with multiple `for` clauses |
 | **JSON updates** | `insert`, `delete`, `replace`, `rename` |
 
-A `[? ... ]` predicate that references the current item `$$` is a truthiness filter: it keeps the
-items for which the expression has a true effective boolean value (`null`, `false`, `0`, `""`, and
-a missing member are falsy). Predicates that do not reference `$$` — such as `[?1]` or `[?last()]` —
-select by position, as in XQuery.
+A `[? ... ]` predicate that references the current item `$$`, directly or through an
+implicit-context call such as `string-length()`, is a truthiness filter: it keeps the items
+for which the expression has a true effective boolean value (`null`, `false`, `0`, `""`, and
+a missing member are falsy). For a dynamic call such as `[?$f()]`, this also applies when the
+called function actually reads the current item. Otherwise, a singleton numeric result
+selects by position, as in `[?1]` or `[?last()]`; other results use their effective boolean value.
 
 ## Mutable JSON with Update Expressions
 
@@ -270,9 +272,9 @@ bjq -c '$$' data.json
 
 ### Streamed array input
 
-Top-level arrays from stdin (without `-s`) or files larger than 1.5 GB use
-single-pass iteration. See the [StreamingArray read contract](src/main/java/io/brackit/query/jsonitem/array/StreamingArray.java)
-for reread, materialization, and parsing-failure restrictions.
+Top-level arrays from stdin (without `-s`) or files larger than 1.5 GB are parsed
+lazily. See the [StreamingArray read contract](src/main/java/io/brackit/query/jsonitem/array/StreamingArray.java)
+for single-pass iteration, caching, reread, and parsing-failure restrictions.
 
 For repeated reads from stdin, `-s` buffers all input in memory and wraps the JSON
 values in an outer array. Select the original array with `$$[0]`:
@@ -296,6 +298,9 @@ QueryContext ctx = new BrackitQueryContext();
 Query query = new Query("for $i in 1 to 10 return $i * $i");
 query.serialize(ctx, System.out);
 ```
+
+For repeated executions of a compiled query, see the
+[declaration and default-context cache contract](src/main/java/io/brackit/query/QueryExecution.java).
 
 The optimizer automatically applies:
 - Hash-joins for multi-variable FLWOR expressions
@@ -324,7 +329,7 @@ counted or drained at the boundary. Item-type constraints still validate consume
 and skipped items; singleton/empty return bounds use eager bounded lookahead.
 Deferred recursion overflow becomes the existing `BIDY0006` query error, so a
 consuming expression such as `try {count(local:slice())} catch * {...}` can catch it.
-Existing argument and shared-binding policies are unchanged.
+Written parameter and return types follow the [sequence type rules](#sequence-types).
 
 ## Installation
 
@@ -348,6 +353,20 @@ dependencies {
 
 ## JSONiq Syntax
 
+### Sequence types
+
+A written sequence type without an occurrence indicator, such as `xs:integer` or
+`item()`, requires exactly one item. Use `?` for zero or one, `*` for zero or more,
+`+` for one or more, and `empty-sequence()` for no items. Omitting a type annotation
+still permits `item()*`.
+
+These bounds apply to `instance of`, `treat as`, `typeswitch` cases, declared variables,
+function parameters and returns (including dynamic calls and bound partial-application
+arguments), and typed FLWOR bindings. For example, `declare variable $x as xs:integer :=
+(1,2); $x` raises `XPTY0004`; use `xs:integer*` to allow multiple integers. A mismatched
+`treat as` raises `XPDY0050`. Singleton bounds are checked before exposing the first item,
+so `exists((1,2) treat as item())` also raises that error.
+
 ### Arrays
 
 ```xquery
@@ -367,6 +386,11 @@ $obj.name                            (: field access :)
 $obj{name, age}                      (: projection :)
 { $obj1, $obj2 }                     (: merge objects :)
 ```
+
+Array lookup (`$arr[index]`) and unboxing (`$arr[]`) skip non-array operands; object
+lookup (`$obj.field`) skips non-object operands. This applies to both single items
+and mixed sequences: `1[0]`, `1[]`, and `1 .field` return the empty sequence, while
+`(1, [10])[0]` returns `10`. Dynamic-call syntax such as `1(0)` still raises a query error.
 
 ### Updates (for mutable stores)
 

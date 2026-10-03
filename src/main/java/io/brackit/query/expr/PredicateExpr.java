@@ -53,10 +53,9 @@ public abstract class PredicateExpr implements Expr {
   protected final boolean[] bindSize;
   protected final int[] bindCount;
   /**
-   * Per predicate: {@code true} if the predicate is a JSONiq {@code [? ... ]} filter referencing
-   * the context item ({@code $$}). Such filters apply effective-boolean-value (truthiness)
-   * semantics unconditionally — a numeric predicate value is NOT interpreted as a positional
-   * test against the context position.
+   * Per predicate: {@code true} when the compiler can guarantee a JSONiq filter depends on
+   * the context item. Potential implicit-focus reads in dynamic calls are tracked separately
+   * by {@code potentialFocus}, so a context-independent call can still select by position.
    */
   protected final boolean[] ebvFilter;
   private final Object[] potentialFocus;

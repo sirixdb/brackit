@@ -414,9 +414,14 @@ public abstract class Accessor {
     this.axis = axis;
   }
 
+  /**
+   * Whether the cursor must be reversed to rank positional predicates. Spatial reverse-axis
+   * accessors yield document order; temporal accessors retain the order supplied by
+   * {@link TemporalNode#getEarlier(boolean)}.
+   */
   public boolean requiresPositionReversal() {
-    return axis == Axis.ANCESTOR || axis == Axis.ANCESTOR_OR_SELF
-        || axis == Axis.PRECEDING || axis == Axis.PRECEDING_SIBLING;
+    return axis == Axis.ANCESTOR || axis == Axis.ANCESTOR_OR_SELF || axis == Axis.PRECEDING || axis
+        == Axis.PRECEDING_SIBLING;
   }
 
   public Axis getAxis() {

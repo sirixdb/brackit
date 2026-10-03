@@ -12,6 +12,15 @@ import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.sequence.AbstractSequence;
 
+/**
+ * Owns declaration and default-context values for one execution of a {@link Query}.
+ * Initializers share their value within that execution, including across lazy reads and
+ * worker tasks, without binding it into the caller's {@link QueryContext}. Later executions
+ * initialize their own values, even when they reuse the same compiled query and context.
+ * The original context object is passed to backend operations; execution state is carried
+ * separately by a scoped value. Direct expression evaluation outside a matching execution
+ * resolves initializers without this cache.
+ */
 public final class QueryExecution {
   private static final ScopedValue<QueryExecution> CURRENT = ScopedValue.newInstance();
 
@@ -42,12 +51,13 @@ public final class QueryExecution {
   public static ScopedValue.Carrier capture() {
     ScopedValue.Carrier scope = PredicateExpr.captureFocus();
     QueryExecution execution = current();
-    return execution == null ? scope
+    return execution == null
+        ? scope
         : scope == null ? ScopedValue.where(CURRENT, execution) : scope.where(CURRENT, execution);
   }
 
   public static Sequence resolveDeclaration(QueryContext context, Variable declaration,
-                                            Supplier<? extends Sequence> initializer) {
+      Supplier<? extends Sequence> initializer) {
     QueryExecution execution = current();
     return execution != null && execution.context == context
         ? execution.resolve(declaration, initializer)

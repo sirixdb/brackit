@@ -55,7 +55,15 @@ public class StepExpr extends PredicateExpr {
 
   public StepExpr(Accessor accessor, NodeType test, Expr input, Expr[] filter, boolean[] bindItem, boolean[] bindPos,
       boolean[] bindSize) {
-    this(accessor, test, input, filter, bindItem, bindPos, bindSize, new boolean[filter.length], new Object[filter.length]);
+    this(accessor,
+         test,
+         input,
+         filter,
+         bindItem,
+         bindPos,
+         bindSize,
+         new boolean[filter.length],
+         new Object[filter.length]);
   }
 
   public StepExpr(Accessor accessor, NodeType test, Expr input, Expr[] filter, boolean[] bindItem, boolean[] bindPos,
@@ -102,11 +110,7 @@ public class StepExpr extends PredicateExpr {
           return null;
         } else if (fs instanceof Numeric) {
           IntNumeric pos = ((Numeric) fs).asIntNumeric();
-          // Positional predicates on reverse axes count in AXIS order (XPath §3.3.3 —
-          // reverse document order), but the accessors deliver document order: without
-          // reversing first, 'ancestor::*[1]' returned the root instead of the parent and
-          // 'preceding-sibling::*[1]' the FIRST sibling instead of the nearest — while the
-          // equivalent '[position()=1]' (the dependent-filter path below) was correct.
+          // Normalize cursor order for ranking only when the accessor requires it.
           if (pos != null && backwardAxis && !reversed) {
             s = reverse(s);
             reversed = true;

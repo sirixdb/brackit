@@ -606,11 +606,8 @@ public class Compiler implements Translator {
       bindItem[i] = itemBinding.isReferenced();
       bindPos[i] = posBinding.isReferenced();
       bindSize[i] = sizeBinding.isReferenced();
-      // A JSONiq "[? ... ]" filter that references the context item ($$) is a pure
-      // truthiness filter: the predicate value is reduced to its effective boolean
-      // value and is never compared against the context position. Context-item
-      // independent predicates such as [?1] or [?last()] retain XQuery's positional
-      // semantics.
+      // Record guaranteed and potential focus dependencies separately; PredicateExpr
+      // tracks whether a dynamic implicit-context call actually reads this binding.
       ebvFilter[i] = itemBinding.isContextDependent() && predicate.checkProperty("jsoniqFilter");
       potentialFocus[i] = predicate.checkProperty("jsoniqFilter") ? itemBinding.potentialContext() : null;
     }

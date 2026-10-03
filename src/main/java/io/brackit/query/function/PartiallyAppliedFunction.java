@@ -65,7 +65,8 @@ public class PartiallyAppliedFunction extends AbstractFunction {
     this.boundArgs = boundArgs.clone();
     this.placeholderPositions = placeholderPositions;
     SequenceType[] params = originalFunction.getSignature().getParams();
-    arguments: for (int i = 0; i < boundArgs.length; i++) {
+    arguments:
+    for (int i = 0; i < boundArgs.length; i++) {
       for (int placeholder : placeholderPositions) {
         if (i == placeholder) {
           continue arguments;

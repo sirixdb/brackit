@@ -46,12 +46,14 @@ import io.brackit.query.sequence.BaseIter;
  * as the iterator advances, enabling processing of files that exceed available memory.
  * <p>
  * This array is read-only — mutation methods throw {@link UnsupportedOperationException}.
- * Operations that require random access ({@link #at(int)}, {@link #values()}, {@link #length()})
- * force materialization up to the requested index or fully. Once an iterator consumes an
- * uncached element, only that iterator may continue reading; other iterators, including
- * ones created earlier, and materialization or random access throw a {@link QueryException}.
- * Consumed uncached elements cannot be replayed. Fully materialize with {@link #values()}
- * or {@link #length()} before consuming uncached elements if multiple reads are required.
+ * Indexed access ({@link #at(int)}, {@link #atOrEmpty(int)}) caches through the requested
+ * non-negative index; {@link #values()} and {@link #length()} fully materialize the array.
+ * If a nonempty prefix is cached before iteration consumes an uncached element, subsequent
+ * iteration caches the remainder as well, allowing independent readers to replay the value.
+ * Otherwise, iteration is single-pass: once an iterator consumes an uncached element, only
+ * that iterator may continue reading. Other iterators, including ones created earlier, and
+ * materialization or random access throw a {@link QueryException}. Consumed uncached elements
+ * cannot be replayed.
  * <p>
  * A parsing failure is terminal: the failing read propagates the original exception,
  * and every later read throws a {@link QueryException} with that exception as its cause,
