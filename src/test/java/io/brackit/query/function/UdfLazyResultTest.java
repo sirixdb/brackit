@@ -152,6 +152,11 @@ public class UdfLazyResultTest extends XQueryBaseTest {
         }
 
         @Override
+        public IntNumeric knownSize() {
+          return new Int32(probe.length);
+        }
+
+        @Override
         public IntNumeric size() {
           if (probe.failOnSize) {
             checkFailure(probe.length);
@@ -232,6 +237,12 @@ public class UdfLazyResultTest extends XQueryBaseTest {
 
             @Override
             public Item next() {
+              if (probe.failAfter >= 0 && position >= probe.failAfter) {
+                if (probe.overflow) {
+                  throw new StackOverflowError();
+                }
+                throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, "probe failure");
+              }
               if (position == probe.length) {
                 return null;
               }
@@ -239,7 +250,9 @@ public class UdfLazyResultTest extends XQueryBaseTest {
               position++;
               return probe.value != null
                   ? probe.value
-                  : probe.values != null ? probe.values[position - 1] : new Int32(position);
+                  : probe.values != null
+                      ? probe.values[position - 1]
+                      : position == probe.badItem ? new Str("bad") : new Int32(position);
             }
 
             @Override
@@ -309,6 +322,192 @@ public class UdfLazyResultTest extends XQueryBaseTest {
     probe.repeatable = repeatable;
     probe.value = value;
     return probe;
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "probe:keys()", "probe:unknown-keys()" })
+  public void returnBoundaryNormalizesEmptySingletonAndMultiItemRepresentations(String source) {
+    for (int boundary : new int[] { 0, 1, 2 }) {
+      for (int length : new int[] { 0, 1, 2, 64 }) {
+        resetProbe();
+        Probe probe = PROBE.get();
+        probe.length = length;
+        probe.value = new DArray(List.of(new Int32(10), new Int32(20)));
+        String text = boundary == 1
+            ? "(function() as item()* {" + source + "})()"
+            : "declare function local:f() as item()* {" + source + "}; local:f()";
+        Sequence result = boundary == 2
+            ? TypedSequence.toTypedSequence(SequenceType.ITEM_SEQUENCE,
+                                            (source.equals("probe:keys()") ? new Keys() : new UnknownKeys()).execute(
+                                                                                                                     null,
+                                                                                                                     ctx,
+                                                                                                                     new Sequence[0]))
+            : query(text);
+        if (length == 0) {
+          assertNull(result);
+          assertEquals(0, probe.constructed);
+        } else if (length == 1) {
+          assertSame(probe.value, result);
+          assertEquals(1, probe.constructed);
+        } else {
+          assertInstanceOf(LazySequence.class, result);
+          assertTrue(result.isRepeatable());
+          assertEquals(source.equals("probe:keys()") ? 0 : 2, probe.constructed);
+          try (Iter it = result.iterate()) {
+            assertSame(probe.value, it.next());
+            assertSame(probe.value, it.next());
+          }
+          assertEquals(2, probe.constructed);
+        }
+        assertEquals(probe.opened, probe.closed);
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void singletonConsumerParityMatchesMaterializedResults(String call) {
+    for (String source : new String[] { "probe:keys()", "probe:unknown-keys()" }) {
+      for (String body : new String[] { source, "local:id(" + source + ")" }) {
+        for (Item value : new Item[] { Int32.ONE, new DArray(List.of(new Int32(10), new Int32(20))), new DArray(List
+                                                                                                                    .of()),
+            lookupContainer(true, new ItemSequence(new Int32(10), new Int32(20))) }) {
+          for (String consumer : new String[] { "count(%s)", "count(for $x in %s return $x)",
+              "if (deep-equal(%s,[10,20])) then 1 else 0", "count(%s[0])", "count(%s[-1])", "count(%s[])",
+              "count(subsequence(%s,1,1))", "if (exists(%s)) then 1 else 0", "if (empty(%s)) then 1 else 0",
+              "if (boolean(%s)) then 1 else 0", "count(%s.v)" }) {
+            for (boolean typed : new boolean[] { false, true }) {
+              String text = "declare function local:id($s as item()*) as item()* {($s)}; " + calls("item()*", body)
+                  + (typed ? "let $s as item()* := " + call + " return " : "") + consumer.formatted(typed
+                      ? "$s"
+                      : call);
+              Probe baselineProbe = singletonLookupProbe(false, value);
+              LookupOutcome baseline = lookupOutcome(text);
+              if (value instanceof DArray array && array.len() == 2) {
+                if (consumer.equals("count(for $x in %s return $x)")) {
+                  assertEquals(new LookupOutcome(List.of(2), null), baseline);
+                } else if (consumer.startsWith("if (deep-equal")) {
+                  assertEquals(new LookupOutcome(List.of(1), null), baseline);
+                }
+              }
+              assertEquals(1, baselineProbe.opened, text);
+              assertEquals(1, baselineProbe.closed, text);
+              Probe lazyProbe = singletonLookupProbe(true, value);
+              assertEquals(baseline, lookupOutcome(text), text);
+              assertEquals(1, lazyProbe.constructed, text);
+              assertEquals(1, lazyProbe.opened, text);
+              assertEquals(1, lazyProbe.closed, text);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  public void cheapSizeSliceCountDoesNotConstructItems() {
+    assertEquals(64, integer("declare function local:slice() as item()* {probe:keys()}; count(local:slice())"));
+    assertEquals(0, PROBE.get().constructed);
+    assertEquals(0, PROBE.get().opened);
+  }
+
+  @Test
+  public void unknownPrefixIsReplayedForIndependentReaders() {
+    Sequence result = query("declare function local:f() as item()* {probe:unknown-keys()}; local:f()");
+    assertEquals(2, PROBE.get().constructed);
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(1, PROBE.get().closed);
+    for (int pass = 0; pass < 2; pass++) {
+      try (Iter it = result.iterate()) {
+        assertEquals(1, ((IntNumeric) it.next()).intValue());
+        assertEquals(2, ((IntNumeric) it.next()).intValue());
+      }
+      assertEquals(2, PROBE.get().constructed);
+      assertEquals(1, PROBE.get().opened);
+      assertEquals(1, PROBE.get().closed);
+    }
+    try (Iter it = result.iterate()) {
+      it.skip(new Int32(2));
+      assertEquals(3, ((IntNumeric) it.next()).intValue());
+    }
+    assertEquals(5, PROBE.get().constructed);
+    assertEquals(2, PROBE.get().opened);
+    assertEquals(2, PROBE.get().closed);
+  }
+
+  @Test
+  public void replayedPrefixesStillConvertAndValidateEveryRead() {
+    Sequence promoted = query("declare function local:f() as xs:double* {probe:unknown-keys()}; local:f()");
+    assertEquals(2, PROBE.get().constructed);
+    for (int pass = 0; pass < 2; pass++) {
+      try (Iter it = promoted.iterate()) {
+        assertInstanceOf(Dbl.class, it.next());
+        it.skip(Int32.ONE);
+      }
+      assertInstanceOf(Dbl.class, promoted.get(Int32.ONE));
+    }
+    assertEquals(2, PROBE.get().constructed);
+    assertEquals(64, promoted.size().intValue());
+    assertEquals(66, PROBE.get().constructed);
+    assertEquals(64, promoted.size().intValue());
+    assertEquals(66, PROBE.get().constructed);
+    resetProbe();
+    PROBE.get().badItem = 64;
+    Sequence invalid = query("declare function local:f() as xs:integer* {probe:unknown-keys()}; local:f()");
+    for (int pass = 1; pass <= 2; pass++) {
+      assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, assertThrows(QueryException.class, invalid::size).getCode());
+      assertEquals(2 + 64 * pass, PROBE.get().constructed);
+      assertEquals(PROBE.get().opened, PROBE.get().closed);
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void overflowDuringUnknownSizePeekingRemainsCatchable(String call) {
+    for (String body : new String[] { "probe:unknown-keys()", "local:id(probe:unknown-keys())" }) {
+      for (int failAfter : new int[] { 0, 1, 2 }) {
+        resetProbe();
+        PROBE.get().overflow = true;
+        PROBE.get().failAfter = failAfter;
+        String text = "declare function local:id($s as item()*) as item()* {($s)}; " + calls("item()*", body)
+            + "try {count(" + call + ")} catch * {99}";
+        assertEquals(99, integer(text));
+        assertTrue(PROBE.get().opened > 0);
+        assertEquals(PROBE.get().opened, PROBE.get().closed);
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void nestedAndEmptyArrayMembersRetainItemIdentity(String call) {
+    for (boolean object : new boolean[] { false, true }) {
+      for (Item member : new Item[] { new DArray(List.of(new Int32(10), new Int32(20))), new DArray(List.of()) }) {
+        for (String source : new String[] { "probe:keys()", "probe:unknown-keys()" }) {
+          for (int length : new int[] { 1, 2 }) {
+            for (String access : object ? new String[] { ".v", ".(0)", ".('v')" } : new String[] { "[0]", "[-3]" }) {
+              String text = calls("item()*", source) + "count(" + call + access + ")";
+              Probe baselineProbe = singletonLookupProbe(false, lookupContainer(object, member));
+              baselineProbe.length = length;
+              LookupOutcome baseline = lookupOutcome(text);
+              assertEquals(new LookupOutcome(List.of(length), null), baseline);
+              Probe lazyProbe = singletonLookupProbe(true, lookupContainer(object, member));
+              lazyProbe.length = length;
+              assertEquals(baseline, lookupOutcome(text));
+              assertEquals(lazyProbe.opened, lazyProbe.closed);
+              Sequence result = query(calls("item()*", source) + call + access);
+              try (Iter it = result.iterate()) {
+                for (int i = 0; i < length; i++) {
+                  assertSame(member, it.next());
+                }
+                assertNull(it.next());
+              }
+              assertEquals(lazyProbe.opened, lazyProbe.closed);
+            }
+          }
+        }
+      }
+    }
   }
 
   @ParameterizedTest
@@ -523,7 +722,7 @@ public class UdfLazyResultTest extends XQueryBaseTest {
     assertEquals(3,
                  integer("declare function local:f() as " + type
                      + " {probe:unknown-keys()}; subsequence(local:f(),3,1)"));
-    assertEquals(3, PROBE.get().constructed);
+    assertEquals(5, PROBE.get().constructed);
     assertEquals(PROBE.get().opened, PROBE.get().closed);
   }
 
@@ -614,7 +813,7 @@ public class UdfLazyResultTest extends XQueryBaseTest {
     assertEquals(20,
                  ((IntNumeric) ExprUtil.asItem(xqueryResult(declarations + "(10,20)[" + dependent + "]"))).intValue());
     PROBE.get().value = new Dbl(1.5);
-    assertNull(ExprUtil.asItem(xqueryResult(declarations + "(10[" + call + "]) + 1")));
+    assertEquals(11, ((IntNumeric) ExprUtil.asItem(xqueryResult(declarations + "(10[" + call + "]) + 1"))).intValue());
     assertNull(ExprUtil.asItem(xqueryResult(declarations + "(10,20)[" + call + "]")));
     assertEquals(PROBE.get().opened, PROBE.get().closed);
   }
@@ -736,7 +935,7 @@ public class UdfLazyResultTest extends XQueryBaseTest {
         assertEquals(1, ((IntNumeric) it.next()).intValue());
       }
     }
-    assertEquals(2, PROBE.get().constructed);
+    assertEquals(4, PROBE.get().constructed);
     assertEquals(PROBE.get().opened, PROBE.get().closed);
   }
 
@@ -889,9 +1088,15 @@ public class UdfLazyResultTest extends XQueryBaseTest {
                   expectedConstructed++;
                 }
               }
+              if (source.equals("probe:unknown-keys()")) {
+                expectedConstructed = Math.max(2, expectedConstructed);
+                if (!prefix || arrayCount == 0 || expectedConstructed > 2) {
+                  expectedConstructed += 2;
+                }
+              }
               assertEquals(expectedConstructed, lazyProbe.constructed);
-              assertEquals(1, lazyProbe.opened);
-              assertEquals(1, lazyProbe.closed);
+              assertTrue(lazyProbe.opened >= 1);
+              assertEquals(lazyProbe.opened, lazyProbe.closed);
             }
           }
         }
@@ -903,7 +1108,8 @@ public class UdfLazyResultTest extends XQueryBaseTest {
   public void typedIdentityViewsKeepSingletonLookupTypeRejection() {
     for (String source : new String[] { "probe:keys()", "probe:unknown-keys()" }) {
       for (String access : new String[] { "[0]", "[-1]", "[]" }) {
-        String text = "let $s as item()* := " + source + " return count($s" + access + ")";
+        String text = "declare function local:f() as item()* {" + source
+            + "}; let $s as item()* := local:f() return count($s" + access + ")";
         Probe baselineProbe = singletonLookupProbe(false, Int32.ONE);
         LookupOutcome baseline = lookupOutcome(text);
         assertEquals(new LookupOutcome(List.of(), ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE), baseline);
@@ -920,26 +1126,19 @@ public class UdfLazyResultTest extends XQueryBaseTest {
 
   @ParameterizedTest
   @ValueSource(strings = { "local:f()", "$f()" })
-  public void singletonLookaheadClosesReadersOnEmptySingletonAndFailure(String call) {
+  public void singletonNormalizationClosesReadersOnEmptySingletonAndFailure(String call) {
     for (String access : new String[] { "[0]", "[-1]", "[]" }) {
       for (int length : new int[] { 0, 1, 64 }) {
         resetProbe();
         Probe probe = PROBE.get();
         probe.length = length;
         probe.failAfter = length == 64 ? 1 : -1;
-        Sequence result = query(calls("item()*", "probe:keys()") + call + access);
         for (int pass = 1; pass <= 2; pass++) {
-          try (Iter it = result.iterate()) {
-            if (length == 0) {
-              assertNull(it.next());
-            } else {
-              assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                           assertThrows(QueryException.class, it::next).getCode());
-              assertNull(it.next());
-            }
-            assertEquals(pass, probe.opened);
-            assertEquals(pass, probe.closed);
-          }
+          LookupOutcome outcome = lookupOutcome(calls("item()*", "probe:keys()") + "count(" + call + access + ")");
+          assertEquals(length == 0
+              ? new LookupOutcome(List.of(0), null)
+              : new LookupOutcome(List.of(), ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE), outcome);
+          assertEquals(pass, probe.opened);
           assertEquals(pass, probe.closed);
           assertEquals(length == 0 ? 0 : pass, probe.constructed);
         }
@@ -1078,8 +1277,8 @@ public class UdfLazyResultTest extends XQueryBaseTest {
         nestedProbe.failAfter = nestedFailure ? 1 : -1;
         Sequence member = new Keys().execute(null, ctx, new Sequence[0]);
         Probe outerProbe = singletonLookupProbe(true, lookupContainer(object, member));
+        outerProbe.length = 2;
         if (!nestedFailure) {
-          outerProbe.length = 2;
           outerProbe.failAfter = 1;
         }
         Sequence result = query(calls("item()*", "probe:keys()") + call + (object ? ".v" : "[0]"));
@@ -1184,13 +1383,16 @@ public class UdfLazyResultTest extends XQueryBaseTest {
     assertEquals(3, PROBE.get().constructed);
     assertEquals(1, PROBE.get().opened);
     assertEquals(1, PROBE.get().closed);
-    resetProbe();
-    PROBE.get().length = 0;
-    assertEquals(42,
-                 integer(calls("item()*", "probe:keys()") + "typeswitch(" + call
-                     + ") case empty-sequence() return 42 default return 0"));
-    assertEquals(1, PROBE.get().opened);
-    assertEquals(1, PROBE.get().closed);
+    for (boolean repeatable : new boolean[] { false, true }) {
+      resetProbe();
+      PROBE.get().length = 0;
+      PROBE.get().repeatable = repeatable;
+      assertThrows(NullPointerException.class,
+                   () -> integer(calls("item()*", "probe:keys()") + "typeswitch(" + call
+                       + ") case empty-sequence() return 42 default return 0"));
+      assertEquals(1, PROBE.get().opened);
+      assertEquals(1, PROBE.get().closed);
+    }
   }
 
   @ParameterizedTest

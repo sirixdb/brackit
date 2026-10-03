@@ -79,6 +79,10 @@ public interface Sequence extends Tuple, Expr {
    */
   IntNumeric size() throws QueryException;
 
+  default IntNumeric knownSize() {
+    return null;
+  }
+
   /**
    * Returns the item at the given position or <code>null</code> iff
    * <code>pos</code> is out of range.

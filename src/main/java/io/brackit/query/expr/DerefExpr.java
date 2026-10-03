@@ -140,6 +140,10 @@ public class DerefExpr implements Expr {
                 }
 
                 final var selected = getSequenceByRecordField(obj, itemField);
+                if (selected instanceof Item selectedItem) {
+                  returned = true;
+                  return selectedItem;
+                }
                 if (selected != null) {
                   nestedIter = selected.iterate();
                 }

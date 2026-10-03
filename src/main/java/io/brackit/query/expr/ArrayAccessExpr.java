@@ -137,7 +137,6 @@ public final class ArrayAccessExpr implements Expr {
         return new BaseIter() {
           final Iter iter = sequence.iterate();
           Iter nestedIter;
-          boolean first = true;
           boolean closed;
 
           @Override
@@ -165,19 +164,6 @@ public final class ArrayAccessExpr implements Expr {
                 item = iter.next();
                 if (item == null) {
                   return null;
-                }
-                if (first) {
-                  first = false;
-                  if (!(item instanceof Array)) {
-                    final Item next = iter.next();
-                    if (next == null) {
-                      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                               "Illegal operand type '%s' where '%s' is expected",
-                                               item.itemType(),
-                                               ArrayType.ARRAY);
-                    }
-                    item = next;
-                  }
                 }
                 if (!(item instanceof Array array)) {
                   continue;
@@ -207,6 +193,10 @@ public final class ArrayAccessExpr implements Expr {
                   }
 
                   final Sequence selected = array.at((int) index);
+                  if (selected instanceof Item selectedItem) {
+                    returned = true;
+                    return selectedItem;
+                  }
                   if (selected != null) {
                     nestedIter = selected.iterate();
                   }

@@ -32,7 +32,6 @@ import io.brackit.query.QueryException;
 import io.brackit.query.atomic.Counter;
 import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.IntNumeric;
-import io.brackit.query.atomic.Numeric;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.expr.SequenceExpr;
 import io.brackit.query.jdm.Function;
@@ -80,28 +79,25 @@ public final class FunctionResultSequence extends LazySequence {
         return first;
       }
     }
-    return result;
-  }
-
-  public static Sequence numericPredicate(Sequence value) {
-    Sequence source = value;
-    while (source instanceof TypedSequence || source instanceof FunctionConversionSequence) {
-      source = source instanceof TypedSequence typed ? typed.arg : ((FunctionConversionSequence) source).arg;
-    }
-    if (source instanceof FunctionResultSequence) {
-      try (Iter it = value.iterate()) {
-        Item first = it.next();
-        if (first instanceof Numeric && it.next() == null) {
-          return first;
-        }
+    try {
+      Sequence normalized = RepeatableSequence.normalize(source);
+      if (normalized == null || normalized instanceof Item) {
+        return FunctionConversionSequence.asTypedSequence(type, normalized, false);
       }
+      return new FunctionResultSequence(normalized, type, function.getName());
+    } catch (StackOverflowError error) {
+      throw result.overflow(error);
     }
-    return value;
   }
 
   @Override
   public boolean isRepeatable() {
     return true;
+  }
+
+  @Override
+  public IntNumeric knownSize() {
+    return source.knownSize();
   }
 
   private QueryException overflow(StackOverflowError error) {

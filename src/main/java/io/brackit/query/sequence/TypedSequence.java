@@ -190,27 +190,7 @@ public class TypedSequence extends LazySequence {
       // An unconstrained identity view must not hide an opted-in backend's size
       // or repeatability when a typed variable is returned through another UDF.
       if (sType.getItemType().isAnyItem() && sType.getCardinality() == Cardinality.ZeroOrMany && s.isRepeatable()) {
-        return s instanceof LazySequence ? s : new LazySequence() {
-          @Override
-          public boolean isRepeatable() {
-            return true;
-          }
-
-          @Override
-          public IntNumeric size() {
-            return s.size();
-          }
-
-          @Override
-          public Item get(IntNumeric pos) {
-            return s.get(pos);
-          }
-
-          @Override
-          public Iter iterate() {
-            return s.iterate();
-          }
-        };
+        return RepeatableSequence.normalize(s);
       }
       return new TypedSequence(sType, s);
     }

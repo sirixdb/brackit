@@ -295,13 +295,19 @@ A backend sequence can opt into lazy UDF returns by overriding
 `Sequence.isRepeatable()` to return `true`. Independent readers must see the
 same immutable items (including node identity and failures), even after a
 reader stops early; concurrent readers must not share a single-use cursor.
-Unknown sequences and single-use I/O keep the existing eager UDF conversion
+Unmarked sequences and single-use I/O keep the existing eager UDF conversion
 and materialization behavior.
 
 For opted-in `item()*` and `item()+` results, return conversion preserves the
-backend's `size()`, indexed access and skip paths. Repeatability alone does not
-promise cheap cardinality. Item-type constraints still validate consumed and
-skipped items; singleton/empty return bounds use eager bounded lookahead.
+backend's `size()`, indexed access and skip paths for multi-item values. Backends
+can override `Sequence.knownSize()` with an accurate, non-consuming cardinality;
+the default `null` reports that cardinality is unknown. Repeatability alone does
+not promise cheap cardinality. Empty and singleton results become `null` or the
+actual `Item`, matching materialized results. Without known cardinality, the
+return boundary peeks at most two items, closes that reader, and replays the raw
+prefix before opening an independent tail reader. No tail is counted or drained
+at the boundary. Item-type constraints still validate consumed and skipped
+items; singleton/empty return bounds use eager bounded lookahead.
 Deferred recursion overflow becomes the existing `BIDY0006` query error, so a
 consuming expression such as `try {count(local:slice())} catch * {...}` can catch it.
 Existing argument and shared-binding policies are unchanged.
