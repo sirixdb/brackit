@@ -97,7 +97,7 @@ public class StepExpr extends PredicateExpr {
       // check if the filter predicate is independent
       // of the context item
       if (bindCount[i] == 0) {
-        Sequence fs = filter[i].evaluate(ctx, tuple);
+        Item fs = predicateValue(filter[i].evaluate(ctx, tuple));
         if (fs == null) {
           return null;
         } else if (fs instanceof Numeric) {
@@ -112,20 +112,8 @@ public class StepExpr extends PredicateExpr {
             reversed = true;
           }
           s = (pos != null) ? s.get(pos) : null;
-        } else {
-          try (Iter it = fs.iterate()) {
-            Item first = it.next();
-            if ((first != null) && (it.next() == null) && (first instanceof Numeric)) {
-              IntNumeric pos = ((Numeric) first).asIntNumeric();
-              if (pos != null && backwardAxis && !reversed) {
-                return reverse(s).get(pos); // singleton result: no re-reversal needed
-              }
-              return (pos != null) ? s.get(pos) : null;
-            }
-          }
-          if (!fs.booleanValue()) {
-            return null;
-          }
+        } else if (!fs.booleanValue()) {
+          return null;
         }
       } else {
         // the filter predicate is dependent on the context item
@@ -137,8 +125,7 @@ public class StepExpr extends PredicateExpr {
       }
     }
 
-    if (reversed) {
-      assert s != null;
+    if (reversed && s != null) {
       s = reverse(s);
     }
 

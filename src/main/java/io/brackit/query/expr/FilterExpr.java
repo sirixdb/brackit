@@ -35,7 +35,6 @@ import io.brackit.query.QueryContext;
 import io.brackit.query.Tuple;
 import io.brackit.query.jdm.Expr;
 import io.brackit.query.jdm.Item;
-import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
 
 import java.util.Arrays;
@@ -76,23 +75,14 @@ public class FilterExpr extends PredicateExpr {
       // check if the filter predicate is independent
       // of the context item
       if (bindCount[i] == 0) {
-        Sequence fs = filter[i].evaluate(ctx, tuple);
+        Item fs = predicateValue(filter[i].evaluate(ctx, tuple));
         if (fs == null) {
           return null;
         } else if (fs instanceof Numeric) {
           IntNumeric pos = ((Numeric) fs).asIntNumeric();
           s = pos != null ? s.get(pos) : null;
-        } else {
-          try (Iter it = fs.iterate()) {
-            Item first = it.next();
-            if (first != null && it.next() == null && first instanceof Numeric) {
-              IntNumeric pos = ((Numeric) first).asIntNumeric();
-              return pos != null ? s.get(pos) : null;
-            }
-          }
-          if (!fs.booleanValue()) {
-            return null;
-          }
+        } else if (!fs.booleanValue()) {
+          return null;
         }
       } else {
         // the filter predicate is dependent on the context item

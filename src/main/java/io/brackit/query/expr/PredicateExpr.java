@@ -31,6 +31,9 @@ import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.atomic.Numeric;
 import io.brackit.query.QueryContext;
+import io.brackit.query.QueryException;
+import io.brackit.query.ErrorCode;
+import io.brackit.query.jdm.node.Node;
 import io.brackit.query.Tuple;
 import io.brackit.query.sequence.BaseIter;
 import io.brackit.query.sequence.LazySequence;
@@ -113,8 +116,25 @@ public abstract class PredicateExpr implements Expr {
     return ScopedValue.where(CURRENT_FOCUS, focus).call(() -> matches(i, ctx, tuple, position, focus));
   }
 
+  protected Item predicateValue(Sequence value) {
+    if (value == null || value instanceof Item) {
+      return (Item) value;
+    }
+    try (Iter iterator = value.iterate()) {
+      Item first = iterator.next();
+      if (first == null || first instanceof Node<?>) {
+        return first;
+      }
+      if (iterator.next() != null) {
+        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                                 "Effective boolean value is undefined for sequences with two or more items not starting with a node");
+      }
+      return first;
+    }
+  }
+
   private boolean matches(int i, QueryContext ctx, Tuple tuple, IntNumeric position, Focus focus) {
-    Sequence result = filter[i].evaluate(ctx, tuple);
+    Item result = predicateValue(filter[i].evaluate(ctx, tuple));
     if (result == null) {
       return false;
     }
@@ -123,18 +143,6 @@ public abstract class PredicateExpr implements Expr {
     }
     if (result instanceof Numeric numeric) {
       return numeric.cmp(position) == 0;
-    }
-    if (!(result instanceof Item)) {
-      try (Iter iterator = result.iterate()) {
-        Item first = iterator.next();
-        Item second = iterator.next();
-        if (focus != null && focus.used) {
-          return result.booleanValue();
-        }
-        if (first instanceof Numeric numeric && second == null) {
-          return numeric.cmp(position) == 0;
-        }
-      }
     }
     return result.booleanValue();
   }
