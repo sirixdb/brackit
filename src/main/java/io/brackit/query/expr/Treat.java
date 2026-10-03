@@ -59,6 +59,9 @@ public class Treat implements Expr {
     try {
       Sequence sequence = expr.evaluate(ctx, tuple);
       final Sequence typedSequence = TypedSequence.toTypedSequence(expected, sequence);
+      if (typedSequence == null || typedSequence instanceof Item) {
+        return typedSequence;
+      }
       return new AbstractSequence() {
         final Sequence s = typedSequence;
 
