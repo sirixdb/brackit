@@ -113,6 +113,17 @@ public final class JsoniqFilterPredicateTest extends XQueryBaseTest {
   }
 
   @Test
+  public void dynamicContextIndependentPredicatesStayPositional() {
+    assertEquals("b", query("declare variable $f := function() { 2 }; ('a','b','c')[?$f()]"));
+    assertEquals("a", query("declare variable $f := function() { 1 }; ('a','b','c')[?$f()]"));
+    assertEquals("", query("declare variable $f := function() { 0 }; ('a','b','c')[?$f()]"));
+    assertEquals("b", query("let $c := 2 let $f := function() { $c } return ('a','b','c')[?$f()]"));
+    assertEquals("b", query("declare variable $f := function() { 2 }; ('a','b','c')[?$f()][?1]"));
+    assertEquals("20", query("declare variable $f := function() { 2 }; (10,20,30)[?$f()]"));
+    assertEquals("a b c", query("declare variable $f := function() { 2 }; ('a','b','c')[?$$ and $f()]"));
+  }
+
+  @Test
   public void chainedFiltersCompose() {
     assertEquals("{\"title\":\"A\",\"price\":12.5}", query(BOOKS + "$a[][?$$.price][?$$.title eq \"A\"]"));
   }

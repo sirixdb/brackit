@@ -86,6 +86,10 @@ public class VariableTable {
    * @throws QueryException
    */
   public Variable resolve(QNm name) throws QueryException {
+    return resolve(name, true);
+  }
+
+  public Variable resolve(QNm name, boolean contextDependent) throws QueryException {
     if (log.isTraceEnabled()) {
       log.trace(String.format("Resolving %s", name));
     }
@@ -93,7 +97,7 @@ public class VariableTable {
     for (int i = bLength - 1; i > -1; i--) {
       if (bTable[bTableCounts][i].name.equals(name)) {
         BoundVariable variable = new BoundVariable(name, bTable[bTableCounts][i].type);
-        bTable[bTableCounts][i].connect(variable);
+        bTable[bTableCounts][i].connect(variable, contextDependent);
         return variable;
       }
     }

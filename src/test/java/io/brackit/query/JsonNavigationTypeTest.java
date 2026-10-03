@@ -11,6 +11,21 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JsonNavigationTypeTest extends XQueryBaseTest {
   @ParameterizedTest
+  @ValueSource(strings = { "1()", "1(0)", "(<n/>)()", "(<n/>)(0)", "1('field')", "'text'('field')",
+      "()()", "()(0)", "1(error())", "{}.missing()" })
+  void dynamicNavigationSkipsEmptyAtomicAndXmlOperands(String query) {
+    ResultChecker.dCheck(null, new Query(query).execute(ctx));
+  }
+
+  @Test
+  void dynamicNavigationRetainsScalarPackingAndMatchingOperands() {
+    ResultChecker.dCheck(new ItemSequence(Int32.ONE, new Int32(2)), new Query("(1,2)()").execute(ctx));
+    ResultChecker.dCheck(new ItemSequence(new Int32(10), new Int32(20)), new Query("[10,20]()").execute(ctx));
+    ResultChecker.dCheck(new Int32(10), new Query("[10](0)").execute(ctx));
+    ResultChecker.dCheck(new Int32(10), new Query("{\"field\":10}('field')").execute(ctx));
+  }
+
+  @ParameterizedTest
   @ValueSource(strings = { "1[0]", "1[]", "'text'[0]", "'text'[]", "<n/>[0]", "<n/>[]", "{}[0]", "{}[]", "(1)[0]",
       "('text')[0]", "(<n/>)[0]", "({})[0]", "(1)[]", "('text')[]", "(<n/>)[]", "({})[]", "(1, 'text', <n/>, {})[0]",
       "(1, 'text', <n/>, {})[]", "(1).a", "('text').a", "(<n/>).a", "([1]).a", "(1, 'text', <n/>, [1]).a" })

@@ -30,6 +30,7 @@ package io.brackit.query.expr;
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryContext;
 import io.brackit.query.QueryException;
+import io.brackit.query.QueryExecution;
 import io.brackit.query.Tuple;
 import io.brackit.query.compiler.Bits;
 import io.brackit.query.compiler.Unit;
@@ -77,7 +78,7 @@ public class DefaultCtxItem extends Variable implements Unit {
 
   @Override
   public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
-    return ctx.resolveDefaultContextItem(this, () -> initialize(ctx, tuple));
+    return QueryExecution.resolveDefaultContextItem(ctx, this, () -> initialize(ctx, tuple));
   }
 
   private Item initialize(QueryContext ctx, Tuple tuple) {

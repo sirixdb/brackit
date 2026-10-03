@@ -46,6 +46,7 @@ public class Binding {
   Binding[] next;
   Reference[] refs;
   int refCount;
+  private boolean contextDependent;
   int nextCount;
 
   Binding(QNm name, SequenceType type, Binding prev) {
@@ -80,6 +81,11 @@ public class Binding {
   }
 
   void connect(Reference variable) {
+    connect(variable, true);
+  }
+
+  void connect(Reference variable, boolean contextDependent) {
+    this.contextDependent |= contextDependent;
     if (refs == null) {
       refs = new Reference[2];
     }
@@ -91,6 +97,10 @@ public class Binding {
 
   public boolean isReferenced() {
     return refCount > 0;
+  }
+
+  public boolean isContextDependent() {
+    return contextDependent;
   }
 
   void resolvePositions(int currentPos) {

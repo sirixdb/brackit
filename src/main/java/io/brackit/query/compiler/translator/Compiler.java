@@ -299,7 +299,7 @@ public class Compiler implements Translator {
     }
 
     if (placeholderCount == 0) {
-      Expr contextItemExpr = argCount == 0 ? table.resolve(Bits.FS_DOT) : null;
+      Expr contextItemExpr = argCount == 0 ? table.resolve(Bits.FS_DOT, false) : null;
       return new DynamicFunctionExpr(sctx, functionExpr, contextItemExpr, argumentsExpr);
     } else {
       int[] positions = placeholderCount == argCount
@@ -610,7 +610,7 @@ public class Compiler implements Translator {
       // value and is never compared against the context position. Context-item
       // independent predicates such as [?1] or [?last()] retain XQuery's positional
       // semantics.
-      ebvFilter[i] = bindItem[i] && predicate.checkProperty("jsoniqFilter");
+      ebvFilter[i] = itemBinding.isContextDependent() && predicate.checkProperty("jsoniqFilter");
     }
 
     return new FilterExpr(expr, predicates, bindItem, bindPos, bindSize, ebvFilter);
