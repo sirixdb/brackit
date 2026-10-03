@@ -40,7 +40,8 @@ public class DTD extends AbstractDuration {
   private final int days; // no wrap to month on overflow; widened from short so dateTime
                          // subtractions across long timespans don't wrap silently.
 
-  private final byte hours; // 0..23 -> day wrap on overflow
+  private final byte hours; // bits 0..6: hour magnitude (0..23 -> day wrap on overflow);
+                           // bit 7: duration sign, separate from the magnitude.
 
   private final byte minutes; // 0..59 -> hour wrap on overflow
 
