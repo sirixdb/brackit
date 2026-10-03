@@ -164,8 +164,8 @@ class DefaultContextExecutionTest extends XQueryBaseTest {
   @ParameterizedTest
   @ValueSource(strings = { "$f()", "string-length()" })
   void localFocusShadowsModuleContextOnReusedQueries(String call) {
-    String body = "count(('a','abcd')[?" + call + " eq 4])"
-        + " + count(<r><n>a</n><n>abcd</n></r>/n[?" + call + " eq 4])";
+    String body = "count(('a','abcd')[?" + call + " eq 4])" + " + count(<r><n>a</n><n>abcd</n></r>/n[?" + call
+        + " eq 4])";
     Query query = query("declare context item as xs:string external;", body);
     QueryContext context = context(new Str("host"));
     checkLength(query, context, 2);
@@ -178,8 +178,7 @@ class DefaultContextExecutionTest extends XQueryBaseTest {
   void ordinaryFunctionsDoNotInitializeAnUnusedDefault() {
     Query query = query("declare context item as node() := error();", "$f() and true()");
     QueryContext context = context(null);
-    context.bind(new QNm("f"),
-                 new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "true"), 0));
+    context.bind(new QNm("f"), new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "true"), 0));
     ResultChecker.dCheck(Bool.TRUE, query.execute(context));
     context.setContextItem(new Str("host"));
     ResultChecker.dCheck(Bool.TRUE, query.execute(context));

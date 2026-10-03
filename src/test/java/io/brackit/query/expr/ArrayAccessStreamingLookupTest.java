@@ -169,7 +169,10 @@ class ArrayAccessStreamingLookupTest extends XQueryBaseTest {
     ResultChecker.dCheck(new Int32(20), lookup(array, mapped, new Int32(-1)));
     ResultChecker.dCheck(new Int32(10), lookup(array, mapped, new Int32(-2)));
     QueryException error = assertThrows(QueryException.class,
-                                       () -> ResultChecker.dCheck(null, lookup(array, mapped, new Int("-18446744073709551616"))));
+                                        () -> ResultChecker.dCheck(null,
+                                                                   lookup(array,
+                                                                          mapped,
+                                                                          new Int("-18446744073709551616"))));
     assertEquals(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, error.getCode());
   }
 }

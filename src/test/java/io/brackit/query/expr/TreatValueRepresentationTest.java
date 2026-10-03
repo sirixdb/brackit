@@ -50,12 +50,14 @@ class TreatValueRepresentationTest extends XQueryBaseTest {
   @ValueSource(strings = { "[]", "[10]", "[10,20]" })
   void arraysRemainOneItemForFunctionAndNestedTreatConsumers(String array) {
     String value = array + " treat as item()";
-    for (String query : List.of(
-        "declare function local:f($x as item()) { $x instance of array() }; local:f(" + value + ")",
-        "let $f := function($x as item()) { $x instance of array() } return $f(" + value + ")",
-        "declare function local:f($x as item(), $y as item()) { $x instance of array() }; let $g := local:f(" + value + ",?) return $g(0)",
-        "let $f := function($x as item(), $y as item()) { $x instance of array() } let $g := $f(" + value + ",?) return $g(0)",
-        "((" + value + ") treat as array()) instance of array()")) {
+    for (String query : List.of("declare function local:f($x as item()) { $x instance of array() }; local:f(" + value
+        + ")",
+                                "let $f := function($x as item()) { $x instance of array() } return $f(" + value + ")",
+                                "declare function local:f($x as item(), $y as item()) { $x instance of array() }; let $g := local:f("
+                                    + value + ",?) return $g(0)",
+                                "let $f := function($x as item(), $y as item()) { $x instance of array() } let $g := $f("
+                                    + value + ",?) return $g(0)",
+                                "((" + value + ") treat as array()) instance of array()")) {
       ResultChecker.dCheck(Bool.TRUE, new Query(query).execute(ctx));
     }
   }
@@ -84,8 +86,7 @@ class TreatValueRepresentationTest extends XQueryBaseTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {
-      "declare function local:f($x as item()) { 0 }; local:f((1,2) treat as item())",
+  @ValueSource(strings = { "declare function local:f($x as item()) { 0 }; local:f((1,2) treat as item())",
       "let $f := function($x as item()) { 0 } return $f((1,2) treat as item())",
       "declare function local:f($x as item(), $y as item()) { 0 }; let $g := local:f((1,2) treat as item(),?) return $g(0)",
       "let $f := function($x as item(), $y as item()) { 0 } let $g := $f((1,2) treat as item(),?) return $g(0)",

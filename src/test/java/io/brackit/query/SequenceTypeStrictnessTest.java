@@ -36,9 +36,8 @@ class SequenceTypeStrictnessTest extends XQueryBaseTest {
 
   @ParameterizedTest
   @ValueSource(strings = { "exists((1,2) treat as item())", "exists((1,2) treat as item()?)",
-      "count(() treat as item())", "exists(((1,2) treat as item())())",
-      "exists(((1,2) treat as item()?)())", "{\"value\": ((1,2) treat as item())}",
-      "[10][((0,1) treat as item())]", "([10])[((0,1) treat as item()?)]" })
+      "count(() treat as item())", "exists(((1,2) treat as item())())", "exists(((1,2) treat as item()?)())",
+      "{\"value\": ((1,2) treat as item())}", "[10][((0,1) treat as item())]", "([10])[((0,1) treat as item()?)]" })
   void treatRejectsWrongCardinalityBeforeFirstResult(String query) {
     QueryException error = assertThrows(QueryException.class, () -> consume(query));
     assertEquals(ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE, error.getCode());
@@ -80,8 +79,7 @@ class SequenceTypeStrictnessTest extends XQueryBaseTest {
       "declare function local:f($x as item(), $y as item()) { $x }; let $g := local:f(?, (1,2)) return $g(3)",
       "let $f := function($x as item(), $y as item()) { $y } let $g := $f((1,2),?) return $g(3)",
       "let $f := function($x as xs:integer, $y as item()) { $y } let $g := $f((),?) return $g(3)",
-      "let $g := concat('a', 'b', (1,2),?) return $g('c')",
-      "let $g := concat('a', 'b',?) return $g((1,2))",
+      "let $g := concat('a', 'b', (1,2),?) return $g('c')", "let $g := concat('a', 'b',?) return $g((1,2))",
       "declare function local:f($x as item(), $y as item()) { $y }; exists(local:f((1,2),?))" })
   void partialApplicationsValidateBoundArguments(String query) {
     QueryException error = assertThrows(QueryException.class, () -> consume(query));
@@ -89,8 +87,7 @@ class SequenceTypeStrictnessTest extends XQueryBaseTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {
-      "let $c := 10 let $f := function($x as xs:integer*) { ($c,$x) } return $f((1,2))",
+  @ValueSource(strings = { "let $c := 10 let $f := function($x as xs:integer*) { ($c,$x) } return $f((1,2))",
       "let $c := 10 let $f := function($x as xs:integer+) { ($c,$x) } return $f((1,2))",
       "let $f := function($x as xs:integer*) { (10,$x) } return $f((1,2))",
       "let $f := function($x as xs:integer+) { (10,$x) } return $f((1,2))" })
@@ -109,8 +106,7 @@ class SequenceTypeStrictnessTest extends XQueryBaseTest {
   @Test
   void validScalarTreatConsumersKeepTheirResults() {
     ResultChecker.dCheck(Int32.ONE, new Query("{\"value\": (1 treat as xs:integer)}.value").execute(ctx));
-    ResultChecker.dCheck(Int32.ZERO,
-                         new Query("count({\"value\": (() treat as item()?)}.value)").execute(ctx));
+    ResultChecker.dCheck(Int32.ZERO, new Query("count({\"value\": (() treat as item()?)}.value)").execute(ctx));
     ResultChecker.dCheck(new Int32(10), new Query("[10][(0 treat as xs:integer)]").execute(ctx));
     ResultChecker.dCheck(Bool.TRUE, new Query("exists(([1] treat as item())())").execute(ctx));
   }

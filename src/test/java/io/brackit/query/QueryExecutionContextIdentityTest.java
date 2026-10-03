@@ -217,7 +217,9 @@ class QueryExecutionContextIdentityTest extends XQueryBaseTest {
     BackendContext backend = new BackendContext(store);
     Query declarationQuery = new Query("declare context item as node() := <n/>; $$");
     DefaultCtxItem declaration = (DefaultCtxItem) declarationQuery.getModule().getVariables().resolve(Bits.FS_DOT);
-    Function function = new AbstractFunction(new QNm("parallel-probe"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
+    Function function = new AbstractFunction(new QNm("parallel-probe"),
+                                             new Signature(SequenceType.ITEM_SEQUENCE),
+                                             true) {
       @Override
       public Sequence execute(StaticContext sctx, QueryContext received, Sequence[] args) {
         assertSame(backend, received);
@@ -266,8 +268,9 @@ class QueryExecutionContextIdentityTest extends XQueryBaseTest {
   @Test
   void morselWorkersAndTheirLazyReturnsShareTheExecutionDefault() {
     BackendContext backend = new BackendContext(store);
-    DefaultCtxItem declaration = (DefaultCtxItem) new Query("declare context item as node() := <n/>; $$")
-        .getModule().getVariables().resolve(Bits.FS_DOT);
+    DefaultCtxItem declaration = (DefaultCtxItem) new Query("declare context item as node() := <n/>; $$").getModule()
+                                                                                                         .getVariables()
+                                                                                                         .resolve(Bits.FS_DOT);
     AtomicInteger workers = new AtomicInteger();
     class SplitSource extends ItemSequence implements SplittableSequence {
       SplitSource() {
@@ -348,7 +351,8 @@ class QueryExecutionContextIdentityTest extends XQueryBaseTest {
     Object binding = new Object();
     BoundVariable focus = new BoundVariable(new QNm("focus"), SequenceType.ITEM, binding);
     focus.setPos(0);
-    Function stringLength = new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "string-length"), 0);
+    Function stringLength = new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "string-length"),
+                                                    0);
     Expr call = new DynamicFunctionExpr(null, stringLength, focus);
     Expr predicate;
     if (morsel) {
@@ -367,7 +371,9 @@ class QueryExecutionContextIdentityTest extends XQueryBaseTest {
           return index == 0 ? new ItemSequence(Int32.ONE) : new ItemSequence();
         }
       }
-      Function source = new AbstractFunction(new QNm("predicate-source"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
+      Function source = new AbstractFunction(new QNm("predicate-source"),
+                                             new Signature(SequenceType.ITEM_SEQUENCE),
+                                             true) {
         @Override
         public Sequence execute(StaticContext sctx, QueryContext received, Sequence[] args) {
           return new SplitSource();
@@ -435,8 +441,13 @@ class QueryExecutionContextIdentityTest extends XQueryBaseTest {
       }
     };
     MainModule module = new MainModule();
-    module.setExpr(new FilterExpr(new FunctionExpr(null, input), new Expr[] { predicate }, new boolean[] { true },
-        new boolean[] { false }, new boolean[] { false }, new boolean[] { false }, new Object[] { binding }));
+    module.setExpr(new FilterExpr(new FunctionExpr(null, input),
+                                  new Expr[] { predicate },
+                                  new boolean[] { true },
+                                  new boolean[] { false },
+                                  new boolean[] { false },
+                                  new boolean[] { false },
+                                  new Object[] { binding }));
     ResultChecker.dCheck(expected, new Query(module).execute(ctx));
   }
 }

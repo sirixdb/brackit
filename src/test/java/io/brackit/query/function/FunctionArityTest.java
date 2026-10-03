@@ -37,18 +37,12 @@ class FunctionArityTest extends XQueryBaseTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "let $f := function() { 1 } return $f(?)",
-      "let $f := function() { 1 } return $f(1,?)",
-      "let $f := function($x) { $x } return $f(1,?)",
-      "let $f := function($x,$y) { $x } return $f(?)",
-      "let $f := function($x,$y) { $x } return $f(1,2,?)",
-      "let $f := function() { 1 } return $f(1)",
-      "let $f := function($x) { 1 } return $f()",
-      "let $f := function($x) { 1 } return $f(1,2)",
-      "let $f := function($x,$y) { 1 } return $f()",
-      "let $f := function($x,$y) { 1 } return $f(1)",
-      "let $f := function($x,$y) { 1 } return $f(1,2,3)",
-      "let $c := 10 let $f := function() { $c } return $f(?)",
+  @ValueSource(strings = { "let $f := function() { 1 } return $f(?)", "let $f := function() { 1 } return $f(1,?)",
+      "let $f := function($x) { $x } return $f(1,?)", "let $f := function($x,$y) { $x } return $f(?)",
+      "let $f := function($x,$y) { $x } return $f(1,2,?)", "let $f := function() { 1 } return $f(1)",
+      "let $f := function($x) { 1 } return $f()", "let $f := function($x) { 1 } return $f(1,2)",
+      "let $f := function($x,$y) { 1 } return $f()", "let $f := function($x,$y) { 1 } return $f(1)",
+      "let $f := function($x,$y) { 1 } return $f(1,2,3)", "let $c := 10 let $f := function() { $c } return $f(?)",
       "let $c := 10 let $f := function($x,$y) { $c } return $f(1)",
       "let $f := function($x,$y) { $x } let $g := $f(1,?) return $g()",
       "let $f := function($x,$y) { $x } let $g := $f(1,?) return $g(2,3)",
@@ -61,8 +55,7 @@ class FunctionArityTest extends XQueryBaseTest {
 
   @ParameterizedTest
   @ValueSource(strings = { "declare function local:f() { 1 }; local:f(?)",
-      "declare function local:f($x,$y) { 1 }; local:f(?)",
-      "declare function local:f($x) { 1 }; local:f(1,?)",
+      "declare function local:f($x,$y) { 1 }; local:f(?)", "declare function local:f($x) { 1 }; local:f(1,?)",
       "declare function local:f($x) { 1 }; local:f()", "concat(?)", "concat()" })
   void staticResolutionRetainsItsArityErrors(String query) {
     QueryException error = assertThrows(QueryException.class, () -> consume(query));
@@ -70,8 +63,7 @@ class FunctionArityTest extends XQueryBaseTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "declare function local:f() { 10 }; local:f()",
-      "let $f := function() { 10 } return $f()",
+  @ValueSource(strings = { "declare function local:f() { 10 }; local:f()", "let $f := function() { 10 } return $f()",
       "let $c := 10 let $f := function() { $c } return $f()",
       "let $f := function($x as xs:integer) { $x } return $f(10)",
       "let $c := 3 let $f := function($x as xs:integer,$y as xs:integer) { $c+$x+$y } return $f(2,5)",
@@ -86,14 +78,14 @@ class FunctionArityTest extends XQueryBaseTest {
   void directConstructionChecksBoundAndPlaceholderCountsBeforeIndexing() {
     Function zero = builtin("true", 0);
     QueryException placeholder = assertThrows(QueryException.class,
-                                             () -> new PartiallyAppliedFunction(zero,
-                                                                                new Sequence[] { null },
-                                                                                new int[] { 0 }));
+                                              () -> new PartiallyAppliedFunction(zero,
+                                                                                 new Sequence[] { null },
+                                                                                 new int[] { 0 }));
     assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, placeholder.getCode());
     QueryException bound = assertThrows(QueryException.class,
-                                       () -> new PartiallyAppliedFunction(zero,
-                                                                          new Sequence[] { Int32.ONE },
-                                                                          new int[0]));
+                                        () -> new PartiallyAppliedFunction(zero,
+                                                                           new Sequence[] { Int32.ONE },
+                                                                           new int[0]));
     assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, bound.getCode());
     QueryException ordinary = assertThrows(QueryException.class, () -> new FunctionExpr(null, zero, Int32.ONE));
     assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, ordinary.getCode());
@@ -119,7 +111,8 @@ class FunctionArityTest extends XQueryBaseTest {
     ResultChecker.dCheck(new Str("abcd"),
                          new Query(declaration + "let $g := $f('a','b',?,?) return $g('c','d')").execute(ctx));
     ResultChecker.dCheck(new Str("abc"),
-                         new Query(declaration + "let $g := $f('a',?,?) let $h := $g('b',?) return $h('c')").execute(ctx));
+                         new Query(declaration + "let $g := $f('a',?,?) let $h := $g('b',?) return $h('c')").execute(
+                                                                                                                     ctx));
     ResultChecker.dCheck(new Str("abcd"), new Query("let $g := concat('a','b',?,?) return $g('c','d')").execute(ctx));
   }
 
@@ -129,8 +122,7 @@ class FunctionArityTest extends XQueryBaseTest {
     ctx.setContextItem(new Str("abc"));
     ResultChecker.dCheck(Bool.TRUE, new Query("declare variable $f external; $f() eq 3").execute(ctx));
     ResultChecker.dCheck(Bool.TRUE, new Query("string-length() eq 3").execute(ctx));
-    QueryException error = assertThrows(QueryException.class,
-                                       () -> consume("declare variable $f external; $f('abc')"));
+    QueryException error = assertThrows(QueryException.class, () -> consume("declare variable $f external; $f('abc')"));
     assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, error.getCode());
     ctx.setContextItem(null);
     QueryException missing = assertThrows(QueryException.class, () -> consume("declare variable $f external; $f()"));

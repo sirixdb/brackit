@@ -60,18 +60,20 @@ class ReverseAxisFilterEvaluationTest extends XQueryBaseTest {
 
               @Override
               public Stream<? extends Node<?>> performStep(Node<?> node, NodeType test) {
-                Stream<? extends Node<?>> stream = candidates == null ? delegate.performStep(node, test) : new Stream<Node<?>>() {
-                  int position;
+                Stream<? extends Node<?>> stream = candidates == null
+                    ? delegate.performStep(node, test)
+                    : new Stream<Node<?>>() {
+                      int position;
 
-                  @Override
-                  public Node<?> next() {
-                    return position < candidates.size() ? candidates.get(position++) : null;
-                  }
+                      @Override
+                      public Node<?> next() {
+                        return position < candidates.size() ? candidates.get(position++) : null;
+                      }
 
-                  @Override
-                  public void close() {
-                  }
-                };
+                      @Override
+                      public void close() {
+                      }
+                    };
                 return new Stream<Node<?>>() {
                   @Override
                   public Node<?> next() {
@@ -94,7 +96,8 @@ class ReverseAxisFilterEvaluationTest extends XQueryBaseTest {
 
   @Test
   void existsStopsAtFirstMatchingPrecedingSibling() {
-    Node<?> context = (Node<?>) ExprUtil.asItem(new Query("<r><a flag='yes'/>" + "<b/>".repeat(1000) + "<c/></r>/c").execute(ctx));
+    Node<?> context = (Node<?>) ExprUtil.asItem(new Query("<r><a flag='yes'/>" + "<b/>".repeat(1000) + "<c/></r>/c")
+                                                                                                                    .execute(ctx));
     ctx.setContextItem(context);
     AtomicInteger pulls = new AtomicInteger();
     Query query = new Query(observedAxes(pulls, null), "exists(preceding-sibling::*[?@flag])");
@@ -106,8 +109,8 @@ class ReverseAxisFilterEvaluationTest extends XQueryBaseTest {
   @ValueSource(strings = { "preceding", "preceding-sibling", "ancestor", "ancestor-or-self", "past" })
   void guaranteedEbvFiltersReadOnlyTheFirstBackendAxisCandidate(String axis) {
     List<Node<?>> nodes = List.of((Node<?>) new Query("<a flag='yes'/>").execute(ctx),
-                                 (Node<?>) new Query("<b/>").execute(ctx),
-                                 (Node<?>) new Query("<c/>").execute(ctx));
+                                  (Node<?>) new Query("<b/>").execute(ctx),
+                                  (Node<?>) new Query("<c/>").execute(ctx));
     ctx.setContextItem(nodes.get(2));
     AtomicInteger pulls = new AtomicInteger();
     Query query = new Query(observedAxes(pulls, nodes), "exists(" + axis + "::*[?@flag])");
@@ -142,12 +145,22 @@ class ReverseAxisFilterEvaluationTest extends XQueryBaseTest {
         };
       }
     };
-    Expr predicate = new StepExpr(Accessor.ATTRIBUTE, new AttributeType(new QNm("flag")),
-                                  new BoundVariable(Bits.FS_DOT, 0), new Expr[0],
-                                  new boolean[0], new boolean[0], new boolean[0]);
-    Expr step = new StepExpr(cursor, AnyNodeType.ANY_NODE, first, new Expr[] { predicate },
-                            new boolean[] { true }, new boolean[] { false }, new boolean[] { false },
-                            new boolean[] { true }, new Object[1]);
+    Expr predicate = new StepExpr(Accessor.ATTRIBUTE,
+                                  new AttributeType(new QNm("flag")),
+                                  new BoundVariable(Bits.FS_DOT, 0),
+                                  new Expr[0],
+                                  new boolean[0],
+                                  new boolean[0],
+                                  new boolean[0]);
+    Expr step = new StepExpr(cursor,
+                             AnyNodeType.ANY_NODE,
+                             first,
+                             new Expr[] { predicate },
+                             new boolean[] { true },
+                             new boolean[] { false },
+                             new boolean[] { false },
+                             new boolean[] { true },
+                             new Object[1]);
     assertTrue(step.evaluate(ctx, TupleImpl.EMPTY_TUPLE).booleanValue());
     assertEquals(1, pulls.get());
   }
@@ -156,9 +169,9 @@ class ReverseAxisFilterEvaluationTest extends XQueryBaseTest {
   @ValueSource(strings = { "past", "past-or-self" })
   void temporalPredicatesRankNewestFirstCursorCandidates(String axis) {
     List<Node<?>> nodes = List.of((Node<?>) new Query("<r4 v='1'/>").execute(ctx),
-                                 (Node<?>) new Query("<r3 v='1'/>").execute(ctx),
-                                 (Node<?>) new Query("<r2 v='1'/>").execute(ctx),
-                                 (Node<?>) new Query("<r1 v='1'/>").execute(ctx));
+                                  (Node<?>) new Query("<r3 v='1'/>").execute(ctx),
+                                  (Node<?>) new Query("<r2 v='1'/>").execute(ctx),
+                                  (Node<?>) new Query("<r1 v='1'/>").execute(ctx));
     boolean self = axis.equals("past-or-self");
     List<Node<?>> candidates = self ? nodes : nodes.subList(1, 4);
     ctx.setContextItem(nodes.getFirst());
@@ -168,14 +181,25 @@ class ReverseAxisFilterEvaluationTest extends XQueryBaseTest {
         return new ItemSequence(new Int32(2));
       }
     });
-    List<String> predicates = List.of("[1]", "[2]", "[$rank()]", "[@v + 0]", "[@v + 1]", "[position() le 2]", "[true()]");
+    List<String> predicates = List.of("[1]",
+                                      "[2]",
+                                      "[$rank()]",
+                                      "[@v + 0]",
+                                      "[@v + 1]",
+                                      "[position() le 2]",
+                                      "[true()]");
     for (String predicate : predicates) {
       AtomicInteger pulls = new AtomicInteger();
       Query query = new Query(observedAxes(pulls, candidates),
-          "xquery version \"3.0\"; declare variable $rank external; " + axis + "::*" + predicate);
-      List<Node<?>> expected = predicate.equals("[true()]") ? candidates
-          : predicate.equals("[position() le 2]") ? candidates.subList(0, 2)
-          : List.of(candidates.get(predicate.equals("[2]") || predicate.equals("[$rank()]") || predicate.equals("[@v + 1]") ? 1 : 0));
+                              "xquery version \"3.0\"; declare variable $rank external; " + axis + "::*" + predicate);
+      List<Node<?>> expected = predicate.equals("[true()]")
+          ? candidates
+          : predicate.equals("[position() le 2]")
+              ? candidates.subList(0, 2)
+              : List.of(candidates.get(predicate.equals("[2]") || predicate.equals("[$rank()]") || predicate.equals(
+                                                                                                                    "[@v + 1]")
+                                                                                                                        ? 1
+                                                                                                                        : 0));
       try (Iter result = query.execute(ctx).iterate()) {
         for (Node<?> node : expected) {
           assertSame(node, result.next(), axis + predicate);
@@ -191,7 +215,8 @@ class ReverseAxisFilterEvaluationTest extends XQueryBaseTest {
     Node<?> context = (Node<?>) ExprUtil.asItem(new Query("<r><a flag='yes'/><b flag='yes'/><c/></r>/c").execute(ctx));
     ctx.setContextItem(context);
     AtomicInteger pulls = new AtomicInteger();
-    Query query = new Query(observedAxes(pulls, null), "declare variable $f := function() { 1 }; preceding-sibling::*[" + predicate + "]");
+    Query query = new Query(observedAxes(pulls, null),
+                            "declare variable $f := function() { 1 }; preceding-sibling::*[" + predicate + "]");
     if (predicate.contains("last()")) {
       try (Iter result = query.execute(ctx).iterate()) {
         assertEquals(new QNm("a"), ((Node<?>) result.next()).getName());

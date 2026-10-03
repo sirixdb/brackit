@@ -66,8 +66,9 @@ public class ArrayAccessEmptyOperandTest extends XQueryBaseTest {
     Expr index = new Constant(null);
     ResultChecker.dCheck(Int32.ONE, new ArrayAccessExpr(new Constant(array), index).evaluate(ctx, null));
     ResultChecker.dCheck(Int32.ONE,
-                         new ArrayAccessExpr(new Constant(new ItemSequence(new DArray(List.of()), array)), index).evaluate(ctx,
-                                                                                                                          null));
+                         new ArrayAccessExpr(new Constant(new ItemSequence(new DArray(List.of()), array)), index)
+                                                                                                                 .evaluate(ctx,
+                                                                                                                           null));
   }
 
   @Test

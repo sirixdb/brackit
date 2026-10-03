@@ -31,26 +31,28 @@ class DynamicFunctionContextTest extends XQueryBaseTest {
                          new Query(declaration + "(0,1,2)[?$f()]").execute(ctx));
     ResultChecker.dCheck(keep ? Int32.ZERO : null, new Query(declaration + "0[?$f()]").execute(ctx));
     ResultChecker.dCheck(new Int32(keep ? 2 : 0),
-                         new Query(declaration + "count(<r><a/><b/><c/></r>/c/preceding-sibling::*[?$f()])").execute(ctx));
+                         new Query(declaration + "count(<r><a/><b/><c/></r>/c/preceding-sibling::*[?$f()])").execute(
+                                                                                                                     ctx));
   }
 
   @Test
   void zeroArgumentCollectionUsesDefaultCollectionInsidePredicates() {
     ctx.setDefaultNodeCollection(storeDocument("default", "<default/>"));
-    ctx.bind(new QNm("f"), new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "collection"), 0));
+    ctx.bind(new QNm("f"),
+             new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "collection"), 0));
     String declaration = "declare variable $f external; ";
     ResultChecker.dCheck(new ItemSequence(new Str("missing"), new Str("other")),
                          new Query(declaration + "('missing','other')[?exists($f())]").execute(ctx));
     ResultChecker.dCheck(new Str("missing"), new Query(declaration + "'missing'[?exists($f())]").execute(ctx));
     ResultChecker.dCheck(new Int32(2),
-                         new Query(declaration + "count(<r><a/><b/><c/></r>/c/preceding-sibling::*[?exists($f())])").execute(ctx));
+                         new Query(declaration + "count(<r><a/><b/><c/></r>/c/preceding-sibling::*[?exists($f())])")
+                                                                                                                    .execute(ctx));
   }
 
   @Test
   void explicitBuiltinArgumentsRemainSeparateFromFocus() {
     ctx.bind(new QNm("f"), new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "boolean"), 1));
-    ResultChecker.dCheck(null,
-                         new Query("declare variable $f external; (0,1,2)[?$$ and $f(false())]").execute(ctx));
+    ResultChecker.dCheck(null, new Query("declare variable $f external; (0,1,2)[?$$ and $f(false())]").execute(ctx));
   }
 
   private void bindStringLength() {
@@ -75,18 +77,20 @@ class DynamicFunctionContextTest extends XQueryBaseTest {
     String declaration = "declare context item as xs:string external := 'abcd'; declare variable $f external; ";
     int expected = hostPresent ? 1 : 4;
     ResultChecker.dCheck(Bool.TRUE,
-                         new Query(declaration + "$f() eq " + expected + " and string-length() eq " + expected).execute(ctx));
+                         new Query(declaration + "$f() eq " + expected + " and string-length() eq " + expected).execute(
+                                                                                                                        ctx));
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "declare context item as xs:integer := 'abcd';",
-      "declare context item as node() := 'abcd';", "declare context item as node() external;" })
+  @ValueSource(strings = { "declare context item as xs:integer := 'abcd';", "declare context item as node() := 'abcd';",
+      "declare context item as node() external;" })
   void declaredAndExternalContextTypesAreValidated(String declaration) {
     bindStringLength();
     ctx.setContextItem(new Str("a"));
     for (String call : List.of("$f()", "string-length()")) {
       QueryException error = assertThrows(QueryException.class,
-                                         () -> new Query(declaration + " declare variable $f external; " + call).evaluate(ctx));
+                                          () -> new Query(declaration + " declare variable $f external; " + call)
+                                                                                                                 .evaluate(ctx));
       assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, error.getCode());
     }
   }
@@ -99,7 +103,8 @@ class DynamicFunctionContextTest extends XQueryBaseTest {
     ctx.setContextItem(null);
     for (String call : List.of("$f()", "string-length()")) {
       QueryException error = assertThrows(QueryException.class,
-                                         () -> new Query(declaration + " declare variable $f external; " + call).evaluate(ctx));
+                                          () -> new Query(declaration + " declare variable $f external; " + call)
+                                                                                                                 .evaluate(ctx));
       assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, error.getCode());
     }
   }
@@ -116,8 +121,7 @@ class DynamicFunctionContextTest extends XQueryBaseTest {
 
   @Test
   void contextIndependentZeroArgumentCallsDoNotRequireAContext() {
-    ctx.bind(new QNm("f"),
-             new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "true"), 0));
+    ctx.bind(new QNm("f"), new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "true"), 0));
     ctx.setContextItem(null);
     ResultChecker.dCheck(Bool.TRUE, new Query("declare variable $f external; $f()").execute(ctx));
   }
@@ -129,7 +133,8 @@ class DynamicFunctionContextTest extends XQueryBaseTest {
     ctx.setContextItem(null);
     for (String call : List.of("$f()", "string-length()")) {
       QueryException error = assertThrows(QueryException.class,
-                                         () -> new Query(declaration + " declare variable $f external; " + call).evaluate(ctx));
+                                          () -> new Query(declaration + " declare variable $f external; " + call)
+                                                                                                                 .evaluate(ctx));
       assertEquals(ErrorCode.ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED, error.getCode());
     }
   }
@@ -142,7 +147,8 @@ class DynamicFunctionContextTest extends XQueryBaseTest {
     ResultChecker.dCheck(new Str("abcd"), new Query(declaration + "('a','abcd')[?$f() eq 4]").execute(ctx));
     ResultChecker.dCheck(new Str("abcd"), new Query(declaration + "('a','abcd')[?string-length() eq 4]").execute(ctx));
     ResultChecker.dCheck(Bool.TRUE,
-                         new Query(declaration + "count(('a','abcd')[?$f() eq 4]) eq 1 and $f() eq 3 and string-length() eq 3").execute(ctx));
+                         new Query(declaration
+                             + "count(('a','abcd')[?$f() eq 4]) eq 1 and $f() eq 3 and string-length() eq 3").execute(ctx));
   }
 
   @Test
@@ -153,7 +159,8 @@ class DynamicFunctionContextTest extends XQueryBaseTest {
     ResultChecker.dCheck(Bool.TRUE,
                          new Query(declaration + "count(<r><n>a</n><n>abcd</n></r>/n[?$f() eq 4]) eq 1").execute(ctx));
     ResultChecker.dCheck(Bool.TRUE,
-                         new Query(declaration + "count(<r><n>a</n><n>abcd</n></r>/n[?string-length() eq 4]) eq 1").execute(ctx));
+                         new Query(declaration + "count(<r><n>a</n><n>abcd</n></r>/n[?string-length() eq 4]) eq 1")
+                                                                                                                   .execute(ctx));
   }
 
   @Test
@@ -163,6 +170,7 @@ class DynamicFunctionContextTest extends XQueryBaseTest {
     String declaration = "declare variable $f external; ";
     ItemSequence expected = new ItemSequence(Int32.ONE, new Int32(4));
     ResultChecker.dCheck(expected, new Query(declaration + "<r><n>a</n><n>abcd</n></r>/n/($f())").execute(ctx));
-    ResultChecker.dCheck(expected, new Query(declaration + "<r><n>a</n><n>abcd</n></r>/n/(string-length())").execute(ctx));
+    ResultChecker.dCheck(expected,
+                         new Query(declaration + "<r><n>a</n><n>abcd</n></r>/n/(string-length())").execute(ctx));
   }
 }

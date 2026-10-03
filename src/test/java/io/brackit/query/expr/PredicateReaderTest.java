@@ -42,8 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class PredicateReaderTest extends XQueryBaseTest {
   private enum Route {
-    FILTER_INDEPENDENT, FILTER_SHARED, SCALAR_INDEPENDENT, SCALAR_SHARED,
-    SPATIAL_INDEPENDENT, SPATIAL_SHARED, TEMPORAL_INDEPENDENT, TEMPORAL_SHARED
+    FILTER_INDEPENDENT, FILTER_SHARED, SCALAR_INDEPENDENT, SCALAR_SHARED, SPATIAL_INDEPENDENT, SPATIAL_SHARED, TEMPORAL_INDEPENDENT, TEMPORAL_SHARED
   }
 
   private static final class ReaderProbe extends AbstractSequence {
@@ -81,14 +80,15 @@ class PredicateReaderTest extends XQueryBaseTest {
   }
 
   private Expr predicate(List<Item> values, boolean failAfterFirst, List<ReaderProbe> readers) {
-    return new FunctionExpr(null, new AbstractFunction(new QNm("probe"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
-      @Override
-      public Sequence execute(StaticContext sctx, QueryContext context, Sequence[] args) {
-        ReaderProbe reader = new ReaderProbe(values, failAfterFirst);
-        readers.add(reader);
-        return reader;
-      }
-    });
+    return new FunctionExpr(null,
+                            new AbstractFunction(new QNm("probe"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
+                              @Override
+                              public Sequence execute(StaticContext sctx, QueryContext context, Sequence[] args) {
+                                ReaderProbe reader = new ReaderProbe(values, failAfterFirst);
+                                readers.add(reader);
+                                return reader;
+                              }
+                            });
   }
 
   private Sequence evaluate(Route route, Expr predicate, boolean ebv) {
@@ -96,9 +96,15 @@ class PredicateReaderTest extends XQueryBaseTest {
     Expr expression;
     switch (route) {
       case FILTER_INDEPENDENT, FILTER_SHARED, SCALAR_INDEPENDENT, SCALAR_SHARED -> {
-        Sequence input = route.name().startsWith("SCALAR") ? new Int32(10) : new ItemSequence(new Int32(10), new Int32(20));
-        expression = new FilterExpr(input, new Expr[] { predicate }, new boolean[] { dependent },
-                                    new boolean[] { false }, new boolean[] { false }, new boolean[] { ebv });
+        Sequence input = route.name().startsWith("SCALAR")
+            ? new Int32(10)
+            : new ItemSequence(new Int32(10), new Int32(20));
+        expression = new FilterExpr(input,
+                                    new Expr[] { predicate },
+                                    new boolean[] { dependent },
+                                    new boolean[] { false },
+                                    new boolean[] { false },
+                                    new boolean[] { ebv });
       }
       default -> {
         Node<?> first = ctx.getNodeFactory().element(new QNm("first"));
@@ -125,9 +131,15 @@ class PredicateReaderTest extends XQueryBaseTest {
             };
           }
         };
-        expression = new StepExpr(accessor, AnyNodeType.ANY_NODE, first, new Expr[] { predicate },
-                                  new boolean[] { dependent }, new boolean[] { false }, new boolean[] { false },
-                                  new boolean[] { ebv }, new Object[1]);
+        expression = new StepExpr(accessor,
+                                  AnyNodeType.ANY_NODE,
+                                  first,
+                                  new Expr[] { predicate },
+                                  new boolean[] { dependent },
+                                  new boolean[] { false },
+                                  new boolean[] { false },
+                                  new boolean[] { ebv },
+                                  new Object[1]);
       }
     }
     if (route.name().startsWith("SCALAR")) {
@@ -155,7 +167,8 @@ class PredicateReaderTest extends XQueryBaseTest {
   @EnumSource(Route.class)
   void oneCursorBooleanResultsAreNotReopened(Route route) {
     List<ReaderProbe> readers = new ArrayList<>();
-    List<String> expected = route.name().startsWith("SCALAR") ? List.of("10")
+    List<String> expected = route.name().startsWith("SCALAR")
+        ? List.of("10")
         : route.name().contains("FILTER") ? List.of("10", "20") : List.of("first", "second");
     assertEquals(expected, values(evaluate(route, predicate(List.of(Bool.TRUE), false, readers), false)));
     assertFalse(readers.isEmpty());
@@ -170,7 +183,8 @@ class PredicateReaderTest extends XQueryBaseTest {
   @EnumSource(Route.class)
   void nodeFirstValuesCloseAfterOnePullWithoutReadingTheTail(Route route) {
     Item node = ctx.getNodeFactory().element(new QNm("predicate-node"));
-    List<String> expected = route.name().startsWith("SCALAR") ? List.of("10")
+    List<String> expected = route.name().startsWith("SCALAR")
+        ? List.of("10")
         : route.name().contains("FILTER") ? List.of("10", "20") : List.of("first", "second");
     for (boolean ebv : new boolean[] { false, true }) {
       List<ReaderProbe> readers = new ArrayList<>();
@@ -188,7 +202,9 @@ class PredicateReaderTest extends XQueryBaseTest {
   void multipleAtomicValuesRetainForg0006AndCloseTheReader(Route route) {
     List<ReaderProbe> readers = new ArrayList<>();
     QueryException error = assertThrows(QueryException.class,
-        () -> values(evaluate(route, predicate(List.of(Bool.TRUE, Bool.FALSE), false, readers), false)));
+                                        () -> values(evaluate(route,
+                                                              predicate(List.of(Bool.TRUE, Bool.FALSE), false, readers),
+                                                              false)));
     assertEquals(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, error.getCode());
     assertEquals(1, readers.size());
     assertEquals(2, readers.getFirst().pulls);
@@ -200,9 +216,11 @@ class PredicateReaderTest extends XQueryBaseTest {
   @EnumSource(Route.class)
   void singletonNumericSequencesRetainPositionalRanking(Route route) {
     List<ReaderProbe> readers = new ArrayList<>();
-    List<String> expected = route.name().startsWith("SCALAR") ? List.of()
-        : route.name().contains("FILTER") ? List.of("20")
-        : route.name().startsWith("SPATIAL") ? List.of("first") : List.of("second");
+    List<String> expected = route.name().startsWith("SCALAR")
+        ? List.of()
+        : route.name().contains("FILTER")
+            ? List.of("20")
+            : route.name().startsWith("SPATIAL") ? List.of("first") : List.of("second");
     assertEquals(expected, values(evaluate(route, predicate(List.of(new Int32(2)), false, readers), false)));
     for (ReaderProbe reader : readers) {
       assertEquals(1, reader.opens);
@@ -214,14 +232,18 @@ class PredicateReaderTest extends XQueryBaseTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "<n/>", "(<a/>,<b/>)", "<r><a/><b/></r>/child::*", "<r><a/><b/><c/></r>/c/preceding-sibling::*" })
+  @ValueSource(strings = { "<n/>", "(<a/>,<b/>)", "<r><a/><b/></r>/child::*",
+      "<r><a/><b/><c/></r>/c/preceding-sibling::*" })
   void actualRootFunctionReturnsAFirstNodeBeforeTheLazyError(String input) {
     ctx.bind(new QNm("f"), new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "root"), 0));
     String filter = input + "[?(for $i in (1,2) return if ($i eq 1) then $f() else error())]";
     ResultChecker.dCheck(Bool.TRUE, new Query("declare variable $f external; exists(" + filter + ")").execute(ctx));
     if (input.equals("<n/>")) {
-      assertEquals(new QNm("n"), ((Node<?>) new Query("declare variable $f external; " + filter)
-          .getModule().getBody().evaluateToItem(ctx, TupleImpl.EMPTY_TUPLE)).getName());
+      assertEquals(new QNm("n"),
+                   ((Node<?>) new Query("declare variable $f external; " + filter).getModule()
+                                                                                  .getBody()
+                                                                                  .evaluateToItem(ctx,
+                                                                                                  TupleImpl.EMPTY_TUPLE)).getName());
     }
   }
 
@@ -234,9 +256,13 @@ class PredicateReaderTest extends XQueryBaseTest {
         return new ItemSequence(ctx.getNodeFactory().element(new QNm("a")), ctx.getNodeFactory().element(new QNm("b")));
       }
     });
-    for (String input : List.of("1", "(1,2)", "<r><a/><b/></r>/child::*", "<r><a/><b/><c/></r>/c/preceding-sibling::*")) {
-      QueryException error = assertThrows(QueryException.class, () -> ExprUtil.asItem(new Query(
-          "declare variable $f external; exists(" + input + "[?($f() treat as " + type + ")])").execute(ctx)));
+    for (String input : List.of("1",
+                                "(1,2)",
+                                "<r><a/><b/></r>/child::*",
+                                "<r><a/><b/><c/></r>/c/preceding-sibling::*")) {
+      QueryException error = assertThrows(QueryException.class,
+                                          () -> ExprUtil.asItem(new Query("declare variable $f external; exists("
+                                              + input + "[?($f() treat as " + type + ")])").execute(ctx)));
       assertEquals(ErrorCode.ERR_DYNAMIC_TYPE_DOES_NOT_MATCH_TREAT_TYPE, error.getCode());
     }
   }
@@ -246,12 +272,19 @@ class PredicateReaderTest extends XQueryBaseTest {
     List<ReaderProbe> readers = new ArrayList<>();
     Expr predicate = predicate(List.of(new Int32(2)), false, readers);
     FilterExpr filter = new FilterExpr(new ItemSequence(new Int32(10), new Int32(20)),
-        new Expr[] { predicate, Bool.FALSE }, new boolean[2], new boolean[2], new boolean[2]);
+                                       new Expr[] { predicate, Bool.FALSE },
+                                       new boolean[2],
+                                       new boolean[2],
+                                       new boolean[2]);
     assertNull(filter.evaluate(ctx, TupleImpl.EMPTY_TUPLE));
     Node<?> node = ctx.getNodeFactory().element(new QNm("n"));
-    StepExpr step = new StepExpr(Accessor.ANCESTOR_OR_SELF, AnyNodeType.ANY_NODE, node,
-        new Expr[] { predicate(List.of(Int32.ONE), false, readers), Bool.FALSE },
-        new boolean[2], new boolean[2], new boolean[2]);
+    StepExpr step = new StepExpr(Accessor.ANCESTOR_OR_SELF,
+                                 AnyNodeType.ANY_NODE,
+                                 node,
+                                 new Expr[] { predicate(List.of(Int32.ONE), false, readers), Bool.FALSE },
+                                 new boolean[2],
+                                 new boolean[2],
+                                 new boolean[2]);
     assertNull(step.evaluate(ctx, TupleImpl.EMPTY_TUPLE));
   }
 }

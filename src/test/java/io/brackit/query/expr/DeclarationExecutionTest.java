@@ -108,14 +108,15 @@ class DeclarationExecutionTest extends XQueryBaseTest {
   @Test
   void emptyInitializerRunsOncePerExecutionAndRemainsLazy() {
     AtomicInteger calls = new AtomicInteger();
-    ctx.bind(new QNm("init"), new AbstractFunction(new QNm("empty-initializer"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
-      @Override
-      public Sequence execute(StaticContext sctx, QueryContext context, Sequence[] args) {
-        assertSame(ctx, context);
-        calls.incrementAndGet();
-        return null;
-      }
-    });
+    ctx.bind(new QNm("init"),
+             new AbstractFunction(new QNm("empty-initializer"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
+               @Override
+               public Sequence execute(StaticContext sctx, QueryContext context, Sequence[] args) {
+                 assertSame(ctx, context);
+                 calls.incrementAndGet();
+                 return null;
+               }
+             });
     String declarations = "declare variable $init external; declare variable $x := $init(); ";
     Query unused = new Query(declarations + "true()");
     ResultChecker.dCheck(Bool.TRUE, unused.execute(ctx));
@@ -142,23 +143,24 @@ class DeclarationExecutionTest extends XQueryBaseTest {
   void globalInitializerCanReadAnotherDeclarationOnAWorker() {
     AtomicReference<DefaultCtxItem> contextItem = new AtomicReference<>();
     AtomicInteger calls = new AtomicInteger();
-    ctx.bind(new QNm("init"), new AbstractFunction(new QNm("worker-initializer"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
-      @Override
-      public Sequence execute(StaticContext sctx, QueryContext context, Sequence[] args) {
-        assertSame(ctx, context);
-        calls.incrementAndGet();
-        Item[] result = new Item[1];
-        Task task = new Task() {
-          @Override
-          protected void doCompute() {
-            result[0] = contextItem.get().evaluateToItem(context, TupleImpl.EMPTY_TUPLE);
-          }
-        };
-        FJControl.submit(task).join();
-        assertNull(task.getError());
-        return result[0];
-      }
-    });
+    ctx.bind(new QNm("init"),
+             new AbstractFunction(new QNm("worker-initializer"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
+               @Override
+               public Sequence execute(StaticContext sctx, QueryContext context, Sequence[] args) {
+                 assertSame(ctx, context);
+                 calls.incrementAndGet();
+                 Item[] result = new Item[1];
+                 Task task = new Task() {
+                   @Override
+                   protected void doCompute() {
+                     result[0] = contextItem.get().evaluateToItem(context, TupleImpl.EMPTY_TUPLE);
+                   }
+                 };
+                 FJControl.submit(task).join();
+                 assertNull(task.getError());
+                 return result[0];
+               }
+             });
     Query query = new Query("declare context item as node() := <n/>; declare variable $init external; "
         + "declare variable $x := $init(); exists($x) and ($x is $$) and ($x is $x)");
     contextItem.set((DefaultCtxItem) query.getModule().getVariables().resolve(Bits.FS_DOT));

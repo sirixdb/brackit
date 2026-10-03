@@ -174,11 +174,17 @@ class TypedSequenceTest {
 
   @Test
   void numericConversionUsesTheDeclaredTargetOnEveryRead() {
-    for (AtomicType itemType : List.of(AtomicType.INR, AtomicType.INT, AtomicType.DEC, AtomicType.DBL, NumericType.INSTANCE)) {
+    for (AtomicType itemType : List.of(AtomicType.INR,
+                                       AtomicType.INT,
+                                       AtomicType.DEC,
+                                       AtomicType.DBL,
+                                       NumericType.INSTANCE)) {
       for (boolean builtin : List.of(false, true)) {
         SequenceType singleton = new SequenceType(itemType, Cardinality.One);
         Sequence item = FunctionConversionSequence.asTypedSequence(singleton, new Una("1"), builtin);
-        Sequence sequence = FunctionConversionSequence.asTypedSequence(singleton, new ItemSequence(new Una("1")), builtin);
+        Sequence sequence = FunctionConversionSequence.asTypedSequence(singleton,
+                                                                       new ItemSequence(new Una("1")),
+                                                                       builtin);
         assertEquals(itemType.getType(), assertInstanceOf(Atomic.class, item).type());
         assertEquals(itemType.getType(), assertInstanceOf(Atomic.class, sequence).type());
 

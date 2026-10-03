@@ -146,7 +146,8 @@ public final class JsoniqFilterPredicateTest extends XQueryBaseTest {
 
   @Test
   public void dynamicImplicitFocusPredicatesAgreeWithStaticCalls() {
-    ctx.bind(new QNm("f"), new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "string-length"), 0));
+    ctx.bind(new QNm("f"),
+             new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "string-length"), 0));
     for (String input : new String[] { "('aa','b','ccc')", "'aa'", "('', 'aa')", "<r><n>aa</n><n>b</n><n>ccc</n></r>/n",
         "<r><a>aa</a><b>b</b><c/></r>/c/preceding-sibling::*" }) {
       assertEquals(query(input + "[?string-length()]"), query("declare variable $f external; " + input + "[?$f()]"));
@@ -155,18 +156,23 @@ public final class JsoniqFilterPredicateTest extends XQueryBaseTest {
     assertEquals("aa b ccc", query("declare variable $f external; ('aa','b','ccc')[?$f() + 1]"));
     assertEquals("aa b ccc", query("declare variable $f external; ('aa','b','ccc')[?(for $x in 1 return $f())]"));
     assertEquals("b", query("declare variable $f external; ('aa','b','ccc')[?if (false()) then $f() else 2]"));
-    assertEquals("aa", new Query("declare variable $f external; 'aa'[?$f()]")
-        .getModule().getBody().evaluateToItem(ctx, new TupleImpl()).atomize().stringValue());
+    assertEquals("aa",
+                 new Query("declare variable $f external; 'aa'[?$f()]").getModule()
+                                                                       .getBody()
+                                                                       .evaluateToItem(ctx, new TupleImpl())
+                                                                       .atomize()
+                                                                       .stringValue());
   }
 
   @Test
   public void potentialFocusDoesNotChangeSingletonSequenceNumericResults() {
-    ctx.bind(new QNm("f"), new AbstractFunction(new QNm("sequence-number"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
-      @Override
-      public Sequence execute(StaticContext sctx, QueryContext context, Sequence[] args) {
-        return new ItemSequence(new Int32(2));
-      }
-    });
+    ctx.bind(new QNm("f"),
+             new AbstractFunction(new QNm("sequence-number"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
+               @Override
+               public Sequence execute(StaticContext sctx, QueryContext context, Sequence[] args) {
+                 return new ItemSequence(new Int32(2));
+               }
+             });
     assertEquals("b", query("declare variable $f external; ('a','b','c')[?$f()]"));
     assertEquals("<a/>", query("declare variable $f external; <r><a/><b/><c/></r>/c/preceding-sibling::*[?$f()]"));
     assertEquals("", query("declare variable $f external; 'a'[?$f()]"));
@@ -176,7 +182,8 @@ public final class JsoniqFilterPredicateTest extends XQueryBaseTest {
   public void oneCompiledPredicateCanCallFunctionsWithDifferentFocusDependencies() {
     Query query = new Query("declare variable $f external; ('aa','b','ccc')[?$f()]");
     BrackitQueryContext implicit = new BrackitQueryContext(store);
-    implicit.bind(new QNm("f"), new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "string-length"), 0));
+    implicit.bind(new QNm("f"),
+                  new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "string-length"), 0));
     BrackitQueryContext independent = new BrackitQueryContext(store);
     independent.bind(new QNm("f"), new Query("function() { 2 }").execute(independent));
     ItemSequence all = new ItemSequence(new Str("aa"), new Str("b"), new Str("ccc"));
