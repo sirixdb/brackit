@@ -33,6 +33,7 @@ import io.brackit.query.Tuple;
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.atomic.QNm;
+import io.brackit.query.expr.DefaultCtxItem;
 import io.brackit.query.jdm.*;
 import io.brackit.query.jdm.json.Array;
 import io.brackit.query.jdm.json.Object;
@@ -120,6 +121,7 @@ public class DynamicFunctionExpr implements Expr {
     }
 
     if (functionItem instanceof Function function) {
+      function.getSignature().checkArity(argumentsSize);
       int pos = 0;
       for (Sequence sequence : tuple.array()) {
         if (sequence == functionItem) {
@@ -140,7 +142,7 @@ public class DynamicFunctionExpr implements Expr {
       Sequence[] args;
 
       if (dftCtxType != null) {
-        Item ctxItem = arguments[0].evaluateToItem(ctx, tuple);
+        Item ctxItem = new DefaultCtxItem().evaluateToItem(ctx, tuple);
         FunctionConversionSequence.asTypedSequence(dftCtxType, ctxItem, false);
         args = new Sequence[] { ctxItem };
       } else {

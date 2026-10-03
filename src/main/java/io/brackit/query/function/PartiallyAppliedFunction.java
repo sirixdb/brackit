@@ -58,7 +58,7 @@ public class PartiallyAppliedFunction extends AbstractFunction {
    */
   public PartiallyAppliedFunction(Function originalFunction, Sequence[] boundArgs, int[] placeholderPositions) {
     super(createName(originalFunction),
-          createSignature(originalFunction, placeholderPositions),
+          createSignature(originalFunction, boundArgs.length, placeholderPositions),
           false,
           originalFunction.isUpdating());
     this.originalFunction = originalFunction;
@@ -84,14 +84,16 @@ public class PartiallyAppliedFunction extends AbstractFunction {
     return new QNm(origName.getNamespaceURI(), origName.getPrefix(), origName.getLocalName() + "#partial");
   }
 
-  private static Signature createSignature(Function originalFunction, int[] placeholderPositions) {
-    SequenceType[] origParams = originalFunction.getSignature().getParams();
+  private static Signature createSignature(Function originalFunction, int argumentCount, int[] placeholderPositions) {
+    Signature originalSignature = originalFunction.getSignature();
+    originalSignature.checkArity(argumentCount);
+    SequenceType[] origParams = originalSignature.getParams();
     SequenceType[] newParams = new SequenceType[placeholderPositions.length];
     for (int i = 0; i < placeholderPositions.length; i++) {
       int pos = placeholderPositions[i];
       newParams[i] = pos < origParams.length ? origParams[pos] : origParams[origParams.length - 1];
     }
-    return new Signature(originalFunction.getSignature().getResultType(), newParams);
+    return new Signature(originalSignature.getResultType(), newParams);
   }
 
   @Override
@@ -102,16 +104,13 @@ public class PartiallyAppliedFunction extends AbstractFunction {
     // DynamicFunctionExpr may prepend closure variables to args.
     // We need to skip them and only use the last expectedArgCount arguments.
     int offset = args.length - expectedArgCount;
-    if (offset < 0) {
-      offset = 0;
-    }
 
     // Combine bound arguments with the new arguments
     Sequence[] fullArgs = new Sequence[boundArgs.length];
     System.arraycopy(boundArgs, 0, fullArgs, 0, boundArgs.length);
 
     // Fill in the placeholder positions with the provided arguments
-    for (int i = 0; i < placeholderPositions.length && (offset + i) < args.length; i++) {
+    for (int i = 0; i < placeholderPositions.length; i++) {
       fullArgs[placeholderPositions[i]] = args[offset + i];
     }
 

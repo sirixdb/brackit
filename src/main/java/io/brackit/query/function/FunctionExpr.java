@@ -60,6 +60,7 @@ public class FunctionExpr implements Expr {
     } else {
       this.dftCtxType = null;
     }
+    function.getSignature().checkArity(exprs.length - (dftCtxType != null ? 1 : 0));
   }
 
   public Signature getSignature() {
