@@ -192,10 +192,13 @@ public class ParallelTableJoinTest {
       Item[] build = items(BUILD_SIZE, i -> new Int32(buildValue(i)));
       Item[] probe = items(2000, i -> new Int32(i + 1));
       String query = PROLOG + "for $c in $probe for $p in $build where $c eq $p return $p";
+      List<String> expected = rows(new Query(new CompileChain(), query), probe, build);
+      assertEquals(countBuild(b -> buildValue(b) <= 2000), expected.size());
+
       Query parallel = new Query(new BlockCompileChain(false), query);
       for (int run = 0; run < RUNS; run++) {
         List<String> actual = assertTimeoutPreemptively(Duration.ofSeconds(60), () -> rows(parallel, probe, build));
-        assertEquals(countBuild(b -> buildValue(b) <= 2000), actual.size(), "run " + run);
+        assertEquals(expected, actual, "run " + run);
       }
     } finally {
       if (previous == null) {

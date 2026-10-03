@@ -30,6 +30,7 @@ package io.brackit.query.util.join;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -92,6 +93,22 @@ public class MultiTypeJoinTableTest {
       // a build key is cast: a copy of the build keys is being made
       gate.pass();
       return super.stringValue();
+    }
+  }
+
+  /** An integer whose cast fails the way a copy of a large build side runs out of memory. */
+  private static final class UncastableInteger extends Int32 {
+    private final Gate gate;
+
+    UncastableInteger(int v, Gate gate) {
+      super(v);
+      this.gate = gate;
+    }
+
+    @Override
+    public String stringValue() {
+      gate.pass();
+      throw new OutOfMemoryError("no room for a copy of the build keys");
     }
   }
 
@@ -218,7 +235,7 @@ public class MultiTypeJoinTableTest {
   private static Object probeOrFailure(MultiTypeJoinTable table, Atomic key) {
     try {
       return positions(table.probe(key));
-    } catch (RuntimeException e) {
+    } catch (Throwable e) {
       return e;
     }
   }
@@ -321,6 +338,37 @@ public class MultiTypeJoinTableTest {
       casts.incrementAndGet();
       return super.stringValue();
     }
+  }
+
+  // A copy that fails with an error rather than an exception hands that error
+  // itself to the probes waiting for it, so that every thread of the query
+  // reports the cause the copy really failed with.
+  @Test
+  @Timeout(30)
+  public void anErrorMakingACopyReachesTheProbesWaitingForIt() throws Exception {
+    var gate = new Gate();
+    var table = new MultiTypeJoinTable(Cmp.eq, false, false);
+    table.add(new UncastableInteger(1, gate), row(1), 1);
+    table.seal();
+
+    var first = new AtomicReference<Object>();
+    var second = new AtomicReference<Object>();
+    Thread a = new Thread(() -> first.set(probeOrFailure(table, new Dbl(1))));
+    gate.holdUp = a;
+    a.start();
+    assertTrue(gate.reached.await(20, TimeUnit.SECONDS), "the first probe did not reach the copy");
+    Thread b = new Thread(() -> second.set(probeOrFailure(table, new Dbl(1))));
+    b.start();
+    try {
+      assertFalse(b.join(Duration.ofMillis(500)), "a probe made a second copy of the same build keys");
+    } finally {
+      gate.opened.countDown();
+    }
+    a.join();
+    b.join();
+
+    assertInstanceOf(OutOfMemoryError.class, first.get());
+    assertSame(first.get(), second.get());
   }
 
   // Every double probe needs the integer build keys as doubles. Sealing the

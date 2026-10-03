@@ -120,14 +120,14 @@ public class MultiTypeJoinTable {
 
     private volatile AbstractJoinTable table;
 
-    private volatile RuntimeException failure;
+    private volatile Throwable failure;
 
     private AbstractJoinTable make(Type type, Function<Type, AbstractJoinTable> copier) throws QueryException {
       try {
         AbstractJoinTable copy = copier.apply(type);
         table = copy;
         return copy;
-      } catch (RuntimeException e) {
+      } catch (Throwable e) {
         failure = e;
         throw e;
       } finally {
@@ -146,15 +146,14 @@ public class MultiTypeJoinTable {
         Thread.currentThread().interrupt();
         throw new QueryException(e, ErrorCode.BIT_DYN_INT_ERROR, "Interrupted while waiting for the join build keys");
       }
-      RuntimeException failed = failure;
-      if (failed != null) {
-        throw failed;
+      Throwable failed = failure;
+      if (failed instanceof RuntimeException unchecked) {
+        throw unchecked;
       }
-      copy = table;
-      if (copy == null) {
-        throw new QueryException(ErrorCode.BIT_DYN_INT_ERROR, "The join build keys could not be copied");
+      if (failed instanceof Error error) {
+        throw error;
       }
-      return copy;
+      return table;
     }
 
     @Override
