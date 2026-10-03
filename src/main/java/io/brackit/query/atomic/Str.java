@@ -35,7 +35,9 @@ import io.brackit.query.util.simd.VectorOps;
 import java.nio.charset.StandardCharsets;
 
 /**
- * String atomic type with SIMD-accelerated comparison operations.
+ * String atomic type with Unicode codepoint comparisons and SIMD acceleration.
+ * UTF-8 comparisons require lossless encoding; strings with unpaired surrogates
+ * use scalar comparison even if replacement-encoded bytes were cached.
  *
  * @author Sebastian Baechle
  */
@@ -43,12 +45,14 @@ public class Str extends AbstractAtomic {
   public static final Str EMPTY = new Str("");
 
   /**
-   * Threshold in bytes above which SIMD operations are used.
+   * Length threshold in UTF-16 code units for uncached SIMD comparisons.
    * Below this threshold, scalar operations are typically faster due to SIMD overhead.
    */
   private static final int SIMD_THRESHOLD = 32;
 
   private final String str;
+
+  private final boolean utf8Lossless;
 
   /**
    * Lazily cached UTF-8 bytes for SIMD operations.
@@ -74,6 +78,22 @@ public class Str extends AbstractAtomic {
     if (str == null)
       str = "";
     this.str = str;
+    this.utf8Lossless = isUtf8Lossless(str);
+  }
+
+  private static boolean isUtf8Lossless(String value) {
+    for (int i = 0; i < value.length(); i++) {
+      char ch = value.charAt(i);
+      if (Character.isHighSurrogate(ch)) {
+        if (i + 1 == value.length() || !Character.isLowSurrogate(value.charAt(i + 1))) {
+          return false;
+        }
+        i++;
+      } else if (Character.isLowSurrogate(ch)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
@@ -113,15 +133,11 @@ public class Str extends AbstractAtomic {
 
   @Override
   public int cmp(Atomic other) throws QueryException {
-    if ((other instanceof Str s) || (other instanceof Una)) {
-      // Try SIMD path for longer strings when both are Str
-      if (other instanceof Str s2) {
-        return cmpStr(s2);
-      }
-      return str.compareTo(other.stringValue());
+    if (other instanceof Str s) {
+      return cmpStr(s);
     }
-    if (other instanceof AnyURI) {
-      return str.compareTo(other.stringValue());
+    if (other instanceof Una || other instanceof AnyURI) {
+      return compareCodepoints(str, other.stringValue());
     }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                              "Cannot compare '%s' with '%s'",
@@ -130,8 +146,9 @@ public class Str extends AbstractAtomic {
   }
 
   /**
-   * SIMD-accelerated string comparison.
-   * Uses vectorized comparison for strings longer than SIMD_THRESHOLD.
+   * SIMD-accelerated string comparison with a scalar fallback.
+   * Uses cached UTF-8 when both are available; uncached comparisons use
+   * {@link #SIMD_THRESHOLD} to choose the path.
    *
    * @param other the string to compare with
    * @return negative if this < other, 0 if equal, positive if this > other
@@ -139,6 +156,10 @@ public class Str extends AbstractAtomic {
   private int cmpStr(Str other) {
     if (this == other)
       return 0;
+
+    if (!utf8Lossless || !other.utf8Lossless) {
+      return compareCodepoints(str, other.str);
+    }
 
     // Fast path: use cached UTF-8 if both are available
     byte[] a = utf8Cache;
@@ -152,7 +173,7 @@ public class Str extends AbstractAtomic {
     String s1 = this.str;
     String s2 = other.str;
     if (s1.length() < SIMD_THRESHOLD && s2.length() < SIMD_THRESHOLD) {
-      return s1.compareTo(s2);
+      return compareCodepoints(s1, s2);
     }
 
     // SIMD path for longer strings
@@ -161,15 +182,24 @@ public class Str extends AbstractAtomic {
 
   @Override
   public int atomicCmpInternal(Atomic atomic) {
-    // Use SIMD for Str-to-Str comparison
-    if (atomic instanceof Str s) {
-      return cmpStr(s);
+    return atomic instanceof Str s ? cmpStr(s) : compareCodepoints(str, atomic.stringValue());
+  }
+
+  static int compareCodepoints(String left, String right) {
+    int limit = Math.min(left.length(), right.length());
+    for (int i = 0; i < limit;) {
+      int leftCodepoint = left.codePointAt(i);
+      int rightCodepoint = right.codePointAt(i);
+      if (leftCodepoint != rightCodepoint) {
+        return leftCodepoint - rightCodepoint;
+      }
+      i += Character.charCount(leftCodepoint);
     }
-    return str.compareTo(atomic.stringValue());
+    return left.length() - right.length();
   }
 
   /**
-   * SIMD-accelerated equality check.
+   * SIMD-accelerated equality check with a scalar fallback.
    * More efficient than cmp() == 0 due to early exit on length mismatch.
    */
   @Override
@@ -192,7 +222,7 @@ public class Str extends AbstractAtomic {
       return false;
 
     // Short string optimization
-    if (str.length() < SIMD_THRESHOLD) {
+    if (str.length() < SIMD_THRESHOLD || !utf8Lossless || !s.utf8Lossless) {
       return str.equals(s.str);
     }
 
