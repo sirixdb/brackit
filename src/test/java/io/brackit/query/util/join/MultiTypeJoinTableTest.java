@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -322,6 +323,44 @@ public class MultiTypeJoinTableTest {
             assertSame(keys[pos - 1], bindings[1]);
           }
         }
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("comparisons")
+  public void unicodeURIKeysUseCodepointOrderInDirectComparisonsAndJoins(Cmp cmp, boolean general) {
+    for (String prefix : new String[] { "", "http://example.org/abcdefghijklmnop/" }) {
+      String low = prefix + "\uFF21";
+      String high = prefix + "\uD83D\uDE00";
+      Atomic[] keys = { new AnyURI(high), new Una(low), new Str(high), new AnyURI(low), new Una(high), new Str(low),
+          new AnyURI(high) };
+      Atomic[] probes = { new Una(high), new AnyURI(high), new Str(high), new Una(low), new AnyURI(low), new Str(low) };
+      var table = new MultiTypeJoinTable(cmp, general, false);
+      for (int i = 0; i < keys.length; i++) {
+        table.add(keys[i], row(i + 1), i + 1);
+      }
+      table.seal();
+
+      for (Atomic probe : probes) {
+        var expected = new ArrayList<Integer>();
+        for (int i = 0; i < keys.length; i++) {
+          int order = Arrays.compare(probe.stringValue().codePoints().toArray(),
+                                     keys[i].stringValue().codePoints().toArray());
+          boolean match = switch (cmp) {
+            case eq -> order == 0;
+            case lt -> order < 0;
+            case le -> order <= 0;
+            case gt -> order > 0;
+            case ge -> order >= 0;
+            default -> throw new AssertionError(cmp);
+          };
+          assertEquals(match, general ? cmp.gCmp(null, probe, keys[i]) : cmp.vCmp(null, probe, keys[i]));
+          if (match) {
+            expected.add(i + 1);
+          }
+        }
+        assertEquals(expected, positions(table.probe(probe)), probe.toString());
       }
     }
   }

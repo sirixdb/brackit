@@ -113,15 +113,8 @@ public class Str extends AbstractAtomic {
 
   @Override
   public int cmp(Atomic other) throws QueryException {
-    if ((other instanceof Str s) || (other instanceof Una)) {
-      // Try SIMD path for longer strings when both are Str
-      if (other instanceof Str s2) {
-        return cmpStr(s2);
-      }
-      return str.compareTo(other.stringValue());
-    }
-    if (other instanceof AnyURI) {
-      return str.compareTo(other.stringValue());
+    if (other instanceof Str || other instanceof Una || other instanceof AnyURI) {
+      return cmpStr(other.asStr());
     }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                              "Cannot compare '%s' with '%s'",
@@ -152,7 +145,16 @@ public class Str extends AbstractAtomic {
     String s1 = this.str;
     String s2 = other.str;
     if (s1.length() < SIMD_THRESHOLD && s2.length() < SIMD_THRESHOLD) {
-      return s1.compareTo(s2);
+      int limit = Math.min(s1.length(), s2.length());
+      for (int i = 0; i < limit;) {
+        int left = s1.codePointAt(i);
+        int right = s2.codePointAt(i);
+        if (left != right) {
+          return left - right;
+        }
+        i += Character.charCount(left);
+      }
+      return s1.length() - s2.length();
     }
 
     // SIMD path for longer strings
@@ -161,11 +163,7 @@ public class Str extends AbstractAtomic {
 
   @Override
   public int atomicCmpInternal(Atomic atomic) {
-    // Use SIMD for Str-to-Str comparison
-    if (atomic instanceof Str s) {
-      return cmpStr(s);
-    }
-    return str.compareTo(atomic.stringValue());
+    return cmpStr(atomic.asStr());
   }
 
   /**

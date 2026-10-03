@@ -108,7 +108,7 @@ public class AnyURI extends AbstractAtomic {
   @Override
   public int cmp(Atomic other) throws QueryException {
     if (other instanceof AnyURI || other instanceof Str) {
-      return stringValue().compareTo(other.stringValue());
+      return asStr().cmp(other);
     }
     throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                              "Cannot compare '%s' with '%s'",
@@ -118,7 +118,7 @@ public class AnyURI extends AbstractAtomic {
 
   @Override
   public int atomicCmpInternal(Atomic atomic) {
-    return stringValue().compareTo(atomic.stringValue());
+    return asStr().atomicCmpInternal(atomic);
   }
 
   @Override
