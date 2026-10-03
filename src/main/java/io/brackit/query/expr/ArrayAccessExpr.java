@@ -28,6 +28,8 @@
 package io.brackit.query.expr;
 
 import io.brackit.query.atomic.IntNumeric;
+import io.brackit.query.atomic.Int32;
+import io.brackit.query.jsonitem.array.StreamingArray;
 import io.brackit.query.jdm.*;
 import io.brackit.query.jdm.SplittableSequence;
 import io.brackit.query.util.ExprUtil;
@@ -95,23 +97,24 @@ public final class ArrayAccessExpr implements Expr {
                                Type.INR);
     }
 
-    final long idx = numericIndex.longValue();
+    IntNumeric idx = numericIndex;
 
-    if (idx < 0) {
-      final long fromEnd = array.len() + idx;
-
-      if (fromEnd < 0) {
-        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Illegal negative index: " + fromEnd);
+    if (idx.cmp(Int32.ZERO) < 0) {
+      idx = idx.add(array.length()).asIntNumeric();
+      if (idx.cmp(Int32.ZERO) < 0) {
+        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Illegal negative index: " + idx);
       }
-
-      return array.at((int) fromEnd);
     }
 
-    if (idx >= array.len()) {
+    if (idx.cmp(new Int32(Integer.MAX_VALUE)) >= 0) {
       return null;
     }
 
-    return array.at((int) idx);
+    int position = idx.intValue();
+    if (array instanceof StreamingArray streaming) {
+      return streaming.atOrEmpty(position);
+    }
+    return position < array.len() ? array.at(position) : null;
   }
 
   private LazySequence getLazySequence(final QueryContext ctx, final Tuple tuple, final Sequence sequence) {

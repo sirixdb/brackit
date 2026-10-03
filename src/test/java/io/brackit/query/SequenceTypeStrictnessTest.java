@@ -57,6 +57,8 @@ class SequenceTypeStrictnessTest extends XQueryBaseTest {
       "declare function local:f($x as xs:integer) { $x }; local:f(())",
       "declare function local:f() as xs:integer { (1,2) }; local:f()",
       "declare function local:f() as xs:integer { () }; local:f()",
+      "declare function local:f($x as empty-sequence()) { 3 }; local:f((1))",
+      "let $f := function($x as empty-sequence()) { 3 } return $f((1))",
       "declare function local:f($x as empty-sequence()) { $x }; local:f(1)" })
   void declarationsEnforceCardinality(String query) {
     QueryException error = assertThrows(QueryException.class, () -> consume(query));
@@ -70,6 +72,9 @@ class SequenceTypeStrictnessTest extends XQueryBaseTest {
       "declare function local:f($x as xs:integer, $y as item()) { $y }; let $g := local:f((1,2),?) return $g(3)",
       "declare function local:f($x as item()?, $y as item()) { $y }; let $g := local:f((1,2),?) return $g(3)",
       "declare function local:f($x as empty-sequence(), $y as item()) { $y }; let $g := local:f(1,?) return $g(3)",
+      "declare function local:f($x as empty-sequence(), $y as item()) { $y }; let $g := local:f((1),?) return $g(3)",
+      "let $f := function($x as empty-sequence(), $y as item()) { $y } let $g := $f((1),?) return $g(3)",
+      "declare function local:f($x as empty-sequence(), $y as item()) { $y }; exists(local:f((1),?))",
       "declare function local:f($x as xs:integer, $y as item()) { $y }; let $g := local:f('bad',?) return $g(3)",
       "declare function local:f($x as item(), $y as item(), $z as item()) { $x }; let $g := local:f(?, (1,2),?) return $g(3,4)",
       "declare function local:f($x as item(), $y as item()) { $x }; let $g := local:f(?, (1,2)) return $g(3)",
@@ -108,6 +113,23 @@ class SequenceTypeStrictnessTest extends XQueryBaseTest {
                          new Query("count({\"value\": (() treat as item()?)}.value)").execute(ctx));
     ResultChecker.dCheck(new Int32(10), new Query("[10][(0 treat as xs:integer)]").execute(ctx));
     ResultChecker.dCheck(Bool.TRUE, new Query("exists(([1] treat as item())())").execute(ctx));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "{\"value\": ((1,2) treat as item()*)}.value[]",
+      "{\"value\": ((1,2) treat as item()+)}.value[]" })
+  void manyValuedTreatRetainsScalarArrayPacking(String query) {
+    ResultChecker.dCheck(new ItemSequence(Int32.ONE, new Int32(2)), new Query(query).execute(ctx));
+  }
+
+  @Test
+  void validEmptySequenceArgumentsRemainEmptyInEveryCallPath() {
+    ResultChecker.dCheck(new Int32(3),
+                         new Query("declare function local:f($x as empty-sequence()) { 3 }; local:f(())").execute(ctx));
+    ResultChecker.dCheck(new Int32(3),
+                         new Query("let $f := function($x as empty-sequence()) { 3 } return $f(())").execute(ctx));
+    ResultChecker.dCheck(new Int32(3),
+                         new Query("let $f := function($x as empty-sequence(), $y as item()) { $y } let $g := $f((),?) return $g(3)").execute(ctx));
   }
 
   @Test

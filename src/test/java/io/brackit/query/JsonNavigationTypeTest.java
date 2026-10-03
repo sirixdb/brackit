@@ -30,14 +30,18 @@ class JsonNavigationTypeTest extends XQueryBaseTest {
 
   @ParameterizedTest
   @ValueSource(strings = { "[10][1]", "([10])[1]", "[10][4294967296]", "([10])[4294967296]",
-      "([10])[3000000000]", "(1, [10], [20])[4294967296]" })
+      "([10])[3000000000]", "(1, [10], [20])[4294967296]", "[10][18446744073709551616]",
+      "([10])[18446744073709551616]", "(1, [10], [20])[18446744073709551616]",
+      "[10][9223372036854775808]", "([10])[9223372036854775808]" })
   void positiveOutOfBoundsIndicesAreEmptyInEveryRepresentation(String query) {
     ResultChecker.dCheck(null, new Query(query).execute(ctx));
   }
 
   @ParameterizedTest
   @ValueSource(strings = { "[10][-2]", "([10])[-2]", "[10][-4294967296]", "([10])[-4294967296]",
-      "([10])[-3000000000]", "(1, [10], [20])[-4294967296]" })
+      "([10])[-3000000000]", "(1, [10], [20])[-4294967296]", "[10][-18446744073709551616]",
+      "([10])[-18446744073709551616]", "(1, [10], [20])[-18446744073709551616]",
+      "[10][-9223372036854775809]", "([10])[-9223372036854775809]" })
   void negativeOvershootHasTheSameErrorInEveryRepresentation(String query) {
     QueryException error = assertThrows(QueryException.class,
                                        () -> ResultChecker.dCheck(null, new Query(query).execute(ctx)));

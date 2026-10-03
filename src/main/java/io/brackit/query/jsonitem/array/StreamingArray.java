@@ -134,11 +134,16 @@ public final class StreamingArray extends AbstractArray {
 
   @Override
   public Sequence at(int i) {
-    materializeUpTo(i);
-    if (i < 0 || i >= materialized.size()) {
+    Sequence value = atOrEmpty(i);
+    if (value == null) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
     }
-    return materialized.get(i);
+    return value;
+  }
+
+  public Sequence atOrEmpty(int i) {
+    materializeUpTo(i);
+    return i < 0 || i >= materialized.size() ? null : materialized.get(i);
   }
 
   @Override
