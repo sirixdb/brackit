@@ -29,6 +29,11 @@ package io.brackit.query.function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -40,6 +45,7 @@ import io.brackit.query.QueryContext;
 import io.brackit.query.QueryException;
 import io.brackit.query.XQueryBaseTest;
 import io.brackit.query.atomic.Dbl;
+import io.brackit.query.atomic.Bool;
 import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.atomic.QNm;
@@ -48,6 +54,7 @@ import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.jdm.Signature;
+import io.brackit.query.jsonitem.array.DArray;
 import io.brackit.query.jdm.type.SequenceType;
 import io.brackit.query.jdm.type.AnyItemType;
 import io.brackit.query.jdm.type.AtomicType;
@@ -58,6 +65,7 @@ import io.brackit.query.module.StaticContext;
 import io.brackit.query.sequence.AbstractSequence;
 import io.brackit.query.sequence.BaseIter;
 import io.brackit.query.sequence.LazySequence;
+import io.brackit.query.sequence.TypedSequence;
 import io.brackit.query.util.ExprUtil;
 
 /** Construction budgets exercise backend work independently of wall-clock timing. */
@@ -80,6 +88,8 @@ public class UdfLazyResultTest extends XQueryBaseTest {
     boolean repeatable = true;
     boolean overflow;
     boolean nodes;
+    boolean arrays;
+    Item value;
   }
 
   private static final class Keys extends AbstractFunction {
@@ -106,6 +116,12 @@ public class UdfLazyResultTest extends XQueryBaseTest {
             }
           }
           probe.constructed++;
+          if (probe.arrays) {
+            return new DArray(List.of(new Int32(position * 10)));
+          }
+          if (probe.value != null) {
+            return probe.value;
+          }
           return position == probe.badItem ? new Str("bad") : new Int32(position);
         }
 
@@ -230,6 +246,15 @@ public class UdfLazyResultTest extends XQueryBaseTest {
 
   private int integer(String text) {
     return ((IntNumeric) ExprUtil.asItem(query(text))).intValue();
+  }
+
+  private Sequence xqueryResult(String text) {
+    return new Query("xquery version '3.0'; " + NS + text).execute(ctx);
+  }
+
+  private String calls(String type, String body) {
+    return "declare function local:f() as " + type + " {" + body + "}; " + "let $f := function() as " + type + " {"
+        + body + "} return ";
   }
 
   @ParameterizedTest
@@ -479,5 +504,256 @@ public class UdfLazyResultTest extends XQueryBaseTest {
                  integer("declare function local:f($n) as item()* { "
                      + "if ($n eq 0) then () else ($n,local:f($n - 1)) }; "
                      + "let $s := local:f(3) return sum($s) + sum($s)"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void numericPredicatesKeepRemainingFilters(String call) {
+    PROBE.get().length = 1;
+    for (Bool keep : new Bool[] { Bool.FALSE, Bool.TRUE }) {
+      ctx.bind(new QNm("keep"), keep);
+      String declarations = "declare variable $keep external; " + calls("item()*", "probe:keys()");
+      assertEquals(keep.booleanValue() ? 1 : 0,
+                   ((IntNumeric) ExprUtil.asItem(xqueryResult(declarations + "count(<r><a/></r>/a[" + call
+                       + "][$keep])"))).intValue());
+      assertEquals(keep.booleanValue() ? 1 : 0,
+                   ((IntNumeric) ExprUtil.asItem(xqueryResult(declarations + "count((10,20)[" + call + "][$keep])")))
+                                                                                                                     .intValue());
+    }
+    assertEquals(PROBE.get().opened, PROBE.get().closed);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void typedViewsOfLazyNumericPredicatesKeepPositionAndRemainingFilters(String call) {
+    PROBE.get().length = 1;
+    String declarations = "declare variable $keep external; "
+        + "declare function local:select($s as xs:integer*) as item()* {(10,20)[$s][$keep]}; " + calls("item()*",
+                                                                                                       "probe:keys()");
+    for (String type : new String[] { "item()*", "'http://www.w3.org/2001/XMLSchema':integer*" }) {
+      String binding = declarations + "let $s as " + type + " := " + call + " return ";
+      ctx.bind(new QNm("keep"), Bool.FALSE);
+      assertEquals(0,
+                   ((IntNumeric) ExprUtil.asItem(xqueryResult(binding + "count(<r><a/></r>/a[$s][$keep])")))
+                                                                                                            .intValue());
+      assertEquals(0, ((IntNumeric) ExprUtil.asItem(xqueryResult(binding + "count((10,20)[$s][$keep])"))).intValue());
+      PROBE.get().value = new Int32(2);
+      assertNull(ExprUtil.asItem(xqueryResult(binding + "(10[$s]) + 1")));
+      PROBE.get().value = null;
+    }
+    assertEquals(0,
+                 ((IntNumeric) ExprUtil.asItem(xqueryResult(declarations + "count(local:select(" + call + "))")))
+                                                                                                                 .intValue());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void numericPredicatesMatchScalarAndDependentPositions(String call) {
+    PROBE.get().length = 1;
+    String declarations = calls("item()*", "probe:keys()");
+    assertEquals(11, ((IntNumeric) ExprUtil.asItem(xqueryResult(declarations + "(10[" + call + "]) + 1"))).intValue());
+    PROBE.get().value = new Int32(2);
+    assertNull(ExprUtil.asItem(xqueryResult(declarations + "(10[" + call + "]) + 1")));
+    assertEquals(20, ((IntNumeric) ExprUtil.asItem(xqueryResult(declarations + "(10,20)[" + call + "]"))).intValue());
+    String dependent = "if (position() gt 0) then " + call + " else ()";
+    assertNull(ExprUtil.asItem(xqueryResult(declarations + "(10[" + dependent + "]) + 1")));
+    assertEquals(20,
+                 ((IntNumeric) ExprUtil.asItem(xqueryResult(declarations + "(10,20)[" + dependent + "]"))).intValue());
+    PROBE.get().value = new Dbl(1.5);
+    assertNull(ExprUtil.asItem(xqueryResult(declarations + "(10[" + call + "]) + 1")));
+    assertNull(ExprUtil.asItem(xqueryResult(declarations + "(10,20)[" + call + "]")));
+    assertEquals(PROBE.get().opened, PROBE.get().closed);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void reverseAxisNumericPredicatesKeepAxisOrderAndRemainingFilters(String call) {
+    PROBE.get().length = 1;
+    String path = "<r><a/><b/><c/></r>/c/preceding-sibling::*[" + call + "][$keep]";
+    String declarations = "declare variable $keep external; " + calls("item()*", "probe:keys()");
+    ctx.bind(new QNm("keep"), Bool.TRUE);
+    assertEquals("b", ExprUtil.asItem(xqueryResult(declarations + "name(" + path + ")")).atomize().stringValue());
+    PROBE.get().value = new Int32(2);
+    assertEquals("a", ExprUtil.asItem(xqueryResult(declarations + "name(" + path + ")")).atomize().stringValue());
+    ctx.bind(new QNm("keep"), Bool.FALSE);
+    assertNull(ExprUtil.asItem(xqueryResult(declarations + path)));
+    ctx.bind(new QNm("keep"), Bool.TRUE);
+    PROBE.get().value = new Int32(3);
+    assertNull(ExprUtil.asItem(xqueryResult(declarations + path)));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void jsoniqNumericPredicatesRetainContextTruthiness(String call) {
+    PROBE.get().length = 1;
+    PROBE.get().value = new Int32(2);
+    String declarations = calls("item()*", "probe:keys()");
+    String predicate = "[?if ($$ gt 0) then " + call + " else ()]";
+    assertEquals(30, integer(declarations + "sum((10,20)" + predicate + ")"));
+    assertEquals(11, integer(declarations + "(10" + predicate + ") + 1"));
+    PROBE.get().value = Int32.ZERO;
+    assertEquals(0, integer(declarations + "count((10,20)" + predicate + ")"));
+    assertNull(ExprUtil.asItem(query(declarations + "(10" + predicate + ") + 1")));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void lazyPredicatesRetainEmptyAndNonNumericBooleanBehavior(String call) {
+    String declarations = calls("item()*", "probe:keys()");
+    PROBE.get().length = 0;
+    assertNull(ExprUtil.asItem(xqueryResult(declarations + "(10[" + call + "]) + 1")));
+    PROBE.get().length = 1;
+    PROBE.get().value = Bool.TRUE;
+    assertEquals(11, ((IntNumeric) ExprUtil.asItem(xqueryResult(declarations + "(10[" + call + "]) + 1"))).intValue());
+    PROBE.get().value = Bool.FALSE;
+    assertNull(ExprUtil.asItem(xqueryResult(declarations + "(10[" + call + "]) + 1")));
+    PROBE.get().value = null;
+    PROBE.get().length = 2;
+    assertEquals(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                 assertThrows(QueryException.class,
+                              () -> ExprUtil.asItem(xqueryResult(declarations + "(10[" + call + "]) + 1"))).getCode());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void unmarkedScalarPredicatesRetainMasterBehavior(String call) {
+    PROBE.get().repeatable = false;
+    PROBE.get().length = 1;
+    PROBE.get().value = new Dbl(1.5);
+    assertEquals(11,
+                 ((IntNumeric) ExprUtil.asItem(xqueryResult(calls("item()*", "probe:keys()") + "(10[" + call
+                     + "]) + 1"))).intValue());
+    assertEquals(1, PROBE.get().constructed);
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(1, PROBE.get().closed);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void multiArrayResultsAndTypedIdentityCallsMapEachArray(String call) {
+    PROBE.get().length = 2;
+    PROBE.get().arrays = true;
+    for (String access : new String[] { "[0]", "[-1]", "[]" }) {
+      for (String body : new String[] { "probe:keys()", "local:id(probe:keys())" }) {
+        String declarations = "declare function local:id($s as item()*) as item()* {($s)}; " + calls("item()*", body);
+        Sequence result = query(declarations + call + access);
+        try (Iter it = result.iterate()) {
+          assertEquals(10, ((IntNumeric) it.next()).intValue());
+          assertEquals(20, ((IntNumeric) it.next()).intValue());
+          assertNull(it.next());
+        }
+      }
+      Sequence typed = query("let $s as item()* := probe:keys() return $s" + access);
+      try (Iter it = typed.iterate()) {
+        assertEquals(10, ((IntNumeric) it.next()).intValue());
+        assertEquals(20, ((IntNumeric) it.next()).intValue());
+        assertNull(it.next());
+      }
+    }
+  }
+
+  @Test
+  public void typedIdentityViewPreservesCardinalityGetAndNativeSkip() {
+    Sequence source = new Keys().execute(null, ctx, new Sequence[0]);
+    Sequence typed = TypedSequence.toTypedSequence(SequenceType.ITEM_SEQUENCE, source);
+    assertInstanceOf(LazySequence.class, typed);
+    assertTrue(typed.isRepeatable());
+    assertEquals(64, typed.size().intValue());
+    assertEquals(0, PROBE.get().constructed);
+    assertEquals(60, ((IntNumeric) typed.get(new Int32(60))).intValue());
+    assertEquals(1, PROBE.get().constructed);
+    try (Iter it = typed.iterate()) {
+      it.skip(new Int32(59));
+      assertEquals(60, ((IntNumeric) it.next()).intValue());
+    }
+    assertEquals(2, PROBE.get().constructed);
+    assertEquals(PROBE.get().opened, PROBE.get().closed);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void unknownCardinalityTypedIdentityCallsKeepPrefixWorkBounded(String call) {
+    String declarations = "declare function local:id($s as item()*) as item()* {($s)}; " + calls("item()*",
+                                                                                                 "local:id(probe:unknown-keys())");
+    Sequence result = query(declarations + call);
+    assertEquals(0, PROBE.get().constructed);
+    for (int pass = 0; pass < 2; pass++) {
+      try (Iter it = result.iterate()) {
+        assertEquals(1, ((IntNumeric) it.next()).intValue());
+      }
+    }
+    assertEquals(2, PROBE.get().constructed);
+    assertEquals(PROBE.get().opened, PROBE.get().closed);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void typedCountsReuseOnlySuccessfullyValidatedCardinality(String call) {
+    String declarations = calls("xs:integer*", "probe:keys()");
+    assertEquals(128, integer(declarations + "let $s as item()* := " + call + " return count($s)+count($s)"));
+    assertEquals(64, PROBE.get().constructed);
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(PROBE.get().opened, PROBE.get().closed);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void partialReadsAndCachedCountsNeverBypassLaterConversions(String call) {
+    Sequence result = query(calls("xs:double*", "probe:keys()") + call);
+    try (Iter it = result.iterate()) {
+      assertInstanceOf(Dbl.class, it.next());
+    }
+    assertEquals(1, PROBE.get().constructed);
+    assertEquals(64, result.size().intValue());
+    assertEquals(65, PROBE.get().constructed);
+    assertEquals(64, result.size().intValue());
+    assertEquals(65, PROBE.get().constructed);
+    assertInstanceOf(Dbl.class, result.get(Int32.ONE));
+    try (Iter it = result.iterate()) {
+      it.skip(new Int32(2));
+      assertInstanceOf(Dbl.class, it.next());
+    }
+    assertEquals(69, PROBE.get().constructed);
+    assertEquals(PROBE.get().opened, PROBE.get().closed);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "local:f()", "$f()" })
+  public void invalidTailCountsFailOnEveryRead(String call) {
+    PROBE.get().badItem = 64;
+    Sequence result = query(calls("xs:integer*", "probe:keys()") + call);
+    for (int pass = 1; pass <= 2; pass++) {
+      assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE, assertThrows(QueryException.class, result::size).getCode());
+      assertEquals(64 * pass, PROBE.get().constructed);
+    }
+    assertEquals(PROBE.get().opened, PROBE.get().closed);
+    try (Iter it = result.iterate()) {
+      assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                   assertThrows(QueryException.class, () -> it.skip(new Int32(64))).getCode());
+    }
+    assertEquals(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                 assertThrows(QueryException.class, () -> result.get(new Int32(64))).getCode());
+  }
+
+  @Test
+  public void concurrentTypedCountsShareOneSuccessfulValidation() throws Exception {
+    Sequence result = query("declare function local:f() as xs:integer* {probe:keys()}; local:f()");
+    CountDownLatch start = new CountDownLatch(1);
+    try (var executor = Executors.newFixedThreadPool(2)) {
+      var first = executor.submit(() -> {
+        start.await();
+        return result.size();
+      });
+      var second = executor.submit(() -> {
+        start.await();
+        return result.size();
+      });
+      start.countDown();
+      assertEquals(64, first.get(10, TimeUnit.SECONDS).intValue());
+      assertEquals(64, second.get(10, TimeUnit.SECONDS).intValue());
+    }
+    assertEquals(64, PROBE.get().constructed);
+    assertEquals(1, PROBE.get().opened);
+    assertEquals(1, PROBE.get().closed);
   }
 }

@@ -27,6 +27,8 @@
  */
 package io.brackit.query.expr;
 
+import static io.brackit.query.sequence.FunctionResultSequence.numericPredicate;
+
 import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.atomic.Numeric;
 import io.brackit.query.util.ExprUtil;
@@ -92,7 +94,8 @@ public class StepExpr extends PredicateExpr {
       // check if the filter predicate is independent
       // of the context item
       if (bindCount[i] == 0) {
-        Sequence fs = filter[i].evaluate(ctx, tuple);
+        Sequence value = filter[i].evaluate(ctx, tuple);
+        Sequence fs = numericPredicate(value);
         if (fs == null) {
           return null;
         } else if (fs instanceof Numeric) {
@@ -107,6 +110,9 @@ public class StepExpr extends PredicateExpr {
             reversed = true;
           }
           s = (pos != null) ? s.get(pos) : null;
+          if (fs != value) {
+            reversed = false;
+          }
         } else {
           try (Iter it = fs.iterate()) {
             Item first = it.next();

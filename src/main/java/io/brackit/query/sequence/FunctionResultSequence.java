@@ -32,6 +32,7 @@ import io.brackit.query.QueryException;
 import io.brackit.query.atomic.Counter;
 import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.IntNumeric;
+import io.brackit.query.atomic.Numeric;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.expr.SequenceExpr;
 import io.brackit.query.jdm.Function;
@@ -44,11 +45,12 @@ import io.brackit.query.jdm.type.SequenceType;
 import io.brackit.query.util.ExprUtil;
 
 /** Return conversion for UDF results whose producer explicitly supports independent readers. */
-public final class FunctionResultSequence extends AbstractSequence {
+public final class FunctionResultSequence extends LazySequence {
   private final Sequence source;
   private final SequenceType type;
   private final SequenceType itemType;
   private final QNm functionName;
+  private IntNumeric validatedSize;
 
   private FunctionResultSequence(Sequence source, SequenceType type, QNm functionName) {
     this.source = source;
@@ -81,6 +83,22 @@ public final class FunctionResultSequence extends AbstractSequence {
     return result;
   }
 
+  public static Sequence numericPredicate(Sequence value) {
+    Sequence source = value;
+    while (source instanceof TypedSequence || source instanceof FunctionConversionSequence) {
+      source = source instanceof TypedSequence typed ? typed.arg : ((FunctionConversionSequence) source).arg;
+    }
+    if (source instanceof FunctionResultSequence) {
+      try (Iter it = value.iterate()) {
+        Item first = it.next();
+        if (first instanceof Numeric && it.next() == null) {
+          return first;
+        }
+      }
+    }
+    return value;
+  }
+
   @Override
   public boolean isRepeatable() {
     return true;
@@ -102,12 +120,15 @@ public final class FunctionResultSequence extends AbstractSequence {
   }
 
   @Override
-  public IntNumeric size() {
+  public synchronized IntNumeric size() {
     try {
       if (type.getItemType().isAnyItem()) {
         IntNumeric size = source.size();
         requireNonempty(size.cmp(Int32.ZERO) == 0);
         return size;
+      }
+      if (validatedSize != null) {
+        return validatedSize;
       }
       // A count must still check/convert every item of a constrained item type.
       Counter count = new Counter();
@@ -116,7 +137,7 @@ public final class FunctionResultSequence extends AbstractSequence {
           count.inc();
         }
       }
-      return count.asIntNumeric();
+      return validatedSize = count.asIntNumeric();
     } catch (StackOverflowError error) {
       throw overflow(error);
     }

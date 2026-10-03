@@ -27,6 +27,8 @@
  */
 package io.brackit.query.expr;
 
+import static io.brackit.query.sequence.FunctionResultSequence.numericPredicate;
+
 import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.atomic.Numeric;
@@ -70,7 +72,7 @@ public class FilterExpr extends PredicateExpr {
       // check if the filter predicate is independent
       // of the context item
       if (bindCount[i] == 0) {
-        Sequence fs = filter[i].evaluate(ctx, tuple);
+        Sequence fs = numericPredicate(filter[i].evaluate(ctx, tuple));
         if (fs == null) {
           return null;
         } else if (fs instanceof Numeric) {
@@ -121,7 +123,8 @@ public class FilterExpr extends PredicateExpr {
           current = current.concat(tmp);
         }
 
-        Sequence fRes = filter[i].evaluate(ctx, current);
+        Sequence value = filter[i].evaluate(ctx, current);
+        Sequence fRes = numericPredicate(value);
 
         if (fRes == null) {
           return null;
@@ -129,7 +132,9 @@ public class FilterExpr extends PredicateExpr {
 
         // JSONiq [? ... ] filters over the context item are pure truthiness checks; only
         // ordinary XQuery predicates treat a numeric predicate value as a positional test.
-        if (!ebvFilter[i] && fRes instanceof Numeric && ((Numeric) fRes).intValue() != 1) {
+        if (!ebvFilter[i] && fRes instanceof Numeric numeric && (fRes != value
+            ? numeric.cmp(Int32.ONE) != 0
+            : numeric.intValue() != 1)) {
           return null;
         }
 

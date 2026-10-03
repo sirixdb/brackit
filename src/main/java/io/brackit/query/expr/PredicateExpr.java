@@ -27,6 +27,8 @@
  */
 package io.brackit.query.expr;
 
+import static io.brackit.query.sequence.FunctionResultSequence.numericPredicate;
+
 import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.atomic.Numeric;
@@ -145,7 +147,7 @@ public abstract class PredicateExpr implements Expr {
             current = current.concat(tmp);
           }
 
-          Sequence res = filter[i].evaluate(ctx, current);
+          Sequence res = numericPredicate(filter[i].evaluate(ctx, current));
 
           if (res == null) {
             return false;
