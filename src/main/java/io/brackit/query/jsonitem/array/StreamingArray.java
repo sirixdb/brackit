@@ -47,7 +47,10 @@ import io.brackit.query.sequence.BaseIter;
  * <p>
  * This array is read-only — mutation methods throw {@link UnsupportedOperationException}.
  * Operations that require random access ({@link #at(int)}, {@link #values()}, {@link #length()})
- * force materialization up to the requested index or fully.
+ * force materialization up to the requested index or fully. Once iteration consumes an
+ * uncached element, subsequent iterators and random access throw a {@link QueryException}
+ * because the consumed elements cannot be replayed. Materialize before iterating if
+ * multiple reads are required.
  */
 public final class StreamingArray extends AbstractArray {
 
@@ -57,6 +60,7 @@ public final class StreamingArray extends AbstractArray {
   // Cache for materialized elements (for random access)
   private final List<Sequence> materialized = new ArrayList<>();
   private boolean fullyMaterialized;
+  private boolean streamed;
 
   public StreamingArray(StreamingJSONParser parser) {
     this(parser, false);
@@ -69,6 +73,7 @@ public final class StreamingArray extends AbstractArray {
 
   @Override
   public Iter iterate() {
+    ensureReplayable();
     if (fullyMaterialized) {
       // Already materialized — iterate from cache
       return new BaseIter() {
@@ -94,6 +99,7 @@ public final class StreamingArray extends AbstractArray {
     return new BaseIter() {
       private int index = 0;
       private boolean done = false;
+      private boolean ownsStream = false;
 
       @Override
       public Item next() {
@@ -101,21 +107,34 @@ public final class StreamingArray extends AbstractArray {
           return null;
         }
 
+        // Iterators created before streaming starts must not share the parser cursor.
+        if (!ownsStream) {
+          ensureReplayable();
+        }
+
         // Replay already-materialized elements (from prior random access)
         if (index < materialized.size()) {
           return (Item) materialized.get(index++);
+        }
+
+        // Another operation may have finished materializing since this iterator was created.
+        if (fullyMaterialized) {
+          done = true;
+          return null;
         }
 
         // Pull next from parser — do NOT cache (streaming mode)
         Item item = parser.nextArrayElement();
         if (item == null) {
           done = true;
-          fullyMaterialized = true;
+          fullyMaterialized = !streamed;
           if (wrappedInObject) {
             parser.skipTrailingObjectClose();
           }
           return null;
         }
+        streamed = true;
+        ownsStream = true;
         index++;
         return item;
       }
@@ -205,7 +224,15 @@ public final class StreamingArray extends AbstractArray {
 
   // ==================== Internal ====================
 
+  private void ensureReplayable() {
+    if (streamed) {
+      throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+                               "StreamingArray cannot be reread after uncached elements have been consumed; materialize before iterating");
+    }
+  }
+
   private void materializeAll() {
+    ensureReplayable();
     if (fullyMaterialized) {
       return;
     }
@@ -220,6 +247,7 @@ public final class StreamingArray extends AbstractArray {
   }
 
   private void materializeUpTo(int index) {
+    ensureReplayable();
     while (!fullyMaterialized && materialized.size() <= index) {
       Item item = parser.nextArrayElement();
       if (item == null) {

@@ -302,6 +302,21 @@ public class BrackitJqTest {
   }
 
   @Test
+  public void testRepeatedStreamingArrayCount() {
+    BjqResult result = runBjqWithExitCode(new String[] { "let $a := $$[] return (count($a), count($a))" },
+                                          "[1, 2, 3, 4, 5]");
+    assertTrue(result.exitCode() != 0);
+    assertTrue(result.error().contains("StreamingArray cannot be reread"), result::error);
+  }
+
+  @Test
+  public void testRandomAccessAfterPartialStreamingArrayRead() {
+    BjqResult result = runBjqWithExitCode(new String[] { "(subsequence($$[], 1, 1), $$[0])" }, "[1, 2, 3, 4, 5]");
+    assertTrue(result.exitCode() != 0);
+    assertTrue(result.error().contains("StreamingArray cannot be reread"), result::error);
+  }
+
+  @Test
   public void testSumFunction() {
     String result = runBjq(new String[] { "sum($$[])" }, "[1, 2, 3, 4, 5]");
     assertEquals("15", result);
