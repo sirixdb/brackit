@@ -35,7 +35,9 @@ import io.brackit.query.util.simd.VectorOps;
 import java.nio.charset.StandardCharsets;
 
 /**
- * String atomic type with SIMD-accelerated comparison operations.
+ * String atomic type with Unicode codepoint comparisons and SIMD acceleration.
+ * UTF-8 comparisons require lossless encoding; strings with unpaired surrogates
+ * use scalar comparison even if replacement-encoded bytes were cached.
  *
  * @author Sebastian Baechle
  */
@@ -43,7 +45,7 @@ public class Str extends AbstractAtomic {
   public static final Str EMPTY = new Str("");
 
   /**
-   * Threshold in bytes above which SIMD operations are used.
+   * Length threshold in UTF-16 code units for uncached SIMD comparisons.
    * Below this threshold, scalar operations are typically faster due to SIMD overhead.
    */
   private static final int SIMD_THRESHOLD = 32;
@@ -144,8 +146,9 @@ public class Str extends AbstractAtomic {
   }
 
   /**
-   * SIMD-accelerated string comparison.
-   * Uses vectorized comparison for strings longer than SIMD_THRESHOLD.
+   * SIMD-accelerated string comparison with a scalar fallback.
+   * Uses cached UTF-8 when both are available; uncached comparisons use
+   * {@link #SIMD_THRESHOLD} to choose the path.
    *
    * @param other the string to compare with
    * @return negative if this < other, 0 if equal, positive if this > other
@@ -196,7 +199,7 @@ public class Str extends AbstractAtomic {
   }
 
   /**
-   * SIMD-accelerated equality check.
+   * SIMD-accelerated equality check with a scalar fallback.
    * More efficient than cmp() == 0 due to early exit on length mismatch.
    */
   @Override

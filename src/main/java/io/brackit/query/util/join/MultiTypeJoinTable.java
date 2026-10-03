@@ -228,7 +228,9 @@ public class MultiTypeJoinTable {
     Atomic atomic = key.atomize();
     Type type = atomic.type().getPrimitiveBase();
 
-    // xs:anyURI is promoted to xs:string for comparisons on either side.
+    // Keep URI provenance for general comparisons so untyped counterparts cast
+    // to anyURI (normalizing whitespace and rejecting invalid values) before
+    // string lookup. Value comparisons can merge URI and string tables.
     if (type == Type.AURI || (!isGCmp && type == Type.UNA)) {
       atomic = Cast.cast(null, atomic, Type.STR, false);
       if (!isGCmp) {

@@ -113,13 +113,10 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
    * {@code "lt"}, {@code "ge"}, {@code "le"} only — equality stays {@link StrEq} and inequality
    * {@link StrNe}, whose missing-field/null contracts differ from each other and from this leaf.
    *
-   * <p>COLLATION CONTRACT: the interpreter's general comparison over strings is {@code Str#cmp} =
-   * {@code String.compareTo} = UTF-16 code-unit order. Unsigned UTF-8 byte order (what a
-   * dictionary kernel naturally compares) is CODEPOINT order; the two differ exactly when a
-   * supplementary character (U+10000 and above, a 4-byte UTF-8 sequence) meets a BMP character in
-   * U+E000..U+FFFF. A backend comparing raw UTF-8 must detect that case (any 4-byte lead byte,
-   * {@code (b & 0xFF) >= 0xF0}) and fall back to decoding, or it serves an order the interpreter
-   * disagrees with.
+   * <p>COLLATION CONTRACT: follow {@link io.brackit.query.atomic.Str}'s comparison semantics.
+   * Unsigned UTF-8 byte comparisons agree only for losslessly encoded values and literals.
+   * If encoding would replace unpaired surrogates, a backend must preserve and compare the
+   * original values or DECLINE this predicate rather than compare replacement-encoded bytes.
    *
    * <p>NULL CONTRACT: JSONiq's total order makes null the SMALLEST value, so e.g.
    * {@code null le "x"} is TRUE — a kernel that reads null as missing-and-false must DECLINE this
@@ -144,8 +141,8 @@ public sealed interface PredicateNode permits PredicateNode.NumCmp, PredicateNod
    * kernel would answer false. An error is not false — a backend must DECLINE this leaf over a
    * null-bearing column.
    *
-   * <p>No collation subtlety, unlike {@link StrCmp}: UTF-8 is self-synchronizing, so a byte-wise
-   * needle match IS a codepoint substring match.
+   * <p>UTF-8 is self-synchronizing, so a byte-wise needle match IS a codepoint substring match.
+   * The lossless-encoding requirement in {@link StrCmp} also applies.
    */
   record StrContains(String field, String value) implements PredicateNode {
   }
