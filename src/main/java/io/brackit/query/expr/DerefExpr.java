@@ -35,7 +35,6 @@ import io.brackit.query.QueryContext;
 import io.brackit.query.QueryException;
 import io.brackit.query.Tuple;
 import io.brackit.query.compiler.Bits;
-import io.brackit.query.sequence.BaseIter;
 import io.brackit.query.sequence.ItemSequence;
 import io.brackit.query.sequence.LazySequence;
 import io.brackit.query.jdm.Expr;
@@ -100,71 +99,33 @@ public class DerefExpr implements Expr {
       public Iter iterate() {
         // A fresh base iterator per iterate() call: sharing one across calls would resume
         // an exhausted iterator on the second pass.
-        final Iter iter = base.iterate();
-        return new BaseIter() {
-          Iter nestedIter;
-          boolean closed;
-
+        return new JsonLookupIter(base.iterate()) {
           @Override
-          public Item next() {
-            if (closed) {
-              return null;
-            }
-            boolean returned = false;
-            try {
-              Item item;
-              while (true) {
-                if (nestedIter != null) {
-                  if ((item = nestedIter.next()) != null) {
-                    returned = true;
-                    return item;
-                  }
-                  try {
-                    nestedIter.close();
-                  } finally {
-                    nestedIter = null;
-                  }
-                }
-
-                item = iter.next();
-                if (item == null) {
-                  return null;
-                }
-                if (!(item instanceof Object obj)) {
-                  continue;
-                }
-
-                Item itemField = field.evaluateToItem(ctx, tuple);
-                if (itemField == null) {
-                  continue;
-                }
-
-                final var selected = getSequenceByRecordField(obj, itemField);
-                if (selected instanceof Item selectedItem) {
-                  returned = true;
-                  return selectedItem;
-                }
-                if (selected != null) {
-                  nestedIter = selected.iterate();
-                }
+          protected Item nextItem() {
+            Item item;
+            while (true) {
+              if ((item = nextNested()) != null) {
+                return item;
               }
-            } finally {
-              if (!returned) {
-                close();
+              item = iter.next();
+              if (item == null) {
+                return null;
               }
-            }
-          }
+              if (!(item instanceof Object obj)) {
+                continue;
+              }
 
-          @Override
-          public void close() {
-            if (!closed) {
-              closed = true;
-              try {
-                if (nestedIter != null) {
-                  nestedIter.close();
-                }
-              } finally {
-                iter.close();
+              Item itemField = field.evaluateToItem(ctx, tuple);
+              if (itemField == null) {
+                continue;
+              }
+
+              final var selected = getSequenceByRecordField(obj, itemField);
+              if (selected instanceof Item selectedItem) {
+                return selectedItem;
+              }
+              if (selected != null) {
+                nestedIter = selected.iterate();
               }
             }
           }
