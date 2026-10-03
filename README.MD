@@ -268,6 +268,20 @@ bjq -r '$$.name' data.json
 bjq -c '$$' data.json
 ```
 
+### Streamed array input
+
+Top-level arrays from stdin (without `-s`) or files larger than 1.5 GB use
+single-pass iteration. See the [StreamingArray read contract](src/main/java/io/brackit/query/jsonitem/array/StreamingArray.java)
+for reread, materialization, and parsing-failure restrictions.
+
+For repeated reads from stdin, `-s` buffers all input in memory and wraps the JSON
+values in an outer array. Select the original array with `$$[0]`:
+
+```bash
+echo '[1, 2, 3]' | bjq -s 'let $a := $$[0][] return (count($a), count($a))'
+# Outputs 3 twice
+```
+
 ## Embed in Your Data Store
 
 Brackit is designed as a **retargetable query compiler**. Data stores can plug in their own:
