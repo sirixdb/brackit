@@ -231,7 +231,9 @@ public class MultiTypeJoinTable {
     // xs:anyURI is promoted to xs:string for comparisons on either side.
     if (type == Type.AURI || (!isGCmp && type == Type.UNA)) {
       atomic = Cast.cast(null, atomic, Type.STR, false);
-      type = Type.STR;
+      if (!isGCmp) {
+        type = Type.STR;
+      }
     }
 
     AbstractJoinTable table = tables.get(type);
@@ -248,7 +250,9 @@ public class MultiTypeJoinTable {
 
     if (type == Type.AURI || (!isGCmp && type == Type.UNA)) {
       atomic = Cast.cast(null, atomic, Type.STR, false);
-      type = Type.STR;
+      if (!isGCmp) {
+        type = Type.STR;
+      }
     }
 
     if (type == Type.UNA) {
@@ -289,6 +293,11 @@ public class MultiTypeJoinTable {
 
       lookupIn(matches, tables.get(type), atomic);
       lookupIn(matches, untypedOfType, atomic);
+      if (type == Type.STR) {
+        lookupIn(matches, tables.get(Type.AURI), atomic);
+      } else if (type == Type.AURI) {
+        lookupIn(matches, tables.get(Type.STR), atomic);
+      }
     }
   }
 
@@ -367,7 +376,7 @@ public class MultiTypeJoinTable {
       return;
     }
     for (TEntry entry : from.entries()) {
-      to.add(Cast.cast(null, entry.key.atomic, type, false), entry.value.pos, entry.value.bindings);
+      to.add(castKey(entry.key.atomic, type), entry.value.pos, entry.value.bindings);
     }
   }
 
@@ -376,9 +385,14 @@ public class MultiTypeJoinTable {
     if (table == null && copies == null) {
       return;
     }
-    Atomic key = Cast.cast(null, atomic, type, false);
+    Atomic key = castKey(atomic, type);
     lookupIn(matches, table, key);
     lookupIn(matches, copies, key);
+  }
+
+  private static Atomic castKey(Atomic atomic, Type type) throws QueryException {
+    Atomic key = Cast.cast(null, atomic, type, false);
+    return type == Type.AURI ? Cast.cast(null, key, Type.STR, false) : key;
   }
 
   private static void lookupIn(FastList<TValue> matches, AbstractJoinTable table, Atomic key) throws QueryException {

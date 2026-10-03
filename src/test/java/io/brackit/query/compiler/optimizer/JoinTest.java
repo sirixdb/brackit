@@ -28,7 +28,9 @@
 package io.brackit.query.compiler.optimizer;
 
 import io.brackit.query.XQueryBaseTest;
+import io.brackit.query.atomic.AnyURI;
 import io.brackit.query.atomic.Int32;
+import io.brackit.query.atomic.Una;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.ResultChecker;
 import io.brackit.query.Query;
@@ -60,6 +62,20 @@ public class JoinTest extends XQueryBaseTest {
     String query = "for $a in ('a b') for $b in (xs:anyURI('http://x')) where $a eq $b return $a";
     Sequence res = new Query(query).execute(ctx);
     ResultChecker.dCheck(null, res);
+  }
+
+  @Test
+  public void untypedProbeIsNormalizedForAnyURIBuild() {
+    String query = "for $a in (xs:untypedAtomic(' http://x ')) for $b in (xs:anyURI('http://x')) "
+        + "where $a = $b return $b";
+    ResultChecker.dCheck(new AnyURI("http://x"), new Query(query).execute(ctx));
+  }
+
+  @Test
+  public void untypedBuildIsNormalizedForAnyURIProbe() {
+    String query = "for $a in (xs:anyURI('http://x')) for $b in (xs:untypedAtomic(' http://x ')) "
+        + "where $a = $b return $b";
+    ResultChecker.dCheck(new Una(" http://x "), new Query(query).execute(ctx));
   }
 
   @Test
