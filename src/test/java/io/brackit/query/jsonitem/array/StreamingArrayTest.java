@@ -28,6 +28,8 @@
 package io.brackit.query.jsonitem.array;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -43,26 +45,33 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryException;
 import io.brackit.query.atomic.Int32;
+import io.brackit.query.function.json.JSONFun;
 import io.brackit.query.function.json.StreamingJSONParser;
 import io.brackit.query.jdm.Iter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class StreamingArrayTest {
 
   private StreamingArray array(String json) {
+    return array(json, 16);
+  }
+
+  private StreamingArray array(String json, int bufferSize) {
     var input = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
-    return (StreamingArray) new StreamingJSONParser(input, 16).parse();
+    return (StreamingArray) new StreamingJSONParser(input, bufferSize).parse();
   }
 
   private void assertRereadFails(Runnable read) {
@@ -78,6 +87,135 @@ class StreamingArrayTest {
   private void assertRereadError(QueryException error) {
     assertEquals(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR, error.getCode());
     assertTrue(error.getMessage().contains("StreamingArray cannot be reread"));
+  }
+
+  private void assertTerminalRead(Runnable read, RuntimeException firstFailure) {
+    QueryException error = assertThrows(QueryException.class, read::run);
+    assertEquals(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR, error.getCode());
+    assertTrue(error.getMessage().contains("StreamingArray cannot be read after a parsing failure"));
+    assertSame(firstFailure, error.getCause());
+  }
+
+  private void assertTerminalReads(StreamingArray array, RuntimeException firstFailure) {
+    assertTerminalRead(array::iterate, firstFailure);
+    assertTerminalRead(array::values, firstFailure);
+    assertTerminalRead(array::length, firstFailure);
+    assertTerminalRead(array::len, firstFailure);
+    assertTerminalRead(() -> array.at(0), firstFailure);
+    assertTerminalRead(() -> array.at(Int32.ZERO), firstFailure);
+    assertTerminalRead(() -> array.at(2), firstFailure);
+    assertTerminalRead(() -> array.range(Int32.ZERO, Int32.ONE), firstFailure);
+  }
+
+  private StreamingArray failingInputArray(boolean wrappedInObject) {
+    var input = new InputStream() {
+      private final byte[] bytes = (wrappedInObject ? "[]" : "[1,").getBytes(StandardCharsets.UTF_8);
+      private int index;
+
+      @Override
+      public int read() throws IOException {
+        if (index == bytes.length) {
+          throw new IOException("input failed");
+        }
+        return bytes[index++];
+      }
+    };
+    var parser = new StreamingJSONParser(input, 1);
+    var array = (StreamingArray) parser.parse();
+    return wrappedInObject ? new StreamingArray(parser, true) : array;
+  }
+
+  private static Stream<Arguments> iterationFailures() {
+    return Stream.of(1, 16)
+                 .flatMap(bufferSize -> Stream.of(false, true).map(ownsStream -> Arguments.of(bufferSize, ownsStream)));
+  }
+
+  private static Stream<Arguments> materializationFailures() {
+    return Stream.of(1, 16)
+                 .flatMap(bufferSize -> Stream.<Consumer<StreamingArray>>of(StreamingArray::values,
+                                                                            StreamingArray::length,
+                                                                            StreamingArray::len,
+                                                                            array -> array.at(1),
+                                                                            array -> array.at(Int32.ONE),
+                                                                            array -> array.range(Int32.ZERO, new Int32(2)))
+                                               .map(read -> Arguments.of(bufferSize, read)));
+  }
+
+  private static Stream<Consumer<StreamingArray>> completionReads() {
+    return Stream.of(array -> {
+      try (Iter iter = array.iterate()) {
+        assertNull(iter.next());
+      }
+    }, StreamingArray::values, array -> array.at(0));
+  }
+
+  @ParameterizedTest
+  @MethodSource("iterationFailures")
+  void failedIterationMakesEveryReadTerminal(int bufferSize, boolean ownsStream) {
+    StreamingArray array = array(ownsStream ? "[1,truX,2]" : "[truX,2]", bufferSize);
+    try (Iter first = array.iterate(); Iter second = array.iterate()) {
+      if (ownsStream) {
+        assertEquals(Int32.ONE, first.next());
+      }
+      QueryException error = assertThrows(QueryException.class, first::next);
+      assertEquals(JSONFun.ERR_PARSING_ERROR, error.getCode());
+      assertTrue(error.getMessage().contains("Expected 'true'"));
+      assertTerminalRead(first::next, error);
+      assertTerminalRead(second::next, error);
+      assertTerminalReads(array, error);
+      assertTerminalRead(first::next, error);
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("materializationFailures")
+  void failedMaterializationMakesCachedPrefixAndSuffixUnreadable(int bufferSize, Consumer<StreamingArray> read) {
+    StreamingArray array = array("[1,truX,2]", bufferSize);
+    assertEquals(Int32.ONE, array.at(0));
+    try (Iter iter = array.iterate()) {
+      QueryException error = assertThrows(QueryException.class, () -> read.accept(array));
+      assertEquals(JSONFun.ERR_PARSING_ERROR, error.getCode());
+      assertTrue(error.getMessage().contains("Expected 'true'"));
+      assertTerminalRead(iter::next, error);
+      assertTerminalReads(array, error);
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = { 1, 16 })
+  void numericParserFailureAlsoMakesEveryReadTerminal(int bufferSize) {
+    StreamingArray array = array("[1e+,2]", bufferSize);
+    try (Iter iter = array.iterate()) {
+      NumberFormatException error = assertThrows(NumberFormatException.class, iter::next);
+      assertTerminalRead(iter::next, error);
+      assertTerminalReads(array, error);
+    }
+  }
+
+  @Test
+  void inputFailureMakesOwningIteratorTerminal() {
+    StreamingArray array = failingInputArray(false);
+    try (Iter iter = array.iterate()) {
+      assertEquals(Int32.ONE, iter.next());
+      QueryException error = assertThrows(QueryException.class, iter::next);
+      assertEquals(JSONFun.ERR_PARSING_ERROR, error.getCode());
+      assertTrue(error.getMessage().contains("I/O error: input failed"));
+      assertTerminalRead(iter::next, error);
+      assertTerminalReads(array, error);
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("completionReads")
+  void trailingObjectFailureCannotPublishSuccessfulCompletion(Consumer<StreamingArray> read) {
+    StreamingArray array = failingInputArray(true);
+    try (Iter iter = array.iterate()) {
+      QueryException error = assertThrows(QueryException.class, () -> read.accept(array));
+      assertEquals(JSONFun.ERR_PARSING_ERROR, error.getCode());
+      assertTrue(error.getMessage().contains("I/O error: input failed"));
+      assertTerminalRead(iter::next, error);
+      assertTerminalReads(array, error);
+    }
   }
 
   private static final class PausingInput extends ByteArrayInputStream {

@@ -61,6 +61,7 @@ public final class StreamingArray extends AbstractArray {
   private final List<Sequence> materialized = new ArrayList<>();
   private boolean fullyMaterialized;
   private boolean streamed;
+  private RuntimeException parsingFailure;
 
   public StreamingArray(StreamingJSONParser parser) {
     this(parser, false);
@@ -104,6 +105,7 @@ public final class StreamingArray extends AbstractArray {
       @Override
       public Item next() {
         synchronized (StreamingArray.this) {
+          ensureReadable();
           if (done) {
             return null;
           }
@@ -125,13 +127,10 @@ public final class StreamingArray extends AbstractArray {
           }
 
           // Pull next from parser — do NOT cache (streaming mode)
-          Item item = parser.nextArrayElement();
+          Item item = readNextElement();
           if (item == null) {
             done = true;
             fullyMaterialized = !streamed;
-            if (wrappedInObject) {
-              parser.skipTrailingObjectClose();
-            }
             return null;
           }
           streamed = true;
@@ -226,10 +225,33 @@ public final class StreamingArray extends AbstractArray {
 
   // ==================== Internal ====================
 
+  private void ensureReadable() {
+    if (parsingFailure != null) {
+      throw new QueryException(parsingFailure,
+                               ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
+                               "StreamingArray cannot be read after a parsing failure");
+    }
+  }
+
   private void ensureReplayable() {
+    ensureReadable();
     if (streamed) {
       throw new QueryException(ErrorCode.BIT_DYN_RT_ILLEGAL_STATE_ERROR,
                                "StreamingArray cannot be reread after uncached elements have been consumed; materialize before iterating");
+    }
+  }
+
+  private Item readNextElement() {
+    ensureReadable();
+    try {
+      Item item = parser.nextArrayElement();
+      if (item == null && wrappedInObject) {
+        parser.skipTrailingObjectClose();
+      }
+      return item;
+    } catch (RuntimeException e) {
+      parsingFailure = e;
+      throw e;
     }
   }
 
@@ -239,24 +261,18 @@ public final class StreamingArray extends AbstractArray {
       return;
     }
     Item item;
-    while ((item = parser.nextArrayElement()) != null) {
+    while ((item = readNextElement()) != null) {
       materialized.add(item);
     }
     fullyMaterialized = true;
-    if (wrappedInObject) {
-      parser.skipTrailingObjectClose();
-    }
   }
 
   private void materializeUpTo(int index) {
     ensureReplayable();
     while (!fullyMaterialized && materialized.size() <= index) {
-      Item item = parser.nextArrayElement();
+      Item item = readNextElement();
       if (item == null) {
         fullyMaterialized = true;
-        if (wrappedInObject) {
-          parser.skipTrailingObjectClose();
-        }
         return;
       }
       materialized.add(item);
