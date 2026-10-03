@@ -51,6 +51,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import io.brackit.query.QueryException;
+import io.brackit.query.atomic.AnyURI;
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.atomic.Dbl;
 import io.brackit.query.atomic.Dec;
@@ -248,6 +249,38 @@ public class MultiTypeJoinTableTest {
       }
     }
     return cases.stream();
+  }
+
+  @ParameterizedTest
+  @MethodSource("comparisons")
+  public void anyURIAndStringKeysCompareAsStrings(Cmp cmp, boolean general) {
+    var uri = new AnyURI("http://x");
+    var string = new Str("http://x");
+    Atomic[] keys = { uri, string, new Str("a b"), new AnyURI("http://z"), uri };
+    var table = new MultiTypeJoinTable(cmp, general, false);
+    for (int i = 0; i < keys.length; i++) {
+      table.add(keys[i], row(i + 1), i + 1);
+    }
+    table.seal();
+
+    for (Atomic probe : new Atomic[] { new Str("a b"), string, uri, new Str("http://z") }) {
+      var expected = new ArrayList<Integer>();
+      for (int i = 0; i < keys.length; i++) {
+        int comparison = probe.stringValue().compareTo(keys[i].stringValue());
+        boolean match = switch (cmp) {
+          case eq -> comparison == 0;
+          case lt -> comparison < 0;
+          case le -> comparison <= 0;
+          case gt -> comparison > 0;
+          case ge -> comparison >= 0;
+          default -> throw new AssertionError(cmp);
+        };
+        if (match) {
+          expected.add(i + 1);
+        }
+      }
+      assertEquals(expected, positions(table.probe(probe)), probe.toString());
+    }
   }
 
   // Build and probe keys of every numeric type and untyped ones, so that the

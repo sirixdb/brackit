@@ -56,6 +56,13 @@ public class JoinTest extends XQueryBaseTest {
   }
 
   @Test
+  public void stringWithSpaceDoesNotMatchAnyURI() {
+    String query = "for $a in ('a b') for $b in (xs:anyURI('http://x')) where $a eq $b return $a";
+    Sequence res = new Query(query).execute(ctx);
+    ResultChecker.dCheck(null, res);
+  }
+
+  @Test
   public void nestedForWithLetsInOuterFor() {
     Sequence res = new Query("for $w in (2,4) " + "let $x := (2 to $w) " + "for $a in (1,2,3) " + "for $b in $x "
         + "let $z := $a + $x[0] " + "where $a = $b " + "return $a").execute(ctx);

@@ -228,7 +228,8 @@ public class MultiTypeJoinTable {
     Atomic atomic = key.atomize();
     Type type = atomic.type().getPrimitiveBase();
 
-    if (!isGCmp && type == Type.UNA) {
+    // xs:anyURI is promoted to xs:string for comparisons on either side.
+    if (type == Type.AURI || (!isGCmp && type == Type.UNA)) {
       atomic = Cast.cast(null, atomic, Type.STR, false);
       type = Type.STR;
     }
@@ -245,7 +246,7 @@ public class MultiTypeJoinTable {
     Atomic atomic = key.atomize();
     Type type = atomic.type().getPrimitiveBase();
 
-    if (!isGCmp && type == Type.UNA) {
+    if (type == Type.AURI || (!isGCmp && type == Type.UNA)) {
       atomic = Cast.cast(null, atomic, Type.STR, false);
       type = Type.STR;
     }
@@ -288,12 +289,6 @@ public class MultiTypeJoinTable {
 
       lookupIn(matches, tables.get(type), atomic);
       lookupIn(matches, untypedOfType, atomic);
-
-      if (type == Type.STR) {
-        probeCast(matches, atomic, Type.AURI, tables.get(Type.AURI), null);
-      } else if (type == Type.AURI) {
-        probeCast(matches, atomic, Type.STR, tables.get(Type.STR), null);
-      }
     }
   }
 
