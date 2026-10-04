@@ -408,7 +408,7 @@ abstract class ParentD2Node extends D2Node {
 
   @Override
   public D2Node prepend(Kind kind, QNm name, Atomic value) throws DocumentException {
-    return insertChild(null, kind, name, value, true);
+    return insertChild(null, kind, name, value, false);
   }
 
   @Override
@@ -426,7 +426,7 @@ abstract class ParentD2Node extends D2Node {
   }
 
   D2Node insertBefore(D2Node node, Kind kind, QNm name, Atomic value) throws DocumentException {
-    return insertChild(node, kind, name, value, true);
+    return insertChild(node, kind, name, value, false);
   }
 
   D2Node insertBefore(D2Node node, Node<?> child) throws DocumentException {
@@ -442,7 +442,7 @@ abstract class ParentD2Node extends D2Node {
   }
 
   D2Node insertAfter(D2Node node, Kind kind, QNm name, Atomic value) throws DocumentException {
-    return insertChild(node, kind, name, value, false);
+    return insertChild(node, kind, name, value, true);
   }
 
   D2Node insertAfter(D2Node node, Node<?> child) throws DocumentException {

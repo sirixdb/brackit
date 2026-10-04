@@ -578,7 +578,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
     if (parent == null) {
       throw new DocumentException("%s has no parent", this);
     }
-    return parent.insertAfter(kind, name, value);
+    return parent.insertAfter(this, kind, name, value);
   }
 
   @Override
@@ -602,7 +602,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
     if (parent == null) {
       throw new DocumentException("%s has no parent", this);
     }
-    return parent.insertBefore(kind, name, value);
+    return parent.insertBefore(this, kind, name, value);
   }
 
   @Override

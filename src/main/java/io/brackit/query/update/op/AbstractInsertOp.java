@@ -31,6 +31,7 @@ import java.util.Arrays;
 
 import io.brackit.query.QueryException;
 import io.brackit.query.jdm.node.Node;
+import io.brackit.query.jdm.node.NodeFactory;
 
 /**
  * Base class for all insert operations.
@@ -65,12 +66,13 @@ public abstract class AbstractInsertOp implements UpdateOp {
     return target;
   }
 
-  public void addContent(Node<?> node) {
+  public void addContent(Node<?> node, NodeFactory<?> factory) {
     if (size == content.length) {
       content = Arrays.copyOf(content, content.length * 3 / 2 + 1);
     }
 
-    content[size++] = node;
+    content[size] = factory.copy(node);
+    size++;
   }
 
   protected abstract void doInsert(Node<?> target, Node<?> content) throws QueryException;

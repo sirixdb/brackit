@@ -48,7 +48,7 @@ public abstract class AbstractBuilder<E extends Node<E>> implements NodeSubtreeL
 
   private E parent;
 
-  private final E rootParent;
+  protected final E rootParent;
 
   private Map<String, String> nsMappings;
 

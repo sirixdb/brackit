@@ -31,6 +31,9 @@ import io.brackit.query.update.op.OpType;
 import io.brackit.query.update.op.UpdateOp;
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryException;
+import io.brackit.query.atomic.Una;
+import io.brackit.query.jdm.Kind;
+import io.brackit.query.jdm.node.Node;
 import io.brackit.query.util.log.Logger;
 
 import java.util.ArrayList;
@@ -105,6 +108,8 @@ public final class UpdateList {
       }
     }
 
+    final Set<Node<?>> textParents = new HashSet<>();
+
     // Apply all updates, skipping property updates to deleted targets
     for (final UpdateOp op : ops) {
       // Skip property updates to nodes that will be deleted (same target identity)
@@ -118,7 +123,39 @@ public final class UpdateList {
       if (log.isDebugEnabled()) {
         log.debug(String.format("Applying pending update %s", op));
       }
+      if (op.getTarget() instanceof Node<?> target) {
+        Node<?> parent = switch (op.getType()) {
+          case INSERT_INTO, INSERT_INTO_AS_FIRST, INSERT_INTO_AS_LAST, REPLACE_ELEMENT_CONTENT -> target;
+          case INSERT_BEFORE, INSERT_AFTER, DELETE, REPLACE_NODE, REPLACE_VALUE -> target.getParent();
+          default -> null;
+        };
+        if (parent != null && target.getKind() != Kind.ATTRIBUTE) {
+          textParents.add(parent);
+        }
+      }
       op.apply();
+    }
+
+    for (Node<?> parent : textParents) {
+      if (!deletedTargetIdentities.contains(parent)) {
+        normalizeText(parent);
+      }
+    }
+  }
+
+  private void normalizeText(Node<?> parent) {
+    Node<?> previous = null;
+    for (Node<?> child = parent.getFirstChild(); child != null;) {
+      Node<?> next = child.getNextSibling();
+      if (child.getKind() == Kind.TEXT && child.getValue().stringValue().isEmpty()) {
+        child.delete();
+      } else if (child.getKind() == Kind.TEXT && previous != null && previous.getKind() == Kind.TEXT) {
+        previous.setValue(new Una(previous.getValue().stringValue() + child.getValue().stringValue()));
+        child.delete();
+      } else {
+        previous = child;
+      }
+      child = next;
     }
   }
 

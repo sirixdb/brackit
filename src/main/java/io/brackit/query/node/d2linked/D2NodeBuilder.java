@@ -99,7 +99,11 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
   protected D2Node buildElement(D2Node parent, QNm name, Map<String, String> nsMappings) throws DocumentException {
     ElementD2Node e;
     if (parent != null) {
-      e = (ElementD2Node) ((ParentD2Node) parent).insertChild(sibling, Kind.ELEMENT, name, null, right);
+      e = (ElementD2Node) ((ParentD2Node) parent).insertChild(parent == rootParent ? sibling : null,
+                                                           Kind.ELEMENT,
+                                                           name,
+                                                           null,
+                                                           parent != rootParent || right);
     } else {
       e = (ElementD2Node) first(Kind.ELEMENT, name, null);
     }
@@ -112,7 +116,11 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
   @Override
   protected D2Node buildText(D2Node parent, Atomic text) throws DocumentException {
     if (parent != null) {
-      return ((ParentD2Node) parent).insertChild(sibling, Kind.TEXT, null, text.asUna(), right);
+      return ((ParentD2Node) parent).insertChild(parent == rootParent ? sibling : null,
+                                               Kind.TEXT,
+                                               null,
+                                               text.asUna(),
+                                               parent != rootParent || right);
     } else {
       return first(Kind.TEXT, null, text);
     }
@@ -121,7 +129,11 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
   @Override
   protected D2Node buildComment(D2Node parent, Atomic text) throws DocumentException {
     if (parent != null) {
-      return ((ParentD2Node) parent).insertChild(sibling, Kind.COMMENT, null, text, right);
+      return ((ParentD2Node) parent).insertChild(parent == rootParent ? sibling : null,
+                                               Kind.COMMENT,
+                                               null,
+                                               text,
+                                               parent != rootParent || right);
     } else {
       return first(Kind.COMMENT, null, text);
     }
@@ -130,7 +142,11 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
   @Override
   protected D2Node buildProcessingInstruction(D2Node parent, QNm target, Atomic text) throws DocumentException {
     if (parent != null) {
-      return ((ParentD2Node) parent).insertChild(sibling, Kind.PROCESSING_INSTRUCTION, target, text, right);
+      return ((ParentD2Node) parent).insertChild(parent == rootParent ? sibling : null,
+                                               Kind.PROCESSING_INSTRUCTION,
+                                               target,
+                                               text,
+                                               parent != rootParent || right);
     } else {
       return first(Kind.PROCESSING_INSTRUCTION, target, text);
     }
