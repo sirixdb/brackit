@@ -48,6 +48,8 @@ import java.util.Set;
  * @author Johannes Lichtenberger
  */
 public final class UpdateList {
+  private static final ScopedValue<Boolean> DEFER_TEXT_NORMALIZATION = ScopedValue.newInstance();
+
   private static final Logger log = Logger.getLogger(UpdateList.class);
 
   private static final EnumSet<OpType> checkOps = EnumSet.of(OpType.RENAME,
@@ -71,6 +73,10 @@ public final class UpdateList {
 
   public void append(UpdateOp op) {
     ops.add(op);
+  }
+
+  public static boolean isTextNormalizationDeferred() {
+    return DEFER_TEXT_NORMALIZATION.isBound();
   }
 
   public void apply() throws QueryException {
@@ -159,7 +165,7 @@ public final class UpdateList {
           }
         }
       }
-      op.apply();
+      ScopedValue.where(DEFER_TEXT_NORMALIZATION, true).run(op::apply);
       if (parent != null) {
         collectText(textBoundaries, left != null ? left : parent.getFirstChild(), right);
       }

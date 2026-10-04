@@ -37,9 +37,11 @@ import java.util.stream.Stream;
 
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.atomic.Str;
+import io.brackit.query.atomic.Bool;
 import io.brackit.query.jdm.Kind;
 import io.brackit.query.jdm.node.Node;
 import io.brackit.query.node.parser.DocumentParser;
+import io.brackit.query.node.parser.FragmentHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -50,6 +52,97 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
   private static final String NESTED = "<a x='1' y='2'>one<b z='3'>two<c/>three<!--deep--><?deep value?>four</b>five</a>";
+
+  @Test
+  public void fragmentHelperMergesInsertedTextImmediately() {
+    var factory = new BrackitQueryContext().getNodeFactory();
+    Node<?> root = new FragmentHelper().openElement("r").content("a").insert(factory.text(new Str("b")))
+                                      .closeElement().getRoot();
+    var context = new BrackitQueryContext();
+    context.setContextItem(root);
+    assertEquals(Bool.TRUE, new Query("count($$/text()) = 1 and string($$/text()) = 'ab'").execute(context));
+    assertEquals("ab", root.getFirstChild().getValue().stringValue());
+    assertNull(root.getFirstChild().getNextSibling());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "success", "failure" })
+  public void ordinaryInsertionMergesAfterPendingUpdatesReturn(String outcome) {
+    Node<?> document = document("<r a='original'>old</r>");
+    var context = new BrackitQueryContext();
+    context.setContextItem(document);
+    if (outcome.equals("failure")) {
+      assertThrows(QueryException.class,
+          () -> new Query("insert node attribute a {'duplicate'} into $$/r").execute(context));
+    } else {
+      new Query("insert node text {'x'} into $$/r").execute(context);
+    }
+    document.getFirstChild().append(context.getNodeFactory().text(new Str("Y")));
+    assertDocument("<r a='original'>" + (outcome.equals("failure") ? "oldY" : "oldxY") + "</r>", document);
+    assertNull(document.getFirstChild().getFirstChild().getNextSibling());
+  }
+
+  private static Stream<Arguments> ordinaryTextInsertions() {
+    return Stream.of("append", "prepend", "before", "after").flatMap(position -> {
+      Stream<String> boundaries = switch (position) {
+        case "append" -> Stream.of("none", "left");
+        case "prepend" -> Stream.of("none", "right");
+        default -> Stream.of("none", "left", "right", "both");
+      };
+      return boundaries.flatMap(boundary -> Stream.of("kind", "node", "parser")
+                                                 .map(input -> Arguments.of(position, boundary, input)));
+    });
+  }
+
+  @ParameterizedTest(name = "ordinary {0}, {1} text boundary, {2} input")
+  @MethodSource("ordinaryTextInsertions")
+  public void ordinaryInsertionsMergeEveryAdjacentTextBoundary(String position, String boundary, String input) {
+    boolean leftText = boundary.equals("left") || boundary.equals("both");
+    boolean rightText = boundary.equals("right") || boundary.equals("both");
+    String left = position.equals("prepend") ? "" : leftText ? "L" : "<left/>";
+    String right = position.equals("append") ? "" : rightText ? "R" : "<right/>";
+    Node<?> document = document("<r>" + left + (boundary.equals("both") ? "<cut/>" : "") + right + "</r>");
+    Node<?> root = document.getFirstChild();
+    if (boundary.equals("both")) child(root, "cut").delete();
+    Node<?> leftNode = root.getFirstChild();
+    Node<?> rightNode = root.getLastChild();
+    Node<?> source = new BrackitQueryContext().getNodeFactory().text(new Str("X"));
+    Node<?> inserted = switch (input) {
+      case "kind" -> switch (position) {
+        case "append" -> root.append(Kind.TEXT, null, source.getValue());
+        case "prepend" -> root.prepend(Kind.TEXT, null, source.getValue());
+        case "before" -> rightNode.insertBefore(Kind.TEXT, null, source.getValue());
+        case "after" -> leftNode.insertAfter(Kind.TEXT, null, source.getValue());
+        default -> throw new IllegalArgumentException();
+      };
+      case "node" -> switch (position) {
+        case "append" -> root.append(source);
+        case "prepend" -> root.prepend(source);
+        case "before" -> rightNode.insertBefore(source);
+        case "after" -> leftNode.insertAfter(source);
+        default -> throw new IllegalArgumentException();
+      };
+      case "parser" -> switch (position) {
+        case "append" -> root.append(source::parse);
+        case "prepend" -> root.prepend(source::parse);
+        case "before" -> rightNode.insertBefore(source::parse);
+        case "after" -> leftNode.insertAfter(source::parse);
+        default -> throw new IllegalArgumentException();
+      };
+      default -> throw new IllegalArgumentException();
+    };
+    assertDocument("<r>" + left + "X" + right + "</r>", document);
+    assertTrue(inserted.isChildOf(root));
+    assertEquals((leftText ? "L" : "") + "X" + (rightText ? "R" : ""), inserted.getValue().stringValue());
+    assertEquals("X", source.getValue().stringValue());
+    var context = new BrackitQueryContext();
+    context.setContextItem(document);
+    assertEquals(Bool.TRUE, new Query("count($$/r/text()) = 1").execute(context));
+    if (boundary.equals("both")) {
+      assertDetached(rightNode);
+      assertEquals("R", rightNode.getValue().stringValue());
+    }
+  }
 
   private static Stream<Arguments> namespaceUpdates() {
     return Stream.of("into", "as first into", "as last into", "before", "after", "replace")

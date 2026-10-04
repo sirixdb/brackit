@@ -31,6 +31,7 @@ import io.brackit.query.atomic.Atomic;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.atomic.Una;
 import io.brackit.query.node.parser.NodeSubtreeParser;
+import io.brackit.query.update.UpdateList;
 import io.brackit.query.node.stream.EmptyStream;
 import io.brackit.query.jdm.DocumentException;
 import io.brackit.query.jdm.Kind;
@@ -278,11 +279,16 @@ abstract class ParentD2Node extends D2Node {
 
     if (mergeText && kind == Kind.TEXT) {
       // merge adjacent text nodes
-      if (right && ps != null && ps.getKind() == Kind.TEXT) {
-        ps.setValue(new Una(ps.getValue().stringValue() + value.stringValue()));
+      if (ps != null && ps.getKind() == Kind.TEXT) {
+        String merged = ps.getValue().stringValue() + value.stringValue();
+        if (ns != null && ns.getKind() == Kind.TEXT) {
+          merged += ns.getValue().stringValue();
+          deleteChild(ns);
+        }
+        ps.setValue(new Una(merged));
         return ps;
       }
-      if (!right && ns != null && ns.getKind() == Kind.TEXT) {
+      if (ns != null && ns.getKind() == Kind.TEXT) {
         ns.setValue(new Una(value.stringValue() + ns.getValue().stringValue()));
         return ns;
       }
@@ -347,7 +353,7 @@ abstract class ParentD2Node extends D2Node {
 
   @Override
   public D2Node append(Kind kind, QNm name, Atomic value) throws DocumentException {
-    return insertChild(null, kind, name, value, true, true);
+    return insertChild(null, kind, name, value, true, !UpdateList.isTextNormalizationDeferred());
   }
 
   @Override
@@ -411,7 +417,7 @@ abstract class ParentD2Node extends D2Node {
 
   @Override
   public D2Node prepend(Kind kind, QNm name, Atomic value) throws DocumentException {
-    return insertChild(null, kind, name, value, false, true);
+    return insertChild(null, kind, name, value, false, !UpdateList.isTextNormalizationDeferred());
   }
 
   @Override
@@ -429,7 +435,7 @@ abstract class ParentD2Node extends D2Node {
   }
 
   D2Node insertBefore(D2Node node, Kind kind, QNm name, Atomic value) throws DocumentException {
-    return insertChild(node, kind, name, value, false, true);
+    return insertChild(node, kind, name, value, false, !UpdateList.isTextNormalizationDeferred());
   }
 
   D2Node insertBefore(D2Node node, Node<?> child) throws DocumentException {
@@ -445,7 +451,7 @@ abstract class ParentD2Node extends D2Node {
   }
 
   D2Node insertAfter(D2Node node, Kind kind, QNm name, Atomic value) throws DocumentException {
-    return insertChild(node, kind, name, value, true, true);
+    return insertChild(node, kind, name, value, true, !UpdateList.isTextNormalizationDeferred());
   }
 
   D2Node insertAfter(D2Node node, Node<?> child) throws DocumentException {

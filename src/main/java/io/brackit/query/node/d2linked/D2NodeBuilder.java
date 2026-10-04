@@ -34,6 +34,7 @@ import io.brackit.query.atomic.QNm;
 import io.brackit.query.node.AbstractBuilder;
 import io.brackit.query.jdm.DocumentException;
 import io.brackit.query.jdm.Kind;
+import io.brackit.query.update.UpdateList;
 
 /**
  * @author Sebastian Baechle
@@ -104,7 +105,7 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
                                                            name,
                                                            null,
                                                            parent != rootParent || right,
-                                                           parent != rootParent);
+                                                           parent != rootParent || !UpdateList.isTextNormalizationDeferred());
     } else {
       e = (ElementD2Node) first(Kind.ELEMENT, name, null);
     }
@@ -122,7 +123,7 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
                                                null,
                                                text.asUna(),
                                                parent != rootParent || right,
-                                               parent != rootParent);
+                                               parent != rootParent || !UpdateList.isTextNormalizationDeferred());
     } else {
       return first(Kind.TEXT, null, text);
     }
@@ -136,7 +137,7 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
                                                null,
                                                text,
                                                parent != rootParent || right,
-                                               parent != rootParent);
+                                               parent != rootParent || !UpdateList.isTextNormalizationDeferred());
     } else {
       return first(Kind.COMMENT, null, text);
     }
@@ -150,7 +151,7 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
                                                target,
                                                text,
                                                parent != rootParent || right,
-                                               parent != rootParent);
+                                               parent != rootParent || !UpdateList.isTextNormalizationDeferred());
     } else {
       return first(Kind.PROCESSING_INSTRUCTION, target, text);
     }
