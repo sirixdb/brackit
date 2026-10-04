@@ -47,6 +47,12 @@ import io.brackit.query.jdm.node.Node;
 /**
  * Abstract base class for memory nodes.
  *
+ * <p>
+ * Removal clears the removed node's former parent and sibling links while preserving its
+ * content, descendants, and namespace scope. Retained references remain usable as detached
+ * fragments; deleting a detached node does not affect its former tree.
+ * </p>
+ *
  * @author Sebastian Baechle
  */
 public abstract class D2Node extends AbstractNode<D2Node> {

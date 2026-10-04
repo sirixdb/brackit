@@ -34,7 +34,7 @@ import io.brackit.query.jdm.node.Node;
 import io.brackit.query.jdm.node.NodeFactory;
 
 /**
- * Base class for all insert operations.
+ * Base class for insert operations, also reused by node replacement.
  *
  * @author Sebastian Baechle
  */
@@ -66,6 +66,10 @@ public abstract class AbstractInsertOp implements UpdateOp {
     return target;
   }
 
+  /**
+   * Captures the source before pending updates can change it, including when payload entries
+   * alias one another or the target subtree.
+   */
   public void addContent(Node<?> node, NodeFactory<?> factory) {
     if (size == content.length) {
       content = Arrays.copyOf(content, content.length * 3 / 2 + 1);

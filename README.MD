@@ -214,6 +214,12 @@ delete json $user.temporaryToken
 rename json $record.oldFieldName as "newFieldName"
 ```
 
+XML node updates preserve the source sequence order at every insertion position. For example,
+`insert nodes (<a/>, <b/>, <c/>) as first into $root` places `a`, `b`, and `c` before the
+existing children in that order; `insert nodes (<a/>, <b/>, <c/>) after $anchor` keeps the
+same order after the anchor. For an attribute or a non-root child,
+`replace node $target with ()` removes the target.
+
 This makes Brackit ideal for data stores that need to expose update capabilities through a query language.
 
 ## The Power of FLWOR

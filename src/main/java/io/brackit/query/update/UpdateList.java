@@ -46,6 +46,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Applies pending updates, deferring adjacent-text merging until all operations complete so
+ * that normalization cannot consume a later operation's target. Ordinary D2 insertions merge
+ * eagerly; deferral is scoped to each pending operation. Completion normalizes recorded
+ * mutation boundaries rather than scanning every child of an affected parent.
+ *
  * @author Sebastian Baechle
  * @author Johannes Lichtenberger
  */

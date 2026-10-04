@@ -35,6 +35,11 @@ import io.brackit.query.jdm.DocumentException;
 import io.brackit.query.jdm.Kind;
 import io.brackit.query.jdm.node.Node;
 
+/**
+ * Shared attribute-replacement boundary for pending updates and ordinary node operations.
+ * Replacement expanded names are checked against surviving attributes and the entire payload
+ * before mutation, so kind or name conflicts leave the original attributes and links intact.
+ */
 public final class AttributeReplacement {
   private AttributeReplacement() {
   }

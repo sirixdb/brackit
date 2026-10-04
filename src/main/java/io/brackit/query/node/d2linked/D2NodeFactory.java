@@ -74,6 +74,8 @@ public class D2NodeFactory implements NodeFactory<D2Node> {
 
   @Override
   public D2Node copy(Node<?> source) throws DocumentException {
+    // Node parsing carries descendant namespace events; the detached root also needs
+    // bindings inherited from ancestors that are outside the copied subtree.
     D2Node copy = build(source::parse);
     if (copy instanceof ElementD2Node element) {
       element.preserveNamespaces(source);

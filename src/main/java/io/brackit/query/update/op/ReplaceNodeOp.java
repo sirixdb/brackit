@@ -32,7 +32,7 @@ import io.brackit.query.jdm.node.Node;
 import io.brackit.query.node.AttributeReplacement;
 
 /**
- * Base class for all insert operations.
+ * Pending node replacement, reusing insertion primitives for nonattribute payloads.
  *
  * @author Sebastian Baechle
  */
