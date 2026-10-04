@@ -28,6 +28,8 @@
 package io.brackit.query.node.parser;
 
 import io.brackit.query.jdm.DocumentException;
+import io.brackit.query.jdm.Scope;
+import io.brackit.query.jdm.Stream;
 import io.brackit.query.jdm.node.Node;
 
 /**
@@ -78,6 +80,12 @@ public final class NodeSubtreeListener2HandlerAdapter implements NodeSubtreeList
   @Override
   public <T extends Node<?>> void endElement(T node) throws DocumentException {
     handler.endElement(node.getName());
+    try (Stream<String> prefixes = node.getScope().localPrefixes()) {
+      String prefix;
+      while ((prefix = prefixes.next()) != null) {
+        handler.endMapping(prefix);
+      }
+    }
   }
 
   @Override
@@ -87,6 +95,13 @@ public final class NodeSubtreeListener2HandlerAdapter implements NodeSubtreeList
 
   @Override
   public <T extends Node<?>> void startElement(T node) throws DocumentException {
+    Scope scope = node.getScope();
+    try (Stream<String> prefixes = scope.localPrefixes()) {
+      String prefix;
+      while ((prefix = prefixes.next()) != null) {
+        handler.startMapping(prefix, scope.resolvePrefix(prefix));
+      }
+    }
     handler.startElement(node.getName());
   }
 

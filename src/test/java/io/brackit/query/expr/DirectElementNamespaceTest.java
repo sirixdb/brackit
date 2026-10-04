@@ -1,16 +1,24 @@
 package io.brackit.query.expr;
 
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
+import javax.xml.parsers.DocumentBuilderFactory;
 
+import io.brackit.query.ErrorCode;
 import io.brackit.query.Query;
+import io.brackit.query.QueryException;
 import io.brackit.query.XQueryBaseTest;
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
 import org.junit.jupiter.api.Test;
+import org.xml.sax.InputSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DirectElementNamespaceTest extends XQueryBaseTest {
 
@@ -209,5 +217,73 @@ public class DirectElementNamespaceTest extends XQueryBaseTest {
           "urn:p",
           "p",
           "attr");
+  }
+
+  @Test
+  public void storedDefaultNamespaceBindings() {
+    new Query("bit:store('names', <root><item xmlns='urn:a'>a</item><item xmlns='urn:b'>b</item>"
+        + "<p:item xmlns:p='urn:a'>alias</p:item><item>plain</item></root>)").execute(ctx);
+    checkElements("doc('names')/*", "", "", "root", "urn:a", "", "item", "urn:b", "", "item",
+                  "urn:a", "p", "item", "", "", "item");
+    check("for $e in doc('names')/descendant::* return "
+        + "string(namespace-uri-from-QName(resolve-QName('probe', $e)))", "", "urn:a", "urn:b", "", "");
+  }
+
+  @Test
+  public void storedDefaultNamespaceScopesOverrideInheritAndRestore() {
+    new Query("bit:store('scopes', <root xmlns='urn:outer'><inherited/>"
+        + "<inner xmlns='urn:inner'><leaf/></inner><reset xmlns=''><plain/></reset><sibling/></root>)").execute(ctx);
+    check("for $e in doc('scopes')/descendant::* return "
+        + "string(namespace-uri-from-QName(resolve-QName('probe', $e)))",
+          "urn:outer", "urn:outer", "urn:inner", "urn:inner", "", "", "urn:outer");
+  }
+
+  @Test
+  public void storedPrefixedNamespaceBindings() {
+    new Query("bit:store('prefixes', <p:root xmlns:p='urn:outer' xmlns:q='urn:unused'><p:inherited/>"
+        + "<p:inner xmlns:p='urn:inner'><p:leaf/></p:inner><p:sibling/></p:root>)").execute(ctx);
+    checkElements("doc('prefixes')/*", "urn:outer", "p", "root", "urn:outer", "p", "inherited",
+                  "urn:inner", "p", "inner", "urn:inner", "p", "leaf", "urn:outer", "p", "sibling");
+    check("for $e in doc('prefixes')/descendant::* return namespace-uri-from-QName(resolve-QName('p:probe', $e))",
+          "urn:outer", "urn:outer", "urn:inner", "urn:inner", "urn:outer");
+    check("namespace-uri-from-QName(resolve-QName('q:probe', doc('prefixes')/*))", "urn:unused");
+  }
+
+  private void checkSerializedNamespaces(String query, String... expected) throws Exception {
+    StringWriter xml = new StringWriter();
+    new Query(query).serialize(ctx, new PrintWriter(xml));
+    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    factory.setNamespaceAware(true);
+    var document = factory.newDocumentBuilder().parse(new InputSource(new StringReader(xml.toString())));
+    var elements = document.getElementsByTagName("*");
+    List<String> actual = new ArrayList<>();
+    for (int i = 0; i < elements.getLength(); i++) {
+      String uri = elements.item(i).getNamespaceURI();
+      actual.add(uri == null ? "" : uri);
+    }
+    assertEquals(List.of(expected), actual);
+  }
+
+  @Test
+  public void storedSerializedNamespaces() throws Exception {
+    new Query("bit:store('serialized', <root><item xmlns='urn:a'>a</item><item xmlns='urn:b'>b</item>"
+        + "<p:item xmlns:p='urn:a'>alias</p:item><item>plain</item></root>)").execute(ctx);
+    checkSerializedNamespaces("doc('serialized')", "", "urn:a", "urn:b", "urn:a", "");
+  }
+
+  @Test
+  public void standardXmlNamespaceBinding() throws Exception {
+    String constructor = "<xml:root xmlns:xml='http://www.w3.org/XML/1998/namespace'/>";
+    checkElements(constructor, "http://www.w3.org/XML/1998/namespace", "xml", "root");
+    checkSerializedNamespaces(constructor, "http://www.w3.org/XML/1998/namespace");
+  }
+
+  @Test
+  public void invalidXmlNamespaceBinding() {
+    for (String uri : List.of("urn:wrong", "")) {
+      QueryException error = assertThrows(QueryException.class,
+                                         () -> new Query("<xml:root xmlns:xml='" + uri + "'/>").execute(ctx));
+      assertEquals(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL, error.getCode());
+    }
   }
 }

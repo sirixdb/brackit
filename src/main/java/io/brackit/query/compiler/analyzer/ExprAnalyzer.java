@@ -1254,7 +1254,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 
   protected void checkDirNSAttBinding(String prefix, String uri) throws QueryException {
     if (Namespaces.XML_PREFIX.equals(prefix)) {
-      if (Namespaces.XML_NSURI.equals(uri)) {
+      if (!Namespaces.XML_NSURI.equals(uri)) {
         throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
                                  "Illegal mapping of the prefix '%s' to the namespace URI '%s'",
                                  Namespaces.XML_PREFIX,
