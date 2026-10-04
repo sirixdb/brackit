@@ -101,11 +101,12 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
     ElementD2Node e;
     if (parent != null) {
       e = (ElementD2Node) ((ParentD2Node) parent).insertChild(parent == rootParent ? sibling : null,
-                                                           Kind.ELEMENT,
-                                                           name,
-                                                           null,
-                                                           parent != rootParent || right,
-                                                           parent != rootParent || !UpdateList.isTextNormalizationDeferred());
+                                                              Kind.ELEMENT,
+                                                              name,
+                                                              null,
+                                                              parent != rootParent || right,
+                                                              parent != rootParent || !UpdateList
+                                                                                                 .isTextNormalizationDeferred());
     } else {
       e = (ElementD2Node) first(Kind.ELEMENT, name, null);
     }
@@ -119,11 +120,11 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
   protected D2Node buildText(D2Node parent, Atomic text) throws DocumentException {
     if (parent != null) {
       return ((ParentD2Node) parent).insertChild(parent == rootParent ? sibling : null,
-                                               Kind.TEXT,
-                                               null,
-                                               text.asUna(),
-                                               parent != rootParent || right,
-                                               parent != rootParent || !UpdateList.isTextNormalizationDeferred());
+                                                 Kind.TEXT,
+                                                 null,
+                                                 text.asUna(),
+                                                 parent != rootParent || right,
+                                                 parent != rootParent || !UpdateList.isTextNormalizationDeferred());
     } else {
       return first(Kind.TEXT, null, text);
     }
@@ -133,11 +134,11 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
   protected D2Node buildComment(D2Node parent, Atomic text) throws DocumentException {
     if (parent != null) {
       return ((ParentD2Node) parent).insertChild(parent == rootParent ? sibling : null,
-                                               Kind.COMMENT,
-                                               null,
-                                               text,
-                                               parent != rootParent || right,
-                                               parent != rootParent || !UpdateList.isTextNormalizationDeferred());
+                                                 Kind.COMMENT,
+                                                 null,
+                                                 text,
+                                                 parent != rootParent || right,
+                                                 parent != rootParent || !UpdateList.isTextNormalizationDeferred());
     } else {
       return first(Kind.COMMENT, null, text);
     }
@@ -147,11 +148,11 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
   protected D2Node buildProcessingInstruction(D2Node parent, QNm target, Atomic text) throws DocumentException {
     if (parent != null) {
       return ((ParentD2Node) parent).insertChild(parent == rootParent ? sibling : null,
-                                               Kind.PROCESSING_INSTRUCTION,
-                                               target,
-                                               text,
-                                               parent != rootParent || right,
-                                               parent != rootParent || !UpdateList.isTextNormalizationDeferred());
+                                                 Kind.PROCESSING_INSTRUCTION,
+                                                 target,
+                                                 text,
+                                                 parent != rootParent || right,
+                                                 parent != rootParent || !UpdateList.isTextNormalizationDeferred());
     } else {
       return first(Kind.PROCESSING_INSTRUCTION, target, text);
     }

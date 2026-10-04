@@ -166,7 +166,8 @@ public final class UpdateList {
           }
           case REPLACE_ELEMENT_CONTENT -> parent = target;
           case REPLACE_VALUE -> {
-            if (target.getKind() == Kind.TEXT) textBoundaries.putIfAbsent(target, null);
+            if (target.getKind() == Kind.TEXT)
+              textBoundaries.putIfAbsent(target, null);
           }
           default -> {
           }
@@ -193,13 +194,15 @@ public final class UpdateList {
           boundaries.put(node, previous);
         }
       }
-      if (node.isSelfOf(last)) break;
+      if (node.isSelfOf(last))
+        break;
       previous = node;
     }
   }
 
   private void normalizeText(Node<?> text, Node<?> previous) {
-    if (text.getParent() == null) return;
+    if (text.getParent() == null)
+      return;
     while (text.getValue().stringValue().isEmpty()) {
       if (previous == null || !text.isSelfOf(previous.getNextSibling())) {
         previous = text.getPreviousSibling();
@@ -210,7 +213,8 @@ public final class UpdateList {
       } else {
         previous.deleteNextSibling();
       }
-      if (next == null || next.getKind() != Kind.TEXT) return;
+      if (next == null || next.getKind() != Kind.TEXT)
+        return;
       text = next;
     }
     Node<?> next;

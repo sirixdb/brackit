@@ -56,14 +56,18 @@ public class AttributeReplacementRegressionTest extends XQueryBaseTest {
     return Stream.of("kind", "node", "parser", "query")
                  .flatMap(input -> Stream.of(0, 1, 2)
                                          .flatMap(position -> Stream.of(false, true)
-                                                                    .map(prefixed -> Arguments.of(input, position, prefixed))));
+                                                                    .map(prefixed -> Arguments.of(input,
+                                                                                                  position,
+                                                                                                  prefixed))));
   }
 
   private static Stream<Arguments> multipleReplacements() {
     return Stream.of("parser", "query")
                  .flatMap(input -> Stream.of(0, 1, 2)
                                          .flatMap(position -> Stream.of(false, true)
-                                                                    .map(prefixed -> Arguments.of(input, position, prefixed))));
+                                                                    .map(prefixed -> Arguments.of(input,
+                                                                                                  position,
+                                                                                                  prefixed))));
   }
 
   @ParameterizedTest(name = "surviving collision: {0}, target {1}, prefixed {2}")
@@ -75,7 +79,8 @@ public class AttributeReplacementRegressionTest extends XQueryBaseTest {
     QNm collision = prefixed ? new QNm(survivorName.getNamespaceURI(), "q", survivorName.getLocalName()) : survivorName;
     D2Node source = attribute(collision, "replacement");
     D2Node[] payload = input.equals("query") || input.equals("parser")
-        ? new D2Node[] { attribute(new QNm("new"), "first replacement"), source } : new D2Node[] { source };
+        ? new D2Node[] { attribute(new QNm("new"), "first replacement"), source }
+        : new D2Node[] { source };
     assertThrows(QueryException.class, () -> replace(input, target, payload));
     assertPreserved(original);
     assertNull(original.root().getScope().resolvePrefix("q"));
@@ -93,7 +98,7 @@ public class AttributeReplacementRegressionTest extends XQueryBaseTest {
     D2Node first = attribute(firstName, "first duplicate");
     D2Node second = attribute(duplicateName, "second duplicate");
     assertThrows(QueryException.class,
-        () -> replace(input, target, attribute(new QNm("new"), "valid first member"), first, second));
+                 () -> replace(input, target, attribute(new QNm("new"), "valid first member"), first, second));
     assertPreserved(original);
     assertNull(original.root().getScope().resolvePrefix("q"));
     assertEquals("first duplicate", first.getValue().stringValue());
@@ -112,7 +117,8 @@ public class AttributeReplacementRegressionTest extends XQueryBaseTest {
     D2Node source = attribute(replacementName, "replacement");
     D2Node result = replace(input, target, source);
     assertReplaced(original, target, result, source);
-    if (prefixed) assertEquals("urn:same", original.root().getScope().resolvePrefix("q"));
+    if (prefixed)
+      assertEquals("urn:same", original.root().getScope().resolvePrefix("q"));
   }
 
   @ParameterizedTest(name = "valid sequence: {0}, target {1}, prefixed {2}")
@@ -187,7 +193,8 @@ public class AttributeReplacementRegressionTest extends XQueryBaseTest {
       case "kind" -> target.replaceWith(content[0].getKind(), content[0].getName(), content[0].getValue());
       case "node" -> target.replaceWith(content[0]);
       case "parser" -> target.replaceWith(handler -> {
-        for (D2Node node : content) node.parse(handler);
+        for (D2Node node : content)
+          node.parse(handler);
       });
       case "query" -> {
         var context = new BrackitQueryContext();
@@ -205,7 +212,8 @@ public class AttributeReplacementRegressionTest extends XQueryBaseTest {
     List<D2Node> attributes = new ArrayList<>();
     try (var stream = root.getAttributes()) {
       D2Node node;
-      while ((node = stream.next()) != null) attributes.add(node);
+      while ((node = stream.next()) != null)
+        attributes.add(node);
     }
     return attributes;
   }
@@ -232,7 +240,8 @@ public class AttributeReplacementRegressionTest extends XQueryBaseTest {
     assertEquals(survivors.size() + sources.length, actual.size());
     for (int i = 0; i < survivors.size(); i++) {
       assertSame(survivors.get(i), actual.get(i));
-      assertEquals(original.values().get(original.attributes().indexOf(survivors.get(i))), actual.get(i).getValue().stringValue());
+      assertEquals(original.values().get(original.attributes().indexOf(survivors.get(i))),
+                   actual.get(i).getValue().stringValue());
     }
     for (int i = 0; i < sources.length; i++) {
       D2Node inserted = actual.get(survivors.size() + i);
@@ -245,7 +254,8 @@ public class AttributeReplacementRegressionTest extends XQueryBaseTest {
       assertSame(original.root(), actual.get(i).getParent());
       assertSame(i + 1 < actual.size() ? actual.get(i + 1) : null, actual.get(i).sibling);
     }
-    if (result != null) assertSame(actual.get(survivors.size()), result);
+    if (result != null)
+      assertSame(actual.get(survivors.size()), result);
     assertDetached(target);
     assertEquals(original.values().get(original.attributes().indexOf(target)), target.getValue().stringValue());
   }

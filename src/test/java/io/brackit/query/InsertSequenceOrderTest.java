@@ -48,7 +48,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class InsertSequenceOrderTest extends XQueryBaseTest {
   private static final String DOCUMENT = "<r><left/><anchor/><right/></r>";
-  private static final String NESTED_ELEMENT = "<a x='1' y='2'>one<b z='3'>two<c/>three<!--deep--><?deep value?>four</b>five<!--tail--><?tail value?>six</a>";
+  private static final String NESTED_ELEMENT =
+      "<a x='1' y='2'>one<b z='3'>two<c/>three<!--deep--><?deep value?>four</b>five<!--tail--><?tail value?>six</a>";
   private static final String NESTED_SOURCE = "(" + NESTED_ELEMENT
       + ", <d/>, text {'end'}, comment {'outer'}, processing-instruction outer {'value'})";
   private static final String NESTED_XML = NESTED_ELEMENT + "<d/>end<!--outer--><?outer value?>";
@@ -61,8 +62,8 @@ public class InsertSequenceOrderTest extends XQueryBaseTest {
                 "(attribute x {'1'}, attribute y {'2'}, <a/>, text {'b'}, <c/>)", "<a/>b<c/>", " x='1' y='2'" }, {
                     "attributes", "(attribute x {'1'}, attribute y {'2'}, attribute z {'3'})", "",
                     " x='1' y='2' z='3'" }, { "single element", "<a/>", "<a/>", "" }, { "single text", "text {'a'}",
-                        "a", "" }, { "single attribute", "attribute x {'1'}", "", " x='1'" }, { "nested",
-                            NESTED_SOURCE, NESTED_XML, "" }, { "nested with leading attributes",
+                        "a", "" }, { "single attribute", "attribute x {'1'}", "", " x='1'" }, { "nested", NESTED_SOURCE,
+                            NESTED_XML, "" }, { "nested with leading attributes",
                                 "(attribute p {'1'}, attribute q {'2'}, " + NESTED_SOURCE + ")", NESTED_XML,
                                 " p='1' q='2'" } };
     for (String position : List.of("into", "as first into", "as last into", "before", "after")) {
@@ -192,12 +193,12 @@ public class InsertSequenceOrderTest extends XQueryBaseTest {
   @MethodSource("insertPositions")
   public void pendingInsertSnapshotsSubtreesAndAttributes(String position) {
     var ctx = new BrackitQueryContext();
-    Node<?> document = ctx.getNodeFactory().build(new DocumentParser("<r><src a='old'>old</src><dest><anchor/></dest></r>"));
+    Node<?> document = ctx.getNodeFactory()
+                          .build(new DocumentParser("<r><src a='old'>old</src><dest><anchor/></dest></r>"));
     ctx.setContextItem(document);
     String target = position.equals("before") || position.equals("after") ? "$$/r/dest/anchor" : "$$/r/dest";
 
-    new Query("(insert nodes (<n/>, text {'x'}) into $$/r/src, "
-        + "replace value of node $$/r/src/@a with 'new', "
+    new Query("(insert nodes (<n/>, text {'x'}) into $$/r/src, " + "replace value of node $$/r/src/@a with 'new', "
         + "insert nodes ($$/r/src/@a, $$/r/src) " + position + " " + target + ")").execute(ctx);
 
     String snapshot = "<src a='old'>old</src>";
@@ -215,8 +216,8 @@ public class InsertSequenceOrderTest extends XQueryBaseTest {
     ctx.setContextItem(document);
     String target = position.equals("before") || position.equals("after") ? "$$/r/text()" : "$$/r";
 
-    new Query("(insert node text {'x'} into $$/r, insert nodes ($$/r/text(), text {'y'}) " + position + " "
-        + target + ")").execute(ctx);
+    new Query("(insert node text {'x'} into $$/r, insert nodes ($$/r/text(), text {'y'}) " + position + " " + target
+        + ")").execute(ctx);
 
     String value = switch (position) {
       case "as first into", "before" -> "oldyoldx";
@@ -250,9 +251,7 @@ public class InsertSequenceOrderTest extends XQueryBaseTest {
     String target = position.equals("before") || position.equals("after") ? "$$/r/text()" : "$$/r";
     new Query("insert nodes (<a/>, text {'b'}, <c/>) " + position + " " + target).execute(insertionContext);
 
-    String children = position.equals("as first into") || position.equals("before")
-        ? "<a/>b<c/>LR"
-        : "LR<a/>b<c/>";
+    String children = position.equals("as first into") || position.equals("before") ? "<a/>b<c/>LR" : "LR<a/>b<c/>";
     assertDocument("<r>" + children + "</r>", document);
   }
 
@@ -288,8 +287,8 @@ public class InsertSequenceOrderTest extends XQueryBaseTest {
                                                                                             Kind.COMMENT,
                                                                                             Kind.PROCESSING_INSTRUCTION)
                                                                                         .map(kind -> Arguments.of(position,
-                                                                                                                   representation,
-                                                                                                                   kind))));
+                                                                                                                  representation,
+                                                                                                                  kind))));
   }
 
   @ParameterizedTest(name = "node API {0}: {1} {2}")
@@ -305,8 +304,10 @@ public class InsertSequenceOrderTest extends XQueryBaseTest {
       case PROCESSING_INSTRUCTION -> "<?p payload?>";
       default -> throw new IllegalArgumentException();
     };
-    Node<?> source = ctx.getNodeFactory().build(new DocumentParser("<source>" + xml + "</source>"))
-                        .getFirstChild().getFirstChild();
+    Node<?> source = ctx.getNodeFactory()
+                        .build(new DocumentParser("<source>" + xml + "</source>"))
+                        .getFirstChild()
+                        .getFirstChild();
     Node<?> target = position.equals("before") || position.equals("after")
         ? document.getFirstChild().getFirstChild().getNextSibling()
         : document.getFirstChild();

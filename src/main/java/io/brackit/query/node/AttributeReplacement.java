@@ -57,7 +57,8 @@ public final class AttributeReplacement {
     try (var attributes = parent.getAttributes()) {
       Node<?> attribute;
       while ((attribute = attributes.next()) != null) {
-        if (!attribute.isSelfOf(target)) names.add(attribute.getName());
+        if (!attribute.isSelfOf(target))
+          names.add(attribute.getName());
       }
     }
     for (int i = 0; i < size; i++) {
@@ -74,7 +75,8 @@ public final class AttributeReplacement {
     E first = null;
     for (int i = 0; i < size; i++) {
       E inserted = parent.setAttribute(content[i]);
-      if (first == null) first = inserted;
+      if (first == null)
+        first = inserted;
     }
     return first;
   }

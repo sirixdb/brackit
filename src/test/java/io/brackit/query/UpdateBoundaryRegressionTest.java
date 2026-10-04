@@ -51,13 +51,17 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
-  private static final String NESTED = "<a x='1' y='2'>one<b z='3'>two<c/>three<!--deep--><?deep value?>four</b>five</a>";
+  private static final String NESTED =
+      "<a x='1' y='2'>one<b z='3'>two<c/>three<!--deep--><?deep value?>four</b>five</a>";
 
   @Test
   public void fragmentHelperMergesInsertedTextImmediately() {
     var factory = new BrackitQueryContext().getNodeFactory();
-    Node<?> root = new FragmentHelper().openElement("r").content("a").insert(factory.text(new Str("b")))
-                                      .closeElement().getRoot();
+    Node<?> root = new FragmentHelper().openElement("r")
+                                       .content("a")
+                                       .insert(factory.text(new Str("b")))
+                                       .closeElement()
+                                       .getRoot();
     var context = new BrackitQueryContext();
     context.setContextItem(root);
     assertEquals(Bool.TRUE, new Query("count($$/text()) = 1 and string($$/text()) = 'ab'").execute(context));
@@ -73,7 +77,7 @@ public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
     context.setContextItem(document);
     if (outcome.equals("failure")) {
       assertThrows(QueryException.class,
-          () -> new Query("insert node attribute a {'duplicate'} into $$/r").execute(context));
+                   () -> new Query("insert node attribute a {'duplicate'} into $$/r").execute(context));
     } else {
       new Query("insert node text {'x'} into $$/r").execute(context);
     }
@@ -90,7 +94,7 @@ public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
         default -> Stream.of("none", "left", "right", "both");
       };
       return boundaries.flatMap(boundary -> Stream.of("kind", "node", "parser")
-                                                 .map(input -> Arguments.of(position, boundary, input)));
+                                                  .map(input -> Arguments.of(position, boundary, input)));
     });
   }
 
@@ -103,7 +107,8 @@ public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
     String right = position.equals("append") ? "" : rightText ? "R" : "<right/>";
     Node<?> document = document("<r>" + left + (boundary.equals("both") ? "<cut/>" : "") + right + "</r>");
     Node<?> root = document.getFirstChild();
-    if (boundary.equals("both")) child(root, "cut").delete();
+    if (boundary.equals("both"))
+      child(root, "cut").delete();
     Node<?> leftNode = root.getFirstChild();
     Node<?> rightNode = root.getLastChild();
     Node<?> source = new BrackitQueryContext().getNodeFactory().text(new Str("X"));
@@ -161,10 +166,12 @@ public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
     Node<?> source = document.getFirstChild().getFirstChild();
     Node<?> destination = source.getNextSibling();
     Node<?> target = position.equals("before") || position.equals("after") || position.equals("replace")
-        ? destination.getFirstChild() : destination;
+        ? destination.getFirstChild()
+        : destination;
     context.bind(new QNm("source"), source);
     context.bind(new QNm("target"), target);
-    String update = position.equals("replace") ? "replace node $target with $source"
+    String update = position.equals("replace")
+        ? "replace node $target with $source"
         : "insert node $source " + position + " $target";
     new Query("declare variable $source external; declare variable $target external; " + update).execute(context);
 
@@ -198,18 +205,19 @@ public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
 
   private static Stream<Arguments> replacements() {
     List<Arguments> cases = new ArrayList<>();
-    String[][] payloads = { { "(<a/>, <b/>, <c/>)", "<a/><b/><c/>" },
-        { "(text {'a'}, text {'b'}, text {'c'})", "abc" },
-        { "(text {'a'}, <b/>, text {'c'}, <d/>, text {'e'})", "a<b/>c<d/>e" },
-        { "(" + NESTED + ", <d/>, comment {'end'}, processing-instruction p {'value'})",
-            NESTED + "<d/><!--end--><?p value?>" }, { "()", "" } };
+    String[][] payloads = { { "(<a/>, <b/>, <c/>)", "<a/><b/><c/>" }, { "(text {'a'}, text {'b'}, text {'c'})", "abc" },
+        { "(text {'a'}, <b/>, text {'c'}, <d/>, text {'e'})", "a<b/>c<d/>e" }, { "(" + NESTED
+            + ", <d/>, comment {'end'}, processing-instruction p {'value'})", NESTED + "<d/><!--end--><?p value?>" }, {
+                "()", "" } };
     for (boolean text : List.of(false, true)) {
       for (String position : List.of("first", "middle", "last")) {
         String prefix = position.equals("first") ? "" : text ? "<head/>" : "<head/>left";
         String suffix = position.equals("last") ? "" : text ? "<tail/>" : "right<tail/>";
         String input = "<r>" + prefix + (text ? "old" : "<x/>") + suffix + "</r>";
         for (String[] payload : payloads) {
-          cases.add(Arguments.of(input, text ? "$$/r/text()" : "$$/r/x", payload[0],
+          cases.add(Arguments.of(input,
+                                 text ? "$$/r/text()" : "$$/r/x",
+                                 payload[0],
                                  "<r>" + prefix + payload[1] + suffix + "</r>"));
         }
       }
@@ -220,7 +228,7 @@ public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
   @ParameterizedTest(name = "replace {1} in {0} with {2}")
   @MethodSource("replacements")
   public void replacementKeepsSequenceOrderAndRemovesEmptyContent(String input, String target, String source,
-                                                                  String expected) {
+      String expected) {
     Node<?> document = document(input);
     var context = new BrackitQueryContext();
     context.setContextItem(document);
@@ -297,14 +305,15 @@ public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "element r { ($source, 'b', 'c', text {'d'}) }",
-      "<r>{($source, 'b', 'c', text {'d'})}</r>", "document { ($source, 'b', 'c', text {'d'}) }" })
+  @ValueSource(strings = { "element r { ($source, 'b', 'c', text {'d'}) }", "<r>{($source, 'b', 'c', text {'d'})}</r>",
+      "document { ($source, 'b', 'c', text {'d'}) }" })
   public void constructorsStillNormalizeCopiedText(String expression) {
     Node<?> source = document("<src>orig</src>").getFirstChild().getFirstChild();
     var context = new BrackitQueryContext();
     context.bind(new QNm("source"), source);
     Node<?> constructed = assertInstanceOf(Node.class,
-        new Query("declare variable $source external; " + expression).execute(context));
+                                           new Query("declare variable $source external; " + expression).execute(
+                                                                                                                 context));
     Node<?> text = constructed.getFirstChild();
     assertEquals(Kind.TEXT, text.getKind());
     assertEquals("origb cd", text.getValue().stringValue());
@@ -346,7 +355,8 @@ public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
     Node<?> saved = document.getFirstChild().getFirstChild().getNextSibling().getNextSibling();
     var context = new BrackitQueryContext();
     context.setContextItem(document);
-    String update = variant.equals("merged") ? "delete node $$/r/x"
+    String update = variant.equals("merged")
+        ? "delete node $$/r/x"
         : "replace value of node $$/r/text()[?last()] with ''";
     new Query(update).execute(context);
     String expected = variant.equals("merged") ? "<r>LR<tail/></r>" : "<r>L<x/><tail/></r>";
@@ -358,7 +368,8 @@ public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
 
   private static Stream<Arguments> subtreeRemovals() {
     return Stream.of("delete", "query replace", "query content", "set value", "kind", "node", "parser")
-                 .flatMap(removal -> Stream.of("first", "middle", "last").map(position -> Arguments.of(removal, position)));
+                 .flatMap(removal -> Stream.of("first", "middle", "last")
+                                           .map(position -> Arguments.of(removal, position)));
   }
 
   @ParameterizedTest(name = "detach via {0} at {1}")
@@ -366,22 +377,33 @@ public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
   public void removedSubtreesKeepTheirContentAndNamespaceScope(String removal, String position) {
     String prefix = position.equals("first") ? "" : "<head/>";
     String suffix = position.equals("last") ? "" : "<tail/>";
-    Node<?> document = document("<r xmlns:p='urn:outer'>" + prefix + "<x a='A'><inner>p:value</inner></x>" + suffix + "</r>");
+    Node<?> document = document("<r xmlns:p='urn:outer'>" + prefix + "<x a='A'><inner>p:value</inner></x>" + suffix
+        + "</r>");
     Node<?> root = document.getFirstChild();
     List<Node<?>> originals = new ArrayList<>();
     try (var children = root.getChildren()) {
       Node<?> next;
-      while ((next = children.next()) != null) originals.add(next);
+      while ((next = children.next()) != null)
+        originals.add(next);
     }
     Node<?> saved = child(root, "x");
     var context = new BrackitQueryContext();
     context.setContextItem(document);
     String expected = "<r>" + prefix + "<new/>" + suffix + "</r>";
     switch (removal) {
-      case "delete" -> { new Query("delete node $$/r/x").execute(context); expected = "<r>" + prefix + suffix + "</r>"; }
+      case "delete" -> {
+        new Query("delete node $$/r/x").execute(context);
+        expected = "<r>" + prefix + suffix + "</r>";
+      }
       case "query replace" -> new Query("replace node $$/r/x with <new/>").execute(context);
-      case "query content" -> { new Query("replace value of node $$/r with 'new'").execute(context); expected = "<r>new</r>"; }
-      case "set value" -> { root.setValue(new Str("new")); expected = "<r>new</r>"; }
+      case "query content" -> {
+        new Query("replace value of node $$/r with 'new'").execute(context);
+        expected = "<r>new</r>";
+      }
+      case "set value" -> {
+        root.setValue(new Str("new"));
+        expected = "<r>new</r>";
+      }
       case "kind" -> saved.replaceWith(Kind.ELEMENT, new QNm("new"), null);
       case "node" -> saved.replaceWith(context.getNodeFactory().element(new QNm("new")));
       case "parser" -> saved.replaceWith(context.getNodeFactory().element(new QNm("new"))::parse);
@@ -394,7 +416,8 @@ public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
     assertEquals("urn:outer", resolve(saved.getFirstChild(), "p:value").getNamespaceURI());
     assertEquals(-Integer.signum(root.cmp(saved)), Integer.signum(saved.cmp(root)));
     if (removal.equals("query content") || removal.equals("set value")) {
-      for (Node<?> old : originals) assertDetached(old);
+      for (Node<?> old : originals)
+        assertDetached(old);
     }
     deleteSaved(saved);
     assertDocument(expected, document);
@@ -458,7 +481,8 @@ public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
     assertEquals("inserted", inserted.getName().getLocalName());
     int count = 0;
     try (var children = document.getFirstChild().getChildren()) {
-      while (children.next() != null) count++;
+      while (children.next() != null)
+        count++;
     }
     assertEquals(size + 2, count);
     return work;
@@ -470,27 +494,37 @@ public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
     final Map<Object, Node<?>> delegates = new IdentityHashMap<>();
 
     Node<?> wrap(Node<?> node) {
-      if (node == null) return null;
+      if (node == null)
+        return null;
       Node<?> existing = wrappers.get(node);
-      if (existing != null) return existing;
-      Node<?> proxy = (Node<?>) Proxy.newProxyInstance(Node.class.getClassLoader(), new Class<?>[] { Node.class },
-          (receiver, method, arguments) -> {
-            if (method.getName().equals("getNextSibling") || method.getName().equals("getFirstChild")
-                || method.getName().equals("getPreviousSibling") || method.getName().equals("getLastChild")) visits++;
-            if (arguments != null) {
-              arguments = arguments.clone();
-              for (int index = 0; index < arguments.length; index++) {
-                if (delegates.containsKey(arguments[index])) arguments[index] = delegates.get(arguments[index]);
-              }
-            }
-            try {
-              Object result = method.invoke(node, arguments);
-              if (Node.class.isAssignableFrom(method.getReturnType())) return wrap((Node<?>) result);
-              return result;
-            } catch (InvocationTargetException exception) {
-              throw exception.getCause();
-            }
-          });
+      if (existing != null)
+        return existing;
+      Node<?> proxy = (Node<?>) Proxy.newProxyInstance(Node.class.getClassLoader(),
+                                                       new Class<?>[] { Node.class },
+                                                       (receiver, method, arguments) -> {
+                                                         if (method.getName().equals("getNextSibling") || method
+                                                                                                                .getName()
+                                                                                                                .equals("getFirstChild")
+                                                             || method.getName().equals("getPreviousSibling") || method
+                                                                                                                       .getName()
+                                                                                                                       .equals("getLastChild"))
+                                                           visits++;
+                                                         if (arguments != null) {
+                                                           arguments = arguments.clone();
+                                                           for (int index = 0; index < arguments.length; index++) {
+                                                             if (delegates.containsKey(arguments[index]))
+                                                               arguments[index] = delegates.get(arguments[index]);
+                                                           }
+                                                         }
+                                                         try {
+                                                           Object result = method.invoke(node, arguments);
+                                                           if (Node.class.isAssignableFrom(method.getReturnType()))
+                                                             return wrap((Node<?>) result);
+                                                           return result;
+                                                         } catch (InvocationTargetException exception) {
+                                                           throw exception.getCause();
+                                                         }
+                                                       });
       wrappers.put(node, proxy);
       delegates.put(proxy, node);
       return proxy;
@@ -509,7 +543,8 @@ public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
     try (var children = parent.getChildren()) {
       Node<?> node;
       while ((node = children.next()) != null) {
-        if (node.getKind() == Kind.ELEMENT && node.getName().getLocalName().equals(name)) return node;
+        if (node.getKind() == Kind.ELEMENT && node.getName().getLocalName().equals(name))
+          return node;
       }
     }
     throw new AssertionError("Missing child " + name);
@@ -519,7 +554,8 @@ public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
     List<String> result = new ArrayList<>();
     try (var attributes = node.getAttributes()) {
       Node<?> attribute;
-      while ((attribute = attributes.next()) != null) result.add(attribute.getName().getLocalName());
+      while ((attribute = attributes.next()) != null)
+        result.add(attribute.getName().getLocalName());
     }
     return result;
   }
@@ -527,7 +563,9 @@ public class UpdateBoundaryRegressionTest extends XQueryBaseTest {
   private static QNm resolve(Node<?> node, String name) {
     var context = new BrackitQueryContext();
     context.bind(new QNm("node"), node);
-    return assertInstanceOf(QNm.class, new Query("declare variable $node external; resolve-QName('" + name + "', $node)").execute(context));
+    return assertInstanceOf(QNm.class,
+                            new Query("declare variable $node external; resolve-QName('" + name + "', $node)").execute(
+                                                                                                                       context));
   }
 
   private static void assertDetached(Node<?> node) {
