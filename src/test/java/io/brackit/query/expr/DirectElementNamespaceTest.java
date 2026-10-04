@@ -221,6 +221,33 @@ public class DirectElementNamespaceTest extends XQueryBaseTest {
           "attr");
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = { "urn:value", "http://www.w3.org/XML/1998/namespace", "http://www.w3.org/2000/xmlns/" })
+  public void prefixedXmlnsIsAnOrdinaryAttribute(String value) throws Exception {
+    String constructor = "<root xmlns:p='urn:p' p:xmlns='" + value + "'/>";
+    check("let $root := " + constructor + " return (string(namespace-uri($root)), count($root/@*), "
+        + "for $a in $root/@* return "
+        + "(string(namespace-uri($a)), string(prefix-from-QName(node-name($a))), local-name($a), string($a)))",
+          "", "1", "urn:p", "p", "xmlns", value);
+
+    StringWriter xml = new StringWriter();
+    new Query(constructor).serialize(ctx, new PrintWriter(xml));
+    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    factory.setNamespaceAware(true);
+    var root = factory.newDocumentBuilder().parse(new InputSource(new StringReader(xml.toString()))).getDocumentElement();
+    assertEquals(null, root.getNamespaceURI());
+    assertEquals(value, root.getAttributeNS("urn:p", "xmlns"));
+  }
+
+  @Test
+  public void prefixedXmlnsAttributesPreserveDefaultNamespace() {
+    check("let $root := <root xmlns='urn:default' xmlns:p='urn:p' xmlns:q='urn:q' "
+        + "p:xmlns='urn:p-value' q:xmlns='urn:q-value'/> return "
+        + "(string(namespace-uri($root)), namespace-uri-from-QName(resolve-QName('probe', $root)), "
+        + "count($root/@*), for $a in $root/@* return (string(namespace-uri($a)), local-name($a), string($a)))",
+          "urn:default", "urn:default", "2", "urn:p", "xmlns", "urn:p-value", "urn:q", "xmlns", "urn:q-value");
+  }
+
   @Test
   public void storedDefaultNamespaceBindings() {
     new Query("bit:store('names', <root><item xmlns='urn:a'>a</item><item xmlns='urn:b'>b</item>"

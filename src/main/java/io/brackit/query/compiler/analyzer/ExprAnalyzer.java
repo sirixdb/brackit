@@ -1165,7 +1165,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
         break;
       }
       QNm attName = (QNm) att.getChild(0).getValue();
-      if (("xmlns".equals(attName.getPrefix()) || "xmlns".equals(attName.getLocalName()))
+      boolean defaultNamespaceDeclaration = attName.getPrefix().isEmpty() && "xmlns".equals(attName.getLocalName());
+      if (("xmlns".equals(attName.getPrefix()) || defaultNamespaceDeclaration)
           && !namespaceNames.add(attName.toString())) {
         throw new QueryException(ErrorCode.ERR_DUPLICATE_NAMESPACE_DECL,
                                  "Duplicate namespace declaration '%s'",
@@ -1184,7 +1185,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
         nsDecl.addChild(new AST(XQ.Str, prefix));
         nsDecl.addChild(new AST(XQ.AnyURI, uri));
         expr.insertChild(0, nsDecl);
-      } else if ("xmlns".equals(attName.getLocalName())) {
+      } else if (defaultNamespaceDeclaration) {
         String uri = extractURIFromDirNSAttContent(att.getChild(1));
         checkDirNSAttBinding("", uri);
         sctx.getNamespaces().setDefaultElementNamespace(uri);
