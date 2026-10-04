@@ -27,6 +27,9 @@
  */
 package io.brackit.query.compiler.analyzer;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import io.brackit.query.ErrorCode;
 import io.brackit.query.Query;
 import io.brackit.query.QueryException;
@@ -1155,12 +1158,19 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     // pre-check content sequence for direct
     // namespace attributes
     AST cseq = expr.getChild(1);
+    Set<String> namespaceNames = new HashSet<>();
     for (int i = 0; i < cseq.getChildCount(); i++) {
       AST att = cseq.getChild(i);
       if (att.getType() != XQ.DirAttributeConstructor) {
         break;
       }
       QNm attName = (QNm) att.getChild(0).getValue();
+      if (("xmlns".equals(attName.getPrefix()) || "xmlns".equals(attName.getLocalName()))
+          && !namespaceNames.add(attName.toString())) {
+        throw new QueryException(ErrorCode.ERR_DUPLICATE_NAMESPACE_DECL,
+                                 "Duplicate namespace declaration '%s'",
+                                 attName);
+      }
       if ("xmlns".equals(attName.getPrefix())) {
         String prefix = attName.getLocalName();
         String uri = extractURIFromDirNSAttContent(att.getChild(1));
@@ -1176,6 +1186,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
         expr.insertChild(0, nsDecl);
       } else if ("xmlns".equals(attName.getLocalName())) {
         String uri = extractURIFromDirNSAttContent(att.getChild(1));
+        checkDirNSAttBinding("", uri);
         sctx.getNamespaces().setDefaultElementNamespace(uri);
         // delete from context sequence
         // and prepend prefixed namespace declaration
@@ -1264,10 +1275,10 @@ public class ExprAnalyzer extends AbstractAnalyzer {
       throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
                                "Illegal namespace prefix '%s'",
                                Namespaces.XMLNS_PREFIX);
-    } else if (Namespaces.XML_NSURI.equals(uri)) {
+    } else if (Namespaces.XML_NSURI.equals(uri) || Namespaces.XMLNS_NSURI.equals(uri)) {
       throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
                                "Illegal namespace URI '%s'",
-                               Namespaces.XMLNS_NSURI);
+                               uri);
     }
   }
 

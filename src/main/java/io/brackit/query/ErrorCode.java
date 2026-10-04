@@ -292,6 +292,11 @@ public class ErrorCode {
   public static final QNm ERR_ILLEGAL_NAMESPACE_DECL = new QNm(Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "XQST0070");
 
   /**
+   * err:XQST0071
+   */
+  public static final QNm ERR_DUPLICATE_NAMESPACE_DECL = new QNm(Namespaces.ERR_NSURI, Namespaces.ERR_PREFIX, "XQST0071");
+
+  /**
    * err:XQDY0074
    */
   public static final QNm ERR_UNKNOWN_NS_PREFIX_IN_COMP_CONSTR = new QNm(Namespaces.ERR_NSURI,

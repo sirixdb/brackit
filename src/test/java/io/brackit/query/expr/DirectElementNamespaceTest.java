@@ -15,6 +15,8 @@ import io.brackit.query.atomic.Atomic;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.xml.sax.InputSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -285,5 +287,21 @@ public class DirectElementNamespaceTest extends XQueryBaseTest {
                                          () -> new Query("<xml:root xmlns:xml='" + uri + "'/>").execute(ctx));
       assertEquals(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL, error.getCode());
     }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "<root xmlns:p='urn:a' xmlns:p='urn:b'/>", "<root xmlns:p='urn:a' xmlns:p='urn:a'/>",
+      "<root xmlns='urn:a' xmlns='urn:b'/>", "<root xmlns='urn:a' xmlns='urn:a'/>" })
+  public void duplicateNamespaceDeclarations(String constructor) {
+    QueryException error = assertThrows(QueryException.class, () -> new Query(constructor).execute(ctx));
+    assertEquals("XQST0071", error.getCode().getLocalName());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "<root xmlns='http://www.w3.org/XML/1998/namespace'/>",
+      "<p:root xmlns:p='http://www.w3.org/2000/xmlns/'/>", "<root xmlns='http://www.w3.org/2000/xmlns/'/>" })
+  public void forbiddenNamespaceBindings(String constructor) {
+    QueryException error = assertThrows(QueryException.class, () -> new Query(constructor).execute(ctx));
+    assertEquals(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL, error.getCode());
   }
 }
