@@ -104,6 +104,8 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
       e = (ElementD2Node) first(Kind.ELEMENT, name, null);
     }
     e.nsMappings = nsMappings;
+    // Resolve the original name against local declarations before keeping a substitute prefix.
+    e.setName(name);
     return e;
   }
 

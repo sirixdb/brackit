@@ -1148,7 +1148,9 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     this.sctx = new NestedContext(psctx);
     expr.setStaticContext(sctx);
 
-    QNm name = (QNm) expr.getChild(0).getValue();
+    // Namespace declarations are prepended below, shifting the name's child index.
+    AST nameExpr = expr.getChild(0);
+    QNm name = (QNm) nameExpr.getValue();
 
     // pre-check content sequence for direct
     // namespace attributes
@@ -1187,7 +1189,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 
     // expand element name and update AST
     name = expand(name, DefaultNS.ELEMENT_OR_TYPE);
-    expr.getChild(0).setValue(name);
+    nameExpr.setValue(name);
 
     // merge adjacent string literals and
     // strip boundary whitespace if requested
