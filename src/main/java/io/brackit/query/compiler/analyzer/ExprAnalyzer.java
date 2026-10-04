@@ -1166,8 +1166,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
       }
       QNm attName = (QNm) att.getChild(0).getValue();
       boolean defaultNamespaceDeclaration = attName.getPrefix().isEmpty() && "xmlns".equals(attName.getLocalName());
-      if (("xmlns".equals(attName.getPrefix()) || defaultNamespaceDeclaration)
-          && !namespaceNames.add(attName.toString())) {
+      if (("xmlns".equals(attName.getPrefix()) || defaultNamespaceDeclaration) && !namespaceNames.add(attName
+                                                                                                             .toString())) {
         throw new QueryException(ErrorCode.ERR_DUPLICATE_NAMESPACE_DECL,
                                  "Duplicate namespace declaration '%s'",
                                  attName);
@@ -1189,9 +1189,6 @@ public class ExprAnalyzer extends AbstractAnalyzer {
         String uri = extractURIFromDirNSAttContent(att.getChild(1));
         checkDirNSAttBinding("", uri);
         sctx.getNamespaces().setDefaultElementNamespace(uri);
-        // delete from context sequence
-        // and prepend prefixed namespace declaration
-        // in element constructor
         cseq.deleteChild(i--);
         AST nsDecl = new AST(XQ.NamespaceDeclaration);
         nsDecl.addChild(new AST(XQ.AnyURI, uri));
@@ -1277,9 +1274,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
                                "Illegal namespace prefix '%s'",
                                Namespaces.XMLNS_PREFIX);
     } else if (Namespaces.XML_NSURI.equals(uri) || Namespaces.XMLNS_NSURI.equals(uri)) {
-      throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
-                               "Illegal namespace URI '%s'",
-                               uri);
+      throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL, "Illegal namespace URI '%s'", uri);
     }
   }
 

@@ -367,6 +367,26 @@ arguments), and typed FLWOR bindings. For example, `declare variable $x as xs:in
 `treat as` raises `XPDY0050`. Singleton bounds are checked before exposing the first item,
 so `exists((1,2) treat as item())` also raises that error.
 
+### XML element namespaces
+
+Direct XML constructors preserve declared namespace URIs in element names and
+in-scope bindings, including when nodes are stored or serialized. Default and
+prefixed declarations apply to the element itself and its descendants; nested
+bindings stay local to their subtree, and `xmlns=''` clears an inherited default
+namespace. The default namespace does not apply to unprefixed attributes, and
+`p:xmlns` is an ordinary prefixed attribute.
+
+```xquery
+let $root := <root><item xmlns='urn:a'/><item xmlns='urn:b'/>
+  <p:item xmlns:p='urn:a'/><item/></root>
+for $e in $root/descendant-or-self::* return string(namespace-uri($e))
+(: Returns "", "urn:a", "urn:b", "urn:a", "" :)
+```
+
+Repeating a namespace declaration for the same prefix on one start tag, including
+multiple default declarations, raises `XQST0071`. Invalid reserved bindings raise
+`XQST0070`; see the [namespace binding constraints](src/main/java/io/brackit/query/jdm/Scope.java).
+
 ### Arrays
 
 ```xquery
