@@ -228,13 +228,20 @@ public class DirectElementNamespaceTest extends XQueryBaseTest {
     check("let $root := " + constructor + " return (string(namespace-uri($root)), count($root/@*), "
         + "for $a in $root/@* return "
         + "(string(namespace-uri($a)), string(prefix-from-QName(node-name($a))), local-name($a), string($a)))",
-          "", "1", "urn:p", "p", "xmlns", value);
+          "",
+          "1",
+          "urn:p",
+          "p",
+          "xmlns",
+          value);
 
     StringWriter xml = new StringWriter();
     new Query(constructor).serialize(ctx, new PrintWriter(xml));
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     factory.setNamespaceAware(true);
-    var root = factory.newDocumentBuilder().parse(new InputSource(new StringReader(xml.toString()))).getDocumentElement();
+    var root = factory.newDocumentBuilder()
+                      .parse(new InputSource(new StringReader(xml.toString())))
+                      .getDocumentElement();
     assertEquals(null, root.getNamespaceURI());
     assertEquals(value, root.getAttributeNS("urn:p", "xmlns"));
   }
@@ -245,15 +252,37 @@ public class DirectElementNamespaceTest extends XQueryBaseTest {
         + "p:xmlns='urn:p-value' q:xmlns='urn:q-value'/> return "
         + "(string(namespace-uri($root)), namespace-uri-from-QName(resolve-QName('probe', $root)), "
         + "count($root/@*), for $a in $root/@* return (string(namespace-uri($a)), local-name($a), string($a)))",
-          "urn:default", "urn:default", "2", "urn:p", "xmlns", "urn:p-value", "urn:q", "xmlns", "urn:q-value");
+          "urn:default",
+          "urn:default",
+          "2",
+          "urn:p",
+          "xmlns",
+          "urn:p-value",
+          "urn:q",
+          "xmlns",
+          "urn:q-value");
   }
 
   @Test
   public void storedDefaultNamespaceBindings() {
     new Query("bit:store('names', <root><item xmlns='urn:a'>a</item><item xmlns='urn:b'>b</item>"
         + "<p:item xmlns:p='urn:a'>alias</p:item><item>plain</item></root>)").execute(ctx);
-    checkElements("doc('names')/*", "", "", "root", "urn:a", "", "item", "urn:b", "", "item",
-                  "urn:a", "p", "item", "", "", "item");
+    checkElements("doc('names')/*",
+                  "",
+                  "",
+                  "root",
+                  "urn:a",
+                  "",
+                  "item",
+                  "urn:b",
+                  "",
+                  "item",
+                  "urn:a",
+                  "p",
+                  "item",
+                  "",
+                  "",
+                  "item");
     check("for $e in doc('names')/descendant::* return "
         + "string(namespace-uri-from-QName(resolve-QName('probe', $e)))", "", "urn:a", "urn:b", "", "");
   }
@@ -264,17 +293,41 @@ public class DirectElementNamespaceTest extends XQueryBaseTest {
         + "<inner xmlns='urn:inner'><leaf/></inner><reset xmlns=''><plain/></reset><sibling/></root>)").execute(ctx);
     check("for $e in doc('scopes')/descendant::* return "
         + "string(namespace-uri-from-QName(resolve-QName('probe', $e)))",
-          "urn:outer", "urn:outer", "urn:inner", "urn:inner", "", "", "urn:outer");
+          "urn:outer",
+          "urn:outer",
+          "urn:inner",
+          "urn:inner",
+          "",
+          "",
+          "urn:outer");
   }
 
   @Test
   public void storedPrefixedNamespaceBindings() {
     new Query("bit:store('prefixes', <p:root xmlns:p='urn:outer' xmlns:q='urn:unused'><p:inherited/>"
         + "<p:inner xmlns:p='urn:inner'><p:leaf/></p:inner><p:sibling/></p:root>)").execute(ctx);
-    checkElements("doc('prefixes')/*", "urn:outer", "p", "root", "urn:outer", "p", "inherited",
-                  "urn:inner", "p", "inner", "urn:inner", "p", "leaf", "urn:outer", "p", "sibling");
+    checkElements("doc('prefixes')/*",
+                  "urn:outer",
+                  "p",
+                  "root",
+                  "urn:outer",
+                  "p",
+                  "inherited",
+                  "urn:inner",
+                  "p",
+                  "inner",
+                  "urn:inner",
+                  "p",
+                  "leaf",
+                  "urn:outer",
+                  "p",
+                  "sibling");
     check("for $e in doc('prefixes')/descendant::* return namespace-uri-from-QName(resolve-QName('p:probe', $e))",
-          "urn:outer", "urn:outer", "urn:inner", "urn:inner", "urn:outer");
+          "urn:outer",
+          "urn:outer",
+          "urn:inner",
+          "urn:inner",
+          "urn:outer");
     check("namespace-uri-from-QName(resolve-QName('q:probe', doc('prefixes')/*))", "urn:unused");
   }
 
@@ -311,7 +364,7 @@ public class DirectElementNamespaceTest extends XQueryBaseTest {
   public void invalidXmlNamespaceBinding() {
     for (String uri : List.of("urn:wrong", "")) {
       QueryException error = assertThrows(QueryException.class,
-                                         () -> new Query("<xml:root xmlns:xml='" + uri + "'/>").execute(ctx));
+                                          () -> new Query("<xml:root xmlns:xml='" + uri + "'/>").execute(ctx));
       assertEquals(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL, error.getCode());
     }
   }
