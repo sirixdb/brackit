@@ -27,113 +27,46 @@
  */
 package io.brackit.query.update.op;
 
-import java.util.Arrays;
-
-import io.brackit.query.QueryException;
-import io.brackit.query.jdm.DocumentException;
 import io.brackit.query.jdm.Kind;
-import io.brackit.query.jdm.OperationNotSupportedException;
 import io.brackit.query.jdm.node.Node;
+import io.brackit.query.node.AttributeReplacement;
 
 /**
- * Base class for all insert operations.
+ * Pending node replacement, reusing insertion primitives for nonattribute payloads.
  *
  * @author Sebastian Baechle
  */
-public class ReplaceNodeOp implements UpdateOp {
-  private final Node<?> target;
-
-  private Node<?>[] content;
-
-  private int size;
-
+public class ReplaceNodeOp extends InsertBeforeOp {
   public ReplaceNodeOp(Node<?> target) {
-    this.target = target;
-    this.content = new Node[1];
+    super(target);
   }
 
   @Override
-  public void apply() throws QueryException {
+  protected void insertContent(Node<?> target, Node<?>[] content, int size) {
     if (target.getKind() == Kind.ATTRIBUTE) {
-      Node<?> parentElement = target.getParent();
-      parentElement.deleteAttribute(target.getName());
-
-      for (int i = 0; i < size; i++) {
-        parentElement.setAttribute(content[i]);
-      }
+      AttributeReplacement.replace(target, content, size);
     } else {
-      Node<?> ancorNode;
-      boolean insertAfter;
-      if (target.getPreviousSibling() != null) {
-        insertAfter = true;
-        ancorNode = target.getPreviousSibling();
-      } else {
-        insertAfter = false;
-        ancorNode = target.getParent();
-      }
-
       if (target.getKind() == Kind.TEXT || target.isRoot()) {
-        deleteAndThenInsert(ancorNode, insertAfter);
+        Node<?> parent = target.getParent();
+        Node<?> previous = target.getPreviousSibling();
+        Node<?> next = target.getNextSibling();
+        target.delete();
+        if (next != null) {
+          super.insertContent(next, content, size);
+        } else if (previous != null) {
+          new InsertAfterOp(previous).insertContent(previous, content, size);
+        } else {
+          new InsertIntoAsFirstOp(parent).insertContent(parent, content, size);
+        }
       } else {
-        insertAndThenDelete(ancorNode, insertAfter);
+        super.insertContent(target, content, size);
+        target.delete();
       }
     }
-  }
-
-  private void insertAndThenDelete(Node<?> ancorNode, boolean insertAfter) throws OperationNotSupportedException,
-      DocumentException {
-    insert(ancorNode, insertAfter);
-
-    target.delete();
-  }
-
-  private void deleteAndThenInsert(Node<?> ancorNode, boolean insertAfter) throws DocumentException,
-      OperationNotSupportedException {
-    target.delete();
-
-    insert(ancorNode, insertAfter);
-  }
-
-  private void insert(Node<?> ancorNode, boolean insertAfter) throws OperationNotSupportedException, DocumentException {
-    for (int i = 0; i < size; i++) {
-      if (insertAfter)
-        ancorNode.insertAfter(content[i]);
-      else
-        ancorNode.prepend(content[i]);
-    }
-  }
-
-  @Override
-  public Node<?> getTarget() {
-    return target;
   }
 
   @Override
   public OpType getType() {
     return OpType.REPLACE_NODE;
-  }
-
-  public void addContent(Node<?> node) {
-    if (size == content.length) {
-      content = Arrays.copyOf(content, (content.length * 3) / 2 + 1);
-    }
-
-    content[size++] = node;
-  }
-
-  @Override
-  public String toString() {
-    StringBuilder out = new StringBuilder();
-    out.append(getType());
-    out.append(" ");
-    out.append(target);
-    out.append(" with {");
-    for (int i = 0; i < size; i++) {
-      if (i > 0)
-        out.append(", ");
-      out.append(content[i]);
-    }
-    out.append("}");
-    return out.toString();
   }
 }

@@ -52,7 +52,7 @@ public class ReplaceElementContentOp implements UpdateOp {
       child.delete();
     }
 
-    if (value != null) {
+    if (value != null && !value.stringValue().isEmpty()) {
       target.append(Kind.TEXT, null, value);
     }
   }

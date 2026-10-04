@@ -82,14 +82,14 @@ import io.brackit.query.jdm.Type;
  * <em>attribute</em> throw an {@link UnsupportedOperationException}.
  * </p>
  * <p>
- * <b>Insert operations</b> always insert deep copies of the provided nodes. This is a necessary
- * constraint because the parent relationship of existing nodes must only be set during node
- * creation and can be only unset with delete.
+ * <b>Insert operations</b> always insert deep copies of the provided nodes, so insertion does
+ * not reparent existing nodes. If inserted text is merged with adjacent text,
+ * insertion methods return the surviving text node instead of a newly created node.
  * </p>
  * <p>
- * <b>Delete operations</b> break up the relationship between a a node and its parent. Logically,
+ * <b>Delete operations</b> break up the relationship between a node and its parent. Logically,
  * this node and all its descendant nodes then become deleted, i.e., depending on the underlying
- * implementation, a delete operation might propagate a physical deletion of all ancestors. The
+ * implementation, a delete operation might propagate a physical deletion of all descendants. The
  * runtime behavior is unspecified when attempting to access logically deleted nodes.
  * </p>
  * <p>
@@ -512,7 +512,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
   /**
    * Appends a new node.
    *
-   * @return the newly created node
+   * @return the node representing the inserted content
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
@@ -521,7 +521,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
   /**
    * Appends a deep copy of the given node.
    *
-   * @return the newly created node
+   * @return the node representing the inserted content
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
@@ -530,7 +530,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
   /**
    * Appends a copy of the parsed fragment.
    *
-   * @return the newly created node
+   * @return the node representing the inserted content
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
@@ -539,7 +539,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
   /**
    * Prepends a new node.
    *
-   * @return the newly created node
+   * @return the node representing the inserted content
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
@@ -548,7 +548,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
   /**
    * Prepends a deep copy of the given node.
    *
-   * @return the newly created node
+   * @return the node representing the inserted content
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
@@ -557,7 +557,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
   /**
    * Prepends a copy of the parsed fragment.
    *
-   * @return the newly created node
+   * @return the node representing the inserted content
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
@@ -566,7 +566,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
   /**
    * Inserts a new node before this node.
    *
-   * @return the newly created node
+   * @return the node representing the inserted content
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
@@ -575,7 +575,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
   /**
    * Inserts a deep copy of the given node before this node.
    *
-   * @return the newly created node
+   * @return the node representing the inserted content
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
@@ -584,7 +584,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
   /**
    * Inserts a copy of the parsed fragment before this node.
    *
-   * @return the newly created node
+   * @return the node representing the inserted content
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
@@ -593,7 +593,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
   /**
    * Inserts a new node after this node.
    *
-   * @return the newly created node
+   * @return the node representing the inserted content
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
@@ -602,7 +602,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
   /**
    * Inserts a deep copy of the given node after this node.
    *
-   * @return the newly created node
+   * @return the node representing the inserted content
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
@@ -611,7 +611,7 @@ public interface Node<E extends Node<E>> extends StructuredItem {
   /**
    * Inserts a copy of the parsed fragment after this node.
    *
-   * @return the newly created node
+   * @return the node representing the inserted content
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
@@ -677,7 +677,8 @@ public interface Node<E extends Node<E>> extends StructuredItem {
   /**
    * Replaces this node with a copy of the parsed fragment.
    *
-   * @return the newly created node
+   * @return {@code null} when an empty attribute replacement deletes this node; otherwise,
+   *         the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
@@ -706,6 +707,19 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    * @throws DocumentException if the operation failed
    */
   void delete() throws DocumentException;
+
+  /**
+   * Deletes the next sibling, if present, with the same semantics as {@link #delete()}.
+   * Implementations may use this node as the known predecessor to avoid a sibling search.
+   *
+   * @throws DocumentException if the operation failed
+   */
+  default void deleteNextSibling() throws DocumentException {
+    E next = getNextSibling();
+    if (next != null) {
+      next.delete();
+    }
+  }
 
   /**
    * Parse the subtree rooted at this node.

@@ -30,7 +30,6 @@ package io.brackit.query.node.d2linked;
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.atomic.Str;
-import io.brackit.query.node.parser.NavigationalSubtreeParser;
 import io.brackit.query.node.parser.NodeSubtreeParser;
 import io.brackit.query.jdm.DocumentException;
 import io.brackit.query.jdm.Stream;
@@ -75,7 +74,13 @@ public class D2NodeFactory implements NodeFactory<D2Node> {
 
   @Override
   public D2Node copy(Node<?> source) throws DocumentException {
-    return build(new NavigationalSubtreeParser(source));
+    // Node parsing carries descendant namespace events; the detached root also needs
+    // bindings inherited from ancestors that are outside the copied subtree.
+    D2Node copy = build(source::parse);
+    if (copy instanceof ElementD2Node element) {
+      element.preserveNamespaces(source);
+    }
+    return copy;
   }
 
   public D2Node build(NodeSubtreeParser parser) throws DocumentException {

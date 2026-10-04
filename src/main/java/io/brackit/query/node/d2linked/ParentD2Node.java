@@ -31,6 +31,7 @@ import io.brackit.query.atomic.Atomic;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.atomic.Una;
 import io.brackit.query.node.parser.NodeSubtreeParser;
+import io.brackit.query.update.UpdateList;
 import io.brackit.query.node.stream.EmptyStream;
 import io.brackit.query.jdm.DocumentException;
 import io.brackit.query.jdm.Kind;
@@ -219,18 +220,23 @@ abstract class ParentD2Node extends D2Node {
   }
 
   void deleteChild(D2Node node) throws DocumentException {
+    deleteChild(node, previousSiblingOf(node));
+  }
+
+  void deleteChild(D2Node node, D2Node previous) throws DocumentException {
     if (getKind() == Kind.DOCUMENT && node.getKind() == Kind.ELEMENT) {
       throw new DocumentException("The root element must not be deleted");
     }
 
-    D2Node prev = previousSiblingOf(node);
-    if (prev == null)
+    if (previous == null)
       firstChild = node.sibling;
     else
-      prev.sibling = node.sibling;
+      previous.sibling = node.sibling;
+    node.detach();
   }
 
-  D2Node insertChild(D2Node sibling, Kind kind, QNm name, Atomic value, boolean right) throws DocumentException {
+  D2Node insertChild(D2Node sibling, Kind kind, QNm name, Atomic value, boolean right, boolean mergeText)
+      throws DocumentException {
     if (getKind() == Kind.DOCUMENT && kind == Kind.ELEMENT) {
       for (D2Node c = firstChild; c != null; c = c.sibling) {
         if (c.getKind() == Kind.ELEMENT) {
@@ -274,14 +280,19 @@ abstract class ParentD2Node extends D2Node {
       }
     }
 
-    if (kind == Kind.TEXT) {
+    if (mergeText && kind == Kind.TEXT) {
       // merge adjacent text nodes
       if (ps != null && ps.getKind() == Kind.TEXT) {
-        ps.setValue(new Una(ps.getValue().stringValue() + value.stringValue()));
+        String merged = ps.getValue().stringValue() + value.stringValue();
+        if (ns != null && ns.getKind() == Kind.TEXT) {
+          merged += ns.getValue().stringValue();
+          deleteChild(ns, ps);
+        }
+        ps.setValue(new Una(merged));
         return ps;
       }
       if (ns != null && ns.getKind() == Kind.TEXT) {
-        ns.setValue(new Una(ns.getValue().stringValue() + value.stringValue()));
+        ns.setValue(new Una(value.stringValue() + ns.getValue().stringValue()));
         return ns;
       }
     }
@@ -303,15 +314,16 @@ abstract class ParentD2Node extends D2Node {
       throw new DocumentException("Cannot replace root element with of kind: %s", kind);
     }
 
-    D2Node previous = firstChild;
-    while (previous.sibling != null && previous.sibling != sibling)
-      previous = previous.sibling;
-
-    assert sibling != null;
+    D2Node previous = previousSiblingOf(sibling);
     D2Node child = buildChild(sibling.division, kind, name, value);
 
     child.sibling = sibling.sibling;
-    previous.sibling = child;
+    if (previous == null) {
+      firstChild = child;
+    } else {
+      previous.sibling = child;
+    }
+    sibling.detach();
 
     return child;
   }
@@ -344,7 +356,7 @@ abstract class ParentD2Node extends D2Node {
 
   @Override
   public D2Node append(Kind kind, QNm name, Atomic value) throws DocumentException {
-    return insertChild(null, kind, name, value, true);
+    return insertChild(null, kind, name, value, true, !UpdateList.isTextNormalizationDeferred());
   }
 
   @Override
@@ -408,7 +420,7 @@ abstract class ParentD2Node extends D2Node {
 
   @Override
   public D2Node prepend(Kind kind, QNm name, Atomic value) throws DocumentException {
-    return insertChild(null, kind, name, value, true);
+    return insertChild(null, kind, name, value, false, !UpdateList.isTextNormalizationDeferred());
   }
 
   @Override
@@ -426,7 +438,7 @@ abstract class ParentD2Node extends D2Node {
   }
 
   D2Node insertBefore(D2Node node, Kind kind, QNm name, Atomic value) throws DocumentException {
-    return insertChild(node, kind, name, value, true);
+    return insertChild(node, kind, name, value, false, !UpdateList.isTextNormalizationDeferred());
   }
 
   D2Node insertBefore(D2Node node, Node<?> child) throws DocumentException {
@@ -442,7 +454,7 @@ abstract class ParentD2Node extends D2Node {
   }
 
   D2Node insertAfter(D2Node node, Kind kind, QNm name, Atomic value) throws DocumentException {
-    return insertChild(node, kind, name, value, false);
+    return insertChild(node, kind, name, value, true, !UpdateList.isTextNormalizationDeferred());
   }
 
   D2Node insertAfter(D2Node node, Node<?> child) throws DocumentException {
@@ -463,14 +475,10 @@ abstract class ParentD2Node extends D2Node {
   }
 
   D2Node replace(D2Node node, Node<?> child) throws DocumentException {
-    if (parent == null) {
-      throw new DocumentException("Cannot replace node without parent");
-    }
-    final D2Node me = this;
     D2NodeBuilder builder = new D2NodeBuilder() {
       @Override
       D2Node first(Kind kind, QNm name, Atomic value) throws DocumentException {
-        return replace(me, kind, name, value);
+        return replace(node, kind, name, value);
       }
     };
     child.parse(builder);
@@ -478,14 +486,10 @@ abstract class ParentD2Node extends D2Node {
   }
 
   D2Node replace(D2Node node, NodeSubtreeParser parser) throws DocumentException {
-    if (parent == null) {
-      throw new DocumentException("Cannot replace node without parent");
-    }
-    final D2Node me = this;
     D2NodeBuilder builder = new D2NodeBuilder() {
       @Override
       D2Node first(Kind kind, QNm name, Atomic value) throws DocumentException {
-        return replace(me, kind, name, value);
+        return replace(node, kind, name, value);
       }
     };
     parser.parse(builder);

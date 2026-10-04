@@ -27,9 +27,13 @@
  */
 package io.brackit.query.node.d2linked;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.atomic.Una;
+import io.brackit.query.node.AttributeReplacement;
 import io.brackit.query.node.parser.NodeSubtreeParser;
 import io.brackit.query.jdm.DocumentException;
 import io.brackit.query.jdm.Kind;
@@ -140,44 +144,34 @@ public final class AttributeD2Node extends D2Node {
       throw new DocumentException("Cannot replace attribute with node of type: %s.", kind);
     }
 
-    if (parent == null) {
-      throw new DocumentException("Cannot replace node without parent");
-    }
-
-    return parent.setAttribute(name, value);
+    return AttributeReplacement.replace(this, new D2Node[] { new AttributeD2Node(name, value) }, 1);
   }
 
   @Override
   public D2Node replaceWith(Node<?> node) throws DocumentException {
-    Kind kind = node.getKind();
-    if (kind != Kind.ATTRIBUTE) {
-      throw new DocumentException("Cannot replace attribute with node of type: %s.", kind);
-    }
-
-    if (parent == null) {
-      throw new DocumentException("Cannot replace node without parent");
-    }
-
-    return parent.setAttribute(name, value);
+    return replaceWith(node.getKind(), node.getName(), node.getValue());
   }
 
   @Override
   public D2Node replaceWith(NodeSubtreeParser parser) throws DocumentException {
+    List<D2Node> content = new ArrayList<>();
     D2NodeBuilder builder = new D2NodeBuilder() {
       @Override
-      D2Node first(Kind kind, QNm name, Atomic value) throws DocumentException {
-        if (kind != Kind.ATTRIBUTE) {
-          throw new DocumentException("Cannot replace attribute with node of type: %s.", kind);
-        }
-        if (parent == null) {
-          throw new DocumentException("Cannot replace node without parent");
-        }
+      protected D2Node buildDocument() throws DocumentException {
+        D2Node node = super.buildDocument();
+        content.add(node);
+        return node;
+      }
 
-        return parent.setAttribute(name, value);
+      @Override
+      D2Node first(Kind kind, QNm name, Atomic value) throws DocumentException {
+        D2Node node = super.first(kind, name, value);
+        content.add(node);
+        return node;
       }
     };
     parser.parse(builder);
-    return builder.root();
+    return AttributeReplacement.replace(this, content.toArray(D2Node[]::new), content.size());
   }
 
   @Override

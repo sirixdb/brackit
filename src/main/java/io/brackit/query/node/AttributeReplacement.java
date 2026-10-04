@@ -25,73 +25,59 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package io.brackit.query.update.op;
+package io.brackit.query.node;
 
-import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
-import io.brackit.query.QueryException;
+import io.brackit.query.atomic.QNm;
+import io.brackit.query.jdm.DocumentException;
+import io.brackit.query.jdm.Kind;
 import io.brackit.query.jdm.node.Node;
-import io.brackit.query.jdm.node.NodeFactory;
 
 /**
- * Base class for insert operations, also reused by node replacement.
- *
- * @author Sebastian Baechle
+ * Shared attribute-replacement boundary for pending updates and ordinary node operations.
+ * Replacement expanded names are checked against surviving attributes and the entire payload
+ * before mutation, so kind or name conflicts leave the original attributes and links intact.
  */
-public abstract class AbstractInsertOp implements UpdateOp {
-  private final Node<?> target;
-
-  private Node<?>[] content;
-
-  private int size;
-
-  public AbstractInsertOp(Node<?> target) {
-    this.target = target;
-    this.content = new Node[1];
+public final class AttributeReplacement {
+  private AttributeReplacement() {
   }
 
-  @Override
-  public void apply() {
-    insertContent(target, content, size);
-  }
+  public static <E extends Node<E>> E replace(Node<E> target, Node<?>[] content, int size) throws DocumentException {
+    if (target.getKind() != Kind.ATTRIBUTE) {
+      throw new DocumentException("Cannot replace node of type '%s' as attribute", target.getKind());
+    }
+    E parent = target.getParent();
+    if (parent == null) {
+      throw new DocumentException("Cannot replace node without parent");
+    }
 
-  protected void insertContent(Node<?> target, Node<?>[] content, int size) {
+    Set<QNm> names = new HashSet<>();
+    try (var attributes = parent.getAttributes()) {
+      Node<?> attribute;
+      while ((attribute = attributes.next()) != null) {
+        if (!attribute.isSelfOf(target))
+          names.add(attribute.getName());
+      }
+    }
     for (int i = 0; i < size; i++) {
-      doInsert(target, content[i]);
-    }
-  }
-
-  @Override
-  public Node<?> getTarget() {
-    return target;
-  }
-
-  /**
-   * Captures the source before pending updates can change it, including when payload entries
-   * alias one another or the target subtree.
-   */
-  public void addContent(Node<?> node, NodeFactory<?> factory) {
-    if (size == content.length) {
-      content = Arrays.copyOf(content, content.length * 3 / 2 + 1);
+      if (content[i].getKind() != Kind.ATTRIBUTE) {
+        throw new DocumentException("Cannot replace attribute with node of type: %s.", content[i].getKind());
+      }
+      QNm name = content[i].getName();
+      if (!names.add(name)) {
+        throw new DocumentException("Attribute '%s' already exists.", name);
+      }
     }
 
-    content[size] = factory.copy(node);
-    size++;
-  }
-
-  protected abstract void doInsert(Node<?> target, Node<?> content) throws QueryException;
-
-  public String toString() {
-    StringBuilder out = new StringBuilder();
-    out.append(getType());
-    out.append(" {");
+    target.delete();
+    E first = null;
     for (int i = 0; i < size; i++) {
-      if (i > 0)
-        out.append(", ");
-      out.append(content[i]);
+      E inserted = parent.setAttribute(content[i]);
+      if (first == null)
+        first = inserted;
     }
-    out.append("} on ");
-    out.append(target);
-    return out.toString();
+    return first;
   }
 }

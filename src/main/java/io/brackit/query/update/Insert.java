@@ -152,12 +152,12 @@ public final class Insert extends ConstructedNodeBuilder implements Expr {
 
           insertAttsOp = new InsertAttributesOp(node);
         }
-        insertAttsOp.addContent(insertNode);
+        insertAttsOp.addContent(insertNode, ctx.getNodeFactory());
       } else {
         if (opOp == null) {
           opOp = createOpOp(node);
         }
-        opOp.addContent(insertNode);
+        opOp.addContent(insertNode, ctx.getNodeFactory());
       }
     }
 
@@ -227,12 +227,12 @@ public final class Insert extends ConstructedNodeBuilder implements Expr {
 
           insertAttsOp = new InsertAttributesOp(parent);
         }
-        insertAttsOp.addContent(insertNode);
+        insertAttsOp.addContent(insertNode, ctx.getNodeFactory());
       } else {
         if (opOp == null) {
           opOp = createOpOp(node);
         }
-        opOp.addContent(insertNode);
+        opOp.addContent(insertNode, ctx.getNodeFactory());
       }
     }
 

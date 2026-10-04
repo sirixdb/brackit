@@ -31,20 +31,32 @@ import io.brackit.query.update.op.OpType;
 import io.brackit.query.update.op.UpdateOp;
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryException;
+import io.brackit.query.atomic.Una;
+import io.brackit.query.jdm.Kind;
+import io.brackit.query.jdm.node.Node;
 import io.brackit.query.util.log.Logger;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
+ * Applies pending updates, deferring adjacent-text merging until all operations complete so
+ * that normalization cannot consume a later operation's target. Ordinary D2 insertions merge
+ * eagerly; deferral is scoped to each pending operation. Completion normalizes recorded
+ * mutation boundaries rather than scanning every child of an affected parent.
+ *
  * @author Sebastian Baechle
  * @author Johannes Lichtenberger
  */
 public final class UpdateList {
+  private static final ScopedValue<Boolean> DEFER_TEXT_NORMALIZATION = ScopedValue.newInstance();
+
   private static final Logger log = Logger.getLogger(UpdateList.class);
 
   private static final EnumSet<OpType> checkOps = EnumSet.of(OpType.RENAME,
@@ -68,6 +80,10 @@ public final class UpdateList {
 
   public void append(UpdateOp op) {
     ops.add(op);
+  }
+
+  public static boolean isTextNormalizationDeferred() {
+    return DEFER_TEXT_NORMALIZATION.isBound();
   }
 
   public void apply() throws QueryException {
@@ -105,6 +121,8 @@ public final class UpdateList {
       }
     }
 
+    final Map<Node<?>, Node<?>> textBoundaries = new HashMap<>();
+
     // Apply all updates, skipping property updates to deleted targets
     for (final UpdateOp op : ops) {
       // Skip property updates to nodes that will be deleted (same target identity)
@@ -118,7 +136,91 @@ public final class UpdateList {
       if (log.isDebugEnabled()) {
         log.debug(String.format("Applying pending update %s", op));
       }
-      op.apply();
+      Node<?> parent = null;
+      Node<?> left = null;
+      Node<?> right = null;
+      if (op.getTarget() instanceof Node<?> target && target.getKind() != Kind.ATTRIBUTE) {
+        switch (op.getType()) {
+          case INSERT_INTO, INSERT_INTO_AS_LAST -> {
+            parent = target;
+            left = target.getLastChild();
+          }
+          case INSERT_INTO_AS_FIRST -> {
+            parent = target;
+            right = target.getFirstChild();
+          }
+          case INSERT_BEFORE -> {
+            parent = target.getParent();
+            left = target.getPreviousSibling();
+            right = target;
+          }
+          case INSERT_AFTER -> {
+            parent = target.getParent();
+            left = target;
+            right = target.getNextSibling();
+          }
+          case DELETE, REPLACE_NODE -> {
+            parent = target.getParent();
+            left = target.getPreviousSibling();
+            right = target.getNextSibling();
+          }
+          case REPLACE_ELEMENT_CONTENT -> parent = target;
+          case REPLACE_VALUE -> {
+            if (target.getKind() == Kind.TEXT)
+              textBoundaries.putIfAbsent(target, null);
+          }
+          default -> {
+          }
+        }
+      }
+      ScopedValue.where(DEFER_TEXT_NORMALIZATION, true).run(op::apply);
+      if (parent != null) {
+        collectText(textBoundaries, left != null ? left : parent.getFirstChild(), right);
+      }
+    }
+
+    for (var boundary : textBoundaries.entrySet()) {
+      normalizeText(boundary.getKey(), boundary.getValue());
+    }
+  }
+
+  private void collectText(Map<Node<?>, Node<?>> boundaries, Node<?> first, Node<?> last) {
+    Node<?> previous = null;
+    for (Node<?> node = first; node != null; node = node.getNextSibling()) {
+      if (node.getKind() == Kind.TEXT) {
+        if (previous == null) {
+          boundaries.putIfAbsent(node, null);
+        } else {
+          boundaries.put(node, previous);
+        }
+      }
+      if (node.isSelfOf(last))
+        break;
+      previous = node;
+    }
+  }
+
+  private void normalizeText(Node<?> text, Node<?> previous) {
+    if (text.getParent() == null)
+      return;
+    while (text.getValue().stringValue().isEmpty()) {
+      if (previous == null || !text.isSelfOf(previous.getNextSibling())) {
+        previous = text.getPreviousSibling();
+      }
+      Node<?> next = text.getNextSibling();
+      if (previous == null) {
+        text.delete();
+      } else {
+        previous.deleteNextSibling();
+      }
+      if (next == null || next.getKind() != Kind.TEXT)
+        return;
+      text = next;
+    }
+    Node<?> next;
+    while ((next = text.getNextSibling()) != null && next.getKind() == Kind.TEXT) {
+      text.setValue(new Una(text.getValue().stringValue() + next.getValue().stringValue()));
+      text.deleteNextSibling();
     }
   }
 

@@ -28,6 +28,7 @@
 package io.brackit.query.update.op;
 
 import io.brackit.query.QueryException;
+import io.brackit.query.jdm.Kind;
 import io.brackit.query.jdm.node.Node;
 
 /**
@@ -36,6 +37,23 @@ import io.brackit.query.jdm.node.Node;
 public class InsertAfterOp extends AbstractInsertOp {
   public InsertAfterOp(Node<?> target) {
     super(target);
+  }
+
+  @Override
+  protected void insertContent(Node<?> target, Node<?>[] content, int size) {
+    if (target.getKind() == Kind.TEXT) {
+      // Text insertion may merge into the anchor; advance past each inserted node
+      // so later content remains after it even when the anchor survives the merge.
+      Node<?> anchor = target;
+      for (int i = 0; i < size; i++) {
+        anchor = anchor.insertAfter(content[i]);
+      }
+    } else {
+      // Each insertion occupies the same position immediately after the target.
+      for (int i = size - 1; i >= 0; i--) {
+        doInsert(target, content[i]);
+      }
+    }
   }
 
   @Override

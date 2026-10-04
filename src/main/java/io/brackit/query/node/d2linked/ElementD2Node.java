@@ -38,6 +38,8 @@ import io.brackit.query.jdm.Stream;
 import io.brackit.query.jdm.node.Node;
 
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -170,6 +172,7 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
         } else {
           firstAttribute = attribute.sibling;
         }
+        attribute.detach();
         return true;
       }
       prev = attribute;
@@ -210,8 +213,33 @@ public final class ElementD2Node extends ParentD2Node implements Scope {
 
   @Override
   public void setValue(Atomic value) throws DocumentException {
-    firstChild = null;
-    append(Kind.TEXT, null, value);
+    while (firstChild != null) {
+      firstChild.delete();
+    }
+    if (!value.stringValue().isEmpty()) {
+      append(Kind.TEXT, null, value);
+    }
+  }
+
+  void preserveNamespaces(Node<?> source) {
+    Set<String> prefixes = new HashSet<>();
+    String defaultNamespace = source.getScope().defaultNS();
+    for (Node<?> current = source; current != null; current = current.getParent()) {
+      Scope scope = current.getScope();
+      if (scope != null) {
+        try (Stream<String> local = scope.localPrefixes()) {
+          String prefix;
+          while ((prefix = local.next()) != null) {
+            if (prefixes.add(prefix)) {
+              addPrefix(prefix, scope.resolvePrefix(prefix));
+            }
+          }
+        }
+      }
+    }
+    if (!prefixes.contains("")) {
+      addPrefix("", defaultNamespace);
+    }
   }
 
   @Override

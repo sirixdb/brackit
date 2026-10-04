@@ -47,6 +47,12 @@ import io.brackit.query.jdm.node.Node;
 /**
  * Abstract base class for memory nodes.
  *
+ * <p>
+ * Removal clears the removed node's former parent and sibling links while preserving its
+ * content, descendants, and namespace scope. Retained references remain usable as detached
+ * fragments; deleting a detached node does not affect its former tree.
+ * </p>
+ *
  * @author Sebastian Baechle
  */
 public abstract class D2Node extends AbstractNode<D2Node> {
@@ -72,7 +78,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
    */
   public static final int NODE_CLASS_ID = 1;
 
-  protected final ParentD2Node parent;
+  protected ParentD2Node parent;
 
   protected final int[] division;
 
@@ -83,7 +89,9 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   protected D2Node(ParentD2Node parent, int[] division) {
     this.parent = parent;
     this.division = division;
-    this.localFragmentID = parent == null ? localFragmentID() : parent.localFragmentID;
+    if (parent == null) {
+      this.localFragmentID = localFragmentID();
+    }
   }
 
   private D2Node getRoot() {
@@ -116,13 +124,24 @@ public abstract class D2Node extends AbstractNode<D2Node> {
     return localFragmentID;
   }
 
+  void detach() {
+    if (this instanceof ElementD2Node element) {
+      element.preserveNamespaces(this);
+    }
+    parent = null;
+    sibling = null;
+    localFragmentID = localFragmentID();
+  }
+
   @Override
   protected final int cmpInternal(final D2Node node) {
     if (node == this) {
       return 0;
     }
-    if (localFragmentID != node.localFragmentID) {
-      return localFragmentID < node.localFragmentID ? -1 : 1;
+    int fragment = getRoot().localFragmentID;
+    int otherFragment = node.getRoot().localFragmentID;
+    if (fragment != otherFragment) {
+      return fragment < otherFragment ? -1 : 1;
     }
     D2Node c = null;
     D2Node cp = this;
@@ -463,6 +482,14 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
+  public void deleteNextSibling() throws DocumentException {
+    D2Node next = getNextSibling();
+    if (next != null) {
+      parent.deleteChild(next, this);
+    }
+  }
+
+  @Override
   public void parse(NodeSubtreeHandler handler) throws DocumentException {
     new D2NodeParser(this).parse(handler);
   }
@@ -578,7 +605,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
     if (parent == null) {
       throw new DocumentException("%s has no parent", this);
     }
-    return parent.insertAfter(kind, name, value);
+    return parent.insertAfter(this, kind, name, value);
   }
 
   @Override
@@ -602,7 +629,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
     if (parent == null) {
       throw new DocumentException("%s has no parent", this);
     }
-    return parent.insertBefore(kind, name, value);
+    return parent.insertBefore(this, kind, name, value);
   }
 
   @Override
