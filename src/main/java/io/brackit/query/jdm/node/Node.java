@@ -677,7 +677,8 @@ public interface Node<E extends Node<E>> extends StructuredItem {
   /**
    * Replaces this node with a copy of the parsed fragment.
    *
-   * @return the newly created node
+   * @return {@code null} when an empty attribute replacement deletes this node; otherwise,
+   *         the newly created node
    * @throws OperationNotSupportedException if this operation is not supported
    * @throws DocumentException              if the operation failed
    */
