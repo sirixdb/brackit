@@ -28,6 +28,7 @@
 package io.brackit.query.update.op;
 
 import io.brackit.query.QueryException;
+import io.brackit.query.jdm.Kind;
 import io.brackit.query.jdm.node.Node;
 
 /**
@@ -36,6 +37,20 @@ import io.brackit.query.jdm.node.Node;
 public class InsertBeforeOp extends AbstractInsertOp {
   public InsertBeforeOp(Node<?> target) {
     super(target);
+  }
+
+  @Override
+  protected void insertContent(Node<?> target, Node<?>[] content, int size) {
+    if (target.getKind() == Kind.TEXT) {
+      // A merge can make the inserted text and the original target the same node.
+      // Build from the right and move the anchor to retain the sequence boundary.
+      Node<?> anchor = target;
+      for (int i = size - 1; i >= 0; i--) {
+        anchor = anchor.insertBefore(content[i]);
+      }
+    } else {
+      super.insertContent(target, content, size);
+    }
   }
 
   @Override

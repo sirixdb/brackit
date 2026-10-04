@@ -39,6 +39,14 @@ public class InsertIntoAsFirstOp extends AbstractInsertOp {
   }
 
   @Override
+  protected void insertContent(Node<?> target, Node<?>[] content, int size) {
+    // Each prepend occupies the same first-child position.
+    for (int i = size - 1; i >= 0; i--) {
+      doInsert(target, content[i]);
+    }
+  }
+
+  @Override
   protected void doInsert(Node<?> target, Node<?> content) throws QueryException {
     target.prepend(content);
   }

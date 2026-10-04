@@ -51,6 +51,10 @@ public abstract class AbstractInsertOp implements UpdateOp {
 
   @Override
   public void apply() {
+    insertContent(target, content, size);
+  }
+
+  protected void insertContent(Node<?> target, Node<?>[] content, int size) {
     for (int i = 0; i < size; i++) {
       doInsert(target, content[i]);
     }

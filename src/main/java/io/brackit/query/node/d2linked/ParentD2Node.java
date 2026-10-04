@@ -281,7 +281,7 @@ abstract class ParentD2Node extends D2Node {
         return ps;
       }
       if (ns != null && ns.getKind() == Kind.TEXT) {
-        ns.setValue(new Una(ns.getValue().stringValue() + value.stringValue()));
+        ns.setValue(new Una(value.stringValue() + ns.getValue().stringValue()));
         return ns;
       }
     }
