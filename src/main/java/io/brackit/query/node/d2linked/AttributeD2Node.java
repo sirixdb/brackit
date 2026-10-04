@@ -27,9 +27,13 @@
  */
 package io.brackit.query.node.d2linked;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.atomic.QNm;
 import io.brackit.query.atomic.Una;
+import io.brackit.query.node.AttributeReplacement;
 import io.brackit.query.node.parser.NodeSubtreeParser;
 import io.brackit.query.jdm.DocumentException;
 import io.brackit.query.jdm.Kind;
@@ -140,13 +144,7 @@ public final class AttributeD2Node extends D2Node {
       throw new DocumentException("Cannot replace attribute with node of type: %s.", kind);
     }
 
-    if (parent == null) {
-      throw new DocumentException("Cannot replace node without parent");
-    }
-
-    ParentD2Node element = parent;
-    delete();
-    return element.setAttribute(name, value);
+    return AttributeReplacement.replace(this, new D2Node[] { new AttributeD2Node(name, value) }, 1);
   }
 
   @Override
@@ -156,14 +154,24 @@ public final class AttributeD2Node extends D2Node {
 
   @Override
   public D2Node replaceWith(NodeSubtreeParser parser) throws DocumentException {
+    List<D2Node> content = new ArrayList<>();
     D2NodeBuilder builder = new D2NodeBuilder() {
       @Override
+      protected D2Node buildDocument() throws DocumentException {
+        D2Node node = super.buildDocument();
+        content.add(node);
+        return node;
+      }
+
+      @Override
       D2Node first(Kind kind, QNm name, Atomic value) throws DocumentException {
-        return AttributeD2Node.this.replaceWith(kind, name, value);
+        D2Node node = super.first(kind, name, value);
+        content.add(node);
+        return node;
       }
     };
     parser.parse(builder);
-    return builder.root();
+    return AttributeReplacement.replace(this, content.toArray(D2Node[]::new), content.size());
   }
 
   @Override

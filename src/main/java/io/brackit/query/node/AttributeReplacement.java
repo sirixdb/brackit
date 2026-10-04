@@ -25,48 +25,52 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package io.brackit.query.update.op;
+package io.brackit.query.node;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import io.brackit.query.atomic.QNm;
+import io.brackit.query.jdm.DocumentException;
 import io.brackit.query.jdm.Kind;
 import io.brackit.query.jdm.node.Node;
-import io.brackit.query.node.AttributeReplacement;
 
-/**
- * Base class for all insert operations.
- *
- * @author Sebastian Baechle
- */
-public class ReplaceNodeOp extends InsertBeforeOp {
-  public ReplaceNodeOp(Node<?> target) {
-    super(target);
+public final class AttributeReplacement {
+  private AttributeReplacement() {
   }
 
-  @Override
-  protected void insertContent(Node<?> target, Node<?>[] content, int size) {
-    if (target.getKind() == Kind.ATTRIBUTE) {
-      AttributeReplacement.replace(target, content, size);
-    } else {
-      if (target.getKind() == Kind.TEXT || target.isRoot()) {
-        Node<?> parent = target.getParent();
-        Node<?> previous = target.getPreviousSibling();
-        Node<?> next = target.getNextSibling();
-        target.delete();
-        if (next != null) {
-          super.insertContent(next, content, size);
-        } else if (previous != null) {
-          new InsertAfterOp(previous).insertContent(previous, content, size);
-        } else {
-          new InsertIntoAsFirstOp(parent).insertContent(parent, content, size);
-        }
-      } else {
-        super.insertContent(target, content, size);
-        target.delete();
+  public static <E extends Node<E>> E replace(Node<E> target, Node<?>[] content, int size) throws DocumentException {
+    if (target.getKind() != Kind.ATTRIBUTE) {
+      throw new DocumentException("Cannot replace node of type '%s' as attribute", target.getKind());
+    }
+    E parent = target.getParent();
+    if (parent == null) {
+      throw new DocumentException("Cannot replace node without parent");
+    }
+
+    Set<QNm> names = new HashSet<>();
+    try (var attributes = parent.getAttributes()) {
+      Node<?> attribute;
+      while ((attribute = attributes.next()) != null) {
+        if (!attribute.isSelfOf(target)) names.add(attribute.getName());
       }
     }
-  }
+    for (int i = 0; i < size; i++) {
+      if (content[i].getKind() != Kind.ATTRIBUTE) {
+        throw new DocumentException("Cannot replace attribute with node of type: %s.", content[i].getKind());
+      }
+      QNm name = content[i].getName();
+      if (!names.add(name)) {
+        throw new DocumentException("Attribute '%s' already exists.", name);
+      }
+    }
 
-  @Override
-  public OpType getType() {
-    return OpType.REPLACE_NODE;
+    target.delete();
+    E first = null;
+    for (int i = 0; i < size; i++) {
+      E inserted = parent.setAttribute(content[i]);
+      if (first == null) first = inserted;
+    }
+    return first;
   }
 }
