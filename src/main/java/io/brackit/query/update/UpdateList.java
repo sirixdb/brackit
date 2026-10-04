@@ -108,7 +108,7 @@ public final class UpdateList {
       }
     }
 
-    final Set<Node<?>> textParents = new HashSet<>();
+    final Set<Node<?>> textBoundaries = new HashSet<>();
 
     // Apply all updates, skipping property updates to deleted targets
     for (final UpdateOp op : ops) {
@@ -123,39 +123,70 @@ public final class UpdateList {
       if (log.isDebugEnabled()) {
         log.debug(String.format("Applying pending update %s", op));
       }
-      if (op.getTarget() instanceof Node<?> target) {
-        Node<?> parent = switch (op.getType()) {
-          case INSERT_INTO, INSERT_INTO_AS_FIRST, INSERT_INTO_AS_LAST, REPLACE_ELEMENT_CONTENT -> target;
-          case INSERT_BEFORE, INSERT_AFTER, DELETE, REPLACE_NODE, REPLACE_VALUE -> target.getParent();
-          default -> null;
-        };
-        if (parent != null && target.getKind() != Kind.ATTRIBUTE) {
-          textParents.add(parent);
+      Node<?> parent = null;
+      Node<?> left = null;
+      Node<?> right = null;
+      if (op.getTarget() instanceof Node<?> target && target.getKind() != Kind.ATTRIBUTE) {
+        switch (op.getType()) {
+          case INSERT_INTO, INSERT_INTO_AS_LAST -> {
+            parent = target;
+            left = target.getLastChild();
+          }
+          case INSERT_INTO_AS_FIRST -> {
+            parent = target;
+            right = target.getFirstChild();
+          }
+          case INSERT_BEFORE -> {
+            parent = target.getParent();
+            left = target.getPreviousSibling();
+            right = target;
+          }
+          case INSERT_AFTER -> {
+            parent = target.getParent();
+            left = target;
+            right = target.getNextSibling();
+          }
+          case DELETE, REPLACE_NODE -> {
+            parent = target.getParent();
+            left = target.getPreviousSibling();
+            right = target.getNextSibling();
+          }
+          case REPLACE_ELEMENT_CONTENT -> parent = target;
+          case REPLACE_VALUE -> {
+            if (target.getKind() == Kind.TEXT) textBoundaries.add(target);
+          }
+          default -> {
+          }
         }
       }
       op.apply();
+      if (parent != null) {
+        collectText(textBoundaries, left != null ? left : parent.getFirstChild(), right);
+      }
     }
 
-    for (Node<?> parent : textParents) {
-      if (!deletedTargetIdentities.contains(parent)) {
-        normalizeText(parent);
-      }
+    for (Node<?> text : textBoundaries) {
+      normalizeText(text);
     }
   }
 
-  private void normalizeText(Node<?> parent) {
-    Node<?> previous = null;
-    for (Node<?> child = parent.getFirstChild(); child != null;) {
-      Node<?> next = child.getNextSibling();
-      if (child.getKind() == Kind.TEXT && child.getValue().stringValue().isEmpty()) {
-        child.delete();
-      } else if (child.getKind() == Kind.TEXT && previous != null && previous.getKind() == Kind.TEXT) {
-        previous.setValue(new Una(previous.getValue().stringValue() + child.getValue().stringValue()));
-        child.delete();
-      } else {
-        previous = child;
-      }
-      child = next;
+  private void collectText(Set<Node<?>> boundaries, Node<?> first, Node<?> last) {
+    for (Node<?> node = first; node != null; node = node.getNextSibling()) {
+      if (node.getKind() == Kind.TEXT) boundaries.add(node);
+      if (node.isSelfOf(last)) break;
+    }
+  }
+
+  private void normalizeText(Node<?> text) {
+    if (text.getParent() == null) return;
+    if (text.getValue().stringValue().isEmpty()) {
+      text.delete();
+      return;
+    }
+    Node<?> next;
+    while ((next = text.getNextSibling()) != null && next.getKind() == Kind.TEXT) {
+      text.setValue(new Una(text.getValue().stringValue() + next.getValue().stringValue()));
+      next.delete();
     }
   }
 

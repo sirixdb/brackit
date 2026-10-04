@@ -124,6 +124,9 @@ public class ElementExpr extends ConstructedNodeBuilder implements Expr {
     ContentSink sink = new ContentSink() {
       @Override
       public Node<?> addNode(QueryContext ctx, Node<?> node) {
+        if (node.getKind() == Kind.TEXT) {
+          return element.append(Kind.TEXT, null, node.getValue().asUna());
+        }
         return element.append(node);
       }
 

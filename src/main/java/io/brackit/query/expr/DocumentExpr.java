@@ -33,6 +33,7 @@ import io.brackit.query.QueryException;
 import io.brackit.query.Tuple;
 import io.brackit.query.jdm.Expr;
 import io.brackit.query.jdm.Item;
+import io.brackit.query.jdm.Kind;
 import io.brackit.query.jdm.Sequence;
 import io.brackit.query.jdm.node.Node;
 
@@ -62,6 +63,9 @@ public class DocumentExpr extends ConstructedNodeBuilder implements Expr {
     ContentSink sink = new ContentSink() {
       @Override
       public Node<?> addNode(QueryContext ctx, Node<?> node) {
+        if (node.getKind() == Kind.TEXT) {
+          return document.append(Kind.TEXT, null, node.getValue().asUna());
+        }
         return document.append(node);
       }
 

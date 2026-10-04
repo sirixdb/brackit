@@ -72,7 +72,7 @@ public abstract class D2Node extends AbstractNode<D2Node> {
    */
   public static final int NODE_CLASS_ID = 1;
 
-  protected final ParentD2Node parent;
+  protected ParentD2Node parent;
 
   protected final int[] division;
 
@@ -83,7 +83,9 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   protected D2Node(ParentD2Node parent, int[] division) {
     this.parent = parent;
     this.division = division;
-    this.localFragmentID = parent == null ? localFragmentID() : parent.localFragmentID;
+    if (parent == null) {
+      this.localFragmentID = localFragmentID();
+    }
   }
 
   private D2Node getRoot() {
@@ -116,13 +118,24 @@ public abstract class D2Node extends AbstractNode<D2Node> {
     return localFragmentID;
   }
 
+  void detach() {
+    if (this instanceof ElementD2Node element) {
+      element.preserveNamespaces(this);
+    }
+    parent = null;
+    sibling = null;
+    localFragmentID = localFragmentID();
+  }
+
   @Override
   protected final int cmpInternal(final D2Node node) {
     if (node == this) {
       return 0;
     }
-    if (localFragmentID != node.localFragmentID) {
-      return localFragmentID < node.localFragmentID ? -1 : 1;
+    int fragment = getRoot().localFragmentID;
+    int otherFragment = node.getRoot().localFragmentID;
+    if (fragment != otherFragment) {
+      return fragment < otherFragment ? -1 : 1;
     }
     D2Node c = null;
     D2Node cp = this;

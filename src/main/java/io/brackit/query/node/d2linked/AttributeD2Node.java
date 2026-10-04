@@ -144,21 +144,14 @@ public final class AttributeD2Node extends D2Node {
       throw new DocumentException("Cannot replace node without parent");
     }
 
-    return parent.setAttribute(name, value);
+    ParentD2Node element = parent;
+    delete();
+    return element.setAttribute(name, value);
   }
 
   @Override
   public D2Node replaceWith(Node<?> node) throws DocumentException {
-    Kind kind = node.getKind();
-    if (kind != Kind.ATTRIBUTE) {
-      throw new DocumentException("Cannot replace attribute with node of type: %s.", kind);
-    }
-
-    if (parent == null) {
-      throw new DocumentException("Cannot replace node without parent");
-    }
-
-    return parent.setAttribute(name, value);
+    return replaceWith(node.getKind(), node.getName(), node.getValue());
   }
 
   @Override
@@ -166,14 +159,7 @@ public final class AttributeD2Node extends D2Node {
     D2NodeBuilder builder = new D2NodeBuilder() {
       @Override
       D2Node first(Kind kind, QNm name, Atomic value) throws DocumentException {
-        if (kind != Kind.ATTRIBUTE) {
-          throw new DocumentException("Cannot replace attribute with node of type: %s.", kind);
-        }
-        if (parent == null) {
-          throw new DocumentException("Cannot replace node without parent");
-        }
-
-        return parent.setAttribute(name, value);
+        return AttributeD2Node.this.replaceWith(kind, name, value);
       }
     };
     parser.parse(builder);

@@ -103,7 +103,8 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
                                                            Kind.ELEMENT,
                                                            name,
                                                            null,
-                                                           parent != rootParent || right);
+                                                           parent != rootParent || right,
+                                                           parent != rootParent);
     } else {
       e = (ElementD2Node) first(Kind.ELEMENT, name, null);
     }
@@ -120,7 +121,8 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
                                                Kind.TEXT,
                                                null,
                                                text.asUna(),
-                                               parent != rootParent || right);
+                                               parent != rootParent || right,
+                                               parent != rootParent);
     } else {
       return first(Kind.TEXT, null, text);
     }
@@ -133,7 +135,8 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
                                                Kind.COMMENT,
                                                null,
                                                text,
-                                               parent != rootParent || right);
+                                               parent != rootParent || right,
+                                               parent != rootParent);
     } else {
       return first(Kind.COMMENT, null, text);
     }
@@ -146,7 +149,8 @@ public class D2NodeBuilder extends AbstractBuilder<D2Node> {
                                                Kind.PROCESSING_INSTRUCTION,
                                                target,
                                                text,
-                                               parent != rootParent || right);
+                                               parent != rootParent || right,
+                                               parent != rootParent);
     } else {
       return first(Kind.PROCESSING_INSTRUCTION, target, text);
     }

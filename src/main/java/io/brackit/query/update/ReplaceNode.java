@@ -102,7 +102,7 @@ public class ReplaceNode extends ConstructedNodeBuilder implements Expr {
 
     node = (Node<?>) targetItem;
 
-    if (!allowedForReplaceNonAtt.contains(node.getKind())) {
+    if (!replaceNodeKind.contains(node.getKind())) {
       throw new QueryException(ErrorCode.ERR_UPDATE_REPLACE_TARGET_NOT_A_EATCP_NODE,
                                "Target node kind %s is not allowed for replace node: %s",
                                node.getKind(),
@@ -118,7 +118,7 @@ public class ReplaceNode extends ConstructedNodeBuilder implements Expr {
     Sequence source = sourceExpr.evaluate(ctx, tuple);
     ContentList rList = new ContentList();
     buildContentSequence(ctx, rList, source);
-    ReplaceNodeOp op = null;
+    ReplaceNodeOp op = new ReplaceNodeOp(node);
 
     if (node.getKind() != Kind.ATTRIBUTE) {
       for (Node<?> replacement : rList) {
@@ -128,10 +128,7 @@ public class ReplaceNode extends ConstructedNodeBuilder implements Expr {
                                    node.getKind(),
                                    replacement.getKind());
         }
-        if (op == null) {
-          op = new ReplaceNodeOp(node);
-        }
-        op.addContent(replacement);
+        op.addContent(replacement, ctx.getNodeFactory());
       }
     } else {
       for (Node<?> replacement : rList) {
@@ -140,16 +137,11 @@ public class ReplaceNode extends ConstructedNodeBuilder implements Expr {
                                    "Cannot replace attribute with node of type %s",
                                    replacement.getKind());
         }
-        if (op == null) {
-          op = new ReplaceNodeOp(node);
-        }
-        op.addContent(replacement);
+        op.addContent(replacement, ctx.getNodeFactory());
       }
     }
 
-    if (op != null) {
-      ctx.addPendingUpdate(op);
-    }
+    ctx.addPendingUpdate(op);
 
     return null;
   }

@@ -218,7 +218,11 @@ public class InsertSequenceOrderTest extends XQueryBaseTest {
     new Query("(insert node text {'x'} into $$/r, insert nodes ($$/r/text(), text {'y'}) " + position + " "
         + target + ")").execute(ctx);
 
-    String value = position.equals("as first into") || position.equals("before") ? "oldyoldx" : "oldxoldy";
+    String value = switch (position) {
+      case "as first into", "before" -> "oldyoldx";
+      case "after" -> "oldoldyx";
+      default -> "oldxoldy";
+    };
     assertDocument("<r>" + value + "</r>", document);
   }
 
