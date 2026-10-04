@@ -27,6 +27,9 @@
  */
 package io.brackit.query.compiler.analyzer;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import io.brackit.query.ErrorCode;
 import io.brackit.query.Query;
 import io.brackit.query.QueryException;
@@ -1148,17 +1151,27 @@ public class ExprAnalyzer extends AbstractAnalyzer {
     this.sctx = new NestedContext(psctx);
     expr.setStaticContext(sctx);
 
-    QNm name = (QNm) expr.getChild(0).getValue();
+    // Namespace declarations are prepended below, shifting the name's child index.
+    AST nameExpr = expr.getChild(0);
+    QNm name = (QNm) nameExpr.getValue();
 
     // pre-check content sequence for direct
     // namespace attributes
     AST cseq = expr.getChild(1);
+    Set<String> namespaceNames = new HashSet<>();
     for (int i = 0; i < cseq.getChildCount(); i++) {
       AST att = cseq.getChild(i);
       if (att.getType() != XQ.DirAttributeConstructor) {
         break;
       }
       QNm attName = (QNm) att.getChild(0).getValue();
+      boolean defaultNamespaceDeclaration = attName.getPrefix().isEmpty() && "xmlns".equals(attName.getLocalName());
+      if (("xmlns".equals(attName.getPrefix()) || defaultNamespaceDeclaration) && !namespaceNames.add(attName
+                                                                                                             .toString())) {
+        throw new QueryException(ErrorCode.ERR_DUPLICATE_NAMESPACE_DECL,
+                                 "Duplicate namespace declaration '%s'",
+                                 attName);
+      }
       if ("xmlns".equals(attName.getPrefix())) {
         String prefix = attName.getLocalName();
         String uri = extractURIFromDirNSAttContent(att.getChild(1));
@@ -1172,12 +1185,10 @@ public class ExprAnalyzer extends AbstractAnalyzer {
         nsDecl.addChild(new AST(XQ.Str, prefix));
         nsDecl.addChild(new AST(XQ.AnyURI, uri));
         expr.insertChild(0, nsDecl);
-      } else if ("xmlns".equals(attName.getLocalName())) {
+      } else if (defaultNamespaceDeclaration) {
         String uri = extractURIFromDirNSAttContent(att.getChild(1));
+        checkDirNSAttBinding("", uri);
         sctx.getNamespaces().setDefaultElementNamespace(uri);
-        // delete from context sequence
-        // and prepend prefixed namespace declaration
-        // in element constructor
         cseq.deleteChild(i--);
         AST nsDecl = new AST(XQ.NamespaceDeclaration);
         nsDecl.addChild(new AST(XQ.AnyURI, uri));
@@ -1187,7 +1198,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 
     // expand element name and update AST
     name = expand(name, DefaultNS.ELEMENT_OR_TYPE);
-    expr.getChild(0).setValue(name);
+    nameExpr.setValue(name);
 
     // merge adjacent string literals and
     // strip boundary whitespace if requested
@@ -1252,7 +1263,7 @@ public class ExprAnalyzer extends AbstractAnalyzer {
 
   protected void checkDirNSAttBinding(String prefix, String uri) throws QueryException {
     if (Namespaces.XML_PREFIX.equals(prefix)) {
-      if (Namespaces.XML_NSURI.equals(uri)) {
+      if (!Namespaces.XML_NSURI.equals(uri)) {
         throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
                                  "Illegal mapping of the prefix '%s' to the namespace URI '%s'",
                                  Namespaces.XML_PREFIX,
@@ -1262,10 +1273,8 @@ public class ExprAnalyzer extends AbstractAnalyzer {
       throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
                                "Illegal namespace prefix '%s'",
                                Namespaces.XMLNS_PREFIX);
-    } else if (Namespaces.XML_NSURI.equals(uri)) {
-      throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL,
-                               "Illegal namespace URI '%s'",
-                               Namespaces.XMLNS_NSURI);
+    } else if (Namespaces.XML_NSURI.equals(uri) || Namespaces.XMLNS_NSURI.equals(uri)) {
+      throw new QueryException(ErrorCode.ERR_ILLEGAL_NAMESPACE_DECL, "Illegal namespace URI '%s'", uri);
     }
   }
 

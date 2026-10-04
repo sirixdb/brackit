@@ -7,4 +7,5 @@
 .settings
 target
 .idea/
+/build/
 default.iprof

@@ -53,14 +53,15 @@ public interface Scope {
    * <code>null</code> or the empty string, the default namespace URI is set.
    *
    * <p>
-   * It must be ensured that:
+   * Callers must ensure that:
    * <ul>
-   * <li>the prefix xml is not bound to some namespace URI other than
-   * http://www.w3.org/XML/1998/namespace</li>
-   * <li>a prefix other than xml is bound to the namespace URI
-   * http://www.w3.org/XML/1998/namespace</li>
-   * <li>the prefix xmlns is bound to any namespace URI</li>
-   * <li>a prefix is bound to the namespace URI http://www.w3.org/2000/xmlns/</li>
+   * <li>the prefix xml is bound only to the
+   * {@link io.brackit.query.module.Namespaces#XML_NSURI XML namespace URI}</li>
+   * <li>no prefix other than xml is bound to the XML namespace URI</li>
+   * <li>the prefix xmlns is not bound to any namespace URI</li>
+   * <li>no prefix is bound to the
+   * {@link io.brackit.query.module.Namespaces#XMLNS_NSURI xmlns namespace URI}</li>
+   * </ul>
    *
    * @throws DocumentException
    */
@@ -74,14 +75,7 @@ public interface Scope {
    * namespace URI.
    *
    * <p>
-   * It must be ensured that:
-   * <ul>
-   * <li>the prefix xml is not bound to some namespace URI other than
-   * http://www.w3.org/XML/1998/namespace</li>
-   * <li>a prefix other than xml is bound to the namespace URI
-   * http://www.w3.org/XML/1998/namespace</li>
-   * <li>the prefix xmlns is bound to any namespace URI</li>
-   * <li>a prefix is bound to the namespace URI http://www.w3.org/2000/xmlns/</li>
+   * Bindings follow the constraints documented by {@link #addPrefix(String, String)}.
    *
    * @throws DocumentException
    */

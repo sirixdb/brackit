@@ -54,7 +54,7 @@ public class Namespaces {
 
   public static final String XML_NSURI = "http://www.w3.org/XML/1998/namespace";
 
-  public static final String XMLNS_NSURI = "http://www.w3.org/2000/xmlns";
+  public static final String XMLNS_NSURI = "http://www.w3.org/2000/xmlns/";
 
   public static final String ERR_NSURI = "http://www.w3.org/2005/xqt-errors";
 
