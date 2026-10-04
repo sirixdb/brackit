@@ -30,7 +30,6 @@ package io.brackit.query.sequence;
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.atomic.Counter;
 import io.brackit.query.atomic.Int32;
-import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.expr.Cast;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
@@ -46,9 +45,7 @@ import io.brackit.query.QueryException;
 /**
  * @author Sebastian Baechle
  */
-public class FunctionConversionSequence extends LazySequence {
-
-  private static final Int32 TWO = Int32.ZERO_TO_TWENTY[2];
+public class FunctionConversionSequence extends AbstractSequence {
 
   private final class AtomicTypedIter extends BaseIter {
     final Cardinality card;
@@ -56,6 +53,7 @@ public class FunctionConversionSequence extends LazySequence {
     final Type expected;
     Counter pos = new Counter();
     Iter s;
+    boolean finished;
 
     AtomicTypedIter(Cardinality card, AtomicType iType) {
       this.card = card;
@@ -65,6 +63,9 @@ public class FunctionConversionSequence extends LazySequence {
 
     @Override
     public Item next() {
+      if (finished) {
+        return null;
+      }
       if (s == null) {
         s = arg.iterate();
       }
@@ -76,12 +77,12 @@ public class FunctionConversionSequence extends LazySequence {
                                    "Invalid empty typed sequence (expected %s)",
                                    card);
         }
-        safe = true; // remember that sequence type is OK
+        finished = true;
         return null;
       }
 
       pos.inc();
-      if ((card == Cardinality.Zero) || ((pos.cmp(TWO) == 0) && (card.atMostOne()))) {
+      if (card == Cardinality.Zero) {
         throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                  "Invalid cardinality of typed sequence (expected %s): >= %s",
                                  card,
@@ -94,7 +95,7 @@ public class FunctionConversionSequence extends LazySequence {
 
       if ((type == Type.UNA) && (expected != Type.UNA)) {
         if ((builtin) && (expected.isNumeric())) {
-          atomic = Cast.cast(null, atomic, Type.DBL, false);
+          atomic = Cast.cast(null, atomic, expected, false);
         } else if ((expected.instanceOf(Type.QNM)) || (expected.instanceOf(Type.NOT))) {
           throw new QueryException(ErrorCode.ERR_TYPE_CAST_TO_NAMESPACE_SENSITIVE_TYPE,
                                    "Cannot cast %s to namespace-sensitive type %s",
@@ -116,15 +117,15 @@ public class FunctionConversionSequence extends LazySequence {
         }
       }
 
-      return atomic;
-    }
-
-    @Override
-    public void skip(IntNumeric i) {
-      if (s == null) {
-        s = arg.iterate();
+      if (card.atMostOne()) {
+        if (s.next() != null) {
+          throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                                   "Invalid cardinality of typed sequence (expected %s): >= 2",
+                                   card);
+        }
+        finished = true;
       }
-      s.skip(i);
+      return atomic;
     }
 
     @Override
@@ -140,6 +141,7 @@ public class FunctionConversionSequence extends LazySequence {
     final ItemType iType;
     Counter pos = new Counter();
     Iter s;
+    boolean finished;
 
     TypedIter(Cardinality card, ItemType iType) {
       this.card = card;
@@ -148,6 +150,9 @@ public class FunctionConversionSequence extends LazySequence {
 
     @Override
     public Item next() {
+      if (finished) {
+        return null;
+      }
       if (s == null) {
         s = arg.iterate();
       }
@@ -159,12 +164,12 @@ public class FunctionConversionSequence extends LazySequence {
                                    "Invalid empty typed sequence (expected %s)",
                                    card);
         }
-        safe = true; // remember that sequence type is OK
+        finished = true;
         return null;
       }
 
       pos.inc();
-      if ((card == Cardinality.Zero) || ((pos.cmp(TWO) == 0) && (card.atMostOne()))) {
+      if (card == Cardinality.Zero) {
         throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                  "Invalid cardinality of typed sequence (expected %s): >= %s",
                                  card,
@@ -178,15 +183,15 @@ public class FunctionConversionSequence extends LazySequence {
                                  item);
       }
 
-      return item;
-    }
-
-    @Override
-    public void skip(IntNumeric i) {
-      if (s == null) {
-        s = arg.iterate();
+      if (card.atMostOne()) {
+        if (s.next() != null) {
+          throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                                   "Invalid cardinality of typed sequence (expected %s): >= 2",
+                                   card);
+        }
+        finished = true;
       }
-      s.skip(i);
+      return item;
     }
 
     @Override
@@ -200,8 +205,6 @@ public class FunctionConversionSequence extends LazySequence {
   final SequenceType type;
   final Sequence arg;
   final boolean builtin;
-  // volatile field because safe is evaluated lazy
-  volatile boolean safe;
 
   public FunctionConversionSequence(SequenceType type, Sequence arg, boolean builtin) {
     this.type = type;
@@ -211,9 +214,6 @@ public class FunctionConversionSequence extends LazySequence {
 
   @Override
   public Iter iterate() {
-    if (safe) {
-      return arg.iterate();
-    }
     Cardinality card = type.getCardinality();
     ItemType iType = type.getItemType();
     if (iType instanceof AtomicType) {
@@ -221,42 +221,6 @@ public class FunctionConversionSequence extends LazySequence {
     } else {
       return new TypedIter(card, iType);
     }
-  }
-
-  @Override
-  public Item get(IntNumeric pos) {
-    Item item = arg.get(pos);
-    if (safe) { // volatile read
-      return item;
-    }
-    Cardinality card = type.getCardinality();
-    if (item == null) {
-      if (card.moreThanZero()) {
-        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                 "Invalid empty typed sequence (expected %s)",
-                                 card);
-      }
-    } else {
-      if ((pos.cmp(Int32.ONE) > 0) && (card.atMostOne())) {
-        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                 "Invalid cardinality of typed sequence (expected %s): >= %s",
-                                 card,
-                                 pos);
-      }
-      if ((pos.cmp(Int32.ZERO) > 0) && (card == Cardinality.Zero)) {
-        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                 "Invalid cardinality of typed sequence (expected %s): >= %s",
-                                 card,
-                                 pos);
-      }
-      if (!type.getItemType().matches(item)) {
-        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                 "Item of invalid type in typed sequence (expected %s): %s",
-                                 type.getItemType(),
-                                 item);
-      }
-    }
-    return item;
   }
 
   /**
@@ -270,6 +234,11 @@ public class FunctionConversionSequence extends LazySequence {
       }
       return null;
     } else if (s instanceof Item) {
+      if (sType.getCardinality() == Cardinality.Zero) {
+        throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                                 "Single item where empty sequence expected: %s",
+                                 s);
+      }
       // short-circuit wrapping of single item parameter
       ItemType iType = sType.getItemType();
       if (iType instanceof AtomicType) {
@@ -313,7 +282,7 @@ public class FunctionConversionSequence extends LazySequence {
     } else {
       Sequence ts = new FunctionConversionSequence(sType, s, builtin);
 
-      if (sType.getCardinality().atMostOne()) {
+      if (!sType.getCardinality().many()) {
         try (Iter it = ts.iterate()) {
           return it.next();
         }

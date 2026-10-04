@@ -28,7 +28,12 @@
 package io.brackit.query.sequence;
 
 import io.brackit.query.jdm.Item;
+import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
+import io.brackit.query.jdm.node.Node;
+import io.brackit.query.atomic.Counter;
+import io.brackit.query.atomic.Int32;
+import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.operator.TupleImpl;
 import io.brackit.query.util.ExprUtil;
 import io.brackit.query.ErrorCode;
@@ -40,6 +45,53 @@ import io.brackit.query.Tuple;
  * @author Sebastian Baechle
  */
 public abstract class AbstractSequence implements Sequence {
+  @Override
+  public boolean booleanValue() {
+    try (Iter it = iterate()) {
+      Item item = it.next();
+      if (item == null) {
+        return false;
+      }
+      if (item instanceof Node<?>) {
+        return true;
+      }
+      if (it.next() != null) {
+        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                                 "Effective boolean value is undefined " + "for sequences with two or more items "
+                                     + "not starting with a node");
+      }
+      return item.booleanValue();
+    }
+  }
+
+  @Override
+  public IntNumeric size() {
+    Counter count = new Counter();
+    try (Iter it = iterate()) {
+      while (it.next() != null) {
+        count.inc();
+      }
+    }
+    return count.asIntNumeric();
+  }
+
+  @Override
+  public Item get(IntNumeric pos) {
+    if (Int32.ZERO.cmp(pos) >= 0) {
+      return null;
+    }
+    Counter count = new Counter();
+    try (Iter it = iterate()) {
+      Item item;
+      while ((item = it.next()) != null) {
+        if (count.inc().cmp(pos) == 0) {
+          return item;
+        }
+      }
+    }
+    return null;
+  }
+
   @Override
   public final Sequence evaluate(QueryContext ctx, Tuple context) {
     return this;

@@ -54,11 +54,13 @@ import org.magicwerk.brownies.collections.GapList;
 public class DynamicFunctionExpr implements Expr {
   private final StaticContext sctx;
   private final Expr functionExpr;
+  private final Expr contextItemExpr;
   private final Expr[] arguments;
 
-  public DynamicFunctionExpr(StaticContext sctx, Expr function, Expr... exprs) {
+  public DynamicFunctionExpr(StaticContext sctx, Expr function, Expr contextItemExpr, Expr... exprs) {
     this.sctx = sctx;
     this.functionExpr = function;
+    this.contextItemExpr = contextItemExpr;
     this.arguments = exprs;
   }
 
@@ -121,12 +123,15 @@ public class DynamicFunctionExpr implements Expr {
     }
 
     if (functionItem instanceof Function function) {
+      function.getSignature().checkArity(argumentsSize);
       int pos = 0;
-      for (Sequence sequence : tuple.array()) {
-        if (sequence == functionItem) {
-          break;
+      if (!function.isBuiltIn()) {
+        for (Sequence sequence : tuple.array()) {
+          if (sequence == functionItem) {
+            break;
+          }
+          pos++;
         }
-        pos++;
       }
 
       final ItemType dftCtxItemType = function.getSignature().defaultCtxItemType();
@@ -141,7 +146,7 @@ public class DynamicFunctionExpr implements Expr {
       Sequence[] args;
 
       if (dftCtxType != null) {
-        Item ctxItem = arguments[0].evaluateToItem(ctx, tuple);
+        Item ctxItem = contextItemExpr.evaluateToItem(ctx, tuple);
         FunctionConversionSequence.asTypedSequence(dftCtxType, ctxItem, false);
         args = new Sequence[] { ctxItem };
       } else {
@@ -154,14 +159,10 @@ public class DynamicFunctionExpr implements Expr {
 
         for (int i = 0; i < arguments.length; i++) {
           SequenceType sType = i < params.length ? params[i] : params[params.length - 1];
-          if (sType.getCardinality().many()) {
-            args[pos + i] = arguments[i].evaluate(ctx, tuple);
-            if (!sType.getItemType().isAnyItem()) {
-              args[pos + i] = FunctionConversionSequence.asTypedSequence(sType, args[i], false);
-            }
-          } else {
-            args[pos + i] = arguments[i].evaluateToItem(ctx, tuple);
-            args[pos + i] = FunctionConversionSequence.asTypedSequence(sType, args[i], false);
+          int slot = pos + i;
+          args[slot] = arguments[i].evaluate(ctx, tuple);
+          if (!sType.getCardinality().many() || !sType.getItemType().isAnyItem()) {
+            args[slot] = FunctionConversionSequence.asTypedSequence(sType, args[slot], false);
           }
         }
       }
@@ -180,7 +181,6 @@ public class DynamicFunctionExpr implements Expr {
       return FunctionResultSequence.prepare(function, res);
     }
 
-    // TODO / FIXME
     throw new QueryException(new QNm(""));
   }
 

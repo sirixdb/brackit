@@ -35,7 +35,6 @@ import io.brackit.query.QueryContext;
 import io.brackit.query.Tuple;
 import io.brackit.query.jdm.Expr;
 import io.brackit.query.jdm.Item;
-import io.brackit.query.jdm.Iter;
 import io.brackit.query.jdm.Sequence;
 
 import java.util.Arrays;
@@ -58,6 +57,12 @@ public class FilterExpr extends PredicateExpr {
     this.expr = expr;
   }
 
+  public FilterExpr(Expr expr, Expr[] filter, boolean[] bindItem, boolean[] bindPos, boolean[] bindSize,
+      boolean[] ebvFilter, Object[] potentialFocus) {
+    super(filter, bindItem, bindPos, bindSize, ebvFilter, potentialFocus);
+    this.expr = expr;
+  }
+
   @Override
   public Sequence evaluate(final QueryContext ctx, final Tuple tuple) {
     Sequence s = expr.evaluate(ctx, tuple);
@@ -70,23 +75,14 @@ public class FilterExpr extends PredicateExpr {
       // check if the filter predicate is independent
       // of the context item
       if (bindCount[i] == 0) {
-        Sequence fs = filter[i].evaluate(ctx, tuple);
+        Item fs = predicateValue(filter[i].evaluate(ctx, tuple));
         if (fs == null) {
           return null;
         } else if (fs instanceof Numeric) {
           IntNumeric pos = ((Numeric) fs).asIntNumeric();
           s = pos != null ? s.get(pos) : null;
-        } else {
-          try (Iter it = fs.iterate()) {
-            Item first = it.next();
-            if (first != null && it.next() == null && first instanceof Numeric) {
-              IntNumeric pos = ((Numeric) first).asIntNumeric();
-              return pos != null ? s.get(pos) : null;
-            }
-          }
-          if (!fs.booleanValue()) {
-            return null;
-          }
+        } else if (!fs.booleanValue()) {
+          return null;
         }
       } else {
         // the filter predicate is dependent on the context item
@@ -121,19 +117,7 @@ public class FilterExpr extends PredicateExpr {
           current = current.concat(tmp);
         }
 
-        Sequence fRes = filter[i].evaluate(ctx, current);
-
-        if (fRes == null) {
-          return null;
-        }
-
-        // JSONiq [? ... ] filters over the context item are pure truthiness checks; only
-        // ordinary XQuery predicates treat a numeric predicate value as a positional test.
-        if (!ebvFilter[i] && fRes instanceof Numeric numeric && numeric.intValue() != 1) {
-          return null;
-        }
-
-        if (!fRes.booleanValue()) {
+        if (!matches(i, ctx, current, Int32.ONE)) {
           return null;
         }
       } else {

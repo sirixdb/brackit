@@ -61,6 +61,7 @@ public class FunctionExpr implements Expr {
     } else {
       this.dftCtxType = null;
     }
+    function.getSignature().checkArity(exprs.length - (dftCtxType != null ? 1 : 0));
   }
 
   public Signature getSignature() {
@@ -88,7 +89,7 @@ public class FunctionExpr implements Expr {
             args[i] = FunctionConversionSequence.asTypedSequence(sType, args[i], builtin);
           }
         } else {
-          args[i] = exprs[i].evaluateToItem(ctx, tuple);
+          args[i] = exprs[i].evaluate(ctx, tuple);
           args[i] = FunctionConversionSequence.asTypedSequence(sType, args[i], builtin);
         }
       }

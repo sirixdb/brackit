@@ -31,6 +31,9 @@ import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.atomic.Numeric;
 import io.brackit.query.QueryContext;
+import io.brackit.query.QueryException;
+import io.brackit.query.ErrorCode;
+import io.brackit.query.jdm.node.Node;
 import io.brackit.query.Tuple;
 import io.brackit.query.sequence.BaseIter;
 import io.brackit.query.sequence.LazySequence;
@@ -50,27 +53,97 @@ public abstract class PredicateExpr implements Expr {
   protected final boolean[] bindSize;
   protected final int[] bindCount;
   /**
-   * Per predicate: {@code true} if the predicate is a JSONiq {@code [? ... ]} filter referencing
-   * the context item ({@code $$}). Such filters apply effective-boolean-value (truthiness)
-   * semantics unconditionally — a numeric predicate value is NOT interpreted as a positional
-   * test against the context position.
+   * Per predicate: {@code true} when the compiler can guarantee a JSONiq filter depends on
+   * the context item. Potential implicit-focus reads in dynamic calls are tracked separately
+   * by {@code potentialFocus}, so a context-independent call can still select by position.
    */
   protected final boolean[] ebvFilter;
+  private final Object[] potentialFocus;
+  private static final ScopedValue<Focus> CURRENT_FOCUS = ScopedValue.newInstance();
+
+  private static final class Focus {
+    final Object binding;
+    final Focus parent;
+    volatile boolean used;
+
+    Focus(Object binding) {
+      this.binding = binding;
+      this.parent = CURRENT_FOCUS.isBound() ? CURRENT_FOCUS.get() : null;
+    }
+  }
+
+  public static ScopedValue.Carrier captureFocus() {
+    return CURRENT_FOCUS.isBound() ? ScopedValue.where(CURRENT_FOCUS, CURRENT_FOCUS.get()) : null;
+  }
+
+  public static void contextItemRead(Object binding) {
+    for (Focus focus = CURRENT_FOCUS.isBound() ? CURRENT_FOCUS.get() : null; focus != null; focus = focus.parent) {
+      if (focus.binding == binding) {
+        focus.used = true;
+        return;
+      }
+    }
+  }
 
   public PredicateExpr(Expr[] filter, boolean[] bindItem, boolean[] bindPos, boolean[] bindSize) {
     this(filter, bindItem, bindPos, bindSize, new boolean[filter.length]);
   }
 
   public PredicateExpr(Expr[] filter, boolean[] bindItem, boolean[] bindPos, boolean[] bindSize, boolean[] ebvFilter) {
+    this(filter, bindItem, bindPos, bindSize, ebvFilter, new Object[filter.length]);
+  }
+
+  public PredicateExpr(Expr[] filter, boolean[] bindItem, boolean[] bindPos, boolean[] bindSize, boolean[] ebvFilter,
+      Object[] potentialFocus) {
     this.filter = filter;
     this.bindItem = bindItem;
     this.bindPos = bindPos;
     this.bindSize = bindSize;
     this.ebvFilter = ebvFilter;
+    this.potentialFocus = potentialFocus;
     this.bindCount = new int[filter.length];
     for (int i = 0; i < filter.length; i++) {
       bindCount[i] = (bindItem[i] ? 1 : 0) + (bindPos[i] ? 1 : 0) + (bindSize[i] ? 1 : 0);
     }
+  }
+
+  protected boolean matches(int i, QueryContext ctx, Tuple tuple, IntNumeric position) {
+    if (potentialFocus[i] == null || ebvFilter[i]) {
+      return matches(i, ctx, tuple, position, null);
+    }
+    Focus focus = new Focus(potentialFocus[i]);
+    return ScopedValue.where(CURRENT_FOCUS, focus).call(() -> matches(i, ctx, tuple, position, focus));
+  }
+
+  protected Item predicateValue(Sequence value) {
+    if (value == null || value instanceof Item) {
+      return (Item) value;
+    }
+    try (Iter iterator = value.iterate()) {
+      Item first = iterator.next();
+      if (first == null || first instanceof Node<?>) {
+        return first;
+      }
+      if (iterator.next() != null) {
+        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                                 "Effective boolean value is undefined for sequences with two or more items not starting with a node");
+      }
+      return first;
+    }
+  }
+
+  private boolean matches(int i, QueryContext ctx, Tuple tuple, IntNumeric position, Focus focus) {
+    Item result = predicateValue(filter[i].evaluate(ctx, tuple));
+    if (result == null) {
+      return false;
+    }
+    if (ebvFilter[i] || (focus != null && focus.used)) {
+      return result.booleanValue();
+    }
+    if (result instanceof Numeric numeric) {
+      return numeric.cmp(position) == 0;
+    }
+    return result.booleanValue();
   }
 
   protected class DependentFilterSeq extends LazySequence {
@@ -145,30 +218,7 @@ public abstract class PredicateExpr implements Expr {
             current = current.concat(tmp);
           }
 
-          Sequence res = filter[i].evaluate(ctx, current);
-
-          if (res == null) {
-            return false;
-          }
-
-          if (ebvFilter[i]) {
-            // JSONiq [? ... ] filter over the context item: pure truthiness check.
-            return res.booleanValue();
-          }
-
-          if (res instanceof Numeric) {
-            return ((Numeric) res).cmp(pos) == 0;
-          } else {
-            try (Iter it = res.iterate()) {
-              Item first = it.next();
-              if ((first != null) && (it.next() == null) && (first instanceof Numeric) && (((Numeric) first).cmp(pos)
-                  != 0)) {
-                return false;
-              }
-            }
-
-            return res.booleanValue();
-          }
+          return matches(i, ctx, current, pos);
         }
 
         @Override

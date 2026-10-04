@@ -38,8 +38,10 @@ public interface TemporalNode<E extends TemporalNode<E>> extends Node<E> {
   E getLast();
 
   /**
-   * Get a stream of the same node in all earlier revisions.
+   * Get a stream of the same node in all earlier revisions, newest first.
+   * This is the positional order used by the past axes.
    *
+   * @param includeSelf whether to include the current revision as the first item
    * @return stream of the same node in all earlier revisions
    */
   Stream<E> getEarlier(boolean includeSelf);

@@ -332,8 +332,12 @@ class StreamingArrayTest {
         assertEquals(Int32.ONE, second.next());
       }
       var reread = overlapReads(input, () -> assertEquals(new Int32(cachedPrefix ? 2 : 1), first.next()), second::next);
-      assertRereadFails(reread);
-      if (!cachedPrefix) {
+      if (cachedPrefix) {
+        assertEquals(new Int32(2), reread.get(10, TimeUnit.SECONDS));
+        assertEquals(new Int32(3), second.next());
+        assertNull(second.next());
+      } else {
+        assertRereadFails(reread);
         assertEquals(new Int32(2), first.next());
       }
       assertEquals(new Int32(3), first.next());
@@ -418,17 +422,19 @@ class StreamingArrayTest {
   }
 
   @Test
-  void cachedPrefixDoesNotPermitRereadingUncachedSuffix() {
+  void cachedPrefixRetainsTheSuffixForReplay() {
     StreamingArray array = array("[1,2,3]");
     assertEquals(Int32.ONE, array.at(0));
     try (Iter first = array.iterate(); Iter second = array.iterate()) {
       assertEquals(Int32.ONE, first.next());
       assertEquals(Int32.ONE, second.next());
       assertEquals(new Int32(2), first.next());
-      assertRereadFails(second::next);
-      assertRereadFails(() -> array.at(0));
+      assertEquals(new Int32(2), second.next());
+      assertEquals(Int32.ONE, array.at(0));
       assertEquals(new Int32(3), first.next());
+      assertEquals(new Int32(3), second.next());
       assertNull(first.next());
+      assertNull(second.next());
     }
   }
 

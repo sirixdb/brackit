@@ -3,6 +3,18 @@ package io.brackit.query;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import io.brackit.query.atomic.QNm;
+import io.brackit.query.function.AbstractFunction;
+import io.brackit.query.jdm.Sequence;
+import io.brackit.query.jdm.Signature;
+import io.brackit.query.jdm.type.SequenceType;
+import io.brackit.query.module.Functions;
+import io.brackit.query.module.Namespaces;
+import io.brackit.query.module.StaticContext;
+import io.brackit.query.operator.TupleImpl;
+import io.brackit.query.sequence.ItemSequence;
+import io.brackit.query.atomic.Int32;
+import io.brackit.query.atomic.Str;
 
 import org.junit.jupiter.api.Test;
 
@@ -110,6 +122,74 @@ public final class JsoniqFilterPredicateTest extends XQueryBaseTest {
     assertEquals("c", query("(\"a\", \"b\", \"c\")[?last()]"));
     assertEquals("b c", query("(\"a\", \"b\", \"c\")[?position() gt 1]"));
     assertEquals("20", query("(10, 20, 30)[?2]"));
+  }
+
+  @Test
+  public void dynamicContextIndependentPredicatesStayPositional() {
+    assertEquals("b", query("declare variable $f := function() { 2 }; ('a','b','c')[?$f()]"));
+    assertEquals("a", query("declare variable $f := function() { 1 }; ('a','b','c')[?$f()]"));
+    assertEquals("", query("declare variable $f := function() { 0 }; ('a','b','c')[?$f()]"));
+    assertEquals("b", query("let $c := 2 let $f := function() { $c } return ('a','b','c')[?$f()]"));
+    assertEquals("b", query("declare variable $f := function() { 2 }; ('a','b','c')[?$f()][?1]"));
+    assertEquals("20", query("declare variable $f := function() { 2 }; (10,20,30)[?$f()]"));
+    assertEquals("a b c", query("declare variable $f := function() { 2 }; ('a','b','c')[?$$ and $f()]"));
+  }
+
+  @Test
+  public void dynamicNumericPredicatesUseReverseAxisPositions() {
+    String declaration = "declare variable $f := function() { 1 }; ";
+    assertEquals("<b/>", query(declaration + "<r><a/><b/><c/></r>/c/preceding-sibling::*[?$f()]"));
+    assertEquals("<b/>", query(declaration + "<r><a/><b/><c/></r>/c/preceding-sibling::*[?$f()][?1]"));
+    assertEquals("<r><a/><b/><c/></r>", query(declaration + "<root><r><a/><b/><c/></r></root>/r/c/ancestor::*[?$f()]"));
+    assertEquals("<b/>", query(declaration + "<r><a/><b/><c/></r>/a/following-sibling::*[?$f()]"));
+  }
+
+  @Test
+  public void dynamicImplicitFocusPredicatesAgreeWithStaticCalls() {
+    ctx.bind(new QNm("f"),
+             new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "string-length"), 0));
+    for (String input : new String[] { "('aa','b','ccc')", "'aa'", "('', 'aa')", "<r><n>aa</n><n>b</n><n>ccc</n></r>/n",
+        "<r><a>aa</a><b>b</b><c/></r>/c/preceding-sibling::*" }) {
+      assertEquals(query(input + "[?string-length()]"), query("declare variable $f external; " + input + "[?$f()]"));
+    }
+    assertEquals("aa b ccc", query("declare variable $f external; ('aa','b','ccc')[?$f()]"));
+    assertEquals("aa b ccc", query("declare variable $f external; ('aa','b','ccc')[?$f() + 1]"));
+    assertEquals("aa b ccc", query("declare variable $f external; ('aa','b','ccc')[?(for $x in 1 return $f())]"));
+    assertEquals("b", query("declare variable $f external; ('aa','b','ccc')[?if (false()) then $f() else 2]"));
+    assertEquals("aa",
+                 new Query("declare variable $f external; 'aa'[?$f()]").getModule()
+                                                                       .getBody()
+                                                                       .evaluateToItem(ctx, new TupleImpl())
+                                                                       .atomize()
+                                                                       .stringValue());
+  }
+
+  @Test
+  public void potentialFocusDoesNotChangeSingletonSequenceNumericResults() {
+    ctx.bind(new QNm("f"),
+             new AbstractFunction(new QNm("sequence-number"), new Signature(SequenceType.ITEM_SEQUENCE), true) {
+               @Override
+               public Sequence execute(StaticContext sctx, QueryContext context, Sequence[] args) {
+                 return new ItemSequence(new Int32(2));
+               }
+             });
+    assertEquals("b", query("declare variable $f external; ('a','b','c')[?$f()]"));
+    assertEquals("<a/>", query("declare variable $f external; <r><a/><b/><c/></r>/c/preceding-sibling::*[?$f()]"));
+    assertEquals("", query("declare variable $f external; 'a'[?$f()]"));
+  }
+
+  @Test
+  public void oneCompiledPredicateCanCallFunctionsWithDifferentFocusDependencies() {
+    Query query = new Query("declare variable $f external; ('aa','b','ccc')[?$f()]");
+    BrackitQueryContext implicit = new BrackitQueryContext(store);
+    implicit.bind(new QNm("f"),
+                  new Functions().resolve(new QNm(Namespaces.FN_NSURI, Namespaces.FN_PREFIX, "string-length"), 0));
+    BrackitQueryContext independent = new BrackitQueryContext(store);
+    independent.bind(new QNm("f"), new Query("function() { 2 }").execute(independent));
+    ItemSequence all = new ItemSequence(new Str("aa"), new Str("b"), new Str("ccc"));
+    ResultChecker.dCheck(all, query.execute(implicit));
+    ResultChecker.dCheck(new Str("b"), query.execute(independent));
+    ResultChecker.dCheck(all, query.execute(implicit));
   }
 
   @Test

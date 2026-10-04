@@ -28,6 +28,8 @@
 package io.brackit.query.expr;
 
 import io.brackit.query.atomic.IntNumeric;
+import io.brackit.query.atomic.Int32;
+import io.brackit.query.jsonitem.array.StreamingArray;
 import io.brackit.query.jdm.*;
 import io.brackit.query.jdm.SplittableSequence;
 import io.brackit.query.util.ExprUtil;
@@ -36,11 +38,9 @@ import io.brackit.query.QueryContext;
 import io.brackit.query.QueryException;
 import io.brackit.query.Tuple;
 import io.brackit.query.sequence.BaseIter;
-import io.brackit.query.sequence.ItemSequence;
 import io.brackit.query.sequence.LazySequence;
 import io.brackit.query.jdm.json.Array;
 import io.brackit.query.jdm.json.SplittableMembers;
-import io.brackit.query.jdm.type.ArrayType;
 
 /**
  * @author Sebastian Baechle
@@ -62,28 +62,15 @@ public final class ArrayAccessExpr implements Expr {
       return null;
     }
 
-    if (sequence instanceof ItemSequence itemSequence) {
-      return getLazySequence(ctx, tuple, itemSequence);
-    }
-
-    if (sequence instanceof LazySequence lazySequence) {
-      return getLazySequence(ctx, tuple, lazySequence);
-    }
-
-    final var currItem = ExprUtil.asItem(sequence);
-
-    if (currItem == null) {
-      // asItem() answers null for a sequence that iterates empty — the same nothing the null check
-      // above already returns for. Falling through would report the type error by asking the absent
-      // item what type it is.
-      return null;
+    if (!(sequence instanceof Item currItem)) {
+      return getLazySequence(ctx, tuple, sequence);
     }
 
     if (!(currItem instanceof Array array)) {
-      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                               "Illegal operand type '%s' where '%s' is expected",
-                               currItem.itemType(),
-                               ArrayType.ARRAY);
+      // JSONiq Extension to XQuery, chapter 5 and sections 5.3/5.4: array lookup and
+      // unboxing skip non-arrays, just as object lookup does in section 5.1.
+      // https://www.jsoniq.org/docs/JSONiqExtensionToXQuery/html/section-json-navigation.html
+      return null;
     }
 
     final Item itemIndex = index.evaluateToItem(ctx, tuple);
@@ -99,6 +86,10 @@ public final class ArrayAccessExpr implements Expr {
       return unboxed;
     }
 
+    return lookup(array, itemIndex);
+  }
+
+  private Sequence lookup(Array array, Item itemIndex) {
     if (!(itemIndex instanceof IntNumeric numericIndex)) {
       throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
                                "Illegal operand type '%s' where '%s' is expected",
@@ -106,28 +97,24 @@ public final class ArrayAccessExpr implements Expr {
                                Type.INR);
     }
 
-    // Use the full long value: a positive index beyond int range (e.g. 3000000000) must NOT be
-    // truncated to a negative int (which previously produced a bogus "Illegal negative index").
-    final long idx = numericIndex.longValue();
+    IntNumeric idx = numericIndex;
 
-    if (idx < 0) {
-      // Negative indices count from the end (-1 == last). Overshooting the start is an error.
-      final long fromEnd = array.len() + idx;
-
-      if (fromEnd < 0) {
-        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Illegal negative index: " + fromEnd);
+    if (idx.cmp(Int32.ZERO) < 0) {
+      idx = idx.add(array.length()).asIntNumeric();
+      if (idx.cmp(Int32.ZERO) < 0) {
+        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Illegal negative index: " + idx);
       }
-
-      return array.at((int) fromEnd);
     }
 
-    // A positive index at or beyond the array length is out of bounds -> empty sequence (path-style,
-    // matching the slice operator), rather than truncating or leaking a raw IndexOutOfBoundsException.
-    if (idx >= array.len()) {
+    if (idx.cmp(new Int32(Integer.MAX_VALUE)) >= 0) {
       return null;
     }
 
-    return array.at((int) idx);
+    int position = idx.intValue();
+    if (array instanceof StreamingArray streaming) {
+      return streaming.atOrEmpty(position);
+    }
+    return position < array.len() ? array.at(position) : null;
   }
 
   private LazySequence getLazySequence(final QueryContext ctx, final Tuple tuple, final Sequence sequence) {
@@ -152,25 +139,8 @@ public final class ArrayAccessExpr implements Expr {
               final Item i = index.evaluateToItem(ctx, tuple);
               if (i == null) {
                 nestedIter = getLazySequence(ctx, tuple, array).iterate();
-                return nestedIter.next();
               } else {
-                if (!(i instanceof IntNumeric intNumeric)) {
-                  throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
-                                           "Illegal operand type '%s' where '%s' is expected",
-                                           i.itemType(),
-                                           Type.INR);
-                }
-
-                final long idx = intNumeric.longValue();
-                final long index = idx >= 0 ? idx : array.len() + idx;
-                if (index < 0) {
-                  throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Illegal negative index: " + index);
-                }
-                if (index >= array.len()) {
-                  continue;
-                }
-
-                final Sequence selected = array.at((int) index);
+                Sequence selected = lookup(array, i);
                 if (selected instanceof Item selectedItem) {
                   return selectedItem;
                 }
@@ -217,10 +187,16 @@ public final class ArrayAccessExpr implements Expr {
 
           @Override
           public Item next() {
-            if (i >= array.len()) {
-              return null;
+            while (i < array.len()) {
+              Sequence value = array.at(i++);
+              if (value != null) {
+                Item item = value.evaluateToItem(ctx, tuple);
+                if (item != null) {
+                  return item;
+                }
+              }
             }
-            return array.at(i++).evaluateToItem(ctx, tuple);
+            return null;
           }
 
           @Override

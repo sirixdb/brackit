@@ -27,6 +27,8 @@
  */
 package io.brackit.query.jdm;
 
+import io.brackit.query.ErrorCode;
+import io.brackit.query.QueryException;
 import io.brackit.query.jdm.type.ItemType;
 import io.brackit.query.jdm.type.SequenceType;
 
@@ -66,6 +68,15 @@ public class Signature {
 
   public boolean lastIsVarArg() {
     return lastIsVarArg;
+  }
+
+  public void checkArity(int argumentCount) {
+    if (argumentCount != params.length && (!lastIsVarArg || params.length == 0 || argumentCount < params.length - 1)) {
+      throw new QueryException(ErrorCode.ERR_TYPE_INAPPROPRIATE_TYPE,
+                               "Invalid function arity %s for signature %s",
+                               argumentCount,
+                               this);
+    }
   }
 
   public ItemType defaultCtxItemType() {

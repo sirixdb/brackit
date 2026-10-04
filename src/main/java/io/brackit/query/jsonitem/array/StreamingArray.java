@@ -46,13 +46,14 @@ import io.brackit.query.sequence.BaseIter;
  * as the iterator advances, enabling processing of files that exceed available memory.
  * <p>
  * This array is read-only — mutation methods throw {@link UnsupportedOperationException}.
- * Operations that require random access ({@link #at(int)}, {@link #values()}, {@link #length()})
- * force materialization up to the requested index or fully. Once an iterator consumes an
- * uncached element, only that iterator may continue reading; other iterators, including
- * ones created earlier, and materialization or random access throw a {@link QueryException}.
- * Consumed uncached elements cannot be replayed. Fully materialize with {@link #values()}
- * or {@link #length()} before consuming uncached elements if multiple reads are required;
- * materializing only a prefix does not make the uncached suffix replayable.
+ * Indexed access ({@link #at(int)}, {@link #atOrEmpty(int)}) caches through the requested
+ * non-negative index; {@link #values()} and {@link #length()} fully materialize the array.
+ * If a nonempty prefix is cached before iteration consumes an uncached element, subsequent
+ * iteration caches the remainder as well, allowing independent readers to replay the value.
+ * Otherwise, iteration is single-pass: once an iterator consumes an uncached element, only
+ * that iterator may continue reading. Other iterators, including ones created earlier, and
+ * materialization or random access throw a {@link QueryException}. Consumed uncached elements
+ * cannot be replayed.
  * <p>
  * A parsing failure is terminal: the failing read propagates the original exception,
  * and every later read throws a {@link QueryException} with that exception as its cause,
@@ -101,9 +102,6 @@ public final class StreamingArray extends AbstractArray {
       };
     }
 
-    // Stream from parser without caching — enables constant-memory iteration
-    // over arbitrarily large arrays. Only materializeAll()/materializeUpTo()
-    // populate the cache for random access.
     return new BaseIter() {
       private int index = 0;
       private boolean done = false;
@@ -116,32 +114,28 @@ public final class StreamingArray extends AbstractArray {
           if (done) {
             return null;
           }
-
-          // Iterators created before streaming starts must not share the parser cursor.
           if (!ownsStream) {
             ensureReplayable();
           }
-
-          // Replay already-materialized elements (from prior random access)
           if (index < materialized.size()) {
             return (Item) materialized.get(index++);
           }
-
-          // Another operation may have finished materializing since this iterator was created.
           if (fullyMaterialized) {
             done = true;
             return null;
           }
-
-          // Pull next from parser — do NOT cache (streaming mode)
           Item item = readNextElement();
           if (item == null) {
             done = true;
             fullyMaterialized = !streamed;
             return null;
           }
-          streamed = true;
-          ownsStream = true;
+          if (!materialized.isEmpty()) {
+            materialized.add(item);
+          } else {
+            streamed = true;
+            ownsStream = true;
+          }
           index++;
           return item;
         }
@@ -161,11 +155,16 @@ public final class StreamingArray extends AbstractArray {
 
   @Override
   public synchronized Sequence at(int i) {
-    materializeUpTo(i);
-    if (i < 0 || i >= materialized.size()) {
+    Sequence value = atOrEmpty(i);
+    if (value == null) {
       throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE, "Invalid array index: %s", i);
     }
-    return materialized.get(i);
+    return value;
+  }
+
+  public synchronized Sequence atOrEmpty(int i) {
+    materializeUpTo(i);
+    return i < 0 || i >= materialized.size() ? null : materialized.get(i);
   }
 
   @Override

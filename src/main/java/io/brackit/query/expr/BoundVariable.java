@@ -46,14 +46,21 @@ import io.brackit.query.jdm.type.SequenceType;
  */
 public class BoundVariable extends Variable implements Reference {
   private int pos = -1;
+  private final Object contextBinding;
 
   public BoundVariable(QNm name, SequenceType type) {
+    this(name, type, null);
+  }
+
+  public BoundVariable(QNm name, SequenceType type, Object contextBinding) {
     super(name, type);
+    this.contextBinding = contextBinding;
   }
 
   public BoundVariable(QNm name, int pos) {
     super(name);
     this.pos = pos;
+    this.contextBinding = null;
   }
 
   @Override
@@ -63,6 +70,9 @@ public class BoundVariable extends Variable implements Reference {
 
   @Override
   public Sequence evaluate(QueryContext ctx, Tuple tuple) {
+    if (contextBinding != null) {
+      PredicateExpr.contextItemRead(contextBinding);
+    }
     Sequence s;
     try {
       s = tuple.get(pos);
@@ -83,6 +93,9 @@ public class BoundVariable extends Variable implements Reference {
 
   @Override
   public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
+    if (contextBinding != null) {
+      PredicateExpr.contextItemRead(contextBinding);
+    }
     Sequence s;
     try {
       s = tuple.get(pos);

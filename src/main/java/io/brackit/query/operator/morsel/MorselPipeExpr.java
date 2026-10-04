@@ -30,6 +30,7 @@ package io.brackit.query.operator.morsel;
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryContext;
 import io.brackit.query.QueryException;
+import io.brackit.query.QueryExecution;
 import io.brackit.query.Tuple;
 import io.brackit.query.jdm.Expr;
 import io.brackit.query.jdm.Item;
@@ -265,9 +266,16 @@ public final class MorselPipeExpr implements Expr {
       this.workers = splits;
       this.queue = new ArrayBlockingQueue<>(Math.max(2, splits * QUEUE_DEPTH));
       this.finished = new CountDownLatch(splits);
+      final ScopedValue.Carrier execution = QueryExecution.capture();
       for (int i = 0; i < splits; i++) {
         final int index = i;
-        POOL.execute(() -> runSplit(ctx, tuple, source.split(index, splits)));
+        POOL.execute(() -> {
+          if (execution == null) {
+            runSplit(ctx, tuple, source.split(index, splits));
+          } else {
+            execution.run(() -> runSplit(ctx, tuple, source.split(index, splits)));
+          }
+        });
       }
     }
 

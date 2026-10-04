@@ -32,9 +32,6 @@ import io.brackit.query.atomic.Int32;
 import io.brackit.query.atomic.IntNumeric;
 import io.brackit.query.jdm.Item;
 import io.brackit.query.jdm.Iter;
-import io.brackit.query.jdm.node.Node;
-import io.brackit.query.ErrorCode;
-import io.brackit.query.QueryException;
 
 /**
  * @author Sebastian Baechle
@@ -48,41 +45,13 @@ public abstract class LazySequence extends AbstractSequence {
   @Override
   public boolean booleanValue() {
     Boolean b = bool; // volatile read
-    if (b != null) {
-      return b;
-    }
-    try (Iter s = iterate()) {
-      Item n = s.next();
-      if (n == null) {
-        return (bool = false);
-      }
-      if (n instanceof Node<?>) {
-        return (bool = true);
-      }
-      if (s.next() != null) {
-        throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-                                 "Effective boolean value is undefined " + "for sequences with two or more items "
-                                     + "not starting with a node");
-      }
-      return (bool = n.booleanValue());
-
-    }
+    return b != null ? b : (bool = super.booleanValue());
   }
 
   @Override
   public IntNumeric size() {
     IntNumeric si = size; // volatile read
-    if (si != null) {
-      return si;
-    }
-    final Counter count = new Counter();
-    try (Iter s = iterate()) {
-      while (s.next() != null) {
-        count.inc();
-      }
-    }
-    size = count.asIntNumeric();
-    return size;
+    return si != null ? si : (size = super.size());
   }
 
   @Override

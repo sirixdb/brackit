@@ -55,7 +55,20 @@ public class StepExpr extends PredicateExpr {
 
   public StepExpr(Accessor accessor, NodeType test, Expr input, Expr[] filter, boolean[] bindItem, boolean[] bindPos,
       boolean[] bindSize) {
-    super(filter, bindItem, bindPos, bindSize);
+    this(accessor,
+         test,
+         input,
+         filter,
+         bindItem,
+         bindPos,
+         bindSize,
+         new boolean[filter.length],
+         new Object[filter.length]);
+  }
+
+  public StepExpr(Accessor accessor, NodeType test, Expr input, Expr[] filter, boolean[] bindItem, boolean[] bindPos,
+      boolean[] bindSize, boolean[] ebvFilter, Object[] potentialFocus) {
+    super(filter, bindItem, bindPos, bindSize, ebvFilter, potentialFocus);
     this.accessor = accessor;
     this.test = test;
     this.input = input;
@@ -80,7 +93,7 @@ public class StepExpr extends PredicateExpr {
                                ((Item) node).itemType());
     }
     Sequence s = new AxisStepSequence((Node<?>) node);
-    boolean backwardAxis = !accessor.getAxis().isForward();
+    boolean backwardAxis = accessor.requiresPositionReversal();
     boolean reversed = false;
 
     for (int i = 0; i < filter.length; i++) {
@@ -92,39 +105,23 @@ public class StepExpr extends PredicateExpr {
       // check if the filter predicate is independent
       // of the context item
       if (bindCount[i] == 0) {
-        Sequence fs = filter[i].evaluate(ctx, tuple);
+        Item fs = predicateValue(filter[i].evaluate(ctx, tuple));
         if (fs == null) {
           return null;
         } else if (fs instanceof Numeric) {
           IntNumeric pos = ((Numeric) fs).asIntNumeric();
-          // Positional predicates on reverse axes count in AXIS order (XPath §3.3.3 —
-          // reverse document order), but the accessors deliver document order: without
-          // reversing first, 'ancestor::*[1]' returned the root instead of the parent and
-          // 'preceding-sibling::*[1]' the FIRST sibling instead of the nearest — while the
-          // equivalent '[position()=1]' (the dependent-filter path below) was correct.
+          // Normalize cursor order for ranking only when the accessor requires it.
           if (pos != null && backwardAxis && !reversed) {
             s = reverse(s);
             reversed = true;
           }
           s = (pos != null) ? s.get(pos) : null;
-        } else {
-          try (Iter it = fs.iterate()) {
-            Item first = it.next();
-            if ((first != null) && (it.next() == null) && (first instanceof Numeric)) {
-              IntNumeric pos = ((Numeric) first).asIntNumeric();
-              if (pos != null && backwardAxis && !reversed) {
-                return reverse(s).get(pos); // singleton result: no re-reversal needed
-              }
-              return (pos != null) ? s.get(pos) : null;
-            }
-          }
-          if (!fs.booleanValue()) {
-            return null;
-          }
+        } else if (!fs.booleanValue()) {
+          return null;
         }
       } else {
         // the filter predicate is dependent on the context item
-        if ((backwardAxis) && (!reversed) && (bindPos[i])) {
+        if (backwardAxis && !reversed && (!ebvFilter[i] || bindPos[i] || bindSize[i])) {
           s = reverse(s);
           reversed = true;
         }
@@ -132,8 +129,7 @@ public class StepExpr extends PredicateExpr {
       }
     }
 
-    if (reversed) {
-      assert s != null;
+    if (reversed && s != null) {
       s = reverse(s);
     }
 

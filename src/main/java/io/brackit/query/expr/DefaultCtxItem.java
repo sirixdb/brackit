@@ -30,6 +30,7 @@ package io.brackit.query.expr;
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryContext;
 import io.brackit.query.QueryException;
+import io.brackit.query.QueryExecution;
 import io.brackit.query.Tuple;
 import io.brackit.query.compiler.Bits;
 import io.brackit.query.compiler.Unit;
@@ -52,7 +53,6 @@ public class DefaultCtxItem extends Variable implements Unit {
   private Expr expr;
   private ItemType itemType = AnyItemType.ANY;
   private boolean external = true;
-  private Item item;
 
   public DefaultCtxItem() {
     super(Bits.FS_DOT);
@@ -78,9 +78,10 @@ public class DefaultCtxItem extends Variable implements Unit {
 
   @Override
   public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
-    if (item != null) {
-      return item;
-    }
+    return (Item) QueryExecution.resolveDeclaration(ctx, this, () -> initialize(ctx, tuple));
+  }
+
+  private Item initialize(QueryContext ctx, Tuple tuple) {
     Item i = null;
     if (external) {
       i = ctx.getContextItem();
@@ -93,7 +94,6 @@ public class DefaultCtxItem extends Variable implements Unit {
                                "Dynamic context variable %s is not assigned a value",
                                name);
     }
-    item = TypedSequence.toTypedItem(new SequenceType(itemType, Cardinality.One), i);
-    return i;
+    return TypedSequence.toTypedItem(new SequenceType(itemType, Cardinality.One), i);
   }
 }

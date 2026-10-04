@@ -33,6 +33,7 @@ import io.brackit.query.util.ExprUtil;
 import io.brackit.query.ErrorCode;
 import io.brackit.query.QueryContext;
 import io.brackit.query.QueryException;
+import io.brackit.query.QueryExecution;
 import io.brackit.query.Tuple;
 import io.brackit.query.compiler.Unit;
 import io.brackit.query.sequence.TypedSequence;
@@ -55,19 +56,7 @@ public class DeclVariable extends Variable implements Unit {
 
   @Override
   public Sequence evaluate(QueryContext ctx, Tuple tuple) {
-    Sequence s;
-    if (ctx.isBound(name)) {
-      s = ctx.resolve(name);
-    } else if (expr != null) {
-      s = expr.evaluate(ctx, TupleImpl.EMPTY_TUPLE);
-      // bind sequence to preserve sequence identity
-      // for future references
-      ctx.bind(name, s);
-    } else {
-      throw new QueryException(ErrorCode.ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED,
-                               "Variable %s has not been bound",
-                               name);
-    }
+    Sequence s = resolve(ctx);
     if (type != null) {
       s = TypedSequence.toTypedSequence(type, s);
     }
@@ -76,19 +65,25 @@ public class DeclVariable extends Variable implements Unit {
 
   @Override
   public Item evaluateToItem(QueryContext ctx, Tuple tuple) {
-    Sequence res = ctx.resolve(name);
-    if (res == null) {
+    Sequence res = resolve(ctx);
+    if (type != null) {
+      return TypedSequence.toTypedItem(type, res);
+    }
+    return ExprUtil.asItem(res);
+  }
+
+  private Sequence resolve(QueryContext ctx) {
+    if (ctx.isBound(name)) {
+      return ctx.resolve(name);
+    }
+    return QueryExecution.resolveDeclaration(ctx, this, () -> {
       if (expr == null) {
         throw new QueryException(ErrorCode.ERR_DYNAMIC_CONTEXT_VARIABLE_NOT_DEFINED,
                                  "Variable %s has not been bound",
                                  name);
       }
-      res = expr.evaluate(ctx, TupleImpl.EMPTY_TUPLE);
-    }
-    if (type != null) {
-      return TypedSequence.toTypedItem(type, res);
-    }
-    return ExprUtil.asItem(res);
+      return expr.evaluate(ctx, TupleImpl.EMPTY_TUPLE);
+    });
   }
 
   @Override

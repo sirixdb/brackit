@@ -29,6 +29,8 @@ package io.brackit.query.util.forkjoin;
 
 import java.util.concurrent.RecursiveAction;
 
+import io.brackit.query.QueryExecution;
+
 /**
  * Task abstraction for parallel execution.
  * Extends Java's RecursiveAction for better performance and JVM optimization.
@@ -36,6 +38,8 @@ import java.util.concurrent.RecursiveAction;
  * @author Sebastian Baechle
  */
 public abstract class Task extends RecursiveAction {
+
+  private final ScopedValue.Carrier execution = QueryExecution.capture();
 
   private volatile Throwable throwable;
 
@@ -47,6 +51,14 @@ public abstract class Task extends RecursiveAction {
 
   @Override
   protected final void compute() {
+    if (execution == null) {
+      computeInExecution();
+    } else {
+      execution.run(this::computeInExecution);
+    }
+  }
+
+  private void computeInExecution() {
     try {
       doCompute();
     } catch (Throwable e) {
