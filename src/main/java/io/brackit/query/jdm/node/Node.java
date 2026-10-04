@@ -707,6 +707,13 @@ public interface Node<E extends Node<E>> extends StructuredItem {
    */
   void delete() throws DocumentException;
 
+  default void deleteNextSibling() throws DocumentException {
+    E next = getNextSibling();
+    if (next != null) {
+      next.delete();
+    }
+  }
+
   /**
    * Parse the subtree rooted at this node.
    *

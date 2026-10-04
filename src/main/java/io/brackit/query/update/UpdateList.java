@@ -40,7 +40,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -114,7 +116,7 @@ public final class UpdateList {
       }
     }
 
-    final Set<Node<?>> textBoundaries = new HashSet<>();
+    final Map<Node<?>, Node<?>> textBoundaries = new HashMap<>();
 
     // Apply all updates, skipping property updates to deleted targets
     for (final UpdateOp op : ops) {
@@ -159,7 +161,7 @@ public final class UpdateList {
           }
           case REPLACE_ELEMENT_CONTENT -> parent = target;
           case REPLACE_VALUE -> {
-            if (target.getKind() == Kind.TEXT) textBoundaries.add(target);
+            if (target.getKind() == Kind.TEXT) textBoundaries.putIfAbsent(target, null);
           }
           default -> {
           }
@@ -171,28 +173,45 @@ public final class UpdateList {
       }
     }
 
-    for (Node<?> text : textBoundaries) {
-      normalizeText(text);
+    for (var boundary : textBoundaries.entrySet()) {
+      normalizeText(boundary.getKey(), boundary.getValue());
     }
   }
 
-  private void collectText(Set<Node<?>> boundaries, Node<?> first, Node<?> last) {
+  private void collectText(Map<Node<?>, Node<?>> boundaries, Node<?> first, Node<?> last) {
+    Node<?> previous = null;
     for (Node<?> node = first; node != null; node = node.getNextSibling()) {
-      if (node.getKind() == Kind.TEXT) boundaries.add(node);
+      if (node.getKind() == Kind.TEXT) {
+        if (previous == null) {
+          boundaries.putIfAbsent(node, null);
+        } else {
+          boundaries.put(node, previous);
+        }
+      }
       if (node.isSelfOf(last)) break;
+      previous = node;
     }
   }
 
-  private void normalizeText(Node<?> text) {
+  private void normalizeText(Node<?> text, Node<?> previous) {
     if (text.getParent() == null) return;
-    if (text.getValue().stringValue().isEmpty()) {
-      text.delete();
-      return;
+    while (text.getValue().stringValue().isEmpty()) {
+      if (previous == null || !text.isSelfOf(previous.getNextSibling())) {
+        previous = text.getPreviousSibling();
+      }
+      Node<?> next = text.getNextSibling();
+      if (previous == null) {
+        text.delete();
+      } else {
+        previous.deleteNextSibling();
+      }
+      if (next == null || next.getKind() != Kind.TEXT) return;
+      text = next;
     }
     Node<?> next;
     while ((next = text.getNextSibling()) != null && next.getKind() == Kind.TEXT) {
       text.setValue(new Una(text.getValue().stringValue() + next.getValue().stringValue()));
-      next.delete();
+      text.deleteNextSibling();
     }
   }
 

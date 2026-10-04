@@ -476,6 +476,14 @@ public abstract class D2Node extends AbstractNode<D2Node> {
   }
 
   @Override
+  public void deleteNextSibling() throws DocumentException {
+    D2Node next = getNextSibling();
+    if (next != null) {
+      parent.deleteChild(next, this);
+    }
+  }
+
+  @Override
   public void parse(NodeSubtreeHandler handler) throws DocumentException {
     new D2NodeParser(this).parse(handler);
   }

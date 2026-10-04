@@ -220,15 +220,18 @@ abstract class ParentD2Node extends D2Node {
   }
 
   void deleteChild(D2Node node) throws DocumentException {
+    deleteChild(node, previousSiblingOf(node));
+  }
+
+  void deleteChild(D2Node node, D2Node previous) throws DocumentException {
     if (getKind() == Kind.DOCUMENT && node.getKind() == Kind.ELEMENT) {
       throw new DocumentException("The root element must not be deleted");
     }
 
-    D2Node prev = previousSiblingOf(node);
-    if (prev == null)
+    if (previous == null)
       firstChild = node.sibling;
     else
-      prev.sibling = node.sibling;
+      previous.sibling = node.sibling;
     node.detach();
   }
 
@@ -283,7 +286,7 @@ abstract class ParentD2Node extends D2Node {
         String merged = ps.getValue().stringValue() + value.stringValue();
         if (ns != null && ns.getKind() == Kind.TEXT) {
           merged += ns.getValue().stringValue();
-          deleteChild(ns);
+          deleteChild(ns, ps);
         }
         ps.setValue(new Una(merged));
         return ps;
