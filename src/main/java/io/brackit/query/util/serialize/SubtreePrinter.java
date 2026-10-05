@@ -101,7 +101,7 @@ public class SubtreePrinter extends DefaultHandler {
     out.print(" ");
     out.print(name);
     out.print("=\"");
-    out.print(value);
+    printEscaped(value.stringValue(), true);
     out.print("\"");
   }
 
@@ -135,7 +135,7 @@ public class SubtreePrinter extends DefaultHandler {
     if (emptyElement) {
       if (pendingText != null) {
         out.print(">");
-        out.print(pendingText);
+        printEscaped(pendingText.stringValue(), false);
         out.print("</");
         out.print(name);
         out.print(">");
@@ -186,7 +186,7 @@ public class SubtreePrinter extends DefaultHandler {
         out.print(" xmlns");
       }
       out.print("=\"");
-      out.print(n.uri);
+      printEscaped(n.uri, true);
       out.print("\"");
     }
     ns = null;
@@ -201,7 +201,7 @@ public class SubtreePrinter extends DefaultHandler {
       pendingText = value;
     } else {
       newChild();
-      out.print(value);
+      printEscaped(value.stringValue(), false);
       emptyElement = false;
     }
   }
@@ -236,13 +236,41 @@ public class SubtreePrinter extends DefaultHandler {
         out.println();
       }
       indent();
-      out.print(pendingText);
+      printEscaped(pendingText.stringValue(), false);
       pendingText = null;
     }
     if ((level > 0) && (prettyPrint)) {
       out.println();
     }
     indent();
+  }
+
+  /** Writes character data or a double-quoted attribute/namespace value without changing the stored value. */
+  private void printEscaped(final String value, final boolean attribute) {
+    int start = 0;
+    for (int i = 0; i < value.length(); i++) {
+      final String escape = switch (value.charAt(i)) {
+        case '&' -> "&amp;";
+        case '<' -> "&lt;";
+        case '>' -> "&gt;";
+        case '"' -> attribute ? "&quot;" : null;
+        // References survive XML end-of-line and attribute-value normalization.
+        case '\r' -> "&#xD;";
+        case '\n' -> attribute ? "&#xA;" : null;
+        case '\t' -> attribute ? "&#x9;" : null;
+        default -> null;
+      };
+      if (escape != null) {
+        if (start < i) {
+          out.write(value, start, i - start);
+        }
+        out.write(escape);
+        start = i + 1;
+      }
+    }
+    if (start < value.length()) {
+      out.write(value, start, value.length() - start);
+    }
   }
 
   private void indent() {
