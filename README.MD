@@ -382,6 +382,12 @@ bindings stay local to their subtree, and `xmlns=''` clears an inherited default
 namespace. The default namespace does not apply to unprefixed attributes, and
 `p:xmlns` is an ordinary prefixed attribute.
 
+Namespace URIs, attribute values, and text stay decoded in the node model;
+XML serialization escapes them only at output. For example,
+`https://example.test/ns?a=1&b=2` is emitted as
+`xmlns="https://example.test/ns?a=1&amp;b=2"`, with the same escaping for prefixed
+declarations.
+
 ```xquery
 let $root := <root><item xmlns='urn:a'/><item xmlns='urn:b'/>
   <p:item xmlns:p='urn:a'/><item/></root>
