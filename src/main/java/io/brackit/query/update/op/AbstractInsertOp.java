@@ -30,6 +30,7 @@ package io.brackit.query.update.op;
 import java.util.Arrays;
 
 import io.brackit.query.QueryException;
+import io.brackit.query.jdm.StructuredItem;
 import io.brackit.query.jdm.node.Node;
 import io.brackit.query.jdm.node.NodeFactory;
 
@@ -52,7 +53,12 @@ public abstract class AbstractInsertOp implements UpdateOp {
 
   @Override
   public void apply() {
-    insertContent(target, content, size);
+    apply(getTarget());
+  }
+
+  @Override
+  public void apply(StructuredItem executionTarget) {
+    insertContent((Node<?>) executionTarget, content, size);
   }
 
   protected void insertContent(Node<?> target, Node<?>[] content, int size) {

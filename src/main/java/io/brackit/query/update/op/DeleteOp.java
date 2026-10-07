@@ -28,6 +28,7 @@
 package io.brackit.query.update.op;
 
 import io.brackit.query.QueryException;
+import io.brackit.query.jdm.StructuredItem;
 import io.brackit.query.jdm.node.Node;
 
 /**
@@ -42,7 +43,13 @@ public class DeleteOp implements UpdateOp {
 
   @Override
   public void apply() throws QueryException {
-    target.delete();
+    apply(getTarget());
+  }
+
+  @Override
+  public void apply(StructuredItem executionTarget) throws QueryException {
+    Node<?> executionNode = (Node<?>) executionTarget;
+    executionNode.delete();
   }
 
   @Override

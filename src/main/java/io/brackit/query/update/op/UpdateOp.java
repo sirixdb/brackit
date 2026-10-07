@@ -52,6 +52,26 @@ public interface UpdateOp {
   void apply();
 
   /**
+   * Apply the update operation using an execution target. Built-in XML operations
+   * use this target for all target navigation and mutation, leaving
+   * {@link #getTarget()} and the captured payload unchanged. Their execution target
+   * must be a non-null {@link io.brackit.query.jdm.node.Node} view of the original
+   * target. The caller is responsible for supplying an isolated writer view when
+   * required; this method does not create that view or publish its changes.
+   * <p>
+   * The default implementation ignores {@code executionTarget} and delegates to
+   * {@link #apply()}, preserving existing JSON and custom operation behavior.
+   * Custom operations must override this method to support execution-target routing.
+   * </p>
+   *
+   * @param executionTarget the target view used for this execution
+   * @throws QueryException if anything fails
+   */
+  default void apply(StructuredItem executionTarget) {
+    apply();
+  }
+
+  /**
    * Get the operation type.
    *
    * @return the operation type
