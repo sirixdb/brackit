@@ -52,6 +52,19 @@ public interface UpdateOp {
   void apply();
 
   /**
+   * Apply the update operation using an execution target. XML operations use this
+   * target for all navigation and mutation while retaining their captured target
+   * identity and payload. The default delegates to {@link #apply()} using the
+   * captured target, preserving existing JSON and custom operation behavior.
+   *
+   * @param executionTarget the target view used for this execution
+   * @throws QueryException if anything fails
+   */
+  default void apply(StructuredItem executionTarget) {
+    apply();
+  }
+
+  /**
    * Get the operation type.
    *
    * @return the operation type

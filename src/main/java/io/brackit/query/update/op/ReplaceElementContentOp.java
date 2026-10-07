@@ -30,6 +30,7 @@ package io.brackit.query.update.op;
 import io.brackit.query.QueryException;
 import io.brackit.query.atomic.Atomic;
 import io.brackit.query.jdm.Kind;
+import io.brackit.query.jdm.StructuredItem;
 import io.brackit.query.jdm.node.Node;
 
 /**
@@ -47,13 +48,19 @@ public class ReplaceElementContentOp implements UpdateOp {
 
   @Override
   public void apply() throws QueryException {
+    apply(getTarget());
+  }
+
+  @Override
+  public void apply(StructuredItem executionTarget) throws QueryException {
+    Node<?> executionNode = (Node<?>) executionTarget;
     Node<?> child;
-    while ((child = target.getFirstChild()) != null) {
+    while ((child = executionNode.getFirstChild()) != null) {
       child.delete();
     }
 
     if (value != null && !value.stringValue().isEmpty()) {
-      target.append(Kind.TEXT, null, value);
+      executionNode.append(Kind.TEXT, null, value);
     }
   }
 
