@@ -205,8 +205,12 @@ public class SumAvgAggregator implements Aggregator {
       return numericSumDoubleBatch(in, sumDbl.doubleValue(), dbl.doubleValue());
     }
 
-    // Fallback to original loop for mixed types
-    sum = sum.add((Numeric) first);
+    // Fallback to original loop for mixed types. The batch paths above only take Int64/Dbl, so
+    // `first` may still be any atomic here (e.g. a boolean after an xs:int): check before adding.
+    if (!(first instanceof Numeric firstNumeric)) {
+      throw incompatibleOperand(sum, firstType);
+    }
+    sum = sum.add(firstNumeric);
     count++;
     while ((item = in.next()) != null) {
       sum = numericSum(sum, item);
@@ -361,14 +365,19 @@ public class SumAvgAggregator implements Aggregator {
       s = Cast.cast(null, s, Type.DBL, false);
       type = Type.DBL;
     } else if (!(s instanceof Numeric)) {
-      throw new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
-                               "Incompatible types in aggregate function: %s and %s.",
-                               sum,
-                               type);
+      throw incompatibleOperand(sum, type);
     }
 
     sum = sum.add((Numeric) s);
     return sum;
+  }
+
+  /** err:FORG0006 for a non-numeric operand met while summing numeric values. */
+  private static QueryException incompatibleOperand(Numeric sum, Type type) {
+    return new QueryException(ErrorCode.ERR_INVALID_ARGUMENT_TYPE,
+                              "Incompatible types in aggregate function: %s and %s.",
+                              sum,
+                              type);
   }
 
   private Numeric numericAggCalc(Numeric sum, long count) throws QueryException {
