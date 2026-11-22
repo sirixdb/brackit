@@ -58,9 +58,8 @@ why the lane below exists and why its verdict is about assertions rather than ab
 `pull_request` events after the short `Python mutation tooling` job. It compiles the project itself
 rather than depending on the test lane, so it adds no dependency to `Test` or `publish` and cannot
 delay them. Its **30-minute job limit** bounds the whole job; PIT processes share a **20-minute
-execution budget**, leaving room for compilation, setup and report upload. Each module may use all
-the time still left except a `MIN_MODULE_SECONDS` floor for every module after it; Brackit is a
-single Maven module, so in practice one module receives the whole budget. A deadline kills the
+execution budget**, leaving room for compilation, setup and report upload. Brackit's single Maven
+module receives the whole PIT execution budget. A deadline kills the
 process group, preserves partial reports and explicitly reports incomplete analysis. A large diff
 may need follow-up focused runs; timeouts and missing evidence are never a clean score.
 
@@ -270,9 +269,11 @@ mvn -B -Ppr-mutation org.pitest:pitest-maven:mutationCoverage \
 
 The opt-in [`pr-mutation` profile](../pom.xml) owns every PIT setting and is absent from every normal
 lifecycle, so the ordinary test lane keeps its timing. It requires both the class and the test list,
-so an unset property fails the run instead of silently mutating the whole engine. Minions inherit
-surefire's `argLine`, so they run with the same module and preview flags as the ordinary test lane,
-plus a bounded CI-sized heap.
+so an unset property fails the run instead of silently mutating the whole engine. The profile
+explicitly supplies minions with `--enable-preview` and `--add-modules=jdk.incubator.vector`, the
+same flags as the ordinary test lane, plus a bounded CI-sized heap. Surefire configuration parsing
+stays disabled so its includes, excludes and other settings cannot alter the selected scope;
+PIT ignores `parseSurefireArgLine` when that parsing is disabled.
 
 ## Running the layers
 

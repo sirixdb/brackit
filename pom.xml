@@ -295,12 +295,12 @@
                             <mutationThreshold>0</mutationThreshold>
                             <coverageThreshold>0</coverageThreshold>
                             <timeoutConstant>10000</timeoutConstant>
-                            <!-- Reuse surefire's argLine, so the minions get the same module and
-                                 preview flags the ordinary test lane uses, and add only a bounded
-                                 CI-sized heap. -->
-                            <parseSurefireArgLine>true</parseSurefireArgLine>
+                            <!-- Supply the ordinary test lane's module and preview flags explicitly,
+                                 with a bounded CI-sized heap; keep Surefire scope parsing disabled. -->
                             <parseSurefireConfig>false</parseSurefireConfig>
                             <jvmArgs>
+                                <jvmArg>--enable-preview</jvmArg>
+                                <jvmArg>--add-modules=jdk.incubator.vector</jvmArg>
                                 <jvmArg>-Xmx2g</jvmArg>
                             </jvmArgs>
                         </configuration>

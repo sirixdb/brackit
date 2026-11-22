@@ -17,8 +17,7 @@ import tomllib
 import xml.etree.ElementTree as ET
 
 # Brackit is one Maven module at the repository root. The module dimension is kept so the
-# selection manifest, per-module budget split and job summary have the same shape as the
-# multi-module lane this was ported from: a second module needs an entry here and nothing else.
+# selection manifest, results and job summary have the same shape as the lane this was ported from.
 MODULES = {'brackit': ''}
 DIRECTORIES = {module: directory for module, directory in MODULES.items()}
 # Mutated sources come only from these roots. `src/examples/java` is a main source root too:
@@ -45,8 +44,6 @@ UNRESOLVED_KINDS = ('unmapped', 'over-limit')
 # environment variable or other input may add, ignore or relax a disposition (CONV-203).
 DISPOSITIONS_FILE = '.github/mutation-dispositions.toml'
 ASSOCIATIONS_FILE = '.github/mutation-test-associations.toml'
-# Execution time reserved for each module still waiting, so none is starved by an earlier one.
-MIN_MODULE_SECONDS = 120
 # A large diff cannot afford every mutant of every changed class. A mutant whose covering test
 # hangs costs a whole minion restart, and those restarts - not the mutant count - exhausted the
 # budget long before the mutants do. Sample per class instead, so the work scales with the diff
@@ -1365,16 +1362,10 @@ def run(root, output, seconds, blocking):
                            'count': len(associations)}
     deadline = time.monotonic() + seconds
     results = []
-    pending = len(selected)
     for module, sources in selected.items():
-        # Reserve time for later modules while allowing this module to use the rest.
-        # Divide equally if the remaining budget cannot supply every pending module's floor.
         remaining = max(0.0, deadline - time.monotonic())
-        reserve = min(MIN_MODULE_SECONDS, remaining / pending)
-        share = remaining - reserve * (pending - 1)
         results.append(analyze_module(root, output, module, sources, changed[module],
-                                      time.monotonic() + share, round(share), associations))
-        pending -= 1
+                                      deadline, round(remaining), associations))
         write_results(output, results, associations=association_verdict)
     dispositions = judge_run(root, results, changed, base_text)
     write_results(output, results, dispositions, association_verdict)

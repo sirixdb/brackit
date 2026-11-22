@@ -415,48 +415,27 @@ class RunWiringTest(unittest.TestCase):
             result = json.loads((work.output / 'results.json').read_text())['modules'][0]
             self.assertEqual(result['error'], '10s module execution share exceeded')
 
-    def test_interim_results_carry_associations_and_later_modules_are_judged(self):
-        # A second declared module, which is the only way the per-module interim write and the
-        # later module's judgement have observable behaviour (docs/VERIFICATION.md).
-        modules = {**mutation.MODULES, 'second': 'second'}
-        with lane() as work, \
-             patch.object(mutation, 'MODULES', modules), \
-             patch.object(mutation, 'DIRECTORIES', dict(modules)):
-            query = work.root / 'second'
-            (query / 'src/main/java/q/Q.java').parent.mkdir(parents=True)
-            (query / 'src/main/java/q/Q.java').write_text('package q;\nclass Q {}\n')
-            classes = query / 'target/classes/q'
-            classes.mkdir(parents=True)
-            (classes / 'Q.class').write_bytes(class_file('q.Q', 'Q.java', {('run', '(I)Z'): (3,)}))
-            (work.output / 'selection.json').write_text(json.dumps({
-                'modules': {'brackit': [SOURCE], 'second': ['src/main/java/q/Q.java']},
-                'changed_lines': {'brackit': {SOURCE: [11]},
-                                  'second': {'src/main/java/q/Q.java': [9]}},
-                'dispositions_base': entry(**{'class': 'q.Q'})}))
-            (work.root / mutation.DISPOSITIONS_FILE).write_text(entry(**{'class': 'q.Q'}))
+    def test_interim_results_carry_module_result_and_associations(self):
+        with lane() as work:
             seen = []
+            judge_run = mutation.judge_run
 
-            def execute(command, root, log, timeout):
-                directory = next(argument.split('=', 1)[1] for argument in command
-                                 if argument.startswith('-DprMutationReportDir='))
-                module = Path(directory).parent.name
-                if module == 'second':
-                    seen.append(json.loads((work.output / 'results.json').read_text()))
-                report = work.output / module / 'report/mutations.xml'
-                report.parent.mkdir(parents=True, exist_ok=True)
-                report.write_text('<mutations>' + mutant('KILLED', 3, klass='q.Q', source='Q.java',
-                                                         indexes=(1,)) + '</mutations>')
-                return 1 if module == 'brackit' else 0
+            def judge(root, results, changed, base_text):
+                seen.append(json.loads((work.output / 'results.json').read_text()))
+                return judge_run(root, results, changed, base_text)
 
-            def targets(module_root, sources):
-                return (['q.Q'] if module_root.name == 'second' else ['a.Foo']), []
-            with patch.object(mutation, 'resolve_targets', side_effect=targets), \
-                 patch.object(mutation, 'test_scope', return_value=(['x.T*'], [], {})), \
-                 patch.object(mutation, 'execute', side_effect=execute):
-                mutation.run(work.root, work.output, 300, blocking=True)
+            with patch.object(mutation, 'judge_run', side_effect=judge):
+                code, final, _ = work.run([mutant('KILLED', 3, indexes=(1,))],
+                                          head=entry(), base=entry(), changed=(20,))
+            self.assertEqual(code, 0)
+            self.assertEqual(len(seen), 1)
             self.assertEqual(seen[0]['associations'],
                              {'file': mutation.ASSOCIATIONS_FILE, 'errors': [], 'count': 0})
-            final = json.loads((work.output / 'results.json').read_text())
+            self.assertIsNone(seen[0]['dispositions'])
+            self.assertEqual(len(seen[0]['modules']), 1)
+            result = seen[0]['modules'][0]
+            self.assertEqual((result['module'], result['state'], result['killed']),
+                             ('brackit', 'complete', 1))
             self.assertEqual(states(final), ['not judged'])
 
 

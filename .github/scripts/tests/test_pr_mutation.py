@@ -71,21 +71,6 @@ def module_tree(sources, tests):
         yield root
 
 
-@contextlib.contextmanager
-def extra_modules(*names):
-    """Declare additional modules, for the budget rules only a second module exercises.
-
-    Brackit is one Maven module, so the per-module share has observable behaviour only when
-    `MODULES` holds more than one entry; adding an entry there is exactly the configuration
-    change `MODULES` exists for (docs/VERIFICATION.md#pr-mutation-testing).
-    """
-    modules = {**mutation.MODULES, **{name: name for name in names}}
-    with patch.object(mutation, 'MODULES', modules), \
-         patch.object(mutation, 'DIRECTORIES',
-                      {module: directory for module, directory in modules.items()}):
-        yield
-
-
 # The reviewed association file the lane reads for every run (CONV-204).
 REPOSITORY = SCRIPT.parents[2]
 ASSOCIATIONS, ASSOCIATION_ERRORS = mutation.parse_associations(
@@ -623,44 +608,16 @@ class ReportingTest(unittest.TestCase):
                 result = json.loads((output / 'results.json').read_text())['modules'][0]
                 self.assertNotIn('killed', result)  # stale XML was removed before source mapping
 
-    def test_each_module_gets_a_fair_share_so_one_cannot_starve_the_next(self):
-        # Without a reserve the first module consumes the single shared deadline and a later
-        # module reports 'timed out' although its scope was one test class.
-        with tempfile.TemporaryDirectory() as temp, extra_modules('second'):
+    def test_single_module_receives_the_whole_execution_budget(self):
+        with tempfile.TemporaryDirectory() as temp:
             output = Path(temp)
-            write_manifest(output, {'brackit': ['src/main/java/a/Foo.java'],
-                                    'second': ['src/main/java/a/Bar.java']})
-            timeouts = []
-            with patch.object(mutation, 'prepare_analysis', return_value=['unused']), \
-                 patch.object(mutation, 'execute',
-                              side_effect=lambda command, root, log, timeout:
-                              timeouts.append(timeout) or 0):
-                mutation.run(Path(temp), output, 10, blocking=False)
-            self.assertEqual(len(timeouts), 2)
-            # A 10s budget is smaller than the floor, so it degrades to an equal split.
-            self.assertLess(timeouts[0], 6)
-            self.assertGreater(timeouts[0], 4)
-            # The mocked first module returned at once, so it donates its remainder.
-            self.assertGreater(timeouts[1], 9)
-
-    def test_a_real_budget_reserves_a_floor_without_capping_the_first_module(self):
-        with tempfile.TemporaryDirectory() as temp, extra_modules('second', 'third'):
-            output = Path(temp)
-            modules = ('brackit', 'second', 'third')
-            write_manifest(output, {module: ['src/main/java/a/Foo.java'] for module in modules})
-            timeouts = []
-            with patch.object(mutation, 'prepare_analysis', return_value=['unused']), \
-                 patch.object(mutation, 'execute',
-                              side_effect=lambda command, root, log, timeout:
-                              timeouts.append(timeout) or 0):
-                mutation.run(Path(temp), output, 1320, blocking=False)
-            floor = mutation.MIN_MODULE_SECONDS
-            # The module with the most changed classes is usually first; an equal split would
-            # have capped it at 440s. It may use everything but the other two modules' floor.
-            self.assertGreater(timeouts[0], 1320 - 2 * floor - 1)
-            self.assertLess(timeouts[0], 1320 - 2 * floor + 1)
-            for timeout in timeouts[1:]:
-                self.assertGreaterEqual(timeout, floor)
+            write_manifest(output, {'brackit': ['src/main/java/a/Foo.java']})
+            with patch.object(mutation.time, 'monotonic', return_value=100), \
+                 patch.object(mutation, 'prepare_analysis', return_value=['unused']), \
+                 patch.object(mutation, 'execute', return_value=1) as execute:
+                mutation.run(output, output, 1200, blocking=False)
+            execute.assert_called_once_with(['unused'], output,
+                                            output / 'brackit/pitest.log', 1200)
 
     def test_only_complete_reports_without_undetected_changed_lines_are_clean(self):
         complete = {'module': 'brackit', 'state': 'complete', 'total': 4, 'killed': 2,
