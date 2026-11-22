@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Brackit is a retargetable JSONiq query engine. It compiles and executes queries against semi-structured data (JSON and XML). Originally developed at TU Kaiserslautern, it's now maintained as part of the SirixDB ecosystem.
 
+## Development Standard
+
+How and why this project develops, tests, measures and reviews: `docs/DEVELOPMENT.md`. Workflow: `CONTRIBUTING.md`.
+
+- Spec first: identify the behaviour, invariants and error cases in the specification of record - XQuery 3.1, Functions and Operators 3.1, JSONiq, or a requirement in `spec/` - then derive tests from it before code (`spec/CONV-conventions.md#conv-103--specification-before-implementation`).
+
 ## Build Commands
 
 ```bash

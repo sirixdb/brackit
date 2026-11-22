@@ -38,6 +38,25 @@
         <system>GitHub Issues</system>
     </issueManagement>
     <build>
+        <pluginManagement>
+            <plugins>
+                <!-- Version for the opt-in PR mutation lane, so
+                     `mvn org.pitest:pitest-maven:mutationCoverage` resolves this version without
+                     repeating it on the command line. See docs/VERIFICATION.md. -->
+                <plugin>
+                    <groupId>org.pitest</groupId>
+                    <artifactId>pitest-maven</artifactId>
+                    <version>1.30.2</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.pitest</groupId>
+                            <artifactId>pitest-junit5-plugin</artifactId>
+                            <version>1.2.3</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -231,6 +250,64 @@
         </dependency>
     </dependencies>
     <profiles>
+        <profile>
+            <!-- Opt-in PR mutation scope: the changed-line mutation lane described in
+                 docs/VERIFICATION.md#pr-mutation-testing. It is absent from every normal
+                 lifecycle, so the ordinary test lane keeps its timing, and it never widens the
+                 scope .github/scripts/pr_mutation.py selected: both class and test lists are
+                 required, so an unset property fails the run instead of mutating everything. -->
+            <id>pr-mutation</id>
+            <properties>
+                <!-- PIT has no per-class mutant setting; the limit is the CLASSLIMIT
+                     interceptor feature, whose sampling strides evenly across a class rather than
+                     taking the first N, and does not guarantee that every method is reached. The
+                     lane always passes `+CLASSLIMIT(limit[N])`. The default disables the feature
+                     (it is off anyway), so a focused local rerun sees every mutant of its targets
+                     - which is also what makes a sample provably complete (CONV-202). -->
+                <prMutationFeatures>-CLASSLIMIT</prMutationFeatures>
+                <prMutationReportDir>${project.build.directory}/pr-mutation</prMutationReportDir>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-maven</artifactId>
+                        <configuration>
+                            <targetClasses>${prMutationTargetClasses}</targetClasses>
+                            <targetTests>${prMutationTargetTests}</targetTests>
+                            <features>${prMutationFeatures}</features>
+                            <!-- Benchmarks are not behaviour tests and never belong to a PIT
+                                 baseline; keep exploration in the ordinary test lane. -->
+                            <excludedTestClasses>
+                                <excludedTestClass>*Benchmark</excludedTestClass>
+                            </excludedTestClasses>
+                            <reportsDirectory>${prMutationReportDir}</reportsDirectory>
+                            <timestampedReports>false</timestampedReports>
+                            <outputFormats>
+                                <outputFormat>HTML</outputFormat>
+                                <outputFormat>XML</outputFormat>
+                            </outputFormats>
+                            <threads>2</threads>
+                            <!-- A missing or empty report is incomplete analysis, never a pass;
+                                 the Python reporter owns the verdict, so PIT's own thresholds
+                                 stay at 0. -->
+                            <failWhenNoMutations>true</failWhenNoMutations>
+                            <mutationThreshold>0</mutationThreshold>
+                            <coverageThreshold>0</coverageThreshold>
+                            <timeoutConstant>10000</timeoutConstant>
+                            <!-- Supply the ordinary test lane's module and preview flags explicitly,
+                                 with a bounded CI-sized heap; keep Surefire scope parsing disabled. -->
+                            <parseSurefireConfig>false</parseSurefireConfig>
+                            <jvmArgs>
+                                <jvmArg>--enable-preview</jvmArg>
+                                <jvmArg>--add-modules=jdk.incubator.vector</jvmArg>
+                                <jvmArg>-Xmx2g</jvmArg>
+                            </jvmArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>release</id>
             <build>
