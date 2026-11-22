@@ -26,6 +26,96 @@ jobs:
     - name: Test with Maven
       run: mvn clean test
 
+  PythonTooling:
+    name: Python mutation tooling
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test mutation tooling with branch coverage
+        env:
+          COVERAGE_FILE: ${{ runner.temp }}/python.coverage
+        run: |
+          python3 -m pip install --disable-pip-version-check --only-binary :all: coverage==7.17.3
+          python3 -B -m coverage run --branch --source=.github/scripts --omit='*/tests/*' \
+            -m unittest discover -s .github/scripts/tests -p 'test_pr_mutation*.py'
+          python3 -m coverage xml -o "$RUNNER_TEMP/python-coverage.xml"
+          python3 -m coverage report --fail-under=85
+      - name: Upload Python coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-python
+          path: ${{ runner.temp }}/python-coverage.xml
+          if-no-files-found: error
+          retention-days: 3
+
+  MutationTesting:
+    name: PIT changed-source mutation testing
+    needs: PythonTooling
+    if: github.event_name == 'pull_request'
+    # Advisory rollout policy and blocking switch: docs/VERIFICATION.md#pr-mutation-testing.
+    continue-on-error: ${{ vars.MUTATION_BLOCKING != 'true' }}
+    permissions:
+      contents: read
+    concurrency:
+      group: mutation-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout PR merge revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+      # The changed-line map describes the working tree, so the sources PIT mutates must be the
+      # sources the map was taken from: the formatter would rewrite them during process-sources.
+      - name: Compile main and test classes
+        run: mvn --batch-mode --no-transfer-progress -DskipTests -Dformatter.skip=true test-compile
+      - name: Select changed main sources
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: >-
+          python3 .github/scripts/pr_mutation.py select
+          --base "$BASE_SHA" --head "$HEAD_SHA" --output "$RUNNER_TEMP/pr-mutation"
+      - name: Run bounded PIT analysis
+        # Always enforce internally so incomplete runs remain visible as a failed informational
+        # job. The job-level rollout switch determines whether this fails the PR.
+        run: >-
+          python3 .github/scripts/pr_mutation.py run --seconds 1200 --blocking
+          --output "$RUNNER_TEMP/pr-mutation"
+      - name: Publish mutation summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f "$RUNNER_TEMP/pr-mutation/summary.md" ]]; then
+            cat "$RUNNER_TEMP/pr-mutation/summary.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Mutation analysis incomplete: setup/selection failed; see job logs.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload mutation reports and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-mutation
+          path: ${{ runner.temp }}/pr-mutation
+          if-no-files-found: warn
+          retention-days: 14
+
   publish:
     name: Deploy to OSSRH
     if: ${{ github.repository_owner == 'sirixdb' && (github.event_name == 'push' || github.event_name == 'schedule') }}

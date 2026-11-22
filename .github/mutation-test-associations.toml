@@ -1,0 +1,17 @@
+# Existing behaviour tests the PR mutation lane must run for a changed class (CONV-204), when
+# their names do not match the class. Nothing more: no patterns, no reasons, no other settings.
+# `class` is the top-level binary name of a main class; `tests` are top-level test classes
+# declared in the same module. Associations share the lane's per-module test cap.
+# See docs/VERIFICATION.md#pr-mutation-testing and spec/CONV-conventions.md.
+
+# The XMark corpus runs the same 20 queries and the same golden outputs with unnesting off, with
+# unnesting on, and with unnesting plus join detection, so the unoptimized arm is an independent
+# oracle for the optimized one. Those tests live in `io.brackit.query`, which no name-based rule
+# reaches from a rewrite class, and they are the strongest oracle a rewrite change has.
+[[association]]
+class = "io.brackit.query.compiler.optimizer.walker.topdown.JoinRewriter"
+tests = ["io.brackit.query.XMarkTestUnnestedJoin"]
+
+[[association]]
+class = "io.brackit.query.compiler.optimizer.walker.topdown.LeftJoinUnnesting"
+tests = ["io.brackit.query.XMarkTestUnnested", "io.brackit.query.XMarkTestUnnestedJoin"]
