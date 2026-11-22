@@ -237,11 +237,14 @@ grew. A bound is never widened to get a green build, and a wall-clock assertion 
 ### The benchmark protocol
 
 Counted work is blind to the same work done more slowly, which is the second layer's job. Brackit
-has two timed harnesses, and they are not interchangeable. In-process microbenchmarks are JMH, in
-`src/test/java` ([`QueryBenchmark`](../src/test/java/io/brackit/query/QueryBenchmark.java),
-[`SIMDBenchmark`](../src/test/java/io/brackit/query/util/simd/SIMDBenchmark.java)), over the query
-corpora in `src/test/resources` (XMark, TPoX, TPC-H). End-to-end comparisons are the shell harness
-in `examples/` (`benchmark.sh`, `benchmark-3way.sh`, `benchmark-1b.sh`), which produced the
+has two kinds of timed harness, and they are not interchangeable. In-process measurements use
+standalone manual timing programs in `src/test/java`, run via their `main` methods:
+[`QueryBenchmark`](../src/test/java/io/brackit/query/QueryBenchmark.java) times evaluation of
+precompiled queries over generated JSON data, and
+[`SIMDBenchmark`](../src/test/java/io/brackit/query/util/simd/SIMDBenchmark.java) times SIMD and
+scalar operations over generated arrays. Both use `System.nanoTime()`, not JMH; neither measures
+query compilation. End-to-end comparisons are the shell harness in `examples/` (`benchmark.sh`,
+`benchmark-3way.sh`, `benchmark-1b.sh`), which produced the
 published `bjq`-versus-`jq` numbers in the [README](../README.MD); those were medians of three
 runs, which is the README's stated method and *not* the protocol below. A performance claim without
 its method is not a claim, so a timed change states which harness it used and follows this
@@ -270,7 +273,8 @@ Latency that matters to a storage engine is gated downstream rather than here. S
 engine and owns the timed campaigns and work budgets for the paths it drives; a change whose point
 is query latency inside Sirix is measured there, under
 [Sirix's benchmark protocol and campaign record](https://github.com/sirixdb/sirix/blob/main/docs/BENCHMARK_CAMPAIGNS.md),
-and the Brackit pull request links that evidence. Brackit's own JMH numbers do not substitute for it.
+and the Brackit pull request links that evidence. Brackit's own manual timing results do not
+substitute for it.
 
 ## 7. Exploration beyond the happy path
 

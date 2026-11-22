@@ -15,16 +15,19 @@ chosen because it fails independently of the layer above it.
 | Behaviour tests (JUnit 5) | A query's result sequence, its error code and its serialized output match the specification of record. Most of the suite extends [`XQueryBaseTest`](../src/test/java/io/brackit/query/XQueryBaseTest.java), which supplies the context and store; [`ResultChecker`](../src/test/java/io/brackit/query/ResultChecker.java) compares sequences item by item. | `mvn test` |
 | Repeated-evaluation check | A compiled plan gives the same answer when evaluated twice. `ResultChecker.dCheckS` evaluates its cursor twice and asserts the same result both times, which catches state a plan leaves behind — the classic defect of an operator that consumes an iterator it does not own. Use it, rather than `checkS`, for any new cursor assertion. | part of `mvn test` |
 | Optimizer-equivalence corpus | The same 20 XMark queries and the same golden outputs under three optimizer configurations: unnesting off ([`XMarkTestNested`](../src/test/java/io/brackit/query/XMarkTestNested.java)), unnesting on ([`XMarkTestUnnested`](../src/test/java/io/brackit/query/XMarkTestUnnested.java)), and unnesting plus join detection ([`XMarkTestUnnestedJoin`](../src/test/java/io/brackit/query/XMarkTestUnnestedJoin.java)). A rewrite that changes an answer fails here even when every unit test passes, because the unoptimized arm is an independent oracle for the optimized one. | part of `mvn test` |
-| Golden-output corpora | `src/test/resources` holds the XMark, TPoX and TPC-H query texts and their expected output. Serialization is part of the contract, so these compare the printed result, not an in-memory structure. | part of `mvn test` |
+| Golden-output corpus | `src/test/resources/xmark` holds the 20 XMark queries and their expected output, checked under the three optimizer configurations above. Serialization is part of the contract, so these tests compare the printed result, not an in-memory structure. | part of `mvn test` |
 | Changed-line mutation testing | That the tests covering a change *assert* something: PIT mutates the changed lines and reports which mutants no test noticed. This is the only layer that measures assertion strength rather than execution. | [PR mutation testing](#pr-mutation-testing) |
 | Mutation-lane tooling tests | The reporter's own behaviour — selection, changed-line attribution, test resolution, the verdict and every disposition rule — as behaviour tests over fixtures. | `python3 -B -m unittest discover -s .github/scripts/tests -p 'test_pr_mutation*.py'` |
-| JMH benchmarks | Timed cost of compilation and evaluation in process: [`QueryBenchmark`](../src/test/java/io/brackit/query/QueryBenchmark.java), [`SIMDBenchmark`](../src/test/java/io/brackit/query/util/simd/SIMDBenchmark.java). | run the JMH class directly |
+| Standalone manual timing programs | [`QueryBenchmark`](../src/test/java/io/brackit/query/QueryBenchmark.java) times evaluation of precompiled queries over generated JSON data; [`SIMDBenchmark`](../src/test/java/io/brackit/query/util/simd/SIMDBenchmark.java) times SIMD and scalar operations over generated arrays. Both use `System.nanoTime()`, not JMH; neither measures query compilation. | run each class's `main` method |
 | End-to-end timed comparison | Wall-clock cost of the `bjq` binary against `jq` over generated corpora: `examples/benchmark.sh`, `benchmark-3way.sh`, `benchmark-1b.sh`, which produced the README's published numbers. Timed numbers from either harness are a claim only under the [benchmark protocol](DEVELOPMENT.md#the-benchmark-protocol). | `./examples/benchmark.sh --sizes "10000 100000"` |
 
 **What is deliberately not on this list.** Brackit has no property-based generator harness, no
 model-based differential oracle against a second processor, and the
 [W3C QT3 test suite](https://github.com/w3c/qt3tests) is not wired into CI. Those are the obvious
-next layers for a language with a published conformance corpus, and they are open work.
+next layers for a language with a published conformance corpus, and they are open work. TPoX has
+query resources, but their only consumer, [`QueryTest.testExtension`](../src/test/java/io/brackit/query/QueryTest.java),
+is disabled and asserts no result. TPC-H has query resources with no test consumer or expected
+outputs. Neither corpus checks correctness today.
 [CONV-102](../spec/CONV-conventions.md#conv-102--conformance-and-evidence-honesty) is the reason
 this paragraph exists rather than a row in the table: a layer map that lists harnesses the
 repository does not contain is worse than a short one, because it tells a reviewer that a bug class
@@ -98,7 +101,7 @@ reporter.
 
 Test selection is resolved **per changed source** and is never widened to the module suite. PIT's
 coverage phase has to execute every class in `targetTests`, and the corpus tests parse and run whole
-XMark, TPoX and TPC-H query sets, so whole-module coverage collection can exhaust the budget before
+XMark query sets, so whole-module coverage collection can exhaust the budget before
 mutation analysis starts. Test identities come from declared top-level Java type names and packages,
 not source filenames or directories. Discovery does not require compiled test classes. For a source
 `Foo` in package `p` the first matching step wins:

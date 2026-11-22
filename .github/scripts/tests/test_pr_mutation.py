@@ -379,8 +379,8 @@ class SelectionTest(unittest.TestCase):
 
     def test_scope_caps_stay_small_enough_to_collect_baseline_coverage(self):
         # PIT executes every targetTests class to measure coverage, so the caps are what keeps
-        # the job inside its budget. The corpus tests parse and run whole XMark, TPoX and
-        # TPC-H query sets, so an unbounded selection is the expensive failure here.
+        # the job inside its budget. The corpus tests parse and run whole XMark query sets,
+        # so an unbounded selection is the expensive failure here.
         self.assertLess(mutation.PACKAGE_TEST_LIMIT, mutation.MODULE_TEST_LIMIT)
         self.assertLessEqual(mutation.MODULE_TEST_LIMIT, 100)
 
