@@ -213,8 +213,8 @@ SQLite reaches 100% branch and MC/DC coverage, and it gets there through require
 in a dedicated harness over a feature set that barely changes. We take that principle and not the
 number: a coverage percentage used as a gate in an engine whose optimizer is actively changing buys
 line-shaped tests — the implementation-bound kind §2 rejects — and the number then certifies them.
-(One lane-level floor does exist, on the Python CI helper scripts that run the mutation lane; that
-is CI plumbing, where a line-shaped test is exactly the right thing, not a target for engine code.)
+The mutation tooling's separate coverage floor is documented in
+[VERIFICATION.md](VERIFICATION.md#reviewed-dispositions); §2's behaviour-only rule still applies.
 
 ## 6. Performance is part of correctness
 

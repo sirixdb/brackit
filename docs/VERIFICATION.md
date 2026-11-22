@@ -227,9 +227,11 @@ Pass `--sampled` to `--check` when the reports came from a run with a per-class 
 
 The reporter itself is covered by behaviour tests over fixtures
 ([`.github/scripts/tests`](../.github/scripts/tests)), run with branch coverage in the
-`Python mutation tooling` job. A coverage floor is appropriate there and nowhere else: these are
-small pure functions with no specification of their own beyond this document, which is exactly the
-case [DEVELOPMENT.md §5](DEVELOPMENT.md#5-coverage-is-a-diagnostic-not-a-target) carves out.
+`Python mutation tooling` job. Its coverage floor diagnoses unexercised paths in the CI plumbing;
+test expectations must still come from the lane contracts, including
+[CONV-201 to CONV-204](../spec/CONV-conventions.md#conv-201--mutation-disposition-record), rather
+than targeting lines to reach the floor. This is the tooling exception described in
+[DEVELOPMENT.md §5](DEVELOPMENT.md#5-coverage-is-a-diagnostic-not-a-target).
 
 The job runs on normal `pull_request` events, including forks and Dependabot, with only
 `contents: read`, no secrets and no persisted checkout credentials. Never use `pull_request_target`
@@ -286,7 +288,7 @@ mvn clean test
 
 # One test class, or one method
 mvn test -Dtest=XMarkTestUnnestedJoin
-mvn test -Dtest=NumericCorrectnessTest#sumOfBooleanRaisesTypeError
+mvn test -Dtest=NumericCorrectnessTest#sumMixed
 
 # The mutation lane's own behaviour tests
 python3 -B -m unittest discover -s .github/scripts/tests -p 'test_pr_mutation*.py'
